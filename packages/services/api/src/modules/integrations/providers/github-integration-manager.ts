@@ -5,6 +5,7 @@ import { retry } from '@octokit/plugin-retry';
 import { RequestError } from '@octokit/request-error';
 import type { GitHubIntegration } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
@@ -34,6 +35,7 @@ export class GitHubIntegrationManager {
     logger: Logger,
     private session: Session,
     private storage: Storage,
+    private auditLog: AuditLogRecorder,
     @Inject(GITHUB_APP_CONFIG) private config: GitHubApplicationConfig | null,
   ) {
     this.logger = logger.child({
@@ -76,10 +78,22 @@ export class GitHubIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.addGitHubIntegration({
+    const result = await this.storage.addGitHubIntegration({
       organizationId: input.organizationId,
       installationId: input.installationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.installationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'ENABLED',
+      },
+    });
+
+    return result;
   }
 
   async unregister(input: OrganizationSelector): Promise<void> {
@@ -93,9 +107,21 @@ export class GitHubIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.deleteGitHubIntegration({
+    const result = await this.storage.deleteGitHubIntegration({
       organizationId: input.organizationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
+      },
+    });
+
+    return result;
   }
 
   async isAvailable(selector: OrganizationSelector): Promise<boolean> {

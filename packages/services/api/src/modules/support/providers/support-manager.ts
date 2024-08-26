@@ -3,6 +3,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
 import { atomic } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
@@ -136,6 +137,7 @@ export class SupportManager {
     private organizationManager: OrganizationManager,
     private storage: Storage,
     private session: Session,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ service: 'SupportManager' });
   }
@@ -584,6 +586,17 @@ export class SupportManager {
         }),
       );
 
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketDescription: input.description,
+        ticketPriority: input.priority,
+        ticketId: String(response.ticket.id),
+        ticketSubject: input.subject,
+      },
+    });
+
     return {
       ok: {
         supportTicketId: String(response.ticket.id),
@@ -674,6 +687,19 @@ export class SupportManager {
           return Promise.reject(err);
         }),
       );
+
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_UPDATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketId: input.ticketId,
+        updatedFields: JSON.stringify({
+          comment: request.data.body,
+          authorId: internalUserId,
+          public: true,
+        }),
+      },
+    });
 
     return {
       ok: {

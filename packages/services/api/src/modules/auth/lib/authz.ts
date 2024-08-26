@@ -361,6 +361,7 @@ const actionDefinitions = {
   'schemaVersion:deleteService': schemaCheckOrPublishIdentity,
   'schema:loadFromRegistry': defaultTargetIdentity,
   'schema:compose': defaultTargetIdentity,
+  'auditLog:export': defaultOrgIdentity,
 } satisfies ActionDefinitionMap;
 
 type ActionDefinitionMap = {
