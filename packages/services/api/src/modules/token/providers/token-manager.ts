@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import type { Token } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { diffArrays, pushIfMissing } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OrganizationAccessScope } from '../../auth/providers/organization-access';
 import { ProjectAccessScope } from '../../auth/providers/project-access';
@@ -33,6 +34,7 @@ export class TokenManager {
     private session: Session,
     private tokenStorage: TokenStorage,
     private storage: Storage,
+    private auditLog: AuditLogRecorder,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -82,13 +84,30 @@ export class TokenManager {
     pushIfMissing(scopes, ProjectAccessScope.READ);
     pushIfMissing(scopes, OrganizationAccessScope.READ);
 
-    return this.tokenStorage.createToken({
+    const result = this.tokenStorage.createToken({
       organizationId: input.organizationId,
       projectId: input.projectId,
       targetId: input.targetId,
       name: input.name,
       scopes,
     });
+
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      targetId: input.targetId,
+      projectId: input.projectId,
+      updatedFields: JSON.stringify({
+        tokenCreated: true,
+      }),
+      metadata: {
+        organizationId: input.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
+    return result;
   }
 
   async deleteTokens(input: {
@@ -107,7 +126,26 @@ export class TokenManager {
       },
     });
 
-    return this.tokenStorage.deleteTokens(input);
+    const result = this.tokenStorage.deleteTokens(input);
+
+    const currentUser = await this.session.getViewer();
+
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      targetId: input.targetId,
+      projectId: input.projectId,
+      updatedFields: JSON.stringify({
+        tokenDeleted: true,
+      }),
+      metadata: {
+        organizationId: input.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
+    return result;
   }
 
   async getTokens(selector: TargetSelector): Promise<readonly Token[]> {

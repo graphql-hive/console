@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { encodeCdnToken, generatePrivateKey } from '@hive/cdn-script/cdn-token';
 import { HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import type { Contract } from '../../schema/providers/contracts';
 import { Logger } from '../../shared/providers/logger';
@@ -23,6 +24,7 @@ export class CdnProvider {
   constructor(
     logger: Logger,
     private session: Session,
+    private auditLog: AuditLogRecorder,
     @Inject(CDN_CONFIG) private config: CDNConfig,
     @Inject(S3_CONFIG) private s3Config: S3Config,
     @Inject(Storage) private storage: Storage,
@@ -222,6 +224,23 @@ export class CdnProvider {
       cdnAccessTokenRecord.id,
     );
 
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      targetId: args.targetId,
+      projectId: args.projectId,
+      updatedFields: JSON.stringify({
+        createNewCdnAccessToken: true,
+        alias: args.alias,
+      }),
+      metadata: {
+        organizationId: args.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
     return {
       type: 'success',
       cdnAccessToken: cdnAccessTokenRecord,
@@ -317,6 +336,23 @@ export class CdnProvider {
 
     await this.storage.deleteCDNAccessToken({
       cdnAccessTokenId: args.cdnAccessTokenId,
+    });
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      targetId: args.targetId,
+      projectId: args.projectId,
+      updatedFields: JSON.stringify({
+        deleteCdnAccessToken: true,
+        cdnAccessTokenId: args.cdnAccessTokenId,
+      }),
+      metadata: {
+        organizationId: args.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
     });
 
     return {

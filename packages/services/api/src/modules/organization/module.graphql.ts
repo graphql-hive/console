@@ -12,6 +12,33 @@ export default gql`
     organizationBySlug(organizationSlug: String!): Organization
   }
 
+  input AuditLogFilter {
+    startDate: DateTime
+    endDate: DateTime
+  }
+
+  type AuditLogConnection {
+    edges: [AuditLogEdge!]!
+    pageInfo: AuditLogPageInfo!
+  }
+
+  type AuditLogEdge {
+    node: AuditLog!
+    cursor: String!
+  }
+
+  type AuditLogPageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+  }
+
+  input AuditLogPaginationFilter {
+    first: Int = 25
+    after: Int = 0
+  }
+
   extend type Mutation {
     createOrganization(input: CreateOrganizationInput!): CreateOrganizationResult!
     deleteOrganization(selector: OrganizationSelectorInput!): OrganizationPayload!
@@ -40,6 +67,19 @@ export default gql`
     Remove this mutation after migration is complete.
     """
     migrateUnassignedMembers(input: MigrateUnassignedMembersInput!): MigrateUnassignedMembersResult!
+  }
+
+  type ExportOrganizationAuditLogError implements Error {
+    message: String!
+  }
+
+  type ExportOrganizationAuditLogPayload {
+    url: String!
+  }
+
+  type ExportOrganizationAuditLogResult {
+    ok: ExportOrganizationAuditLogPayload
+    error: ExportOrganizationAuditLogError
   }
 
   type UpdateOrganizationSlugResult {
@@ -258,6 +298,10 @@ export default gql`
     Whether the viewer can migrate the legacy member roles
     """
     viewerCanMigrateLegacyMemberRoles: Boolean!
+    """
+    The organization's audit logs. This field is only available to members with the Admin role.
+    """
+    auditLogs(filter: AuditLogFilter, pagination: AuditLogPaginationFilter): AuditLogConnection!
   }
 
   type OrganizationConnection {

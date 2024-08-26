@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { CheckPolicyResponse, PolicyConfigurationObject } from '@hive/policy';
 import { SchemaPolicy } from '../../../shared/entities';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -22,6 +23,7 @@ export class SchemaPolicyProvider {
     rootLogger: Logger,
     private storage: Storage,
     private session: Session,
+    private auditLog: AuditLogRecorder,
     private api: SchemaPolicyApiProvider,
   ) {
     this.logger = rootLogger.child({ service: 'SchemaPolicyProvider' });
@@ -133,11 +135,28 @@ export class SchemaPolicyProvider {
       },
     });
 
-    return await this.storage.setSchemaPolicyForOrganization({
+    const result = await this.storage.setSchemaPolicyForOrganization({
       organizationId: selector.organizationId,
       policy,
       allowOverrides,
     });
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_POLICY_UPDATED',
+      allowOverrides: allowOverrides,
+      updatedFields: JSON.stringify({
+        policy: policy,
+      }),
+      metadata: {
+        organizationId: selector.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
+    return result;
   }
 
   async setProjectPolicy(selector: ProjectSelector, policy: any) {
@@ -150,10 +169,27 @@ export class SchemaPolicyProvider {
       },
     });
 
-    return await this.storage.setSchemaPolicyForProject({
+    const result = await this.storage.setSchemaPolicyForProject({
       projectId: selector.projectId,
       policy,
     });
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'PROJECT_SETTINGS_UPDATED',
+      projectId: selector.projectId,
+      updatedFields: JSON.stringify({
+        policy: policy,
+      }),
+      metadata: {
+        organizationId: selector.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
+    return result;
   }
 
   async getOrganizationPolicy(selector: OrganizationSelector) {

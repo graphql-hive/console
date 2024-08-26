@@ -96,6 +96,14 @@ export class AuthManager {
     }
   }
 
+  async isOwnerOfOrganization(selector: { organization: string }): Promise<boolean> {
+    const user = await this.session.getViewer();
+    return this.organizationAccess.checkOwnershipForUser({
+      organizationId: selector.organization,
+      userId: user.id,
+    });
+  }
+
   getOrganizationOwnerByToken: () => Promise<User | never> = share(async () => {
     const result = this.session.getLegacySelector();
 

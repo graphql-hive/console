@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Organization, Project, ProjectType } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { ActivityManager } from '../../shared/providers/activity-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -26,6 +27,7 @@ export class ProjectManager {
     private session: Session,
     private tokenStorage: TokenStorage,
     private activityManager: ActivityManager,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -61,6 +63,20 @@ export class ProjectManager {
       organizationId: organization,
     });
 
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'PROJECT_CREATED',
+      projectId: result.ok ? result.project.id : '',
+      projectType: type,
+      projectSlug: slug,
+      metadata: {
+        organizationId: organization,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
     if (result.ok) {
       await Promise.all([
         this.storage.completeGetStartedStep({
@@ -79,7 +95,6 @@ export class ProjectManager {
         }),
       ]);
     }
-
     return result;
   }
 
@@ -101,7 +116,18 @@ export class ProjectManager {
       projectId: project,
       organizationId: organization,
     });
-
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'PROJECT_DELETED',
+      projectId: deletedProject.id,
+      projectSlug: deletedProject.slug,
+      metadata: {
+        organizationId: organization,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
     await this.tokenStorage.invalidateTokens(deletedProject.tokens);
 
     await this.activityManager.create({
@@ -241,6 +267,20 @@ export class ProjectManager {
         },
         meta: {
           value: slug,
+        },
+      });
+      const currentUser = await this.session.getViewer();
+      await this.auditLog.record({
+        eventType: 'PROJECT_SETTINGS_UPDATED',
+        projectId: result.project.id,
+        updatedFields: JSON.stringify({
+          newSlug: input.slug,
+        }),
+        metadata: {
+          organizationId: organization,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
         },
       });
     }

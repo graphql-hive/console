@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { ActivityManager } from '../../shared/providers/activity-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -30,6 +31,7 @@ export class TargetManager {
     private session: Session,
     private activityManager: ActivityManager,
     private idTranslator: IdTranslator,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
@@ -88,6 +90,20 @@ export class TargetManager {
           targetId: result.target.id,
         },
       });
+
+      const currentUser = await this.session.getViewer();
+      await this.auditLog.record({
+        eventType: 'TARGET_CREATED',
+        projectId: result.target.projectId,
+        targetId: result.target.id,
+        targetSlug: result.target.slug,
+        metadata: {
+          organizationId: result.target.orgId,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
+        },
+      });
     }
 
     return result;
@@ -130,6 +146,20 @@ export class TargetManager {
       meta: {
         name: deletedTarget.name,
         cleanId: deletedTarget.slug,
+      },
+    });
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'TARGET_DELETED',
+      targetId: target,
+      targetSlug: deletedTarget.slug,
+      projectId: project,
+      metadata: {
+        organizationId: organization,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
       },
     });
 
@@ -306,6 +336,21 @@ export class TargetManager {
           value: slug,
         },
       });
+
+      await this.auditLog.record({
+        eventType: 'TARGET_SETTINGS_UPDATED',
+        projectId: project,
+        targetId: target,
+        updatedFields: JSON.stringify({
+          newSlug: slug,
+        }),
+        metadata: {
+          organizationId: organization,
+          user: user,
+          userEmail: user.email,
+          userId: user.id,
+        },
+      });
     }
 
     return result;
@@ -348,6 +393,37 @@ export class TargetManager {
         reason: 'Target not found.',
       } as const;
     }
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      projectId: args.projectId,
+      targetId: args.targetId,
+      updatedFields: JSON.stringify({
+        graphqlEndpointUrl: args.graphqlEndpointUrl,
+      }),
+      metadata: {
+        organizationId: args.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
+
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      projectId: args.projectId,
+      targetId: args.targetId,
+      updatedFields: JSON.stringify({
+        graphqlEndpointUrl: args.graphqlEndpointUrl,
+      }),
+      metadata: {
+        organizationId: args.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
+    });
 
     return {
       type: 'ok',
@@ -406,6 +482,22 @@ export class TargetManager {
       projectId: args.projectId,
       targetId: args.targetId,
       nativeComposition: args.nativeComposition,
+    });
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'TARGET_SETTINGS_UPDATED',
+      projectId: args.projectId,
+      targetId: args.targetId,
+      updatedFields: JSON.stringify({
+        nativeComposition: args.nativeComposition,
+      }),
+      metadata: {
+        organizationId: args.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      },
     });
 
     return target;

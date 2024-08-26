@@ -4,6 +4,7 @@ import type {
   AddAlertInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  AuditLogFilter,
   CreateMemberRoleInput,
   CreateOrganizationInput,
   CreateProjectInput,
