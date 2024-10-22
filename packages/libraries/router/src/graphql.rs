@@ -236,7 +236,6 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     match arg_value {
                         Value::Enum(value) => {
                             let value_str = value.to_string();
-                            println!("Coordinate: {input_type_name}.{value_str}");
                             ctx.schema_coordinates
                                 .insert(format!("{input_type_name}.{value_str}").to_string());
                         }

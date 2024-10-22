@@ -93,7 +93,6 @@ impl HiveRegistry {
             None => 10,
         };
         let accept_invalid_certs = config.accept_invalid_certs.unwrap_or_else(|| false);
-
         let logger = Logger::new();
 
         // In case of an endpoint and an key being empty, we don't start the polling and skip the registry

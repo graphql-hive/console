@@ -145,8 +145,10 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
 
 ### Configuration
 
-- `HIVE_TOKEN` - Your 'Registry Access Token' as configured in hive For self hosted Hive:
-- `HIVE_ENDPOINT` - The usage endpoint (defaults to https://app.graphql-hive.com/usage)
+- `HIVE_TOKEN` (**required**) - Your
+  [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.
+- `HIVE_ENDPOINT` (**optional**) - For self-hosting, you can override `/usage` endpoint (defaults to
+  `https://app.graphql-hive.com/usage`)
 
 <Tabs items={['Binary', 'Docker', 'Custom']}>
   <Tabs.Tab>
@@ -247,6 +249,71 @@ plugins:
     #  Accepts invalid SSL certificates
     #  Default: false
     # accept_invalid_certs: true
+```
+
+## Persisted Documents (App Deployments)
+
+To activate [App Deployments](/docs/schema-registry/app-deployments) in your Apollo Router, you need
+to enable the `hive.persisted_documents` plugin. The plugin uses the `HIVE_CDN_ENDPOINT` and
+`HIVE_CDN_KEY` environment variables to resolve the persisted documents IDs.
+
+```yaml filename="router.yaml"
+# ... the rest of your configuration
+plugins:
+  hive.usage: {}
+  hive.persisted_documents:
+    enabled: true
+```
+
+Once enabled, follow the
+[App Deployments guide](/docs/schema-registry/app-deployments#sending-persisted-document-requests-from-your-app)
+to send persisted document requests from your app, using the Hive CDN for resolving the document
+IDs.
+
+### Configuration
+
+The following environment variables are required:
+
+- `HIVE_CDN_ENDPOINT` - the endpoint Hive generated for you in the previous step (for example:
+  `https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/supergraph`)
+- `HIVE_CDN_KEY` - the access key to Hive CDN
+
+You may configure the plugin with the following options:
+
+```yaml filename="router.yaml"
+# ... the rest of your configuration
+plugins:
+  hive.usage: {}
+  hive.persisted_documents:
+    # Enables/disables the plugin
+    # Default: true
+    enabled: true
+    # The endpoint of the Hive CDN. You can either specify it here, or use the existing HIVE_CDN_ENDPOINT environment variable.
+    # Required
+    endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/supergraph'
+    # The access key to the Hive CDN. You can either specify it here, or use the existing HIVE_CDN_KEY environment variable.
+    # Required
+    key: '...'
+    # Enables/disables the option to allow arbitrary documents to be executed.
+    # Optional
+    # Default: false
+    allow_arbitrary_documents: false
+    # HTTP connect timeout in seconds for the Hive CDN requests.
+    # Optional
+    # Default: 5
+    connect_timeout: 5
+    # HTTP request timeout in seconds for the Hive CDN requests.
+    # Optional
+    # Default: 15
+    request_timeout: 15
+    # Accepts invalid SSL certificates for the Hive CDN requests.
+    # Optional
+    # Default: false
+    accept_invalid_certs: false
+    # The maximum number of documents to hold in a LRU cache.
+    # Optional
+    # Default: 1000
+    cache_size: 1000
 ```
 
 ## Additional Resources
