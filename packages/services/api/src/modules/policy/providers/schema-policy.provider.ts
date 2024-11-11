@@ -176,11 +176,9 @@ export class SchemaPolicyProvider {
 
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
-      eventType: 'PROJECT_SETTINGS_UPDATED',
+      eventType: 'PROJECT_POLICY_UPDATED',
       projectId: selector.projectId,
-      updatedFields: JSON.stringify({
-        policy: policy,
-      }),
+      policy: JSON.stringify(policy),
       metadata: {
         organizationId: selector.organizationId,
         user: currentUser,

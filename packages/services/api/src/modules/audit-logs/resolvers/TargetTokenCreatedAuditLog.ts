@@ -1,7 +1,7 @@
-import type { ProjectSettingsUpdatedAuditLogResolvers } from './../../../__generated__/types';
+import type { TargetTokenCreatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
- * Note: This object type is generated because "ProjectSettingsUpdatedAuditLogMapper" is declared. This is to ensure runtime safety.
+ * Note: This object type is generated because "TargetTokenCreatedAuditLogMapper" is declared. This is to ensure runtime safety.
  *
  * When a mapper is used, it is possible to hit runtime errors in some scenarios:
  * - given a field name, the schema type's field type does not match mapper's field type
@@ -9,11 +9,12 @@ import type { ProjectSettingsUpdatedAuditLogResolvers } from './../../../__gener
  *
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
-export const ProjectSettingsUpdatedAuditLog: ProjectSettingsUpdatedAuditLogResolvers = {
-  __isTypeOf: e => e.event_action === 'PROJECT_SETTINGS_UPDATED',
+export const TargetTokenCreatedAuditLog: TargetTokenCreatedAuditLogResolvers = {
+  __isTypeOf: e => e.event_action === 'TARGET_TOKEN_CREATED',
   eventTime: e => new Date(e.event_time).toISOString(),
   projectId: e => e.metadata.projectId,
-  updatedFields: e => e.metadata.updatedFields,
+  targetId: e => e.metadata.targetId,
+  alias: e => e.metadata.alias,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {
     return {

@@ -271,11 +271,9 @@ export class ProjectManager {
       });
       const currentUser = await this.session.getViewer();
       await this.auditLog.record({
-        eventType: 'PROJECT_SETTINGS_UPDATED',
-        projectId: result.project.id,
-        updatedFields: JSON.stringify({
-          newSlug: input.slug,
-        }),
+        eventType: 'PROJECT_SLUG_UPDATED',
+        previousSlug: slug,
+        newSlug: result.project.slug,
         metadata: {
           organizationId: organization,
           user: currentUser,

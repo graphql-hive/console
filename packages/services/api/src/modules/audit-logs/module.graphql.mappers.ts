@@ -13,8 +13,9 @@ export type OrganizationPolicyUpdatedAuditLogMapper = AuditLogType;
 export type OrganizationPlanUpdatedAuditLogMapper = AuditLogType;
 // Project
 export type ProjectCreatedAuditLogMapper = AuditLogType;
-export type ProjectSettingsUpdatedAuditLogMapper = AuditLogType;
 export type ProjectDeletedAuditLogMapper = AuditLogType;
+export type ProjectPolicyUpdatedAuditLogMapper = AuditLogType;
+export type ProjectSlugUpdatedAuditLogMapper = AuditLogType;
 // User Role
 export type RoleCreatedAuditLogMapper = AuditLogType;
 export type RoleAssignedAuditLogMapper = AuditLogType;
@@ -38,8 +39,14 @@ export type UserRemovedAuditLogMapper = AuditLogType;
 export type UserSettingsUpdatedAuditLogMapper = AuditLogType;
 // Target
 export type TargetCreatedAuditLogMapper = AuditLogType;
-export type TargetSettingsUpdatedAuditLogMapper = AuditLogType;
 export type TargetDeletedAuditLogMapper = AuditLogType;
+export type TargetSlugUpdatedAuditLogMapper = AuditLogType;
+export type TargetGraphQLEndpointUrlUpdatedAuditLogMapper = AuditLogType;
+export type TargetSchemaCompositionUpdatedAuditLogMapper = AuditLogType;
+export type TargetCDNAccessTokenCreatedAuditLogMapper = AuditLogType;
+export type TargetCDNAccessTokenDeletedAuditLogMapper = AuditLogType;
+export type TargetTokenCreatedAuditLogMapper = AuditLogType;
+export type TargetTokenDeletedAuditLogMapper = AuditLogType;
 // Subscription
 export type SubscriptionCreatedAuditLogMapper = AuditLogType;
 export type SubscriptionUpdatedAuditLogMapper = AuditLogType;

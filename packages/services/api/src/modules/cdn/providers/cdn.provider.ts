@@ -226,13 +226,10 @@ export class CdnProvider {
 
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_CREATED',
       targetId: args.targetId,
       projectId: args.projectId,
-      updatedFields: JSON.stringify({
-        createNewCdnAccessToken: true,
-        alias: args.alias,
-      }),
+      alias: args.alias,
       metadata: {
         organizationId: args.organizationId,
         user: currentUser,
@@ -340,13 +337,10 @@ export class CdnProvider {
 
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_DELETED',
       targetId: args.targetId,
       projectId: args.projectId,
-      updatedFields: JSON.stringify({
-        deleteCdnAccessToken: true,
-        cdnAccessTokenId: args.cdnAccessTokenId,
-      }),
+      alias: record.alias,
       metadata: {
         organizationId: args.organizationId,
         user: currentUser,

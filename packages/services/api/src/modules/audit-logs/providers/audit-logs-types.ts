@@ -46,9 +46,14 @@ export const auditLogSchema = z.discriminatedUnion('eventType', [
     projectType: z.string(),
   }),
   z.object({
-    eventType: z.literal('PROJECT_SETTINGS_UPDATED'),
+    eventType: z.literal('PROJECT_POLICY_UPDATED'),
     projectId: z.string().uuid(),
-    updatedFields: z.string(),
+    policy: z.string(),
+  }),
+  z.object({
+    eventType: z.literal('PROJECT_SLUG_UPDATED'),
+    previousSlug: z.string(),
+    newSlug: z.string(),
   }),
   z.object({
     eventType: z.literal('PROJECT_DELETED'),
@@ -62,10 +67,47 @@ export const auditLogSchema = z.discriminatedUnion('eventType', [
     targetSlug: z.string(),
   }),
   z.object({
-    eventType: z.literal('TARGET_SETTINGS_UPDATED'),
+    eventType: z.literal('TARGET_SLUG_UPDATED'),
     projectId: z.string().uuid(),
     targetId: z.string().uuid(),
-    updatedFields: z.string(),
+    previousSlug: z.string(),
+    newSlug: z.string(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_GRAPHQL_ENDPOINT_URL_UPDATED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    graphqlEndpointUrl: z.string().nullish(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_SCHEMA_COMPOSITION_UPDATED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    nativeComposition: z.boolean(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_CDN_ACCESS_TOKEN_CREATED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    alias: z.string(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_CDN_ACCESS_TOKEN_DELETED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    alias: z.string(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_TOKEN_CREATED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    alias: z.string(),
+  }),
+  z.object({
+    eventType: z.literal('TARGET_TOKEN_DELETED'),
+    projectId: z.string().uuid(),
+    targetId: z.string().uuid(),
+    alias: z.string(),
   }),
   z.object({
     eventType: z.literal('TARGET_DELETED'),

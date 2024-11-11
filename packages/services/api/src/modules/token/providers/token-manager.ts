@@ -93,12 +93,10 @@ export class TokenManager {
     });
 
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_TOKEN_CREATED',
       targetId: input.targetId,
       projectId: input.projectId,
-      updatedFields: JSON.stringify({
-        tokenCreated: true,
-      }),
+      alias: input.name,
       metadata: {
         organizationId: input.organizationId,
         user: currentUser,
@@ -131,12 +129,10 @@ export class TokenManager {
     const currentUser = await this.session.getViewer();
 
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_TOKEN_DELETED',
       targetId: input.targetId,
       projectId: input.projectId,
-      updatedFields: JSON.stringify({
-        tokenDeleted: true,
-      }),
+      alias: input.tokenIds.join(', '),
       metadata: {
         organizationId: input.organizationId,
         user: currentUser,

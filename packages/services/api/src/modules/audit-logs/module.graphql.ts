@@ -42,20 +42,28 @@ export const typeDefs = gql`
     projectSlug: String!
   }
 
-  type ProjectSettingsUpdatedAuditLog implements AuditLog {
-    id: ID!
-    eventTime: DateTime!
-    record: AuditLogIdRecord!
-    projectId: String!
-    updatedFields: JSON!
-  }
-
   type ProjectDeletedAuditLog implements AuditLog {
     id: ID!
     eventTime: DateTime!
     record: AuditLogIdRecord!
     projectId: String!
     projectSlug: String!
+  }
+
+  type ProjectPolicyUpdatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    policy: JSON!
+  }
+
+  type ProjectSlugUpdatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    previousSlug: String!
+    newSlug: String!
   }
 
   """
@@ -261,15 +269,6 @@ export const typeDefs = gql`
     targetSlug: String!
   }
 
-  type TargetSettingsUpdatedAuditLog implements AuditLog {
-    id: ID!
-    eventTime: DateTime!
-    record: AuditLogIdRecord!
-    projectId: String!
-    targetId: String!
-    updatedFields: JSON!
-  }
-
   type TargetDeletedAuditLog implements AuditLog {
     id: ID!
     eventTime: DateTime!
@@ -277,6 +276,70 @@ export const typeDefs = gql`
     projectId: String!
     targetId: String!
     targetSlug: String!
+  }
+
+  type TargetSlugUpdatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    previousSlug: String!
+    newSlug: String!
+  }
+
+  type TargetGraphQLEndpointUrlUpdatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    graphqlEndpointUrl: String!
+  }
+
+  type TargetSchemaCompositionUpdatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    nativeComposition: Boolean!
+  }
+
+  type TargetCDNAccessTokenCreatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    alias: String!
+  }
+
+  type TargetCDNAccessTokenDeletedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    alias: String!
+  }
+
+  type TargetTokenCreatedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    alias: String!
+  }
+
+  type TargetTokenDeletedAuditLog implements AuditLog {
+    id: ID!
+    eventTime: DateTime!
+    record: AuditLogIdRecord!
+    projectId: String!
+    targetId: String!
+    alias: String!
   }
 
   """

@@ -338,12 +338,11 @@ export class TargetManager {
       });
 
       await this.auditLog.record({
-        eventType: 'TARGET_SETTINGS_UPDATED',
+        eventType: 'TARGET_SLUG_UPDATED',
         projectId: project,
         targetId: target,
-        updatedFields: JSON.stringify({
-          newSlug: slug,
-        }),
+        newSlug: result.target.slug,
+        previousSlug: slug,
         metadata: {
           organizationId: organization,
           user: user,
@@ -396,27 +395,10 @@ export class TargetManager {
 
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_GRAPHQL_ENDPOINT_URL_UPDATED',
       projectId: args.projectId,
       targetId: args.targetId,
-      updatedFields: JSON.stringify({
-        graphqlEndpointUrl: args.graphqlEndpointUrl,
-      }),
-      metadata: {
-        organizationId: args.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
-      },
-    });
-
-    await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
-      projectId: args.projectId,
-      targetId: args.targetId,
-      updatedFields: JSON.stringify({
-        graphqlEndpointUrl: args.graphqlEndpointUrl,
-      }),
+      graphqlEndpointUrl: args.graphqlEndpointUrl,
       metadata: {
         organizationId: args.organizationId,
         user: currentUser,
@@ -486,12 +468,10 @@ export class TargetManager {
 
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
-      eventType: 'TARGET_SETTINGS_UPDATED',
+      eventType: 'TARGET_SCHEMA_COMPOSITION_UPDATED',
       projectId: args.projectId,
       targetId: args.targetId,
-      updatedFields: JSON.stringify({
-        nativeComposition: args.nativeComposition,
-      }),
+      nativeComposition: args.nativeComposition,
       metadata: {
         organizationId: args.organizationId,
         user: currentUser,

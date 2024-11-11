@@ -265,4 +265,5 @@ export const Organization: Pick<
       },
       __typename: 'AuditLogConnection',
     };
-  };
+  },
+};
