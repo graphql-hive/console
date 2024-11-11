@@ -452,7 +452,7 @@ const SettingsPageRenderer = (props: {
           </Card>
         )}
 
-        {organization.me.isOwner && (
+        {organization.viewerCanTransferOwnership && (
           <Card>
             <CardHeader>
               <CardTitle>Audit Logs</CardTitle>
