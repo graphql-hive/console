@@ -64,19 +64,6 @@ export class ProjectManager {
     });
 
     const currentUser = await this.session.getViewer();
-    await this.auditLog.record({
-      eventType: 'PROJECT_CREATED',
-      projectId: result.ok ? result.project.id : '',
-      projectType: type,
-      projectSlug: slug,
-      metadata: {
-        organizationId: organization,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
-      },
-    });
-
     if (result.ok) {
       await Promise.all([
         this.storage.completeGetStartedStep({
@@ -91,6 +78,18 @@ export class ProjectManager {
           },
           meta: {
             projectType: type,
+          },
+        }),
+        this.auditLog.record({
+          eventType: 'PROJECT_CREATED',
+          projectId: result.project.id,
+          projectType: type,
+          projectSlug: slug,
+          metadata: {
+            organizationId: organization,
+            user: currentUser,
+            userEmail: currentUser.email,
+            userId: currentUser.id,
           },
         }),
       ]);
