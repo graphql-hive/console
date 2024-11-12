@@ -1786,7 +1786,8 @@ function connectionString() {
   } = process.env;
   return (
     POSTGRES_CONNECTION_STRING ||
-    `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_SSL ? '?sslmode=require' : '?sslmode=disable'
+    `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${
+      POSTGRES_SSL ? '?sslmode=require' : '?sslmode=disable'
     }`
   );
 }
@@ -1818,7 +1819,7 @@ test.concurrent(
     await storage.createVersion({
       schema: brokenSdl,
       author: 'Jochen',
-      async actionFn() { },
+      async actionFn() {},
       base_schema: null,
       commit: '123',
       changes: [],
