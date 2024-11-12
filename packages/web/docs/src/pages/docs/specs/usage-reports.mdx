@@ -1,3 +1,7 @@
+import { UsageReportsJSONSchema } from '../../../components/usage-reports-json-schema'
+
+export { getStaticProps } from '../../../components/usage-reports-json-schema'
+
 # Usage Reporting
 
 The official JavaScript Hive Client (`@graphql-hive/core`) collects executed operations and sends
@@ -71,144 +75,7 @@ export interface Metadata {
 <details>
   <summary>JSON Schema</summary>
 
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Report",
-  "additionalProperties": false,
-  "type": "object",
-  "properties": {
-    "size": {
-      "type": "integer"
-    },
-    "map": {
-      "type": "object",
-      "patternProperties": {
-        "^(.*)$": {
-          "title": "OperationMapRecord",
-          "additionalProperties": false,
-          "type": "object",
-          "properties": {
-            "operation": {
-              "type": "string"
-            },
-            "operationName": {
-              "type": "string"
-            },
-            "fields": {
-              "minItems": 1,
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": ["operation", "fields"]
-        }
-      }
-    },
-    "operations": {
-      "type": "array",
-      "items": {
-        "title": "RequestOperation",
-        "additionalProperties": false,
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "integer"
-          },
-          "operationMapKey": {
-            "type": "string"
-          },
-          "execution": {
-            "title": "Execution",
-            "additionalProperties": false,
-            "type": "object",
-            "properties": {
-              "ok": {
-                "type": "boolean"
-              },
-              "duration": {
-                "type": "integer"
-              },
-              "errorsTotal": {
-                "type": "integer"
-              }
-            },
-            "required": ["ok", "duration", "errorsTotal"]
-          },
-          "metadata": {
-            "title": "Metadata",
-            "additionalProperties": false,
-            "type": "object",
-            "properties": {
-              "client": {
-                "title": "Client",
-                "additionalProperties": false,
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "version": {
-                    "type": "string"
-                  }
-                },
-                "required": ["name", "version"]
-              }
-            }
-          },
-          "persistedDocumentHash": {
-            "type": "string",
-            "title": "PersistedDocumentHash",
-            "pattern": "^[a-zA-Z0-9_-]{1,64}~[a-zA-Z0-9._-]{1,64}~([A-Za-z]|[0-9]|_){1,128}$"
-          }
-        },
-        "required": ["timestamp", "operationMapKey", "execution"]
-      }
-    },
-    "subscriptionOperations": {
-      "type": "array",
-      "items": {
-        "title": "SubscriptionOperation",
-        "additionalProperties": false,
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "integer"
-          },
-          "operationMapKey": {
-            "type": "string"
-          },
-          "metadata": {
-            "title": "Metadata",
-            "additionalProperties": false,
-            "type": "object",
-            "properties": {
-              "client": {
-                "title": "Client",
-                "additionalProperties": false,
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "version": {
-                    "type": "string"
-                  }
-                },
-                "required": ["name", "version"]
-              }
-            }
-          }
-        },
-        "required": ["timestamp", "operationMapKey"]
-      }
-    }
-  },
-  "required": ["size", "map"]
-}
-```
+<UsageReportsJSONSchema />
 
 </details>
 
@@ -303,7 +170,7 @@ export interface Metadata {
 }
 ```
 
-## Curl example request
+## `curl` example request
 
 ```bash
 curl -X POST \

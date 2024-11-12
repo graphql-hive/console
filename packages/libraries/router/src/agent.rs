@@ -23,6 +23,7 @@ pub struct Report {
 #[derive(Serialize, Debug)]
 struct OperationMapRecord {
     operation: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     operationName: Option<String>,
     fields: Vec<String>,
 }
@@ -33,7 +34,10 @@ struct Operation {
     operationMapKey: String,
     timestamp: u64,
     execution: Execution,
+    #[serde(skip_serializing_if = "Option::is_none")]
     metadata: Option<Metadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    persistedDocumentHash: Option<String>,
 }
 
 #[allow(non_snake_case)]
@@ -46,12 +50,15 @@ struct Execution {
 
 #[derive(Serialize, Debug)]
 struct Metadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     client: Option<ClientInfo>,
 }
 
 #[derive(Serialize, Debug)]
 struct ClientInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     version: Option<String>,
 }
 
@@ -65,6 +72,7 @@ pub struct ExecutionReport {
     pub errors: usize,
     pub operation_body: String,
     pub operation_name: Option<String>,
+    pub persisted_document_hash: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -145,6 +153,7 @@ impl UsageAgent {
         connect_timeout: u64,
         request_timeout: u64,
         accept_invalid_certs: bool,
+        flush_interval: Duration,
     ) -> Self {
         let schema = parse_schema::<String>(&schema)
             .expect("Failed to parse schema")
@@ -173,7 +182,7 @@ impl UsageAgent {
 
         tokio::task::spawn(async move {
             loop {
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                tokio::time::sleep(flush_interval).await;
 
                 let agent_ref = agent_for_interval.lock().await.clone();
                 tokio::task::spawn(async move {
@@ -197,21 +206,13 @@ impl UsageAgent {
             let operation = self
                 .processor
                 .lock()
-                .map_err(|e| {
-                    AgentError::Lock(
-                        e.to_string(),
-                    )
-                })?
+                .map_err(|e| AgentError::Lock(e.to_string()))?
                 .process(
                     &op.operation_body,
                     &self
                         .state
                         .lock()
-                        .map_err(|e| {
-                            AgentError::Lock(
-                                e.to_string(),
-                            )
-                        })?
+                        .map_err(|e| AgentError::Lock(e.to_string()))?
                         .schema,
                 );
             match operation {
@@ -230,6 +231,21 @@ impl UsageAgent {
                     match operation {
                         Some(operation) => {
                             let hash = operation.hash;
+
+                            let client_name = non_empty_string(op.client_name);
+                            let client_version = non_empty_string(op.client_version);
+
+                            let metadata: Option<Metadata> =
+                                if client_name.is_some() || client_version.is_some() {
+                                    Some(Metadata {
+                                        client: Some(ClientInfo {
+                                            name: client_name,
+                                            version: client_version,
+                                        }),
+                                    })
+                                } else {
+                                    None
+                                };
                             report.operations.push(Operation {
                                 operationMapKey: hash.clone(),
                                 timestamp: op.timestamp,
@@ -238,12 +254,8 @@ impl UsageAgent {
                                     duration: op.duration.as_nanos(),
                                     errorsTotal: op.errors,
                                 },
-                                metadata: Some(Metadata {
-                                    client: Some(ClientInfo {
-                                        name: non_empty_string(op.client_name),
-                                        version: non_empty_string(op.client_version),
-                                    }),
-                                }),
+                                persistedDocumentHash: op.persisted_document_hash,
+                                metadata,
                             });
                             if !report.map.contains_key(&hash) {
                                 report.map.insert(
@@ -272,9 +284,7 @@ impl UsageAgent {
         let size = self
             .state
             .lock()
-            .map_err(|e| {
-                AgentError::Lock(e.to_string())
-            })?
+            .map_err(|e| AgentError::Lock(e.to_string()))?
             .push(execution_report);
 
         self.flush_if_full(size)?;
@@ -285,13 +295,14 @@ impl UsageAgent {
     pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
         const DELAY_BETWEEN_TRIES: Duration = Duration::from_millis(500);
         const MAX_TRIES: u8 = 3;
-
         let mut error_message = "unexpected error".to_string();
 
         for _ in 0..MAX_TRIES {
+            // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
             let resp = self
                 .client
                 .post(self.endpoint.clone())
+                .header("X-Usage-API-Version", "2")
                 .header(
                     reqwest::header::AUTHORIZATION,
                     format!("Bearer {}", self.token.clone()),
