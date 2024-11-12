@@ -1786,8 +1786,7 @@ function connectionString() {
   } = process.env;
   return (
     POSTGRES_CONNECTION_STRING ||
-    `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${
-      POSTGRES_SSL ? '?sslmode=require' : '?sslmode=disable'
+    `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}${POSTGRES_SSL ? '?sslmode=require' : '?sslmode=disable'
     }`
   );
 }
@@ -1819,7 +1818,7 @@ test.concurrent(
     await storage.createVersion({
       schema: brokenSdl,
       author: 'Jochen',
-      async actionFn() {},
+      async actionFn() { },
       base_schema: null,
       commit: '123',
       changes: [],
@@ -1885,3 +1884,76 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent('checking a schema with directives', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    directive @scalarCustomDirectiveTest on SCALAR
+    directive @objectCustomDirectiveTest on OBJECT
+    directive @interfaceCustomDirectiveTest on INTERFACE
+    directive @inputObjectCustomDirectiveTest on INPUT_OBJECT
+    directive @argumentDefinitionCustomDirectiveTest on ARGUMENT_DEFINITION
+    directive @enumCustomDirectiveTest on ENUM
+    directive @enumValueCustomDirectiveTest on ENUM_VALUE
+    directive @fieldDefinitionCustomDirectiveTest on FIELD_DEFINITION
+    directive @inputFieldDefinitionCustomDirectiveTest on INPUT_FIELD_DEFINITION
+    directive @unionCustomDirectiveTest on UNION
+
+    type Query {
+      a: String
+    }
+
+    type ObjectTest @objectCustomDirectiveTest {
+      a: String
+    }
+
+    scalar NewScalar @scalarCustomDirectiveTest
+
+    interface InterfaceTest @interfaceCustomDirectiveTest {
+      a: String
+    }
+
+    input InputTest @inputObjectCustomDirectiveTest {
+      a: String
+      b: String @inputFieldDefinitionCustomDirectiveTest
+    }
+
+    type ArgumentDefinitionTest {
+      a(a: String @argumentDefinitionCustomDirectiveTest): String
+    }
+
+    enum EnumTest @enumCustomDirectiveTest {
+      A
+      B @enumValueCustomDirectiveTest
+    }
+
+    type A {
+      a: String!
+    }
+
+    type B {
+      b: String!
+    }
+
+    union UnionTest @unionCustomDirectiveTest = A | B
+  `;
+
+  const result = await token.checkSchema(sdl).then(r => r.expectNoGraphQLErrors());
+  console.log('---> result', result);
+
+  expect(result.schemaCheck).toEqual({
+    __typename: 'SchemaCheckSuccess',
+    changes: {
+      nodes: [],
+      total: 0,
+    },
+    schemaCheck: {
+      id: expect.any(String),
+    },
+    valid: true,
+  });
+});
