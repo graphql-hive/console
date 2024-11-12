@@ -1,4 +1,5 @@
 import { stringify } from 'csv-stringify';
+import { GraphQLError } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { captureException } from '@sentry/node';
@@ -15,11 +16,11 @@ const auditLogEventTypes = auditLogSchema.options.map(option => option.shape.eve
 
 export const AuditLogClickhouseObjectModel = z.object({
   id: z.string(),
-  event_time: z.string(),
-  user_id: z.string(),
-  user_email: z.string(),
+  timestamp: z.string(),
   organization_id: z.string(),
   event_action: z.enum(auditLogEventTypes as [string, ...string[]]),
+  user_id: z.string(),
+  user_email: z.string(),
   metadata: z.string().transform(x => JSON.parse(x)),
 });
 
@@ -63,7 +64,7 @@ export class AuditLogManager {
       organization: organizationSlug,
     });
     if (!isOwner) {
-      throw new Error('Unauthorized: You are not authorized to perform this action');
+      throw new GraphQLError('Unauthorized: You are not authorized to perform this action');
     }
 
     const sqlFirst = sql.raw(pagination?.first ? pagination.first.toString() : '25');
@@ -75,16 +76,16 @@ export class AuditLogManager {
     if (filter?.startDate && filter?.endDate) {
       const from = this.formatToClickhouseDateTime(filter.startDate.toISOString());
       const to = this.formatToClickhouseDateTime(filter.endDate.toISOString());
-      where.push(sql`event_time >= ${from} AND event_time <= ${to}`);
+      where.push(sql`timestamp >= ${from} AND timestamp <= ${to}`);
     }
     const whereClause = where.length > 0 ? sql`WHERE ${sql.join(where, ' AND ')}` : sql``;
 
     const result = await this.clickHouse.query({
       query: sql`
         SELECT *
-        FROM audit_log
+        FROM audit_logs
         ${whereClause}
-        ORDER BY event_time DESC
+        ORDER BY timestamp DESC
         LIMIT ${sqlFirst}
         OFFSET ${sqlAfter}
       `,
@@ -181,7 +182,7 @@ export class AuditLogManager {
       }
 
       const data = getAllAuditLogs.data.map(log => {
-        const { id, event_time, user_id, user_email, event_action, metadata } = log;
+        const { id, timestamp, user_id, user_email, event_action, metadata } = log;
         const newUser = {
           id: metadata.user.id,
           email: metadata.user.email,
@@ -197,7 +198,7 @@ export class AuditLogManager {
         return {
           ID: id,
           Type: event_action,
-          CreatedAt: event_time,
+          CreatedAt: timestamp,
           UserID: user_id,
           UserEmail: user_email,
           Metadata: JSON.stringify(newMetadata),

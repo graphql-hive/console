@@ -47,18 +47,18 @@ export class AuditLogRecorder {
       const eventMetadata = JSON.stringify(metadata);
       const eventTime = new Date();
       const id = randomUUID();
-      const values = [id, eventTime, userId, userEmail, organizationId, eventType, eventMetadata];
+      const values = [id, eventTime, organizationId, eventType, userId, userEmail, eventMetadata];
 
       await this.clickHouse.insert({
         query: c_sql`
-              INSERT INTO "audit_log" (
-                "id"
-                , "event_time"
-                , "user_id"
-                , "user_email"
-                , "organization_id"
-                , "event_action"
-                , "metadata"
+              INSERT INTO "audit_logs" (
+                id,
+                timestamp,
+                organization_id,
+                event_action,
+                user_id,
+                user_email,
+                metadata
               )
               FORMAT CSV`,
         data: [values],
