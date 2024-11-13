@@ -11,7 +11,7 @@ import type { TargetSlugUpdatedAuditLogResolvers } from './../../../__generated_
  */
 export const TargetSlugUpdatedAuditLog: TargetSlugUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'TARGET_SLUG_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   projectId: e => e.metadata.projectId,
   targetId: e => e.metadata.targetId,
   newSlug: e => e.metadata.newSlug,

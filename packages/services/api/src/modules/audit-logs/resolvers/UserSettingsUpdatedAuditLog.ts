@@ -11,7 +11,7 @@ import type { UserSettingsUpdatedAuditLogResolvers } from './../../../__generate
  */
 export const UserSettingsUpdatedAuditLog: UserSettingsUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'USER_SETTINGS_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   updatedFields: e => e.metadata.updatedFields,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {

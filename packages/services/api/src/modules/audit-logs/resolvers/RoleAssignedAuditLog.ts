@@ -11,7 +11,7 @@ import type { RoleAssignedAuditLogResolvers } from './../../../__generated__/typ
  */
 export const RoleAssignedAuditLog: RoleAssignedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ROLE_ASSIGNED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   previousMemberRole: e => e.metadata.previousMemberRole,
   roleId: e => e.metadata.roleId,
   updatedMember: e => e.metadata.updatedMember,

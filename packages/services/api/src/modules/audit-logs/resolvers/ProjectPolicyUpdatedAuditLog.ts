@@ -11,7 +11,7 @@ import type { ProjectPolicyUpdatedAuditLogResolvers } from './../../../__generat
  */
 export const ProjectPolicyUpdatedAuditLog: ProjectPolicyUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'PROJECT_POLICY_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   projectId: e => e.metadata.projectId,
   policy: e => e.metadata.policy,
   id: e => e.id,

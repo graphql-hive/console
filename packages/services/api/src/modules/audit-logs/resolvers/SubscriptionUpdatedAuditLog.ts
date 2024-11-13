@@ -11,7 +11,7 @@ import type { SubscriptionUpdatedAuditLogResolvers } from './../../../__generate
  */
 export const SubscriptionUpdatedAuditLog: SubscriptionUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'SUBSCRIPTION_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   updatedFields: e => e.metadata.updatedFields,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {

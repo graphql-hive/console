@@ -11,7 +11,7 @@ import type { SupportTicketCreatedAuditLogResolvers } from './../../../__generat
  */
 export const SupportTicketCreatedAuditLog: SupportTicketCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'SUPPORT_TICKET_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   ticketDescription: e => e.metadata.ticketDescription,
   ticketId: e => e.metadata.ticketId,
   ticketPriority: e => e.metadata.ticketPriority,

@@ -11,7 +11,7 @@ import type { CollectionCreatedAuditLogResolvers } from './../../../__generated_
  */
 export const CollectionCreatedAuditLog: CollectionCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'COLLECTION_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   collectionId: e => e.metadata.collectionId,
   collectionName: e => e.metadata.collectionName,
   targetId: e => e.metadata.targetId,

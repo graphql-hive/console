@@ -12,7 +12,7 @@ import type { OrganizationTransferredRequestAuditLogResolvers } from './../../..
 export const OrganizationTransferredRequestAuditLog: OrganizationTransferredRequestAuditLogResolvers =
   {
     __isTypeOf: e => e.event_action === 'ORGANIZATION_TRANSFERRED_REQUEST',
-    eventTime: e => new Date(e.event_time).toISOString(),
+    eventTime: e => new Date(e.timestamp).toISOString(),
     newOwnerEmail: e => e.metadata.newOwnerEmail,
     newOwnerId: e => e.metadata.newOwnerId,
     id: e => e.id,

@@ -11,7 +11,7 @@ import type { TargetTokenCreatedAuditLogResolvers } from './../../../__generated
  */
 export const TargetTokenCreatedAuditLog: TargetTokenCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'TARGET_TOKEN_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   projectId: e => e.metadata.projectId,
   targetId: e => e.metadata.targetId,
   alias: e => e.metadata.alias,

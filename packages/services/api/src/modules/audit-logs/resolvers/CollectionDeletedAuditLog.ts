@@ -11,7 +11,7 @@ import type { CollectionDeletedAuditLogResolvers } from './../../../__generated_
  */
 export const CollectionDeletedAuditLog: CollectionDeletedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'COLLECTION_DELETED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   collectionId: e => e.metadata.collectionId,
   collectionName: e => e.metadata.collectionName,
   id: e => e.id,

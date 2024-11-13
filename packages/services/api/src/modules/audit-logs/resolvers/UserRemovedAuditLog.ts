@@ -11,7 +11,7 @@ import type { UserRemovedAuditLogResolvers } from './../../../__generated__/type
  */
 export const UserRemovedAuditLog: UserRemovedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'USER_REMOVED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   removedUserEmail: e => e.metadata.removedUserEmail,
   removedUserId: e => e.metadata.removedUserId,
   id: e => e.id,

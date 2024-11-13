@@ -11,7 +11,7 @@ import type { TargetTokenDeletedAuditLogResolvers } from './../../../__generated
  */
 export const TargetTokenDeletedAuditLog: TargetTokenDeletedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'TARGET_TOKEN_DELETED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   projectId: e => e.metadata.projectId,
   targetId: e => e.metadata.targetId,
   alias: e => e.metadata.alias,

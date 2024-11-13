@@ -11,7 +11,7 @@ import type { OrganizationPolicyUpdatedAuditLogResolvers } from './../../../__ge
  */
 export const OrganizationPolicyUpdatedAuditLog: OrganizationPolicyUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ORGANIZATION_POLICY_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   allowOverrides: e => e.metadata.allowOverrides,
   updatedFields: e => e.metadata.updatedFields,
   id: e => e.id,

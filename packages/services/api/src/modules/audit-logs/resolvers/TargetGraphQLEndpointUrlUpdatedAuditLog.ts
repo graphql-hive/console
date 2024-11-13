@@ -12,7 +12,7 @@ import type { TargetGraphQlEndpointUrlUpdatedAuditLogResolvers } from './../../.
 export const TargetGraphQLEndpointUrlUpdatedAuditLog: TargetGraphQlEndpointUrlUpdatedAuditLogResolvers =
   {
     __isTypeOf: e => e.event_action === 'TARGET_GRAPHQL_ENDPOINT_URL_UPDATED',
-    eventTime: e => new Date(e.event_time).toISOString(),
+    eventTime: e => new Date(e.timestamp).toISOString(),
     projectId: e => e.metadata.projectId,
     targetId: e => e.metadata.targetId,
     graphqlEndpointUrl: e => e.metadata.graphqlEndpointUrl,

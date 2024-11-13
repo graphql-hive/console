@@ -12,7 +12,7 @@ import type { OrganizationUpdatedIntegrationAuditLogResolvers } from './../../..
 export const OrganizationUpdatedIntegrationAuditLog: OrganizationUpdatedIntegrationAuditLogResolvers =
   {
     __isTypeOf: e => e.event_action === 'ORGANIZATION_UPDATED_INTEGRATION',
-    eventTime: e => new Date(e.event_time).toISOString(),
+    eventTime: e => new Date(e.timestamp).toISOString(),
     integrationStatus: e => e.metadata.integrationStatus,
     integrationType: e => e.metadata.integrationType,
     integrationId: e => e.metadata.integrationId,

@@ -11,7 +11,7 @@ import type { OrganizationSlugUpdatedAuditLogResolvers } from './../../../__gene
  */
 export const OrganizationSlugUpdatedAuditLog: OrganizationSlugUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ORGANIZATION_SLUG_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   previousSlug: e => e.metadata.previousSlug,
   newSlug: e => e.metadata.newSlug,
   id: e => e.id,

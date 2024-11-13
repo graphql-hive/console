@@ -11,7 +11,7 @@ import type { OrganizationPlanUpdatedAuditLogResolvers } from './../../../__gene
  */
 export const OrganizationPlanUpdatedAuditLog: OrganizationPlanUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ORGANIZATION_PLAN_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   previousPlan: e => e.metadata.previousPlan,
   newPlan: e => e.metadata.newPlan,
   id: e => e.id,

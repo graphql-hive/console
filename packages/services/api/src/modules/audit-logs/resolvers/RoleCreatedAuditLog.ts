@@ -11,7 +11,7 @@ import type { RoleCreatedAuditLogResolvers } from './../../../__generated__/type
  */
 export const RoleCreatedAuditLog: RoleCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ROLE_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   roleId: e => e.metadata.roleId,
   roleName: e => e.metadata.roleName,
   id: e => e.id,

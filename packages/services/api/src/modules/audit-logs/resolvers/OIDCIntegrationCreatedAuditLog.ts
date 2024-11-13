@@ -11,7 +11,7 @@ import type { OidcIntegrationCreatedAuditLogResolvers } from './../../../__gener
  */
 export const OIDCIntegrationCreatedAuditLog: OidcIntegrationCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'OIDC_INTEGRATION_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   integrationId: e => e.metadata.integrationId,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {

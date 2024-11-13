@@ -11,7 +11,7 @@ import type { SupportTicketUpdatedAuditLogResolvers } from './../../../__generat
  */
 export const SupportTicketUpdatedAuditLog: SupportTicketUpdatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'SUPPORT_TICKET_UPDATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   ticketId: e => e.metadata.ticketId,
   updatedFields: e => e.metadata.updatedFields,
   id: e => e.id,

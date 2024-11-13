@@ -11,7 +11,7 @@ import type { OrganizationDeletedAuditLogResolvers } from './../../../__generate
  */
 export const OrganizationDeletedAuditLog: OrganizationDeletedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ORGANIZATION_DELETED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   organizationId: e => e.metadata.organizationId,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {

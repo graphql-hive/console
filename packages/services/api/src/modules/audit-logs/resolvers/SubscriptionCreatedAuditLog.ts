@@ -11,7 +11,7 @@ import type { SubscriptionCreatedAuditLogResolvers } from './../../../__generate
  */
 export const SubscriptionCreatedAuditLog: SubscriptionCreatedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'SUBSCRIPTION_CREATED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   newPlan: e => e.metadata.newPlan,
   operations: e => e.metadata.operations,
   paymentMethodId: e => e.metadata.paymentMethodId,

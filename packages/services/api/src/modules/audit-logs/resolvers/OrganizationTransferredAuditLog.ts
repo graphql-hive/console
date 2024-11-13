@@ -11,7 +11,7 @@ import type { OrganizationTransferredAuditLogResolvers } from './../../../__gene
  */
 export const OrganizationTransferredAuditLog: OrganizationTransferredAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'ORGANIZATION_TRANSFERRED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   newOwnerEmail: e => e.metadata.newOwnerEmail,
   newOwnerId: e => e.metadata.newOwnerId,
   id: e => e.id,

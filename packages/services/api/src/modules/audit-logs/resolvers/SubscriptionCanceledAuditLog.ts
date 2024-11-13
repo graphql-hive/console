@@ -11,7 +11,7 @@ import type { SubscriptionCanceledAuditLogResolvers } from './../../../__generat
  */
 export const SubscriptionCanceledAuditLog: SubscriptionCanceledAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'SUBSCRIPTION_CANCELED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   newPlan: e => e.metadata.newPlan,
   previousPlan: e => e.metadata.previousPlan,
   id: e => e.id,

@@ -12,7 +12,7 @@ import type { OperationInDocumentCollectionUpdatedAuditLogResolvers } from './..
 export const OperationInDocumentCollectionUpdatedAuditLog: OperationInDocumentCollectionUpdatedAuditLogResolvers =
   {
     __isTypeOf: e => e.event_action === 'OPERATION_IN_DOCUMENT_COLLECTION_UPDATED',
-    eventTime: e => new Date(e.event_time).toISOString(),
+    eventTime: e => new Date(e.timestamp).toISOString(),
     collectionId: e => e.metadata.collectionId,
     collectionName: e => e.metadata.collectionName,
     updatedFields: e => e.metadata.updatedFields,

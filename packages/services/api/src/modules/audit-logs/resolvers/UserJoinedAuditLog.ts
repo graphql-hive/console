@@ -11,7 +11,7 @@ import type { UserJoinedAuditLogResolvers } from './../../../__generated__/types
  */
 export const UserJoinedAuditLog: UserJoinedAuditLogResolvers = {
   __isTypeOf: e => e.event_action === 'USER_JOINED',
-  eventTime: e => new Date(e.event_time).toISOString(),
+  eventTime: e => new Date(e.timestamp).toISOString(),
   inviteeEmail: e => e.metadata.inviteeEmail,
   id: e => e.id,
   record: async (event, _arg, _ctx) => {

@@ -12,7 +12,7 @@ import type { TargetSchemaCompositionUpdatedAuditLogResolvers } from './../../..
 export const TargetSchemaCompositionUpdatedAuditLog: TargetSchemaCompositionUpdatedAuditLogResolvers =
   {
     __isTypeOf: e => e.event_action === 'TARGET_SCHEMA_COMPOSITION_UPDATED',
-    eventTime: e => new Date(e.event_time).toISOString(),
+    eventTime: e => new Date(e.timestamp).toISOString(),
     projectId: e => e.metadata.projectId,
     targetId: e => e.metadata.targetId,
     nativeComposition: e => e.metadata.nativeComposition,
