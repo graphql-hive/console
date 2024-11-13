@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "@graphql-inspector/core": "6.2.0-alpha-20241112112337-f1cd302bf97c02915ee2fd06d4ffc8254b71ae01",
+    "@graphql-inspector/core": "6.2.0",
     "@graphql-tools/code-file-loader": "~8.1.0",
     "@graphql-tools/graphql-file-loader": "~8.0.0",
     "@graphql-tools/json-file-loader": "~8.0.0",
