@@ -6,6 +6,11 @@ type Author = {
 };
 
 export const authors: Record<string, Author> = {
+  tuval: {
+    name: 'Tuval Simha',
+    link: 'https://github.com/TuvalSimha',
+    github: 'TuvalSimha',
+  },
   kamil: {
     name: 'Kamil Kisiela',
     link: 'https://x.com/kamilkisiela',
