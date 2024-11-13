@@ -1,0 +1,46 @@
+---
+title: Support for Custom Directives
+description: Announcing the support for custom directives in the Hive Schema Registry.
+date: 2024-11-14
+authors: [tuval]
+---
+
+We're excited to announce that the Hive Schema Registry now supports custom directives!
+
+Hive offers enhanced support for custom directives, allowing users to easily detect changes in
+directive usage within GraphQL schemas. This feature greatly improves the capabilities of schema
+diffing, enabling comprehensive tracking of modifications related to custom directives across
+different schema versions.
+
+## Rules for Custom Directives
+
+Support for custom directives covers various schema elements, including:
+
+- SCHEMA
+- SCALAR
+- OBJECT
+- FIELD_DEFINITION
+- ARGUMENT_DEFINITION
+- INTERFACE
+- UNION
+- ENUM
+- ENUM_VALUE
+- INPUT_OBJECT
+- INPUT_FIELD_DEFINITION
+
+## Example
+
+```graphql filename="OLD_SCHEMA"
+input Foo {
+  a: String
+  b: String
+}
+```
+
+```graphql filename="NEW_SCHEMA"
+directive @anyNameDirective on INPUT_FIELD_DEFINITION
+input Foo {
+  a: String @anyNameDirective
+  b: String
+}
+```
