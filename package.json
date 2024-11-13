@@ -94,7 +94,7 @@
     "turbo": "2.2.3",
     "typescript": "5.6.3",
     "vite-tsconfig-paths": "5.0.1",
-    "vitest": "2.0.5"
+    "vitest": "2.1.5"
   },
   "pnpm": {
     "overrides.csstype": "To fix type check error https://github.com/JedWatson/react-select/issues/5952",
