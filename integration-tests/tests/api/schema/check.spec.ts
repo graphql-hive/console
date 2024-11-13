@@ -1,4 +1,3 @@
-import { dir } from 'console';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
