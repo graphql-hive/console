@@ -1,3 +1,4 @@
+import { dir } from 'console';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
@@ -1957,4 +1958,288 @@ test.concurrent('checking a schema with directives', async () => {
     },
     valid: true,
   });
+});
+
+test.concurrent('Added custom directives', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  // Create a token with write rights
+  const writeToken = await createTargetAccessToken({});
+  // Publish schema with write rights
+  const publishResult = await writeToken
+    .publishSchema({
+      sdl: /* GraphQL */ `
+        type Query {
+          ping: String
+        }
+      `,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+
+  // Schema publish should be successful
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  // Create a token with read rights
+  const readToken = await createTargetAccessToken({
+    mode: 'readOnly',
+  });
+
+  // Check schema with new custom directives
+  const checkResult = await readToken
+    .checkSchema(/* GraphQL */ `
+      directive @scalarCustomDirectiveTest on SCALAR
+      directive @objectCustomDirectiveTest on OBJECT
+      directive @interfaceCustomDirectiveTest on INTERFACE
+      directive @inputObjectCustomDirectiveTest on INPUT_OBJECT
+      directive @argumentDefinitionCustomDirectiveTest on ARGUMENT_DEFINITION
+      directive @enumCustomDirectiveTest on ENUM
+      directive @enumValueCustomDirectiveTest on ENUM_VALUE
+      directive @fieldDefinitionCustomDirectiveTest on FIELD_DEFINITION
+      directive @inputFieldDefinitionCustomDirectiveTest on INPUT_FIELD_DEFINITION
+      directive @unionCustomDirectiveTest on UNION
+
+      type Query {
+        a: String
+      }
+
+      type ObjectTest @objectCustomDirectiveTest {
+        a: String
+      }
+
+      scalar NewScalar @scalarCustomDirectiveTest
+
+      interface InterfaceTest @interfaceCustomDirectiveTest {
+        a: String
+      }
+
+      input InputTest @inputObjectCustomDirectiveTest {
+        a: String
+        b: String @inputFieldDefinitionCustomDirectiveTest
+      }
+
+      type ArgumentDefinitionTest {
+        a(a: String @argumentDefinitionCustomDirectiveTest): String
+      }
+
+      enum EnumTest @enumCustomDirectiveTest {
+        A
+        B @enumValueCustomDirectiveTest
+      }
+
+      type A {
+        a: String!
+      }
+
+      type B {
+        b: String!
+      }
+
+      union UnionTest @unionCustomDirectiveTest = A | B
+    `)
+    .then(r => r.expectNoGraphQLErrors());
+
+  const schemaCheck = checkResult.schemaCheck;
+
+  if (schemaCheck.__typename !== 'SchemaCheckError') {
+    throw new Error(`Expected SchemaCheckError, got ${schemaCheck.__typename}`);
+  }
+
+  const schemaCheckId = schemaCheck.schemaCheck?.id;
+
+  if (schemaCheckId == null) {
+    throw new Error('Missing schema check id.');
+  }
+  expect(schemaCheck.changes?.total).toEqual(21);
+  expect(schemaCheck.changes?.nodes).toEqual([
+    { message: "Field 'ping' was removed from object type 'Query'", criticality: 'Breaking' },
+    { message: "Type 'A' was added", criticality: 'Safe' },
+    { message: "Type 'ArgumentDefinitionTest' was added", criticality: 'Safe' },
+    { message: "Type 'B' was added", criticality: 'Safe' },
+    { message: "Type 'EnumTest' was added", criticality: 'Safe' },
+    { message: "Type 'InputTest' was added", criticality: 'Safe' },
+    { message: "Type 'InterfaceTest' was added", criticality: 'Safe' },
+    { message: "Type 'NewScalar' was added", criticality: 'Safe' },
+    { message: "Type 'ObjectTest' was added", criticality: 'Safe' },
+    { message: "Type 'UnionTest' was added", criticality: 'Safe' },
+    { message: "Field 'a' was added to object type 'Query'", criticality: 'Safe' },
+    {
+      message: "Directive 'argumentDefinitionCustomDirectiveTest' was added",
+      criticality: 'Safe',
+    },
+    { message: "Directive 'enumCustomDirectiveTest' was added", criticality: 'Safe' },
+    { message: "Directive 'enumValueCustomDirectiveTest' was added", criticality: 'Safe' },
+    {
+      message: "Directive 'fieldDefinitionCustomDirectiveTest' was added",
+      criticality: 'Safe',
+    },
+    {
+      message: "Directive 'inputFieldDefinitionCustomDirectiveTest' was added",
+      criticality: 'Safe',
+    },
+    { message: "Directive 'inputObjectCustomDirectiveTest' was added", criticality: 'Safe' },
+    { message: "Directive 'interfaceCustomDirectiveTest' was added", criticality: 'Safe' },
+    { message: "Directive 'objectCustomDirectiveTest' was added", criticality: 'Safe' },
+    { message: "Directive 'scalarCustomDirectiveTest' was added", criticality: 'Safe' },
+    { message: "Directive 'unionCustomDirectiveTest' was added", criticality: 'Safe' },
+  ]);
+});
+
+test.concurrent('Removed custom directives', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  // Create a token with write rights
+  const writeToken = await createTargetAccessToken({});
+  // Publish schema with write rights
+  const publishResult = await writeToken
+    .publishSchema({
+      sdl: /* GraphQL */ `
+        directive @scalarCustomDirectiveTest on SCALAR
+        directive @objectCustomDirectiveTest on OBJECT
+        directive @interfaceCustomDirectiveTest on INTERFACE
+        directive @inputObjectCustomDirectiveTest on INPUT_OBJECT
+        directive @argumentDefinitionCustomDirectiveTest on ARGUMENT_DEFINITION
+        directive @enumCustomDirectiveTest on ENUM
+        directive @enumValueCustomDirectiveTest on ENUM_VALUE
+        directive @fieldDefinitionCustomDirectiveTest on FIELD_DEFINITION
+        directive @inputFieldDefinitionCustomDirectiveTest on INPUT_FIELD_DEFINITION
+        directive @unionCustomDirectiveTest on UNION
+
+        type Query {
+          a: String
+        }
+
+        type ObjectTest @objectCustomDirectiveTest {
+          a: String
+        }
+
+        scalar NewScalar @scalarCustomDirectiveTest
+
+        interface InterfaceTest @interfaceCustomDirectiveTest {
+          a: String
+        }
+
+        input InputTest @inputObjectCustomDirectiveTest {
+          a: String
+          b: String @inputFieldDefinitionCustomDirectiveTest
+        }
+
+        type ArgumentDefinitionTest {
+          a(a: String @argumentDefinitionCustomDirectiveTest): String
+        }
+
+        enum EnumTest @enumCustomDirectiveTest {
+          A
+          B @enumValueCustomDirectiveTest
+        }
+
+        type A {
+          a: String!
+        }
+
+        type B {
+          b: String!
+        }
+
+        union UnionTest @unionCustomDirectiveTest = A | B
+      `,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+
+  // Schema publish should be successful
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  // Create a token with read rights
+  const readToken = await createTargetAccessToken({
+    mode: 'readOnly',
+  });
+
+  // Check schema with removed custom directives
+  const checkResult = await readToken
+    .checkSchema(/* GraphQL */ `
+      type Query {
+        ping: String
+      }
+    `)
+    .then(r => r.expectNoGraphQLErrors());
+
+  const schemaCheck = checkResult.schemaCheck;
+
+  if (schemaCheck.__typename !== 'SchemaCheckError') {
+    throw new Error(`Expected SchemaCheckError, got ${schemaCheck.__typename}`);
+  }
+
+  const schemaCheckId = schemaCheck.schemaCheck?.id;
+
+  if (schemaCheckId == null) {
+    throw new Error('Missing schema check id.');
+  }
+
+  expect(schemaCheck.changes?.total).toEqual(21);
+  expect(schemaCheck.changes?.nodes).toEqual([
+    { message: "Type 'A' was removed", criticality: 'Breaking' },
+    {
+      message: "Type 'ArgumentDefinitionTest' was removed",
+      criticality: 'Breaking',
+    },
+    { message: "Type 'B' was removed", criticality: 'Breaking' },
+    { message: "Type 'EnumTest' was removed", criticality: 'Breaking' },
+    { message: "Type 'InputTest' was removed", criticality: 'Breaking' },
+    {
+      message: "Type 'InterfaceTest' was removed",
+      criticality: 'Breaking',
+    },
+    { message: "Type 'NewScalar' was removed", criticality: 'Breaking' },
+    { message: "Type 'ObjectTest' was removed", criticality: 'Breaking' },
+    { message: "Type 'UnionTest' was removed", criticality: 'Breaking' },
+    {
+      message: "Field 'a' was removed from object type 'Query'",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'argumentDefinitionCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'enumCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'enumValueCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'fieldDefinitionCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'inputFieldDefinitionCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'inputObjectCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'interfaceCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'objectCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'scalarCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Directive 'unionCustomDirectiveTest' was removed",
+      criticality: 'Breaking',
+    },
+    {
+      message: "Field 'ping' was added to object type 'Query'",
+      criticality: 'Safe',
+    },
+  ]);
 });
