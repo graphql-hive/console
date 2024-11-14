@@ -1944,7 +1944,6 @@ test.concurrent('checking a schema with directives', async () => {
   `;
 
   const result = await token.checkSchema(sdl).then(r => r.expectNoGraphQLErrors());
-  console.log('---> result', result);
 
   expect(result.schemaCheck).toEqual({
     __typename: 'SchemaCheckSuccess',
