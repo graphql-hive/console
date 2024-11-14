@@ -1,0 +1,94 @@
+---
+title: Automatically run custom authentication processes in the Laboratory
+description:
+  Useful for handling authentication flows like OAuth, where you may need to refresh an access token
+date: 2024-10-28
+authors: [dimitri]
+---
+
+import { Callout } from '@theguild/components'
+
+We've added Preflight Scripts to Laboratory! These scripts allow you to automatically run custom
+authentication processes before executing your GraphQL operations. They're especially useful for
+handling authentication flows like OAuth, where you may need to refresh an access token. Let's
+explore how it works.
+
+export function Caption({ children }) {
+  return <p className="text-center text-sm italic">{children}</p>
+}
+
+## Configuring Preflight Script
+
+To create a script click on the command line icon (right after Operation Collections plugin icon) in
+GraphiQL sidebar section.
+
+![Command line icon](./command-line-icon.png)
+
+{/* prettier-ignore */}
+<Caption>The preflight script is accessible by clicking on the Command line icon in the GraphiQL sidebar</Caption>
+
+You will see Script editor (JavaScript language) which is read-only and present for a quick view of
+your saved script and Environment variables editor (JSON language) which is persistent in
+localStorage.
+
+![Preflight script plugin view](./preflight-script-plugin.png)
+
+<Caption>Preflight script plugin view</Caption>
+
+## Editing Preflight Script
+
+Clicking on the `Edit` button will open Modal where you can edit, test and save your script in
+database.
+
+<Callout type="warning">
+  **Note**: Your script will stored as plain text in our database, don't put any secrets there, use
+  Environment variables editor for it! The preflight script is accessible to all members of your
+  organization, but only users with access to target Settings can edit the script code.
+</Callout>
+
+You can use any JavaScript syntax (including top-level `await`) in the Script editor. Getting and
+Setting environment variables is done by accessing the `environment` property on the `lab` global
+variable.
+
+```js
+// get myKey variable from the Environment variables editor
+lab.environment.get('myKey')
+// set myKey variable to the Environment variables editor (persistent in localStorage)
+lab.environment.set('myKey', myValue)
+```
+
+![Demo how to get and set environment variables](./get-and-set-env-vars.png)
+
+<Caption>Demo how to get and set environment variables</Caption>
+
+## CryptoJS
+
+Additionally, you can access the CryptoJS library by accessing the `CryptoJS` property on the `lab`
+global variable.
+
+![CryptoJS](./crypto-js.png)
+
+<Caption>CryptoJS</Caption>
+
+## Global Variables and Errors
+
+Access to global variables such as `this`, `window` or `globalThis` is restricted. Errors thrown by the script will be displayed in Console Output.
+
+![Demo restricted access to global variables](./unable-to-access-global-variables.png)
+
+<Caption>Demo restricted access to global variables</Caption>
+
+## Using Environment Variables
+
+To use your environment variables in GraphiQL headers editor wraps environment keys with
+double-curly braces, e.g.:
+
+```json filename="Headers" /{{myEnvVar}}/
+{
+  "Authorization": "Bearer {{myEnvVar}}"
+}
+```
+
+![Replace syntax in action](./replace-syntax.png)
+
+<Caption>Replace syntax is done via double open/closed curly braces, e.g. `{{ myEnvVar }}`</Caption>
