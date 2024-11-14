@@ -47,11 +47,19 @@ will be used for authenticating the supergraph polling from the CDN.
 
 <Tabs items={['Binary', 'Docker', 'Custom']}>
   <Tabs.Tab>
-    Download Apollo Router for Linux (`x86_64`), MacOS (`x86_64`) or Windows (`x86_64`):
+    Download Apollo Router for Linux (`x86_64`), MacOS (`x86_64`) or Windows (`x86_64`). To download the latest version of the router, use the following script:
 
     ```bash
     curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash
     ```
+
+    To download a specfic version of the router, use the `-v` or `--version` flag:
+
+    ```bash
+    curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash -s -- --version router1.57.1-plugin1.0.0
+    ```
+
+    > The full list of releases can be found in the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router)
 
     Start the router:
 
@@ -63,14 +71,16 @@ will be used for authenticating the supergraph polling from the CDN.
 
   </Tabs.Tab>
   <Tabs.Tab>
-      Running Apollo Router with Hive's Schema Registry:
+      To run Apollo Router with Hive plugin, use the following Docker command.
+
+      Make sure to replace `IMAGE_TAG_HERE` with the image tag. You can use `latest` for development, or pick a specific version for production from the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
 
       ```bash
       docker run -p 4000:4000 \
         --env HIVE_CDN_ENDPOINT="..." \ # The endpoint of your CDN access token
         --env HIVE_CDN_KEY="..." \ # The CDN access token
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE
       ```
 
       Passing command-line arguments:
@@ -80,7 +90,7 @@ will be used for authenticating the supergraph polling from the CDN.
         --env HIVE_CDN_ENDPOINT="..." \ # The endpoint of your CDN access token
         --env HIVE_CDN_KEY="..." \ # The CDN access token
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest --log debug
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE --log debug
       ```
 
   </Tabs.Tab>
@@ -133,6 +143,18 @@ will be used for authenticating the supergraph polling from the CDN.
   </Tabs.Tab>
 </Tabs>
 
+### Version Structure
+
+The Docker image's and the binary artifact's versioning follows the pattern
+`routerX.Y.Z-pluginX.Y.Z`, combining both the core
+[Apollo Router](https://crates.io/crates/apollo-router) and
+[Hive plugin](https://crates.io/crates/hive-apollo-router-plugin) versions.
+
+For example: `router1.57.1-plugin1.0.0`.
+
+You can find the list of releases in the
+[releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
+
 ## Configuration
 
 - `HIVE_CDN_ENDPOINT` - the endpoint Hive generated for you in the previous step
@@ -172,7 +194,10 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
 
   </Tabs.Tab>
   <Tabs.Tab>
-      Running Apollo Router with Hive's Schema Registry and Usage Reporting:
+      To run Apollo Router with Hive plugin with usage reporting, use the following Docker command.
+
+      Make sure to replace `IMAGE_TAG_HERE` with the image tag. You can use `latest` for development, or pick a specific version for production from the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
+
 
       ```bash
       docker run -p 4000:4000 \
@@ -181,7 +206,7 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
         --env HIVE_CDN_KEY="..." \
         --mount "type=bind,source=/home/usr/src/hive/router.yaml,target=/dist/config/router.yaml" \
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE
       ```
 
       To follow the same convention as Apollo Router's official Docker image, the config file is also located at `/dist/config/router.yaml`.

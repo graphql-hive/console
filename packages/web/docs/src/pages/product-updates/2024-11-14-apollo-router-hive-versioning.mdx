@@ -7,9 +7,7 @@ date: 2024-11-14
 authors: [dotan]
 ---
 
-We're excited to announce the stable `v1` release of our Hive plugin for Apollo Router. This release
-marks a significant milestone in providing robust GraphQL API monitoring and management
-capabilities.
+We're excited to announce the stable `v1` release of our Hive plugin for Apollo Router!
 
 For detailed integration instructions, visit our
 [Apollo Router integration documentation](/docs/other-integrations/apollo-router).
@@ -41,12 +39,21 @@ docker pull ghcr.io/graphql-hive/apollo-router:router1.57.1-plugin1.0.0
 Browse all available versions in our
 [releases registry](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
 
+For running instructions, see our [Docker usage guide](/docs/other-integrations/apollo-router).
+
 ### Binary Installation
 
-Download Apollo Router with Hive plugin for Linux (x86_64), MacOS (x86_64), or Windows (x86_64):
+Download Apollo Router with Hive plugin for Linux (`x86_64`), MacOS (`x86_64`), or Windows
+(`x86_64`):
 
 ```bash
 curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash
+```
+
+You may also specify a version using the `-v` or `--version` flag:
+
+```bash
+curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash -s -- --version router1.57.1-plugin1.0.0
 ```
 
 For setup instructions, see our [binary deployment guide](/docs/other-integrations/apollo-router).
