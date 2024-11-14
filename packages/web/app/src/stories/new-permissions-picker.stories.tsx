@@ -1,5 +1,5 @@
 import { ReactElement, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import {
@@ -10,17 +10,17 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -505,18 +505,18 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
   const selectedGroup = dynamicGroups.find(group => group.id === selectedGroupId) ?? null;
 
   return (
-    <Dialog open>
+    <Card>
       <Form {...form}>
-        <DialogContent className="min-h-[550px] max-w-[960px]">
-          {selectedGroup === null && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Member Role Editor</DialogTitle>
-                <DialogDescription>
-                  Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
-                  tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
-                </DialogDescription>
-              </DialogHeader>
+        {selectedGroup === null && (
+          <>
+            <CardHeader>
+              <CardTitle>Member Role Editor</CardTitle>
+              <CardDescription>
+                Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
+                tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="flex flex-row space-x-6">
                 <div className="w-72 shrink-0 space-y-4">
                   <FormField
@@ -585,8 +585,10 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                               level: ResourceLevel.project,
                               permissions: {},
                               title: 'Project ' + id,
+                              canDelete: true,
                             },
                           ]);
+                          setSelectedGroupId(id);
                         }}
                       >
                         Project-level
@@ -601,8 +603,10 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                               level: ResourceLevel.target,
                               permissions: {},
                               title: 'Target ' + id,
+                              canDelete: true,
                             },
                           ]);
+                          setSelectedGroupId(id);
                         }}
                       >
                         Target-level
@@ -617,8 +621,10 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                               level: ResourceLevel.service,
                               permissions: {},
                               title: 'Service ' + id,
+                              canDelete: true,
                             },
                           ]);
+                          setSelectedGroupId(id);
                         }}
                       >
                         Service-level
@@ -627,23 +633,25 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                   </DropdownMenu>
                 </div>
               </div>
-            </>
-          )}
-          {selectedGroup !== null && (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  <span className="cursor-pointer" onClick={() => setSelectedGroupId(null)}>
-                    Member Role Editor
-                  </span>{' '}
-                  <span>{'>'}</span> {selectedGroup.title}
-                </DialogTitle>
-                <p className="mt-1 text-xs text-gray-400">
-                  These permissions apply to all resources within the organization.
-                  <br /> E.g. if you grant access to projects permissions, these apply to all
-                  projects.
-                </p>
-              </DialogHeader>
+            </CardContent>
+          </>
+        )}
+        {selectedGroup !== null && (
+          <>
+            <CardHeader>
+              <CardTitle>
+                <span className="cursor-pointer" onClick={() => setSelectedGroupId(null)}>
+                  Member Role Editor
+                </span>{' '}
+                <span>{'>'}</span> {selectedGroup.title}
+              </CardTitle>
+              <CardDescription>
+                These permissions apply to all resources within the organization.
+                <br /> E.g. if you grant access to projects permissions, these apply to all
+                projects.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="max-h-[500px] overflow-scroll pr-5">
                 <PermissionSelector
                   resourceLevel={selectedGroup.level}
@@ -664,11 +672,30 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                   }}
                 />
               </div>
-            </>
-          )}
-        </DialogContent>
+            </CardContent>
+            <CardFooter>
+              <div className="ml-auto mr-0">
+                {selectedGroup.canDelete && (
+                  <Button
+                    className="mr-2"
+                    onClick={() =>
+                      setDynamicGroups(groups =>
+                        groups.filter(group => group.id !== selectedGroup.id),
+                      )
+                    }
+                  >
+                    Delete
+                  </Button>
+                )}
+                <Button onClick={() => setSelectedGroupId(null)}>
+                  <Check size={12} /> Apply
+                </Button>
+              </div>
+            </CardFooter>
+          </>
+        )}
       </Form>
-    </Dialog>
+    </Card>
   );
 }
 
