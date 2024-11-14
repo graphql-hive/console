@@ -194,12 +194,12 @@ export class OrganizationManager {
 
   async leaveOrganization(organizationId: string): Promise<
     | {
-      ok: true;
-    }
+        ok: true;
+      }
     | {
-      ok: false;
-      message: string;
-    }
+        ok: false;
+        message: string;
+      }
   > {
     this.logger.debug('Leaving organization (organization=%s)', organizationId);
     const user = await this.session.getViewer();
@@ -612,12 +612,12 @@ export class OrganizationManager {
 
     const role = input.role
       ? await this.storage.getOrganizationMemberRole({
-        organizationId: organization.id,
-        roleId: input.role,
-      })
+          organizationId: organization.id,
+          roleId: input.role,
+        })
       : await this.storage.getViewerOrganizationMemberRole({
-        organizationId: organization.id,
-      });
+          organizationId: organization.id,
+        });
     if (!role) {
       throw new HiveError(`Role not found`);
     }
@@ -1566,12 +1566,12 @@ export class OrganizationManager {
     )[],
   ): Promise<
     | {
-      ok: false;
-      message: string;
-    }
+        ok: false;
+        message: string;
+      }
     | {
-      ok: true;
-    }
+        ok: true;
+      }
   > {
     // Ensure role is not locked (can't be deleted)
     if (role.locked) {
@@ -1632,12 +1632,12 @@ export class OrganizationManager {
     )[],
   ):
     | {
-      ok: false;
-      message: string;
-    }
+        ok: false;
+        message: string;
+      }
     | {
-      ok: true;
-    } {
+        ok: true;
+      } {
     // Ensure role is not locked (can't be updated)
     if (role.locked) {
       return {
@@ -1675,12 +1675,12 @@ export class OrganizationManager {
     )[],
   ):
     | {
-      ok: false;
-      message: string;
-    }
+        ok: false;
+        message: string;
+      }
     | {
-      ok: true;
-    } {
+        ok: true;
+      } {
     // Ensure user has access to all scopes in the role
     const currentUserMissingScopes = role.scopes.filter(
       scope => !currentUserScopes.includes(scope),

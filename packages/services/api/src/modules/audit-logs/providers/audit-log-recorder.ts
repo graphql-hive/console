@@ -9,12 +9,14 @@ import { auditLogSchema, type AuditLogSchemaEvent } from './audit-logs-types';
 type AuditLogEventTypeToMetadata = {
   [K in AuditLogSchemaEvent['eventType']]: Extract<AuditLogSchemaEvent, { eventType: K }>;
 };
+
 type AuditLogUser = {
   userId: string;
   userEmail: string;
   organizationId: string;
   user: User;
 };
+
 type AuditLogRecordEvent = AuditLogUser &
   AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
 
@@ -37,17 +39,23 @@ export class AuditLogRecorder {
 
   async record(data: AuditLogRecordEvent): Promise<void> {
     try {
-      const { eventType } = data;
-      const { organizationId, userEmail, userId } = data;
+      const { eventType, organizationId, userEmail, userId } = data;
       this.logger.debug('Creating audit log event', { eventType });
-
       const parsedEvent = auditLogSchema.parse(data);
-      const metadata = {
-        user: data.eventType,
-        ...parsedEvent,
+
+      const context = {
+        fullName: data.user.fullName,
+        email: data.user.email,
+        displayName: data.user.displayName,
+        provider: data.user.provider,
       };
 
-      const eventMetadata = JSON.stringify(metadata);
+      const structuredMetadata = {
+        context,
+        eventDetails: parsedEvent,
+      };
+
+      const eventMetadata = JSON.stringify(structuredMetadata);
       const eventTime = new Date();
       const id = randomUUID();
       const values = [id, eventTime, organizationId, eventType, userId, userEmail, eventMetadata];
