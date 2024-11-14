@@ -184,6 +184,7 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
     viewerCanManageOIDCIntegration
     viewerCanModifySlackIntegration
     viewerCanModifyGitHubIntegration
+    viewerCanExportAuditLogs
     ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
     ...GitHubIntegrationSection_OrganizationFragment
@@ -452,7 +453,7 @@ const SettingsPageRenderer = (props: {
           </Card>
         )}
 
-        {organization.viewerCanTransferOwnership && (
+        {organization.viewerCanExportAuditLogs && (
           <Card>
             <CardHeader>
               <CardTitle>Audit Logs</CardTitle>
