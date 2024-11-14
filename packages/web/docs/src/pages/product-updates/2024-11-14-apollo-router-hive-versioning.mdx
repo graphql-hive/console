@@ -1,0 +1,71 @@
+---
+title: Hive Plugin for Apollo-Router v1 stable release
+description:
+  The stable custom build of Apollo-Router with Hive plugin is now available as v1. Learn how to use
+  it in your custom Federation projects.
+date: 2024-11-13
+authors: [dotan]
+---
+
+We're excited to announce that our custom build of Apollo Router with integrated Hive plugin has
+reached its stable `v1` release.
+
+For additional information about using Hive with Apollo-Router, please refer to our
+[integration documentation](/docs/other-integrations/apollo-router).
+
+## Versioning
+
+The custom `apollo-router` build is now versioned and released based on changes to the core
+[`apollo-router` Crate](https://crates.io/crates/apollo-router), and also based on the
+[Hive plugin Crate](https://crates.io/crates/hive-apollo-router-plugin).
+
+The combined artifact and releases will be tagged as: `routerX.Y.Z-pluginX.Y.Z` (for example:
+`router1.57.1-plugin0.1.1`). This will allow you to easily track the version of `apollo-router`, and
+also the Hive plugin running along with it.
+
+## Use as Docker image
+
+To use the custom build of Apollo-Router from a Docker image, you can pull the latest version from
+the
+[GitHub Packages registry](https://github.com/graphql-hive/console/pkgs/container/apollo-router):
+
+```
+docker pull ghcr.io/graphql-hive/apollo-router:latest
+```
+
+If you wish to specify a version, you can use the version tag (see **Versioning** above):
+
+```
+docker pull ghcr.io/graphql-hive/apollo-router:router1.57.1-plugin0.1.1
+```
+
+> We recommend using an explicit version for your production deployments. This will ensure that you
+> are always running the same version of the custom build. Using `latest` might lead to unexpected
+> or breaking changes.
+
+The
+[full list of releases can be found here](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
+
+## Use as a binary
+
+To use the custom build of Apollo-Router with Hive plugin, download Apollo-Router for Linux
+(`x86_64`), MacOS (`x86_64`) or Windows (`x86_64`):
+
+```bash
+curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash
+```
+
+And follow the
+[instructions for running Apollo-Router as a binary](/docs/other-integrations/apollo-router).
+
+## Use as a library (from Crates)
+
+Earlier this week, we published the Hive plugin for Apollo-Router as a standalone library on
+Crates.io.
+
+```toml
+[dependencies]
+hive-apollo-router-plugin = "..."
+```
+
+[You can find the Hive plugin for Apollo-Router on Crates.io (`hive-apollo-router-plugin`)](https://crates.io/crates/hive-apollo-router-plugin).
