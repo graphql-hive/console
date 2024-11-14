@@ -38,12 +38,12 @@ export class AuditLogRecorder {
   async record(data: AuditLogRecordEvent): Promise<void> {
     try {
       const { eventType } = data;
-      const { organizationId, userEmail, userId } = data.metadata;
+      const { organizationId, userEmail, userId } = data;
       this.logger.debug('Creating audit log event', { eventType });
 
       const parsedEvent = auditLogSchema.parse(data);
       const metadata = {
-        user: data.metadata.user,
+        user: data.eventType,
         ...parsedEvent,
       };
 

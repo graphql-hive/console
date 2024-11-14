@@ -2,6 +2,7 @@ import { stringify } from 'csv-stringify';
 import { GraphQLError } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import { decodeHashBasedCursor } from '@hive/storage';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -17,7 +18,6 @@ const auditLogEventTypes = auditLogSchema.options.map(option => option.shape.eve
 export const AuditLogClickhouseObjectModel = z.object({
   id: z.string(),
   timestamp: z.string(),
-  organization_id: z.string(),
   event_action: z.enum(auditLogEventTypes as [string, ...string[]]),
   user_id: z.string(),
   user_email: z.string(),
@@ -54,7 +54,11 @@ export class AuditLogManager {
 
   async getPaginatedAuditLogs(
     organizationSlug: string,
-    pagination?: { first: number; after: number },
+    pagination?: {
+      cursorId?: string | null;
+      cursorTimestamp?: string | null;
+      first: number | null;
+    },
     filter?: { startDate?: Date; endDate?: Date },
   ): Promise<{ data: AuditLogType[] }> {
     this.logger.info(
@@ -71,8 +75,11 @@ export class AuditLogManager {
       throw new GraphQLError('Unauthorized: You are not authorized to perform this action');
     }
 
-    const sqlFirst = sql.raw(String(pagination?.first ?? 25));
-    const sqlAfter = sql.raw(String(pagination?.after ?? 0));
+    const limit = sql.raw(String(pagination?.first ?? 25));
+    const newCursorId = pagination?.cursorId ? decodeHashBasedCursor(pagination?.cursorId) : null;
+    const cursorTimestamp = pagination?.cursorTimestamp
+      ? this.formatToClickhouseDateTime(pagination.cursorTimestamp)
+      : '1960-11-14 16:49:13';
 
     const where: SqlValue[] = [];
     where.push(sql`organization_id = ${organizationSlug}`);
@@ -82,16 +89,22 @@ export class AuditLogManager {
       const to = this.formatToClickhouseDateTime(filter.endDate.toISOString());
       where.push(sql`timestamp >= ${from} AND timestamp <= ${to}`);
     }
+    if (pagination?.cursorId || pagination?.cursorTimestamp) {
+      where.push(sql`timestamp = ${cursorTimestamp}`);
+      where.push(sql`id < ${String(newCursorId?.id)}`);
+    } else {
+      where.push(sql`timestamp <= ${cursorTimestamp}`);
+    }
     const whereClause = where.length > 0 ? sql`WHERE ${sql.join(where, ' AND ')}` : sql``;
+    console.log('whereClause', whereClause);
 
     const result = await this.clickHouse.query({
       query: sql`
         SELECT *
         FROM audit_logs
         ${whereClause}
-        ORDER BY timestamp DESC
-        LIMIT ${sqlFirst}
-        OFFSET ${sqlAfter}
+        ORDER BY timestamp DESC, id DESC
+        LIMIT ${limit}
       `,
       queryId: 'get-audit-logs',
       timeout: 10000,
@@ -151,7 +164,7 @@ export class AuditLogManager {
       const totalAuditLogs = await this.totalAuditLogs(organizationSlug);
       const getAllAuditLogs = await this.getPaginatedAuditLogs(
         organizationSlug,
-        { first: totalAuditLogs ?? 1000, after: 0 },
+        { first: totalAuditLogs ?? 1000, cursorId: null, cursorTimestamp: null },
         { startDate: formattedStartDate, endDate: formattedEndDate },
       );
 

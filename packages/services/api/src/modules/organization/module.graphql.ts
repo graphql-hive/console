@@ -35,8 +35,9 @@ export default gql`
   }
 
   input AuditLogPaginationFilter {
-    first: Int = 25
-    after: Int = 0
+    first: Int
+    cursorId: String
+    cursorTimestamp: String
   }
 
   extend type Mutation {

@@ -28,6 +28,7 @@ export const Organization: Pick<
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
+  | 'viewerCanExportAuditLogs'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
   | 'viewerCanMigrateLegacyMemberRoles'
@@ -234,7 +235,8 @@ export const Organization: Pick<
     const auditLogs = await ctx.injector.get(AuditLogManager).getPaginatedAuditLogs(
       organization.id,
       {
-        after: arg.pagination?.after ?? 0,
+        cursorId: arg.pagination?.cursorId,
+        cursorTimestamp: arg.pagination?.cursorTimestamp,
         first: arg.pagination?.first ?? 25,
       },
       {
@@ -251,7 +253,7 @@ export const Organization: Pick<
     });
 
     const hasNextPage = items.length > (arg.pagination?.first ?? 25);
-    const hasPreviousPage = arg.pagination?.after !== 0;
+    const hasPreviousPage = !!arg.pagination?.cursorId;
     const startCursor = items[0]?.cursor;
     const endCursor = items[items.length - 1]?.cursor;
 
@@ -265,5 +267,14 @@ export const Organization: Pick<
       },
       __typename: 'AuditLogConnection',
     };
+  },
+  viewerCanExportAuditLogs: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'auditLog:export',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };
