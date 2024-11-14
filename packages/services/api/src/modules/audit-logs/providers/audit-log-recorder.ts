@@ -36,7 +36,7 @@ export class AuditLogRecorder {
     try {
       const { eventType } = data;
       const { organizationId, userEmail, userId } = data.metadata;
-      this.logger.debug('Creating a log audit event (data=%o)', data);
+      this.logger.debug('Creating audit log event', { eventType });
 
       const parsedEvent = auditLogSchema.parse(data);
       const metadata = {

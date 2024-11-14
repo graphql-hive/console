@@ -19,7 +19,4 @@ export const action: Action = async exec => {
     TTL timestamp + INTERVAL 1 YEAR
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;
   `);
-  // Because we partition data by weeks,
-  // I added `ttl_only_drop_parts` to simply drop parts,
-  // instead of rows when TTL is exceeded.
 };

@@ -24,6 +24,10 @@ export const AuditLogClickhouseObjectModel = z.object({
   metadata: z.string().transform(x => JSON.parse(x)),
 });
 
+const AuditLogTotalModel = z.object({
+  count: z.number(),
+});
+
 export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;
 
 const AuditLogClickhouseArrayModel = z.array(AuditLogClickhouseObjectModel);
@@ -100,6 +104,29 @@ export class AuditLogManager {
     };
   }
 
+  async totalAuditLogs(organizationSlug: string): Promise<number> {
+    const isOwner = await this.auth.isOwnerOfOrganization({
+      organization: organizationSlug,
+    });
+    if (!isOwner) {
+      throw new GraphQLError('Unauthorized: You are not authorized to perform this action');
+    }
+
+    const result = await this.clickHouse.query({
+      query: sql`
+        SELECT count()
+        FROM audit_logs
+        WHERE organization_id = ${organizationSlug}
+      `,
+      queryId: 'total-audit-logs',
+      timeout: 10000,
+    });
+
+    const { count } = AuditLogTotalModel.parse(result.data[0]);
+
+    return count;
+  }
+
   async exportAndSendEmail(
     organizationSlug: string,
     filter: { startDate?: Date | null; endDate?: Date | null },
@@ -121,9 +148,10 @@ export class AuditLogManager {
 
     try {
       const { email } = await this.session.getViewer();
+      const totalAuditLogs = await this.totalAuditLogs(organizationSlug);
       const getAllAuditLogs = await this.getPaginatedAuditLogs(
         organizationSlug,
-        { first: 1000, after: 0 },
+        { first: totalAuditLogs ?? 1000, after: 0 },
         { startDate: formattedStartDate, endDate: formattedEndDate },
       );
 
@@ -195,7 +223,8 @@ export class AuditLogManager {
       const { endpoint, bucket, client } = s3Storage;
       const cleanStartDate = formattedStartDate?.toISOString().split('T')[0];
       const cleanEndDate = formattedEndDate?.toISOString().split('T')[0];
-      const key = `audit-logs/${organizationSlug}/${cleanStartDate}-${cleanEndDate}.csv`;
+      const unixTimestampInSeconds = Math.floor(Date.now() / 1000);
+      const key = `audit-logs/${organizationSlug}/${unixTimestampInSeconds}-.${cleanStartDate}-${cleanEndDate}.csv`;
       const uploadResult = await client.fetch([endpoint, bucket, key].join('/'), {
         method: 'PUT',
         headers: {
