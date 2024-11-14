@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import cookies from 'js-cookie';
 import { LifeBuoyIcon, LoaderCircleIcon } from 'lucide-react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { Control, useForm, UseFormReturn } from 'react-hook-form';
 import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
@@ -402,30 +402,15 @@ const UpdateMeMutation = graphql(`
   }
 `);
 
+const minMessage = 'Name must be at least 2 characters long';
+const maxMessage = 'Name must be at most 25 characters long';
+
 const userSettingsModalFormSchema = z.object({
-  fullName: z
-    .string({
-      required_error: 'Full Name is required',
-    })
-    .min(2, {
-      message: 'Name must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Name must be at most 50 characters long',
-    }),
-  displayName: z
-    .string({
-      required_error: 'Display Name is required',
-    })
-    .min(2, {
-      message: 'Name must be at least 2 characters long',
-    })
-    .max(50, {
-      message: 'Name must be at most 50 characters long',
-    }),
+  fullName: z.string().min(2, { message: minMessage }).max(50, { message: maxMessage }),
+  displayName: z.string().min(2, { message: minMessage }).max(50, { message: maxMessage }),
 });
 
-export type UserSettingsModalFormValues = z.infer<typeof userSettingsModalFormSchema>;
+type UserSettingsModalFormValues = z.infer<typeof userSettingsModalFormSchema>;
 
 export function UserSettingsModal({
   isOpen,
@@ -434,20 +419,14 @@ export function UserSettingsModal({
   isOpen: boolean;
   toggleModalOpen: () => void;
 }): ReactElement {
-  const [meQuery] = useQuery({
-    query: UserSettings_MeQuery,
-    pause: !isOpen,
-  });
+  const [meQuery] = useQuery({ query: UserSettings_MeQuery, pause: !isOpen });
   const [, mutate] = useMutation(UpdateMeMutation);
   const { toast } = useToast();
 
   const form = useForm<UserSettingsModalFormValues>({
     mode: 'all',
     resolver: zodResolver(userSettingsModalFormSchema),
-    defaultValues: {
-      fullName: '',
-      displayName: '',
-    },
+    defaultValues: { fullName: '', displayName: '' },
   });
 
   useEffect(() => {
@@ -461,13 +440,20 @@ export function UserSettingsModal({
 
   async function onSubmit(values: UserSettingsModalFormValues) {
     const { data } = await mutate({ input: values });
-    if (data?.updateMe.error) {
+    if (!data) return;
+
+    const { error, ok } = data.updateMe;
+
+    if (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: data.updateMe.error.message,
+        description: error.message,
       });
-    } else if (data?.updateMe.ok) {
+      return;
+    }
+
+    if (ok) {
       toggleModalOpen();
       toast({
         variant: 'default',
@@ -477,41 +463,29 @@ export function UserSettingsModal({
     }
   }
 
-  return (
-    <UserSettingsModalContent
-      toggleModalOpen={toggleModalOpen}
-      form={form}
-      isOpen={isOpen}
-      onSubmit={onSubmit}
-      fetching={meQuery.fetching}
-    />
-  );
-}
+  const isButtonDisabled =
+    form.formState.isSubmitting ||
+    !form.formState.isValid ||
+    meQuery.fetching ||
+    !form.formState.isDirty;
 
-export function UserSettingsModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  form: UseFormReturn<UserSettingsModalFormValues>;
-  onSubmit: (values: UserSettingsModalFormValues) => void;
-  fetching?: boolean;
-}) {
   return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
+    <Dialog open={isOpen} onOpenChange={toggleModalOpen}>
       <DialogContent className="container w-4/5 max-w-[400px] md:w-3/5">
-        <Form {...props.form}>
-          <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>Profile settings</DialogTitle>
               <DialogDescription>Update your profile information.</DialogDescription>
             </DialogHeader>
-            {props.fetching ? (
+            {meQuery.fetching ? (
               <div className="flex justify-center">
                 <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" />
               </div>
             ) : (
               <div className="space-y-8">
                 <FormField
-                  control={props.form.control}
+                  control={form.control}
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
@@ -524,7 +498,7 @@ export function UserSettingsModalContent(props: {
                   )}
                 />
                 <FormField
-                  control={props.form.control}
+                  control={form.control}
                   name="displayName"
                   render={({ field }) => (
                     <FormItem>
@@ -544,12 +518,7 @@ export function UserSettingsModalContent(props: {
                 size="lg"
                 className="w-full justify-center"
                 variant="primary"
-                disabled={
-                  props.form.formState.isSubmitting ||
-                  !props.form.formState.isValid ||
-                  props.fetching ||
-                  !props.form.formState.isDirty
-                }
+                disabled={isButtonDisabled}
                 data-cy="confirm"
               >
                 Save Changes
