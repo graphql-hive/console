@@ -81,14 +81,14 @@ export class GitHubIntegrationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
-      integrationId: input.installationId,
-      integrationType: 'GITHUB',
-      integrationStatus: 'ENABLED',
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        integrationId: input.installationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'ENABLED',
       },
     });
 
@@ -113,14 +113,14 @@ export class GitHubIntegrationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
-      integrationId: input.organizationId,
-      integrationType: 'GITHUB',
-      integrationStatus: 'DISABLED',
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
       },
     });
 

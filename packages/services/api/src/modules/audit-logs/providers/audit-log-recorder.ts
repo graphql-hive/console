@@ -6,14 +6,17 @@ import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-
 import { Logger } from '../../shared/providers/logger';
 import { auditLogSchema, type AuditLogSchemaEvent } from './audit-logs-types';
 
-type AuditLogRecordEvent = AuditLogSchemaEvent & {
-  metadata: {
-    userId: string;
-    userEmail: string;
-    organizationId: string;
-    user: User;
-  };
+type AuditLogEventTypeToMetadata = {
+  [K in AuditLogSchemaEvent['eventType']]: Extract<AuditLogSchemaEvent, { eventType: K }>;
 };
+type AuditLogUser = {
+  userId: string;
+  userEmail: string;
+  organizationId: string;
+  user: User;
+};
+type AuditLogRecordEvent = AuditLogUser &
+  AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
 
 @Injectable({
   scope: Scope.Operation,

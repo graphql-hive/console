@@ -588,15 +588,15 @@ export class SupportManager {
 
     await this.auditLog.record({
       eventType: 'SUPPORT_TICKET_CREATED',
-      ticketDescription: input.description,
-      ticketPriority: input.priority,
-      ticketId: String(response.ticket.id),
-      ticketSubject: input.subject,
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        ticketDescription: input.description,
+        ticketPriority: input.priority,
+        ticketId: String(response.ticket.id),
+        ticketSubject: input.subject,
       },
     });
 
@@ -693,17 +693,17 @@ export class SupportManager {
 
     await this.auditLog.record({
       eventType: 'SUPPORT_TICKET_UPDATED',
-      ticketId: input.ticketId,
-      updatedFields: JSON.stringify({
-        comment: request.data.body,
-        authorId: internalUserId,
-        public: true,
-      }),
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        ticketId: input.ticketId,
+        updatedFields: JSON.stringify({
+          comment: request.data.body,
+          authorId: internalUserId,
+          public: true,
+        }),
       },
     });
 

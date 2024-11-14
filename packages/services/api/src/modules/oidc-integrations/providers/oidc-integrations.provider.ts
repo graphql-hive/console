@@ -134,12 +134,12 @@ export class OIDCIntegrationsProvider {
         const currentUser = await this.session.getViewer();
         await this.auditLog.record({
           eventType: 'OIDC_INTEGRATION_CREATED',
-          integrationId: creationResult.oidcIntegration.id,
+          organizationId: args.organizationId,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
           metadata: {
-            organizationId: args.organizationId,
-            user: currentUser,
-            userEmail: currentUser.email,
-            userId: currentUser.id,
+            integrationId: creationResult.oidcIntegration.id,
           },
         });
 
@@ -254,15 +254,15 @@ export class OIDCIntegrationsProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'OIDC_INTEGRATION_UPDATED',
-      updatedFields: JSON.stringify({
-        updateOIDCIntegration: true,
-      }),
-      integrationId: args.oidcIntegrationId,
+      organizationId: integration.linkedOrganizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: integration.linkedOrganizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        updatedFields: JSON.stringify({
+          updateOIDCIntegration: true,
+        }),
+        integrationId: args.oidcIntegrationId,
       },
     });
 
@@ -319,12 +319,12 @@ export class OIDCIntegrationsProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'OIDC_INTEGRATION_DELETED',
-      integrationId: args.oidcIntegrationId,
+      organizationId: integration.linkedOrganizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: integration.linkedOrganizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        integrationId: args.oidcIntegrationId,
       },
     });
 

@@ -94,14 +94,14 @@ export class TokenManager {
 
     await this.auditLog.record({
       eventType: 'TARGET_TOKEN_CREATED',
-      targetId: input.targetId,
-      projectId: input.projectId,
-      alias: input.name,
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        targetId: input.targetId,
+        projectId: input.projectId,
+        alias: input.name,
       },
     });
 
@@ -130,14 +130,14 @@ export class TokenManager {
 
     await this.auditLog.record({
       eventType: 'TARGET_TOKEN_DELETED',
-      targetId: input.targetId,
-      projectId: input.projectId,
-      alias: input.tokenIds.join(', '),
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        targetId: input.targetId,
+        projectId: input.projectId,
+        alias: input.tokenIds.join(', '),
       },
     });
 

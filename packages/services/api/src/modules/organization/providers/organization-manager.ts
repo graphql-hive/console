@@ -350,12 +350,12 @@ export class OrganizationManager {
         this.auditLog.record({
           eventType: 'ORGANIZATION_CREATED',
           organizationId: result.organization.id,
-          organizationSlug: slug,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
           metadata: {
             organizationId: result.organization.id,
-            user: currentUser,
-            userEmail: currentUser.email,
-            userId: currentUser.id,
+            organizationSlug: slug,
           },
         }),
       ]);
@@ -392,12 +392,9 @@ export class OrganizationManager {
     await this.auditLog.record({
       eventType: 'ORGANIZATION_DELETED',
       organizationId: organization.id,
-      metadata: {
-        organizationId: organization.id,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
-      },
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
     });
 
     return deletedOrganization;
@@ -441,13 +438,13 @@ export class OrganizationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_PLAN_UPDATED',
-      newPlan: plan,
-      previousPlan: organization.billingPlan,
+      organizationId: organization.id,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization.id,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        newPlan: plan,
+        previousPlan: organization.billingPlan,
       },
     });
 
@@ -488,17 +485,17 @@ export class OrganizationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'SUBSCRIPTION_UPDATED',
-      updatedFields: JSON.stringify({
-        monthlyRateLimit: {
-          retentionInDays: monthlyRateLimit.retentionInDays,
-          operations: monthlyRateLimit.operations,
-        },
-      }),
+      organizationId: organization.id,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization.id,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        updatedFields: JSON.stringify({
+          monthlyRateLimit: {
+            retentionInDays: monthlyRateLimit.retentionInDays,
+            operations: monthlyRateLimit.operations,
+          },
+        }),
       },
     });
 
@@ -543,13 +540,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ORGANIZATION_SLUG_UPDATED',
-      previousSlug: organization.slug,
-      newSlug: slug,
+      organizationId: organization.id,
+      user: user,
+      userEmail: user.email,
+      userId: user.id,
       metadata: {
-        organizationId: organization.id,
-        user: user,
-        userEmail: user.email,
-        userId: user.id,
+        previousSlug: organization.slug,
+        newSlug: slug,
       },
     });
 
@@ -694,13 +691,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'USER_INVITED',
-      inviteeEmail: email,
-      roleId: role.id,
+      organizationId: organization.id,
+      user: user,
+      userEmail: user.email,
+      userId: user.id,
       metadata: {
-        organizationId: organization.id,
-        user: user,
-        userEmail: user.email,
-        userId: user.id,
+        inviteeEmail: email,
+        roleId: role.id,
       },
     });
 
@@ -769,12 +766,12 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'USER_JOINED',
-      inviteeEmail: user.email,
+      organizationId: organization.id,
+      user: user,
+      userEmail: user.email,
+      userId: user.id,
       metadata: {
-        organizationId: organization.id,
-        user: user,
-        userEmail: user.email,
-        userId: user.id,
+        inviteeEmail: user.email,
       },
     });
 
@@ -845,13 +842,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ORGANIZATION_TRANSFERRED_REQUEST',
-      newOwnerEmail: member.user.email,
-      newOwnerId: member.user.id,
+      organizationId: organization.id,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization.id,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        newOwnerEmail: member.user.email,
+        newOwnerId: member.user.id,
       },
     });
 
@@ -901,13 +898,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ORGANIZATION_TRANSFERRED',
-      newOwnerEmail: currentUser.email,
-      newOwnerId: currentUser.id,
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        newOwnerEmail: currentUser.email,
+        newOwnerId: currentUser.id,
       },
     });
 
@@ -995,13 +992,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'USER_REMOVED',
-      removedUserEmail: member.user.email,
-      removedUserId: member.user.id,
+      organizationId: organization,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        removedUserEmail: member.user.email,
+        removedUserId: member.user.id,
       },
     });
 
@@ -1153,13 +1150,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ROLE_CREATED',
-      roleId: role.id,
-      roleName: role.name,
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        roleId: role.id,
+        roleName: role.name,
       },
     });
 
@@ -1219,13 +1216,13 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ROLE_DELETED',
-      roleId: role.id,
-      roleName: role.name,
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        roleId: role.id,
+        roleName: role.name,
       },
     });
 
@@ -1348,15 +1345,15 @@ export class OrganizationManager {
     if (result) {
       await this.auditLog.record({
         eventType: 'ROLE_ASSIGNED',
-        previousMemberRole: member.role ? member.role.name : null,
-        roleId: newRole.id,
-        updatedMember: member.user.email,
-        userIdAssigned: input.userId,
+        organizationId: input.organizationId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
         metadata: {
-          organizationId: input.organizationId,
-          user: currentUser,
-          userEmail: currentUser.email,
-          userId: currentUser.id,
+          previousMemberRole: member.role ? member.role.name : null,
+          roleId: newRole.id,
+          updatedMember: member.user.email,
+          userIdAssigned: input.userId,
         },
       });
     }
@@ -1491,18 +1488,18 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ROLE_UPDATED',
-      roleId: updatedRole.id,
-      roleName: updatedRole.name,
-      updatedFields: JSON.stringify({
-        name: roleName,
-        description: input.description,
-        scopes: newScopes,
-      }),
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        roleId: updatedRole.id,
+        roleName: updatedRole.name,
+        updatedFields: JSON.stringify({
+          name: roleName,
+          description: input.description,
+          scopes: newScopes,
+        }),
       },
     });
     return {

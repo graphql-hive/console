@@ -144,15 +144,15 @@ export class SchemaPolicyProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_POLICY_UPDATED',
-      allowOverrides: allowOverrides,
-      updatedFields: JSON.stringify({
-        policy: policy,
-      }),
+      organizationId: selector.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: selector.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        allowOverrides: allowOverrides,
+        updatedFields: JSON.stringify({
+          policy: policy,
+        }),
       },
     });
 
@@ -177,13 +177,13 @@ export class SchemaPolicyProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'PROJECT_POLICY_UPDATED',
-      projectId: selector.projectId,
-      policy: JSON.stringify(policy),
+      organizationId: selector.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: selector.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        projectId: selector.projectId,
+        policy: JSON.stringify(policy),
       },
     });
 

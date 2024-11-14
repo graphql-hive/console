@@ -51,15 +51,15 @@ export class BillingProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'SUBSCRIPTION_CREATED',
-      operations: input.reserved.operations,
-      paymentMethodId: input.paymentMethodId,
-      newPlan: 'PRO',
-      previousPlan: 'HOBBY',
+      user: currentUser,
+      organizationId: input.organizationId,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        operations: input.reserved.operations,
+        paymentMethodId: input.paymentMethodId,
+        newPlan: 'PRO',
+        previousPlan: 'HOBBY',
       },
     });
 
@@ -129,13 +129,13 @@ export class BillingProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'SUBSCRIPTION_CANCELED',
-      newPlan: 'HOBBY',
-      previousPlan: 'PRO',
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        newPlan: 'HOBBY',
+        previousPlan: 'PRO',
       },
     });
 

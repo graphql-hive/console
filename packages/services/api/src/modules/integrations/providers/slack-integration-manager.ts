@@ -53,14 +53,14 @@ export class SlackIntegrationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
-      integrationId: input.organizationId,
-      integrationType: 'SLACK',
-      integrationStatus: 'ENABLED',
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        integrationId: input.organizationId,
+        integrationType: 'SLACK',
+        integrationStatus: 'ENABLED',
       },
     });
 
@@ -84,14 +84,14 @@ export class SlackIntegrationManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
-      integrationId: input.organizationId,
-      integrationType: 'GITHUB',
-      integrationStatus: 'DISABLED',
+      organizationId: input.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: input.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
       },
     });
 

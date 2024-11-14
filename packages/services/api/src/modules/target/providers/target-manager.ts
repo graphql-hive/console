@@ -94,14 +94,14 @@ export class TargetManager {
       const currentUser = await this.session.getViewer();
       await this.auditLog.record({
         eventType: 'TARGET_CREATED',
-        projectId: result.target.projectId,
-        targetId: result.target.id,
-        targetSlug: result.target.slug,
+        organizationId: result.target.orgId,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
         metadata: {
-          organizationId: result.target.orgId,
-          user: currentUser,
-          userEmail: currentUser.email,
-          userId: currentUser.id,
+          projectId: result.target.projectId,
+          targetId: result.target.id,
+          targetSlug: result.target.slug,
         },
       });
     }
@@ -152,14 +152,14 @@ export class TargetManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'TARGET_DELETED',
-      targetId: target,
-      targetSlug: deletedTarget.slug,
-      projectId: project,
+      organizationId: organization,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        targetId: target,
+        targetSlug: deletedTarget.slug,
+        projectId: project,
       },
     });
 
@@ -339,15 +339,15 @@ export class TargetManager {
 
       await this.auditLog.record({
         eventType: 'TARGET_SLUG_UPDATED',
-        projectId: project,
-        targetId: target,
-        newSlug: result.target.slug,
-        previousSlug: slug,
+        organizationId: organization,
+        user: user,
+        userEmail: user.email,
+        userId: user.id,
         metadata: {
-          organizationId: organization,
-          user: user,
-          userEmail: user.email,
-          userId: user.id,
+          projectId: project,
+          targetId: target,
+          newSlug: result.target.slug,
+          previousSlug: slug,
         },
       });
     }
@@ -396,14 +396,14 @@ export class TargetManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'TARGET_GRAPHQL_ENDPOINT_URL_UPDATED',
-      projectId: args.projectId,
-      targetId: args.targetId,
-      graphqlEndpointUrl: args.graphqlEndpointUrl,
+      organizationId: args.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: args.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        projectId: args.projectId,
+        targetId: args.targetId,
+        graphqlEndpointUrl: args.graphqlEndpointUrl,
       },
     });
 
@@ -469,14 +469,14 @@ export class TargetManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'TARGET_SCHEMA_COMPOSITION_UPDATED',
-      projectId: args.projectId,
-      targetId: args.targetId,
-      nativeComposition: args.nativeComposition,
+      organizationId: args.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: args.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        projectId: args.projectId,
+        targetId: args.targetId,
+        nativeComposition: args.nativeComposition,
       },
     });
 

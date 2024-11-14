@@ -151,14 +151,14 @@ export class CollectionProvider {
 
     await this.auditLog.record({
       eventType: 'COLLECTION_CREATED',
-      collectionId: collection.id,
-      collectionName: collection.title,
-      targetId: target.id,
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: collection.id,
+        collectionName: collection.title,
+        targetId: target.id,
       },
     });
 
@@ -221,17 +221,17 @@ export class CollectionProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'COLLECTION_UPDATED',
-      collectionId: collection.id,
-      collectionName: collection.title,
-      updatedFields: JSON.stringify({
-        name: args.name,
-        description: args.description || null,
-      }),
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: collection.id,
+        collectionName: collection.title,
+        updatedFields: JSON.stringify({
+          name: args.name,
+          description: args.description || null,
+        }),
       },
     });
 
@@ -288,13 +288,13 @@ export class CollectionProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'COLLECTION_DELETED',
-      collectionId: args.collectionId,
-      collectionName: collection.title,
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: args.collectionId,
+        collectionName: collection.title,
       },
     });
 
@@ -389,16 +389,16 @@ export class CollectionProvider {
 
     await this.auditLog.record({
       eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_CREATED',
-      collectionId: collection.id,
-      collectionName: collection.title,
-      operationId: document.id,
-      operationQuery: document.contents,
-      targetId: target.id,
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
+        operationQuery: document.contents,
+        targetId: target.id,
       },
     });
 
@@ -508,20 +508,20 @@ export class CollectionProvider {
 
     await this.auditLog.record({
       eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_UPDATED',
-      collectionId: collection.id,
-      collectionName: collection.title,
-      operationId: document.id,
-      updatedFields: JSON.stringify({
-        name: data.name,
-        query: data.query,
-        variables: data.variables,
-        headers: data.headers,
-      }),
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
+        updatedFields: JSON.stringify({
+          name: data.name,
+          query: data.query,
+          variables: data.variables,
+          headers: data.headers,
+        }),
       },
     });
 
@@ -605,14 +605,14 @@ export class CollectionProvider {
 
     await this.auditLog.record({
       eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_DELETED',
-      collectionId: collection.id,
-      collectionName: collection.title,
-      operationId: document.id,
+      organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
       },
     });
 

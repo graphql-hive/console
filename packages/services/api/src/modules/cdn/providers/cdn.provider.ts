@@ -227,14 +227,14 @@ export class CdnProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'TARGET_CDN_ACCESS_TOKEN_CREATED',
-      targetId: args.targetId,
-      projectId: args.projectId,
-      alias: args.alias,
+      organizationId: args.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: args.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: args.alias,
       },
     });
 
@@ -338,14 +338,14 @@ export class CdnProvider {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'TARGET_CDN_ACCESS_TOKEN_DELETED',
-      targetId: args.targetId,
-      projectId: args.projectId,
-      alias: record.alias,
+      organizationId: args.organizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: args.organizationId,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: record.alias,
       },
     });
 

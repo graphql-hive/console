@@ -82,14 +82,14 @@ export class ProjectManager {
         }),
         this.auditLog.record({
           eventType: 'PROJECT_CREATED',
-          projectId: result.project.id,
-          projectType: type,
-          projectSlug: slug,
+          organizationId: organization,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
           metadata: {
-            organizationId: organization,
-            user: currentUser,
-            userEmail: currentUser.email,
-            userId: currentUser.id,
+            projectId: result.project.id,
+            projectType: type,
+            projectSlug: slug,
           },
         }),
       ]);
@@ -118,13 +118,13 @@ export class ProjectManager {
     const currentUser = await this.session.getViewer();
     await this.auditLog.record({
       eventType: 'PROJECT_DELETED',
-      projectId: deletedProject.id,
-      projectSlug: deletedProject.slug,
+      organizationId: organization,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
       metadata: {
-        organizationId: organization,
-        user: currentUser,
-        userEmail: currentUser.email,
-        userId: currentUser.id,
+        projectId: deletedProject.id,
+        projectSlug: deletedProject.slug,
       },
     });
     await this.tokenStorage.invalidateTokens(deletedProject.tokens);
@@ -271,13 +271,13 @@ export class ProjectManager {
       const currentUser = await this.session.getViewer();
       await this.auditLog.record({
         eventType: 'PROJECT_SLUG_UPDATED',
-        previousSlug: slug,
-        newSlug: result.project.slug,
+        organizationId: organization,
+        user: currentUser,
+        userEmail: currentUser.email,
+        userId: currentUser.id,
         metadata: {
-          organizationId: organization,
-          user: currentUser,
-          userEmail: currentUser.email,
-          userId: currentUser.id,
+          previousSlug: slug,
+          newSlug: result.project.slug,
         },
       });
     }
