@@ -67,8 +67,8 @@ export class AuditLogManager {
       throw new GraphQLError('Unauthorized: You are not authorized to perform this action');
     }
 
-    const sqlFirst = sql.raw(pagination?.first ? pagination.first.toString() : '25');
-    const sqlAfter = sql.raw(pagination?.after ? pagination.after.toString() : '0');
+    const sqlFirst = sql.raw(String(pagination?.first ?? 25));
+    const sqlAfter = sql.raw(String(pagination?.after ?? 0));
 
     const where: SqlValue[] = [];
     where.push(sql`organization_id = ${organizationSlug}`);
@@ -97,51 +97,6 @@ export class AuditLogManager {
 
     return {
       data,
-    };
-  }
-
-  async uploadToS3(
-    data: string,
-    key: string,
-  ): Promise<{ ok: { url: string } } | { error: { message: string } }> {
-    const s3Storage = this.s3Config[0];
-    const { endpoint, bucket, client } = s3Storage;
-
-    const uploadResult = await client.fetch([endpoint, bucket, key].join('/'), {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'text/csv',
-      },
-      body: data,
-    });
-
-    if (!uploadResult.ok) {
-      return {
-        error: {
-          message: 'Failed to upload the file',
-        },
-      };
-    }
-
-    const getPresignedUrl = await client.fetch([endpoint, bucket, key].join('/'), {
-      method: 'GET',
-      aws: {
-        signQuery: true,
-      },
-    });
-
-    if (!getPresignedUrl.ok) {
-      return {
-        error: {
-          message: 'Failed to get the pre-signed URL',
-        },
-      };
-    }
-
-    return {
-      ok: {
-        url: getPresignedUrl.url,
-      },
     };
   }
 
