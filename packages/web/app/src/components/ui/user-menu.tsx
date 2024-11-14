@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import cookies from 'js-cookie';
 import { LifeBuoyIcon, LoaderCircleIcon } from 'lucide-react';
-import { Control, useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
