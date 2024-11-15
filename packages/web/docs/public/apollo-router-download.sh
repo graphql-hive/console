@@ -11,7 +11,7 @@ parse_args() {
     key="$1"
 
     case $key in
-      -c | --commit)
+      -c | --commit | -v | --version)
         COMMIT="$2"
         shift # past commit argument
         shift # past commit value
