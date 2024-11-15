@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { OperationInDocumentCollectionUpdatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -18,12 +19,5 @@ export const OperationInDocumentCollectionUpdatedAuditLog: OperationInDocumentCo
     updatedFields: e => e.metadata.updatedFields,
     operationId: e => e.metadata.operationId,
     id: e => e.id,
-    record: async (event, _arg, _ctx) => {
-      return {
-        userEmail: event.user_email,
-        userId: event.user_id,
-        organizationId: event.organization_id,
-        user: event.metadata.user,
-      };
-    },
+    record: e => auditLogUserSchema.parse(e),
   };

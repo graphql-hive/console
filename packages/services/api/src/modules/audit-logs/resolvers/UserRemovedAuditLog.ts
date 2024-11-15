@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { UserRemovedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -15,12 +16,5 @@ export const UserRemovedAuditLog: UserRemovedAuditLogResolvers = {
   removedUserEmail: e => e.metadata.removedUserEmail,
   removedUserId: e => e.metadata.removedUserId,
   id: e => e.id,
-  record: async (event, _arg, _ctx) => {
-    return {
-      userEmail: event.user_email,
-      userId: event.user_id,
-      organizationId: event.organization_id,
-      user: event.metadata.user,
-    };
-  },
+  record: e => auditLogUserSchema.parse(e),
 };

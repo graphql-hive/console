@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { CollectionCreatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -16,12 +17,5 @@ export const CollectionCreatedAuditLog: CollectionCreatedAuditLogResolvers = {
   collectionName: e => e.metadata.collectionName,
   targetId: e => e.metadata.targetId,
   id: e => e.id,
-  record: async (event, _arg, _ctx) => {
-    return {
-      userEmail: event.user_email,
-      userId: event.user_id,
-      organizationId: event.organization_id,
-      user: event.metadata.user,
-    };
-  },
+  record: e => auditLogUserSchema.parse(e),
 };

@@ -323,3 +323,23 @@ export const auditLogSchema = z.discriminatedUnion('eventType', [
 ]);
 
 export type AuditLogSchemaEvent = z.infer<typeof auditLogSchema>;
+
+export const auditLogUserSchema = z.object({
+  userId: z.string(),
+  userEmail: z.string(),
+  organizationId: z.string(),
+  user: z.object({
+    id: z.string(),
+    email: z.string(),
+    fullName: z.string(),
+    displayName: z.string(),
+    provider: z.enum(['GITHUB', 'GOOGLE', 'OIDC', 'USERNAME_PASSWORD']),
+    superTokensUserId: z.string().nullable(),
+    isAdmin: z.boolean(),
+    externalAuthUserId: z.string().nullable(),
+    oidcIntegrationId: z.string().nullable(),
+    zendeskId: z.string().nullable(),
+  }),
+});
+
+export type AuditLogUser = z.infer<typeof auditLogUserSchema>;

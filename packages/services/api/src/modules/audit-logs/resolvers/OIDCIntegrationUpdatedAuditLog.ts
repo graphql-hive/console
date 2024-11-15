@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { OidcIntegrationUpdatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -15,12 +16,5 @@ export const OIDCIntegrationUpdatedAuditLog: OidcIntegrationUpdatedAuditLogResol
   updatedFields: e => e.metadata.updatedFields,
   integrationId: e => e.metadata.integrationId,
   id: e => e.id,
-  record: async (event, _arg, _ctx) => {
-    return {
-      userEmail: event.user_email,
-      userId: event.user_id,
-      organizationId: event.organization_id,
-      user: event.metadata.user,
-    };
-  },
+  record: e => auditLogUserSchema.parse(e),
 };

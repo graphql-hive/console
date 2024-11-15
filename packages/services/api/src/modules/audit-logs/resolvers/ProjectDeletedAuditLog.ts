@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { ProjectDeletedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -15,12 +16,5 @@ export const ProjectDeletedAuditLog: ProjectDeletedAuditLogResolvers = {
   projectId: e => e.metadata.projectId,
   projectSlug: e => e.metadata.projectSlug,
   id: e => e.id,
-  record: async (event, _arg, _ctx) => {
-    return {
-      userEmail: event.user_email,
-      userId: event.user_id,
-      organizationId: event.organization_id,
-      user: event.metadata.user,
-    };
-  },
+  record: e => auditLogUserSchema.parse(e),
 };

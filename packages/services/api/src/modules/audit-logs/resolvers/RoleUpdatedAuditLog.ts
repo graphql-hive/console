@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { RoleUpdatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -16,12 +17,5 @@ export const RoleUpdatedAuditLog: RoleUpdatedAuditLogResolvers = {
   updatedFields: e => e.metadata.updatedFields,
   roleName: e => e.metadata.roleName,
   id: e => e.id,
-  record: async (event, _arg, _ctx) => {
-    return {
-      userEmail: event.user_email,
-      userId: event.user_id,
-      organizationId: event.organization_id,
-      user: event.metadata.user,
-    };
-  },
+  record: e => auditLogUserSchema.parse(e),
 };

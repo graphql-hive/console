@@ -1,3 +1,4 @@
+import { auditLogUserSchema } from '../providers/audit-logs-types';
 import type { TargetGraphQlEndpointUrlUpdatedAuditLogResolvers } from './../../../__generated__/types';
 
 /*
@@ -17,12 +18,5 @@ export const TargetGraphQLEndpointUrlUpdatedAuditLog: TargetGraphQlEndpointUrlUp
     targetId: e => e.metadata.targetId,
     graphqlEndpointUrl: e => e.metadata.graphqlEndpointUrl,
     id: e => e.id,
-    record: async (event, _arg, _ctx) => {
-      return {
-        userEmail: event.user_email,
-        userId: event.user_id,
-        organizationId: event.organization_id,
-        user: event.metadata.user,
-      };
-    },
+    record: e => auditLogUserSchema.parse(e),
   };

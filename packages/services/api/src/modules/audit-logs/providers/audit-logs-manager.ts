@@ -18,14 +18,11 @@ const auditLogEventTypes = auditLogSchema.options.map(option => option.shape.eve
 export const AuditLogClickhouseObjectModel = z.object({
   id: z.string(),
   timestamp: z.string(),
+  organization_id: z.string(),
   event_action: z.enum(auditLogEventTypes as [string, ...string[]]),
   user_id: z.string(),
   user_email: z.string(),
   metadata: z.string().transform(x => JSON.parse(x)),
-});
-
-const AuditLogTotalModel = z.object({
-  count: z.number(),
 });
 
 export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;
@@ -74,12 +71,14 @@ export class AuditLogManager {
     if (!isOwner) {
       throw new GraphQLError('Unauthorized: You are not authorized to perform this action');
     }
-
     const limit = sql.raw(String(pagination?.first ?? 25));
     const newCursorId = pagination?.cursorId ? decodeHashBasedCursor(pagination?.cursorId) : null;
+    const lastYear = this.formatToClickhouseDateTime(
+      new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString(),
+    );
     const cursorTimestamp = pagination?.cursorTimestamp
       ? this.formatToClickhouseDateTime(pagination.cursorTimestamp)
-      : '1960-11-14 16:49:13';
+      : lastYear;
 
     const where: SqlValue[] = [];
     where.push(sql`organization_id = ${organizationSlug}`);
@@ -89,14 +88,15 @@ export class AuditLogManager {
       const to = this.formatToClickhouseDateTime(filter.endDate.toISOString());
       where.push(sql`timestamp >= ${from} AND timestamp <= ${to}`);
     }
-    if (pagination?.cursorId || pagination?.cursorTimestamp) {
-      where.push(sql`timestamp = ${cursorTimestamp}`);
+
+    if (pagination?.cursorId) {
       where.push(sql`id < ${String(newCursorId?.id)}`);
+    } else if (pagination?.cursorTimestamp) {
+      where.push(sql`timestamp = ${cursorTimestamp}`);
     } else {
       where.push(sql`timestamp <= ${cursorTimestamp}`);
     }
     const whereClause = where.length > 0 ? sql`WHERE ${sql.join(where, ' AND ')}` : sql``;
-    console.log('whereClause', whereClause);
 
     const result = await this.clickHouse.query({
       query: sql`
@@ -127,7 +127,7 @@ export class AuditLogManager {
 
     const result = await this.clickHouse.query({
       query: sql`
-        SELECT count()
+        SELECT *
         FROM audit_logs
         WHERE organization_id = ${organizationSlug}
       `,
@@ -135,9 +135,7 @@ export class AuditLogManager {
       timeout: 10000,
     });
 
-    const { count } = AuditLogTotalModel.parse(result.data[0]);
-
-    return count;
+    return result.rows;
   }
 
   async exportAndSendEmail(
@@ -177,49 +175,28 @@ export class AuditLogManager {
         };
       }
 
-      const data = getAllAuditLogs.data.map(log => {
-        const { id, timestamp, user_id, user_email, event_action, metadata } = log;
-        const newUser = {
-          id: metadata.user.id,
-          email: metadata.user.email,
-          provider: metadata.user.provider,
-          fullName: metadata.user.fullName,
-          displayName: metadata.user.displayName,
-        };
-        delete metadata.user;
-        const newMetadata = {
-          ...newUser,
-          ...metadata,
-        };
-        return {
-          ID: id,
-          Type: event_action,
-          CreatedAt: timestamp,
-          UserID: user_id,
-          UserEmail: user_email,
-          Metadata: JSON.stringify(newMetadata),
-        };
-      });
-
-      const columns = ['ID', 'Type', 'CreatedAt', 'UserID', 'UserEmail', 'Metadata'];
       const currentDate = new Date().toLocaleDateString();
       const currentTime = new Date().toLocaleTimeString();
-
       const customHeader = [
         [`Hive Audit Logs for Organization: ${organizationSlug}`],
         [`Date: ${currentDate}`],
         [`Time: ${currentTime}`],
         [`User: ${email}`],
         [''], // Blank row
-        [''], // Another blank row to separate sections
       ];
 
       const csvData = await new Promise<string>((resolve, reject) => {
         stringify(
-          data,
+          getAllAuditLogs.data,
           {
-            header: true,
-            columns,
+            columns: {
+              id: 'ID',
+              timestamp: 'Created At',
+              event_action: 'Event Type',
+              user_id: 'User ID',
+              user_email: 'User Email',
+              metadata: 'Metadata',
+            },
           },
           (err, output) => {
             if (err) {

@@ -2,31 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { captureException } from '@sentry/node';
-import { type User } from '../../../shared/entities';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { Logger } from '../../shared/providers/logger';
-import { auditLogSchema, type AuditLogSchemaEvent } from './audit-logs-types';
+import { auditLogSchema, AuditLogUser, type AuditLogSchemaEvent } from './audit-logs-types';
 
 type AuditLogEventTypeToMetadata = {
   [K in AuditLogSchemaEvent['eventType']]: Extract<AuditLogSchemaEvent, { eventType: K }>;
 };
 
-type AuditLogUser = {
-  userId: string;
-  userEmail: string;
-  organizationId: string;
-  user: User;
-};
-
-type AuditLogRecordEvent = AuditLogUser &
-  AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
-
-const userContextSchema = z.object({
+const UserContextSchema = z.object({
   fullName: z.string(),
   email: z.string(),
   displayName: z.string(),
   provider: z.string(),
 });
+
+type AuditLogRecordEvent = AuditLogUser &
+  AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
 
 @Injectable({
   scope: Scope.Operation,
@@ -51,7 +43,7 @@ export class AuditLogRecorder {
       this.logger.debug('Creating audit log event', { eventType });
 
       const parsedMetadata = auditLogSchema.parse(data);
-      const parsedContext = userContextSchema.parse(data.user);
+      const parsedContext = UserContextSchema.parse(data.user);
       const eventMetadata = JSON.stringify({
         ...parsedMetadata,
         ...parsedContext,
