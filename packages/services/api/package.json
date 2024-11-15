@@ -63,7 +63,7 @@
     "supertokens-node": "16.7.5",
     "tslib": "2.8.0",
     "undici": "6.20.1",
-    "vitest": "2.0.5",
+    "vitest": "2.1.5",
     "zod": "3.23.8",
     "zod-validation-error": "3.4.0"
   }
