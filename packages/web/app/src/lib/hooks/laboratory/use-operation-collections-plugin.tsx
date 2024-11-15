@@ -123,11 +123,9 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
 };
 
 export function Content() {
-  const { organizationSlug, projectSlug, targetSlug } = useParams({ strict: false }) as {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-  };
+  const { organizationSlug, projectSlug, targetSlug } = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
+  });
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {

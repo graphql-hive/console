@@ -350,6 +350,8 @@ const actionDefinitions = {
   'target:modifySettings': defaultTargetIdentity,
   'laboratory:describe': defaultTargetIdentity,
   'laboratory:modify': defaultTargetIdentity,
+  'laboratory:createPreflightScript': defaultTargetIdentity,
+  'laboratory:updatePreflightScript': defaultTargetIdentity,
   'appDeployment:describe': defaultTargetIdentity,
   'appDeployment:create': defaultAppDeploymentIdentity,
   'appDeployment:publish': defaultAppDeploymentIdentity,
