@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, InfoIcon } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, InfoIcon, XIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import {
@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -403,7 +404,7 @@ function PermissionSelector(props: {
   const [focusedPermission, setFocusedPermission] = useState(null as string | null);
 
   const [openAccordions, setOpenAccordions] = useState([] as Array<string>);
-  console.log(openAccordions);
+
   return (
     <Accordion
       type="multiple"
@@ -563,6 +564,9 @@ function GroupTeaser(props: {
   title: string;
   grantedPermissions: GrantedPermissions;
   onClick: () => void;
+  mode: GroupAccessMode;
+  resourceLevel: ResourceLevel | null;
+  resources: Array<string>;
 }) {
   const assignedPermissionsCount = Array.from(Object.values(props.grantedPermissions)).reduce(
     (current, next) => {
@@ -576,11 +580,44 @@ function GroupTeaser(props: {
 
   return (
     <Button variant="outline" className="w-full" onClick={props.onClick}>
+      {props.resourceLevel && <Badge className="mr-2 capitalize">{props.resourceLevel}</Badge>}
       <span className="ml-0 mr-auto">{props.title}</span>
-      {assignedPermissionsCount > 0 && <>{assignedPermissionsCount} selected</>}
+      {props.resourceLevel && props.resources.length === 0 ? (
+        <>
+          <span className="text-red-400">No {props.resourceLevel}s selected</span>
+        </>
+      ) : (
+        <>
+          {props.mode === GroupAccessMode.granular &&
+            (assignedPermissionsCount > 0 ? (
+              <>{assignedPermissionsCount} selected</>
+            ) : (
+              props.resourceLevel && <span className="text-red-400">No permissions selected</span>
+            ))}
+          {props.mode === GroupAccessMode.allowAll && <>All allowed</>}
+          {props.mode === GroupAccessMode.denyAll && <>All denied</>}
+        </>
+      )}
       <ChevronRight size={16} className="ml-2" />
     </Button>
   );
+}
+
+function ResourceBadge(props: { name: string; onDelete: () => void }) {
+  return (
+    <Badge className="mr-1 pr-1">
+      {props.name}
+      <button className="ml-1" onClick={props.onDelete}>
+        <XIcon size="10" />
+      </button>
+    </Badge>
+  );
+}
+
+const enum GroupAccessMode {
+  granular = 'granular',
+  allowAll = 'allowAll',
+  denyAll = 'denyAll',
 }
 
 type Group = {
@@ -588,43 +625,62 @@ type Group = {
   level: ResourceLevel;
   title: string;
   permissions: GrantedPermissions;
-  canDelete?: true;
+  mode: GroupAccessMode;
+  resources: Array<string>;
 };
 
-function createGroup(args: {
-  id: string;
-  level: ResourceLevel;
-  title: string;
-  canDelete?: true;
-}): Group {
+function createGroup(args: { id: string; level: ResourceLevel; title: string }): Group {
   return {
     ...args,
     permissions: {},
+    mode: GroupAccessMode.granular,
+    resources: [],
   };
 }
 
-function GG(props: { mode?: 'read-only'; role?: { name: string; description: string } }) {
+function GG() {
   const form = useForm({
     resolver: zodResolver(roleFormSchema),
     mode: 'onChange',
     defaultValues: {
-      name: props.role?.name ?? 'New Role',
-      description: props.role?.description,
+      name: 'New Role',
+      description: '',
     },
-    disabled: props.mode === 'read-only',
   });
 
-  const [selectedGroupId, setSelectedGroupId] = useState<null | string>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<null | string>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hive:prototype:permissions')!).selectedGroupId;
+    } catch (err) {
+      return null;
+    }
+  });
 
-  const [dynamicGroups, setDynamicGroups] = useState<Array<Group>>(() => [
-    createGroup({
-      id: 'default',
-      level: ResourceLevel.organization,
-      title: 'Global Organization Wide Permissions',
-    }),
-  ]);
+  const [dynamicGroups, setDynamicGroups] = useState<Array<Group>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hive:prototype:permissions')!).dynamicGroups;
+    } catch (err) {
+      return [
+        createGroup({
+          id: 'default',
+          level: ResourceLevel.organization,
+          title: 'Global Organization Wide Permissions',
+        }),
+      ];
+    }
+  });
 
   const selectedGroup = dynamicGroups.find(group => group.id === selectedGroupId) ?? null;
+
+  useEffect(() => {
+    localStorage.setItem(
+      'hive:prototype:permissions',
+      JSON.stringify({
+        selectedGroupId,
+        dynamicGroups,
+      }),
+    );
+  }, [selectedGroupId, dynamicGroups]);
 
   return (
     <Card>
@@ -686,6 +742,9 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                           title={group.title}
                           grantedPermissions={group.permissions}
                           onClick={() => setSelectedGroupId(group.id)}
+                          mode={group.mode}
+                          resourceLevel={group.id === 'default' ? null : group.level}
+                          resources={group.resources}
                         />
                       );
                     })}
@@ -705,8 +764,7 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                             createGroup({
                               id,
                               level: ResourceLevel.project,
-                              title: 'Project ' + id,
-                              canDelete: true,
+                              title: 'New Group' + id,
                             }),
                           ]);
                           setSelectedGroupId(id);
@@ -722,8 +780,7 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                             createGroup({
                               id,
                               level: ResourceLevel.target,
-                              title: 'Target ' + id,
-                              canDelete: true,
+                              title: 'New Group' + id,
                             }),
                           ]);
                           setSelectedGroupId(id);
@@ -740,7 +797,6 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                               id,
                               level: ResourceLevel.service,
                               title: 'Service ' + id,
-                              canDelete: true,
                             }),
                           ]);
                           setSelectedGroupId(id);
@@ -764,37 +820,180 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                 </span>{' '}
                 <span>{'>'}</span> {selectedGroup.title}
               </CardTitle>
-              <CardDescription>
-                These permissions apply to all resources within the organization.
-                <br /> E.g. if you grant access to projects permissions, these apply to all
-                projects.
-              </CardDescription>
+              {selectedGroup.id === 'default' && (
+                <CardDescription>
+                  These permissions apply to all resources within the organization.
+                  <br /> E.g. if you grant access to projects permissions, these apply to all
+                  projects.
+                </CardDescription>
+              )}
+              {selectedGroup.level === ResourceLevel.project && (
+                <CardDescription>
+                  These permissions apply to all the selected projects.
+                  <br /> E.g. if you grant access to access the laboratory, the member is able to
+                  access the laboratory on all targets within all the selected projects.
+                </CardDescription>
+              )}
+              {selectedGroup.level === ResourceLevel.target && (
+                <CardDescription>
+                  These permissions apply to all the selected targets.
+                  <br /> E.g. if you grant access to approve schema checks, the member is able to
+                  approve schema checks on all services within the target.
+                </CardDescription>
+              )}
+              {selectedGroup.level === ResourceLevel.service && (
+                <CardDescription>
+                  These permission apply to all the selected services.
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="max-h-[500px] overflow-scroll pr-5">
-                <PermissionSelector
-                  resourceLevel={selectedGroup.level}
-                  grantedPermissions={selectedGroup.permissions}
-                  updateGrantedPermissions={updates => {
-                    setDynamicGroups(groups =>
-                      groups.map(group => {
-                        if (group.id !== selectedGroup.id) {
-                          return group;
-                        }
+              <div className="flex flex-row space-x-6">
+                <div className="w-72 shrink-0 space-y-4">
+                  {selectedGroup.level !== ResourceLevel.organization && (
+                    <>
+                      <p>Group Name</p>
+                      <Input value={selectedGroup.title} />
+                      <p>Selected {selectedGroup.level}s</p>
+                      <div>
+                        <Input
+                          onKeyUp={ev => {
+                            if (ev.key !== 'Enter') {
+                              return;
+                            }
+                            const value: string = (ev.target as any).value;
+                            (ev.target as any).value = '';
 
-                        return {
-                          ...group,
-                          permissions: { ...group.permissions, ...updates },
-                        };
-                      }),
-                    );
-                  }}
-                />
+                            setDynamicGroups(groups =>
+                              groups.map(group => {
+                                if (
+                                  group.id !== selectedGroup.id ||
+                                  group.resources.includes(value)
+                                ) {
+                                  return group;
+                                }
+
+                                return {
+                                  ...group,
+                                  resources: [...group.resources, value],
+                                };
+                              }),
+                            );
+                          }}
+                        />
+                        <div className="mt-2">
+                          {selectedGroup.resources.map(resource => (
+                            <ResourceBadge
+                              key={resource}
+                              name={resource}
+                              onDelete={() => {
+                                setDynamicGroups(groups =>
+                                  groups.map(group => {
+                                    if (group.id !== selectedGroup.id) {
+                                      return group;
+                                    }
+
+                                    return {
+                                      ...group,
+                                      resources: group.resources.filter(name => name !== resource),
+                                    };
+                                  }),
+                                );
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <p>Mode</p>
+                  <Select
+                    value={selectedGroup.mode}
+                    onValueChange={value => {
+                      setDynamicGroups(groups =>
+                        groups.map(group => {
+                          if (group.id !== selectedGroup.id) {
+                            return group;
+                          }
+
+                          return {
+                            ...group,
+                            mode: value as GroupAccessMode,
+                          };
+                        }),
+                      );
+                    }}
+                  >
+                    <SelectTrigger className="w-[150px] shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GroupAccessMode.granular}>Granular</SelectItem>
+                      <SelectItem value={GroupAccessMode.allowAll}>Allow All</SelectItem>
+                      <SelectItem value={GroupAccessMode.denyAll}>Deny all</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {selectedGroup.mode === GroupAccessMode.granular && (
+                    <p className="text-muted-foreground text-sm">
+                      Grant specific permissions for the specified resources based on your
+                      selection.
+                    </p>
+                  )}
+                  {selectedGroup.mode === GroupAccessMode.allowAll && (
+                    <p className="text-muted-foreground text-sm">
+                      All permissions are granted for the specified resources.
+                    </p>
+                  )}
+                  {selectedGroup.mode === GroupAccessMode.denyAll && (
+                    <p className="text-muted-foreground text-sm">
+                      All permissions are denied for the specified resources.
+                    </p>
+                  )}
+                </div>
+                <div
+                  className={cn(
+                    'max-h-[500px] w-full overflow-scroll pr-5',
+                    !!(
+                      selectedGroup.mode === GroupAccessMode.allowAll ||
+                      selectedGroup.mode === GroupAccessMode.denyAll
+                    ) && 'pointer-events-none opacity-25',
+                  )}
+                >
+                  <PermissionSelector
+                    resourceLevel={selectedGroup.level}
+                    grantedPermissions={
+                      selectedGroup.mode === GroupAccessMode.allowAll ||
+                      selectedGroup.mode === GroupAccessMode.denyAll
+                        ? {}
+                        : selectedGroup.permissions
+                    }
+                    updateGrantedPermissions={updates => {
+                      setDynamicGroups(groups =>
+                        groups.map(group => {
+                          if (group.id !== selectedGroup.id) {
+                            return group;
+                          }
+
+                          return {
+                            ...group,
+                            permissions: { ...group.permissions, ...updates },
+                          };
+                        }),
+                      );
+                    }}
+                  />
+                </div>
               </div>
             </CardContent>
             <CardFooter>
               <div className="ml-auto mr-0">
-                {selectedGroup.canDelete && (
+                {selectedGroup.resources.length === 0 &&
+                  selectedGroup.level !== ResourceLevel.organization && (
+                    <span className="pr-5 text-red-400">
+                      Please add at least one {selectedGroup.level}.
+                    </span>
+                  )}
+                {selectedGroup.id !== 'default' && (
                   <Button
                     className="mr-2"
                     onClick={() =>
@@ -806,7 +1005,13 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                     Delete
                   </Button>
                 )}
-                <Button onClick={() => setSelectedGroupId(null)}>
+                <Button
+                  onClick={() => setSelectedGroupId(null)}
+                  disabled={
+                    selectedGroup.resources.length === 0 &&
+                    selectedGroup.level !== ResourceLevel.organization
+                  }
+                >
                   <Check size={12} /> Apply
                 </Button>
               </div>
@@ -831,6 +1036,14 @@ export const Default: Story = {
   render: () => (
     <div className="p-5">
       <GG />
+      <Button
+        onClick={() => {
+          localStorage.removeItem('hive:prototype:permissions');
+        }}
+        className="mt-8"
+      >
+        Reset Local Storage state
+      </Button>
     </div>
   ),
 };
