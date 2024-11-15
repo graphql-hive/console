@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { encodeHashBasedCursor } from '@hive/storage';
+import { AuditLogManager } from '../../audit-logs/providers/audit-logs-manager';
 import { Session } from '../../auth/lib/authz';
 import {
   isOrganizationScope,
@@ -11,6 +13,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'auditLogs'
   | 'cleanId'
   | 'getStarted'
   | 'id'
@@ -25,6 +28,7 @@ export const Organization: Pick<
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
+  | 'viewerCanExportAuditLogs'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
   | 'viewerCanMigrateLegacyMemberRoles'
@@ -226,5 +230,51 @@ export const Organization: Pick<
       .getOrganizationOwner({ organizationId: organization.id });
     const viewer = await session.getViewer();
     return viewer.id === owner.id;
+  },
+  auditLogs: async (organization, arg, ctx) => {
+    const auditLogs = await ctx.injector.get(AuditLogManager).getPaginatedAuditLogs(
+      organization.id,
+      {
+        cursorId: arg.pagination?.cursorId,
+        cursorTimestamp: arg.pagination?.cursorTimestamp,
+        first: arg.pagination?.first ?? 25,
+      },
+      {
+        endDate: arg.filter?.endDate ? arg.filter.endDate : undefined,
+        startDate: arg.filter?.startDate ? arg.filter.startDate : undefined,
+      },
+    );
+
+    let items = auditLogs.data.map(row => {
+      return {
+        cursor: encodeHashBasedCursor({ id: row.id }),
+        node: row,
+      };
+    });
+
+    const hasNextPage = items.length > (arg.pagination?.first ?? 25);
+    const hasPreviousPage = !!arg.pagination?.cursorId;
+    const startCursor = items[0]?.cursor;
+    const endCursor = items[items.length - 1]?.cursor;
+
+    return {
+      edges: items,
+      pageInfo: {
+        endCursor,
+        hasNextPage,
+        hasPreviousPage,
+        startCursor,
+      },
+      __typename: 'AuditLogConnection',
+    };
+  },
+  viewerCanExportAuditLogs: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'auditLog:export',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };

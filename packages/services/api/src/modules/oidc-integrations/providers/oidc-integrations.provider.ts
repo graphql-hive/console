@@ -2,6 +2,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
@@ -20,6 +21,7 @@ export class OIDCIntegrationsProvider {
     logger: Logger,
     private storage: Storage,
     private crypto: CryptoProvider,
+    private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
     private session: Session,
@@ -129,6 +131,18 @@ export class OIDCIntegrationsProvider {
       });
 
       if (creationResult.type === 'ok') {
+        const currentUser = await this.session.getViewer();
+        await this.auditLog.record({
+          eventType: 'OIDC_INTEGRATION_CREATED',
+          organizationId: args.organizationId,
+          user: currentUser,
+          userEmail: currentUser.email,
+          userId: currentUser.id,
+          metadata: {
+            integrationId: creationResult.oidcIntegration.id,
+          },
+        });
+
         return creationResult;
       }
 
@@ -237,6 +251,21 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'OIDC_INTEGRATION_UPDATED',
+      organizationId: integration.linkedOrganizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
+      metadata: {
+        updatedFields: JSON.stringify({
+          updateOIDCIntegration: true,
+        }),
+        integrationId: args.oidcIntegrationId,
+      },
+    });
+
     return {
       type: 'error',
       message: "Couldn't update integration.",
@@ -286,6 +315,18 @@ export class OIDCIntegrationsProvider {
     });
 
     await this.storage.deleteOIDCIntegration(args);
+
+    const currentUser = await this.session.getViewer();
+    await this.auditLog.record({
+      eventType: 'OIDC_INTEGRATION_DELETED',
+      organizationId: integration.linkedOrganizationId,
+      user: currentUser,
+      userEmail: currentUser.email,
+      userId: currentUser.id,
+      metadata: {
+        integrationId: args.oidcIntegrationId,
+      },
+    });
 
     return {
       type: 'ok',

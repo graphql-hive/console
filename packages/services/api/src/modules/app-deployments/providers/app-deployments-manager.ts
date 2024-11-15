@@ -115,13 +115,15 @@ export class AppDeploymentsManager {
       },
     });
 
-    return await this.appDeployments.addDocumentsToAppDeployment({
+    const result = await this.appDeployments.addDocumentsToAppDeployment({
       organizationId: token.organizationId,
       projectId: token.projectId,
       targetId: token.targetId,
       appDeployment: args.appDeployment,
       operations: args.documents,
     });
+
+    return result;
   }
 
   async activateAppDeployment(args: {
@@ -143,11 +145,13 @@ export class AppDeploymentsManager {
       },
     });
 
-    return await this.appDeployments.activateAppDeployment({
+    const result = await this.appDeployments.activateAppDeployment({
       organizationId: token.organizationId,
       targetId: token.targetId,
       appDeployment: args.appDeployment,
     });
+
+    return result;
   }
 
   async retireAppDeployment(args: {
@@ -170,11 +174,13 @@ export class AppDeploymentsManager {
       },
     });
 
-    return await this.appDeployments.retireAppDeployment({
+    const result = await this.appDeployments.retireAppDeployment({
       organizationId: target.orgId,
       targetId: target.id,
       appDeployment: args.appDeployment,
     });
+
+    return result;
   }
 
   async getPaginatedDocumentsForAppDeployment(
