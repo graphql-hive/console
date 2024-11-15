@@ -28,24 +28,37 @@ variable "BUILD_STABLE" {
   default = ""
 }
 
+variable "IMAGE_SUFFIX" {
+  default = ""
+}
+
+variable "BUILD_PLATFORM" {
+  default = "linux/amd64,linux/arm64"
+}
+
 function "get_target" {
   params = []
   result = notequal("", BUILD_TYPE) ? notequal("ci", BUILD_TYPE) ? "target-publish" : "target-ci" : "target-dev"
 }
 
+function "get_platform" {
+  params = []
+  result = "${BUILD_PLATFORM}"
+}
+
 function "local_image_tag" {
   params = [name]
-  result = equal("", BUILD_TYPE) ? "${DOCKER_REGISTRY}${name}:latest" : ""
+  result = equal("", BUILD_TYPE) ? "${DOCKER_REGISTRY}${name}:latest${IMAGE_SUFFIX}" : ""
 }
 
 function "stable_image_tag" {
   params = [name]
-  result = equal("1", BUILD_STABLE) ? "${DOCKER_REGISTRY}${name}:latest" : ""
+  result = equal("1", BUILD_STABLE) ? "${DOCKER_REGISTRY}${name}:latest${IMAGE_SUFFIX}" : ""
 }
 
 function "image_tag" {
   params = [name, tag]
-  result = notequal("", tag) ? "${DOCKER_REGISTRY}${name}:${tag}" : ""
+  result = notequal("", tag) ? "${DOCKER_REGISTRY}${name}:${tag}${IMAGE_SUFFIX}" : ""
 }
 
 target "migrations-base" {
@@ -84,7 +97,7 @@ target "target-ci" {
 }
 
 target "target-publish" {
-  platforms = ["linux/amd64", "linux/arm64"]
+  platforms = [get_platform()]
   cache-from = ["type=gha,ignore-error=true"]
   cache-to = ["type=gha,mode=max,ignore-error=true"]
 }
@@ -452,7 +465,7 @@ group "integration-tests" {
   ]
 }
 
-group "rust" {
+group "apollo-router-hive-build" {
   targets = [
     "apollo-router"
   ]
