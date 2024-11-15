@@ -33,6 +33,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -852,87 +853,110 @@ function GG() {
                 <div className="w-72 shrink-0 space-y-4">
                   {selectedGroup.level !== ResourceLevel.organization && (
                     <>
-                      <p>Group Name</p>
-                      <Input value={selectedGroup.title} />
-                      <p>Selected {selectedGroup.level}s</p>
-                      <div>
+                      <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <Label>Group Title</Label>
                         <Input
-                          onKeyUp={ev => {
-                            if (ev.key !== 'Enter') {
-                              return;
-                            }
-                            const value: string = (ev.target as any).value;
-                            (ev.target as any).value = '';
-
+                          value={selectedGroup.title}
+                          onChange={ev => {
                             setDynamicGroups(groups =>
                               groups.map(group => {
-                                if (
-                                  group.id !== selectedGroup.id ||
-                                  group.resources.includes(value)
-                                ) {
+                                if (group.id !== selectedGroup.id) {
                                   return group;
                                 }
 
                                 return {
                                   ...group,
-                                  resources: [...group.resources, value],
+                                  title: ev.target.value,
                                 };
                               }),
                             );
                           }}
                         />
-                        <div className="mt-2">
-                          {selectedGroup.resources.map(resource => (
-                            <ResourceBadge
-                              key={resource}
-                              name={resource}
-                              onDelete={() => {
-                                setDynamicGroups(groups =>
-                                  groups.map(group => {
-                                    if (group.id !== selectedGroup.id) {
-                                      return group;
-                                    }
+                      </div>
+                      <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <Label>Selected {selectedGroup.level}s</Label>
+                        <div className="flex w-full max-w-sm items-center space-x-2">
+                          <Input
+                            onKeyUp={ev => {
+                              if (ev.key !== 'Enter') {
+                                return;
+                              }
+                              const value: string = (ev.target as any).value;
+                              (ev.target as any).value = '';
 
-                                    return {
-                                      ...group,
-                                      resources: group.resources.filter(name => name !== resource),
-                                    };
-                                  }),
-                                );
-                              }}
-                            />
-                          ))}
+                              setDynamicGroups(groups =>
+                                groups.map(group => {
+                                  if (
+                                    group.id !== selectedGroup.id ||
+                                    group.resources.includes(value)
+                                  ) {
+                                    return group;
+                                  }
+
+                                  return {
+                                    ...group,
+                                    resources: [...group.resources, value],
+                                  };
+                                }),
+                              );
+                            }}
+                          />
+                          <Button type="submit">Add</Button>
                         </div>
+                      </div>
+                      <div className="mt-2">
+                        {selectedGroup.resources.map(resource => (
+                          <ResourceBadge
+                            key={resource}
+                            name={resource}
+                            onDelete={() => {
+                              setDynamicGroups(groups =>
+                                groups.map(group => {
+                                  if (group.id !== selectedGroup.id) {
+                                    return group;
+                                  }
+
+                                  return {
+                                    ...group,
+                                    resources: group.resources.filter(name => name !== resource),
+                                  };
+                                }),
+                              );
+                            }}
+                          />
+                        ))}
                       </div>
                     </>
                   )}
-                  <p>Mode</p>
-                  <Select
-                    value={selectedGroup.mode}
-                    onValueChange={value => {
-                      setDynamicGroups(groups =>
-                        groups.map(group => {
-                          if (group.id !== selectedGroup.id) {
-                            return group;
-                          }
+                  <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label>Mode</Label>
+                    <Select
+                      value={selectedGroup.mode}
+                      onValueChange={value => {
+                        setDynamicGroups(groups =>
+                          groups.map(group => {
+                            if (group.id !== selectedGroup.id) {
+                              return group;
+                            }
 
-                          return {
-                            ...group,
-                            mode: value as GroupAccessMode,
-                          };
-                        }),
-                      );
-                    }}
-                  >
-                    <SelectTrigger className="w-[150px] shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={GroupAccessMode.granular}>Granular</SelectItem>
-                      <SelectItem value={GroupAccessMode.allowAll}>Allow All</SelectItem>
-                      <SelectItem value={GroupAccessMode.denyAll}>Deny all</SelectItem>
-                    </SelectContent>
-                  </Select>
+                            return {
+                              ...group,
+                              mode: value as GroupAccessMode,
+                            };
+                          }),
+                        );
+                      }}
+                    >
+                      <SelectTrigger className="w-[150px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={GroupAccessMode.granular}>Granular</SelectItem>
+                        <SelectItem value={GroupAccessMode.allowAll}>Allow All</SelectItem>
+                        <SelectItem value={GroupAccessMode.denyAll}>Deny all</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {selectedGroup.mode === GroupAccessMode.granular && (
                     <p className="text-muted-foreground text-sm">
                       Grant specific permissions for the specified resources based on your
