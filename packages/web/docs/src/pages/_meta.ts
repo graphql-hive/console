@@ -43,6 +43,14 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
       toc: true,
     },
   },
+  partners: {
+    title: 'Partners',
+    type: 'page',
+    display: 'hidden',
+    theme: {
+      layout: 'raw',
+    },
+  },
   products: {
     title: 'Products',
     type: 'menu',

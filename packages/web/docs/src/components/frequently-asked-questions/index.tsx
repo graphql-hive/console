@@ -5,6 +5,7 @@ import { Anchor, Heading } from '@theguild/components';
 import { cn } from '../../lib';
 import FederationQuestions from './federation-questions.mdx';
 import HomeQuestions from './home-questions.mdx';
+import PartnersQuestions from './partners-questions.mdx';
 
 const a = (props: ComponentPropsWithoutRef<'a'>) => (
   <Anchor
@@ -99,6 +100,26 @@ export function FrequentlyAskedFederationQuestions({ className }: { className?: 
       )}
     >
       <FederationQuestions
+        components={{
+          a,
+          h2,
+          ul,
+          li,
+        }}
+      />
+    </section>
+  );
+}
+
+export function FrequentlyAskedPartnersQuestions({ className }: { className?: string }) {
+  return (
+    <section
+      className={cn(
+        className,
+        'text-green-1000 flex flex-col gap-x-6 gap-y-2 px-4 py-6 md:flex-row md:px-10 lg:gap-x-24 lg:px-[120px] lg:py-24',
+      )}
+    >
+      <PartnersQuestions
         components={{
           a,
           h2,
