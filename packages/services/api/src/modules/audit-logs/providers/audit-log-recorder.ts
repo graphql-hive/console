@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Scope } from 'graphql-modules';
+import { z } from 'zod';
 import { captureException } from '@sentry/node';
 import { type User } from '../../../shared/entities';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
@@ -19,6 +20,13 @@ type AuditLogUser = {
 
 type AuditLogRecordEvent = AuditLogUser &
   AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
+
+const userContextSchema = z.object({
+  fullName: z.string(),
+  email: z.string(),
+  displayName: z.string(),
+  provider: z.string(),
+});
 
 @Injectable({
   scope: Scope.Operation,
@@ -41,21 +49,14 @@ export class AuditLogRecorder {
     try {
       const { eventType, organizationId, userEmail, userId } = data;
       this.logger.debug('Creating audit log event', { eventType });
-      const parsedEvent = auditLogSchema.parse(data);
 
-      const context = {
-        fullName: data.user.fullName,
-        email: data.user.email,
-        displayName: data.user.displayName,
-        provider: data.user.provider,
-      };
+      const parsedMetadata = auditLogSchema.parse(data);
+      const parsedContext = userContextSchema.parse(data.user);
+      const eventMetadata = JSON.stringify({
+        ...parsedMetadata,
+        ...parsedContext,
+      });
 
-      const structuredMetadata = {
-        context,
-        eventDetails: parsedEvent,
-      };
-
-      const eventMetadata = JSON.stringify(structuredMetadata);
       const eventTime = new Date();
       const id = randomUUID();
       const values = [id, eventTime, organizationId, eventType, userId, userEmail, eventMetadata];
