@@ -1,5 +1,14 @@
 # 16.10.2024
 
+## 0.1.2
+
+### Patch Changes
+
+- [#5937](https://github.com/graphql-hive/console/pull/5937)
+  [`a3453f7`](https://github.com/graphql-hive/console/commit/a3453f7bf6f63d1feb60b9cd3768f19ae0b2a687)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Improvements to release pipeline and added
+  missing metadata to Cargo file
+
 ## 0.1.1
 
 ### Patch Changes
