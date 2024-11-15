@@ -1,7 +1,6 @@
 import { stringify } from 'csv-stringify';
 import { GraphQLError } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { z } from 'zod';
 import { decodeHashBasedCursor } from '@hive/storage';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
@@ -11,23 +10,7 @@ import { SqlValue } from '../../operations/providers/sql';
 import { Emails, mjml } from '../../shared/providers/emails';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
-import { auditLogSchema } from './audit-logs-types';
-
-const auditLogEventTypes = auditLogSchema.options.map(option => option.shape.eventType.value);
-
-export const AuditLogClickhouseObjectModel = z.object({
-  id: z.string(),
-  timestamp: z.string(),
-  organization_id: z.string(),
-  event_action: z.enum(auditLogEventTypes as [string, ...string[]]),
-  user_id: z.string(),
-  user_email: z.string(),
-  metadata: z.string().transform(x => JSON.parse(x)),
-});
-
-export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;
-
-const AuditLogClickhouseArrayModel = z.array(AuditLogClickhouseObjectModel);
+import { AuditLogClickhouseArrayModel, AuditLogType } from './audit-logs-types';
 
 @Injectable({
   scope: Scope.Operation,
@@ -140,7 +123,8 @@ export class AuditLogManager {
 
   async exportAndSendEmail(
     organizationSlug: string,
-    filter: { startDate?: Date | null; endDate?: Date | null },
+    filter?: { startDate?: string; endDate?: string },
+    pagination?: { first: number; cursorId: string | null; cursorTimestamp: string | null },
   ): Promise<{ ok: { url: string } | null } | { error?: { message: string } | null }> {
     const isOwner = await this.auth.isOwnerOfOrganization({
       organization: organizationSlug,
@@ -162,7 +146,11 @@ export class AuditLogManager {
       const totalAuditLogs = await this.totalAuditLogs(organizationSlug);
       const getAllAuditLogs = await this.getPaginatedAuditLogs(
         organizationSlug,
-        { first: totalAuditLogs ?? 1000, cursorId: null, cursorTimestamp: null },
+        {
+          first: totalAuditLogs ?? 1000,
+          cursorId: pagination?.cursorId ?? null,
+          cursorTimestamp: pagination?.cursorTimestamp ?? null,
+        },
         { startDate: formattedStartDate, endDate: formattedEndDate },
       );
 

@@ -343,3 +343,35 @@ export const auditLogUserSchema = z.object({
 });
 
 export type AuditLogUser = z.infer<typeof auditLogUserSchema>;
+
+export const auditLogEventTypes = auditLogSchema.options.map(
+  option => option.shape.eventType.value,
+);
+
+export const AuditLogClickhouseObjectModel = z.object({
+  id: z.string(),
+  timestamp: z.string(),
+  organization_id: z.string(),
+  event_action: z.enum(auditLogEventTypes as [string, ...string[]]),
+  user_id: z.string(),
+  user_email: z.string(),
+  metadata: z.string().transform(x => JSON.parse(x)),
+});
+
+export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;
+
+export const AuditLogClickhouseArrayModel = z.array(AuditLogClickhouseObjectModel);
+
+export type AuditLogEventTypeToMetadata = {
+  [K in AuditLogSchemaEvent['eventType']]: Extract<AuditLogSchemaEvent, { eventType: K }>;
+};
+
+export const UserContextSchema = z.object({
+  fullName: z.string(),
+  email: z.string(),
+  displayName: z.string(),
+  provider: z.string(),
+});
+
+export type AuditLogRecordEvent = AuditLogUser &
+  AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];

@@ -1,24 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Scope } from 'graphql-modules';
-import { z } from 'zod';
 import { captureException } from '@sentry/node';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { Logger } from '../../shared/providers/logger';
-import { auditLogSchema, AuditLogUser, type AuditLogSchemaEvent } from './audit-logs-types';
-
-type AuditLogEventTypeToMetadata = {
-  [K in AuditLogSchemaEvent['eventType']]: Extract<AuditLogSchemaEvent, { eventType: K }>;
-};
-
-const UserContextSchema = z.object({
-  fullName: z.string(),
-  email: z.string(),
-  displayName: z.string(),
-  provider: z.string(),
-});
-
-type AuditLogRecordEvent = AuditLogUser &
-  AuditLogEventTypeToMetadata[AuditLogSchemaEvent['eventType']];
+import { AuditLogRecordEvent, auditLogSchema, UserContextSchema } from './audit-logs-types';
 
 @Injectable({
   scope: Scope.Operation,
