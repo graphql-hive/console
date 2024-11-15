@@ -71,26 +71,26 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'organization:describe',
-        title: 'View',
+        title: 'View organization',
         description: 'Member can see the organization. Permission can not be modified.',
         readOnly: true,
         level: ResourceLevel.organization,
       },
       {
         id: 'organization:support',
-        title: 'Support',
+        title: 'Access support tickets',
         description: 'Member can access, create and reply to support tickets.',
         level: ResourceLevel.organization,
       },
       {
         id: 'organization:updateSlug',
-        title: 'Update Slug',
+        title: 'Update organization slug',
         description: 'Member can modify the organization slug.',
         level: ResourceLevel.organization,
       },
       {
         id: 'organization:delete',
-        title: 'Delete',
+        title: 'Delete organization',
         description: 'Member can delete the Organization.',
         level: ResourceLevel.organization,
       },
@@ -101,34 +101,34 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'members:describe',
-        title: 'View',
-        description: 'Member can view the organization members.',
+        title: 'View members',
+        description: 'Member can access the organization member overview.',
         level: ResourceLevel.organization,
       },
       {
         id: 'members:assignRole',
-        title: 'Assign Role',
+        title: 'Assign member role',
         description: 'Member can assign roles to users.',
         dependsOn: 'members:describe',
         level: ResourceLevel.organization,
       },
       {
         id: 'members:modifyRole',
-        title: 'Modify Role',
+        title: 'Modify member role',
         description: 'Member can modify, create and delete roles.',
         dependsOn: 'members:describe',
         level: ResourceLevel.organization,
       },
       {
         id: 'members:remove',
-        title: 'Remove Member',
-        description: 'Member can remove users from the Organization.',
+        title: 'Remove member',
+        description: 'Member can remove users from the organization.',
         dependsOn: 'members:describe',
         level: ResourceLevel.organization,
       },
       {
         id: 'members:manageInvites',
-        title: 'Manage Invites',
+        title: 'Manage invites',
         description: 'Member can invite users via email and modify or delete pending invites.',
         dependsOn: 'members:describe',
         level: ResourceLevel.organization,
@@ -140,25 +140,25 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'billing:describe',
-        title: 'Describe',
-        description: 'Member can see the billing information.',
+        title: 'View billing',
+        description: 'Member can view the billing information.',
         level: ResourceLevel.organization,
       },
       {
         id: 'billing:update',
-        title: 'Manage project level schema linting',
-        description: 'Member can see the billing information.',
+        title: 'Update billing',
+        description: 'Member can change the organization plan.',
         dependsOn: 'billing:describe',
         level: ResourceLevel.organization,
       },
     ],
   },
   {
-    title: 'Open ID Connect',
+    title: 'OpenID Connect',
     permissions: [
       {
         id: 'oidc:manage',
-        title: 'Manage Integration',
+        title: 'Manage OpenID Connect integration',
         description: 'Member can connect, modify, and remove an OIDC provider to the connection.',
         level: ResourceLevel.organization,
       },
@@ -169,7 +169,7 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'github:manage',
-        title: 'Manage Integration',
+        title: 'Manage GitHub integration',
         description:
           'Member can connect, modify, and remove access for the GitHub integration and repository access.',
         level: ResourceLevel.organization,
@@ -181,7 +181,7 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'slack:manage',
-        title: 'Manage Slack Integration',
+        title: 'Manage Slack integration',
         description:
           'Member can connect, modify, and remove access for the Slack integration and repository access.',
         level: ResourceLevel.organization,
@@ -193,29 +193,29 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'project:create',
-        title: 'Create Project',
+        title: 'Create project',
         description: 'Member can create new projects.',
         level: ResourceLevel.organization,
       },
       {
         id: 'project:describe',
-        title: 'View Project',
+        title: 'View project',
         description: 'Member can access the specified projects.',
         level: [ResourceLevel.project, ResourceLevel.organization],
       },
       {
         id: 'project:delete',
-        title: 'View Project',
+        title: 'Delete project',
         description: 'Member can access the specified projects.',
-        dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization],
+        dependsOn: 'project:describe',
       },
       {
         id: 'project:modifySettings',
         title: 'Modify Settings',
         description: 'Member can access the specified projects.',
-        dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization],
+        dependsOn: 'project:describe',
       },
     ],
   },
@@ -231,9 +231,9 @@ const permissionGroups: Array<PermissionGroup> = [
       {
         id: 'schemaLinting:modifyProjectSettings',
         title: 'Manage project level schema linting',
-        description: 'Member can view and modify the organization schema linting rules.',
+        description: 'Member can view and modify the projects schema linting rules.',
         level: [ResourceLevel.project, ResourceLevel.organization],
-        dependsOn: 'project:view',
+        dependsOn: 'project:describe',
       },
     ],
   },
@@ -242,20 +242,21 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'target:create',
-        title: 'Create Target',
+        title: 'Create target',
         description: 'Member can create new projects.',
+        dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization],
       },
       {
         id: 'target:delete',
-        title: 'Delete Target',
+        title: 'Delete target',
         description: 'Member can access the specified projects.',
         dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization, ResourceLevel.target],
       },
       {
         id: 'target:modifySettings',
-        title: 'Modify Settings',
+        title: 'Modify settings',
         description: 'Member can access the specified projects.',
         dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization, ResourceLevel.target],
@@ -267,13 +268,14 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'laboratory:describe',
-        title: 'View Laboratory',
+        title: 'View laboratory',
         description: 'Member can access the laboratory, view and execute GraphQL documents.',
+        dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization, ResourceLevel.target],
       },
       {
         id: 'laboratory:modify',
-        title: 'Modify Laboratory',
+        title: 'Modify laboratory',
         description:
           'Member can create, delete and update collections and documents in the laboratory.',
         dependsOn: 'laboratory:describe',
@@ -286,8 +288,9 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'appDeployments:describe',
-        title: 'View App Deployments',
+        title: 'View app deployments',
         description: 'Member can view app deployments.',
+        dependsOn: 'project:describe',
         level: [ResourceLevel.project, ResourceLevel.organization, ResourceLevel.target],
       },
     ],
@@ -297,8 +300,9 @@ const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'appDeployments:describe',
-        title: 'Approve Schema Check',
+        title: 'Approve schema check',
         description: 'Member can approve failed schema checks.',
+        dependsOn: 'project:describe',
         level: [
           ResourceLevel.project,
           ResourceLevel.organization,
@@ -397,11 +401,9 @@ function PermissionSelector(props: {
                     <Select
                       disabled={permission.readOnly || needsDependency}
                       value={
-                        needsDependency
-                          ? ''
-                          : permission.readOnly
-                            ? 'allow'
-                            : props.grantedPermissions[permission.id] || 'not-selected'
+                        permission.readOnly
+                          ? 'allow'
+                          : props.grantedPermissions[permission.id] || 'not-selected'
                       }
                       onValueChange={value => {
                         const dependents = dependencyGraph.get(permission.id) ?? [];
@@ -413,14 +415,14 @@ function PermissionSelector(props: {
                           props.updateGrantedPermissions({
                             [permission.id]: 'deny',
                             ...Object.fromEntries(
-                              dependents.map(value => [[value, undefined] as const]),
+                              dependents.map(value => [value, 'deny'] as const),
                             ),
                           });
                         } else if (value === 'not-selected') {
                           props.updateGrantedPermissions({
                             [permission.id]: undefined,
                             ...Object.fromEntries(
-                              dependents.map(value => [[value, undefined] as const]),
+                              dependents.map(value => [value, undefined] as const),
                             ),
                           });
                         }
@@ -472,6 +474,26 @@ function GroupTeaser(props: {
   );
 }
 
+type Group = {
+  id: string;
+  level: ResourceLevel;
+  title: string;
+  permissions: { [key: string]: 'allow' | 'deny' | undefined };
+  canDelete?: true;
+};
+
+function createGroup(args: {
+  id: string;
+  level: ResourceLevel;
+  title: string;
+  canDelete?: true;
+}): Group {
+  return {
+    ...args,
+    permissions: {},
+  };
+}
+
 function GG(props: { mode?: 'read-only'; role?: { name: string; description: string } }) {
   const form = useForm({
     resolver: zodResolver(roleFormSchema),
@@ -485,21 +507,12 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
 
   const [selectedGroupId, setSelectedGroupId] = useState<null | string>(null);
 
-  const [dynamicGroups, setDynamicGroups] = useState<
-    Array<{
-      id: string;
-      level: ResourceLevel;
-      title: string;
-      permissions: { [key: string]: 'allow' | 'deny' | undefined };
-      canDelete?: true;
-    }>
-  >([
-    {
+  const [dynamicGroups, setDynamicGroups] = useState<Array<Group>>(() => [
+    createGroup({
       id: 'default',
       level: ResourceLevel.organization,
       title: 'Global Organization Wide Permissions',
-      permissions: {},
-    },
+    }),
   ]);
 
   const selectedGroup = dynamicGroups.find(group => group.id === selectedGroupId) ?? null;
@@ -580,13 +593,12 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                           const id = window.crypto.randomUUID();
                           setDynamicGroups(groups => [
                             ...groups,
-                            {
+                            createGroup({
                               id,
                               level: ResourceLevel.project,
-                              permissions: {},
                               title: 'Project ' + id,
                               canDelete: true,
-                            },
+                            }),
                           ]);
                           setSelectedGroupId(id);
                         }}
@@ -598,13 +610,12 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                           const id = window.crypto.randomUUID();
                           setDynamicGroups(groups => [
                             ...groups,
-                            {
+                            createGroup({
                               id,
                               level: ResourceLevel.target,
-                              permissions: {},
                               title: 'Target ' + id,
                               canDelete: true,
-                            },
+                            }),
                           ]);
                           setSelectedGroupId(id);
                         }}
@@ -616,13 +627,12 @@ function GG(props: { mode?: 'read-only'; role?: { name: string; description: str
                           const id = window.crypto.randomUUID();
                           setDynamicGroups(groups => [
                             ...groups,
-                            {
+                            createGroup({
                               id,
                               level: ResourceLevel.service,
-                              permissions: {},
                               title: 'Service ' + id,
                               canDelete: true,
-                            },
+                            }),
                           ]);
                           setSelectedGroupId(id);
                         }}
