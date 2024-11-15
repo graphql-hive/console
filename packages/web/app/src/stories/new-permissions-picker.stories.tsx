@@ -1,5 +1,5 @@
-import { ReactElement, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, InfoIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import {
@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Meta, StoryObj } from '@storybook/react';
@@ -338,19 +339,79 @@ const roleFormSchema = z.object({
 
 function PermissionSelector(props: {
   resourceLevel: ResourceLevel;
-  grantedPermissions: Record<string, 'allow' | 'deny' | undefined>;
-  updateGrantedPermissions: (group: Record<string, 'allow' | 'deny' | undefined>) => void;
+  grantedPermissions: GrantedPermissions;
+  updateGrantedPermissions: (group: GrantedPermissions) => void;
 }) {
-  return (
-    <Accordion type="multiple" className="w-full">
-      {permissionGroups.map(group => {
-        let selectedPermissions = 0;
-        for (const permission of group.permissions) {
-          if (props.grantedPermissions[permission.id] !== undefined) {
-            selectedPermissions++;
+  const grantedPermissions = useMemo<GrantedPermissions>(() => {
+    return {
+      ...props.grantedPermissions,
+      // A lot of the rules depends on 'project:describe'
+      // However, if we are on resource level target or service, project:describe needs to be specified so it can be selected.
+      ...(props.resourceLevel === ResourceLevel.target ||
+      props.resourceLevel === ResourceLevel.service
+        ? {
+            'project:describe': 'allow',
           }
+        : {}),
+    };
+  }, [props.resourceLevel, props.grantedPermissions]);
+
+  const [filteredGroups, permissionGroupMapping] = useMemo(() => {
+    const filteredGroups: Array<
+      PermissionGroup & {
+        selectedPermissionCount: number;
+      }
+    > = [];
+    const permissionGroupMapping = new Map<string, string>();
+
+    for (const group of permissionGroups) {
+      let selectedPermissionCount = 0;
+
+      const filteredGroupPermissions = group.permissions.filter(permission => {
+        const shouldInclude = Array.isArray(permission.level)
+          ? permission.level.includes(props.resourceLevel)
+          : props.resourceLevel === permission.level;
+
+        if (shouldInclude === false) {
+          return false;
         }
 
+        if (props.grantedPermissions[permission.id] !== undefined) {
+          selectedPermissionCount++;
+        }
+
+        permissionGroupMapping.set(permission.id, group.title);
+
+        return true;
+      });
+
+      if (filteredGroupPermissions.length === 0) {
+        continue;
+      }
+
+      filteredGroups.push({
+        ...group,
+        selectedPermissionCount,
+        permissions: filteredGroupPermissions,
+      });
+    }
+
+    return [filteredGroups, permissionGroupMapping] as const;
+  }, [props.resourceLevel, props.grantedPermissions]);
+  const permissionRefs = useRef(new Map<string, HTMLElement>());
+
+  const [focusedPermission, setFocusedPermission] = useState(null as string | null);
+
+  const [openAccordions, setOpenAccordions] = useState([] as Array<string>);
+  console.log(openAccordions);
+  return (
+    <Accordion
+      type="multiple"
+      className="w-full"
+      value={openAccordions}
+      onValueChange={values => setOpenAccordions(values)}
+    >
+      {filteredGroups.map(group => {
         const dependencyGraph = new Map<string, Array<string>>();
         for (const permission of group.permissions) {
           if (!permission.dependsOn) {
@@ -364,52 +425,99 @@ function PermissionSelector(props: {
           arr.push(permission.id);
         }
 
-        const filteredGroupPermissions = group.permissions.filter(permission =>
-          Array.isArray(permission.level)
-            ? permission.level.includes(props.resourceLevel)
-            : props.resourceLevel === permission.level,
-        );
-
-        if (filteredGroupPermissions.length === 0) {
-          return null;
-        }
-
         return (
-          <AccordionItem value={group.title}>
+          <AccordionItem value={group.title} key={group.title}>
             <AccordionTrigger className="w-full" key={group.title}>
               {group.title}{' '}
-              {selectedPermissions > 0 && (
+              {group.selectedPermissionCount > 0 && (
                 <span className="ml-auto mr-1 inline-block text-sm">
-                  {selectedPermissions} selected
+                  {group.selectedPermissionCount} selected
                 </span>
               )}
             </AccordionTrigger>
-            <AccordionContent className="pl-2">
-              {filteredGroupPermissions.map(permission => {
+            <AccordionContent className="pl-2" forceMount={true}>
+              {group.permissions.map(permission => {
                 const needsDependency =
-                  !!permission.dependsOn &&
-                  props.grantedPermissions[permission.dependsOn] !== 'allow';
+                  !!permission.dependsOn && grantedPermissions[permission.dependsOn] !== 'allow';
+
                 return (
                   <div
-                    className="flex flex-row items-center justify-between space-x-4 py-2 pt-0 text-sm"
+                    className={cn(
+                      'border-ring flex flex-row items-center justify-between space-x-4 border-orange-500 py-2 pt-0 text-sm',
+                      focusedPermission === permission.id && 'margin-[-1px] border',
+                    )}
                     key={permission.id}
+                    data-permission-id={permission.id}
+                    ref={ref => {
+                      if (ref) {
+                        permissionRefs.current.set(permission.id, ref);
+                      }
+                    }}
                   >
                     <div className={cn(needsDependency && 'opacity-30')}>
                       <div className="font-semibold text-white">{permission.title}</div>
                       <div className="text-xs text-gray-400">{permission.description}</div>
                     </div>
+                    {!!permission.dependsOn && permissionGroupMapping.has(permission.dependsOn) && (
+                      <div className="text-gray flex grow justify-end">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <InfoIcon />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                This permission depends on another permission.{' '}
+                                <Button
+                                  variant="orangeLink"
+                                  onClick={() => {
+                                    const dependencyPermission = permission.dependsOn;
+                                    if (!dependencyPermission) {
+                                      return;
+                                    }
+                                    const element =
+                                      permissionRefs.current.get(dependencyPermission);
+
+                                    if (!element) {
+                                      return;
+                                    }
+                                    setOpenAccordions(values => {
+                                      const groupName =
+                                        permissionGroupMapping.get(dependencyPermission);
+                                      if (!groupName) {
+                                      }
+                                      if (groupName && values.includes(groupName) === false) {
+                                        return [...values, groupName];
+                                      }
+                                      return values;
+                                    });
+                                    setFocusedPermission(dependencyPermission);
+                                    element.scrollIntoView({ behavior: 'smooth' });
+                                  }}
+                                >
+                                  View permission.
+                                </Button>
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
                     <Select
                       disabled={permission.readOnly || needsDependency}
                       value={
                         permission.readOnly
                           ? 'allow'
-                          : props.grantedPermissions[permission.id] || 'not-selected'
+                          : grantedPermissions[permission.id] || 'not-selected'
                       }
                       onValueChange={value => {
                         const dependents = dependencyGraph.get(permission.id) ?? [];
                         if (value === 'allow') {
                           props.updateGrantedPermissions({
                             [permission.id]: 'allow',
+                            ...Object.fromEntries(
+                              dependents.map(value => [value, undefined] as const),
+                            ),
                           });
                         } else if (value === 'deny') {
                           props.updateGrantedPermissions({
@@ -426,6 +534,7 @@ function PermissionSelector(props: {
                             ),
                           });
                         }
+                        setFocusedPermission(null);
                       }}
                     >
                       <SelectTrigger className="w-[150px] shrink-0">
@@ -478,7 +587,7 @@ type Group = {
   id: string;
   level: ResourceLevel;
   title: string;
-  permissions: { [key: string]: 'allow' | 'deny' | undefined };
+  permissions: GrantedPermissions;
   canDelete?: true;
 };
 
