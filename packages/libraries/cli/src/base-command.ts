@@ -181,75 +181,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       'graphql-client-version': this.config.version,
     };
 
-    return this.graphql(registry, requestHeaders);
-  }
-
-  graphql(endpoint: string, additionalHeaders: Record<string, string> = {}) {
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'User-Agent': `hive-cli/${this.config.version}`,
-      ...additionalHeaders,
-    };
-
-    const isDebug = this.flags.debug;
-
-    return {
-      async request<TResult, TVariables>(
-        args: {
-          operation: TypedDocumentNode<TResult, TVariables>;
-          /** timeout in milliseconds */
-          timeout?: number;
-        } & (TVariables extends Record<string, never>
-          ? {
-              variables?: never;
-            }
-          : {
-              variables: TVariables;
-            }),
-      ): Promise<TResult> {
-        const response = await http.post(
-          endpoint,
-          JSON.stringify({
-            query: typeof args.operation === 'string' ? args.operation : print(args.operation),
-            variables: args.variables,
-          }),
-          {
-            logger: {
-              info: (...args) => {
-                if (isDebug) {
-                  console.info(...args);
-                }
-              },
-              error: (...args) => {
-                console.error(...args);
-              },
-            },
-            headers: requestHeaders,
-            timeout: args.timeout,
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Invalid status code for HTTP call: ${response.status}`);
-        }
-        const jsonData = (await response.json()) as ExecutionResult<TResult>;
-
-        if (jsonData.errors && jsonData.errors.length > 0) {
-          throw new ClientError(
-            `Failed to execute GraphQL operation: ${jsonData.errors
-              .map(e => e.message)
-              .join('\n')}`,
-            {
-              errors: jsonData.errors,
-              headers: response.headers,
-            },
-          );
-        }
-
-        return jsonData.data!;
-      },
-    };
+    return graphqlRequest({
+      endpoint: registry,
+      additionalHeaders: requestHeaders,
+      version: this.config.version,
+      debug: this.flags.debug,
+    });
   }
 
   handleFetchError(error: unknown): never {
@@ -306,4 +243,76 @@ class ClientError extends Error {
 
 function isClientError(error: Error): error is ClientError {
   return error instanceof ClientError;
+}
+
+export function graphqlRequest(config: {
+  endpoint: string;
+  additionalHeaders?: Record<string, string>;
+  version?: string;
+  debug?: boolean;
+}) {
+  const requestHeaders = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(config.version ? { 'User-Agent': `hive-cli/${config.version}` } : {}),
+    ...(config.additionalHeaders ?? {}),
+  };
+
+  // const isDebug = this.flags.debug;
+  const isDebug = config.debug === true;
+
+  return {
+    async request<TResult, TVariables>(
+      args: {
+        operation: TypedDocumentNode<TResult, TVariables>;
+        /** timeout in milliseconds */
+        timeout?: number;
+      } & (TVariables extends Record<string, never>
+        ? {
+            variables?: never;
+          }
+        : {
+            variables: TVariables;
+          }),
+    ): Promise<TResult> {
+      const response = await http.post(
+        config.endpoint,
+        JSON.stringify({
+          query: typeof args.operation === 'string' ? args.operation : print(args.operation),
+          variables: args.variables,
+        }),
+        {
+          logger: {
+            info: (...args) => {
+              if (isDebug) {
+                console.info(...args);
+              }
+            },
+            error: (...args) => {
+              console.error(...args);
+            },
+          },
+          headers: requestHeaders,
+          timeout: args.timeout,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Invalid status code for HTTP call: ${response.status}`);
+      }
+      const jsonData = (await response.json()) as ExecutionResult<TResult>;
+
+      if (jsonData.errors && jsonData.errors.length > 0) {
+        throw new ClientError(
+          `Failed to execute GraphQL operation: ${jsonData.errors.map(e => e.message).join('\n')}`,
+          {
+            errors: jsonData.errors,
+            headers: response.headers,
+          },
+        );
+      }
+
+      return jsonData.data!;
+    },
+  };
 }

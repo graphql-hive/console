@@ -1,11 +1,13 @@
 import colors from 'colors';
-import { concatAST, print } from 'graphql';
+import { concatAST, parse, print } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
 import { loadTypedefs } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
-import BaseCommand from '../base-command';
+import type { Loader } from '@graphql-tools/utils';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import BaseCommand, { graphqlRequest } from '../base-command';
 import { FragmentType, graphql, useFragment as unmaskFragment } from '../gql';
 import { CriticalityLevel, SchemaErrorConnection, SchemaWarningConnection } from '../gql/graphql';
 
@@ -106,16 +108,33 @@ export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningCo
 }
 
 export async function loadSchema(
+  /**
+   * This is used to determine the correct loader to use.
+   *
+   * If a user is simply introspecting a schema, the 'introspection' should be used.
+   * In case of federation, we should skip the UrlLoader,
+   * because it will try to introspect the schema
+   * instead of fetching the SDL with directives.
+   */
+  intent: 'introspection' | 'federation-subgraph-introspection',
   file: string,
   options?: {
     headers?: Record<string, string>;
     method?: 'GET' | 'POST';
   },
 ) {
+  const loaders: Loader[] = [new CodeFileLoader(), new GraphQLFileLoader(), new JsonFileLoader()];
+
+  if (intent === 'federation-subgraph-introspection') {
+    loaders.push(new FederationSubgraphUrlLoader());
+  } else {
+    loaders.push(new UrlLoader());
+  }
+
   const sources = await loadTypedefs(file, {
     ...options,
     cwd: process.cwd(),
-    loaders: [new CodeFileLoader(), new GraphQLFileLoader(), new JsonFileLoader(), new UrlLoader()],
+    loaders,
   });
 
   return print(concatAST(sources.map(s => s.document!)));
@@ -123,4 +142,34 @@ export async function loadSchema(
 
 export function minifySchema(schema: string): string {
   return schema.replace(/\s+/g, ' ').trim();
+}
+
+class FederationSubgraphUrlLoader implements Loader {
+  async load(pointer: string) {
+    if (!pointer.startsWith('http://') && !pointer.startsWith('https://')) {
+      return null;
+    }
+
+    const response = await graphqlRequest({
+      endpoint: pointer,
+    }).request({
+      operation: parse(`
+        query GetFederationSchema {
+          _service {
+            sdl
+          }
+        }
+      `) as TypedDocumentNode<{ _service: { sdl: string } }, {}>,
+      variables: undefined,
+    });
+
+    const sdl = minifySchema(response._service.sdl);
+
+    return [
+      {
+        document: parse(sdl),
+        rawSDL: sdl,
+      },
+    ];
+  }
 }

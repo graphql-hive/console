@@ -7,6 +7,16 @@ need to retrieve the schema SDL (in a `.graphql` file) before using it with the
 We've collected popular Code-First libraries and frameworks and created a quick guide for retrieving
 the GraphQL SDL before using it with the Hive CLI.
 
+## Introspecting a running service
+
+If you're using a GraphQL framework that doesn't expose the schema as a `.graphql` file, you can use
+the Hive CLI to introspect the schema from a running GraphQL API (GraphQL API (or a subgraph in case
+of GraphQL Federation).
+
+```bash
+hive introspect http://localhost:4000/graphql --write schema.graphql
+```
+
 ## Pothos
 
 [Pothos](https://pothos-graphql.dev/) is a plugin based GraphQL schema builder for TypeScript. It
@@ -99,7 +109,7 @@ GraphQL servers in Rust that are type-safe.
 
 The schema object of Juniper can be printted using the `as_schema_language` function:
 
-```Rust
+```rust
 struct Query;
 
 #[graphql_object]
