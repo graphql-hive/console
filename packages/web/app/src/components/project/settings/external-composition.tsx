@@ -63,12 +63,14 @@ const ExternalCompositionForm_EnableMutation = graphql(`
 
 const ExternalCompositionForm_OrganizationFragment = graphql(`
   fragment ExternalCompositionForm_OrganizationFragment on Organization {
+    id
     slug
   }
 `);
 
 const ExternalCompositionForm_ProjectFragment = graphql(`
   fragment ExternalCompositionForm_ProjectFragment on Project {
+    id
     slug
   }
 `);

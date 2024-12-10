@@ -17,6 +17,167 @@ export const createPolicy = (level: RuleInstanceSeverityLevel): SchemaPolicyInpu
 
 describe('Schema policy checks', () => {
   describe('model: composite', () => {
+    it('no-unreachable-types issue: directives are not scanned/marked as unused', async () => {
+      const policyObject: SchemaPolicyInput = {
+        rules: [
+          {
+            ruleId: 'no-unreachable-types',
+            severity: RuleInstanceSeverityLevel.Error,
+          },
+        ],
+      };
+
+      const { tokens, policy } = await prepareProject(ProjectType.Federation);
+      await policy.setOrganizationSchemaPolicy(policyObject, true);
+      const cli = createCLI(tokens.registry);
+
+      await cli.publish({
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String!
+          }
+        `,
+        serviceName: 'a',
+        serviceUrl: 'https://api.com/a',
+        expect: 'latest-composable',
+      });
+
+      await cli.publish({
+        sdl: /* GraphQL */ `
+          type Query {
+            b: String!
+          }
+        `,
+        serviceName: 'b',
+        serviceUrl: 'https://api.com/b',
+        expect: 'latest-composable',
+      });
+
+      // In this example, the policy checks sees the "hasRole" directive in the schema
+      // because we are using composeDirective.
+      const rawMessage = await cli.check({
+        sdl: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@composeDirective"])
+            @link(url: "https://myspecs.dev/myDirective/v1.0", import: ["@hasRole"])
+            @composeDirective(name: "@hasRole")
+
+          scalar Unused
+
+          scalar Used
+
+          scalar UsedInInput
+
+          directive @hasRole(role: Role!) on QUERY | MUTATION | FIELD_DEFINITION
+
+          enum Role {
+            admin
+            user
+          }
+
+          enum Permission {
+            read
+            write
+            create
+            delete
+          }
+
+          type Query {
+            userRole(roleID: Int!): UserRole! @hasRole(role: admin)
+            scalar(input: UsedInInput!): Used
+          }
+
+          type UserRole {
+            id: ID!
+            name: String!
+          }
+        `,
+        serviceName: 'c',
+        expect: 'rejected',
+      });
+      const message = stripAnsi(rawMessage);
+
+      expect(message).toContain(`Detected 2 errors`);
+      expect(message.split('\n').slice(1)).toEqual([
+        '✖ Detected 2 errors',
+        '',
+        '   - Scalar type `Unused` is unreachable. (source: policy-no-unreachable-types)',
+        '   - Enum type `Permission` is unreachable. (source: policy-no-unreachable-types)',
+        '',
+        'ℹ Detected 9 changes',
+        '',
+        '   Safe changes:',
+        '   - Type Permission was added',
+        '   - Type Role was added',
+        '   - Type Unused was added',
+        '   - Type Used was added',
+        '   - Type UsedInInput was added',
+        '   - Type UserRole was added',
+        '   - Field scalar was added to object type Query',
+        '   - Field userRole was added to object type Query',
+        '   - Directive hasRole was added',
+        '',
+        'View full report:',
+        expect.any(String),
+        '',
+      ]);
+
+      // But in this one, we are not using composeDirective, so the final compose directive
+      // is not visible by the policy checker, and the policy checker will not detect it.
+      // This is why it's being reported an unused, and also other related inputs/types.
+      const rawMessage2 = await cli.check({
+        sdl: /* GraphQL */ `
+          scalar Unused
+
+          scalar Used
+
+          scalar UsedInInput
+
+          directive @hasRole(role: Role!) on QUERY | MUTATION | FIELD_DEFINITION
+
+          enum Role {
+            admin
+            user
+          }
+
+          enum Permission {
+            read
+            write
+            create
+            delete
+          }
+
+          type Query {
+            userRole(roleID: Int!): UserRole! @hasRole(role: admin)
+            scalar(input: UsedInInput!): Used
+          }
+
+          type UserRole {
+            id: ID!
+            name: String!
+          }
+        `,
+        serviceName: 'c',
+        expect: 'rejected',
+      });
+      const message2 = stripAnsi(rawMessage2);
+
+      expect(message2).toContain(`Detected 4 errors`);
+      expect(message2).toContain(
+        `Scalar type \`Unused\` is unreachable. (source: policy-no-unreachable-types)`,
+      );
+      expect(message2).toContain(
+        `Directive \`hasRole\` is unreachable. (source: policy-no-unreachable-types)`,
+      );
+      expect(message2).toContain(
+        `Enum type \`Role\` is unreachable. (source: policy-no-unreachable-types)`,
+      );
+      expect(message2).toContain(
+        `Enum type \`Permission\` is unreachable. (source: policy-no-unreachable-types)`,
+      );
+    });
+
     it('Federation project with policy with only warnings, should check only the part that was changed', async () => {
       const { tokens, policy } = await prepareProject(ProjectType.Federation);
       await policy.setOrganizationSchemaPolicy(

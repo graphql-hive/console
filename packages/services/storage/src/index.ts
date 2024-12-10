@@ -153,7 +153,7 @@ export async function createStorage(
   function transformSchemaPolicy(schema_policy: schema_policy_config): SchemaPolicy {
     return {
       id: `${schema_policy.resource_type}_${schema_policy.resource_id}`,
-      config: schema_policy.config,
+      config: schema_policy.config_v4,
       createdAt: schema_policy.created_at,
       updatedAt: schema_policy.updated_at,
       resource: schema_policy.resource_type,
@@ -3416,14 +3416,14 @@ export async function createStorage(
     async setSchemaPolicyForOrganization(input): Promise<SchemaPolicy> {
       const result = await pool.one<schema_policy_config>(sql`/* setSchemaPolicyForOrganization */
         INSERT INTO "schema_policy_config"
-        ("resource_type", "resource_id", "config", "allow_overriding")
+        ("resource_type", "resource_id", "config_v4", "allow_overriding")
           VALUES ('ORGANIZATION', ${input.organizationId}, ${sql.jsonb(input.policy)}, ${
             input.allowOverrides
           })
         ON CONFLICT
           (resource_type, resource_id)
         DO UPDATE
-          SET "config" = ${sql.jsonb(input.policy)},
+          SET "config_v4" = ${sql.jsonb(input.policy)},
               "allow_overriding" = ${input.allowOverrides},
               "updated_at" = now()
         RETURNING *;
@@ -3434,12 +3434,12 @@ export async function createStorage(
     async setSchemaPolicyForProject(input): Promise<SchemaPolicy> {
       const result = await pool.one<schema_policy_config>(sql`/* setSchemaPolicyForProject */
       INSERT INTO "schema_policy_config"
-      ("resource_type", "resource_id", "config")
+      ("resource_type", "resource_id", "config_v4")
         VALUES ('PROJECT', ${input.projectId}, ${sql.jsonb(input.policy)})
       ON CONFLICT
         (resource_type, resource_id)
       DO UPDATE
-        SET "config" = ${sql.jsonb(input.policy)},
+        SET "config_v4" = ${sql.jsonb(input.policy)},
             "updated_at" = now()
       RETURNING *;
     `);
