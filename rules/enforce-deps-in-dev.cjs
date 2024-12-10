@@ -196,9 +196,30 @@ function reportIfMissing(context, deps, node, name, scopes) {
   context.report(node, missingErrorMessage(importPackageName));
 }
 
+const ARRAY_DEFAULT_OPTIONS = {
+  type: 'array',
+  uniqueItems: true,
+  minItems: 1,
+  items: {
+    type: 'string',
+  },
+};
+
 module.exports = {
   meta: {
     type: 'problem',
+    schema: {
+      type: 'array',
+      maxItems: 1,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          scopes: ARRAY_DEFAULT_OPTIONS,
+          ignored: ARRAY_DEFAULT_OPTIONS,
+        },
+      },
+    },
   },
 
   create(context) {

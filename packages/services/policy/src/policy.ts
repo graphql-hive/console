@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import { Linter } from 'eslint';
 import { z, ZodType } from 'zod';
-import { GraphQLESLintRule, parseForESLint, rules } from '@graphql-eslint/eslint-plugin';
+import { GraphQLESLintRule, parser, rules } from '@graphql-eslint/eslint-plugin/programmatic';
 import { RELEVANT_RULES } from './rules';
 
 const ajv = new Ajv({
@@ -12,24 +12,23 @@ const ajv = new Ajv({
   allowMatchingProperties: true,
 });
 const linter = new Linter();
-linter.defineParser('@graphql-eslint/eslint-plugin', { parseForESLint });
 
-for (const [ruleId, rule] of Object.entries(rules)) {
-  linter.defineRule(ruleId, rule as any);
-}
+const RULE_LEVEL = z.union([
+  //
+  z.number().min(0).max(2),
+  z.enum(['off', 'warn', 'error']),
+]);
 
-const RULE_LEVEL = z.union([z.number().min(0).max(2), z.enum(['off', 'warn', 'error'])]);
-
-type RulemapValidationType = {
+type RuleMapValidationType = {
   [RuleKey in keyof typeof rules]: ZodType;
 };
 
 export function normalizeAjvSchema(
-  schema: GraphQLESLintRule['meta']['schema'],
-): GraphQLESLintRule['meta']['schema'] {
+  schema: NonNullable<GraphQLESLintRule['meta']>['schema'],
+): NonNullable<GraphQLESLintRule['meta']>['schema'] {
   if (Array.isArray(schema)) {
     if (schema.length === 0) {
-      return null;
+      return;
     }
 
     return {
@@ -40,19 +39,19 @@ export function normalizeAjvSchema(
     };
   }
 
-  return schema || null;
+  return schema;
 }
 
 export function createInputValidationSchema() {
   return z
     .object(
       RELEVANT_RULES.reduce((acc, [name, rule]) => {
-        const schema = normalizeAjvSchema(rule.meta.schema);
+        const schema = normalizeAjvSchema(rule.meta!.schema);
         const validate = schema ? ajv.compile(schema) : null;
 
         return {
           ...acc,
-          [name]: z.union([
+          [`@graphql-eslint/${name}`]: z.union([
             z.tuple([RULE_LEVEL]),
             z.tuple(
               validate
@@ -77,7 +76,7 @@ export function createInputValidationSchema() {
             ),
           ]),
         };
-      }, {} as RulemapValidationType),
+      }, {} as RuleMapValidationType),
     )
     .required()
     .partial()
@@ -94,8 +93,18 @@ export async function schemaPolicyCheck(input: {
   return linter.verify(
     input.source,
     {
-      parser: '@graphql-eslint/eslint-plugin',
-      parserOptions: { schema: input.schema },
+      files: ['*.graphql'],
+      plugins: {
+        '@graphql-eslint': { rules },
+      },
+      languageOptions: {
+        parser,
+        parserOptions: {
+          graphQLConfig: {
+            schema: input.schema,
+          },
+        },
+      },
       rules: input.policy,
     },
     'schema.graphql',

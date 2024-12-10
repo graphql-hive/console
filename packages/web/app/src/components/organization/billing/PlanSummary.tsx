@@ -6,6 +6,7 @@ import { CurrencyFormatter } from './helpers';
 
 const PriceEstimationTable_PlanFragment = graphql(`
   fragment PriceEstimationTable_PlanFragment on BillingPlan {
+    id
     includedOperationsLimit
     pricePerOperationsUnit
     basePrice
