@@ -629,7 +629,7 @@ export const gatewayConfig = defineConfig({
     // Then set generic auth plugin to use granular mode
     mode: 'protect-granular',
     // Set where to extract the payload
-    resolveUser: ctx => ctx.jwt?.payload,
+    resolveUserFn: ctx => ctx.jwt?.payload,
     // If you want to continue execution even if some fields are rejected
     rejectUnauthenticated: false
   }
@@ -674,11 +674,10 @@ this behavior by providing a custom `extractScopes` function.
 
 ```ts
 {
-  resolveUserFn,
   validateUser,
   mode: 'protect-granular',
   // Set where to extract the payload
-  resolveUser: ctx => ctx.jwt?.payload,
+  resolveUserFn: ctx => ctx.jwt?.payload,
   extractScopes: jwtPayload => jwtPayload?.scopes // Expected to return an array of strings
 }
 ```
