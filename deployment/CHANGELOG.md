@@ -1,5 +1,14 @@
 # hive
 
+## 1.2.2
+
+### Patch Changes
+
+- [#6065](https://github.com/graphql-hive/console/pull/6065)
+  [`9297f33`](https://github.com/graphql-hive/console/commit/9297f33ad6c2c0a5ff77ea92c43ca5c97fd9a2d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Allow organizations without a GitHub or Slack
+  integration to add and manage integrations.
+
 ## 1.2.1
 
 ### Patch Changes
