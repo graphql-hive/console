@@ -76,7 +76,7 @@ function GitHubIntegrationSection(props: {
   );
 
   return organization.hasGitHubIntegration ? (
-    <>
+    <div className="flex flex-row justify-start gap-3">
       <Button
         variant="destructive"
         disabled={deleteGitHubMutation.fetching}
@@ -94,7 +94,7 @@ function GitHubIntegrationSection(props: {
       <Button variant="destructive" asChild>
         <a href={`/api/github/connect/${organization.slug}`}>Adjust permissions</a>
       </Button>
-    </>
+    </div>
   ) : (
     <Button variant="default" asChild>
       <a href={`/api/github/connect/${organization.slug}`}>
