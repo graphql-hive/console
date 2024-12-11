@@ -123,5 +123,6 @@
       "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch"
     }
-  }
+  },
+  "test": true
 }
