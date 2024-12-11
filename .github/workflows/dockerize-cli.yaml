@@ -10,6 +10,9 @@ on:
       cliVersion:
         required: true
         type: string
+      publishLatest:
+        default: false
+        type: boolean
 
 jobs:
   build-cli-docker-image:
@@ -64,6 +67,7 @@ jobs:
           RELEASE: ${{ inputs.cliVersion }}
           BUILD_TYPE: 'publish'
           PWD: ${{ github.workspace }}
+          BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false

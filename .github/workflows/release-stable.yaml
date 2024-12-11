@@ -108,4 +108,5 @@ jobs:
     if: ${{ needs.publish.outputs.publish == 'true' }}
     with:
       cliVersion: ${{ needs.publish.outputs.version }}
+      publishLatest: true
     secrets: inherit
