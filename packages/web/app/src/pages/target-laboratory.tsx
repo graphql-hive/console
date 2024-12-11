@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useMemo, useState } from 'react';
+import { ComponentProps, ReactElement, useCallback, useMemo, useState } from 'react';
 import { cx } from 'class-variance-authority';
 import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
@@ -33,6 +33,7 @@ import {
 import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
+import { executeScript, preflightScriptPlugin } from '@/lib/preflight-sandbox/graphiql-plugin';
 import { cn } from '@/lib/utils';
 import { explorerPlugin } from '@graphiql/plugin-explorer';
 import {
@@ -52,7 +53,7 @@ import { useRedirect } from '@/lib/access/common';
 const explorer = explorerPlugin();
 
 // Declare outside components, otherwise while clicking on field in explorer operationCollectionsPlugin will be open
-const plugins = [explorer, operationCollectionsPlugin];
+const plugins = [explorer, operationCollectionsPlugin, preflightScriptPlugin];
 
 function Share(): ReactElement | null {
   const label = 'Share query';
@@ -243,11 +244,43 @@ function Save(props: {
   );
 }
 
+const onModifyHeaders: ComponentProps<typeof GraphiQL>['onModifyHeaders'] = async (
+  headers = {},
+) => {
+  const result = await executeScript();
+  if ('error' in result) {
+    const formatError = JSON.stringify(
+      {
+        name: result.error.name,
+        message: result.error.message,
+      },
+      null,
+      2,
+    );
+    throw new Error(`Error during preflight script execution:\n\n${formatError}`);
+  }
+  const { environmentVariables } = result;
+
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => {
+      if (typeof value === 'string') {
+        // Replace all occurrences of `{{keyName}}` strings only if key exists in `environmentVariables`
+        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey) => {
+          return Object.hasOwn(environmentVariables, envKey)
+            ? (environmentVariables[envKey] as string)
+            : originalString;
+        });
+      }
+      return [key, value];
+    }),
+  );
+};
+
 function LaboratoryPageContent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  selectedOperationId: string | undefined;
+  selectedOperationId?: string;
 }) {
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
@@ -448,7 +481,9 @@ function LaboratoryPageContent(props: {
           .graphiql-dialog a {
             --color-primary: 40, 89%, 60% !important;
           }
-
+          .graphiql-container {
+            overflow: unset; /* remove default overflow */
+          }
           .graphiql-container,
           .graphiql-dialog,
           .CodeMirror-info {
@@ -468,8 +503,7 @@ function LaboratoryPageContent(props: {
       {!query.fetching && !query.stale && (
         <GraphiQL
           fetcher={fetcher}
-          showPersistHeadersSettings={false}
-          shouldPersistHeaders={false}
+          shouldPersistHeaders
           plugins={plugins}
           visiblePlugin={operationCollectionsPlugin}
           schema={schema}
@@ -477,6 +511,7 @@ function LaboratoryPageContent(props: {
           className={isFullScreen ? 'fixed inset-0 bg-[#030711]' : ''}
           onTabChange={handleTabChange}
           readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
+          onModifyHeaders={onModifyHeaders}
         >
           <GraphiQL.Logo>
             <Button

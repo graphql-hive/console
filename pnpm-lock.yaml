@@ -16,9 +16,9 @@ patchedDependencies:
   '@apollo/federation@0.38.1':
     hash: rjgakkkphrejw6qrtph4ar24zq
     path: patches/@apollo__federation@0.38.1.patch
-  '@graphiql/react@1.0.0-alpha.3':
-    hash: gnbo5nw2wgehkfq2yrmuhrx4im
-    path: patches/@graphiql__react@1.0.0-alpha.3.patch
+  '@graphiql/react':
+    hash: bru5she67j343rpipomank3vn4
+    path: patches/@graphiql__react.patch
   '@graphql-eslint/eslint-plugin@3.20.1':
     hash: n437g5o7zq7pnxdxldn52uql2q
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
@@ -40,6 +40,9 @@ patchedDependencies:
   got@14.4.4:
     hash: b6pwqmrs3qqykctltsasvrfwti
     path: patches/got@14.4.4.patch
+  graphiql:
+    hash: yjzkcog7ut7wshk4npre67txki
+    path: patches/graphiql.patch
   mjml-core@4.14.0:
     hash: zxxsxbqejjmcwuzpigutzzq6wa
     path: patches/mjml-core@4.14.0.patch
@@ -689,6 +692,12 @@ importers:
       '@hive/webhooks':
         specifier: workspace:*
         version: link:../webhooks
+      '@nodesecure/i18n':
+        specifier: ^4.0.1
+        version: 4.0.1
+      '@nodesecure/js-x-ray':
+        specifier: 8.0.0
+        version: 8.0.0
       '@octokit/app':
         specifier: 14.1.0
         version: 14.1.0
@@ -1659,10 +1668,10 @@ importers:
         version: 6.0.7(@types/node@22.9.3)(less@4.2.0)(lightningcss@1.28.1)(terser@5.36.0)
       '@graphiql/plugin-explorer':
         specifier: 4.0.0-alpha.2
-        version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@graphiql/react':
-        specifier: 1.0.0-alpha.3
-        version: 1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 1.0.0-alpha.4
+        version: 1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@graphiql/toolkit':
         specifier: 0.9.1
         version: 0.9.1(@types/node@22.9.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)
@@ -1807,6 +1816,9 @@ importers:
       '@trpc/server':
         specifier: 10.45.2
         version: 10.45.2
+      '@types/crypto-js':
+        specifier: ^4.2.2
+        version: 4.2.2
       '@types/dompurify':
         specifier: 3.0.5
         version: 3.0.5
@@ -1852,6 +1864,9 @@ importers:
       cmdk:
         specifier: 0.2.1
         version: 0.2.1(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
@@ -1877,8 +1892,8 @@ importers:
         specifier: 11.11.17
         version: 11.11.17(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphiql:
-        specifier: 4.0.0-alpha.4
-        version: 4.0.0-alpha.4(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 4.0.0-alpha.5
+        version: 4.0.0-alpha.5(patch_hash=yjzkcog7ut7wshk4npre67txki)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -2005,6 +2020,9 @@ importers:
       zod:
         specifier: 3.23.8
         version: 3.23.8
+      zustand:
+        specifier: 5.0.1
+        version: 5.0.1(@types/react@18.3.12)(immer@10.1.1)(react@18.3.1)(use-sync-external-store@1.2.0(react@18.3.1))
 
   packages/web/docs:
     dependencies:
@@ -3913,8 +3931,8 @@ packages:
       react: ^16.8.0 || ^17 || ^18
       react-dom: ^16.8.0 || ^17 || ^18
 
-  '@graphiql/react@1.0.0-alpha.3':
-    resolution: {integrity: sha512-9WPfC7I9xO1qC/dKaYwVe3UbPJvdjU+fxoUW2Id0mIljkD7LXnVUnzBQMB1SY4JrRJX3I0nQPbHXzKvAYSpnjw==}
+  '@graphiql/react@1.0.0-alpha.4':
+    resolution: {integrity: sha512-psie5qQNVlklXAhNPD8sIRtpNDzJfNzzZ5EH0ofrJ8AeVcj+DYmIqxRWw5zvjDAtNTKyOAJSCpQdCNDCCi2PEQ==}
     peerDependencies:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0-alpha.2
       react: ^16.8.0 || ^17 || ^18
@@ -4964,6 +4982,20 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@nodesecure/estree-ast-utils@1.5.0':
+    resolution: {integrity: sha512-uRdPpBQOSvn+iuLWlbtP6NZTI54ALhFZNRc5K+ZaYT8FeYFu0g6HwlNwwwPyyTB1kXyysRRi9j9fkW9bAYSXtw==}
+
+  '@nodesecure/i18n@4.0.1':
+    resolution: {integrity: sha512-i/A8citn5N1i7VBL0PbryAx3zM3sgpFsfVVzIrl5tSTih3cMbQ3QYKCo294U2DMaoncWmI6wO5S71XwctvTHeg==}
+    engines: {node: '>=18'}
+
+  '@nodesecure/js-x-ray@8.0.0':
+    resolution: {integrity: sha512-RTDrJfYuLIZ1pnIz+KJOCfH+kHaoxkO0Nyr2xo/6eiuFKzO1F0gSnrE1uQfhUGfeBiMiwx2qzOdyeKFgYn5Baw==}
+    engines: {node: '>=18.0.0'}
+
+  '@nodesecure/sec-literal@1.2.0':
+    resolution: {integrity: sha512-LGgJmBtnIVHwjZ1QA62YyDvPysdYvGcGn6/JADjY23snTNZS+D9JrkxnChggoNDYj3/GtjutbY/cSlLXEcUJRw==}
 
   '@npmcli/agent@2.2.1':
     resolution: {integrity: sha512-H4FrOVtNyWC8MUwL3UfjOsAihHvT1Pe8POj3JvjXhSTJipsZMtgUALCT4mGyYZNxymkUfOw3PUj6dE4QPp6osQ==}
@@ -7617,6 +7649,9 @@ packages:
   '@types/connect@3.4.36':
     resolution: {integrity: sha512-P63Zd/JUGq+PdrM1lv0Wv5SBYeA2+CORvbrXbngriYY0jzLUWfQMQQxOhjONEz/wlHOAxOdY7CY65rgQdTjq2w==}
 
+  '@types/crypto-js@4.2.2':
+    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
+
   '@types/debug@4.1.7':
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
 
@@ -9373,6 +9408,10 @@ packages:
     resolution: {integrity: sha512-FJ3UgI4gIl+PHZm53knsuSFpE+nESMr7M4v9QcgB7S63Kj/6WqMiFQJpBBYz1Pt+66bZpP3Q7Lye0Oo9MPKEdg==}
     engines: {node: '>=0.10.0'}
 
+  deepmerge@4.3.1:
+    resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
+    engines: {node: '>=0.10.0'}
+
   default-browser-id@3.0.0:
     resolution: {integrity: sha512-OZ1y3y0SqSICtE8DE4S8YOE9UZOJ8wO16fKWVP5J1Qz42kV9jcnMVFrEE/noXb/ss3Q4pZIH79kxofzyNNtUNA==}
     engines: {node: '>=12'}
@@ -9490,6 +9529,10 @@ packages:
   diff@5.2.0:
     resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
     engines: {node: '>=0.3.1'}
+
+  digraph-js@2.2.3:
+    resolution: {integrity: sha512-btynrARSW6pBmDz9+cwCxkBJ91CGBxIaNQo7V+ul9/rCRr3HddwehpEMnL6Ru2OeC2pKdRteB1v5TgZRrAAYKQ==}
+    engines: {node: '>=16.0.0'}
 
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -10314,6 +10357,9 @@ packages:
       react-dom:
         optional: true
 
+  frequency-set@1.0.2:
+    resolution: {integrity: sha512-Qip6vS0fY/et08sZXumws05weoYvj2ZLkBq3xIwFDFLg8v5IMQiRa+P30tXL0CU6DiYUPLuN3HyRcwW6yWPdeA==}
+
   fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
     engines: {node: '>= 0.6'}
@@ -10578,8 +10624,8 @@ packages:
       react: ^15.6.0 || ^16.0.0
       react-dom: ^15.6.0 || ^16.0.0
 
-  graphiql@4.0.0-alpha.4:
-    resolution: {integrity: sha512-mMjUJKqNSuHGDBC6JE3CprtBniB3iaGN7Ifisrd6ucmpH7biqA1uIbz1LgzCeQdtndCTHADLJu6dCGOWAcgP9w==}
+  graphiql@4.0.0-alpha.5:
+    resolution: {integrity: sha512-LAxuJ8kwPlT7YbgM2VMr6bn9xWHRgUL4SRZtvA2VTDDkMgsnTLKd9Vro/EZNKJCTaC7SGOBRImAGCOPlpfTTjw==}
     peerDependencies:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0-alpha.2
       react: ^16.8.0 || ^17 || ^18
@@ -11104,6 +11150,10 @@ packages:
     resolution: {integrity: sha512-Y1JXKrfykRJGdlDwdKlLpLyMIiWqWvuSd17TvZk68PLAOGOoF4Xyav1z0Xhoi+gCYjZVeC5SI+hYFOfvXmGRCA==}
     engines: {node: '>= 0.4'}
 
+  is-base64@1.1.0:
+    resolution: {integrity: sha512-Nlhg7Z2dVC4/PTvIFkgVVNvPHSO2eR/Yd0XzhGiXCXEvWnptXlXa/clQ8aePPiMuxEGcWfzWbGw2Fe3d+Y3v1g==}
+    hasBin: true
+
   is-bigint@1.0.4:
     resolution: {integrity: sha512-zB9CruMamjym81i2JZ3UMn54PKGsQzsJeo6xvN3HJJ4CAsQNB6iRutp2To77OfCNuoxspsIhzaPoO1zyCEhFOg==}
 
@@ -11210,6 +11260,9 @@ packages:
   is-map@2.0.2:
     resolution: {integrity: sha512-cOZFQQozTha1f4MxLFzlgKYPTyj26picdZTx82hbc/Xf4K/tZOOXSCkMvU4pKioRXGDLJRn0GM7Upe7kR721yg==}
 
+  is-minified-code@2.0.0:
+    resolution: {integrity: sha512-I1BHmOxm7owypunUWnYx2Ggdhg3lzdyJXLepi8NuR/IsvgVgkwjLj+12iYAGUklu0Xvy3nXGcDSKGbE0Q0Nkag==}
+
   is-negative-zero@2.0.2:
     resolution: {integrity: sha512-dqJvarLawXsFbNDeJW7zAz8ItJ9cd28YufuuFzh0G8pNHjJMnY08Dv7sYX2uF5UpQOwieAeOExEYAWWfu7ZZUA==}
     engines: {node: '>= 0.4'}
@@ -11308,6 +11361,10 @@ packages:
   is-subdir@1.2.0:
     resolution: {integrity: sha512-2AT6j+gXe/1ueqbW6fLZJiIw3F8iXGJtt0yDrZaBhAZEG1raiTxKWU+IPqMCzQAXOUCKdA4UDMgacKH25XG2Cw==}
     engines: {node: '>=4'}
+
+  is-svg@4.4.0:
+    resolution: {integrity: sha512-v+AgVwiK5DsGtT9ng+m4mClp6zDAmwrW8nZi6Gg15qzvBnRWWdfWA1TGaXyCDnWq5g5asofIgMVl3PjKxvk1ug==}
+    engines: {node: '>=6'}
 
   is-symbol@1.0.4:
     resolution: {integrity: sha512-C/CPBqKWnvdcxqIARxyOh4v1UUEOCHpgDa0WYgpKDFMszcrPcffg5uhwSgPCLD2WWxmq6isisz87tzT01tuGhg==}
@@ -11847,6 +11904,9 @@ packages:
   lodash.isarguments@3.1.0:
     resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
 
+  lodash.isequal@4.5.0:
+    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
+
   lodash.isplainobject@4.0.6:
     resolution: {integrity: sha512-oSXzaWypCMHkPC3NvBEaPHf0KsA5mvPrOPgQWDsbg8n7orZ290M0BmC/jgRZ4vcJ6DTAhjrsSYgdsW/F+MFOBA==}
 
@@ -11870,6 +11930,9 @@ packages:
 
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
+
+  lodash.uniqwith@4.5.0:
+    resolution: {integrity: sha512-7lYL8bLopMoy4CTICbxygAUq6CdRJ36vFc80DucPueUee+d5NBRxz3FdT9Pes/HEx5mPoT9jwnsEJWz1N7uq7Q==}
 
   lodash.xorby@4.7.0:
     resolution: {integrity: sha512-gYiD6nvuQy0AEkMoUju+t4f4Rn18fjsLB/7x7YZFqtFT9kmegRLrj/uGEQVyVDy7otTmSrIMXNOk2wwuLcfHCQ==}
@@ -12098,6 +12161,10 @@ packages:
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
+
+  meriyah@5.0.0:
+    resolution: {integrity: sha512-tNlPDP4AzkH/7cROw7PKJ7mCLe/ZLpa2ja23uqB35vt63+8dgZi2NKLJMrkjxLcxArnLJVvd3Y/7pRl3OLR7yg==}
+    engines: {node: '>=10.4.0'}
 
   mermaid@11.2.1:
     resolution: {integrity: sha512-F8TEaLVVyxTUmvKswVFyOkjPrlJA5h5vNR1f7ZnSWSpqxgEZG1hggtn/QCa7znC28bhlcrNh10qYaIiill7q4A==}
@@ -14160,6 +14227,9 @@ packages:
   safe-regex2@3.1.0:
     resolution: {integrity: sha512-RAAZAGbap2kBfbVhvmnTFv73NWLMvDGOITFYTZBAaY8eR+Ir4ef7Up/e7amo+y1+AH+3PtLkrt9mvcTsG9LXug==}
 
+  safe-regex@2.1.1:
+    resolution: {integrity: sha512-rx+x8AMzKb5Q5lQ95Zoi6ZbJqwCLkqi3XuJXp5P3rT8OEc6sZCJG5AE5dU3lsgRr/F4Bs31jSlVN+j5KrsGu9A==}
+
   safe-stable-stringify@2.4.2:
     resolution: {integrity: sha512-gMxvPJYhP0O9n2pvcfYfIuYgbledAOJFcqRThtPRmjscaipiwcwPPKLytpVzMkG2HAN87Qmo2d4PtGiri1dSLA==}
     engines: {node: '>=10'}
@@ -14970,6 +15040,9 @@ packages:
         optional: true
       '@swc/wasm':
         optional: true
+
+  ts-pattern@5.5.0:
+    resolution: {integrity: sha512-jqbIpTsa/KKTJYWgPNsFNbLVpwCgzXfFJ1ukNn4I8hMwyQzHMJnk/BqWzggB0xpkILuKzaO/aMYhS0SkaJyKXg==}
 
   tsconfck@3.0.3:
     resolution: {integrity: sha512-4t0noZX9t6GcPTfBAbIbbIU4pfpCwh0ueq3S4O/5qXI1VwK1outmxhe9dOiEWqMz3MW2LKgDTpqWV+37IWuVbA==}
@@ -15849,6 +15922,24 @@ packages:
 
   zrender@5.6.0:
     resolution: {integrity: sha512-uzgraf4njmmHAbEUxMJ8Oxg+P3fT04O+9p7gY+wJRVxo8Ge+KmYv0WJev945EH4wFuc4OY2NLXz46FZrWS9xJg==}
+
+  zustand@5.0.1:
+    resolution: {integrity: sha512-pRET7Lao2z+n5R/HduXMio35TncTlSW68WsYBq2Lg1ASspsNGjpwLAsij3RpouyV6+kHMwwwzP0bZPD70/Jx/w==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -18378,15 +18469,15 @@ snapshots:
       graphql: 16.9.0
       typescript: 5.6.3
 
-  '@graphiql/plugin-explorer@4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@graphiql/plugin-explorer@4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@graphiql/react': 1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@graphiql/react': 1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphiql-explorer: 0.9.0(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql: 16.9.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@graphiql/react@1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@graphiql/react@1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@graphiql/toolkit': 0.10.0(@types/node@22.9.3)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)
       '@headlessui/react': 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -20010,6 +20101,35 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.17.1
+
+  '@nodesecure/estree-ast-utils@1.5.0':
+    dependencies:
+      '@nodesecure/sec-literal': 1.2.0
+
+  '@nodesecure/i18n@4.0.1':
+    dependencies:
+      cacache: 18.0.2
+      deepmerge: 4.3.1
+      lodash.get: 4.4.2
+
+  '@nodesecure/js-x-ray@8.0.0':
+    dependencies:
+      '@nodesecure/estree-ast-utils': 1.5.0
+      '@nodesecure/sec-literal': 1.2.0
+      digraph-js: 2.2.3
+      estree-walker: 3.0.3
+      frequency-set: 1.0.2
+      is-minified-code: 2.0.0
+      meriyah: 5.0.0
+      safe-regex: 2.1.1
+      ts-pattern: 5.5.0
+
+  '@nodesecure/sec-literal@1.2.0':
+    dependencies:
+      frequency-set: 1.0.2
+      is-base64: 1.1.0
+      is-svg: 4.4.0
+      string-width: 5.1.2
 
   '@npmcli/agent@2.2.1':
     dependencies:
@@ -23552,6 +23672,8 @@ snapshots:
     dependencies:
       '@types/node': 22.9.3
 
+  '@types/crypto-js@4.2.2': {}
+
   '@types/debug@4.1.7':
     dependencies:
       '@types/ms': 0.7.34
@@ -25587,6 +25709,8 @@ snapshots:
 
   deepmerge@4.2.2: {}
 
+  deepmerge@4.3.1: {}
+
   default-browser-id@3.0.0:
     dependencies:
       bplist-parser: 0.2.0
@@ -25673,6 +25797,11 @@ snapshots:
   diff@4.0.2: {}
 
   diff@5.2.0: {}
+
+  digraph-js@2.2.3:
+    dependencies:
+      lodash.isequal: 4.5.0
+      lodash.uniqwith: 4.5.0
 
   dir-glob@3.0.1:
     dependencies:
@@ -26853,6 +26982,8 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
+  frequency-set@1.0.2: {}
+
   fresh@0.5.2: {}
 
   fromentries@1.3.2: {}
@@ -27175,9 +27306,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  graphiql@4.0.0-alpha.4(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  graphiql@4.0.0-alpha.5(patch_hash=yjzkcog7ut7wshk4npre67txki)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@graphiql/react': 1.0.0-alpha.3(patch_hash=gnbo5nw2wgehkfq2yrmuhrx4im)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@graphiql/react': 1.0.0-alpha.4(patch_hash=bru5she67j343rpipomank3vn4)(@codemirror/language@6.10.2)(@types/node@22.9.3)(@types/react-dom@18.3.1)(@types/react@18.3.12)(graphql-ws@5.16.0(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql: 16.9.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -27904,6 +28035,8 @@ snapshots:
     dependencies:
       has-tostringtag: 1.0.0
 
+  is-base64@1.1.0: {}
+
   is-bigint@1.0.4:
     dependencies:
       has-bigints: 1.0.2
@@ -27988,6 +28121,8 @@ snapshots:
 
   is-map@2.0.2: {}
 
+  is-minified-code@2.0.0: {}
+
   is-negative-zero@2.0.2: {}
 
   is-network-error@1.0.0: {}
@@ -28058,6 +28193,10 @@ snapshots:
   is-subdir@1.2.0:
     dependencies:
       better-path-resolve: 1.0.0
+
+  is-svg@4.4.0:
+    dependencies:
+      fast-xml-parser: 4.4.1
 
   is-symbol@1.0.4:
     dependencies:
@@ -28578,6 +28717,8 @@ snapshots:
 
   lodash.isarguments@3.1.0: {}
 
+  lodash.isequal@4.5.0: {}
+
   lodash.isplainobject@4.0.6: {}
 
   lodash.lowercase@4.3.0: {}
@@ -28593,6 +28734,8 @@ snapshots:
   lodash.sortby@4.7.0: {}
 
   lodash.startcase@4.4.0: {}
+
+  lodash.uniqwith@4.5.0: {}
 
   lodash.xorby@4.7.0: {}
 
@@ -28974,6 +29117,8 @@ snapshots:
   merge-stream@2.0.0: {}
 
   merge2@1.4.1: {}
+
+  meriyah@5.0.0: {}
 
   mermaid@11.2.1:
     dependencies:
@@ -31615,6 +31760,10 @@ snapshots:
     dependencies:
       ret: 0.4.3
 
+  safe-regex@2.1.1:
+    dependencies:
+      regexp-tree: 0.1.27
+
   safe-stable-stringify@2.4.2: {}
 
   safer-buffer@2.1.2: {}
@@ -32521,6 +32670,8 @@ snapshots:
       yn: 3.1.1
     optionalDependencies:
       '@swc/core': 1.9.2(@swc/helpers@0.5.11)
+
+  ts-pattern@5.5.0: {}
 
   tsconfck@3.0.3(typescript@5.6.3):
     optionalDependencies:
@@ -33545,5 +33696,12 @@ snapshots:
   zrender@5.6.0:
     dependencies:
       tslib: 2.3.0
+
+  zustand@5.0.1(@types/react@18.3.12)(immer@10.1.1)(react@18.3.1)(use-sync-external-store@1.2.0(react@18.3.1)):
+    optionalDependencies:
+      '@types/react': 18.3.12
+      immer: 10.1.1
+      react: 18.3.1
+      use-sync-external-store: 1.2.0(react@18.3.1)
 
   zwitch@2.0.4: {}

@@ -16,7 +16,7 @@ import { deployKafka } from './services/kafka';
 import { deployObservability } from './services/observability';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
-import { deployProxy } from './services/proxy';
+import { deployLabWorker, deployProxy } from './services/proxy';
 import { deployRateLimit } from './services/rate-limit';
 import { deployRedis } from './services/redis';
 import { deployS3, deployS3Mirror } from './services/s3';
@@ -311,6 +311,13 @@ const proxy = deployProxy({
   graphql,
   usage,
   environment,
+});
+
+deployLabWorker({
+  reverseProxy: proxy!,
+  app,
+  environment,
+  path: '/worker.js',
 });
 
 deployCloudFlareSecurityTransform({

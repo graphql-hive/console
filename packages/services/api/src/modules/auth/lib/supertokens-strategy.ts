@@ -307,7 +307,7 @@ function transformOrganizationMemberLegacyScopes(args: {
       case TargetAccessScope.SETTINGS: {
         policies.push({
           effect: 'allow',
-          action: ['target:modifySettings'],
+          action: ['target:modifySettings', 'laboratory:modifyPreflightScript'],
           resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
         });
         break;

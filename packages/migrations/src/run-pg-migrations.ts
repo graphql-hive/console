@@ -147,5 +147,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2024.11.12T00-00-00.supertokens-9.1'),
       await import('./actions/2024.11.12T00-00-00.supertokens-9.2'),
       await import('./actions/2024.11.12T00-00-00.supertokens-9.3'),
+      await import('./actions/2024.11.20T00.00.00.create-preflight-scripts'),
     ],
   });
