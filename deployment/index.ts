@@ -314,7 +314,7 @@ const proxy = deployProxy({
 });
 
 deployCloudFlareSecurityTransform({
-  envName,
+  environment,
   // Paths used by 3rd-party software.
   // The CF Page Rules should not affect them and do not apply any special security headers.
   ignoredPaths: [
