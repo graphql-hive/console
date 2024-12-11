@@ -127,6 +127,7 @@ const ModelMigrationSettings_upgradeProjectRegistryModelMutation = graphql(`
 
 const ModelMigrationSettings_ProjectFragment = graphql(`
   fragment ModelMigrationSettings_ProjectFragment on Project {
+    id
     type
     slug
     registryModel

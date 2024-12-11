@@ -495,6 +495,7 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       nodes {
         id
         user {
+          id
           displayName
         }
         role {
@@ -626,6 +627,7 @@ export function OrganizationMembers(props: {
 
 const ChangePermissionsModal_OrganizationFragment = graphql(`
   fragment ChangePermissionsModal_OrganizationFragment on Organization {
+    id
     ...UsePermissionManager_OrganizationFragment
   }
 `);

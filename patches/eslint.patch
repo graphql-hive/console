@@ -1,0 +1,13 @@
+diff --git a/lib/linter/node-event-generator.js b/lib/linter/node-event-generator.js
+index 0eb2f8dc02bf1d602928b187915ed71d82f4a8ac..fedf8897d3e4d20761ea893878422fce6bd3a781 100644
+--- a/lib/linter/node-event-generator.js
++++ b/lib/linter/node-event-generator.js
+@@ -9,7 +9,7 @@
+ // Requirements
+ //------------------------------------------------------------------------------
+ 
+-const esquery = require("esquery");
++const esquery = require("esquery").default || require("esquery");
+ 
+ //------------------------------------------------------------------------------
+ // Typedefs

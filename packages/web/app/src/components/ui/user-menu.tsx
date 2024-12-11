@@ -55,7 +55,6 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
       id
       slug
       me {
-        id
         ...UserMenu_MemberFragment
       }
       getStarted {
@@ -79,6 +78,7 @@ const UserMenu_MeFragment = graphql(`
 
 const UserMenu_MemberFragment = graphql(`
   fragment UserMenu_MemberFragment on Member {
+    id
     canLeaveOrganization
   }
 `);
@@ -143,7 +143,7 @@ export function UserMenu(props: {
                   {me?.provider === AuthProvider.Google ? (
                     <FaGoogle title="Signed in using Google" />
                   ) : me?.provider === AuthProvider.Github ? (
-                    <FaGithub title="Signed in using Github" />
+                    <FaGithub title="Signed in using GitHub" />
                   ) : (
                     <FaKey title="Signed in using username and password" />
                   )}
