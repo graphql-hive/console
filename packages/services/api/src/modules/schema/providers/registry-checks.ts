@@ -1,5 +1,5 @@
 import { URL } from 'node:url';
-import type { GraphQLSchema } from 'graphql';
+import { buildASTSchema, parse, type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
 import { CriticalityLevel } from '@graphql-inspector/core';
@@ -460,7 +460,14 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+    const existingSchemaParsed = parse(args.existingSdl ?? ' ');
+    const incomingSchemaParsed = parse(args.incomingSdl ?? ' ');
+    const buildASTExistingSchema = buildASTSchema(existingSchemaParsed);
+    const buildASTIncomingSchema = buildASTSchema(incomingSchemaParsed);
+    let inspectorChanges = await this.inspector.diff(
+      buildASTExistingSchema,
+      buildASTIncomingSchema,
+    );
 
     // Filter out federation specific changes as they are not relevant for the schema diff and were in previous schema versions by accident.
     if (args.filterOutFederationChanges === true) {
