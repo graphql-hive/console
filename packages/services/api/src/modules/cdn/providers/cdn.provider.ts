@@ -2,8 +2,10 @@ import bcryptjs from 'bcryptjs';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { encodeCdnToken, generatePrivateKey } from '@hive/cdn-script/cdn-token';
+import { maskToken } from '@hive/service-common';
 import { HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import type { Contract } from '../../schema/providers/contracts';
 import { Logger } from '../../shared/providers/logger';
@@ -23,6 +25,7 @@ export class CdnProvider {
   constructor(
     logger: Logger,
     private session: Session,
+    private auditLog: AuditLogRecorder,
     @Inject(CDN_CONFIG) private config: CDNConfig,
     @Inject(S3_CONFIG) private s3Config: S3Config,
     @Inject(Storage) private storage: Storage,
@@ -222,6 +225,18 @@ export class CdnProvider {
       cdnAccessTokenRecord.id,
     );
 
+    const maskedToken = maskToken(cdnAccessToken);
+    await this.auditLog.record({
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_CREATED',
+      organizationId: args.organizationId,
+      metadata: {
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: args.alias,
+        token: maskedToken,
+      },
+    });
+
     return {
       type: 'success',
       cdnAccessToken: cdnAccessTokenRecord,
@@ -317,6 +332,16 @@ export class CdnProvider {
 
     await this.storage.deleteCDNAccessToken({
       cdnAccessTokenId: args.cdnAccessTokenId,
+    });
+
+    await this.auditLog.record({
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_DELETED',
+      organizationId: args.organizationId,
+      metadata: {
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: record.alias,
+      },
     });
 
     return {

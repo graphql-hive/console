@@ -1,7 +1,9 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { maskToken } from '@hive/service-common';
 import type { Token } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { diffArrays, pushIfMissing } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { OrganizationAccessScope } from '../../auth/providers/organization-access';
 import { ProjectAccessScope } from '../../auth/providers/project-access';
@@ -33,6 +35,7 @@ export class TokenManager {
     private session: Session,
     private tokenStorage: TokenStorage,
     private storage: Storage,
+    private auditLog: AuditLogRecorder,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -82,13 +85,27 @@ export class TokenManager {
     pushIfMissing(scopes, ProjectAccessScope.READ);
     pushIfMissing(scopes, OrganizationAccessScope.READ);
 
-    return this.tokenStorage.createToken({
+    const result = await this.tokenStorage.createToken({
       organizationId: input.organizationId,
       projectId: input.projectId,
       targetId: input.targetId,
       name: input.name,
       scopes,
     });
+
+    const maskedToken = maskToken(result.token);
+    await this.auditLog.record({
+      eventType: 'TARGET_TOKEN_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        targetId: input.targetId,
+        projectId: input.projectId,
+        alias: input.name,
+        token: maskedToken,
+      },
+    });
+
+    return result;
   }
 
   async deleteTokens(input: {
@@ -107,7 +124,19 @@ export class TokenManager {
       },
     });
 
-    return this.tokenStorage.deleteTokens(input);
+    const result = this.tokenStorage.deleteTokens(input);
+
+    await this.auditLog.record({
+      eventType: 'TARGET_TOKEN_DELETED',
+      organizationId: input.organizationId,
+      metadata: {
+        targetId: input.targetId,
+        projectId: input.projectId,
+        alias: input.tokenIds.join(', '),
+      },
+    });
+
+    return result;
   }
 
   async getTokens(selector: TargetSelector): Promise<readonly Token[]> {

@@ -1,7 +1,9 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
+import { maskToken } from '@hive/service-common';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
@@ -20,6 +22,7 @@ export class OIDCIntegrationsProvider {
     logger: Logger,
     private storage: Storage,
     private crypto: CryptoProvider,
+    private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
     private session: Session,
@@ -129,6 +132,14 @@ export class OIDCIntegrationsProvider {
       });
 
       if (creationResult.type === 'ok') {
+        await this.auditLog.record({
+          eventType: 'OIDC_INTEGRATION_CREATED',
+          organizationId: args.organizationId,
+          metadata: {
+            integrationId: creationResult.oidcIntegration.id,
+          },
+        });
+
         return creationResult;
       }
 
@@ -231,6 +242,24 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.data,
       });
 
+      const redactedClientSecret = maskToken(oidcIntegration.clientId);
+      const redactedTokenEndpoint = maskToken(oidcIntegration.tokenEndpoint);
+      await this.auditLog.record({
+        eventType: 'OIDC_INTEGRATION_UPDATED',
+        organizationId: integration.linkedOrganizationId,
+        metadata: {
+          updatedFields: JSON.stringify({
+            updateOIDCIntegration: true,
+            clientId: args.clientId,
+            clientSecret: redactedClientSecret,
+            tokenEndpoint: redactedTokenEndpoint,
+            userinfoEndpoint: args.userinfoEndpoint,
+            authorizationEndpoint: args.authorizationEndpoint,
+          }),
+          integrationId: args.oidcIntegrationId,
+        },
+      });
+
       return {
         type: 'ok',
         oidcIntegration,
@@ -286,6 +315,14 @@ export class OIDCIntegrationsProvider {
     });
 
     await this.storage.deleteOIDCIntegration(args);
+
+    await this.auditLog.record({
+      eventType: 'OIDC_INTEGRATION_DELETED',
+      organizationId: integration.linkedOrganizationId,
+      metadata: {
+        integrationId: args.oidcIntegrationId,
+      },
+    });
 
     return {
       type: 'ok',

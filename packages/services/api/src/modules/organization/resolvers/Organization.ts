@@ -25,6 +25,7 @@ export const Organization: Pick<
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
+  | 'viewerCanExportAuditLogs'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
   | 'viewerCanMigrateLegacyMemberRoles'
@@ -226,5 +227,14 @@ export const Organization: Pick<
       .getOrganizationOwner({ organizationId: organization.id });
     const viewer = await session.getViewer();
     return viewer.id === owner.id;
+  },
+  viewerCanExportAuditLogs: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'auditLog:export',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };

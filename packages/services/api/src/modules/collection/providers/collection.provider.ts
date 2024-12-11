@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import { DocumentCollection, DocumentCollectionOperation, Target } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -19,6 +20,7 @@ export class CollectionProvider {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'CollectionProvider' });
   }
@@ -140,12 +142,21 @@ export class CollectionProvider {
       targetId,
     });
     const currentUser = await this.session.getViewer();
-
     const collection = await this.storage.createDocumentCollection({
       createdByUserId: currentUser.id,
       title: args.name,
       description: args.description || '',
       targetId,
+    });
+
+    await this.auditLog.record({
+      eventType: 'COLLECTION_CREATED',
+      organizationId,
+      metadata: {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        targetId: target.id,
+      },
     });
 
     return {
@@ -204,6 +215,19 @@ export class CollectionProvider {
       targetId,
     });
 
+    await this.auditLog.record({
+      eventType: 'COLLECTION_UPDATED',
+      organizationId,
+      metadata: {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        updatedFields: JSON.stringify({
+          name: args.name,
+          description: args.description || null,
+        }),
+      },
+    });
+
     return {
       collection,
       target,
@@ -252,6 +276,15 @@ export class CollectionProvider {
 
     await this.storage.deleteDocumentCollection({
       documentCollectionId: args.collectionId,
+    });
+
+    await this.auditLog.record({
+      eventType: 'COLLECTION_DELETED',
+      organizationId,
+      metadata: {
+        collectionId: args.collectionId,
+        collectionName: collection.title,
+      },
     });
 
     return {
@@ -341,6 +374,18 @@ export class CollectionProvider {
       variables: data.variables,
       headers: data.headers,
       createdByUserId: currentUser.id,
+    });
+
+    await this.auditLog.record({
+      eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_CREATED',
+      organizationId,
+      metadata: {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
+        operationQuery: document.contents,
+        targetId: target.id,
+      },
     });
 
     return {
@@ -445,6 +490,22 @@ export class CollectionProvider {
       };
     }
 
+    await this.auditLog.record({
+      eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_UPDATED',
+      organizationId,
+      metadata: {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
+        updatedFields: JSON.stringify({
+          name: data.name,
+          query: data.query,
+          variables: data.variables,
+          headers: data.headers,
+        }),
+      },
+    });
+
     return {
       type: 'success' as const,
       target,
@@ -519,6 +580,16 @@ export class CollectionProvider {
       organizationId,
       projectId,
       targetId,
+    });
+
+    await this.auditLog.record({
+      eventType: 'OPERATION_IN_DOCUMENT_COLLECTION_DELETED',
+      organizationId,
+      metadata: {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        operationId: document.id,
+      },
     });
 
     return {

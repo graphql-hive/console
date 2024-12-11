@@ -2,6 +2,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import type { StripeBillingApi, StripeBillingApiInput } from '@hive/stripe-billing';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { OrganizationBilling } from '../../../shared/entities';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -21,6 +22,7 @@ export class BillingProvider {
 
   constructor(
     logger: Logger,
+    private auditLog: AuditLogRecorder,
     private storage: Storage,
     private idTranslator: IdTranslator,
     private session: Session,
@@ -38,13 +40,26 @@ export class BillingProvider {
     }
   }
 
-  upgradeToPro(input: StripeBillingApiInput['createSubscriptionForOrganization']) {
+  async upgradeToPro(input: StripeBillingApiInput['createSubscriptionForOrganization']) {
     this.logger.debug('Upgrading to PRO (input=%o)', input);
     if (!this.billingService) {
       throw new Error(`Billing service is not configured!`);
     }
 
-    return this.billingService.createSubscriptionForOrganization.mutate(input);
+    const result = this.billingService.createSubscriptionForOrganization.mutate(input);
+
+    await this.auditLog.record({
+      eventType: 'SUBSCRIPTION_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        operations: input.reserved.operations,
+        paymentMethodId: input.paymentMethodId,
+        newPlan: 'PRO',
+        previousPlan: 'HOBBY',
+      },
+    });
+
+    return result;
   }
 
   syncOrganization(input: StripeBillingApiInput['syncOrganizationToStripe']) {
@@ -106,6 +121,15 @@ export class BillingProvider {
     if (!this.billingService) {
       throw new Error(`Billing service is not configured!`);
     }
+
+    await this.auditLog.record({
+      eventType: 'SUBSCRIPTION_CANCELED',
+      organizationId: input.organizationId,
+      metadata: {
+        newPlan: 'HOBBY',
+        previousPlan: 'PRO',
+      },
+    });
 
     return await this.billingService.cancelSubscriptionForOrganization.mutate(input);
   }
