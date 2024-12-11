@@ -1,6 +1,4 @@
-import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import diagram from '../../../../public/docs/pages/self-hosting/diagram.png'
 
 # Self-Hosting Hive
 
@@ -46,7 +44,7 @@ components:
 - Hive microservices
 
 <Callout type="info">
-The defualt configuration of the self-hosted environment comes with a single instance of each database.
+The default configuration of the self-hosted environment comes with a single instance of each database.
 
 For production environments, we recommend replacing the in-cluster databases (PostgreSQL, Kafka and
 ClickHouse) and storage (S3) with managed database/storage (Cloud-based or in-house).
@@ -59,11 +57,7 @@ ClickHouse) and storage (S3) with managed database/storage (Cloud-based or in-ho
 
 The following diagram shows the architecture of a self-hosted GraphQL Hive instance:
 
-<NextImage
-  alt="Self-hosting diagram"
-  src={diagram}
-  className="mt-10 w-full rounded-lg drop-shadow-md"
-/>
+![Self-hosting diagram](/docs/pages/self-hosting/diagram.png)
 
 ### Services Overview
 
@@ -132,7 +126,7 @@ First download the `docker-compose.community.yml` file from the
 using `wget`. This's going to download the latest version available.
 
 <Callout type="info">
-  Note: make sure you've Docker installed to be able to continue with the setup process.
+  **Note**: make sure you've Docker installed to be able to continue with the setup process.
 </Callout>
 
 > You can also download the file directly from GitHub, if you don't have wget installed using the
@@ -275,7 +269,7 @@ git init
 Make sure you exclude the following in your `.gitignore` file, because you don't wanna push those in
 your commits:
 
-```
+```gitignore
 node_modules
 .hive
 hive.json

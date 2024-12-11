@@ -2,8 +2,6 @@
 searchable: false
 ---
 
-import { Callout } from '@theguild/components'
-
 # Rate Limiting
 
 Rate limiting is a technique for reducing server load by limiting the number of requests that can be
@@ -82,7 +80,7 @@ type Query {
 - `max`: Define the max number of calls to the given field per window.
 
 - `identityArgs`: If you wanted to limit the requests to a field per id, per user, use identityArgs
-  to define how the request should be identified. For example you'd provide just ["id"] if you
+  to define how the request should be identified. For example, you'd provide just ["id"] if you
   wanted to rate limit the access to a field by id. We use Lodash's get to access nested identity
   args, docs here.
 

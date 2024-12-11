@@ -1,12 +1,4 @@
-import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import projectImage from '../../../../public/docs/pages/first-steps/project.png'
-import githubIntegrationImage from '../../../../public/docs/pages/management/org-github-integration.png'
-import slackIntegrationImage from '../../../../public/docs/pages/management/org-slack-integration.png'
-import projectGitLinkImage from '../../../../public/docs/pages/management/project-git-link.png'
-import projectHttpAlertImage from '../../../../public/docs/pages/management/project-http-alert.png'
-import msteamsFormImage from '../../../../public/docs/pages/management/project-msteams-alert.png'
-import slackAlertFormImage from '../../../../public/docs/pages/management/project-slack-alert.png'
 
 # Project Management
 
@@ -32,11 +24,7 @@ Hive supports the following project types:
 
 To create a new project, click on **Create Project +** button from your organization's main page:
 
-<NextImage
-  alt="Create Project Form"
-  src={projectImage}
-  className="mt-10 max-w-lg rounded-lg drop-shadow-md"
-/>
+![Create Project Form](/docs/pages/first-steps/project.png)
 
 Choose a project type based on your project's stack, and then enter the project slug.
 
@@ -68,11 +56,7 @@ Having a Project connected with your GitHub repositories gives you the following
 - Have direct connection between a schema version and a Git commit in your repository in Hive
   dashboard.
 
-<NextImage
-  alt="Associated Git"
-  src={projectGitLinkImage}
-  className="mt-6 max-w-lg rounded-lg drop-shadow-md"
-/>
+![Associated Git](/docs/pages/management/project-git-link.png)
 
 ### Change slug of a project
 
@@ -91,7 +75,7 @@ Settings tab of your project:
 As the owner of an organization, you have the option to delete a project, including all targets,
 settings and all data collected during your use of Hive.
 
-To delete an project, go to the **Settings** tab of your project, and use the **Delete Project**
+To delete a project, go to the **Settings** tab of your project, and use the **Delete Project**
 section.
 
 <Callout type="warning">This action is not reversible!</Callout>
@@ -118,11 +102,7 @@ At the moment, Hive supports the following transports to ship your alerts and no
 Integrating your project with a Slack channel will allow you to receive alerts and notifications
 shipped directly to a Slack channel.
 
-<NextImage
-  alt="Hive Slack Message"
-  src={slackIntegrationImage}
-  className="mt-6 max-w-lg rounded-lg drop-shadow-md"
-/>
+![Hive Slack Message](/docs/pages/management/org-slack-integration.png)
 
 To integrate your **project** with a Slack channel, you first need to
 [activate the Slack integration at the organization level](/docs/management/organizations#slack).
@@ -130,11 +110,7 @@ To integrate your **project** with a Slack channel, you first need to
 Once you have activated the Slack integration, you can configure a Slack channel to connect to your
 Hive project:
 
-<NextImage
-  alt="Hive and Slack Configuration"
-  src={slackAlertFormImage}
-  className="mt-6 max-w-sm rounded-lg drop-shadow-md"
-/>
+![Hive and Slack Configuration](/docs/pages/management/project-slack-alert.png)
 
 <Callout type="info">
   To send messages to private channels, invite the @GraphQLHive account first. Without this
@@ -148,7 +124,7 @@ notification is triggered. All you need to do is to provide a valid HTTP URL, an
 a `POST` request to that URL, with a JSON payload acceptable by MS Teams.
 [MS Teams Webhook JSON example](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using#example-of-connector-message)
 
-Typically the webhook URL looks like:
+Typically, the webhook URL looks like:
 
 ```txt
 https://USERNAME.webhook.office.com/webhookb2/XXXXX/IncomingWebhook/YYYY/ZZZZZ
@@ -157,11 +133,7 @@ https://USERNAME.webhook.office.com/webhookb2/XXXXX/IncomingWebhook/YYYY/ZZZZZ
 You can find more information on how to set up a webhook in MS Teams in the
 [official documentation - Create Incoming Webhooks](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet).
 
-<NextImage
-  alt="MS Teams Alert Configuration"
-  src={msteamsFormImage}
-  className="mt-6 max-w-sm rounded-lg drop-shadow-md"
-/>
+![MS Teams Alert Configuration](/docs/pages/management/project-msteams-alert.png)
 
 #### HTTP Webhook
 
@@ -183,11 +155,7 @@ a notification is triggered.
   address must contain a valid hostname (not an IP address), and the port must be standard.
 </Callout>
 
-<NextImage
-  alt="HTTP Alert Configuration"
-  src={projectHttpAlertImage}
-  className="mt-6 max-w-sm rounded-lg drop-shadow-md"
-/>
+![HTTP Alert Configuration](/docs/pages/management/project-http-alert.png)
 
 <Callout type="info">
   Every type of event/notification has a different JSON payload, please refer to the information

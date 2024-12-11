@@ -1,9 +1,4 @@
-import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import tokenImage from '../../../../public/docs/pages/guides/token.png'
-import newTargetFormImage from '../../../../public/docs/pages/management/new-target-form.png'
-import tagetConditionalBreakingChangesImage from '../../../../public/docs/pages/management/target-conditional-breaking-changes.png'
-import tokenCreateSuccess from '../../../../public/docs/pages/management/target-created-token.png'
 
 # Target Management
 
@@ -23,11 +18,7 @@ use.
 From your Hive **project** page, you can see the list of targets created under the project. You can
 also use the **New Target** button to create a new target.
 
-<NextImage
-  alt="Create Target Form"
-  src={newTargetFormImage}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Create Target Form](/docs/pages/management/new-target-form.png)
 
 ## Manage existing target
 
@@ -40,11 +31,7 @@ schemas as safe, based on real-life data and traffic reported to Hive. This is d
 When a new schema of your GraphQL schema is published to the registry, Hive uses the data collected
 from your API gateway to identify whether the change in your schema actually affects consumers.
 
-<NextImage
-  alt="Conditional Breaking Changes"
-  src={tagetConditionalBreakingChangesImage}
-  className="mt-10 max-w-3xl rounded-lg drop-shadow-md"
-/>
+![Conditional Breaking Changes](/docs/pages/management/target-conditional-breaking-changes.png)
 
 Under your target's **Settings** page, you can enable the **Conditional Breaking Changes** feature
 and configure the following settings:
@@ -57,7 +44,7 @@ a specific time range.
 Here are a few examples and their meaning:
 
 - **Traffic Threshold:** `0%`: A breaking change is considered as breaking and dangerous if the
-  field was was used at least once.
+  field was used at least once.
 - **Traffic Threshold:** `10%`: A breaking change is considered as breaking and dangerous if the
   field was requested by more than 10% of all GraphQL operation.
 
@@ -152,20 +139,12 @@ Under the **Registry Access Tokens** section, click the **Generate new token** b
 access token a either select a predefined preset for your token (under **Simple** view), or create a
 token with custom permissions (under **Advanced** view).
 
-<NextImage
-  alt="Create Registry Token Form"
-  src={tokenImage}
-  className="mt-10 max-w-md rounded-lg drop-shadow-md"
-/>
+![Create Registry Token Form](/docs/pages/guides/token.png)
 
-Click on **Generate Token** button and you should get your CLI token created, with permissions to
+Click on **Generate Token** button, and you should get your CLI token created, with permissions to
 publish GraphQL schemas.
 
-<NextImage
-  alt="Created Token"
-  src={tokenCreateSuccess}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Created Token](/docs/pages/management/target-created-token.png)
 
 Make sure to copy your token and keep it safe. **You won't be able to see it again.**
 

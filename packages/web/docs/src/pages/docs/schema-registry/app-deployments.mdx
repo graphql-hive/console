@@ -2,7 +2,6 @@
 title: 'App Deployment (Persisted Operations)'
 ---
 
-import NextImage from 'next/image'
 import { Callout, Tabs } from '@theguild/components'
 
 # App Deployments
@@ -14,7 +13,7 @@ import { Callout, Tabs } from '@theguild/components'
       href="#"
       className="inline-block underline"
       onClick={() => {
-        window?.$crisp?.push(['do', 'chat:open'])
+        window.$crisp?.push(['do', 'chat:open'])
       }}
     >
       reach out to us
@@ -32,7 +31,7 @@ Making better decisions about:
 
 - Which operations are being used by what app client version (mobile app, web app, etc.)
 - Which team or developer is responsible for a specific operation and needs to be contacted for
-  Schema change decissions
+  Schema change decisions
 
 ```mermaid
 flowchart LR
@@ -174,24 +173,12 @@ App UI.
 
 Navigate to the Target page on the Hive Dashboard and click on the **Apps** tab to see it.
 
-import pendingAppImage from '../../../../public/docs/pages/features/app-deployments/pending-app.png'
-
-<NextImage
-  alt="Pending App Deployment"
-  src={pendingAppImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Pending App Deployment](/docs/pages/features/app-deployments/pending-app.png)
 
 By clicking on the app deployments name, you can navigate to the app deployment details page, where
 you can see all the GraphQL operations that are uploaded as part of this app deployment.
 
-import detailAppImage from '../../../../public/docs/pages/features/app-deployments/detail-app.png'
-
-<NextImage
-  alt="App Deployment Detail View"
-  src={detailAppImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![App Deployment Detail View](/docs/pages/features/app-deployments/detail-app.png)
 
 ## Publish an App Deployment
 
@@ -214,13 +201,7 @@ hive app:publish --name "my-app" --version "1.0.0"
 After publishing the app deployment, the persisted documents, the status of the app deployment on
 the Hive dashboard will change to **active**.
 
-import activeAppImage from '../../../../public/docs/pages/features/app-deployments/active-app.png'
-
-<NextImage
-  alt="Active App Deployment"
-  src={activeAppImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Active App Deployment](/docs/pages/features/app-deployments/active-app.png)
 
 ## Persisted Documents on GraphQL Server and Gateway
 
@@ -549,15 +530,14 @@ function fetchQuery(operation, variables) {
 
 </Tabs>
 
-## Continous Deployment (CD) Integration
+## Continuous Deployment (CD) Integration
 
 We recommend integrating the app deployment creation and publishing into your CD pipeline for
-automating the creationg and publishing of app deployments.
+automating the creating and publishing of app deployments.
 
 Usually the following steps are performed.
 
 ```mermaid
-
 graph TD
     A[Extract Persisted Documents from App] --> B[Create App Deployment via Hive CLI]
     B --> C[Publish App Deployment via Hive CLI]

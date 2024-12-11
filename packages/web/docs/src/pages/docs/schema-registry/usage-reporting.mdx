@@ -2,14 +2,7 @@
 title: GraphQL Schema Usage
 ---
 
-import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import monitoringViewImage from '../../../../public/docs/pages/features/monitoring-view.png'
-import usageClientsImage from '../../../../public/docs/pages/features/usage-clients.png'
-import usageLatencyImage from '../../../../public/docs/pages/features/usage-latency-over-time.png'
-import usageOperationsOverTimeImage from '../../../../public/docs/pages/features/usage-operations-over-time.png'
-import usageRpmImage from '../../../../public/docs/pages/features/usage-rpm-over-time.png'
-import usageStatsImage from '../../../../public/docs/pages/features/usage-stats.png'
 
 # Usage Reporting and Monitoring
 
@@ -57,11 +50,7 @@ For additional reading, please refer to the following resources:
 Once you have usage reporting enabled, and shipped your usage reports to Hive, you can view the
 usage data in the **Monitoring** view of the target.
 
-<NextImage
-  alt="Monitoring View"
-  src={monitoringViewImage}
-  className="mt-10 max-w-3xl rounded-lg drop-shadow-md"
-/>
+![Monitoring View](/docs/pages/features/monitoring-view.png)
 
 This view includes the following information:
 
@@ -72,26 +61,18 @@ From the usage statistics view, you'll be able to see the following metrics of y
 1. Total amount of GraphQL executed.
 2. Average RPM (Requests Per Minute)
 3. Total count of unique GraphQL operations
-4. Sucess-rate of the executed operations
+4. Success-rate of the executed operations
 5. Error-rate of the executed operations
 6. Latency (`p99`, `p95` and `p90`)
 
-<NextImage
-  alt="Usage Statistics View"
-  src={usageStatsImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Usage Statistics View](/docs/pages/features/usage-stats.png)
 
 ### Clients Overview
 
 A breakdown of the clients who are using your GraphQL gateway, and the amount of operations executed
 by each client.
 
-<NextImage
-  alt="Clients Overview"
-  src={usageClientsImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Clients Overview](/docs/pages/features/usage-clients.png)
 
 ### Monitoring Statistics
 
@@ -100,24 +81,12 @@ performance:
 
 1. **Operations time**: the amount of GraphQL operations executed over time.
 
-<NextImage
-  alt="Operations Over Time"
-  src={usageOperationsOverTimeImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Operations Over Time](/docs/pages/features/usage-operations-over-time.png)
 
 2. **RPM over time**: the amount of GraphQL operations executed per minute over time.
 
-<NextImage
-  alt="RPM Over Time"
-  src={usageRpmImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![RPM Over Time](/docs/pages/features/usage-rpm-over-time.png)
 
 3. **Latency over time**: the latency of GraphQL operations over time.
 
-<NextImage
-  alt="Latency Over Time"
-  src={usageLatencyImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Latency Over Time](/docs/pages/features/usage-latency-over-time.png)

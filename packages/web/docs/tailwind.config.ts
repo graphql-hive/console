@@ -3,6 +3,7 @@ import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssRadix from 'tailwindcss-radix';
 import { fontFamily } from 'tailwindcss/defaultTheme';
+// @ts-expect-error -- no types
 import { default as flattenColorPalette } from 'tailwindcss/lib/util/flattenColorPalette';
 import plugin from 'tailwindcss/plugin';
 import tailwindTypography from '@tailwindcss/typography';

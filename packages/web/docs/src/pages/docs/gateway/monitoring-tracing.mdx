@@ -4,9 +4,7 @@ description:
   behavior of your Hive Gateway.
 ---
 
-import Image from 'next/image'
-import { Table, Td, Th, Tr } from 'nextra/components'
-import { Callout, Cards, Tabs } from '@theguild/components'
+import { Callout, Tabs } from '@theguild/components'
 
 # Monitoring and Tracing
 
@@ -130,7 +128,7 @@ The following are available to use with this plugin:
 
 <Tabs items={['CLI', 'Programmatic Usage']}>
 
-  <Tabs.Tab>
+<Tabs.Tab>
 
 ```ts filename="gateway.config.ts"
 import { createStdoutExporter, defineConfig } from '@graphql-hive/gateway'
@@ -159,7 +157,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-  </Tabs.Tab>
+</Tabs.Tab>
 
 <Tabs.Tab>
 

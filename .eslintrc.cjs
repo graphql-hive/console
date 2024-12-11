@@ -224,9 +224,35 @@ module.exports = {
         },
         tailwindcss: {
           callees: tailwindCallees,
-          whitelist: ['light', 'hive-focus', 'hive-focus-within'],
+          whitelist: ['light', 'hive-focus', 'hive-focus-within', '_text-primary-600'],
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
+      },
+    },
+    {
+      files: ['packages/web/docs/src/**/*.mdx'],
+      parser: 'eslint-mdx',
+      parserOptions: {
+        ecmaVersion: 2024,
+        sourceType: 'module',
+      },
+      rules: {
+        'import/no-duplicates': 'error',
+        'react/jsx-uses-vars': 'error', // should be enabled, otherwise @typescript-eslint/no-unused-vars gives false positive
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            argsIgnorePattern: '^_',
+            varsIgnorePattern: '^_', // allow underscores in destructuring
+          },
+        ],
+        'no-restricted-imports': [
+          'error',
+          {
+            name: 'next/image',
+            message: 'Use markdown syntax - ![Your image alt attribute](/path/to/your/image)',
+          },
+        ],
       },
     },
     {

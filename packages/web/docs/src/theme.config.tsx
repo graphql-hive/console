@@ -1,3 +1,4 @@
+import NextImage, { ImageProps } from 'next/image';
 import { useRouter } from 'next/router';
 import {
   defineConfig,
@@ -124,23 +125,24 @@ export default defineConfig({
 
       return (
         <HiveFooter
-          isHive
           className={cn(
             isLandingPage(route) ? 'light' : '[&>:first-child]:mx-0 [&>:first-child]:max-w-[90rem]',
             'pt-[72px]',
           )}
-          resources={[
-            {
-              children: 'Privacy Policy',
-              href: 'https://the-guild.dev/graphql/hive/privacy-policy.pdf',
-              title: 'Privacy Policy',
-            },
-            {
-              children: 'Terms of Use',
-              href: 'https://the-guild.dev/graphql/hive/terms-of-use.pdf',
-              title: 'Terms of Use',
-            },
-          ]}
+          items={{
+            resources: [
+              {
+                children: 'Privacy Policy',
+                href: 'https://the-guild.dev/graphql/hive/privacy-policy.pdf',
+                title: 'Privacy Policy',
+              },
+              {
+                children: 'Terms of Use',
+                href: 'https://the-guild.dev/graphql/hive/terms-of-use.pdf',
+                title: 'Terms of Use',
+              },
+            ],
+          }}
         />
       );
     },
@@ -183,4 +185,14 @@ export default defineConfig({
   description: 'Schema registry for your GraphQL workflows',
   websiteName: 'Hive',
   logo: <HiveLogo className="text-green-1000" />,
+  components: {
+    // @ts-expect-error -- fixme
+    img(props: ImageProps) {
+      const ComponentToUse = typeof props.src === 'object' ? NextImage : 'img';
+      return (
+        // @ts-expect-error -- fixme
+        <ComponentToUse {...props} className={cn('rounded-lg drop-shadow-md', props.className)} />
+      );
+    },
+  },
 });

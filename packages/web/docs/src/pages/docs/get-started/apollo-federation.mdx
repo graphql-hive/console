@@ -1,19 +1,4 @@
-import NextImage from 'next/image'
 import { Callout, Cards, FileTree, Steps, Tabs } from '@theguild/components'
-import cdnAccessTokenSettings from '../../../../public/docs/pages/get-started/apollo-federation/cdn-access-token-settings.png'
-import createAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/create-access-token.png'
-import cdnAccessTokenCreate from '../../../../public/docs/pages/get-started/apollo-federation/create-cdn-access-token.png'
-import createdAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/created-access-token.png'
-import cdnAccessTokenCreated from '../../../../public/docs/pages/get-started/apollo-federation/created-cdn-access-token.png'
-import publishFirstSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png'
-import publishSecondSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png'
-import publishThirdSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png'
-import registryTokenSettings from '../../../../public/docs/pages/get-started/apollo-federation/registry-token-settings.png'
-import targetOverview from '../../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
-import cdnTokenImage from '../../../../public/docs/pages/guides/federation-cdn-token.png'
-
-import historyImage from '../../../../public/docs/pages/guides/history.png'
-import tokenImage from '../../../../public/docs/pages/guides/token.png'
 
 # Get started with Apollo Federation
 
@@ -119,11 +104,7 @@ As you may have noticed, Hive has created three targets under your project: `dev
 `staging`, and `production`. Each of these targets represent a different environment. You can remove
 or create new targets as needed, for modelling the different environments of your project.
 
-<NextImage
-  src={targetOverview}
-  alt="Project overview showing the available targets"
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Project overview showing the available targets](/docs/pages/get-started/apollo-federation/target-overview.png)
 
 For this guide we will use the `development` target.
 
@@ -133,29 +114,17 @@ access token with the necessary permissions for the Hive CLI.
 Select the `development` target under your Hive project and then choose the **Settings** tab. On the
 Settings screen, you can manage your target's settings and access tokens.
 
-<NextImage
-  src={registryTokenSettings}
-  alt="Target settings for registry token management"
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Target settings for registry token management](/docs/pages/get-started/apollo-federation/registry-token-settings.png)
 
 Under the **Registry Access Tokens** section, click the **Create new registry token** button. Give
 your access token a name and select **Read & Write** for the permissions:
 
-<NextImage
-  alt="Create Registry Token Form"
-  src={createAccessToken}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Create Registry Token Form](/docs/pages/get-started/apollo-federation/create-access-token.png)
 
 Click on **Generate Token** button and you should get your CLI token created, with permissions to
 publish GraphQL schemas.
 
-<NextImage
-  alt="Created Registry Token Form"
-  src={createdAccessToken}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Created Registry Token Form](/docs/pages/get-started/apollo-federation/created-access-token.png)
 
 Make sure to copy your token and keep it safe. **You won't be able to see it again.**
 
@@ -239,11 +208,7 @@ schema version on the Hive dashboard.
 If you'll get to your target's page on Hive dashboard, you should see that it was updated with the
 new schema you just published 🎉
 
-<NextImage
-  alt="First published schema version on the Hive dashboard"
-  src={publishFirstSchemaVersionUi}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![First published schema version on the Hive dashboard](/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png)
 
 <Callout type="info">
   You should also check out the **Explorer** tab: you can see the schema you just published, and
@@ -319,11 +284,7 @@ If everything goes well, you should see the following output:
 After the publish process, if we had over to the Hive dashboard, we can see our new schema version
 published.
 
-<NextImage
-  alt="Second published schema version on the Hive dashboard"
-  src={publishSecondSchemaVersionUi}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Second published schema version on the Hive dashboard](/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png)
 
 Last, we will publish the **Reviews** subgraph schema to Hive. Again, let's start by copying the
 schema to a local file.
@@ -395,11 +356,7 @@ Again, if everything goes well, you should see the following output:
 
 On your target's **Explorer** page now, you'll be able to see the schema of all three subgraphs 🎉
 
-<NextImage
-  alt="Third published schema version on the Hive dashboard"
-  src={publishThirdSchemaVersionUi}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Third published schema version on the Hive dashboard](/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png)
 
 Congratulations on publishing and composing your first subgraphs with the Hive schema registry!
 
@@ -444,33 +401,21 @@ For accessing the supergraph, we need to create the CDN access token from the Hi
 
 Navigate to your target's settings page and select the **CDN Tokens** tab.
 
-<NextImage
-  alt="CDN Token Form"
-  src={cdnAccessTokenSettings}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![CDN Token Form](/docs/pages/get-started/apollo-federation/cdn-access-token-settings.png)
 
 Click the **Create new CDN token** button, give your token a name and click **Create**.
 
-<NextImage
-  alt="CDN Token Form"
-  src={cdnAccessTokenCreate}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![CDN Token Form](/docs/pages/get-started/apollo-federation/create-cdn-access-token.png)
 
 There will be a confirmation screen showing the CDN token you just created. Make sure to copy it and
 keep it safe.
 
-<NextImage
-  alt="CDN Token Form"
-  src={cdnAccessTokenCreated}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![CDN Token Form](/docs/pages/get-started/apollo-federation/created-cdn-access-token.png)
 
 #### Run the Gateway
 
 Hive Gateway is the Federation Gateway that seamlessly integrates with the Hive registry. You can
-run Hive Gateay either as a Docker image, binary or NPM package.
+run Hive Gateway either as a Docker image, binary or NPM package.
 
 <Tabs items={['Binary', 'Docker', 'Node.js Package']}>
 
@@ -552,24 +497,12 @@ npx hive-gateway supergraph \
 If you now navigate to `http://localhost:4000`, you should see the Hive Gateway page with
 information about the supergraph and subgraphs.
 
-import HiveGatewayLandingPageImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png'
-
-<NextImage
-  alt="Hive Gateway Landing Page"
-  src={HiveGatewayLandingPageImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Hive Gateway Landing Page](/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png)
 
 Now, if you navigate to `http://localhost:4000/graphql`, you should see the GraphiQL interface where
 you can write and execute queries against the supergraph.
 
-import HiveGatewayGraphiqlImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png'
-
-<NextImage
-  alt="Hive Gateway GraphiQL"
-  src={HiveGatewayGraphiqlImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Hive Gateway GraphiQL](/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png)
 
 Here you can execute GraphQL operations against the supergraph, which will be delegate to the single
 subgraph services.
@@ -693,13 +626,7 @@ query TopProductsWithReview {
 After executing the query, a few times, let's switch back to the Hive dashboard and navigate to the
 insights page.
 
-import HiveDashboardInsightsImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png'
-
-<NextImage
-  alt="Hive Gateway GraphiQL"
-  src={HiveDashboardInsightsImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Hive Gateway GraphiQL](/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png)
 
 Here we can now see the GraphQL operations from our Gateway being reported to the registry.
 

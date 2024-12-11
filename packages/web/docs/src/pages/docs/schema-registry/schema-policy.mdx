@@ -2,15 +2,7 @@
 title: Schema Policies (linting)
 ---
 
-import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import cliPolicyErrorImage from '../../../../public/docs/pages/features/policy/policy-cli-error.png'
-import cliPolicyWarningImage from '../../../../public/docs/pages/features/policy/policy-cli-warning.png'
-import policyOverrideConfigImage from '../../../../public/docs/pages/features/policy/policy-override-config.png'
-import policyOverrideSeverityImage from '../../../../public/docs/pages/features/policy/policy-override-severity.png'
-import policyOverviewImage from '../../../../public/docs/pages/features/policy/policy-overview.png'
-import policyRulesConfigImage from '../../../../public/docs/pages/features/policy/policy-rules-config.png'
-import policySeverityImage from '../../../../public/docs/pages/features/policy/policy-severity.png'
 
 # Schema Policies
 
@@ -37,11 +29,7 @@ To find the list of all available rules, go to your **organization** or **projec
 **Policy** tab. You will see the list of all available rules, with the ability to enable/disable
 rule by using the corresponding checkbox.
 
-<NextImage
-  alt="Schema Policy Overview"
-  src={policyOverviewImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Schema Policy Overview](/docs/pages/features/policy/policy-overview.png)
 
 Once a rule is activated, you may configure the following options:
 
@@ -49,11 +37,7 @@ Once a rule is activated, you may configure the following options:
 
 You can set the severity of the rule to `warning` or `error`. The default severity is `warning`.
 
-<NextImage
-  alt="Schema Policy Severity"
-  src={policySeverityImage}
-  className="w-sm mt-6 rounded-lg drop-shadow-md"
-/>
+![Schema Policy Severity](/docs/pages/features/policy/policy-severity.png)
 
 A rule defined with `warning` severity will emit a **warning**, but will not fail the schema check.
 
@@ -65,11 +49,7 @@ Every rule activated in the policy can be configured with the corresponding opti
 might only have the severity option, but some rule can be configured with additional options to
 ensure flexibility.
 
-<NextImage
-  alt="Policy Per-rule Configuration"
-  src={policyRulesConfigImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Policy Per-rule Configuration](/docs/pages/features/policy/policy-rules-config.png)
 
 ## Policies Hierarchy and Overrides
 
@@ -85,22 +65,14 @@ being merged**.
 When a policy is defined for the organization, you'll see an indicator on the project page, near
 every rule that you override:
 
-<NextImage
-  alt="Override Policy Configuration"
-  src={policyOverrideConfigImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Override Policy Configuration](/docs/pages/features/policy/policy-override-config.png)
 
 In addition to the ability to override rules configuration or severity, you can disable rules that
 were defined at the organization level by setting the rule severity to `off`.
 
-<NextImage
-  alt="Override Policy Severity"
-  src={policyOverrideSeverityImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Override Policy Severity](/docs/pages/features/policy/policy-override-severity.png)
 
-### Prevening overrides
+### Preventing overrides
 
 If you wish to prevent overrides of your organization-level policies, you can do so by unchecking
 the `Allow projects to override or disable rules` checkbox under your organization's **Policy**
@@ -117,14 +89,6 @@ page.
 Schema Policies is fully integrated into the Hive CLI, and you'll see both warnings and error coming
 from the schema policies:
 
-<NextImage
-  alt="Hive CLI and Policy Warnings"
-  src={cliPolicyWarningImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Hive CLI and Policy Warnings](/docs/pages/features/policy/policy-cli-warning.png)
 
-<NextImage
-  alt="Hive CLI and Policy Errors"
-  src={cliPolicyErrorImage}
-  className="mt-6 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Hive CLI and Policy Errors](/docs/pages/features/policy/policy-cli-error.png)

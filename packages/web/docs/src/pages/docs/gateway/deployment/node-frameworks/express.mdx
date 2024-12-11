@@ -4,8 +4,6 @@ description:
   a robust set of features to handle HTTP on Node.js applications.
 ---
 
-import { Callout } from '@theguild/components'
-
 # Integration with Express
 
 [Express is the most popular web framework for Node.js.](https://expressjs.com/) It is a minimalist
@@ -65,7 +63,7 @@ const app = express()
 
 const serveRuntime = createGatewayRuntime(/* Your configuration */)
 const hiveGWRouter = express.Router()
-// GraphiQL specefic CSP configuration
+// GraphiQL specific CSP configuration
 hiveGWRouter.use(
   helmet({
     contentSecurityPolicy: {

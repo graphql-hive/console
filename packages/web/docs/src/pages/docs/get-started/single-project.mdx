@@ -1,8 +1,4 @@
-import NextImage from 'next/image'
 import { Callout, Steps } from '@theguild/components'
-import cdnTokenImage from '../../../../public/docs/pages/guides/cdn_token.png'
-import historyImage from '../../../../public/docs/pages/guides/history.png'
-import tokenImage from '../../../../public/docs/pages/guides/token.png'
 
 # Single Schema Project
 
@@ -19,9 +15,9 @@ read GraphQL schemas from `.graphql` files in your local filesystem.
 
 <Callout type="info">
   **Using code-first approach to write your GraphQL schema?**
-  
-  Please refer to the [Code-First Guide](/docs/other-integrations/code-first) to learn how to use the Hive with
-code-first approach.
+
+Please refer to the [Code-First Guide](/docs/other-integrations/code-first) to learn how to use the
+Hive with code-first approach.
 
 </Callout>
 
@@ -63,11 +59,7 @@ tab. On the Settings screen, you can manage your target's settings and access to
 Under the **Registry Access Tokens** section, click the **Generate new token** button. Give your
 access token a name and select **Schema Check & Push** from the list of token presets:
 
-<NextImage
-  alt="Create Registry Token Form"
-  src={tokenImage}
-  className="mt-10 max-w-md rounded-lg drop-shadow-md"
-/>
+![Create Registry Token Form](/docs/pages/guides/token.png)
 
 Click on **Generate Token** button and you should get your CLI token created, with permissions to
 publish GraphQL schemas.
@@ -249,11 +241,7 @@ You should see now that Hive accepted your published schema and updated the regi
 It's a good timing to check the **History** tab of your Hive target. You should see that a new
 schema is published now, and you can see the changes you made:
 
-<NextImage
-  alt="Schema History"
-  src={historyImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![Schema History](/docs/pages/guides/history.png)
 
 ### Fetch your schema
 
@@ -288,11 +276,7 @@ To use your access token, go to your target's page on Hive's dashboard and click
 CDN** button. You will see a screen with instructions on how to obtain different types of artifacts
 from the CDN. For this guide, you can pick the **GraphQL SDL** artifact.
 
-<NextImage
-  alt="CDN Token Form"
-  src={cdnTokenImage}
-  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
-/>
+![CDN Token Form](/docs/pages/guides/cdn_token.png)
 
 Copy the URL and let's try to fetch your schema using `curl` (replace `YOUR_HIVE_CDN_TOKEN` with
 your CDN token, and `CDN_ENDPOINT_HERE` with the endpoint you copied from Hive's dashboard):

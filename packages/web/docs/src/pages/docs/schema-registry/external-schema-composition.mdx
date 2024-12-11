@@ -1,9 +1,4 @@
-import NextImage from 'next/image'
 import { Callout, Steps, Tabs } from '@theguild/components'
-import externalCompositionInvalid from '../../../../public/docs/pages/management/external-composition-invalid.png'
-import externalCompositionValid from '../../../../public/docs/pages/management/external-composition-valid.png'
-import externalCompositionOff from '../../../../public/docs/pages/management/external-schema-composition-disabled.png'
-import externalCompositionOn from '../../../../public/docs/pages/management/external-schema-composition-enabled.png'
 
 # External Schema Composition
 
@@ -163,7 +158,7 @@ await server.listen({
 ```
 
 <Callout type="info">
-  You can also find here [an example using NodeJS's HTTP
+  You can also find here [an example using NodeJS' HTTP
   library](https://github.com/graphql-hive/platform/blob/4af001a7102b255bd8ceb8e3f01722faceb8f2f3/packages/services/external-composition/federation-2).
 </Callout>
 
@@ -218,37 +213,21 @@ function verifyRequest(input) {
 Start by enabling the **External Composition** for your project. To do that, go to your Hive project
 page, and click the **Settings** tab. You'll notice a **"External Composition"** section.
 
-<NextImage
-  alt="External Composition section in the project settings"
-  src={externalCompositionOff}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![External Composition section in the project settings](/docs/pages/management/external-schema-composition-disabled.png)
 
 Next, provide the URL of your deployed endpoint, and also set the secret you set for your service.
 Click **Save**.
 
-<NextImage
-  alt="External Composition section in the project settings"
-  src={externalCompositionOn}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
+![External Composition section in the project settings](/docs/pages/management/external-schema-composition-enabled.png)
 
 If your service is available publicly and the secret matches, you should see a green checkmark next
 to the URL:
 
-<NextImage
-  alt="Valid External Composition"
-  src={externalCompositionValid}
-  className="mt-6 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Valid External Composition](/docs/pages/management/external-composition-valid.png)
 
 In case of a failure, you'll see a red cross with the reason of the failure:
 
-<NextImage
-  alt="Valid External Composition"
-  src={externalCompositionInvalid}
-  className="mt-6 max-w-xl rounded-lg drop-shadow-md"
-/>
+![Invalid External Composition](/docs/pages/management/external-composition-invalid.png)
 
 Now you should be able to use the **External Composition** feature in your project.
 [Publish a GraphQL schema](/docs/schema-registry#publish-a-schema) or perform a
