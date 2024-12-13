@@ -258,6 +258,7 @@ export const PermissionsSpace = memo(
 
 const UsePermissionManager_OrganizationFragment = graphql(`
   fragment UsePermissionManager_OrganizationFragment on Organization {
+    id
     slug
     me {
       ...CanAccessOrganization_MemberFragment

@@ -1010,6 +1010,7 @@ const TargetSettingsPage_UpdateTargetSlugMutation = graphql(`
 
 const TargetSettingsPage_OrganizationFragment = graphql(`
   fragment TargetSettingsPage_OrganizationFragment on Organization {
+    id
     me {
       ...CanAccessTarget_MemberFragment
       ...RegistryAccessTokens_MeFragment

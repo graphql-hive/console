@@ -52,6 +52,7 @@ const MemberRoleMigrationStickyNote_OrganizationFragment = graphql(`
     id
     slug
     me {
+      id
       isAdmin
     }
     unassignedMembersToMigrate {
