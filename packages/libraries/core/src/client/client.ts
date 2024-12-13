@@ -54,19 +54,19 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
   const info = printTokenInfo
     ? async () => {
-        try {
-          let endpoint = 'https://app.graphql-hive.com/graphql';
+      try {
+        let endpoint = 'https://app.graphql-hive.com/graphql';
 
-          // Look for the reporting.endpoint for the legacy reason.
-          if (options.reporting && options.reporting.endpoint) {
-            endpoint = options.reporting.endpoint;
-          }
+        // Look for the reporting.endpoint for the legacy reason.
+        if (options.reporting && options.reporting.endpoint) {
+          endpoint = options.reporting.endpoint;
+        }
 
-          if (options.selfHosting?.graphqlEndpoint) {
-            endpoint = options.selfHosting.graphqlEndpoint;
-          }
+        if (options.selfHosting?.graphqlEndpoint) {
+          endpoint = options.selfHosting.graphqlEndpoint;
+        }
 
-          const query = /* GraphQL */ `
+        const query = /* GraphQL */ `
             query myTokenInfo {
               tokenInfo {
                 __typename
@@ -95,90 +95,90 @@ export function createHive(options: HivePluginOptions): HiveClient {
             }
           `;
 
-          infoLogger.info('Fetching token details...');
+        infoLogger.info('Fetching token details...');
 
-          const response = await http.post(
-            endpoint,
-            JSON.stringify({
-              query,
-              operationName: 'myTokenInfo',
-            }),
-            {
-              headers: {
-                'content-type': 'application/json',
-                Authorization: `Bearer ${options.token}`,
-                'user-agent': `hive-client/${version}`,
-                'graphql-client-name': 'Hive Client',
-                'graphql-client-version': version,
-              },
-              timeout: 30_000,
-              fetchImplementation: options?.agent?.__testing?.fetch,
-              logger: infoLogger,
+        const response = await http.post(
+          endpoint,
+          JSON.stringify({
+            query,
+            operationName: 'myTokenInfo',
+          }),
+          {
+            headers: {
+              'content-type': 'application/json',
+              Authorization: `Bearer ${options.token}`,
+              'user-agent': `hive-client/${version}`,
+              'graphql-client-name': 'Hive Client',
+              'graphql-client-version': version,
             },
-          );
+            timeout: 30_000,
+            fetchImplementation: options?.agent?.fetch,
+            logger: infoLogger,
+          },
+        );
 
-          if (response.ok) {
-            const result: ExecutionResult<any> = await response.json();
+        if (response.ok) {
+          const result: ExecutionResult<any> = await response.json();
 
-            if (result.data?.tokenInfo.__typename === 'TokenInfo') {
-              const { tokenInfo } = result.data;
+          if (result.data?.tokenInfo.__typename === 'TokenInfo') {
+            const { tokenInfo } = result.data;
 
-              const {
-                organization,
-                project,
-                target,
-                canReportSchema,
-                canCollectUsage,
-                canReadOperations,
-              } = tokenInfo;
-              const print = createPrinter([
-                tokenInfo.token.name,
-                organization.name,
-                project.name,
-                target.name,
-              ]);
+            const {
+              organization,
+              project,
+              target,
+              canReportSchema,
+              canCollectUsage,
+              canReadOperations,
+            } = tokenInfo;
+            const print = createPrinter([
+              tokenInfo.token.name,
+              organization.name,
+              project.name,
+              target.name,
+            ]);
 
-              const appUrl =
-                options.selfHosting?.applicationUrl?.replace(/\/$/, '') ??
-                'https://app.graphql-hive.com';
-              const organizationUrl = `${appUrl}/${organization.slug}`;
-              const projectUrl = `${organizationUrl}/${project.slug}`;
-              const targetUrl = `${projectUrl}/${target.slug}`;
+            const appUrl =
+              options.selfHosting?.applicationUrl?.replace(/\/$/, '') ??
+              'https://app.graphql-hive.com';
+            const organizationUrl = `${appUrl}/${organization.slug}`;
+            const projectUrl = `${organizationUrl}/${project.slug}`;
+            const targetUrl = `${projectUrl}/${target.slug}`;
 
-              infoLogger.info(
-                [
-                  'Token details',
-                  '',
-                  `Token name:            ${print(tokenInfo.token.name)}`,
-                  `Organization:          ${print(organization.name, organizationUrl)}`,
-                  `Project:               ${print(project.name, projectUrl)}`,
-                  `Target:                ${print(target.name, targetUrl)}`,
-                  '',
-                  `Can report schema?     ${print(canReportSchema ? 'Yes' : 'No')}`,
-                  `Can collect usage?     ${print(canCollectUsage ? 'Yes' : 'No')}`,
-                  `Can read operations?   ${print(canReadOperations ? 'Yes' : 'No')}`,
-                  '',
-                ].join('\n'),
-              );
-            } else if (result.data?.tokenInfo.message) {
-              infoLogger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
-            } else {
-              infoLogger.error(`${result.errors![0].message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
-            }
+            infoLogger.info(
+              [
+                'Token details',
+                '',
+                `Token name:            ${print(tokenInfo.token.name)}`,
+                `Organization:          ${print(organization.name, organizationUrl)}`,
+                `Project:               ${print(project.name, projectUrl)}`,
+                `Target:                ${print(target.name, targetUrl)}`,
+                '',
+                `Can report schema?     ${print(canReportSchema ? 'Yes' : 'No')}`,
+                `Can collect usage?     ${print(canCollectUsage ? 'Yes' : 'No')}`,
+                `Can read operations?   ${print(canReadOperations ? 'Yes' : 'No')}`,
+                '',
+              ].join('\n'),
+            );
+          } else if (result.data?.tokenInfo.message) {
+            infoLogger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
+            infoLogger.info(
+              `How to create a token? https://docs.graphql-hive.com/features/tokens`,
+            );
           } else {
-            infoLogger.error(`Error ${response.status}: ${response.statusText}`);
+            infoLogger.error(`${result.errors![0].message}`);
+            infoLogger.info(
+              `How to create a token? https://docs.graphql-hive.com/features/tokens`,
+            );
           }
-        } catch (error) {
-          infoLogger.error(`Error ${(error as Error)?.message ?? error}`);
+        } else {
+          infoLogger.error(`Error ${response.status}: ${response.statusText}`);
         }
+      } catch (error) {
+        infoLogger.error(`Error ${(error as Error)?.message ?? error}`);
       }
-    : () => {};
+    }
+    : () => { };
 
   function createInstrumentedExecute(
     executeImpl: typeof ExecuteImplementation,
@@ -218,9 +218,9 @@ export function createHive(options: HivePluginOptions): HiveClient {
     createInstrumentedExecute,
     experimental__persistedDocuments: options.experimental__persistedDocuments
       ? createPersistedDocuments({
-          ...options.experimental__persistedDocuments,
-          logger,
-        })
+        ...options.experimental__persistedDocuments,
+        logger,
+      })
       : null,
   };
 }

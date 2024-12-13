@@ -626,30 +626,30 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-    collect(
-      {
-        schema,
-        document: op,
-        operationName: 'deleteProjectShouldntBeIncluded',
-      },
-      {},
-    ),
-    collect(
-      {
-        schema,
-        document: op,
-        operationName: 'deleteProject',
-      },
-      {},
-    ),
-    collect(
-      {
-        schema,
-        document: op2,
-        operationName: 'getProject',
-      },
-      {},
-    )),
+      collect(
+        {
+          schema,
+          document: op,
+          operationName: 'deleteProjectShouldntBeIncluded',
+        },
+        {},
+      ),
+      collect(
+        {
+          schema,
+          document: op,
+          operationName: 'deleteProject',
+        },
+        {},
+      ),
+      collect(
+        {
+          schema,
+          document: op2,
+          operationName: 'getProject',
+        },
+        {},
+      )),
   ]);
   await hive.dispose();
   await waitFor(50);
@@ -733,9 +733,7 @@ test('retry on non-200', async () => {
       minTimeout: 10,
       sendInterval: 10,
       maxRetries: 1,
-      __testing: {
-        fetch: fetchSpy,
-      },
+      fetch: fetchSpy,
     },
     token,
     usage: {

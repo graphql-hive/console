@@ -55,11 +55,11 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   if (!pluginOptions.usage || pluginOptions.enabled === false) {
     return {
       collect() {
-        return async () => {};
+        return async () => { };
       },
-      collectRequest() {},
-      async dispose() {},
-      collectSubscription() {},
+      collectRequest() { },
+      async dispose() { },
+      collectSubscription() { },
     };
   }
 
@@ -88,7 +88,7 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       token: pluginOptions.token,
       enabled: pluginOptions.enabled,
       debug: pluginOptions.debug,
-      __testing: pluginOptions.agent?.__testing,
+      fetch: pluginOptions.agent?.fetch,
     },
     {
       data: {
@@ -235,11 +235,11 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
                 client: args.experimental__persistedDocumentHash
                   ? undefined
                   : pickClientInfoProperties(
-                      typeof args.args.contextValue !== 'undefined' &&
-                        typeof options.clientInfo !== 'undefined'
-                        ? options.clientInfo(args.args.contextValue)
-                        : createDefaultClientInfo()(args.args.contextValue),
-                    ),
+                    typeof args.args.contextValue !== 'undefined' &&
+                      typeof options.clientInfo !== 'undefined'
+                      ? options.clientInfo(args.args.contextValue)
+                      : createDefaultClientInfo()(args.args.contextValue),
+                  ),
                 persistedDocumentHash: args.experimental__persistedDocumentHash,
               },
             };
@@ -306,7 +306,7 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
               client: experimental__persistedDocumentHash
                 ? undefined
                 : typeof args.contextValue !== 'undefined' &&
-                    typeof options.clientInfo !== 'undefined'
+                  typeof options.clientInfo !== 'undefined'
                   ? options.clientInfo(args.contextValue)
                   : createDefaultClientInfo()(args.contextValue),
               persistedDocumentHash: experimental__persistedDocumentHash,
@@ -378,13 +378,13 @@ export interface Report {
 
 type AgentAction =
   | {
-      type: 'request';
-      data: CollectedOperation;
-    }
+    type: 'request';
+    data: CollectedOperation;
+  }
   | {
-      type: 'subscription';
-      data: CollectedSubscriptionOperation;
-    };
+    type: 'subscription';
+    data: CollectedSubscriptionOperation;
+  };
 
 interface CollectedOperation {
   key: string;

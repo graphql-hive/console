@@ -44,11 +44,10 @@ export interface AgentOptions {
    */
   logger?: Logger;
   /**
-   * Testing purposes only
+   * WHATWG Compatible fetch implementation
+   * used by the agent to send reports
    */
-  __testing?: {
-    fetch?: typeof fetch;
-  };
+  fetch?: typeof fetch;
 }
 
 export function createAgent<TEvent>(
@@ -67,7 +66,7 @@ export function createAgent<TEvent>(
     headers?(): Record<string, string>;
   },
 ) {
-  const options: Required<Omit<AgentOptions, '__testing'>> = {
+  const options: Required<Omit<AgentOptions, 'fetch'>> = {
     timeout: 30_000,
     debug: false,
     enabled: true,
@@ -174,7 +173,7 @@ export function createAgent<TEvent>(
           factor: 2,
         },
         logger: options.logger,
-        fetchImplementation: pluginOptions.__testing?.fetch,
+        fetchImplementation: pluginOptions.fetch,
       })
       .then(res => {
         debugLog(`Report sent!`);
