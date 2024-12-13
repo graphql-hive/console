@@ -7,5 +7,10 @@ export function createConnectionString(config: {
   ssl: boolean;
 }) {
   // prettier-ignore
-  return `postgres://${config.user}:${config.password}@${config.host}:${config.port}/${config.db}${config.ssl ? '?sslmode=require' : '?sslmode=disable'}`;
+  const encodedUser = encodeURIComponent(config.user);
+  const encodedPassword = typeof config.password === 'string' ? `:${encodeURIComponent(config.password)}` : '';
+  const encodedHost = encodeURIComponent(config.host);
+  const encodedDb = encodeURIComponent(config.db);
+
+  return `postgres://${encodedUser}${encodedPassword}@${encodedHost}:${config.port}/${encodedDb}${config.ssl ? '?sslmode=require' : '?sslmode=disable'}`;
 }
