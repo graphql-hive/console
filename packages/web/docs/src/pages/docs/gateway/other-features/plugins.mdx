@@ -86,8 +86,7 @@ to general events.
 
 #### `onYogaInit`
 
-It is the very first hook called just before the underlying GraphQL Yoga instance starts listening
-for HTTP requests.
+It is the very first hook called just before the gateway starts listening for HTTP requests.
 
 ##### Possible usages
 
@@ -95,7 +94,7 @@ You can use this hook to customize the Yoga instance.
 
 ##### API
 
-- `yoga`: the Graphql Yoga `YogaServer` instance that is about to start.
+- `yoga`: `YogaServer` instance that is about to start with the gateway.
 
 #### `onPluginInit`
 
@@ -168,6 +167,26 @@ upstream subgraph using the http transport, or a request made a plugin to a thir
 - `logger`: The logger instance for the specific request that includes the details of the request
   and the response.
 
+#### `Symbol.asyncDispose` or `Symbol.dispose`
+
+In order to clean up resources when Hive Gateway is shut down, you can use `Symbol.asyncDispose` or
+`Symbol.syncDispose` to clean up resources.
+
+```ts
+export const useMyPlugin = () => {
+  return {
+    async [Symbol.asyncDispose]() {
+      // Clean up resources
+      await stopConnection()
+    }
+  }
+}
+```
+
+You can learn more about
+[Explicit Resource Management](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management)
+here.
+
 ### Request Lifecycle
 
 The following diagram shows the lifecycle of request in Hive Gateway.
@@ -175,9 +194,11 @@ The following diagram shows the lifecycle of request in Hive Gateway.
 Each hook is given a single parameter called payload. Please see detail section of each hook to know
 what contains each of this payloads.
 
+<div className="[&_a]:text-primary-600 [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
+
 ```mermaid
 stateDiagram-v2
-  onRequest: <a href="onrequest">onRequest</a>
+  onRequest: <a href="#onrequest">onRequest</a>
   GraphQLRequest: GraphQL Request
 
   [*] --> onRequest
@@ -224,7 +245,8 @@ stateDiagram-v2
       onSubgraphExecute: <a href="#onsubgraphexecute">onSubgraphExecute</a>
       onSubgraphExecuteDone: <a href="#onsubgraphexecutedone">onSubgraphExecuteDone</a>
 
-      [*] --> onDelegationPlan
+      [*] --> onDelegationPlan: Plan is not cached
+      [*] --> onDelegationStageExecute: Plan is cached
       onDelegationPlan --> onDelegationStageExecute
       onDelegationStageExecute --> onSubgraphExecute
       onSubgraphExecute --> onSubgraphExecuteDone
@@ -248,6 +270,8 @@ stateDiagram-v2
   GraphQLRequest --> onResponse
   onResponse --> [*]
 ```
+
+</div>
 
 ### `onRequest`
 
@@ -474,28 +498,6 @@ You can see [Prometheus plugin](/docs/gateway/authorization-authentication) for 
 use this hook.
 
 ##### API
-
-
-
-#### `Symbol.asyncDispose` or `Symbol.dispose`
-
-In order to clean up resources when Hive Gateway is shut down, you can use `Symbol.asyncDispose` or
-`Symbol.syncDispose` to clean up resources.
-
-```ts
-export const useMyPlugin = () => {
-  return {
-    async [Symbol.asyncDispose]() {
-      // Clean up resources
-      stopConnection()
-    }
-  }
-}
-```
-
-You can learn more about
-[Explicit Resource Management](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management)
-here.
 
 ### Plugin Context
 
