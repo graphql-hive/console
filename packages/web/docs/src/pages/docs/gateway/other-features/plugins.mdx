@@ -88,60 +88,50 @@ to general events.
 
 It is the very first hook called just before the gateway starts listening for HTTP requests.
 
-##### Possible usages
-
 You can use this hook to customize the Yoga instance.
 
-##### API
-
-- `yoga`: `YogaServer` instance that is about to start with the gateway.
+| Payload field | Description                                                    |
+| ------------- | -------------------------------------------------------------- |
+| `yoga`        | `YogaServer` instance that is about to start with the gateway. |
 
 #### `onPluginInit`
 
-This hook is called before the server starts listening to HTTP requests.
-
-##### Possible usages
+Called before the server starts listening to HTTP requests.
 
 In this hook, you can initialize every long running components, such as values stores, cache, third
 party clients, etc...
 
 You can add other plugin in this hook, which allow you to ensure plugins you depends on are present.
 
-##### API
-
-- `addPlugin(plugin: Plugin)`: allow to add a plugin to the plugin list. The new plugin will be
-  added in place in the list, just after the one calling this function. It is possible to call this
-  function multiple times. In this case, plugin order is preserved.
-- `plugins: Plugin[]`: the current list of plugins. It can be used to verify if a plugin you depends
-  on is already in the list, or to verify your plugin is not present twice. This should never be
-  mutated, please use `addPlugin` function instead.
-- `setSchema(schema: GraphQLSchema)`: allows to replace the current schema
-- `registerContextErrorHandler(handler)`: registers a handler that will be called if the GraphQL
-  context factory throws an error. It's useful for error reporting for example.
+| Payload field                          | Description                                                                                                                                                                                              |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `addPlugin(plugin: Plugin)`            | Allows adding a plugin to the plugin list. The new plugin will be added just after the one calling this function. It can be called multiple times, preserving plugin order.                              |
+| `plugins: Plugin[]`                    | The current list of plugins. It can be used to verify if a dependent plugin is already in the list or to ensure your plugin is not present twice. This should never be mutated; use `addPlugin` instead. |
+| `setSchema(schema: GraphQLSchema)`     | Allows replacing the current schema.                                                                                                                                                                     |
+| `registerContextErrorHandler(handler)` | Registers a handler that will be called if the GraphQL context factory throws an error. Useful for error reporting.                                                                                      |
 
 #### `onSchemaChange`
 
 This hook is called when the schema changes, either because the Gateway loaded it the first time, or
 because a plugin changed it.
 
-##### Possible usages
+Possible usage examples of this hooks are:
 
 - Monitor changes of schemas
 - Analyse the schema or keep track of it for other hooks
 - Modify the schema
 
-##### API
-
-- `schema`: The new loaded schema
-- `replaceSchema`: replace the schema. This will trigger a new call to `onSchemaChange`, so you
-  should keep track of schema already modified by your plugin to avoid infinite change loop.
+| Payload field   | Description                                                                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`        | The new loaded schema                                                                                                                                                   |
+| `replaceSchema` | Replace the schema. This will trigger a new call to `onSchemaChange`, so you should keep track of schema already modified by your plugin to avoid infinite change loop. |
 
 #### `onFetch`
 
 This hook is called each time the `fetch` function is called. It can be either a request to an
 upstream subgraph using the http transport, or a request made a plugin to a third party technology.
 
-##### Possible usages
+Possible usage examples of the hooks are:
 
 - Manipulate HTTP [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object
 - Manipulate HTTP [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) object
@@ -149,23 +139,18 @@ upstream subgraph using the http transport, or a request made a plugin to a thir
 - Add custom headers
 - Monitor the HTTP request
 
-##### API
-
-- `url`: The target URL of the request
-- `setUrl`: replace the target URL
-- `options`: the `fetch` function options
-- `setOptions`: replace the options that will be used to send the request
-- `info`: the GraphQL operation info
-- `fetchFn`: the fetch function that will be used to make the request. By default, it is the one
-  provided in the Gateway configuration if provided, or `@whatwg-node/fetch` if not.
-- `setFetchFn`: replace the `fetch` function that will be used to make the request. It should be
-  compatible with standard `fetch` API.
-- `executionRequest`: present only if the request is an upstream subgraph request. It contains all
-  information about the upstream query, notably the target subgraph name.
-- `requestId`: a uniq id identifying the client request. This is used to correlate downstream and
-  upstream request across services.
-- `logger`: The logger instance for the specific request that includes the details of the request
-  and the response.
+| Payload field      | Description                                                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`              | The target URL of the request                                                                                                                                          |
+| `setUrl`           | Replace the target URL                                                                                                                                                 |
+| `options`          | The `fetch` function options                                                                                                                                           |
+| `setOptions`       | Replace the options that will be used to send the request                                                                                                              |
+| `info`             | The GraphQL operation info                                                                                                                                             |
+| `fetchFn`          | The fetch function that will be used to make the request. By default, it is the one provided in the Gateway configuration if provided, or `@whatwg-node/fetch` if not. |
+| `setFetchFn`       | Replace the `fetch` function that will be used to make the request. It should be compatible with standard `fetch` API.                                                 |
+| `executionRequest` | Present only if the request is an upstream subgraph request. It contains all information about the upstream query, notably the target subgraph name.                   |
+| `requestId`        | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.                                                |
+| `logger`           | The logger instance for the specific request that includes the details of the request and the response.                                                                |
 
 #### `Symbol.asyncDispose` or `Symbol.dispose`
 
@@ -290,25 +275,8 @@ Prefer `onRequestParse` when possible, or wrap the hook code in a `try` block.
 
 </Callout>
 
-**Example actions in this hook:**
-
-- Manipulate the request
-- Short circuit before Yoga handles the request
-
-#### API
-
-- `request`: The incoming HTTP request as WHATWG `Request` object.
-  [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).
-- `serverContext`: The early context object that is shared between all hooks and the GraphQL
-  execution. [Learn more about the context](/docs/features/context).
-- `fetchAPI`: WHATWG Fetch API implementation.
-  [Learn more about the fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
-- `url`: WHATWG URL object of the incoming request.
-  [Learn more about the URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL).
-- `endResponse`: A function that allows you to end the request early and send a response to the
-  client.
-
-#### Example
+For example, you can shortcut the manually handle an HTTP request, short-circuiting the Hive Gateway
+HTTP handler:
 
 ```ts
 import type { GatewayPlugin } from '@graphql-hive/gateway'
@@ -331,17 +299,37 @@ function useAuth(): GatewayPlugin {
 }
 ```
 
+Possible usage examples of this hook are:
+
+- Manipulate the request
+- Short circuit before Yoga handles the request
+
+| Payload field   | Description                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request). |
+| `serverContext` | The early context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](/docs/features/context).    |
+| `fetchAPI`      | WHATWG Fetch API implementation. [Learn more about the fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).                  |
+| `url`           | WHATWG URL object of the incoming request. [Learn more about the URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL).             |
+| `endResponse`   | A function that allows you to end the request early and send a response to the client.                                                          |
+
 ### `onRequestParse`
 
 This hook is invoked for any incoming GraphQL HTTP request and is invoked before attempting to parse
 the GraphQL parameters. Here you can manipulate the request, set a custom request parser or apply
 security measures such as checking for access tokens etc.
 
-**Example actions in this hook:**
+Possible usage examples of this hook are:
 
 - Manipulate the request
 - Set custom GraphQL request parser (use custom GraphQL protocol)
 - Apply security measures
+
+| Payload field      | Description                                                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`          | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request). |
+| `url`              | The incoming HTTP request target url                                                                                                            |
+| `requestParser`    | The function that will be used to extract GraphQL params from the request.                                                                      |
+| `setRequestParser` | Allows to replace the function that will be used to extract GraphQL params from the request                                                     |
 
 ### `onParams`
 
@@ -354,7 +342,7 @@ of parsing the parameters (if you wish to diverge from the GraphQL over HTTP spe
 In addition to that you could also short-circuit and skip the GraphQL execution. E.g. you might want
 to serve a result from the cache instead.
 
-**Example actions in this hook:**
+Possible usage examples of this hook are:
 
 - **[Response Cache](/docs/features/response-caching)**: Short-circuit GraphQL execution if response
   can be served from the cache.
@@ -362,6 +350,14 @@ to serve a result from the cache instead.
   from the persisted operations store before running the execution.
 - **[APQ](/docs/features/automatic-persisted-queries):** Load/persist the `query` document string on
   the persisted operations store.
+
+| Payload field | Description                                                                                                                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`     | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).                                                                  |
+| `params`      | The `GraphQLParams` extracted from the request.                                                                                                                                                                  |
+| `setParams`   | Allows to replace the `GraphQLParams` for this request                                                                                                                                                           |
+| fetchAPI      | [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) provided in the Hive Gateway configuration. This should be used to make outgoing HTTP request, since it will trigger the `onFetch` hook. |
+| `context`     | The server context. It can contain runtime specific data, such as `req` and `res` object when running in Node for example.                                                                                       |
 
 ### `onParse`
 
@@ -373,6 +369,15 @@ before the document is parsed and/or into after the document is parsed.
 - Replace GraphQL parser and support future GraphQL syntax
 - Collect metrics about parsing success/failures
 
+| Payload Field       | Description                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `context`           | The current context object.                                                                             |
+| `extendContext`     | Extend the context object with a partial.                                                               |
+| `params`            | The parameters that are passed to the parse call.                                                       |
+| `parseFn`           | The current parse function.                                                                             |
+| `setParseFn`        | Replace the current parse function.                                                                     |
+| `setParsedDocument` | Set/overwrite the parsed document. If a parsed document is set the call to the parseFn will be skipped. |
+
 ### `onValidate`
 
 Called for validating the GraphQL document. This hook has a before and after stage. You can hook
@@ -382,6 +387,16 @@ into before the document is parsed and/or into after the document is parsed.
 
 - Register additional validation rules (e.g. [Disable Introspection](/docs/features/introspection))
 - Collect metrics about validation success/failures
+
+| Payload field       | Description                                                               |
+| ------------------- | ------------------------------------------------------------------------- |
+| `context`           | The current context object.                                               |
+| `extendContext`     | Extend the context object with a partial.                                 |
+| `params`            | The parameters with which the validate function will be invoked.          |
+| `addValidationRule` | Register a validation rule that will be used for the validate invocation. |
+| `validateFn`        | The current validate function that will be invoked.                       |
+| `setValidationFn`   | Overwrite the current validate function.                                  |
+| `setResult`         | Set a validation error result and skip the validate invocation.           |
 
 ### `onContextBuilding`
 
@@ -393,6 +408,12 @@ before and after the context is built.
 - Authentication
 - Add data to context object (e.g. user data or dataloader instances)
 
+| Payload field          | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `context`              | The current GraphQL context object.                  |
+| `extendContext`        | Extend the context object with a partial.            |
+| `breakContextBuilding` | Prevent calls on any further context building hooks. |
+
 ### `onExecute`
 
 Called for executing a GraphQL mutation or query operation. This hook has a before and after stage.
@@ -403,6 +424,14 @@ You can hook into before and after the GraphQL request is executed.
 - Collect metrics about execution time
 - Error logging/reporting
 
+| Payload field               | Description                                                    |
+| --------------------------- | -------------------------------------------------------------- |
+| `executeFn`                 | Current execute function that will be used for execution.      |
+| `args`                      | Arguments the execute function will be invoked with.           |
+| `setExecuteFn`              | Replace the current execute function with a new one.           |
+| `setResultAndStopExecution` | Set an execution result and skip calling the execute function. |
+| `extendContext`             | Extend the context object with a partial.                      |
+
 ### `onSubscribe`
 
 Called for subscribing to a GraphQL subscription operation. This hook has a before and after stage.
@@ -412,6 +441,14 @@ You can hook into before and after the GraphQL subscription is executed.
 
 - Collect metrics about execution time
 - Error logging/reporting
+
+| Payload field               | Description                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `subscribeFn`               | Current subscribe function that will be used for setting up the subscription.                            |
+| `args`                      | Current arguments with which the subscribe function will be invoked.                                     |
+| `setSubscribeFn`            | Replace the current subscribe function with a new one that will be used for setting up the subscription. |
+| `extendContext`             | Extend the context object with a partial.                                                                |
+| `setResultAndStopExecution` | Set a subscribe result and skip calling the subscribe function.                                          |
 
 ### `onExecutionResult`
 
@@ -429,6 +466,13 @@ Here, you can modify the result, to add monitoring or instrumentation extensions
 - Add metadata to results
 - Collect errors
 
+| Payload field | Description                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`     | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request). |
+| `result`      | The execution result, which can be an `ExecutionResultWithSerializer`, an `AsyncIterable<ExecutionResultWithSerializer>`.                       |
+| `setResult`   | Allows to replace the execution result.                                                                                                         |
+| `context`     | The GraphQL context.                                                                                                                            |
+
 ### `onResultProcess`
 
 This hook is invoked after a GraphQL request has been processed and before the response is forwarded
@@ -439,6 +483,16 @@ sending the result over the wire.
 
 - Specify custom response format
 - Logging/Metrics
+
+| Field Name             | Description                                                                                                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`              | The incoming HTTP request as WHATWG [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object.                                                                      |
+| `result`               | The execution result, which can be an `ExecutionResultWithSerializer`, an `AsyncIterable<ExecutionResultWithSerializer>`. If the request contains batch queries, this will be an array |
+| `setResult`            | Allows to replace the execution result.                                                                                                                                                |
+| `resultProcessor`      | The result processor to be used to turn the result into an HTTP [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object.                                         |
+| `acceptableMediaTypes` | List of acceptable media types for the result processor.                                                                                                                               |
+| `setResultProcessor`   | Allows to set the result processor and the accepted media type.                                                                                                                        |
+| `serverContext`        | The server context which can contain runtime specific data, such as for example `req` and `res` object when running in Node                                                            |
 
 ### `onResponse`
 
@@ -462,34 +516,17 @@ Prefer `onRequestParse` when possible, or wrap the hook code in a `try` block.
 - Specify custom response format
 - Logging/Metrics
 
-#### API
-
-- `request`: The incoming HTTP request as WHATWG `Request` object.
-  [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).
-- `serverContext`: The final context object that is shared between all hooks and the GraphQL
-  execution. [Learn more about the context](/docs/features/context).
-- `response`: The outgoing HTTP response as WHATWG `Response` object.
-  [Learn more about the response interface](https://developer.mozilla.org/en-US/docs/Web/API/Response).
-
-#### Example
-
-```ts
-import type { GatewayPlugin } from '@graphql-hive/gateway'
-
-function useGatewaySignature(): GatewayPlugin {
-  return {
-    onResponse({ request, response }) {
-      response.headers.set('X-GraphQL-Server', 'Yoga')
-    }
-  }
-}
-```
+| Field Name      | Description                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).               |
+| `serverContext` | The final context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](/docs/features/context).                  |
+| `response`      | The outgoing HTTP response as WHATWG `Response` object. [Learn more about the response interface](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
 
 #### `onSubgraphExecute`
 
 This hook is invoked for ANY request that is sent to the subgraph.
 
-##### Possible usages
+**Example actions in this hook:**
 
 - Manipulate the request
 - Add a custom auth header
@@ -498,7 +535,17 @@ This hook is invoked for ANY request that is sent to the subgraph.
 You can see [Prometheus plugin](/docs/gateway/authorization-authentication) for an example of how to
 use this hook.
 
-##### API
+| Payload Field         | Description                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| `subgraph`            | The GraphQL schema of the subgraph.                                                                     |
+| `subgraphName`        | The name of the subgraph.                                                                               |
+| `transportEntry`      | The transport entry that will be used to resolve queries for this subgraph                              |
+| `executionRequest`    | The execution request object containing details of the upstream GraphQL operation.                      |
+| `setExecutionRequest` | Function to replace the current execution request.                                                      |
+| `executor`            | The executor function used to execute the upstream request.                                             |
+| `setExecutor`         | Function to replace the current executor.                                                               |
+| `requestId`           | A unique ID identifying the client request.                                                             |
+| `logger`              | The logger instance for the specific request that includes the details of the request and the response. |
 
 ### Plugin Context
 
