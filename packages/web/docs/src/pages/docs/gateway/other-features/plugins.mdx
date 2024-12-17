@@ -449,7 +449,7 @@ Prefer `onRequestParse` when possible, or wrap the hook code in a `try` block.
 #### Example
 
 ```ts
-import { Plugin } from 'graphql-yoga'
+import type { GatewayPlugin } from '@graphql-hive/gateway'
 
 function useYogaSignature(): Plugin {
   return {
