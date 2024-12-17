@@ -206,7 +206,8 @@ stateDiagram-v2
     onExecute: <a href="#onexecute">onExecute</a>
     onSubscribe: <a href="#onsubscribe">onSubscribe</a>
 
-    onExecuteDone: <a href="#onexecutedone"> onExecuteDone</a>
+    onExecuteDone: <a href="#onexecutedone">onExecuteDone</a>
+    onFetch: <a href="#onfetch">onFetch (HTTP only)</a>
     onSubscribeDone: <a href="#onsubscribedone">onSubscribeDone</a>
     onExecutionResult: <a href="#onexecutionresult">onExecutionResult</a>
     onResultProcess: <a href="#onresultprocess">onResultProcess</a>
@@ -235,7 +236,8 @@ stateDiagram-v2
       [*] --> onDelegationStageExecute: Plan is cached
       onDelegationPlan --> onDelegationStageExecute
       onDelegationStageExecute --> onSubgraphExecute
-      onSubgraphExecute --> onSubgraphExecuteDone
+      onSubgraphExecute --> onFetch
+      onFetch --> onSubgraphExecuteDone
 
       state is_plan_finished <<choice>>
       onSubgraphExecuteDone --> is_plan_finished
