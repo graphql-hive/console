@@ -7,12 +7,11 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from 'slonik';
 import { update } from 'slonik-utilities';
-import { TransactionFunction } from 'slonik/dist/src/types';
+import { TaggedTemplateLiteralInvocation, TransactionFunction } from 'slonik/dist/src/types';
 import zod from 'zod';
 import type {
   Alert,
   AlertChannel,
-  AuthProvider,
   Member,
   Organization,
   OrganizationBilling,
@@ -21,7 +20,6 @@ import type {
   Schema,
   Storage,
   TargetSettings,
-  User,
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
@@ -139,37 +137,6 @@ async function tracedTransaction<T>(
   });
 }
 
-function resolveAuthProviderOfUser(
-  user: users & {
-    provider: string | null | undefined;
-  },
-): AuthProvider {
-  // TODO: remove this once we have migrated all users
-  if (user.external_auth_user_id) {
-    if (user.external_auth_user_id.startsWith('github')) {
-      return 'GITHUB';
-    }
-
-    if (user.external_auth_user_id.startsWith('google')) {
-      return 'GOOGLE';
-    }
-
-    return 'USERNAME_PASSWORD';
-  }
-
-  if (user.provider === 'oidc') {
-    return 'OIDC';
-  }
-  if (user.provider === 'google') {
-    return 'GOOGLE';
-  }
-  if (user.provider === 'github') {
-    return 'GITHUB';
-  }
-
-  return 'USERNAME_PASSWORD';
-}
-
 type MemberRoleColumns =
   | {
       role_id: organization_member_roles['id'];
@@ -192,25 +159,6 @@ export async function createStorage(
   additionalInterceptors: Interceptor[] = [],
 ): Promise<Storage> {
   const pool = await getPool(connection, maximumPoolSize, additionalInterceptors);
-
-  function transformUser(
-    user: users & {
-      provider: string | null | undefined;
-    },
-  ): User {
-    return {
-      id: user.id,
-      email: user.email,
-      superTokensUserId: user.supertoken_user_id,
-      provider: resolveAuthProviderOfUser(user),
-      fullName: user.full_name,
-      displayName: user.display_name,
-      isAdmin: user.is_admin ?? false,
-      externalAuthUserId: user.external_auth_user_id ?? null,
-      oidcIntegrationId: user.oidc_integration_id ?? null,
-      zendeskId: user.zendesk_user_id ?? null,
-    };
-  }
 
   function transformSchemaPolicy(schema_policy: schema_policy_config): SchemaPolicy {
     return {
@@ -235,7 +183,7 @@ export async function createStorage(
     return {
       id: user.id,
       isOwner: user.is_owner,
-      user: transformUser(user),
+      user: UserModel.parse(user),
       // This allows us to have a fallback for users that don't have a role, remove this once we all users have a role
       scopes: (user.scopes as Member['scopes']) || [],
       organization: user.organization_id,
@@ -276,6 +224,7 @@ export async function createStorage(
       },
       featureFlags: decodeFeatureFlags(organization.feature_flags),
       zendeskId: organization.zendesk_organization_id ?? null,
+      ownerId: organization.user_id,
     };
   }
 
@@ -477,27 +426,23 @@ export async function createStorage(
       { superTokensUserId }: { superTokensUserId: string },
       connection: Connection,
     ) {
-      const user = await connection.maybeOne<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getUserBySuperTokenId */
+      const record = await connection.maybeOne<unknown>(sql`/* getUserBySuperTokenId */
         SELECT
-          u.*,
-          stu.third_party_id as provider
+          ${userFields(sql`"users".`, sql`"stu".`)}
         FROM
-          users as u
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+          "users"
+        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+          ON ("stu"."user_id" = "users"."supertoken_user_id")
         WHERE
-          u.supertoken_user_id = ${superTokensUserId}
+          "users"."supertoken_user_id" = ${superTokensUserId}
         LIMIT 1
       `);
 
-      if (user) {
-        return transformUser(user);
+      if (!record) {
+        return null;
       }
 
-      return null;
+      return UserModel.parse(record);
     },
     async createUser(
       {
@@ -505,36 +450,31 @@ export async function createStorage(
         email,
         fullName,
         displayName,
-        externalAuthUserId,
         oidcIntegrationId,
       }: {
         superTokensUserId: string;
         email: string;
         fullName: string;
         displayName: string;
-        externalAuthUserId: string | null;
         oidcIntegrationId: string | null;
       },
       connection: Connection,
     ) {
-      const user = await connection.one<users>(
+      await connection.query<unknown>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "external_auth_user_id", "oidc_integration_id")
+            ("email", "supertoken_user_id", "full_name", "display_name", "oidc_integration_id")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${externalAuthUserId}, ${oidcIntegrationId})
-          RETURNING *
+            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
         `,
       );
 
-      const provider = await connection.maybeOneFirst<string>(sql`/* findSupertokensProvider */
-        SELECT third_party_id FROM supertokens_thirdparty_users WHERE user_id = ${superTokensUserId} LIMIT 1
-      `);
+      const user = await this.getUserBySuperTokenId({ superTokensUserId }, connection);
+      if (!user) {
+        throw new Error('Something went wrong.');
+      }
 
-      return transformUser({
-        ...user,
-        provider,
-      });
+      return user;
     },
     async getOrganization(userId: string, connection: Connection) {
       const org = await connection.maybeOne<Slonik<organizations>>(
@@ -602,7 +542,6 @@ export async function createStorage(
   function buildUserData(input: {
     superTokensUserId: string;
     email: string;
-    externalAuthUserId: string | null;
     oidcIntegrationId: string | null;
     firstName: string | null;
     lastName: string | null;
@@ -618,7 +557,6 @@ export async function createStorage(
       email: input.email,
       displayName: name,
       fullName: name,
-      externalAuthUserId: input.externalAuthUserId,
       oidcIntegrationId: input.oidcIntegrationId,
     };
   }
@@ -637,14 +575,12 @@ export async function createStorage(
     },
     async ensureUserExists({
       superTokensUserId,
-      externalAuthUserId,
       email,
       oidcIntegration,
       firstName,
       lastName,
     }: {
       superTokensUserId: string;
-      externalAuthUserId?: string | null;
       firstName: string | null;
       lastName: string | null;
       email: string;
@@ -661,7 +597,6 @@ export async function createStorage(
             buildUserData({
               superTokensUserId,
               email,
-              externalAuthUserId: externalAuthUserId ?? null,
               oidcIntegrationId: oidcIntegration?.id ?? null,
               firstName,
               lastName,
@@ -691,52 +626,42 @@ export async function createStorage(
     },
     getUserById: batch(async input => {
       const userIds = input.map(i => i.id);
-      const users = await pool.any<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getUserById */
+      const records = await pool.any<unknown>(sql`/* getUserById */
         SELECT
-          u.*, stu.third_party_id as provider
+          ${userFields(sql`"users".`, sql`"stu".`)}
         FROM
-          "users" as u
-        LEFT JOIN
-          supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+          "users"
+        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+          ON ("stu"."user_id" = "users"."supertoken_user_id")
         WHERE
-          u.id = ANY(${sql.array(userIds, 'uuid')})
+          "users"."id" = ANY(${sql.array(userIds, 'uuid')})
       `);
 
-      const mappings = new Map<
-        string,
-        users & {
-          provider: string | null;
-        }
-      >();
-      for (const user of users) {
+      const mappings = new Map<string, UserType>();
+      for (const record of records) {
+        const user = UserModel.parse(record);
         mappings.set(user.id, user);
       }
 
-      return userIds.map(id => {
-        const user = mappings.get(id) ?? null;
-        return Promise.resolve(user ? transformUser(user) : null);
-      });
+      return userIds.map(async id => mappings.get(id) ?? null);
     }),
     async updateUser({ id, displayName, fullName }) {
-      const user = await pool.one<users>(sql`/* updateUser */
+      await pool.one<users>(sql`/* updateUser */
         UPDATE "users"
-        SET display_name = ${displayName}, full_name = ${fullName}
-        WHERE id = ${id}
-        RETURNING *
+        SET
+          "display_name" = ${displayName}
+          , "full_name" = ${fullName}
+        WHERE
+          "id" = ${id}
       `);
 
-      const provider = await pool.maybeOneFirst<string>(sql`/* findSupertokensProvider */
-        SELECT third_party_id FROM supertokens_thirdparty_users WHERE user_id = ${user.supertoken_user_id} LIMIT 1
-      `);
+      const user = await this.getUserById({ id });
 
-      return transformUser({
-        ...user,
-        provider,
-      });
+      if (!user) {
+        throw new Error('Something went wrong.');
+      }
+
+      return user;
     },
     createOrganization(input) {
       return tracedTransaction('createOrganization', pool, async t => {
@@ -915,7 +840,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationOwner */
         SELECT
-          u.*,
+          ${userFields(sql`"u".`, sql`"stu".`)},
           COALESCE(omr.scopes, om.scopes) as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -923,14 +848,13 @@ export async function createStorage(
           omr.name as role_name,
           omr.locked as role_locked,
           omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
+          omr.description as role_description
         FROM organizations as o
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
         LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE o.id IN (${sql.join(organizations, sql`, `)})`,
+        WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
       return organizations.map(organization => {
@@ -967,7 +891,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMembers */
         SELECT
-          u.*,
+          ${userFields(sql`"u".`, sql`"stu".`)},
           COALESCE(omr.scopes, om.scopes) as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -976,16 +900,15 @@ export async function createStorage(
           omr.name as role_name,
           omr.locked as role_locked,
           omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
+          omr.description as role_description
         FROM organization_member as om
         LEFT JOIN organizations as o ON (o.id = om.organization_id)
         LEFT JOIN users as u ON (u.id = om.user_id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
         LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id IN (${sql.join(
+        WHERE om.organization_id = ANY(${sql.array(
           organizations,
-          sql`, `,
+          'uuid',
         )}) ORDER BY u.created_at DESC`,
       );
 
@@ -1010,7 +933,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMember */
           SELECT
-            u.*,
+            ${userFields(sql`"u".`, sql`"stu".`)},
             COALESCE(omr.scopes, om.scopes) as scopes,
             om.organization_id,
             om.connected_to_zendesk,
@@ -1019,8 +942,7 @@ export async function createStorage(
             omr.name as role_name,
             omr.locked as role_locked,
             omr.scopes as role_scopes,
-            omr.description as role_description,
-            stu.third_party_id as provider
+            omr.description as role_description
           FROM organization_member as om
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
@@ -1178,7 +1100,7 @@ export async function createStorage(
       >(
         sql`/* getMembersWithoutRole */
         SELECT
-          u.*,
+          ${userFields(sql`"u".`, sql`"stu".`)},
           COALESCE(omr.scopes, om.scopes) as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -1187,8 +1109,7 @@ export async function createStorage(
           omr.name as role_name,
           omr.locked as role_locked,
           omr.scopes as role_scopes,
-          omr.description as role_description,
-          stu.third_party_id as provider
+          omr.description as role_description
         FROM organization_member as om
         LEFT JOIN organizations as o ON (o.id = om.organization_id)
         LEFT JOIN users as u ON (u.id = om.user_id)
@@ -4378,30 +4299,6 @@ export async function createStorage(
       return TargetBreadcrumbModel.parse(result);
     },
 
-    async getOrganizationUser(args) {
-      const result = await pool.maybeOne<
-        users & {
-          provider: string | null;
-        }
-      >(sql`/* getOrganizationUser */
-        SELECT
-          "u".*, "stu"."third_party_id" as provider
-        FROM "organization_member" as "om"
-          LEFT JOIN "organizations" as "o" ON ("o"."id" = "om"."organization_id")
-          LEFT JOIN "users" as "u" ON ("u"."id" = "om"."user_id")
-          LEFT JOIN "supertokens_thirdparty_users" as "stu" ON ("stu"."user_id" = "u"."supertoken_user_id")
-        WHERE
-          "u"."id" = ${args.userId}
-          AND "o"."id" = ${args.organizationId}
-      `);
-
-      if (result === null) {
-        return null;
-      }
-
-      return transformUser(result);
-    },
-
     async updateTargetGraphQLEndpointUrl(args) {
       const result = await pool.maybeOne<unknown>(sql`/* updateTargetGraphQLEndpointUrl */
         UPDATE
@@ -5305,3 +5202,51 @@ export type PaginatedSchemaVersionConnection = Readonly<{
     endCursor: string;
   }>;
 }>;
+
+export const userFields = (
+  user: TaggedTemplateLiteralInvocation,
+  superTokensThirdParty: TaggedTemplateLiteralInvocation,
+) => sql`
+  ${user}"id"
+  , ${user}"email"
+  , to_json(${user}"created_at") AS "createdAt"
+  , ${user}"display_name" AS "displayName"
+  , ${user}"full_name" AS "fullName"
+  , ${user}"supertoken_user_id" AS "superTokensUserId"
+  , ${user}"is_admin" AS "isAdmin"
+  , ${user}"oidc_integration_id" AS "oidcIntegrationId"
+  , ${user}"zendesk_user_id" AS "zendeskId" 
+  , ${superTokensThirdParty}"third_party_id" AS "provider"
+`;
+
+export const UserModel = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  createdAt: zod.string(),
+  displayName: zod.string(),
+  fullName: zod.string(),
+  superTokensUserId: zod.string(),
+  isAdmin: zod
+    .boolean()
+    .nullable()
+    .transform(value => value ?? false),
+  oidcIntegrationId: zod.string().nullable(),
+  zendeskId: zod.string().nullable(),
+  provider: zod
+    .string()
+    .nullable()
+    .transform(provider => {
+      if (provider === 'oidc') {
+        return 'OIDC' as const;
+      }
+      if (provider === 'google') {
+        return 'GOOGLE' as const;
+      }
+      if (provider === 'github') {
+        return 'GITHUB' as const;
+      }
+      return 'USERNAME_PASSWORD' as const;
+    }),
+});
+
+type UserType = zod.TypeOf<typeof UserModel>;
