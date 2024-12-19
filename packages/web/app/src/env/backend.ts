@@ -64,7 +64,7 @@ const BaseSchema = zod.object({
   GRAPHQL_PERSISTED_OPERATIONS: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
-  LABORATORY_PREFLIGHT_WORKER_URL: emptyString(zod.string().url().optional()),
+  LABORATORY_PREFLIGHT_EMBED_URL: emptyString(zod.string().url().optional()),
   ZENDESK_SUPPORT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 

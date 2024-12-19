@@ -317,7 +317,6 @@ deployLabWorker({
   reverseProxy: proxy,
   app,
   environment,
-  path: '/worker.js',
 });
 
 deployCloudFlareSecurityTransform({

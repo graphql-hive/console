@@ -1,5 +1,5 @@
-import type { UserConfig } from 'vite';
 import { resolve } from 'node:path';
+import type { UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
 
@@ -20,6 +20,9 @@ export default {
       input: {
         index: resolve(__dirname, 'index.html'),
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
+      },
+      output: {
+        entryFileNames: '[name].js',
       },
     },
   },

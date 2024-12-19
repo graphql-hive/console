@@ -11,19 +11,24 @@ export function deployLabWorker({
   reverseProxy,
   app,
   environment,
-  path,
 }: {
   reverseProxy: Proxy;
   app: App;
   environment: Environment;
-  path: string;
 }) {
   const dnsName = `lab-worker.${environment.rootDns}`;
+
   reverseProxy.registerInternalProxy(dnsName, {
-    path,
+    path: '/preflight-worker-embed.js',
     service: app.service,
     host: dnsName,
-    customRewrite: '/preflight-script-worker.js',
+    customRewrite: '/preflight-worker-embed.js',
+  });
+  reverseProxy.registerInternalProxy(dnsName, {
+    path: '/',
+    service: app.service,
+    host: dnsName,
+    customRewrite: '/__preflight-embed',
   });
 
   return {

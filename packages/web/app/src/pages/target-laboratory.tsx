@@ -434,6 +434,7 @@ function LaboratoryPageContent(props: {
 
   return (
     <>
+      {preflightScript.iframeElement}
       <div className="flex py-6">
         <div className="flex-1">
           <Title>Laboratory</Title>
@@ -532,7 +533,6 @@ function LaboratoryPageContent(props: {
           }
         `}</style>
       </Helmet>
-
       {!query.fetching && !query.stale && (
         <PreflightScriptProvider value={preflightScript}>
           <GraphiQL

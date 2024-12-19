@@ -38,11 +38,6 @@ import {
 } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
 import type { LogMessage } from './preflight-script-worker';
-import workerUrl from './preflight-script-worker?worker&url';
-
-const PreflightWorker = Worker.bind(null, env.laboratory.preflightWorkerUrl || workerUrl, {
-  type: import.meta.env.DEV ? 'module' : undefined,
-});
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -160,6 +155,8 @@ const enum PreflightWorkerState {
 export function usePreflightScript(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
+  const iframeRef = useRef<HTMLIFrameElement | undefined>();
+
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorage(
     'hive:laboratory:isPreflightScriptEnabled',
@@ -183,45 +180,34 @@ export function usePreflightScript(args: {
     if (isPreview === false && !isPreflightScriptEnabled) {
       return safeParseJSON(latestEnvironmentVariablesRef.current);
     }
+
+    const id = crypto.randomUUID();
+    setState(PreflightWorkerState.running);
+    const now = Date.now();
+    setLogs(prev => [...prev, '> Start running script']);
+
     try {
-      setState(PreflightWorkerState.running);
+      const contentWindow = iframeRef.current?.contentWindow;
 
-      const now = Date.now();
-      setLogs(prev => [...prev, '> Start running script']);
+      if (!contentWindow) {
+        throw new Error('Could not load iframe embed.');
+      }
 
-      const worker = new PreflightWorker();
+      contentWindow.postMessage(
+        {
+          type: 'run',
+          id,
+          script,
+          environmentVariables: (environmentVariables && safeParseJSON(environmentVariables)) || {},
+        },
+        '*',
+      );
 
-      const isReadyD = Promise.withResolvers<void>();
       const isFinishedD = Promise.withResolvers<void>();
 
-      const timeout = setTimeout(() => {
-        setLogs(logs => [
-          ...logs,
-          new Error(
-            `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
-          ),
-        ]);
-        isFinishedD.resolve();
-      }, PREFLIGHT_TIMEOUT);
-
-      currentRun.current = () => {
-        clearTimeout(timeout);
-        setLogs(logs => [
-          ...logs,
-          '> Preflight script interrupted by user',
-          {
-            type: 'separator' as const,
-          },
-        ]);
-        isFinishedD.resolve();
-      };
-
-      worker.onmessage = (ev: MessageEvent<WorkerMessagePayload>) => {
-        if (ev.data.type === 'ready') {
-          isReadyD.resolve();
-          return;
-        }
-
+      // eslint-disable-next-line no-inner-declarations
+      function eventHandler(ev: MessageEvent) {
+        console.log(ev.data);
         if (ev.data.type === 'result') {
           const mergedEnvironmentVariables = {
             ...safeParseJSON(latestEnvironmentVariablesRef.current),
@@ -236,37 +222,29 @@ export function usePreflightScript(args: {
             },
           ]);
           isFinishedD.resolve();
-          clearTimeout(timeout);
           return;
         }
+
         if (ev.data.type === 'log') {
-          const message = ev.data.message;
-          setLogs(logs => [...logs, message]);
+          const log = ev.data.log;
+          setLogs(logs => [...logs, log]);
           return;
         }
+
         if (ev.data.type === 'error') {
           const error = ev.data.error;
           setLogs(logs => [...logs, error]);
           isFinishedD.resolve();
-          clearTimeout(timeout);
           return;
         }
+      }
 
-        throw new Error('Received unexpected response from worker.');
-      };
-
-      await isReadyD.promise;
-
-      worker.postMessage({
-        script,
-        environmentVariables: (environmentVariables && safeParseJSON(environmentVariables)) || {},
-      });
-
+      window.addEventListener('message', eventHandler);
       await isFinishedD.promise;
-      setState(PreflightWorkerState.ready);
+      window.removeEventListener('message', eventHandler);
 
-      worker.onmessage = () => {};
-      worker.terminate();
+      setState(PreflightWorkerState.ready);
+      return safeParseJSON(latestEnvironmentVariablesRef.current);
     } catch (err) {
       if (err instanceof Error) {
         setLogs(prev => [
@@ -282,8 +260,6 @@ export function usePreflightScript(args: {
       }
       throw err;
     }
-
-    return safeParseJSON(latestEnvironmentVariablesRef.current);
   }
 
   function abort() {
@@ -309,6 +285,20 @@ export function usePreflightScript(args: {
     state,
     logs,
     clearLogs: () => setLogs([]),
+    iframeElement: (
+      <iframe
+        src={env.laboratory.preflightEmbedUrl || '/__preflight-embed'}
+        title="preflight-worker"
+        className="hidden"
+        /**
+         * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
+         * In PROD the webworker is not
+         */
+        // sandbox={import.meta.env.DEV ? 'allow-scripts allow-same-origin' : 'allow-scripts'}
+        // @ts-expect-error ref typings
+        ref={iframeRef}
+      />
+    ),
   } as const;
 }
 

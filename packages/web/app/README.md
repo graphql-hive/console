@@ -28,7 +28,7 @@ The following environment variables configure the application.
 | `NODE_ENV`                              | No                                         | The `NODE_ENV` value.                                                                         | `production`                                         |
 | `GA_TRACKING_ID`                        | No                                         | The token for Google Analytics in order to track user actions.                                | `g6aff8102efda5e1d12e`                               |
 | `GRAPHQL_PERSISTED_OPERATIONS`          | No                                         | Send persisted operation hashes instead of documents to the server.                           | `1` (enabled) or `0` (disabled)                      |
-| `LABORATORY_PREFLIGHT_WORKER_URL`       | No                                         | Where to serve the laboratory worker from.                                                    | Default `""`                                         |
+| `LABORATORY_PREFLIGHT_EMBED_URL`        | No                                         | Where to serve the laboratory embed from.                                                     | Default `""`                                         |
 
 ## Hive Hosted Configuration
 
