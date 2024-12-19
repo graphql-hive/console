@@ -75,6 +75,12 @@ The following diagram shows the architecture of a self-hosted GraphQL Hive insta
 
 - **PostgreSQL database**: stores all core data, including: users, GraphQL schemas, schema checks,
   projects, targets, organizations and configurations.
+
+<Callout type="info">
+  We recommend using PostgreSQL version 16. While older versions (14, 15) may still work, we
+  recommend using 16 as this is the version we using for the cloud version of Hive.
+</Callout>
+
 - **Redis**: deployed as in-cluster, used for mainly for short-term caching.
 - **ClickHouse database**: stores all GraphQL operations usage data.
 - **Kafka**: high-throughput message queue, used for sending usage data to the usage-ingestor
