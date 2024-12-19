@@ -84,6 +84,26 @@ There are 2 categories of hooks:
 Gateway lifecycle allows to setup long running services, initialize in-memory cache or stores, react
 to general events.
 
+<div className="[&_a]:text-primary [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
+
+```mermaid
+stateDiagram-v2
+  onYogaInit: <a href="#onyogainit">onYogaInit</a>
+  onPluginInit: <a href="#onplugininit">onPluginInit</a>
+  onDispose: <a href="#ondispose">onDispose</a>
+  listening: Listening for HTTP requests
+
+  [*] --> onYogaInit
+  onYogaInit --> onPluginInit
+  onPluginInit --> listening
+  listening --> onDispose: Gateway is shutting down
+
+  note left of listening: <a href="#onschemachange">onSchemaChange</a> called for each new schema loaded
+  note left of listening: <a href="#onfetch">onFetch</a> called for each outgoing HTTP request
+```
+
+</div>
+
 #### `onYogaInit`
 
 It is the very first hook called just before the gateway starts listening for HTTP requests.
@@ -152,15 +172,15 @@ Possible usage examples of the hooks are:
 | `requestId`        | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.                                                |
 | `logger`           | The logger instance for the specific request that includes the details of the request and the response.                                                                |
 
-#### `Symbol.asyncDispose` or `Symbol.dispose`
+#### `onDispose`
 
-In order to clean up resources when Hive Gateway is shut down, you can use `Symbol.asyncDispose` or
-`Symbol.syncDispose` to clean up resources.
+In order to clean up resources when Hive Gateway is shut down, you can use `onDispose`,
+`Symbol.asyncDispose` or `Symbol.syncDispose` to clean up resources.
 
 ```ts
 export const useMyPlugin = () => {
   return {
-    async [Symbol.asyncDispose]() {
+    async onDispose() {
       // Clean up resources
       await stopConnection()
     }
@@ -168,9 +188,7 @@ export const useMyPlugin = () => {
 }
 ```
 
-You can learn more about
-[Explicit Resource Management](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management)
-here.
+[You can learn more about Explicit Resource Management in Yoga documentation](https://the-guild.dev/graphql/yoga-server/docs/features/explicit-resource-management).
 
 ### Request Lifecycle
 
@@ -194,74 +212,71 @@ stateDiagram-v2
   onRequest --> onRequest_if_state
 
   onRequest_if_state --> onResponse: Is not a GraphQL Request
-  onRequest_if_state --> GraphQLRequest: Is GraphQL Request
+  onRequest_if_state --> onRequestParse: Is GraphQL Request
 
-  state GraphQLRequest {
-    onRequestParse: <a href="#onrequestparse">onRequestParse</a>
-    onParams: <a href="#onparams">onParams</a>
-    onEnveloped: <a href="#onenveloped">onEnveloped</a>
-    onParse: <a href="#onparse">onParse</a>
-    onValidate: <a href="#onvalidate">onValidate</a>
-    onContextBuilding: <a href="oncontextbuilding">onContextBuilding</a>
-    onExecute: <a href="#onexecute">onExecute</a>
-    onSubscribe: <a href="#onsubscribe">onSubscribe</a>
+  onRequestParse: <a href="#onrequestparse">onRequestParse</a>
+  onParams: <a href="#onparams">onParams</a>
+  onEnveloped: <a href="#onenveloped">onEnveloped</a>
+  onParse: <a href="#onparse">onParse</a>
+  onValidate: <a href="#onvalidate">onValidate</a>
+  onContextBuilding: <a href="oncontextbuilding">onContextBuilding</a>
+  onExecute: <a href="#onexecute">onExecute</a>
+  onSubscribe: <a href="#onsubscribe">onSubscribe</a>
 
-    onExecuteDone: <a href="#onexecutedone">onExecuteDone</a>
-    onFetch: <a href="#onfetch">onFetch (HTTP only)</a>
-    onSubscribeDone: <a href="#onsubscribedone">onSubscribeDone</a>
-    onExecutionResult: <a href="#onexecutionresult">onExecutionResult</a>
-    onResultProcess: <a href="#onresultprocess">onResultProcess</a>
+  onExecuteDone: <a href="#onexecutedone">onExecuteDone</a>
+  onFetch: <a href="#onfetch">onFetch (HTTP only)</a>
+  onSubscribeDone: <a href="#onsubscribedone">onSubscribeDone</a>
+  onExecutionResult: <a href="#onexecutionresult">onExecutionResult</a>
+  onResultProcess: <a href="#onresultprocess">onResultProcess</a>
+  onDelegationPlan: <a href="#ondelegationplan">onDelegationPlan</a>
+  onDelegationStageExecute: <a href="#ondelegationstageexecute">onDelegationStageExecute</a>
+  onSubgraphExecute: <a href="#onsubgraphexecute">onSubgraphExecute</a>
+  onSubgraphExecuteDone: <a href="#onsubgraphexecutedone">onSubgraphExecuteDone</a>
 
 
-    [*] --> onRequestParse
-    onRequestParse --> onParams
-    onParams --> onEnveloped
-    onEnveloped --> onParse
-    onParse --> onValidate
-    onValidate --> onContextBuilding
-    onContextBuilding --> onExecute
-    onContextBuilding --> onSubscribe
+  onRequestParse --> onParams
+  onParams --> onEnveloped
+  onEnveloped --> onParse
+  onParse --> onValidate
+  onValidate --> onContextBuilding
+  onContextBuilding --> onExecute: query or mutation
+  onContextBuilding --> onSubscribe: subscription
 
-    onExecute --> SubgraphDelegation
-    onSubscribe --> SubgraphDelegation
+  state is_plan_cached <<choice>>
+  onExecute --> is_plan_cached
+  onSubscribe --> is_plan_cached
+  is_plan_cached --> onDelegationPlan: Plan is not cached
+  is_plan_cached --> onDelegationStageExecute: Plan is cached
 
-    SubgraphDelegation: Subgraph Delegation
-    state SubgraphDelegation {
-      onDelegationPlan: <a href="#ondelegationplan">onDelegationPlan</a>
-      onDelegationStageExecute: <a href="#ondelegationstageexecute">onDelegationStageExecute</a>
-      onSubgraphExecute: <a href="#onsubgraphexecute">onSubgraphExecute</a>
-      onSubgraphExecuteDone: <a href="#onsubgraphexecutedone">onSubgraphExecuteDone</a>
+  note left of onDelegationPlan
+    Will be called for each nested selection set of the query
+  end note
+  onDelegationPlan --> onDelegationStageExecute
+  onDelegationStageExecute --> onSubgraphExecute
+  onSubgraphExecute --> onFetch
+  onFetch --> onSubgraphExecuteDone
 
-      [*] --> onDelegationPlan: Plan is not cached
-      [*] --> onDelegationStageExecute: Plan is cached
-      onDelegationPlan --> onDelegationStageExecute
-      onDelegationStageExecute --> onSubgraphExecute
-      onSubgraphExecute --> onFetch
-      onFetch --> onSubgraphExecuteDone
+  state is_plan_finished <<choice>>
+  onSubgraphExecuteDone --> is_plan_finished
+  is_plan_finished --> onDelegationStageExecute: plan not finished
 
-      state is_plan_finished <<choice>>
-      onSubgraphExecuteDone --> is_plan_finished
-      is_plan_finished --> onDelegationStageExecute: plan not finished
-      is_plan_finished --> [*]: plan finished
-    }
-
-    SubgraphDelegation --> onExecuteDone
-    SubgraphDelegation --> onSubscribeDone
+  state end_of_execution <<fork>>
+  is_plan_finished --> end_of_execution: plan finished
+  end_of_execution --> onExecuteDone: query or mutation
+  end_of_execution --> onSubscribeDone: subscription
 
     onExecuteDone --> onExecutionResult
     onSubscribeDone --> onExecutionResult
 
     onExecutionResult --> onResultProcess
-    onResultProcess --> [*]
-  }
 
-  GraphQLRequest --> onResponse
+  onResultProcess --> onResponse
   onResponse --> [*]
 ```
 
 </div>
 
-### `onRequest`
+#### `onRequest`
 
 This hook is invoked for ANY incoming HTTP request. Here you can manipulate the request or create a
 short circuit before Yoga handles the request.
@@ -314,7 +329,7 @@ Possible usage examples of this hook are:
 | `url`           | WHATWG URL object of the incoming request. [Learn more about the URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL).             |
 | `endResponse`   | A function that allows you to end the request early and send a response to the client.                                                          |
 
-### `onRequestParse`
+#### `onRequestParse`
 
 This hook is invoked for any incoming GraphQL HTTP request and is invoked before attempting to parse
 the GraphQL parameters. Here you can manipulate the request, set a custom request parser or apply
@@ -333,7 +348,7 @@ Possible usage examples of this hook are:
 | `requestParser`    | The function that will be used to extract GraphQL params from the request.                                                                      |
 | `setRequestParser` | Allows to replace the function that will be used to extract GraphQL params from the request                                                     |
 
-### `onParams`
+#### `onParams`
 
 This hook is invoked for an incoming GraphQL request after the GraphQL parameters (`query`,
 `variables`, `extensions` and `operationName`) have been ATTEMPTED to be parsed.
@@ -361,7 +376,7 @@ Possible usage examples of this hook are:
 | fetchAPI      | [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) provided in the Hive Gateway configuration. This should be used to make outgoing HTTP request, since it will trigger the `onFetch` hook. |
 | `context`     | The server context. It can contain runtime specific data, such as `req` and `res` object when running in Node for example.                                                                                       |
 
-### `onParse`
+#### `onParse`
 
 Called for parsing the GraphQL document. This hook has a before and after stage. You can hook into
 before the document is parsed and/or into after the document is parsed.
@@ -380,7 +395,7 @@ before the document is parsed and/or into after the document is parsed.
 | `setParseFn`        | Replace the current parse function.                                                                     |
 | `setParsedDocument` | Set/overwrite the parsed document. If a parsed document is set the call to the parseFn will be skipped. |
 
-### `onValidate`
+#### `onValidate`
 
 Called for validating the GraphQL document. This hook has a before and after stage. You can hook
 into before the document is parsed and/or into after the document is parsed.
@@ -400,7 +415,7 @@ into before the document is parsed and/or into after the document is parsed.
 | `setValidationFn`   | Overwrite the current validate function.                                  |
 | `setResult`         | Set a validation error result and skip the validate invocation.           |
 
-### `onContextBuilding`
+#### `onContextBuilding`
 
 Called for building the GraphQL context. This hook has a before and after stage. You can hook into
 before and after the context is built.
@@ -416,7 +431,7 @@ before and after the context is built.
 | `extendContext`        | Extend the context object with a partial.            |
 | `breakContextBuilding` | Prevent calls on any further context building hooks. |
 
-### `onExecute`
+#### `onExecute`
 
 Called for executing a GraphQL mutation or query operation. This hook has a before and after stage.
 You can hook into before and after the GraphQL request is executed.
@@ -434,7 +449,7 @@ You can hook into before and after the GraphQL request is executed.
 | `setResultAndStopExecution` | Set an execution result and skip calling the execute function. |
 | `extendContext`             | Extend the context object with a partial.                      |
 
-### `onSubscribe`
+#### `onSubscribe`
 
 Called for subscribing to a GraphQL subscription operation. This hook has a before and after stage.
 You can hook into before and after the GraphQL subscription is executed.
@@ -452,7 +467,58 @@ You can hook into before and after the GraphQL subscription is executed.
 | `extendContext`             | Extend the context object with a partial.                                                                |
 | `setResultAndStopExecution` | Set a subscribe result and skip calling the subscribe function.                                          |
 
-### `onExecutionResult`
+#### `onDelegationPlan`
+
+Called each time a delegation plan is calculated for a query. This hook is not called for each
+queries, because the plan is cached. This means it will be called only the first time a query
+document is encountered since the last schema change.
+
+This hook is mostly used for monitoring and tracing purposes.
+
+| Field Name                 | Description                                              |
+| -------------------------- | -------------------------------------------------------- |
+| `supergraph`               | The GraphQL schema of the supergraph.                    |
+| `subgraph`                 | The name of the subgraph.                                |
+| `sourceSubschema`          | The source subschema.                                    |
+| `typeName`                 | The name of the type.                                    |
+| `variables`                | The variables used in the request.                       |
+| `fragments`                | The fragments used in the request.                       |
+| `fieldNodes`               | The field nodes of the request.                          |
+| `context`                  | The context object.                                      |
+| `requestId`                | An optional unique ID identifying the client request.    |
+| `logger`                   | An optional logger instance for the specific request.    |
+| `info`                     | An optional GraphQLResolveInfo object.                   |
+| `delegationPlanBuilder`    | The delegation plan builder.                             |
+| `setDelegationPlanBuilder` | Function to replace the current delegation plan builder. |
+
+#### `onDelegationStageExecute`
+
+#### `onSubgraphExecute`
+
+This hook is invoked for ANY request that is sent to the subgraph.
+
+**Example actions in this hook:**
+
+- Manipulate the request
+- Add a custom auth header
+- Monitor the subgraph request
+
+You can see [Prometheus plugin](/docs/gateway/authorization-authentication) for an example of how to
+use this hook.
+
+| Payload Field         | Description                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| `subgraph`            | The GraphQL schema of the subgraph.                                                                     |
+| `subgraphName`        | The name of the subgraph.                                                                               |
+| `transportEntry`      | The transport entry that will be used to resolve queries for this subgraph                              |
+| `executionRequest`    | The execution request object containing details of the upstream GraphQL operation.                      |
+| `setExecutionRequest` | Function to replace the current execution request.                                                      |
+| `executor`            | The executor function used to execute the upstream request.                                             |
+| `setExecutor`         | Function to replace the current executor.                                                               |
+| `requestId`           | A unique ID identifying the client request.                                                             |
+| `logger`              | The logger instance for the specific request that includes the details of the request and the response. |
+
+#### `onExecutionResult`
 
 This hook is invoked for each result produced for GraphQL operation, before it is processed to be
 sent to client.
@@ -475,7 +541,7 @@ Here, you can modify the result, to add monitoring or instrumentation extensions
 | `setResult`   | Allows to replace the execution result.                                                                                                         |
 | `context`     | The GraphQL context.                                                                                                                            |
 
-### `onResultProcess`
+#### `onResultProcess`
 
 This hook is invoked after a GraphQL request has been processed and before the response is forwarded
 to the client. Here you can customize what transport/response processor format should be used for
@@ -496,7 +562,7 @@ sending the result over the wire.
 | `setResultProcessor`   | Allows to set the result processor and the accepted media type.                                                                                                                        |
 | `serverContext`        | The server context which can contain runtime specific data, such as for example `req` and `res` object when running in Node                                                            |
 
-### `onResponse`
+#### `onResponse`
 
 This hook is invoked after a HTTP request (both GraphQL and NON GraphQL) has been processed and
 after the response has been forwarded to the client. Here you can perform any cleanup or logging
@@ -523,31 +589,6 @@ Prefer `onRequestParse` when possible, or wrap the hook code in a `try` block.
 | `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).               |
 | `serverContext` | The final context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](/docs/features/context).                  |
 | `response`      | The outgoing HTTP response as WHATWG `Response` object. [Learn more about the response interface](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
-
-#### `onSubgraphExecute`
-
-This hook is invoked for ANY request that is sent to the subgraph.
-
-**Example actions in this hook:**
-
-- Manipulate the request
-- Add a custom auth header
-- Monitor the subgraph request
-
-You can see [Prometheus plugin](/docs/gateway/authorization-authentication) for an example of how to
-use this hook.
-
-| Payload Field         | Description                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `subgraph`            | The GraphQL schema of the subgraph.                                                                     |
-| `subgraphName`        | The name of the subgraph.                                                                               |
-| `transportEntry`      | The transport entry that will be used to resolve queries for this subgraph                              |
-| `executionRequest`    | The execution request object containing details of the upstream GraphQL operation.                      |
-| `setExecutionRequest` | Function to replace the current execution request.                                                      |
-| `executor`            | The executor function used to execute the upstream request.                                             |
-| `setExecutor`         | Function to replace the current executor.                                                               |
-| `requestId`           | A unique ID identifying the client request.                                                             |
-| `logger`              | The logger instance for the specific request that includes the details of the request and the response. |
 
 ### Plugin Context
 
