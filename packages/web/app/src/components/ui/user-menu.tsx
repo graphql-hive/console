@@ -1,7 +1,10 @@
+import { ReactElement, useEffect } from 'react';
 import cookies from 'js-cookie';
-import { LifeBuoyIcon } from 'lucide-react';
+import { LifeBuoyIcon, LoaderCircleIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
-import { useMutation } from 'urql';
+import { useMutation, useQuery } from 'urql';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -42,12 +45,15 @@ import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { GetStartedProgress } from '../get-started/trigger';
 import { MemberRoleMigrationStickyNote } from '../organization/members/migration';
-import { UserSettingsModal } from '../user/settings';
 import { Changelog } from './changelog/changelog';
 import { latestChangelog } from './changelog/generated-changelog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './form';
+import { Input } from './input';
+import { useToast } from './use-toast';
 
 const UserMenu_OrganizationConnectionFragment = graphql(`
   fragment UserMenu_OrganizationConnectionFragment on OrganizationConnection {
@@ -359,6 +365,167 @@ export function LeaveOrganizationModalContent(props: {
             Leave organization
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const UserSettings_MeQuery = graphql(`
+  query UserSettings_MeQuery {
+    me {
+      id
+      fullName
+      displayName
+      canSwitchOrganization
+    }
+  }
+`);
+
+const UpdateMeMutation = graphql(`
+  mutation updateMe($input: UpdateMeInput!) {
+    updateMe(input: $input) {
+      ok {
+        updatedUser {
+          id
+          fullName
+          displayName
+        }
+      }
+      error {
+        message
+        inputErrors {
+          fullName
+          displayName
+        }
+      }
+    }
+  }
+`);
+
+const minMessage = 'Name must be at least 2 characters long';
+const maxMessage = 'Name must be at most 25 characters long';
+
+const userSettingsModalFormSchema = z.object({
+  fullName: z.string().min(2, { message: minMessage }).max(50, { message: maxMessage }),
+  displayName: z.string().min(2, { message: minMessage }).max(50, { message: maxMessage }),
+});
+
+type UserSettingsModalFormValues = z.infer<typeof userSettingsModalFormSchema>;
+
+export function UserSettingsModal({
+  isOpen,
+  toggleModalOpen,
+}: {
+  isOpen: boolean;
+  toggleModalOpen: () => void;
+}): ReactElement {
+  const [meQuery] = useQuery({ query: UserSettings_MeQuery, pause: !isOpen });
+  const [, mutate] = useMutation(UpdateMeMutation);
+  const { toast } = useToast();
+
+  const form = useForm<UserSettingsModalFormValues>({
+    mode: 'all',
+    resolver: zodResolver(userSettingsModalFormSchema),
+    defaultValues: { fullName: '', displayName: '' },
+  });
+
+  useEffect(() => {
+    if (meQuery.data?.me) {
+      form.reset({
+        fullName: meQuery.data.me.fullName || '',
+        displayName: meQuery.data.me.displayName || '',
+      });
+    }
+  }, [meQuery.data, form]);
+
+  async function onSubmit(values: UserSettingsModalFormValues) {
+    const { data } = await mutate({ input: values });
+    if (!data) return;
+
+    const { error, ok } = data.updateMe;
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+      return;
+    }
+
+    if (ok) {
+      toggleModalOpen();
+      toast({
+        variant: 'default',
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully',
+      });
+    }
+  }
+
+  const isButtonDisabled =
+    form.formState.isSubmitting ||
+    !form.formState.isValid ||
+    meQuery.fetching ||
+    !form.formState.isDirty;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={toggleModalOpen}>
+      <DialogContent className="container w-4/5 max-w-[400px] md:w-3/5">
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Profile settings</DialogTitle>
+              <DialogDescription>Update your profile information.</DialogDescription>
+            </DialogHeader>
+            {meQuery.fetching ? (
+              <div className="flex justify-center">
+                <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Your Full Name" autoComplete="off" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="displayName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Display Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Your Display Name" autoComplete="off" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full justify-center"
+                variant="primary"
+                disabled={isButtonDisabled}
+                data-cy="confirm"
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
