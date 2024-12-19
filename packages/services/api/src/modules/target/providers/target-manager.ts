@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { ActivityManager } from '../../shared/providers/activity-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -30,6 +31,7 @@ export class TargetManager {
     private session: Session,
     private activityManager: ActivityManager,
     private idTranslator: IdTranslator,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
@@ -88,6 +90,16 @@ export class TargetManager {
           targetId: result.target.id,
         },
       });
+
+      await this.auditLog.record({
+        eventType: 'TARGET_CREATED',
+        organizationId: result.target.orgId,
+        metadata: {
+          projectId: result.target.projectId,
+          targetId: result.target.id,
+          targetSlug: result.target.slug,
+        },
+      });
     }
 
     return result;
@@ -130,6 +142,16 @@ export class TargetManager {
       meta: {
         name: deletedTarget.name,
         cleanId: deletedTarget.slug,
+      },
+    });
+
+    await this.auditLog.record({
+      eventType: 'TARGET_DELETED',
+      organizationId: organization,
+      metadata: {
+        targetId: target,
+        targetSlug: deletedTarget.slug,
+        projectId: project,
       },
     });
 
@@ -306,6 +328,17 @@ export class TargetManager {
           value: slug,
         },
       });
+
+      await this.auditLog.record({
+        eventType: 'TARGET_SLUG_UPDATED',
+        organizationId: organization,
+        metadata: {
+          projectId: project,
+          targetId: target,
+          newSlug: result.target.slug,
+          previousSlug: slug,
+        },
+      });
     }
 
     return result;
@@ -348,6 +381,16 @@ export class TargetManager {
         reason: 'Target not found.',
       } as const;
     }
+
+    await this.auditLog.record({
+      eventType: 'TARGET_GRAPHQL_ENDPOINT_URL_UPDATED',
+      organizationId: args.organizationId,
+      metadata: {
+        projectId: args.projectId,
+        targetId: args.targetId,
+        graphqlEndpointUrl: args.graphqlEndpointUrl,
+      },
+    });
 
     return {
       type: 'ok',
@@ -406,6 +449,16 @@ export class TargetManager {
       projectId: args.projectId,
       targetId: args.targetId,
       nativeComposition: args.nativeComposition,
+    });
+
+    await this.auditLog.record({
+      eventType: 'TARGET_SCHEMA_COMPOSITION_UPDATED',
+      organizationId: args.organizationId,
+      metadata: {
+        projectId: args.projectId,
+        targetId: args.targetId,
+        nativeComposition: args.nativeComposition,
+      },
     });
 
     return target;

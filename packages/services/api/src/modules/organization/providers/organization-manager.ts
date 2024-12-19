@@ -3,6 +3,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { Organization, OrganizationMemberRole } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { cache, diffArrays, share } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { OrganizationAccessScope } from '../../auth/providers/organization-access';
@@ -61,8 +62,9 @@ export class OrganizationManager {
   constructor(
     logger: Logger,
     private storage: Storage,
-    private authManager: AuthManager,
     private session: Session,
+    private authManager: AuthManager,
+    private auditLog: AuditLogRecorder,
     private tokenStorage: TokenStorage,
     private activityManager: ActivityManager,
     private billingProvider: BillingProvider,
@@ -336,13 +338,22 @@ export class OrganizationManager {
     });
 
     if (result.ok) {
-      await this.activityManager.create({
-        type: 'ORGANIZATION_CREATED',
-        selector: {
+      await Promise.all([
+        this.activityManager.create({
+          type: 'ORGANIZATION_CREATED',
+          selector: {
+            organizationId: result.organization.id,
+          },
+          user,
+        }),
+        this.auditLog.record({
+          eventType: 'ORGANIZATION_CREATED',
           organizationId: result.organization.id,
-        },
-        user,
-      });
+          metadata: {
+            organizationSlug: result.organization.id,
+          },
+        }),
+      ]);
     }
 
     return result;
@@ -371,6 +382,11 @@ export class OrganizationManager {
     // Because we checked the access before, it's stale by now
     this.authManager.resetAccessCache();
     this.session.reset();
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_DELETED',
+      organizationId: organization.id,
+    });
 
     return deletedOrganization;
   }
@@ -410,6 +426,15 @@ export class OrganizationManager {
       },
     });
 
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_PLAN_UPDATED',
+      organizationId: organization.id,
+      metadata: {
+        newPlan: plan,
+        previousPlan: organization.billingPlan,
+      },
+    });
+
     return result;
   }
 
@@ -443,6 +468,19 @@ export class OrganizationManager {
         },
       });
     }
+
+    await this.auditLog.record({
+      eventType: 'SUBSCRIPTION_UPDATED',
+      organizationId: organization.id,
+      metadata: {
+        updatedFields: JSON.stringify({
+          monthlyRateLimit: {
+            retentionInDays: monthlyRateLimit.retentionInDays,
+            operations: monthlyRateLimit.operations,
+          },
+        }),
+      },
+    });
 
     return result;
   }
@@ -483,6 +521,15 @@ export class OrganizationManager {
       reservedSlugs: reservedOrganizationSlugs,
     });
 
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_SLUG_UPDATED',
+      organizationId: organization.id,
+      metadata: {
+        previousSlug: organization.slug,
+        newSlug: slug,
+      },
+    });
+
     if (result.ok) {
       await this.activityManager.create({
         type: 'ORGANIZATION_ID_UPDATED',
@@ -494,7 +541,6 @@ export class OrganizationManager {
         },
       });
     }
-
     return result;
   }
 
@@ -621,6 +667,15 @@ export class OrganizationManager {
       }),
     ]);
 
+    await this.auditLog.record({
+      eventType: 'USER_INVITED',
+      organizationId: organization.id,
+      metadata: {
+        inviteeEmail: email,
+        roleId: role.id,
+      },
+    });
+
     return {
       ok: invitation,
     };
@@ -683,6 +738,14 @@ export class OrganizationManager {
         },
       }),
     ]);
+
+    await this.auditLog.record({
+      eventType: 'USER_JOINED',
+      organizationId: organization.id,
+      metadata: {
+        inviteeEmail: user.email,
+      },
+    });
 
     return organization;
   }
@@ -749,6 +812,15 @@ export class OrganizationManager {
       `,
     });
 
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_TRANSFERRED_REQUEST',
+      organizationId: organization.id,
+      metadata: {
+        newOwnerEmail: member.user.email,
+        newOwnerId: member.user.id,
+      },
+    });
+
     return {
       ok: {
         email: member.user.email,
@@ -792,6 +864,15 @@ export class OrganizationManager {
       },
     });
     const currentUser = await this.session.getViewer();
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_TRANSFERRED',
+      organizationId: input.organizationId,
+      metadata: {
+        newOwnerEmail: currentUser.email,
+        newOwnerId: currentUser.id,
+      },
+    });
 
     await this.storage.answerOrganizationTransferRequest({
       organizationId: input.organizationId,
@@ -874,6 +955,15 @@ export class OrganizationManager {
     // Because we checked the access before, it's stale by now
     this.authManager.resetAccessCache();
     this.session.reset();
+
+    await this.auditLog.record({
+      eventType: 'USER_REMOVED',
+      organizationId: organization,
+      metadata: {
+        removedUserEmail: member.user.email,
+        removedUserId: member.user.id,
+      },
+    });
 
     return this.storage.getOrganization({
       organizationId: organization,
@@ -1021,6 +1111,15 @@ export class OrganizationManager {
       scopes,
     });
 
+    await this.auditLog.record({
+      eventType: 'ROLE_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        roleId: role.id,
+        roleName: role.name,
+      },
+    });
+
     return {
       ok: {
         updatedOrganization: await this.storage.getOrganization({
@@ -1073,6 +1172,15 @@ export class OrganizationManager {
     await this.storage.deleteOrganizationMemberRole({
       organizationId: input.organizationId,
       roleId: input.roleId,
+    });
+
+    await this.auditLog.record({
+      eventType: 'ROLE_DELETED',
+      organizationId: input.organizationId,
+      metadata: {
+        roleId: role.id,
+        roleName: role.name,
+      },
     });
 
     return {
@@ -1183,14 +1291,29 @@ export class OrganizationManager {
     this.authManager.resetAccessCache();
     this.session.reset();
 
+    const result = {
+      updatedMember: await this.getOrganizationMember({
+        organizationId: input.organizationId,
+        userId: input.userId,
+      }),
+      previousMemberRole: member.role,
+    };
+
+    if (result) {
+      await this.auditLog.record({
+        eventType: 'ROLE_ASSIGNED',
+        organizationId: input.organizationId,
+        metadata: {
+          previousMemberRole: member.role ? member.role.name : null,
+          roleId: newRole.id,
+          updatedMember: member.user.email,
+          userIdAssigned: input.userId,
+        },
+      });
+    }
+
     return {
-      ok: {
-        updatedMember: await this.getOrganizationMember({
-          organizationId: input.organizationId,
-          userId: input.userId,
-        }),
-        previousMemberRole: member.role,
-      },
+      ok: result,
     };
   }
 
@@ -1317,6 +1440,19 @@ export class OrganizationManager {
     this.authManager.resetAccessCache();
     this.session.reset();
 
+    await this.auditLog.record({
+      eventType: 'ROLE_UPDATED',
+      organizationId: input.organizationId,
+      metadata: {
+        roleId: updatedRole.id,
+        roleName: updatedRole.name,
+        updatedFields: JSON.stringify({
+          name: roleName,
+          description: input.description,
+          scopes: newScopes,
+        }),
+      },
+    });
     return {
       ok: {
         updatedRole,
