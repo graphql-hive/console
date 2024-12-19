@@ -44,16 +44,19 @@ is advised to spread the plugin's factory context into the plugins options, this
 have access to all components they need.
 
 ```ts filename="gateway.config.ts"
-import { useGraphQLJit } from '@envelop/graphql-jit'
 import { defineConfig } from '@graphql-hive/gateway'
 import useNewRelic from '@graphql-mesh/plugin-newrelic'
+import { useSOFA } from '@graphql-yoga/plugin-sofa'
 
 export const gatewayConfig = defineConfig({
   plugins: ctx => [
-    useGraphQLJit(),
+    useSOFA({
+      ...ctx,
+      basePath: '/rest',
+      swaggerUIEndpoint: '/rest/docs'
+    }),
     useNewRelic({
       ...ctx
-      // other options
     })
   ]
 })
