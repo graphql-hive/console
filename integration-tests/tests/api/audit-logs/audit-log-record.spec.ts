@@ -79,7 +79,7 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
     },
     token: ownerToken,
   });
-
+  expect(exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.error).toBeNull();
   const url = exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.ok?.url;
   const parsedUrl = new URL(String(url));
   const pathParts = parsedUrl.pathname.split('/');

@@ -1,15 +1,23 @@
 import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
-import { Inject, Injectable, Scope } from 'graphql-modules';
+import { Injectable, Scope } from 'graphql-modules';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
+import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Emails, mjml } from '../../shared/providers/emails';
 import { Logger } from '../../shared/providers/logger';
-import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
 import { AuditLogClickhouseArrayModel, AuditLogType } from './audit-logs-types';
+
+export class AuditLogS3Config {
+  constructor(
+    public client: AwsClient,
+    public endpoint: string,
+    public bucket: string,
+  ) {}
+}
 
 @Injectable({
   scope: Scope.Operation,
@@ -23,7 +31,7 @@ export class AuditLogManager {
   constructor(
     logger: Logger,
     private clickHouse: ClickHouse,
-    @Inject(S3_CONFIG) private s3Config: S3Config,
+    private s3Config: AuditLogS3Config,
     private emailProvider: Emails,
     private session: Session,
     private storage: Storage,
@@ -92,7 +100,7 @@ export class AuditLogManager {
         ok?: never;
         error: {
           message: string;
-        } | null;
+        };
       }
   > {
     await this.session.assertPerformAction({
@@ -139,8 +147,7 @@ export class AuditLogManager {
         );
       });
 
-      const s3Storage = this.s3Config[0];
-      const { endpoint, bucket, client } = s3Storage;
+      const { endpoint, bucket, client } = this.s3Config;
       const cleanStartDate = filter.startDate.toISOString().split('T')[0];
       const cleanEndDate = filter.endDate.toISOString().split('T')[0];
       const unixTimestampInSeconds = Math.floor(Date.now() / 1000);
