@@ -1,10 +1,9 @@
-import { ComponentProps, PropsWithoutRef, useCallback, useMemo, useState } from 'react';
+import { ComponentProps, PropsWithoutRef, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { formatISO } from 'date-fns';
-import { useFormik } from 'formik';
+import { InfoIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import * as Yup from 'yup';
 import { z } from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -35,12 +34,14 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { TimeAgo } from '@/components/ui/time-ago';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { Combobox } from '@/components/v2/combobox';
-import { Switch } from '@/components/v2/switch';
 import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
+import { ENTERPRISE_RETENTION_DAYS } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -49,6 +50,7 @@ import { canAccessTarget, TargetAccessScope } from '@/lib/access/target';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { resolveRetentionInDaysBasedOrganizationPlan } from '@/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -414,6 +416,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     organization(selector: $organizationSelector) {
       organization {
         id
+        plan
         rateLimit {
           retentionInDays
         }
@@ -462,13 +465,37 @@ function floorDate(date: Date): Date {
   return new Date(Math.floor(date.getTime() / time) * time);
 }
 
+const conditionalBreakingChangesFormSchema = z.object({
+  period: z.preprocess(
+    value => Number(value),
+    z
+      .number({ required_error: 'Period is required' })
+      .min(1, 'Period must be at least 1 days')
+      .max(ENTERPRISE_RETENTION_DAYS, `Period must be at most ${ENTERPRISE_RETENTION_DAYS} days`)
+      .transform(value => Math.round(value)),
+  ),
+  percentage: z.preprocess(
+    value => Number(value),
+    z
+      .number({ required_error: 'Percentage is required' })
+      .min(0, 'Percentage must be at least 0%')
+      .max(100, 'Percentage must be at most 100%')
+      .transform(value => Math.round(value)),
+  ),
+  targetIds: z.array(z.string()),
+  excludedClients: z.array(z.string()),
+});
+
+type ConditionalBreakingChangesFormValues = z.infer<typeof conditionalBreakingChangesFormSchema>;
+
 const ConditionalBreakingChanges = (props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) => {
+  const { toast } = useToast();
   const [targetValidation, setValidation] = useMutation(SetTargetValidationMutation);
-  const [mutation, updateValidation] = useMutation(
+  const [_, updateValidation] = useMutation(
     TargetSettingsPage_UpdateTargetValidationSettingsMutation,
   );
   const [targetSettings] = useQuery({
@@ -493,256 +520,339 @@ const ConditionalBreakingChanges = (props: {
     TargetSettings_TargetValidationSettingsFragment,
     targetSettings.data?.target?.validationSettings,
   );
+
+  const retentionInDaysBasedOrganizationPlan =
+    targetSettings.data?.organization?.organization?.rateLimit.retentionInDays;
+  const defaultDays = resolveRetentionInDaysBasedOrganizationPlan(
+    retentionInDaysBasedOrganizationPlan,
+  );
+
   const isEnabled = settings?.enabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
-  const { toast } = useToast();
 
-  const {
-    handleSubmit,
-    isSubmitting,
-    errors,
-    touched,
-    values,
-    handleBlur,
-    handleChange,
-    setFieldValue,
-    setFieldTouched,
-  } = useFormik({
-    enableReinitialize: true,
-    initialValues: {
-      percentage: settings?.percentage || 0,
-      period: settings?.period || 0,
+  const conditionalBreakingChangesForm = useForm({
+    mode: 'all',
+    resolver: zodResolver(conditionalBreakingChangesFormSchema),
+    defaultValues: {
+      period: settings?.period ?? defaultDays,
+      percentage: settings?.percentage ?? 0,
       targetIds: settings?.targets.map(t => t.id) || [],
       excludedClients: settings?.excludedClients ?? [],
     },
-    validationSchema: Yup.object().shape({
-      percentage: Yup.number().min(0).max(100).required(),
-      period: Yup.number()
-        .min(1)
-        .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
-        .test('double-precision', 'Invalid precision', num => {
-          if (typeof num !== 'number') {
-            return false;
-          }
+  });
 
-          // Round the number to two decimal places
-          // and check if it is equal to the original number
-          return Number(num.toFixed(2)) === num;
-        })
-        .required(),
-      targetIds: Yup.array().of(Yup.string()).min(1),
-      excludedClients: Yup.array().of(Yup.string()),
-    }),
-    onSubmit: values =>
-      updateValidation({
+  // Set form values when settings are fetched
+  useEffect(() => {
+    conditionalBreakingChangesForm.setValue('period', settings?.period ?? defaultDays);
+    conditionalBreakingChangesForm.setValue('percentage', settings?.percentage ?? 0);
+    conditionalBreakingChangesForm.setValue('targetIds', settings?.targets.map(t => t.id) || []);
+    conditionalBreakingChangesForm.setValue('excludedClients', settings?.excludedClients ?? []);
+  }, [settings]);
+
+  const orgPlan = targetSettings.data?.organization?.organization?.plan;
+
+  async function onConditionalBreakingChangesFormSubmit(
+    data: ConditionalBreakingChangesFormValues,
+  ) {
+    // This is a workaround for the issue with zod's transform function
+    if (data.period > defaultDays) {
+      conditionalBreakingChangesForm.setError('period', {
+        message: `Period must be at most ${defaultDays} days`,
+        type: 'maxLength',
+      });
+      return;
+    }
+    try {
+      const result = await updateValidation({
         input: {
           organizationSlug: props.organizationSlug,
           projectSlug: props.projectSlug,
           targetSlug: props.targetSlug,
-          ...values,
+          percentage: data.percentage,
+          period: data.period,
+          targetIds: data.targetIds,
+          excludedClients: data.excludedClients,
         },
-      }).then(result => {
-        if (result.error || result.data?.updateTargetValidationSettings.error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description:
-              result.error?.message || result.data?.updateTargetValidationSettings.error?.message,
-          });
-        } else {
-          toast({
-            variant: 'default',
-            title: 'Success',
-            description: 'Conditional breaking changes settings updated successfully',
-          });
-        }
-      }),
-  });
+      });
+      if (result.data?.updateTargetValidationSettings.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.data.updateTargetValidationSettings.error.message,
+        });
+      } else {
+        toast({
+          variant: 'default',
+          title: 'Success',
+          description: 'Conditional breaking changes updated successfully',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update conditional breaking changes',
+      });
+    }
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <SubPageLayout>
-        <SubPageLayoutHeader
-          subPageTitle="Conditional Breaking Changes"
-          description={
-            <>
-              <CardDescription>
-                Conditional Breaking Changes can change the behavior of schema checks, based on real
-                traffic data sent to Hive.
-              </CardDescription>
-              <CardDescription>
-                <DocsLink
-                  href="/management/targets#conditional-breaking-changes"
-                  className="text-gray-500 hover:text-gray-300"
-                >
-                  Learn more
-                </DocsLink>
-              </CardDescription>
-            </>
-          }
-        >
-          {targetSettings.fetching ? (
-            <Spinner />
-          ) : (
-            <Switch
-              className="shrink-0"
-              checked={isEnabled}
-              onCheckedChange={async enabled => {
-                await setValidation({
-                  input: {
-                    targetSlug: props.targetSlug,
-                    projectSlug: props.projectSlug,
-                    organizationSlug: props.organizationSlug,
-                    enabled,
-                  },
-                });
-              }}
-              disabled={targetValidation.fetching}
-            />
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Conditional Breaking Changes"
+        description={
+          <>
+            <CardDescription>
+              Conditional Breaking Changes can change the behavior of schema checks, based on real
+              traffic data sent to Hive.
+            </CardDescription>
+            <CardDescription>
+              <DocsLink
+                href="/management/targets#conditional-breaking-changes"
+                className="text-gray-500 hover:text-gray-300"
+              >
+                Learn more
+              </DocsLink>
+            </CardDescription>
+          </>
+        }
+      >
+        {targetSettings.fetching ? (
+          <Spinner />
+        ) : (
+          <Switch
+            className="shrink-0 data-[state=unchecked]:bg-gray-700"
+            checked={isEnabled}
+            onCheckedChange={async enabled => {
+              await setValidation({
+                input: {
+                  targetSlug: props.targetSlug,
+                  projectSlug: props.projectSlug,
+                  organizationSlug: props.organizationSlug,
+                  enabled,
+                },
+              });
+            }}
+            disabled={targetValidation.fetching}
+          />
+        )}
+      </SubPageLayoutHeader>
+      <Form {...conditionalBreakingChangesForm}>
+        <form
+          onSubmit={conditionalBreakingChangesForm.handleSubmit(
+            onConditionalBreakingChangesFormSubmit,
           )}
-        </SubPageLayoutHeader>
-        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
-          <div>
-            A schema change is considered as breaking only if it affects more than
-            <Input
-              name="percentage"
-              onChange={handleChange}
-              onBlur={handleBlur}
-              value={values.percentage}
-              disabled={isSubmitting}
-              type="number"
-              min="0"
-              max="100"
-              step={0.01}
-              className="mx-2 !inline-flex w-16"
-            />
-            % of traffic in the past
-            <Input
-              name="period"
-              onChange={handleChange}
-              onBlur={handleBlur}
-              value={values.period}
-              disabled={isSubmitting}
-              type="number"
-              min="1"
-              max={targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30}
-              className="mx-2 !inline-flex w-16"
-            />
-            days.
-          </div>
-          <div className="mt-3">
-            {touched.percentage && errors.percentage && (
-              <div className="text-red-500">{errors.percentage}</div>
-            )}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.percentage && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
+        >
+          <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+            <div className="flex flex-row items-baseline justify-start">
+              A schema change is considered as breaking only if it affects more than
+              <FormField
+                control={conditionalBreakingChangesForm.control}
+                name="percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        autoComplete="off"
+                        placeholder="Percentage"
+                        className="mx-2 !inline-flex w-16"
+                        disabled={!isEnabled}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              % of traffic in the past
+              <div className="ml-2 flex flex-row items-baseline">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <InfoIcon className="h-4 w-4 text-gray-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        You can customize Conditional Breaking Change date range,
+                        <br />
+                        based on your data retention and your Hive plan.
+                        <br />
+                        Your plan: {orgPlan}.
+                        <br />
+                        Date retention: {defaultDays} days.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
+              <FormField
+                control={conditionalBreakingChangesForm.control}
+                name="period"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        autoComplete="off"
+                        {...field}
+                        className="mx-2 !inline-flex w-16"
+                        disabled={!isEnabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              days.
+            </div>
+            {conditionalBreakingChangesForm.formState.errors.period && (
+              <FormField
+                control={conditionalBreakingChangesForm.control}
+                name="period"
+                render={() => (
+                  <FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-            {touched.period && errors.period && <div className="text-red-500">{errors.period}</div>}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.period}
-              </div>
+            {conditionalBreakingChangesForm.formState.errors.percentage && (
+              <FormField
+                control={conditionalBreakingChangesForm.control}
+                name="percentage"
+                render={() => (
+                  <FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          </div>
-          <div className="space-y-6">
-            <div>
+            <div className="space-y-6">
               <div className="space-y-2">
                 <div>
-                  <div className="font-semibold">Allow breaking change for these clients:</div>
+                  <div className="font-semibold">Schema usage data from these targets:</div>
                   <div className="text-xs text-gray-400">
-                    Marks a breaking change as safe when it only affects the following clients.
+                    Marks a breaking change as safe when it was not requested in the targets
+                    clients.
                   </div>
                 </div>
-                <div className="max-w-[420px]">
-                  {values.targetIds.length > 0 ? (
-                    <ClientExclusion
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      selectedTargetIds={values.targetIds}
-                      clientsFromSettings={settings?.excludedClients ?? []}
-                      name="excludedClients"
-                      value={values.excludedClients}
-                      onBlur={() => setFieldTouched('excludedClients')}
-                      onChange={async options => {
-                        await setFieldValue(
-                          'excludedClients',
-                          options.map(o => o.value),
-                        );
-                      }}
-                      disabled={isSubmitting}
-                    />
-                  ) : (
-                    <div className="text-gray-500">Select targets first</div>
-                  )}
+                <div className="pl-2">
+                  {possibleTargets?.map(pt => (
+                    <div key={pt.id} className="flex items-center gap-x-2">
+                      <FormField
+                        control={conditionalBreakingChangesForm.control}
+                        name="targetIds"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value.includes(pt.id)}
+                                onCheckedChange={async isChecked => {
+                                  await conditionalBreakingChangesForm.setValue(
+                                    'targetIds',
+                                    isChecked
+                                      ? [...field.value, pt.id]
+                                      : field.value.filter(value => value !== pt.id),
+                                  );
+                                }}
+                                onBlur={() =>
+                                  conditionalBreakingChangesForm.setValue('targetIds', field.value)
+                                }
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      {pt.slug}
+                    </div>
+                  ))}
                 </div>
-                {touched.excludedClients && errors.excludedClients && (
-                  <div className="text-red-500">{errors.excludedClients}</div>
-                )}
               </div>
-            </div>
-            <div className="space-y-2">
               <div>
-                <div className="font-semibold">Schema usage data from these targets:</div>
-                <div className="text-xs text-gray-400">
-                  Marks a breaking change as safe when it was not requested in the targets clients.
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-semibold">Allow breaking change for these clients:</div>
+                    <div className="text-xs text-gray-400">
+                      Marks a breaking change as safe when it only affects the following clients.
+                    </div>
+                  </div>
+                  <div className="max-w-[420px]">
+                    {conditionalBreakingChangesForm.watch('targetIds').length > 0 ? (
+                      <FormField
+                        control={conditionalBreakingChangesForm.control}
+                        name="excludedClients"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <ClientExclusion
+                                organizationSlug={props.organizationSlug}
+                                projectSlug={props.projectSlug}
+                                selectedTargetIds={field.value}
+                                clientsFromSettings={settings?.excludedClients ?? []}
+                                name="excludedClients"
+                                value={field.value}
+                                onBlur={() =>
+                                  conditionalBreakingChangesForm.setValue(
+                                    'excludedClients',
+                                    field.value,
+                                  )
+                                }
+                                onChange={async options => {
+                                  await conditionalBreakingChangesForm.setValue(
+                                    'excludedClients',
+                                    options.map(o => o.value),
+                                  );
+                                }}
+                                disabled={conditionalBreakingChangesForm.formState.isSubmitting}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-yellow-800 bg-yellow-600/10 py-2 pl-5 text-gray-400">
+                        <div>
+                          <div className="font-semibold">Select a target to enable this option</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <FormField
+                    control={conditionalBreakingChangesForm.control}
+                    name="excludedClients"
+                    render={() => <FormMessage />}
+                  />
                 </div>
               </div>
-              <div className="pl-2">
-                {possibleTargets?.map(pt => (
-                  <div key={pt.id} className="flex items-center gap-x-2">
-                    <Checkbox
-                      checked={values.targetIds.includes(pt.id)}
-                      onCheckedChange={async isChecked => {
-                        await setFieldValue(
-                          'targetIds',
-                          isChecked
-                            ? [...values.targetIds, pt.id]
-                            : values.targetIds.filter(value => value !== pt.id),
-                        );
-                      }}
-                      onBlur={() => setFieldTouched('targetIds', true)}
-                    />{' '}
-                    {pt.slug}
-                  </div>
-                ))}
+            </div>
+            <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+              <div>
+                <div className="font-semibold">Example settings</div>
+                <div className="text-sm">Removal of a field is considered breaking if</div>
+              </div>
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  0%
+                </Tag>{' '}
+                - the field was used at least once in past 30 days
+              </div>
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  10%
+                </Tag>{' '}
+                - the field was requested by more than 10% of all GraphQL operations in recent 30
+                days
               </div>
             </div>
+            <Button
+              type="submit"
+              disabled={conditionalBreakingChangesForm.formState.isSubmitting || !isEnabled}
+            >
+              Save
+            </Button>
           </div>
-          {touched.targetIds && errors.targetIds && (
-            <div className="text-red-500">{errors.targetIds}</div>
-          )}
-          <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
-            <div>
-              <div className="font-semibold">Example settings</div>
-              <div className="text-sm">Removal of a field is considered breaking if</div>
-            </div>
-
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                0%
-              </Tag>{' '}
-              - the field was used at least once in past 30 days
-            </div>
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                10%
-              </Tag>{' '}
-              - the field was requested by more than 10% of all GraphQL operations in recent 30 days
-            </div>
-          </div>
-          <Button type="submit" disabled={isSubmitting}>
-            Save
-          </Button>
-          {mutation.error && (
-            <span className="ml-2 text-red-500">
-              {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
-            </span>
-          )}
-        </div>
-      </SubPageLayout>
-    </form>
+        </form>
+      </Form>
+    </SubPageLayout>
   );
 };
 
@@ -805,7 +915,6 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
           slugForm.setError('slug', error);
         }
       } catch (error) {
-        console.error('error', error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -884,6 +993,17 @@ const TargetSettingsPage_UpdateTargetGraphQLEndpointUrl = graphql(`
   }
 `);
 
+const GraphQLEndpointUrlFormSchema = z.object({
+  enableReinitialize: z.boolean(),
+  graphqlEndpointUrl: z
+    .string()
+    .url('Please enter a valid url')
+    .max(300, 'Max 300 chars.')
+    .min(1, 'Please enter a valid url.'),
+});
+
+type GraphQLEndpointUrlFormValues = z.infer<typeof GraphQLEndpointUrlFormSchema>;
+
 function GraphQLEndpointUrl(props: {
   graphqlEndpointUrl: string | null;
   organizationSlug: string;
@@ -891,44 +1011,42 @@ function GraphQLEndpointUrl(props: {
   targetSlug: string;
 }) {
   const { toast } = useToast();
-  const [mutation, mutate] = useMutation(TargetSettingsPage_UpdateTargetGraphQLEndpointUrl);
-  const { handleSubmit, values, handleChange, handleBlur, isSubmitting, errors, touched } =
-    useFormik({
+  const [_, mutate] = useMutation(TargetSettingsPage_UpdateTargetGraphQLEndpointUrl);
+
+  const graphQLEndpointUrlForm = useForm({
+    mode: 'onChange',
+    resolver: zodResolver(GraphQLEndpointUrlFormSchema),
+    defaultValues: {
       enableReinitialize: true,
-      initialValues: {
-        graphqlEndpointUrl: props.graphqlEndpointUrl || '',
+      graphqlEndpointUrl: props.graphqlEndpointUrl || '',
+    },
+  });
+
+  function onGraphQLEndpointUrlFormSubmit(data: GraphQLEndpointUrlFormValues) {
+    mutate({
+      input: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+        graphqlEndpointUrl: data.graphqlEndpointUrl === '' ? null : data.graphqlEndpointUrl,
       },
-      validationSchema: Yup.object().shape({
-        graphqlEndpointUrl: Yup.string()
-          .url('Please enter a valid url.')
-          .min(1, 'Please enter a valid url.')
-          .max(300, 'Max 300 chars.'),
-      }),
-      onSubmit: values =>
-        mutate({
-          input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
-            graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
-          },
-        }).then(result => {
-          if (result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error) {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description:
-                result.data?.updateTargetGraphQLEndpointUrl.error?.message || result.error?.message,
-            });
-          } else {
-            toast({
-              variant: 'default',
-              title: 'Success',
-              description: 'GraphQL endpoint url updated successfully',
-            });
-          }
-        }),
+    }).then(result => {
+      if (result.error || result.data?.updateTargetGraphQLEndpointUrl.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description:
+            result.error?.message || result.data?.updateTargetGraphQLEndpointUrl.error?.message,
+        });
+      } else {
+        toast({
+          variant: 'default',
+          title: 'Success',
+          description: 'GraphQL endpoint url updated successfully',
+        });
+      }
     });
+  }
 
   return (
     <SubPageLayout>
@@ -953,36 +1071,36 @@ function GraphQLEndpointUrl(props: {
           </>
         }
       />
-      <div>
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-row items-center gap-x-2">
-            <Input
-              placeholder="Endpoint Url"
-              name="graphqlEndpointUrl"
-              value={values.graphqlEndpointUrl}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isSubmitting}
-              className="w-96"
-            />
-            <Button type="submit" disabled={isSubmitting}>
-              Save
-            </Button>
-          </div>
-          {touched.graphqlEndpointUrl && (errors.graphqlEndpointUrl || mutation.error) && (
-            <div className="mt-2 text-red-500">
-              {errors.graphqlEndpointUrl ??
-                mutation.error?.graphQLErrors[0]?.message ??
-                mutation.error?.message}
-            </div>
-          )}
-          {mutation.data?.updateTargetGraphQLEndpointUrl.error && (
-            <div className="mt-2 text-red-500">
-              {mutation.data.updateTargetGraphQLEndpointUrl.error.message}
-            </div>
-          )}
+      <Form {...graphQLEndpointUrlForm}>
+        <form onSubmit={graphQLEndpointUrlForm.handleSubmit(onGraphQLEndpointUrlFormSubmit)}>
+          <FormField
+            control={graphQLEndpointUrlForm.control}
+            name="graphqlEndpointUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    autoComplete="off"
+                    placeholder="Endpoint Url"
+                    className="w-96"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            disabled={
+              graphQLEndpointUrlForm.formState.isSubmitting ||
+              !graphQLEndpointUrlForm.formState.isValid
+            }
+          >
+            Save
+          </Button>
         </form>
-      </div>
+      </Form>
     </SubPageLayout>
   );
 }
