@@ -1,4 +1,9 @@
 {
+  "search.exclude": {
+    "**/dist": true,
+    "**/pnpm-lock.yaml": true,
+    "**/*.tsbuildinfo": true
+  },
   "commands.commands": [
     {
       "command": "terminals.runTerminals",
@@ -28,5 +33,8 @@
     ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

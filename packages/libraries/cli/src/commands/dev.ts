@@ -9,9 +9,11 @@ import {
   CompositionResult,
 } from '@theguild/federation-composition';
 import Command from '../base-command';
+import { Fragments } from '../fragments/__';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
-import { loadSchema, renderErrors } from '../helpers/schema';
+import { loadSchema } from '../helpers/schema';
+import { tb } from '../helpers/typebox/__';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -83,6 +85,17 @@ type ServiceWithSource = {
       };
 };
 
+// TODO add JSON output support.
+// Unlike other commands that return, this common kicks off a long running process in the terminal
+// that outputs messages to the terminal over time.
+// Therefore the OClif framework pattern of returning an object is incompatible.
+// We'll need to inspect the json flag ourselves and return the appropriate output.
+//
+// Presumably users would typically NOT use JSON output for this command. This task appears to be motivated by
+// the principal of simplicity via consistency.
+//
+// NDJSON (new line delimited JSON) would be a suitable output.
+
 export default class Dev extends Command<typeof Dev> {
   static description = [
     'Develop and compose Supergraph with your local services.',
@@ -94,6 +107,20 @@ export default class Dev extends Command<typeof Dev> {
     '',
     'Work in Progress: Please note that this command is still under development and may undergo changes in future releases',
   ].join('\n');
+  static parameters = {
+    named: tb.Object({
+      'registry.endpoint': tb.Optional(tb.String()),
+      'registry.accessToken': tb.Optional(tb.String()),
+      service: tb.Optional(tb.Array(tb.String())),
+      url: tb.Optional(tb.Array(tb.String())),
+      schema: tb.Optional(tb.Array(tb.String())),
+      watch: tb.Optional(tb.Boolean()),
+      'watch.interval': tb.Optional(tb.Number()),
+      write: tb.Optional(tb.String()),
+      remote: tb.Optional(tb.Boolean()),
+      unstable__forceLatest: tb.Optional(tb.Boolean()),
+    }),
+  };
   static flags = {
     'registry.endpoint': Flags.string({
       description: 'registry endpoint',
@@ -165,6 +192,8 @@ export default class Dev extends Command<typeof Dev> {
       dependsOn: ['remote'],
     }),
   };
+  // todo
+  // static output = SchemaOutput.output();
 
   async run() {
     const { flags } = await this.parse(Dev);
@@ -214,7 +243,7 @@ export default class Dev extends Command<typeof Dev> {
             write: flags.write,
             unstable__forceLatest,
             onError: message => {
-              this.fail(message);
+              this.logFailure(message);
             },
           }),
         );
@@ -227,7 +256,7 @@ export default class Dev extends Command<typeof Dev> {
           services,
           write: flags.write,
           onError: message => {
-            this.fail(message);
+            this.logFailure(message);
           },
         }),
       );
@@ -299,13 +328,11 @@ export default class Dev extends Command<typeof Dev> {
       } catch (error) {
         reject(error);
       }
-    }).catch(error => {
-      this.handleFetchError(error);
     });
 
     if (compositionHasErrors(compositionResult)) {
       if (compositionResult.errors) {
-        renderErrors.call(this, {
+        Fragments.SchemaErrorConnection.log.call(this, {
           total: compositionResult.errors.length,
           nodes: compositionResult.errors.map(error => ({
             message: error.message,
@@ -324,7 +351,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
@@ -368,7 +395,7 @@ export default class Dev extends Command<typeof Dev> {
 
     if (!valid) {
       if (compositionResult.errors) {
-        renderErrors.call(this, compositionResult.errors);
+        Fragments.SchemaErrorConnection.log.call(this, compositionResult.errors);
       }
 
       input.onError('Composition failed');
@@ -382,7 +409,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
@@ -392,12 +419,12 @@ export default class Dev extends Command<typeof Dev> {
     serviceInputs: ServiceInput[],
     compose: (services: Service[]) => Promise<void>,
   ) {
-    this.info('Watch mode enabled');
+    this.logInfo('Watch mode enabled');
 
     let services = await this.resolveServices(serviceInputs);
     await compose(services);
 
-    this.info('Watching for changes');
+    this.logInfo('Watching for changes');
 
     let resolveWatchMode: () => void;
 
@@ -414,25 +441,25 @@ export default class Dev extends Command<typeof Dev> {
             service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
           )
         ) {
-          this.info('Detected changes, recomposing');
+          this.logInfo('Detected changes, recomposing');
           await compose(newServices);
           services = newServices;
         }
       } catch (error) {
-        this.fail(String(error));
+        this.logFailure(String(error));
       }
 
       timeoutId = setTimeout(watch, watchInterval);
     };
 
     process.once('SIGINT', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });
 
     process.once('SIGTERM', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });

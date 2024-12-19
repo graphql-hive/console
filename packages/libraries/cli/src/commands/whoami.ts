@@ -3,6 +3,9 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
+import { casesExhausted } from '../helpers/general';
+import { tb } from '../helpers/typebox/__';
+import { SchemaOutput } from '../schema-output/__';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {
@@ -32,7 +35,7 @@ const myTokenInfoQuery = graphql(/* GraphQL */ `
   }
 `);
 
-export default class WhoAmI extends Command<typeof WhoAmI> {
+export default class Whoami extends Command<typeof Whoami> {
   static description = 'shows information about the current token';
   static flags = {
     'registry.endpoint': Flags.string({
@@ -58,9 +61,37 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       },
     }),
   };
+  static output = SchemaOutput.output(
+    SchemaOutput.success({
+      __typename: tb.Literal('TokenInfo'),
+      token: tb.Object({
+        name: tb.String(),
+      }),
+      organization: tb.Object({
+        slug: tb.String(),
+      }),
+      project: tb.Object({
+        type: tb.String(),
+        slug: tb.String(),
+      }),
+      target: tb.Object({
+        slug: tb.String(),
+      }),
+      authorization: tb.Object({
+        schema: tb.Object({
+          publish: tb.Boolean(),
+          check: tb.Boolean(),
+        }),
+      }),
+    }),
+    SchemaOutput.failure({
+      __typename: tb.Literal('TokenNotFoundError'),
+      message: tb.String(),
+    }),
+  );
 
-  async run() {
-    const { flags } = await this.parse(WhoAmI);
+  async runResult() {
+    const { flags } = await this.parse(Whoami);
 
     const registry = this.ensure({
       key: 'registry.endpoint',
@@ -80,13 +111,10 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       .request({
         operation: myTokenInfoQuery,
       })
-      .catch(error => {
-        this.handleFetchError(error);
-      });
+      .then(_ => _.tokenInfo);
 
-    if (result.tokenInfo.__typename === 'TokenInfo') {
-      const { tokenInfo } = result;
-      const { organization, project, target } = tokenInfo;
+    if (result.__typename === 'TokenInfo') {
+      const { organization, project, target } = result;
 
       const organizationUrl = `https://app.graphql-hive.com/${organization.slug}`;
       const projectUrl = `${organizationUrl}/${project.slug}`;
@@ -98,23 +126,54 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       };
 
       const print = createPrinter({
-        'Token name:': [colors.bold(tokenInfo.token.name)],
+        'Token name:': [colors.bold(result.token.name)],
         ' ': [''],
         'Organization:': [colors.bold(organization.slug), colors.dim(organizationUrl)],
         'Project:': [colors.bold(project.slug), colors.dim(projectUrl)],
         'Target:': [colors.bold(target.slug), colors.dim(targetUrl)],
         '  ': [''],
-        'Access to schema:publish': [tokenInfo.canPublishSchema ? access.yes : access.not],
-        'Access to schema:check': [tokenInfo.canCheckSchema ? access.yes : access.not],
+        'Access to schema:publish': [result.canPublishSchema ? access.yes : access.not],
+        'Access to schema:check': [result.canCheckSchema ? access.yes : access.not],
       });
 
       this.log(print());
-    } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
-      this.error(`Token not found. Reason: ${result.tokenInfo.message}`, {
-        exit: 0,
-        suggestions: [`How to create a token? https://docs.graphql-hive.com/features/tokens`],
+
+      return this.success({
+        __typename: 'TokenInfo',
+        token: {
+          name: result.token.name,
+        },
+        organization: {
+          slug: organization.slug,
+        },
+        project: {
+          type: project.type,
+          slug: project.slug,
+        },
+        target: {
+          slug: target.slug,
+        },
+        authorization: {
+          schema: {
+            publish: result.canPublishSchema,
+            check: result.canCheckSchema,
+          },
+        },
       });
     }
+
+    if (result.__typename === 'TokenNotFoundError') {
+      return this.failureEnvelope({
+        suggestions: [`How to create a token? https://docs.graphql-hive.com/features/tokens`],
+        exitCode: 0,
+        data: {
+          __typename: 'TokenNotFoundError',
+          message: result.message,
+        },
+      });
+    }
+
+    throw casesExhausted(result);
   }
 }
 

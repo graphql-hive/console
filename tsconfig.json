@@ -25,6 +25,7 @@
     "moduleResolution": "node",
     "strict": true,
     "paths": {
+      "@graphql-hive/cli": ["./packages/libraries/cli/src/index.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/src/modules/schema/providers/artifact-storage-reader": [
         "./packages/services/api/src/modules/schema/providers/artifact-storage-reader.ts"

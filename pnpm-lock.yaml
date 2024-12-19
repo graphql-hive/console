@@ -274,6 +274,9 @@ importers:
       '@graphql-hive/apollo':
         specifier: workspace:*
         version: link:../packages/libraries/apollo/dist
+      '@graphql-hive/cli':
+        specifier: workspace:*
+        version: link:../packages/libraries/cli
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../packages/libraries/core/dist
@@ -292,6 +295,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../packages/services/storage
+      '@sinclair/typebox':
+        specifier: ^0.34.12
+        version: 0.34.12
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -417,6 +423,9 @@ importers:
       '@oclif/plugin-update':
         specifier: 4.2.13
         version: 4.2.13
+      '@sinclair/typebox':
+        specifier: 0.34.12
+        version: 0.34.12
       '@theguild/federation-composition':
         specifier: 0.14.2
         version: 0.14.2(graphql@16.9.0)
@@ -3870,7 +3879,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -6775,6 +6783,9 @@ packages:
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
+
+  '@sinclair/typebox@0.34.12':
+    resolution: {integrity: sha512-tNc3Z7OUqcneO14tYyUH2QMdvC2c5sQOY0+SDw70aZix7Qi4GkaOQc22LfaVFPn64enKU5ggV2ryLWykeMGEog==}
 
   '@sinclair/typebox@0.34.2':
     resolution: {integrity: sha512-mqdNXxKuepwsYxJTg4UlE3C8Lbu/oRkbo3oRv2FNrWCqMuBVJo4oRmfXGzbJGnwALi/zlfqgWQPIWes8idMziA==}
@@ -22354,6 +22365,8 @@ snapshots:
       '@sigstore/protobuf-specs': 0.3.0
 
   '@sinclair/typebox@0.27.8': {}
+
+  '@sinclair/typebox@0.34.12': {}
 
   '@sinclair/typebox@0.34.2': {}
 

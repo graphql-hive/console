@@ -1,8 +1,11 @@
-import { Args, Errors, Flags, ux } from '@oclif/core';
+import { Args, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
+import { Fragments } from '../../fragments/__';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { renderErrors } from '../../helpers/schema';
+import { casesExhausted } from '../../helpers/general';
+import { tb } from '../../helpers/typebox/__';
+import { SchemaOutput } from '../../schema-output/__';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
   mutation schemaDelete($input: SchemaDeleteInput!) {
@@ -39,6 +42,18 @@ const schemaDeleteMutation = graphql(/* GraphQL */ `
 
 export default class SchemaDelete extends Command<typeof SchemaDelete> {
   static description = 'deletes a schema';
+  static descriptionFragmentForAction = 'delete schema';
+  static parameters = {
+    positional: tb.Tuple([tb.String()]),
+    named: tb.Object({
+      'registry.endpoint': tb.Optional(tb.String()),
+      'registry.accessToken': tb.Optional(tb.String()),
+      registry: tb.Optional(tb.String()),
+      token: tb.Optional(tb.String()),
+      dryRun: tb.Optional(tb.Boolean()),
+      confirm: tb.Optional(tb.Boolean()),
+    }),
+  };
   static flags = {
     'registry.endpoint': Flags.string({
       description: 'registry endpoint',
@@ -71,7 +86,6 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       default: false,
     }),
   };
-
   static args = {
     service: Args.string({
       name: 'service' as const,
@@ -80,39 +94,48 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       hidden: false,
     }),
   };
+  static output = SchemaOutput.output(
+    SchemaOutput.success({
+      __typename: tb.Literal('SchemaDeleteSuccess'),
+    }),
+    SchemaOutput.failure({
+      __typename: tb.Literal('SchemaDeleteError'),
+      errors: tb.Array(SchemaOutput.SchemaError),
+    }),
+  );
 
-  async run() {
-    try {
-      const { flags, args } = await this.parse(SchemaDelete);
+  async runResult() {
+    const { flags, args } = await this.parse(SchemaDelete);
 
-      const service: string = args.service;
+    const service: string = args.service;
 
-      if (!flags.confirm) {
-        const confirmed = await ux.confirm(
-          `Are you sure you want to delete "${service}" from the registry? (y/n)`,
-        );
+    if (!flags.confirm) {
+      const confirmed = await ux.confirm(
+        `Are you sure you want to delete "${service}" from the registry? (y/n)`,
+      );
 
-        if (!confirmed) {
-          this.info('Aborting');
-          this.exit(0);
-        }
+      if (!confirmed) {
+        this.logInfo('Aborting');
+        this.exit(0);
       }
+    }
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-      });
+    const endpoint = this.ensure({
+      key: 'registry.endpoint',
+      args: flags,
+      legacyFlagName: 'registry',
+      defaultValue: graphqlEndpoint,
+      env: 'HIVE_REGISTRY',
+    });
+    const accessToken = this.ensure({
+      key: 'registry.accessToken',
+      args: flags,
+      legacyFlagName: 'token',
+      env: 'HIVE_TOKEN',
+    });
 
-      const result = await this.registryApi(endpoint, accessToken).request({
+    const result = await this.registryApi(endpoint, accessToken)
+      .request({
         operation: schemaDeleteMutation,
         variables: {
           input: {
@@ -120,28 +143,33 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
             dryRun: flags.dryRun,
           },
         },
+      })
+      .then(_ => _.schemaDelete);
+
+    if (result.__typename === 'SchemaDeleteSuccess') {
+      const message = `${service} deleted`;
+      this.logSuccess(message);
+      return this.successEnvelope({
+        message,
+        data: {
+          __typename: 'SchemaDeleteSuccess',
+        },
       });
-
-      if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
-        this.success(`${service} deleted`);
-        this.exit(0);
-        return;
-      }
-
-      this.fail(`Failed to delete ${service}`);
-      const errors = result.schemaDelete.errors;
-
-      if (errors) {
-        renderErrors.call(this, errors);
-        this.exit(1);
-      }
-    } catch (error) {
-      if (error instanceof Errors.ExitError) {
-        throw error;
-      } else {
-        this.fail(`Failed to complete`);
-        this.handleFetchError(error);
-      }
     }
+
+    if (result.__typename === 'SchemaDeleteError') {
+      const message = `Failed to delete ${service}`;
+      this.logFailure(message);
+      Fragments.SchemaErrorConnection.log.call(this, result.errors);
+      return this.failureEnvelope({
+        message,
+        data: {
+          __typename: 'SchemaDeleteError',
+          errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
+        },
+      });
+    }
+
+    throw casesExhausted(result);
   }
 }
