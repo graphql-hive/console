@@ -1,6 +1,7 @@
 import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Injectable, Scope } from 'graphql-modules';
+import { traceFn } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
@@ -86,6 +87,19 @@ export class AuditLogManager {
     };
   }
 
+  @traceFn('AuditLogsManager.exportAndSendEmail', {
+    initAttributes: (organizationId, filter) => ({
+      'hive.organization.id': organizationId,
+      'input.start-date': filter.startDate.toString(),
+      'input.end-date': filter.endDate.toString(),
+    }),
+    resultAttributes: result => ({
+      'error.message': result.error?.message,
+    }),
+    errorAttributes: error => ({
+      'error.message': error.message,
+    }),
+  })
   async exportAndSendEmail(
     organizationId: string,
     filter: { startDate: Date; endDate: Date },
