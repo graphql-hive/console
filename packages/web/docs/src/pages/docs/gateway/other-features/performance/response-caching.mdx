@@ -70,12 +70,16 @@ for the fields and types they are defining. You can add this directive during co
 ### `@cacheControl` directive
 
 This directive allows you to control response caching from the subgraph. But its behavior is
-different in different gateway and subgraph implementations. In GraphQL Yoga, `@cacheControl`
-directive is used to configure the behavior of the response caching plugin, and the response caching
-plugin uses `ETag` headers, not `Cache-Control` headers so it can be automatically invalidated by
-mutations. Unlike GraphQL Yoga, Apollo Server uses `Cache-Control` directives to set the caching
-behavior of the response headers without `ETag` headers and it doesn't validate the cached response
-by the client.
+different in different gateway and subgraph implementations.
+
+In GraphQL Yoga, `@cacheControl` directive is used to configure the behavior of the response caching
+plugin, and the response caching plugin uses `ETag` headers, not `Cache-Control` headers so it can
+be automatically invalidated by mutations.
+[Learn more here](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching).
+
+Unlike GraphQL Yoga, Apollo Server uses `Cache-Control` directives to set the caching behavior of
+the response headers without `ETag` headers and it doesn't validate the cached response by the
+client. [Learn more here](https://www.apollographql.com/docs/apollo-server/performance/caching).
 
 As Apollo Server handles `@cacheControl` directives to configure the behavior of the response
 headers including `cache-control` of the subgraph server. And in this case, you can just use
