@@ -67,6 +67,43 @@ for the fields and types they are defining. You can add this directive during co
 - [See here for Federation to learn more about the `@cacheControl` directive](https://www.apollographql.com/docs/federation/performance/caching/#using-cache-hints-with-subgraphs)
 - [See here for GraphQL Mesh to learn more about the `@cacheControl` in subgraph definitions](/docs/gateway/other-features/performance/response-caching)
 
+### `@cacheControl` directive
+
+In Apollo Server, `@cacheControl` directive is used to configure the behavior of the response
+headers including `cache-control` of the subgraph server. And in this case, you can just use
+[HTTP Caching plugin](/docs/gateway/other-features/performance/http-caching) to handle caching
+headers. If you want to use that approach with Apollo Server, check the relevant docs
+[here](https://www.apollographql.com/docs/apollo-server/performance/caching).
+
+But in Hive Gateway, it is possible to handle those directives on the gateway level to configure
+response caching of the gateway from the subgraph. In this case, you need to expose `@cacheControl`
+directive to the supergraph by adding the following definitions;
+
+```graphql
+extend schema
+  @link(
+    # Federation spec version should be at least 2.1 to support `@composeDirective`
+    url: "https://specs.apollo.dev/federation/v2.1"
+    import: ["@composeDirective"]
+  )
+  # Import `@cacheControl`
+  @link(url: "https://the-guild.dev/mesh/v1.0", import: ["@cacheControl"])
+  # Use `@composeDirective` to define the directive as exposed
+  @composeDirective(name: "@cacheControl")
+
+# Then add the actual directive definitions
+enum CacheControlScope {
+  PUBLIC
+  PRIVATE
+}
+
+directive @cacheControl(
+  maxAge: Int
+  scope: CacheControlScope
+  inheritMaxAge: Boolean
+) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
+```
+
 ## Session based caching
 
 If your GraphQL API returns specific data depending on the viewer's session, you can use the session
