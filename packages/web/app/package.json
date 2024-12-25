@@ -112,7 +112,7 @@
     "react-toastify": "10.0.6",
     "react-virtualized-auto-sizer": "1.0.24",
     "react-virtuoso": "4.12.3",
-    "react-window": "1.8.10",
+    "react-window": "1.8.11",
     "regenerator-runtime": "0.14.1",
     "snarkdown": "2.0.0",
     "storybook": "8.4.7",
