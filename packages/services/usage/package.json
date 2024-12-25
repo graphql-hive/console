@@ -12,7 +12,7 @@
     "@hive/service-common": "workspace:*",
     "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
-    "@sentry/node": "7.120.0",
+    "@sentry/node": "7.120.2",
     "@sinclair/typebox": "0.34.13",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
