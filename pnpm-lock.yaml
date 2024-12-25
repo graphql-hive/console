@@ -140,7 +140,7 @@ importers:
         version: link:rules
       eslint-plugin-tailwindcss:
         specifier: npm:@hasparus/eslint-plugin-tailwindcss@3.17.5
-        version: '@hasparus/eslint-plugin-tailwindcss@3.17.5(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))'
+        version: '@hasparus/eslint-plugin-tailwindcss@3.17.5(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))'
       fs-extra:
         specifier: 11.2.0
         version: 11.2.0
@@ -1970,14 +1970,14 @@ importers:
         specifier: 2.5.4
         version: 2.5.4
       tailwindcss:
-        specifier: 3.4.15
-        version: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+        specifier: 3.4.17
+        version: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
       tailwindcss-animate:
         specifier: 1.0.7
-        version: 1.0.7(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       tailwindcss-radix:
         specifier: 3.0.5
-        version: 3.0.5(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 3.0.5(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -2025,10 +2025,10 @@ importers:
         version: 1.1.3(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tailwindcss/typography':
         specifier: 0.5.15
-        version: 0.5.15(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 0.5.15(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       '@theguild/components':
         specifier: 7.4.0
-        version: 7.4.0(@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))))(@types/react-dom@18.3.1)(@types/react@18.3.12)(next@14.2.18(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)(webpack@5.94.0(@swc/core@1.9.2(@swc/helpers@0.5.11))(esbuild@0.23.1))
+        version: 7.4.0(@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))))(@types/react-dom@18.3.1)(@types/react@18.3.12)(next@14.2.18(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)(webpack@5.94.0(@swc/core@1.9.2(@swc/helpers@0.5.11))(esbuild@0.23.1))
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -2058,14 +2058,14 @@ importers:
         version: 2.5.4
       tailwindcss-animate:
         specifier: 1.0.7
-        version: 1.0.7(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       tailwindcss-radix:
         specifier: 3.0.5
-        version: 3.0.5(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 3.0.5(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
     devDependencies:
       '@theguild/tailwind-config':
         specifier: 0.6.0
-        version: 0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+        version: 0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       '@types/react':
         specifier: 18.3.12
         version: 18.3.12
@@ -2085,8 +2085,8 @@ importers:
         specifier: 1.2.2
         version: 1.2.2
       tailwindcss:
-        specifier: 3.4.15
-        version: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+        specifier: 3.4.17
+        version: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
   rules:
     devDependencies:
@@ -3943,7 +3943,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -11831,12 +11830,12 @@ packages:
     resolution: {integrity: sha512-KRDkHlLlNj3DWh79CDt93fPlRJh2W1AuHV0ZSZAMMuN7lqlsZTV5842idfS1urWG8q9tc17velp1gCXhY7sLnQ==}
     engines: {node: '>= 12.0.0'}
 
-  lilconfig@2.1.0:
-    resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
-    engines: {node: '>=10'}
-
   lilconfig@3.1.2:
     resolution: {integrity: sha512-eop+wDAvpItUys0FWkHIKeC9ybYrTGbU41U5K7+bttZZeohvnY7M9dZ5kB21GNWiFT2q1OoPTvncPCgSOVO5ow==}
+    engines: {node: '>=14'}
+
+  lilconfig@3.1.3:
+    resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
     engines: {node: '>=14'}
 
   lines-and-columns@1.2.4:
@@ -14815,8 +14814,8 @@ packages:
     peerDependencies:
       tailwindcss: ^3.4.1
 
-  tailwindcss@3.4.15:
-    resolution: {integrity: sha512-r4MeXnfBmSOuKUWmXe6h2CcyfzJCEk4F0pptO5jlnYSIViUkVmsawj80N5h2lO3gwcmSb4n3PuN+e+GC1Guylw==}
+  tailwindcss@3.4.17:
+    resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -16304,8 +16303,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16412,11 +16411,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16455,6 +16454,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.693.0(@aws-sdk/client-sts@3.693.0)':
@@ -16588,11 +16588,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16631,7 +16631,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.693.0':
@@ -16745,7 +16744,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16864,7 +16863,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/types': 3.6.0
@@ -17039,7 +17038,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/shared-ini-file-loader': 3.1.9
@@ -19784,11 +19783,11 @@ snapshots:
       protobufjs: 7.3.0
       yargs: 17.7.2
 
-  '@hasparus/eslint-plugin-tailwindcss@3.17.5(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
+  '@hasparus/eslint-plugin-tailwindcss@3.17.5(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
     dependencies:
       fast-glob: 3.3.2
       postcss: 8.4.49
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
   '@headlessui/react@1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -23430,17 +23429,17 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
-  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
+  '@tailwindcss/container-queries@0.1.1(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
     dependencies:
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
-  '@tailwindcss/typography@0.5.15(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
+  '@tailwindcss/typography@0.5.15(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
     dependencies:
       lodash.castarray: 4.4.0
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       postcss-selector-parser: 6.0.10
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
   '@tanstack/history@1.31.16': {}
 
@@ -23530,12 +23529,12 @@ snapshots:
       typescript: 4.9.5
       yargs: 16.2.0
 
-  '@theguild/components@7.4.0(@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))))(@types/react-dom@18.3.1)(@types/react@18.3.12)(next@14.2.18(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)(webpack@5.94.0(@swc/core@1.9.2(@swc/helpers@0.5.11))(esbuild@0.23.1))':
+  '@theguild/components@7.4.0(@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))))(@types/react-dom@18.3.1)(@types/react@18.3.12)(next@14.2.18(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.6.3)(webpack@5.94.0(@swc/core@1.9.2(@swc/helpers@0.5.11))(esbuild@0.23.1))':
     dependencies:
       '@giscus/react': 3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@next/bundle-analyzer': 15.0.4
       '@radix-ui/react-navigation-menu': 1.2.0(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@theguild/tailwind-config': 0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+      '@theguild/tailwind-config': 0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       clsx: 2.1.1
       fuzzy: 0.1.3
       next: 14.2.18(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -23631,12 +23630,12 @@ snapshots:
       npm-to-yarn: 3.0.0
       unist-util-visit: 5.0.0
 
-  '@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
+  '@theguild/tailwind-config@0.6.0(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))':
     dependencies:
-      '@tailwindcss/container-queries': 0.1.1(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
+      '@tailwindcss/container-queries': 0.1.1(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)))
       postcss-import: 16.1.0(postcss@8.4.49)
       postcss-lightningcss: 1.0.1(postcss@8.4.49)
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
   '@tootallnate/once@2.0.0': {}
 
@@ -28671,9 +28670,9 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.28.1
       lightningcss-win32-x64-msvc: 1.28.1
 
-  lilconfig@2.1.0: {}
-
   lilconfig@3.1.2: {}
+
+  lilconfig@3.1.3: {}
 
   lines-and-columns@1.2.4: {}
 
@@ -30891,7 +30890,7 @@ snapshots:
 
   postcss-load-config@4.0.2(postcss@8.4.49)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)):
     dependencies:
-      lilconfig: 3.1.2
+      lilconfig: 3.1.3
       yaml: 2.5.0
     optionalDependencies:
       postcss: 8.4.49
@@ -32457,15 +32456,15 @@ snapshots:
 
   tailwind-merge@2.5.4: {}
 
-  tailwindcss-animate@1.0.7(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))):
+  tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))):
     dependencies:
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
-  tailwindcss-radix@3.0.5(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))):
+  tailwindcss-radix@3.0.5(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))):
     dependencies:
-      tailwindcss: 3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
+      tailwindcss: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3))
 
-  tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)):
+  tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.6.3)):
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
@@ -32476,7 +32475,7 @@ snapshots:
       glob-parent: 6.0.2
       is-glob: 4.0.3
       jiti: 1.21.6
-      lilconfig: 2.1.0
+      lilconfig: 3.1.3
       micromatch: 4.0.8
       normalize-path: 3.0.0
       object-hash: 3.0.0
