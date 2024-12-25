@@ -29,7 +29,7 @@
     "bcryptjs": "2.4.3",
     "date-fns": "4.1.0",
     "dockerode": "4.0.2",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "graphql": "16.9.0",
     "human-id": "4.1.1",
     "ioredis": "5.4.2",

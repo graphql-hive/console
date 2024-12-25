@@ -35,7 +35,7 @@
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@whatwg-node/server": "0.9.50",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "fastify": "4.28.1",
     "got": "14.4.5",
     "graphql": "16.9.0",

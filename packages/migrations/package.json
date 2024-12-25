@@ -24,7 +24,7 @@
     "@whatwg-node/fetch": "0.9.22",
     "bcryptjs": "2.4.3",
     "copyfiles": "2.4.1",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "got": "14.4.5",
     "graphql": "16.9.0",
     "p-limit": "6.1.0",

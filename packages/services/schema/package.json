@@ -19,7 +19,7 @@
     "@trpc/server": "10.45.2",
     "@types/async-retry": "1.4.8",
     "@types/ioredis-mock": "8.2.5",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "fast-json-stable-stringify": "2.1.0",
     "fastify": "4.28.1",
     "got": "14.4.5",

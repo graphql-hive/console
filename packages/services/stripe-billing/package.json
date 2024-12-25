@@ -16,7 +16,7 @@
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "date-fns": "4.1.0",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "got": "14.4.5",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",

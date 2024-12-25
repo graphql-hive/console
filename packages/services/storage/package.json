@@ -22,7 +22,7 @@
     "@tgriesser/schemats": "9.0.1",
     "@types/node": "22.9.3",
     "@types/pg": "8.11.10",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "fast-json-stable-stringify": "2.1.0",
     "got": "14.4.5",
     "pg-promise": "11.10.2",

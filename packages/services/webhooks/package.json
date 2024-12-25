@@ -15,7 +15,7 @@
     "@trpc/server": "10.45.2",
     "bullmq": "5.26.2",
     "copyfiles": "2.4.1",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "got": "14.4.5",
     "ioredis": "5.4.2",
     "p-timeout": "6.1.3",
