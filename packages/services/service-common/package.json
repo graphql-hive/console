@@ -23,7 +23,7 @@
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
     "@sentry/utils": "7.120.2",
-    "fastify": "4.28.1",
+    "fastify": "4.29.0",
     "fastify-plugin": "4.5.1",
     "opentelemetry-instrumentation-fetch-node": "1.2.3",
     "p-retry": "6.2.1",
