@@ -19,7 +19,7 @@
     "bullmq": "5.26.2",
     "copyfiles": "2.4.1",
     "dotenv": "16.4.5",
-    "ioredis": "5.4.1",
+    "ioredis": "5.4.2",
     "mjml": "4.14.0",
     "nodemailer": "6.9.16",
     "p-timeout": "6.1.3",

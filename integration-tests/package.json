@@ -32,7 +32,7 @@
     "dotenv": "16.4.5",
     "graphql": "16.9.0",
     "human-id": "4.1.1",
-    "ioredis": "5.4.1",
+    "ioredis": "5.4.2",
     "slonik": "30.4.4",
     "strip-ansi": "7.1.0",
     "tslib": "2.8.1",
