@@ -205,11 +205,11 @@ importers:
         specifier: 1.0.1
         version: 1.0.1(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
       '@pulumi/kubernetes':
-        specifier: 4.17.1
-        version: 4.17.1(encoding@0.1.13)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
+        specifier: 4.19.0
+        version: 4.19.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
       '@pulumi/kubernetesx':
         specifier: 0.1.6
-        version: 0.1.6(@pulumi/kubernetes@4.17.1(encoding@0.1.13)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))
+        version: 0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))
       '@pulumi/pulumi':
         specifier: 3.137.0
         version: 3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
@@ -5901,8 +5901,8 @@ packages:
   '@pulumi/command@1.0.1':
     resolution: {integrity: sha512-PqqcMp80Y9dc7Lt0epXqvqha76S4XF08NB8lpMA0zJ9zWvkkssQ8lq8XdHuZOrAGHXj7gKBs6JBrhhltoovUTQ==}
 
-  '@pulumi/kubernetes@4.17.1':
-    resolution: {integrity: sha512-XmPhPG7vqXHo0/hs14JX25oNF7Aum0dmdqYTWIvbUUqi9GUD05eJTYh0PyNpOm4sFuRbFVvqHdc8NbVbc1R6Fg==}
+  '@pulumi/kubernetes@4.19.0':
+    resolution: {integrity: sha512-q11ORIJPNakGwHllEq+owBWsGuVinwUIfLR8QUeqkeUJkz8sTfkU3psqVIOIai/7XITQyKbXNRhbQAJckfudOw==}
 
   '@pulumi/kubernetesx@0.1.6':
     resolution: {integrity: sha512-9VL4Yi4b4aLC/obBarJuNkm86kABByUZICYPSTdV396MGZtOc066o2brsB+kWVQcVfkYVXTPrpjIkAwBXXnzGw==}
@@ -8073,9 +8073,6 @@ packages:
 
   '@types/tern@0.23.9':
     resolution: {integrity: sha512-ypzHFE/wBzh+BlH6rrBgS5I/Z7RD21pGhZ2rltb/+ZrVM1awdZwjx7hE5XfuYgHWk9uvV5HLZN3SloevCAp3Bw==}
-
-  '@types/tmp@0.0.33':
-    resolution: {integrity: sha512-gVC1InwyVrO326wbBZw+AO3u2vRXz/iRWq9jYhpG4W8LXyIgDv3ZmcLQ5Q4Gs+gFMyqx+viFoFT+l3p61QFCmQ==}
 
   '@types/tmp@0.2.6':
     resolution: {integrity: sha512-chhaNf2oKHlRkDGt+tiKE2Z5aJ6qalm7Z9rlLdBwmOiAAf09YQvvoLXjWK4HWPF1xU/fqvMgfNfpVoBscA/tKA==}
@@ -16464,8 +16461,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16572,11 +16569,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16615,6 +16612,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.693.0(@aws-sdk/client-sts@3.693.0)':
@@ -16748,11 +16746,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16791,7 +16789,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.693.0':
@@ -16905,7 +16902,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -17024,7 +17021,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/types': 3.6.0
@@ -17199,7 +17196,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/shared-ini-file-loader': 3.1.9
@@ -21633,25 +21630,20 @@ snapshots:
       - ts-node
       - typescript
 
-  '@pulumi/kubernetes@4.17.1(encoding@0.1.13)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)':
+  '@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
       '@pulumi/pulumi': 3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
-      '@types/node-fetch': 2.6.4
-      '@types/tmp': 0.0.33
       glob: 10.3.12
-      node-fetch: 2.6.12(encoding@0.1.13)
       shell-quote: 1.7.3
-      tmp: 0.0.33
     transitivePeerDependencies:
       - bluebird
-      - encoding
       - supports-color
       - ts-node
       - typescript
 
-  '@pulumi/kubernetesx@0.1.6(@pulumi/kubernetes@4.17.1(encoding@0.1.13)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))':
+  '@pulumi/kubernetesx@0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2))':
     dependencies:
-      '@pulumi/kubernetes': 4.17.1(encoding@0.1.13)(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/kubernetes': 4.19.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
       '@pulumi/pulumi': 3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)
 
   '@pulumi/pulumi@3.137.0(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)':
@@ -24296,8 +24288,6 @@ snapshots:
   '@types/tern@0.23.9':
     dependencies:
       '@types/estree': 1.0.6
-
-  '@types/tmp@0.0.33': {}
 
   '@types/tmp@0.2.6': {}
 
