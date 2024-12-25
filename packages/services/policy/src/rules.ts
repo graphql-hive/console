@@ -1,20 +1,20 @@
-import { GraphQLESLintRule, rules, type CategoryType } from '@graphql-eslint/eslint-plugin';
+import {
+  GraphQLESLintRule,
+  rules,
+  type CategoryType,
+} from '@graphql-eslint/eslint-plugin/programmatic';
 
 type AllRulesType = typeof rules;
 type RuleName = keyof AllRulesType;
 
 const SKIPPED_RULES: RuleName[] = [
   // Skipped because in order to operate, it needs operations.
-  // Also it does not make sense to run it as part of a schema check.
+  // Also, it does not make sense to run it as part of a schema check.
   'no-unused-fields',
 ];
 
-function isRelevantCategory(category?: CategoryType | CategoryType[]): boolean {
-  if (!category) {
-    return false;
-  }
-
-  return Array.isArray(category) ? category.includes('Schema') : category === 'Schema';
+function isRelevantCategory(category: string): boolean {
+  return (category as CategoryType).includes('schema');
 }
 
 // Some rules have configurations for operations (like "alphabetize") and we do not want to expose them.
@@ -22,37 +22,32 @@ function patchRulesConfig<T extends RuleName>(
   ruleName: T,
   ruleDef: AllRulesType[T],
 ): GraphQLESLintRule {
+  const { schema } = ruleDef.meta as any;
   switch (ruleName) {
     case 'alphabetize': {
       // Remove operation-specific configurations
-      delete ruleDef.meta.schema.items.properties.selections;
-      delete ruleDef.meta.schema.items.properties.variables;
+      delete schema.items.properties.selections;
+      delete schema.items.properties.variables;
       break;
     }
     case 'naming-convention': {
       // Remove operation-specific configurations
-      delete ruleDef.meta.schema.items.properties.VariableDefinition;
-      delete ruleDef.meta.schema.items.properties.OperationDefinition;
+      delete schema.items.properties.VariableDefinition;
+      delete schema.items.properties.OperationDefinition;
 
-      // Get rid of "definitions" references becuse it's breaking Monaco editor in the frontend
-      Object.entries(ruleDef.meta.schema.items.properties).forEach(([, propDef]) => {
+      // Get rid of "definitions" references because it's breaking Monaco editor in the frontend
+      Object.entries(schema.items.properties).forEach(([, propDef]) => {
         if (propDef && typeof propDef === 'object' && 'oneOf' in propDef) {
-          propDef.oneOf = [
-            ruleDef.meta.schema.definitions.asObject,
-            ruleDef.meta.schema.definitions.asString,
-          ];
+          propDef.oneOf = [schema.definitions.asObject, schema.definitions.asString];
         }
       });
-      ruleDef.meta.schema.items.patternProperties = {
+      schema.items.patternProperties = {
         '^(Argument|DirectiveDefinition|EnumTypeDefinition|EnumValueDefinition|FieldDefinition|InputObjectTypeDefinition|InputValueDefinition|InterfaceTypeDefinition|ObjectTypeDefinition|ScalarTypeDefinition|UnionTypeDefinition)(.+)?$':
           {
-            oneOf: [
-              ruleDef.meta.schema.definitions.asObject,
-              ruleDef.meta.schema.definitions.asString,
-            ],
+            oneOf: [schema.definitions.asObject, schema.definitions.asString],
           },
       };
-      delete ruleDef.meta.schema.definitions;
+      delete schema.definitions;
 
       break;
     }
@@ -68,8 +63,8 @@ function patchRulesConfig<T extends RuleName>(
 export const RELEVANT_RULES = Object.entries(rules)
   .filter(
     ([ruleName, rule]) =>
-      isRelevantCategory(rule.meta.docs?.category) &&
-      rule.meta.docs?.graphQLJSRuleName === undefined &&
+      isRelevantCategory(rule.meta!.docs!.category!) &&
+      rule.meta!.docs!.graphQLJSRuleName === undefined &&
       !SKIPPED_RULES.includes(ruleName as RuleName),
   )
   .map(
