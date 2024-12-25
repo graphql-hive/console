@@ -62,6 +62,12 @@ import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from 
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique } from './utils';
 
+export type Seed = ReturnType<typeof initSeed>;
+export type OwnerSeed = Awaited<ReturnType<Seed['createOwner']>>;
+export type OrgSeed = Awaited<ReturnType<OwnerSeed['createOrg']>>;
+export type ProjectSeed = Awaited<ReturnType<OrgSeed['createProject']>>;
+export type TargetAccessTokenSeed = Awaited<ReturnType<ProjectSeed['createTargetAccessToken']>>;
+
 export function initSeed() {
   const pg = {
     user: ensureEnv('POSTGRES_USER'),

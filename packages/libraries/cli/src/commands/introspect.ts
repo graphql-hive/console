@@ -4,6 +4,7 @@ import { buildSchema, GraphQLError, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
 import { loadSchema } from '../helpers/schema';
+import { Output } from '../output/__';
 
 export default class Introspect extends Command<typeof Introspect> {
   static description = 'introspects a GraphQL Schema';
@@ -18,7 +19,6 @@ export default class Introspect extends Command<typeof Introspect> {
       multiple: true,
     }),
   };
-
   static args = {
     location: Args.string({
       name: 'location',
@@ -27,8 +27,9 @@ export default class Introspect extends Command<typeof Introspect> {
       hidden: false,
     }),
   };
+  static output = [Output.SuccessOutputFile, Output.SuccessOutputStdout];
 
-  async run() {
+  async runResult() {
     const { flags, args } = await this.parse(Introspect);
     const headers = flags.header?.reduce(
       (acc, header) => {
@@ -47,7 +48,7 @@ export default class Introspect extends Command<typeof Introspect> {
       method: 'POST',
     }).catch(err => {
       if (err instanceof GraphQLError) {
-        this.fail(err.message);
+        this.logFailure(err.message);
         this.exit(1);
       }
 
@@ -57,43 +58,47 @@ export default class Introspect extends Command<typeof Introspect> {
     });
 
     if (!schema) {
-      this.fail('Unable to load schema');
+      this.logFailure('Unable to load schema');
       this.exit(1);
     }
 
     if (!flags.write) {
-      this.log(schema);
-      return;
+      return this.success({
+        type: 'SuccessOutputStdout',
+        content: schema,
+      });
     }
 
-    if (flags.write) {
-      const filepath = resolve(process.cwd(), flags.write);
-
-      switch (extname(flags.write.toLowerCase())) {
-        case '.graphql':
-        case '.gql':
-        case '.gqls':
-        case '.graphqls':
-          writeFileSync(filepath, schema, 'utf8');
-          break;
-        case '.json': {
-          const schemaObject = buildSchema(schema, {
-            assumeValidSDL: true,
-            assumeValid: true,
-          });
-          writeFileSync(
-            filepath,
-            JSON.stringify(introspectionFromSchema(schemaObject), null, 2),
-            'utf8',
-          );
-          break;
-        }
-        default:
-          this.fail(`Unsupported file extension ${extname(flags.write)}`);
-          this.exit(1);
+    const filepath = resolve(process.cwd(), flags.write);
+    switch (extname(flags.write.toLowerCase())) {
+      case '.graphql':
+      case '.gql':
+      case '.gqls':
+      case '.graphqls':
+        writeFileSync(filepath, schema, 'utf8');
+        break;
+      case '.json': {
+        const schemaObject = buildSchema(schema, {
+          assumeValidSDL: true,
+          assumeValid: true,
+        });
+        writeFileSync(
+          filepath,
+          JSON.stringify(introspectionFromSchema(schemaObject), null, 2),
+          'utf8',
+        );
+        break;
       }
-
-      this.success(`Saved to ${filepath}`);
+      default:
+        this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
+        this.exit(1);
     }
+
+    this.logSuccess(`Saved to ${filepath}`);
+    return this.success({
+      type: 'SuccessOutputFile',
+      path: filepath,
+      bytes: schema.length,
+    });
   }
 }

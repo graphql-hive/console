@@ -3,11 +3,16 @@ import { GraphQLError, print } from 'graphql';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
+import { Fragments } from '../../fragments/__';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { casesExhausted } from '../../helpers/general';
 import { gitInfo } from '../../helpers/git';
-import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
+import { InferInput } from '../../helpers/oclif';
+import { loadSchema, minifySchema } from '../../helpers/schema';
+import { T } from '../../helpers/typebox/__';
 import { invariant } from '../../helpers/validation';
+import { Output } from '../../output/__';
 
 const schemaPublishMutation = graphql(/* GraphQL */ `
   mutation schemaPublish($input: SchemaPublishInput!, $usesGitHubApp: Boolean!) {
@@ -132,7 +137,6 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       multiple: true,
     }),
   };
-
   static args = {
     file: Args.string({
       name: 'file',
@@ -141,6 +145,96 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       hidden: false,
     }),
   };
+  static output = [
+    Output.success('SuccessSchemaPublish', {
+      data: {
+        diffType: T.Enum({
+          initial: 'initial',
+          change: 'change',
+          unknown: 'unknown', // todo: improve this, need better understanding of the api
+        }),
+        message: T.Nullable(T.String()),
+        changes: T.Array(Output.SchemaChange),
+        url: T.Nullable(T.String({ format: 'uri' })),
+      },
+      text(_, data, s) {
+        if (data.diffType === 'initial') {
+          s.success('Published initial schema.');
+        } else if (data.message) {
+          s.success(data.message);
+        } else if (data.diffType === 'change' && data.changes.length === 0) {
+          s.success('No changes. Skipping.');
+        } else {
+          if (data.changes.length) {
+            s.line(Output.schemaChangesText(data.changes));
+            s.line();
+          }
+          s.success('Schema published');
+        }
+        if (data.url) {
+          s.info(`Available at ${data.url}`);
+        }
+      },
+    }),
+    Output.success('FailureSchemaPublish', {
+      data: {
+        changes: Output.SchemaChanges,
+        errors: Output.SchemaErrors,
+        url: T.Nullable(T.String({ format: 'uri' })),
+      },
+      text({ flags }: InferInput<typeof SchemaPublish>, data, s) {
+        s.line(Output.schemaErrorsText(data.errors));
+        s.line();
+        if (data.changes.length) {
+          s.line(Output.schemaChangesText(data.changes));
+          s.line();
+        }
+        if (!flags.force) {
+          s.failure('Failed to publish schema');
+        } else {
+          s.success('Schema published (forced)');
+        }
+        if (data.url) {
+          s.info(`Available at ${data.url}`);
+        }
+      },
+    }),
+    Output.success('SuccessSchemaPublishGitHub', {
+      data: {
+        message: T.String(),
+      },
+      text(_, data, s) {
+        s.success(data.message);
+      },
+    }),
+    Output.failure('FailureSchemaPublishGitHub', {
+      data: {
+        message: T.String(),
+      },
+      text(_, data, s) {
+        s.failure(data.message);
+      },
+    }),
+    Output.failure('FailureSchemaPublishInvalidGraphQLSchema', {
+      data: {
+        message: T.String(),
+        locations: T.Array(
+          T.Object({
+            line: T.Readonly(T.Number()),
+            column: T.Readonly(T.Number()),
+          }),
+        ),
+      },
+      text(_, data, s) {
+        const location =
+          data.locations.length > 0
+            ? ` at line ${data.locations[0].line}, column ${data.locations[0].column}`
+            : '';
+        s.failure(`The SDL is not valid${location}:`);
+        s.line(data.message);
+      },
+    }),
+  ];
 
   resolveMetadata(metadata: string | undefined): string | undefined {
     if (!metadata) {
@@ -157,7 +251,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       const exists = existsSync(metadata);
 
       if (!exists) {
-        throw new Error(
+        throw new Errors.CLIError(
           `Failed to load metadata from "${metadata}": Please specify a path to an existing file, or a string with valid JSON.`,
         );
       }
@@ -168,111 +262,111 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
         return fileContent;
       } catch (e) {
-        throw new Error(
+        throw new Errors.CLIError(
           `Failed to load metadata from file "${metadata}": Please make sure the file is readable and contains a valid JSON`,
         );
       }
     }
   }
 
-  async run() {
-    try {
-      const { flags, args } = await this.parse(SchemaPublish);
+  async runResult() {
+    const { flags, args } = await this.parse(SchemaPublish);
 
-      await this.require(flags);
+    await this.require(flags);
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
+    const endpoint = this.ensure({
+      key: 'registry.endpoint',
+      args: flags,
+      legacyFlagName: 'registry',
+      defaultValue: graphqlEndpoint,
+      env: 'HIVE_REGISTRY',
+    });
+    const accessToken = this.ensure({
+      key: 'registry.accessToken',
+      args: flags,
+      legacyFlagName: 'token',
+      env: 'HIVE_TOKEN',
+    });
+    const service = flags.service;
+    const url = flags.url;
+    const file = args.file;
+    const experimental_acceptBreakingChanges = flags.experimental_acceptBreakingChanges;
+    const metadata = this.resolveMetadata(flags.metadata);
+    const usesGitHubApp = flags.github;
+
+    let commit: string | undefined | null = this.maybe({
+      key: 'commit',
+      args: flags,
+      env: 'HIVE_COMMIT',
+    });
+    let author: string | undefined | null = this.maybe({
+      key: 'author',
+      args: flags,
+      env: 'HIVE_AUTHOR',
+    });
+
+    let gitHub: null | {
+      repository: string;
+      commit: string;
+    } = null;
+
+    if (!commit || !author) {
+      const git = await gitInfo(() => {
+        this.warn(`No git information found. Couldn't resolve author and commit.`);
       });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-      });
-      const service = flags.service;
-      const url = flags.url;
-      const file = args.file;
-      const force = flags.force;
-      const experimental_acceptBreakingChanges = flags.experimental_acceptBreakingChanges;
-      const metadata = this.resolveMetadata(flags.metadata);
-      const usesGitHubApp = flags.github;
 
-      let commit: string | undefined | null = this.maybe({
-        key: 'commit',
-        args: flags,
-        env: 'HIVE_COMMIT',
-      });
-      let author: string | undefined | null = this.maybe({
-        key: 'author',
-        args: flags,
-        env: 'HIVE_AUTHOR',
-      });
-
-      let gitHub: null | {
-        repository: string;
-        commit: string;
-      } = null;
-
-      if (!commit || !author) {
-        const git = await gitInfo(() => {
-          this.warn(`No git information found. Couldn't resolve author and commit.`);
-        });
-
-        if (!commit) {
-          commit = git.commit;
-        }
-
-        if (!author) {
-          author = git.author;
-        }
+      if (!commit) {
+        commit = git.commit;
       }
 
       if (!author) {
-        throw new Errors.CLIError(`Missing "author"`);
+        author = git.author;
       }
+    }
 
-      if (!commit) {
-        throw new Errors.CLIError(`Missing "commit"`);
+    if (!author) {
+      throw new Errors.CLIError(`Missing "author"`);
+    }
+
+    if (!commit) {
+      throw new Errors.CLIError(`Missing "commit"`);
+    }
+
+    if (usesGitHubApp) {
+      // eslint-disable-next-line no-process-env
+      const repository = process.env['GITHUB_REPOSITORY'] ?? null;
+      if (!repository) {
+        throw new Errors.CLIError(`Missing "GITHUB_REPOSITORY" environment variable.`);
       }
+      gitHub = {
+        repository,
+        commit,
+      };
+    }
 
-      if (usesGitHubApp) {
-        // eslint-disable-next-line no-process-env
-        const repository = process.env['GITHUB_REPOSITORY'] ?? null;
-        if (!repository) {
-          throw new Errors.CLIError(`Missing "GITHUB_REPOSITORY" environment variable.`);
-        }
-        gitHub = {
-          repository,
-          commit,
-        };
+    let sdl: string;
+    try {
+      const rawSdl = await loadSchema(file);
+      invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
+      const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
+      sdl = minifySchema(transformedSDL);
+    } catch (err) {
+      if (err instanceof GraphQLError) {
+        const locations = err.locations?.map(location => ({ ...location })) ?? [];
+        return this.failure({
+          type: 'FailureSchemaPublishInvalidGraphQLSchema',
+          message: err.message,
+          locations,
+        });
       }
+      throw err;
+    }
 
-      let sdl: string;
-      try {
-        const rawSdl = await loadSchema(file);
-        invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
-        const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
-        sdl = minifySchema(transformedSDL);
-      } catch (err) {
-        if (err instanceof GraphQLError) {
-          const location = err.locations?.[0];
-          const locationString = location
-            ? ` at line ${location.line}, column ${location.column}`
-            : '';
-          throw new Error(`The SDL is not valid${locationString}:\n ${err.message}`);
-        }
-        throw err;
-      }
+    let result: DocumentType<typeof schemaPublishMutation>['schemaPublish'] | null = null;
 
-      let result: DocumentType<typeof schemaPublishMutation> | null = null;
-
-      do {
-        result = await this.registryApi(endpoint, accessToken).request({
+    do {
+      const loopResult = await this.registryApi(endpoint, accessToken)
+        .request({
           operation: schemaPublishMutation,
           variables: {
             input: {
@@ -281,7 +375,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               author,
               commit,
               sdl,
-              force,
+              force: flags.force,
               experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
               metadata,
               gitHub,
@@ -291,77 +385,73 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           },
           /** Gateway timeout is 60 seconds. */
           timeout: 55_000,
-        });
+        })
+        .then(data => data.schemaPublish);
 
-        if (result.schemaPublish.__typename === 'SchemaPublishSuccess') {
-          const changes = result.schemaPublish.changes;
-
-          if (result.schemaPublish.initial) {
-            this.success('Published initial schema.');
-          } else if (result.schemaPublish.successMessage) {
-            this.success(result.schemaPublish.successMessage);
-          } else if (changes && changes.total === 0) {
-            this.success('No changes. Skipping.');
-          } else {
-            if (changes) {
-              renderChanges.call(this, changes);
-            }
-            this.success('Schema published');
-          }
-
-          if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
-          }
-        } else if (result.schemaPublish.__typename === 'SchemaPublishRetry') {
-          this.log(result.schemaPublish.reason);
+      if (loopResult) {
+        if (loopResult.__typename === 'SchemaPublishRetry') {
+          this.log(loopResult.reason);
           this.log('Waiting for other schema publishes to complete...');
           result = null;
-        } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          this.fail(
-            `${result.schemaPublish.missingServiceError} Please use the '--service <name>' parameter.`,
-          );
-          this.exit(1);
-        } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          this.fail(
-            `${result.schemaPublish.missingUrlError} Please use the '--url <url>' parameter.`,
-          );
-          this.exit(1);
-        } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
-          const changes = result.schemaPublish.changes;
-          const errors = result.schemaPublish.errors;
-          renderErrors.call(this, errors);
-
-          if (changes && changes.total) {
-            this.log('');
-            renderChanges.call(this, changes);
-          }
-          this.log('');
-
-          if (!force) {
-            this.fail('Failed to publish schema');
-            this.exit(1);
-          } else {
-            this.success('Schema published (forced)');
-          }
-
-          if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
-          }
-        } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
-          this.success(result.schemaPublish.message);
-        } else {
-          this.error(
-            'message' in result.schemaPublish ? result.schemaPublish.message : 'Unknown error',
-          );
+          continue;
         }
-      } while (result === null);
-    } catch (error) {
-      if (error instanceof Errors.ExitError) {
-        throw error;
-      } else {
-        this.fail('Failed to publish schema');
-        this.handleFetchError(error);
+
+        result = loopResult;
       }
+    } while (result === null);
+
+    if (result.__typename === 'SchemaPublishSuccess') {
+      // todo can this data type be split into different cases?
+      return this.success({
+        type: 'SuccessSchemaPublish',
+        // In API it seems that these two cases represent different things:
+        // 1. result.changes = undefined
+        // 2. result.changes = []
+        // TODO understand this better and improve the name of "unknown" here.
+        diffType: result.initial ? 'initial' : result.changes ? 'change' : 'unknown',
+        message: result.successMessage || null,
+        changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
+        url: result.linkToWebsite ?? null,
+      });
     }
+
+    if (result.__typename === 'SchemaPublishMissingServiceError') {
+      this.logFailure(`${result.missingServiceError} Please use the '--service <name>' parameter.`);
+      this.exit(1);
+    }
+
+    if (result.__typename === 'SchemaPublishMissingUrlError') {
+      this.logFailure(`${result.missingUrlError} Please use the '--url <url>' parameter.`);
+      this.exit(1);
+    }
+
+    if (result.__typename === 'SchemaPublishError') {
+      if (!flags.force) {
+        process.exitCode = 1;
+      }
+      return this.success({
+        type: 'FailureSchemaPublish',
+        changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
+        errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
+        url: result.linkToWebsite ?? null,
+      });
+    }
+
+    if (result.__typename === 'GitHubSchemaPublishSuccess') {
+      return this.success({
+        type: 'SuccessSchemaPublishGitHub',
+        message: result.message,
+      });
+    }
+
+    if (result.__typename === 'GitHubSchemaPublishError') {
+      return this.failure({
+        type: 'FailureSchemaPublishGitHub',
+        // todo: Why property check? Types suggest it is always there.
+        message: 'message' in result ? result.message : 'Unknown error',
+      });
+    }
+
+    throw casesExhausted(result);
   }
 }

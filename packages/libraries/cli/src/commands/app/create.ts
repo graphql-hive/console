@@ -1,9 +1,11 @@
-import { z } from 'zod';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
-import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { InferInput } from '../../helpers/oclif';
+import { SchemaHive } from '../../helpers/schema';
+import { T } from '../../helpers/typebox/__';
+import { Output } from '../../output/__';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -23,7 +25,6 @@ export default class AppCreate extends Command<typeof AppCreate> {
       required: true,
     }),
   };
-
   static args = {
     file: Args.string({
       name: 'file',
@@ -32,8 +33,39 @@ export default class AppCreate extends Command<typeof AppCreate> {
       hidden: false,
     }),
   };
+  static output = [
+    Output.success('SuccessSkipAppCreate', {
+      data: {
+        status: Output.AppDeploymentStatus,
+      },
+      text(input: InferInput<typeof AppCreate>, output) {
+        return `App deployment "${input.flags.name}@${input.flags.version}" is "${output.status}". Skip uploading documents...`;
+      },
+    }),
+    Output.success('SuccessAppCreate', {
+      data: {
+        id: T.StringNonEmpty,
+        operationsCount: T.Number(),
+      },
+      text(args: InferInput<typeof AppCreate>, data, s) {
+        s.line(
+          `App deployment "${args.flags.name}@${args.flags.version}" (${data.operationsCount} operations) created.\nActivate it with the "hive app:publish" command.`,
+        );
+      },
+    }),
+    Output.failure('FailureAppCreate', {
+      data: {
+        message: T.String(),
+      },
+    }),
+    Output.failure('FailureInvalidManifestModel', {
+      data: {
+        errors: T.Array(T.Value.MaterializedValueErrorT),
+      },
+    }),
+  ];
 
-  async run() {
+  async runResult() {
     const { flags, args } = await this.parse(AppCreate);
 
     const endpoint = this.ensure({
@@ -51,60 +83,65 @@ export default class AppCreate extends Command<typeof AppCreate> {
     const file: string = args.file;
     const fs = await import('fs/promises');
     const contents = await fs.readFile(file, 'utf-8');
-    const operations: unknown = JSON.parse(contents);
-    const validationResult = ManifestModel.safeParse(operations);
-
-    if (validationResult.success === false) {
-      // TODO: better error message :)
-      throw new Error('Invalid manifest');
+    const operations = T.Value.ParseJsonSafe(ManifestModel, contents);
+    if (operations instanceof T.Value.AssertError) {
+      return this.failure({
+        type: 'FailureInvalidManifestModel',
+        errors: T.Value.MaterializeValueErrorIterator(operations.Errors()),
+      });
     }
 
-    const result = await this.registryApi(endpoint, accessToken).request({
-      operation: CreateAppDeploymentMutation,
-      variables: {
-        input: {
-          appName: flags['name'],
-          appVersion: flags['version'],
+    const result = await this.registryApi(endpoint, accessToken)
+      .request({
+        operation: CreateAppDeploymentMutation,
+        variables: {
+          input: {
+            appName: flags['name'],
+            appVersion: flags['version'],
+          },
         },
-      },
-    });
+      })
+      .then(_ => _.createAppDeployment);
 
-    if (result.createAppDeployment.error) {
-      // TODO: better error message formatting :)
-      throw new Error(result.createAppDeployment.error.message);
+    if (result.error) {
+      return this.failure({
+        type: 'FailureAppCreate',
+        message: result.error.message,
+      });
     }
 
-    if (!result.createAppDeployment.ok) {
+    // TODO: Improve Hive API by returning a union type.
+    if (!result.ok) {
       throw new Error('Unknown error');
     }
 
-    if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {
-      this.log(
-        `App deployment "${flags['name']}@${flags['version']}" is "${result.createAppDeployment.ok.createdAppDeployment.status}". Skip uploading documents...`,
-      );
-      return;
+    if (result.ok.createdAppDeployment.status !== SchemaHive.AppDeploymentStatus.Pending) {
+      return this.success({
+        type: 'SuccessSkipAppCreate',
+        status: result.ok.createdAppDeployment.status,
+      });
     }
 
     let buffer: Array<{ hash: string; body: string }> = [];
 
     const flush = async (force = false) => {
       if (buffer.length >= 100 || force) {
-        const result = await this.registryApi(endpoint, accessToken).request({
-          operation: AddDocumentsToAppDeploymentMutation,
-          variables: {
-            input: {
-              appName: flags['name'],
-              appVersion: flags['version'],
-              documents: buffer,
+        const result = await this.registryApi(endpoint, accessToken)
+          .request({
+            operation: AddDocumentsToAppDeploymentMutation,
+            variables: {
+              input: {
+                appName: flags['name'],
+                appVersion: flags['version'],
+                documents: buffer,
+              },
             },
-          },
-        });
+          })
+          .then(_ => _.addDocumentsToAppDeployment);
 
-        if (result.addDocumentsToAppDeployment.error) {
-          if (result.addDocumentsToAppDeployment.error.details) {
-            const affectedOperation = buffer.at(
-              result.addDocumentsToAppDeployment.error.details.index,
-            );
+        if (result.error) {
+          if (result.error.details) {
+            const affectedOperation = buffer.at(result.error.details.index);
 
             const maxCharacters = 40;
 
@@ -114,14 +151,14 @@ export default class AppCreate extends Command<typeof AppCreate> {
                   ? affectedOperation.body.substring(0, maxCharacters) + '...'
                   : affectedOperation.body
               ).replace(/\n/g, '\\n');
-              this.infoWarning(
-                `Failed uploading document: ${result.addDocumentsToAppDeployment.error.details.message}` +
+              this.logWarning(
+                `Failed uploading document: ${result.error.details.message}` +
                   `\nOperation hash: ${affectedOperation?.hash}` +
                   `\nOperation body: ${truncatedBody}`,
               );
             }
           }
-          this.error(result.addDocumentsToAppDeployment.error.message);
+          this.error(result.error.message);
         }
         buffer = [];
       }
@@ -129,7 +166,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
     let counter = 0;
 
-    for (const [hash, body] of Object.entries(validationResult.data)) {
+    for (const [hash, body] of Object.entries(operations)) {
       buffer.push({ hash, body });
       await flush();
       counter++;
@@ -137,13 +174,15 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
     await flush(true);
 
-    this.log(
-      `\nApp deployment "${flags['name']}@${flags['version']}" (${counter} operations) created.\nActive it with the "hive app:publish" command.`,
-    );
+    return this.success({
+      type: 'SuccessAppCreate',
+      id: result.ok.createdAppDeployment.id,
+      operationsCount: counter,
+    });
   }
 }
 
-const ManifestModel = z.record(z.string());
+const ManifestModel = T.Record(T.String(), T.String());
 
 const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
   mutation CreateAppDeployment($input: CreateAppDeploymentInput!) {

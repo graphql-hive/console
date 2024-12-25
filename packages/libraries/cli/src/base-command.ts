@@ -1,19 +1,26 @@
-import colors from 'colors';
-import { print, type GraphQLError } from 'graphql';
+import { print } from 'graphql';
 import type { ExecutionResult } from 'graphql';
 import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { Command, Errors, Flags, Interfaces } from '@oclif/core';
+import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
+import { Errors } from './helpers/errors/__';
+import { Failure } from './helpers/errors/cli-error-with-data';
+import { OmitNever } from './helpers/general';
+import { Tex } from './helpers/tex/__';
+import { T } from './helpers/typebox/__';
+import { Output } from './output/__';
 
-export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
-  (typeof BaseCommand)['baseFlags'] & T['flags']
->;
-export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
+export default abstract class BaseCommand<$Command extends typeof Command> extends Command {
+  public static enableJsonFlag = true;
 
-type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+  /**
+   * The data type returned by this command when executed.
+   *
+   * Used by methods: {@link BaseCommand.success}, {@link BaseCommand.failure}, {@link BaseCommand.runResult}.
+   */
+  public static output: Output.DataType[] = [];
 
-export default abstract class BaseCommand<T extends typeof Command> extends Command {
   protected _userConfig: Config | undefined;
 
   static baseFlags = {
@@ -23,8 +30,162 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     }),
   };
 
-  protected flags!: Flags<T>;
-  protected args!: Args<T>;
+  protected flags!: InferFlags<$Command>;
+
+  protected args!: InferArgs<$Command>;
+
+  /**
+   * Prefer implementing {@link BaseCommand.runResult} instead of this method. Refer to it for its benefits.
+   *
+   * By default this command runs {@link BaseCommand.runResult}, having logic to handle its return value.
+   */
+  async run(): Promise<void | Output.InferSuccess<GetOutput<$Command>>> {
+    // todo: Make it easier for the Hive team to be alerted.
+    // - Alert the Hive team automatically with some opt-in telemetry?
+    // - A single-click-link with all relevant variables serialized into search parameters?
+    const schemaViolationMessage = `Whoops. This Hive CLI command tried to output a value that violates its own schema. This should never happen. Please report this error to the Hive team at https://github.com/graphql-hive/console/issues/new.`;
+
+    const thisClass = this.constructor as typeof BaseCommand;
+    const resultUnparsed = await this.runResult();
+    // @ts-expect-error fixme
+    const resultDataTypeName = resultUnparsed.data.type;
+    const dataType = thisClass.output.find(
+      dataType => dataType.schema.properties.data.properties.type.const === resultDataTypeName,
+    );
+    if (!dataType) {
+      throw new Failure({
+        message: schemaViolationMessage,
+        data: {
+          type: 'ErrorDataTypeNotFound',
+          message: schemaViolationMessage,
+          value: resultUnparsed,
+        },
+      });
+    }
+
+    const errorsIterator = T.Value.Value.Errors(dataType.schema, resultUnparsed);
+    const materializedErrors = T.Value.MaterializeValueErrorIterator(errorsIterator);
+    if (materializedErrors.length > 0) {
+      // todo: Display data in non-json output.
+      // The default textual output of an OClif error will not display any of the data below. We will want that information in a bug report.
+      throw new Errors.Failure({
+        message: schemaViolationMessage,
+        data: {
+          type: 'ErrorOutputSchemaViolation',
+          message: schemaViolationMessage,
+          schema: dataType,
+          value: resultUnparsed,
+          errors: materializedErrors,
+        },
+      });
+    }
+
+    // Should never throw because we checked for errors above.
+    const result = T.Value.Parse(dataType.schema, resultUnparsed);
+
+    // Data types can optionally bundle a textual representation of their data.
+    if (dataType.text) {
+      const texBuilder = Tex.createBuilder();
+      const dataTypeTextInit = dataType.text(
+        { flags: this.flags, args: this.args },
+        result.data,
+        texBuilder,
+      );
+      const dataTypeText =
+        typeof dataTypeTextInit === 'string'
+          ? dataTypeTextInit
+          : dataTypeTextInit === undefined
+            ? // This pattern designed for user relying on mutated state of the given Tex.Builder.
+              texBuilder.state.value
+            : // They returned a Tex.Builder instance.
+              dataTypeTextInit.state.value;
+
+      // `this.log` adds a newline, so remove one from text to avoid undesired extra trailing space.
+      this.log(dataTypeText.replace(/\n$/, ''));
+    }
+
+    /**
+     * OClif outputs returned values as JSON.
+     */
+    if (Output.isSuccess(result as any)) {
+      return result as any;
+    }
+
+    /**
+     * OClif supports converting thrown errors into JSON.
+     *
+     * OClif will run {@link BaseCommand.toErrorJson} which
+     * allows us to convert thrown values into JSON.
+     * We throw a CLIFailure which will be specially handled it.
+     */
+    throw new Errors.Failure({
+      // @ts-expect-error fixme
+      data: result.data,
+      // @ts-expect-error fixme
+      message: result.data.message ?? 'Unknown error.',
+    });
+  }
+
+  /**
+   * A safer alternative to {@link BaseCommand.run}. Benefits:
+   *
+   * 1. Clearer control-flow: Treats errors as data (meaning you return them).
+   * 2. More type-safe 1: Throwing is not tracked by TypeScript, return is.
+   * 3. More type-safe 2: You are prevented from forgetting to return JSON data (void return not allowed).
+   *
+   * Note: You must specify your command's output type in {@link BaseCommand.output} to take advantage of this method.
+   */
+  async runResult(): Promise<
+    Output.InferSuccess<GetOutput<$Command>> | Output.InferFailure<GetOutput<$Command>>
+  > {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Variant of {@link BaseCommand.successEnvelope} that only requires passing the data.
+   * See that method for more details.
+   */
+  success(data: InferOutputSuccessData<$Command>): InferOutputSuccess<$Command> {
+    return this.successEnvelope({ data } as any) as any;
+  }
+
+  /**
+   * Helper function for easy creation of success envelope (with defaults) that
+   * adheres to the type specified by your command's {@link BaseCommand.output}.
+   */
+  successEnvelope(
+    envelopeInit: InferOutputSuccessEnvelopeInit<$Command>,
+  ): InferOutputSuccess<$Command> {
+    return {
+      ...Output.successDefaults,
+      ...(envelopeInit as object),
+    } as any;
+  }
+
+  /**
+   * Variant of {@link BaseCommand.failure} that only requires passing the data.
+   * See that method for more details.
+   */
+  failure(data: InferOutputFailureData<$Command>): InferOutputFailure<$Command> {
+    return this.failureEnvelope({ data } as any) as any;
+  }
+
+  /**
+   * Helper function for easy creation of failure data (with defaults) that
+   * adheres to the type specified by your command's {@link BaseCommand.output}.
+   *
+   * This is only useful within {@link BaseCommand.runResult} which allows returning instead of throwing failures.
+   *
+   * When you return this,
+   */
+  failureEnvelope(
+    envelopeInit: InferOutputFailureEnvelopeInit<$Command>,
+  ): InferOutputFailure<$Command> {
+    return {
+      ...Output.failureDefaults,
+      ...(envelopeInit as object),
+    } as any;
+  }
 
   protected get userConfig(): Config {
     if (!this._userConfig) {
@@ -33,7 +194,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     return this._userConfig!;
   }
 
-  public async init(): Promise<void> {
+  async init(): Promise<void> {
     await super.init();
 
     this._userConfig = new Config({
@@ -45,36 +206,40 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     const { args, flags } = await this.parse({
       flags: this.ctor.flags,
       baseFlags: (super.ctor as typeof BaseCommand).baseFlags,
+      enableJsonFlag: this.ctor.enableJsonFlag,
       args: this.ctor.args,
       strict: this.ctor.strict,
     });
-    this.flags = flags as Flags<T>;
-    this.args = args as Args<T>;
+    this.flags = flags as InferFlags<$Command>;
+    this.args = args as InferArgs<$Command>;
   }
 
-  success(...args: any[]) {
-    this.log(colors.green('✔'), ...args);
+  /**
+   * {@link Command.log} with success styling.
+   */
+  logSuccess(...args: any[]) {
+    this.log(Tex.success(...args).trim());
   }
 
-  fail(...args: any[]) {
-    this.log(colors.red('✖'), ...args);
+  /**
+   * {@link Command.log} with failure styling.
+   */
+  logFailure(...args: any[]) {
+    this.log(Tex.failure(...args).trim());
   }
 
-  info(...args: any[]) {
-    this.log(colors.yellow('ℹ'), ...args);
+  /**
+   * {@link Command.log} with info styling.
+   */
+  logInfo(...args: any[]) {
+    this.log(Tex.info(...args).trim());
   }
 
-  infoWarning(...args: any[]) {
-    this.log(colors.yellow('⚠'), ...args);
-  }
-
-  bolderize(msg: string) {
-    const findSingleQuotes = /'([^']+)'/gim;
-    const findDoubleQuotes = /"([^"]+)"/gim;
-
-    return msg
-      .replace(findSingleQuotes, (_: string, value: string) => colors.bold(value))
-      .replace(findDoubleQuotes, (_: string, value: string) => colors.bold(value));
+  /**
+   * {@link Command.log} with warning styling.
+   */
+  logWarning(...args: any[]) {
+    this.log(Tex.warning(...args).trim());
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
@@ -111,9 +276,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
    * @param env an env var name
    */
   ensure<
-    TKey extends ValidConfigurationKeys,
-    TArgs extends {
-      [key in TKey]: GetConfigurationValueType<TKey>;
+    $Key extends ValidConfigurationKeys,
+    $Args extends {
+      [key in $Key]: GetConfigurationValueType<$Key>;
     },
   >({
     key,
@@ -123,34 +288,34 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     message,
     env,
   }: {
-    args: TArgs;
-    key: TKey;
+    args: $Args;
+    key: $Key;
     /** By default we try to match config names with flag names, but for legacy compatibility we need to provide the old flag name. */
     legacyFlagName?: keyof OmitNever<{
       // Symbol.asyncIterator to discriminate against any lol
-      [TArgKey in keyof TArgs]: typeof Symbol.asyncIterator extends TArgs[TArgKey]
+      [TArgKey in keyof $Args]: typeof Symbol.asyncIterator extends $Args[TArgKey]
         ? never
-        : string extends TArgs[TArgKey]
+        : string extends $Args[TArgKey]
           ? TArgKey
           : never;
     }>;
 
-    defaultValue?: TArgs[keyof TArgs] | null;
+    defaultValue?: $Args[keyof $Args] | null;
     message?: string;
     env?: string;
-  }): NonNullable<GetConfigurationValueType<TKey>> | never {
+  }): NonNullable<GetConfigurationValueType<$Key>> | never {
     if (args[key] != null) {
-      return args[key] as NonNullable<GetConfigurationValueType<TKey>>;
+      return args[key] as NonNullable<GetConfigurationValueType<$Key>>;
     }
 
     if (legacyFlagName && (args as any)[legacyFlagName] != null) {
-      return args[legacyFlagName] as any as NonNullable<GetConfigurationValueType<TKey>>;
+      return args[legacyFlagName] as any as NonNullable<GetConfigurationValueType<$Key>>;
     }
 
     // eslint-disable-next-line no-process-env
     if (env && process.env[env]) {
       // eslint-disable-next-line no-process-env
-      return process.env[env] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
+      return process.env[env] as $Args[keyof $Args] as NonNullable<GetConfigurationValueType<$Key>>;
     }
 
     const userConfigValue = this._userConfig!.get(key);
@@ -164,14 +329,23 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     }
 
     if (message) {
-      throw new Errors.CLIError(message);
+      throw new Errors.Failure({
+        message,
+        data: {
+          type: 'FailureUserInput',
+          parameter: key,
+        },
+      });
     }
 
-    throw new Errors.CLIError(`Missing "${String(key)}"`);
-  }
-
-  cleanRequestId(requestId?: string | null) {
-    return requestId ? requestId.split(',')[0].trim() : undefined;
+    throw new Errors.Failure({
+      message: `Missing "${String(key)}"`,
+      data: {
+        type: 'FailureUserInput',
+        problem: 'namedArgumentMissing',
+        parameter: key,
+      },
+    });
   }
 
   registryApi(registry: string, token: string) {
@@ -236,7 +410,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         const jsonData = (await response.json()) as ExecutionResult<TResult>;
 
         if (jsonData.errors && jsonData.errors.length > 0) {
-          throw new ClientError(
+          throw new Errors.ClientError(
             `Failed to execute GraphQL operation: ${jsonData.errors
               .map(e => e.message)
               .join('\n')}`,
@@ -252,30 +426,86 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     };
   }
 
+  /**
+   * @see https://oclif.io/docs/error_handling/#error-handling-in-the-catch-method
+   */
+  async catch(error: Errors.CommandError): Promise<void> {
+    if (error instanceof Errors.ClientError) {
+      await super.catch(clientErrorToCLIFailure(error));
+    } else {
+      await super.catch(error);
+    }
+  }
+
+  /**
+   * Custom logic for how thrown values are converted into JSON.
+   *
+   * @remarks
+   *
+   * 1. OClif input validation error classes have
+   * no structured information available about the error
+   * which limits our ability here to forward structure to
+   * the user. :(
+   */
+  toErrorJson(value: unknown) {
+    if (value instanceof Errors.Failure) {
+      return value.envelope;
+    }
+
+    if (value instanceof Errors.FailedFlagValidationError) {
+      return this.failureEnvelope({
+        suggestions: value.suggestions,
+        data: {
+          type: 'FailureUserInput',
+          message: value.message,
+          problem: 'namedArgumentInvalid',
+        },
+      } as any);
+    }
+
+    if (value instanceof Errors.RequiredArgsError) {
+      return this.failureEnvelope({
+        suggestions: value.suggestions,
+        data: {
+          type: 'FailureUserInput',
+          message: value.message,
+          problem: 'positionalArgumentMissing',
+        },
+      } as any);
+    }
+
+    if (value instanceof Errors.CLIError) {
+      return this.failureEnvelope({
+        suggestions: value.suggestions,
+        data: {
+          type: 'Failure',
+          message: value.message,
+        },
+      } as any);
+    }
+    if (value instanceof Error) {
+      return this.failure({
+        type: 'Failure',
+        message: value.message,
+      } as any);
+    }
+    return super.toErrorJson(value);
+  }
+
   handleFetchError(error: unknown): never {
     if (typeof error === 'string') {
-      return this.error(error);
+      this.error(error);
+    }
+
+    if (error instanceof Errors.ClientError) {
+      this.error(clientErrorToCLIFailure(error));
     }
 
     if (error instanceof Error) {
-      if (isClientError(error)) {
-        const errors = error.response?.errors;
-
-        if (Array.isArray(errors) && errors.length > 0) {
-          return this.error(errors[0].message, {
-            ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-          });
-        }
-
-        return this.error(error.message, {
-          ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-        });
-      }
-
-      return this.error(error);
+      this.error(error);
     }
 
-    return this.error(JSON.stringify(error));
+    this.error(JSON.stringify(error));
   }
 
   async require<
@@ -292,18 +522,73 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 }
 
-class ClientError extends Error {
-  constructor(
-    message: string,
-    public response: {
-      errors?: readonly GraphQLError[];
-      headers: Headers;
-    },
-  ) {
-    super(message);
-  }
-}
+const clientErrorToCLIFailure = (error: Errors.ClientError): Errors.Failure => {
+  const requestId = cleanRequestId(error.response?.headers?.get('x-request-id'));
+  const errors =
+    error.response?.errors?.map(e => {
+      return {
+        message: e.message,
+      };
+    }) ?? [];
+  // todo: Use error chains & aggregate errors.
+  const causedByMessage =
+    errors.length > 0
+      ? `Caused by error(s):\n${errors.map(e => e.message).join('\n')}`
+      : `Caused by:\n${error.message}`;
+  const message = `Request to Hive API failed. ${causedByMessage}`;
 
-function isClientError(error: Error): error is ClientError {
-  return error instanceof ClientError;
-}
+  return new Errors.Failure({
+    message,
+    ref: requestId,
+    data: {
+      type: 'FailureHiveApiRequest',
+      message,
+      requestId,
+      errors,
+    },
+  });
+};
+
+// prettier-ignore
+type InferFlags<$CommandClass extends typeof Command> =
+  Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & $CommandClass['flags']>;
+
+// prettier-ignore
+type InferArgs<$CommandClass extends typeof Command> =
+  Interfaces.InferredArgs<$CommandClass['args']>;
+
+// prettier-ignore
+type InferOutputSuccess<$CommandClass extends typeof Command> =
+  Output.InferSuccess<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type InferOutputFailure<$CommandClass extends typeof Command> =
+  Output.InferFailure<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type InferOutputFailureEnvelopeInit<$CommandClass extends typeof Command> =
+  Output.InferFailureEnvelopeInit<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type InferOutputSuccessEnvelopeInit<$CommandClass extends typeof Command> =
+  Output.InferSuccessEnvelopeInit<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type InferOutputFailureData<$CommandClass extends typeof Command> =
+  Output.InferFailureData<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type InferOutputSuccessData<$CommandClass extends typeof Command> =
+  Output.InferSuccessData<GetOutput<$CommandClass>>;
+
+// prettier-ignore
+type GetOutput<$CommandClass extends typeof Command> =
+  'output' extends keyof $CommandClass
+    ? $CommandClass['output'] extends Output.DataType[]
+      ? $CommandClass['output'][number]
+    : never
+  : never;
+
+const cleanRequestId = (requestId?: string | null) => {
+  return requestId ? requestId.split(',')[0].trim() : undefined;
+};

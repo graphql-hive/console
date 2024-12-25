@@ -4,6 +4,8 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { InferInput } from '../../helpers/oclif';
+import { Output } from '../../output/__';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
@@ -57,7 +59,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       description: 'whether to write to a file instead of stdout',
     }),
   };
-
   static args = {
     actionId: Args.string({
       name: 'actionId' as const,
@@ -66,8 +67,30 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       hidden: false,
     }),
   };
+  static output = [
+    Output.failure('FailureSchemaFetchMissingSchema', {
+      data: {},
+      text({ args }: InferInput<typeof SchemaFetch>, _, s) {
+        s.failure(`No schema found for action id ${args.actionId}`);
+      },
+    }),
+    Output.failure('FailureSchemaFetchInvalidSchema', {
+      data: {},
+      text({ args }: InferInput<typeof SchemaFetch>, _, s) {
+        s.failure(`Schema is invalid for action id ${args.actionId}`);
+      },
+    }),
+    Output.failure('FailureSchemaFetchMissingSDLType', {
+      data: {},
+      text({ args, flags }: InferInput<typeof SchemaFetch>, _, s) {
+        s.failure(`No ${flags.type} found for action id ${args.actionId}`);
+      },
+    }),
+    Output.SuccessOutputFile,
+    Output.SuccessOutputStdout,
+  ];
 
-  async run() {
+  async runResult() {
     const { flags, args } = await this.parse(SchemaFetch);
 
     const endpoint = this.ensure({
@@ -85,8 +108,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       env: 'HIVE_TOKEN',
     });
 
-    const actionId: string = args.actionId;
-
     const sdlType = this.ensure({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -97,28 +118,35 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       defaultValue: 'sdl',
     });
 
-    const result = await this.registryApi(endpoint, accessToken).request({
-      operation: SchemaVersionForActionIdQuery,
-      variables: {
-        actionId,
-        includeSDL: sdlType === 'sdl',
-        includeSupergraph: sdlType === 'supergraph',
-      },
-    });
+    const result = await this.registryApi(endpoint, accessToken)
+      .request({
+        operation: SchemaVersionForActionIdQuery,
+        variables: {
+          actionId: args.actionId,
+          includeSDL: sdlType === 'sdl',
+          includeSupergraph: sdlType === 'supergraph',
+        },
+      })
+      .then(_ => _.schemaVersionForActionId);
 
-    if (result.schemaVersionForActionId == null) {
-      return this.error(`No schema found for action id ${actionId}`);
+    if (result == null) {
+      return this.failure({
+        type: 'FailureSchemaFetchMissingSchema',
+      });
     }
 
-    if (result.schemaVersionForActionId.valid === false) {
-      return this.error(`Schema is invalid for action id ${actionId}`);
+    if (result.valid === false) {
+      return this.failure({
+        type: 'FailureSchemaFetchInvalidSchema',
+      });
     }
 
-    const schema =
-      result.schemaVersionForActionId.sdl ?? result.schemaVersionForActionId.supergraph;
+    const schema = result.sdl ?? result.supergraph;
 
     if (schema == null) {
-      return this.error(`No ${sdlType} found for action id ${actionId}`);
+      return this.failure({
+        type: 'FailureSchemaFetchMissingSDLType',
+      });
     }
 
     if (flags.write) {
@@ -131,11 +159,19 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
           await writeFile(filepath, schema, 'utf8');
           break;
         default:
-          this.fail(`Unsupported file extension ${extname(flags.write)}`);
+          this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
           this.exit(1);
       }
-      return;
+      return this.success({
+        type: 'SuccessOutputFile',
+        path: filepath,
+        bytes: schema.length,
+      });
     }
-    this.log(schema);
+
+    return this.success({
+      type: 'SuccessOutputStdout',
+      content: schema,
+    });
   }
 }

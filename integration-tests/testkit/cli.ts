@@ -1,26 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { execaCommand } from '@esm2cjs/execa';
 import { fetchLatestSchema, fetchLatestValidSchema } from './flow';
+import { generateTmpFile } from './fs';
 import { getServiceHost } from './utils';
 
 const binPath = resolve(__dirname, '../../packages/libraries/cli/bin/run');
 const cliDir = resolve(__dirname, '../../packages/libraries/cli');
 
-async function generateTmpFile(content: string, extension: string) {
-  const dir = tmpdir();
-  const fileName = randomUUID();
-  const filepath = join(dir, `${fileName}.${extension}`);
-
-  await writeFile(filepath, content, 'utf-8');
-
-  return filepath;
-}
-
-async function exec(cmd: string) {
-  const outout = await execaCommand(`${binPath} ${cmd}`, {
+export async function exec(cmd: string) {
+  const result = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,
     env: {
       OCLIF_CLI_CUSTOM_PATH: cliDir,
@@ -28,11 +17,11 @@ async function exec(cmd: string) {
     },
   });
 
-  if (outout.failed) {
-    throw new Error(outout.stderr);
+  if (result.failed) {
+    throw new Error('CLI execution marked as "failed".', { cause: result.stderr });
   }
 
-  return outout.stdout;
+  return result.stdout;
 }
 
 export async function schemaPublish(args: string[]) {
@@ -70,6 +59,8 @@ async function dev(args: string[]) {
   );
 }
 
+export type CLI = ReturnType<typeof createCLI>;
+
 export function createCLI(tokens: { readwrite: string; readonly: string }) {
   let publishCount = 0;
 
@@ -81,6 +72,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     expect: expectedStatus,
     legacy_force,
     legacy_acceptBreakingChanges,
+    json,
   }: {
     sdl: string;
     commit?: string;
@@ -90,6 +82,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     legacy_force?: boolean;
     legacy_acceptBreakingChanges?: boolean;
     expect: 'latest' | 'latest-composable' | 'ignored' | 'rejected';
+    json?: boolean;
   }): Promise<string> {
     const publishName = ` #${++publishCount}`;
     const commit = randomUUID();
@@ -106,6 +99,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       ...(metadata ? ['--metadata', await generateTmpFile(JSON.stringify(metadata), 'json')] : []),
       ...(legacy_force ? ['--force'] : []),
       ...(legacy_acceptBreakingChanges ? ['--experimental_acceptBreakingChanges'] : []),
+      ...(json ? ['--json'] : []),
       await generateTmpFile(sdl, 'graphql'),
     ]);
 
@@ -177,15 +171,18 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     sdl,
     serviceName,
     expect: expectedStatus,
+    json,
   }: {
     sdl: string;
     serviceName?: string;
     expect: 'approved' | 'rejected';
+    json?: boolean;
   }): Promise<string> {
     const cmd = schemaCheck([
       '--registry.accessToken',
       tokens.readonly,
       ...(serviceName ? ['--service', serviceName] : []),
+      ...(json ? ['--json'] : []),
       await generateTmpFile(sdl, 'graphql'),
     ]);
 
@@ -199,11 +196,19 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
   async function deleteCommand({
     serviceName,
     expect: expectedStatus,
+    json,
   }: {
     serviceName?: string;
+    json?: boolean;
     expect: 'latest' | 'latest-composable' | 'rejected';
   }): Promise<string> {
-    const cmd = schemaDelete(['--token', tokens.readwrite, '--confirm', serviceName ?? '']);
+    const cmd = schemaDelete([
+      '--token',
+      tokens.readwrite,
+      '--confirm',
+      serviceName ?? '',
+      ...(json ? ['--json'] : []),
+    ]);
 
     const before = {
       latest: await fetchLatestSchema(tokens.readonly).then(r => r.expectNoGraphQLErrors()),
@@ -259,11 +264,13 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       url: string;
       sdl: string;
     }>;
+    json?: boolean;
     remote: boolean;
     write?: string;
     useLatestVersion?: boolean;
   }) {
     return dev([
+      ...(input.json ? ['--json'] : []),
       ...(input.remote
         ? [
             '--remote',
