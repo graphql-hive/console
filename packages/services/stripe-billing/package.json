@@ -21,7 +21,7 @@
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
     "stripe": "17.3.0",
-    "zod": "3.23.8"
+    "zod": "3.24.1"
   },
   "buildOptions": {
     "external": [

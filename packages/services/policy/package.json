@@ -21,7 +21,7 @@
     "fastify": "4.28.1",
     "graphql": "16.9.0",
     "pino-pretty": "11.3.0",
-    "zod": "3.23.8",
+    "zod": "3.24.1",
     "zod-validation-error": "3.4.0"
   },
   "buildOptions": {
