@@ -11,8 +11,8 @@
     "reflect-metadata": "^0.2.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "3.693.0",
-    "@aws-sdk/s3-request-presigner": "3.693.0",
+    "@aws-sdk/client-s3": "3.717.0",
+    "@aws-sdk/s3-request-presigner": "3.717.0",
     "@date-fns/utc": "2.1.0",
     "@graphql-hive/core": "workspace:*",
     "@graphql-inspector/core": "5.1.0-alpha-20231208113249-34700c8a",
