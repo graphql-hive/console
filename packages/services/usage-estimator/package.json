@@ -15,7 +15,7 @@
     "@sentry/node": "7.120.0",
     "@trpc/server": "10.45.2",
     "dotenv": "16.4.5",
-    "got": "14.4.4",
+    "got": "14.4.5",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
     "tslib": "2.8.1",
