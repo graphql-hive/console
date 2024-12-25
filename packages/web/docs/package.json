@@ -15,7 +15,7 @@
     "@theguild/components": "7.4.0",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
-    "next": "14.2.18",
+    "next": "14.2.21",
     "react": "18.3.1",
     "react-avatar": "5.0.3",
     "react-countup": "6.5.3",
