@@ -110,7 +110,7 @@
     "react-select": "5.8.3",
     "react-string-replace": "1.1.1",
     "react-toastify": "10.0.6",
-    "react-virtualized-auto-sizer": "1.0.24",
+    "react-virtualized-auto-sizer": "1.0.25",
     "react-virtuoso": "4.12.3",
     "react-window": "1.8.10",
     "regenerator-runtime": "0.14.1",
