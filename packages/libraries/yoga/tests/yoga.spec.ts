@@ -1685,6 +1685,7 @@ describe('request batching usage reporting', () => {
           },
           agent: {
             maxSize: 1,
+            sendInterval: 10,
             logger: createLogger('silent'),
           },
         }),
