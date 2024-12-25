@@ -1967,8 +1967,8 @@ importers:
         specifier: 0.9.0
         version: 0.9.0
       tailwind-merge:
-        specifier: 2.5.4
-        version: 2.5.4
+        specifier: 2.6.0
+        version: 2.6.0
       tailwindcss:
         specifier: 3.4.17
         version: 3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))
@@ -2054,8 +2054,8 @@ importers:
         specifier: 5.4.0
         version: 5.4.0(react@18.3.1)
       tailwind-merge:
-        specifier: 2.5.4
-        version: 2.5.4
+        specifier: 2.6.0
+        version: 2.6.0
       tailwindcss-animate:
         specifier: 1.0.7
         version: 1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2)))
@@ -14951,8 +14951,8 @@ packages:
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
 
-  tailwind-merge@2.5.4:
-    resolution: {integrity: sha512-0q8cfZHMu9nuYP/b5Shb7Y7Sh1B7Nnl5GqNr1U+n2p6+mybvRtayrQ+0042Z5byvTA8ihjlP8Odo8/VnHbZu4Q==}
+  tailwind-merge@2.6.0:
+    resolution: {integrity: sha512-P+Vu1qXfzediirmHOC3xKGAYeZtPcV9g76X+xg2FD4tYgR71ewMA35Y3sCz3zhiN/dwefRpJX0yBcgwi1fXNQA==}
 
   tailwindcss-animate@1.0.7:
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
@@ -16464,8 +16464,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16572,11 +16572,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16615,6 +16615,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.693.0(@aws-sdk/client-sts@3.693.0)':
@@ -16748,11 +16749,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16791,7 +16792,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.693.0':
@@ -16905,7 +16905,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -17024,7 +17024,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/types': 3.6.0
@@ -17199,7 +17199,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.8
       '@smithy/shared-ini-file-loader': 3.1.9
@@ -23826,7 +23826,7 @@ snapshots:
       react-player: 2.16.0(react@18.3.1)
       remark-mdx-disable-explicit-jsx: 0.1.0
       semver: 7.6.2
-      tailwind-merge: 2.5.4
+      tailwind-merge: 2.6.0
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -32762,7 +32762,7 @@ snapshots:
 
   tabbable@6.2.0: {}
 
-  tailwind-merge@2.5.4: {}
+  tailwind-merge@2.6.0: {}
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.9.2(@swc/helpers@0.5.11))(@types/node@22.9.3)(typescript@5.7.2))):
     dependencies:
