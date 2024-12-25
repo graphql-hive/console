@@ -37,9 +37,9 @@ patchedDependencies:
   eslint@8.57.1:
     hash: fjbpfrtrjd6idngyeqxnwopfva
     path: patches/eslint@8.57.1.patch
-  got@14.4.4:
+  got@14.4.5:
     hash: b6pwqmrs3qqykctltsasvrfwti
-    path: patches/got@14.4.4.patch
+    path: patches/got@14.4.5.patch
   mjml-core@4.14.0:
     hash: zxxsxbqejjmcwuzpigutzzq6wa
     path: patches/mjml-core@4.14.0.patch
@@ -614,8 +614,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -750,8 +750,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1060,8 +1060,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1117,8 +1117,8 @@ importers:
         specifier: 4.28.1
         version: 4.28.1
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1225,8 +1225,8 @@ importers:
         specifier: 4.28.1
         version: 4.28.1
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1361,8 +1361,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       pg-promise:
         specifier: 11.10.2
         version: 11.10.2(pg-query-stream@4.7.0(pg@8.13.1))
@@ -1409,8 +1409,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1505,8 +1505,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1547,8 +1547,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1586,8 +1586,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1628,8 +1628,8 @@ importers:
         specifier: 16.4.5
         version: 16.4.5
       got:
-        specifier: 14.4.4
-        version: 14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        specifier: 14.4.5
+        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
       ioredis:
         specifier: 5.4.1
         version: 5.4.1
@@ -3943,6 +3943,7 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
+    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -10639,8 +10640,8 @@ packages:
     resolution: {integrity: sha512-XfBk1CxOOScDcMr9O1yKkNaQyy865NbYs+F7dr4H0LZMVgCj2Le59k6PqbNHoL5ToeaEQUYh6c6yMfVcc6SJxA==}
     engines: {node: '>=16'}
 
-  got@14.4.4:
-    resolution: {integrity: sha512-tqiF7eSgTBwQkxb1LxsEpva8TaMYVisbhplrFVmw9GQE3855Z+MH/mnsXLLOkDxR6hZJRFMj5VTAZ8lmTF8ZOA==}
+  got@14.4.5:
+    resolution: {integrity: sha512-sq+uET8TnNKRNnjEOPJzMcxeI0irT8BBNmf+GtZcJpmhYsQM1DSKmCROUjPWKsXZ5HzwD5Cf5/RV+QD9BSTxJg==}
     engines: {node: '>=20'}
 
   graceful-fs@4.2.11:
@@ -27349,7 +27350,7 @@ snapshots:
       p-cancelable: 3.0.0
       responselike: 3.0.0
 
-  got@14.4.4(patch_hash=b6pwqmrs3qqykctltsasvrfwti):
+  got@14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti):
     dependencies:
       '@sindresorhus/is': 7.0.1
       '@szmarczak/http-timer': 5.0.1
