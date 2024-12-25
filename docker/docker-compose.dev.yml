@@ -143,7 +143,7 @@ services:
       API_KEYS: bubatzbieber6942096420
 
   oidc-server-mock:
-    image: ghcr.io/soluto/oidc-server-mock:0.9.2
+    image: ghcr.io/soluto/oidc-server-mock:10.0.0
     mem_limit: 150m
     ports:
       - '7043:80'
