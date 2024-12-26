@@ -31,7 +31,7 @@
     "@hive/storage": "workspace:*",
     "@sentry/integrations": "7.114.0",
     "@sentry/node": "7.120.2",
-    "@swc/core": "1.9.2",
+    "@swc/core": "1.10.1",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@whatwg-node/server": "0.9.50",
