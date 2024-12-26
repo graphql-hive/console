@@ -5,5 +5,5 @@ export default {
   security: 'Security',
   'header-propagation': 'Header Propagation',
   testing: 'Testing & Debugging',
-  'custom-plugins': 'Plugins',
+  'custom-plugins': 'Custom Plugins',
 };
