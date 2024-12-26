@@ -1153,8 +1153,8 @@ importers:
         specifier: 6.3.1
         version: 6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/sentry':
-        specifier: 7.1.1
-        version: 7.1.1(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)
+        specifier: 12.0.0
+        version: 12.0.0(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)
       '@envelop/types':
         specifier: 5.0.0
         version: 5.0.0
@@ -3240,12 +3240,12 @@ packages:
       '@envelop/core': ^5.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/sentry@7.1.1':
-    resolution: {integrity: sha512-dNq56ZaMQSj7U9czMSdcL+HqBuJVTTYyzLrX2nBRukohdI+kvDi+ptfpfAKtOXT+1fuKTlzvLupXDMMVjPbB8Q==}
+  '@envelop/sentry@12.0.0':
+    resolution: {integrity: sha512-lk5RWthR1eYmcR2yoRjj3xFopLM8j2mZUmp4ViPkdPimEjNFUw41/fkcPs7BQXBaVlRi0LhKzZDsOl++8WMFJg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.0
-      '@sentry/node': ^6 || ^7
+      '@envelop/core': ^5.0.2
+      '@sentry/node': ^8.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@envelop/types@4.0.1':
@@ -16420,8 +16420,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16528,11 +16528,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16571,6 +16571,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.716.0(@aws-sdk/client-sts@3.716.0)':
@@ -16704,11 +16705,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16747,7 +16748,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.716.0':
@@ -16861,7 +16861,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16980,7 +16980,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.10
       '@smithy/types': 3.7.1
@@ -17155,7 +17155,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.10
       '@smithy/shared-ini-file-loader': 3.1.11
@@ -18161,7 +18161,7 @@ snapshots:
       lru-cache: 10.2.0
       tslib: 2.8.1
 
-  '@envelop/sentry@7.1.1(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)':
+  '@envelop/sentry@12.0.0(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       '@sentry/node': 7.120.2
