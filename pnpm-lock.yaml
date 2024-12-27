@@ -49,9 +49,9 @@ patchedDependencies:
   mjml-core@4.14.0:
     hash: zxxsxbqejjmcwuzpigutzzq6wa
     path: patches/mjml-core@4.14.0.patch
-  oclif@4.13.6:
-    hash: fkmkpwec6wqhte6g47j3tlprse
-    path: patches/oclif@4.13.6.patch
+  oclif:
+    hash: kmdoz5rhsd4tek3w4wmt7vygge
+    path: patches/oclif.patch
   slonik@30.4.4:
     hash: jxrvl4xmdvyktjijg7yfdkb34i
     path: patches/slonik@30.4.4.patch
@@ -453,7 +453,7 @@ importers:
         version: 3.1.4
       oclif:
         specifier: 4.13.6
-        version: 4.13.6(patch_hash=fkmkpwec6wqhte6g47j3tlprse)
+        version: 4.13.6(patch_hash=kmdoz5rhsd4tek3w4wmt7vygge)
       rimraf:
         specifier: 4.4.1
         version: 4.4.1
@@ -30695,7 +30695,7 @@ snapshots:
 
   obuf@1.1.2: {}
 
-  oclif@4.13.6(patch_hash=fkmkpwec6wqhte6g47j3tlprse):
+  oclif@4.13.6(patch_hash=kmdoz5rhsd4tek3w4wmt7vygge):
     dependencies:
       '@aws-sdk/client-cloudfront': 3.596.0
       '@aws-sdk/client-s3': 3.717.0
