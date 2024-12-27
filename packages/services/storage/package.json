@@ -20,7 +20,7 @@
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
     "@tgriesser/schemats": "9.0.1",
-    "@types/node": "22.9.3",
+    "@types/node": "22.10.2",
     "@types/pg": "8.11.10",
     "dotenv": "16.4.7",
     "fast-json-stable-stringify": "2.1.0",
