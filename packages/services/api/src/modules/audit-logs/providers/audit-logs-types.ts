@@ -321,6 +321,12 @@ export const AuditLogModel = z.union([
       updatedFields: z.string(),
     }),
   }),
+  z.object({
+    eventType: z.literal('PREFLIGHT_SCRIPT_CHANGED'),
+    metadata: z.object({
+      scriptContents: z.string(),
+    }),
+  }),
 ]);
 
 export type AuditLogSchemaEvent = z.infer<typeof AuditLogModel>;

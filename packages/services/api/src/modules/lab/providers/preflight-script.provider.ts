@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getLocalLang, getTokenSync } from '@nodesecure/i18n';
 import * as jsxray from '@nodesecure/js-x-ray';
 import type { Target } from '../../../shared/entities';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -56,6 +57,7 @@ export class PreflightScriptProvider {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
+    private auditLogs: AuditLogRecorder,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
   ) {
     this.logger = logger.child({ source: 'PreflightScriptProvider' });
@@ -170,6 +172,14 @@ export class PreflightScriptProvider {
         },
       };
     }
+
+    await this.auditLogs.record({
+      eventType: 'PREFLIGHT_SCRIPT_CHANGED',
+      organizationId,
+      metadata: {
+        scriptContents: preflightScript.sourceCode,
+      },
+    });
 
     const updatedTarget = await this.storage.getTarget({
       organizationId,
