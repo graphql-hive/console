@@ -3,6 +3,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
+import { traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -95,6 +96,15 @@ export class SchemaManager {
     });
   }
 
+  @traceFn('SchemaManager.compose', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'input.only.composable': input.onlyComposable,
+      'input.services.count': input.services.length,
+    }),
+  })
   async compose(
     input: TargetSelector & {
       onlyComposable: boolean;
@@ -187,6 +197,14 @@ export class SchemaManager {
     throw new Error('Composition was successful but is missing a supergraph');
   }
 
+  @traceFn('SchemaManager.getSchemasOfVersion', {
+    initAttributes: selector => ({
+      'hive.target.id': selector.targetId,
+      'hive.organization.id': selector.organizationId,
+      'hive.project.id': selector.projectId,
+      'hive.version.id': selector.versionId,
+    }),
+  })
   @atomic(stringifySelector)
   async getSchemasOfVersion(
     selector: {
@@ -204,6 +222,14 @@ export class SchemaManager {
     return schemas;
   }
 
+  @traceFn('SchemaManager.getSchemasOfVersion', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.id,
+    }),
+  })
   @atomic(stringifySelector)
   async getMaybeSchemasOfVersion(schemaVersion: SchemaVersion) {
     this.logger.debug('Fetching schemas (schemaVersionId=%s)', schemaVersion.id);
@@ -298,6 +324,15 @@ export class SchemaManager {
     };
   }
 
+  @traceFn('SchemaManager.updateSchemaVersionStatus', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.versionId,
+      'hive.input.valid': input.valid,
+    }),
+  })
   async updateSchemaVersionStatus(
     input: TargetSelector & { versionId: string; valid: boolean },
   ): Promise<SchemaVersion> {
@@ -337,6 +372,16 @@ export class SchemaManager {
     });
   }
 
+  @traceFn('SchemaManager.createVersion', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.commit': input.commit,
+      'hive.version.valid': input.valid,
+      'hive.version.service': input.service || '',
+    }),
+  })
   async createVersion(
     input: ({
       commit: string;

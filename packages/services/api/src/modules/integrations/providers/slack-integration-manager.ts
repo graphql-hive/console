@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { AccessError } from '../../../shared/errors';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
@@ -23,6 +24,7 @@ export class SlackIntegrationManager {
     private session: Session,
     private storage: Storage,
     private crypto: CryptoProvider,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({
       source: 'SlackIntegrationManager',
@@ -43,10 +45,22 @@ export class SlackIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.addSlackIntegration({
+    const result = await this.storage.addSlackIntegration({
       organizationId: input.organizationId,
       token: this.crypto.encrypt(input.token),
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.organizationId,
+        integrationType: 'SLACK',
+        integrationStatus: 'ENABLED',
+      },
+    });
+
+    return result;
   }
 
   async unregister(input: OrganizationSelector): Promise<void> {
@@ -59,9 +73,21 @@ export class SlackIntegrationManager {
       },
     });
     this.logger.debug('Updating organization');
-    await this.storage.deleteSlackIntegration({
+    const result = await this.storage.deleteSlackIntegration({
       organizationId: input.organizationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
+      },
+    });
+
+    return result;
   }
 
   async isAvailable(selector: OrganizationSelector): Promise<boolean> {

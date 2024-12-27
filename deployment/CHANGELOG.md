@@ -1,5 +1,45 @@
 # hive
 
+## 2.0.1
+
+### Patch Changes
+
+- [#6158](https://github.com/graphql-hive/console/pull/6158)
+  [`3093c9f`](https://github.com/graphql-hive/console/commit/3093c9fc23ab0a53926a187a91fe93ef6fee5be1)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added missing index for postgres db field
+  "schema_version_changes.schema_version_id"
+
+## 2.0.0
+
+### Major Changes
+
+- [#6142](https://github.com/graphql-hive/console/pull/6142)
+  [`25f1460`](https://github.com/graphql-hive/console/commit/25f14604f482ac42826c63ec08bc108a67d37fd0)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Upgrade the PostgreSQL version for Docker
+  Compose from version 14.13 to use 16.4.
+
+  **This change is published as major, as it requires attention based on your setup.**
+
+  For self-hosters with a managed database, we recommend upgrading PostgreSQL based on your Cloud
+  provider's or IT's recommendation.
+
+  For self-hosters running in Docker, you can read about
+  [upgrading PostgreSQL in a Docker container here](https://helgeklein.com/blog/upgrading-postgresql-in-docker-container/).
+
+  > The Hive data that was previously created with PostgreSQL v14 is compatible with v16.
+
+### Patch Changes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Improvement for OTEL tracing and added
+  missing attributes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Performance improvements for Postgres DB
+  calls (specifically `getSchemasOfVersion`, see https://github.com/graphql-hive/console/pull/6154)
+
 ## 1.2.4
 
 ### Patch Changes

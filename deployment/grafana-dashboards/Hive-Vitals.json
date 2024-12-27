@@ -423,6 +423,166 @@
       "gridPos": {
         "h": 6,
         "w": 6,
+        "x": 6,
+        "y": 7
+      },
+      "id": 76,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0-79828",
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Max",
+            "allowedTimeGrainsMs": [1800000, 3600000, 21600000, 43200000, 86400000],
+            "dimensionFilters": [],
+            "metricName": "max_connections",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Active",
+            "allowedTimeGrainsMs": [1800000, 3600000, 21600000, 43200000, 86400000],
+            "dimensionFilters": [],
+            "metricName": "active_connections",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "B",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Waiting",
+            "allowedTimeGrainsMs": [
+              60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
+            ],
+            "dimensionFilters": [],
+            "metricName": "client_connections_waiting",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "C",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        }
+      ],
+      "title": "Postgres Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$Subscription"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
         "x": 12,
         "y": 1
       },

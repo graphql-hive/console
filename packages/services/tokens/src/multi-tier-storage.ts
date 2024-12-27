@@ -127,6 +127,8 @@ export async function createStorage(
             action: 'set',
           });
         });
+
+        return cacheEntry;
       } catch (error) {
         // If the DB is down, we log the error, and we throw exception.
         // This will cause the cache to return stale data.
@@ -193,6 +195,9 @@ export async function createStorage(
     async readToken(hashedToken, maskedToken) {
       const status: LRUCache.Status<CacheEntry> = {};
       const context = { maskedToken, source: 'in-memory' };
+      const tokenLogger = serverLogger.child({
+        maskedToken,
+      });
       const data = await cache.fetch(hashedToken, {
         context,
         status,
@@ -201,7 +206,11 @@ export async function createStorage(
       if (status.fetch) {
         recordCacheRead(status.fetch);
       } else {
-        serverLogger.warn('Status of the fetch is missing');
+        tokenLogger.warn('Status of the fetch is missing');
+      }
+
+      if (status.fetchError) {
+        tokenLogger.error('Fetch error in the In-Memory-Cache (error=%s)', status.fetchError);
       }
 
       if (!data) {

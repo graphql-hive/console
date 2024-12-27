@@ -11,17 +11,17 @@
   "devDependencies": {
     "@graphql-eslint/eslint-plugin": "3.20.1",
     "@hive/service-common": "workspace:*",
-    "@sentry/node": "7.120.0",
+    "@sentry/node": "7.120.2",
     "@sentry/tracing": "7.114.0",
     "@trpc/server": "10.45.2",
     "@types/eslint": "8.56.12",
     "ajv": "8.17.1",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "eslint": "8.57.1",
-    "fastify": "4.28.1",
+    "fastify": "4.29.0",
     "graphql": "16.9.0",
     "pino-pretty": "11.3.0",
-    "zod": "3.23.8",
+    "zod": "3.24.1",
     "zod-validation-error": "3.4.0"
   },
   "buildOptions": {

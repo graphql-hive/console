@@ -5,6 +5,9 @@ import { alertsModule } from './modules/alerts';
 import { WEBHOOKS_CONFIG, WebhooksConfig } from './modules/alerts/providers/tokens';
 import { appDeploymentsModule } from './modules/app-deployments';
 import { APP_DEPLOYMENTS_ENABLED } from './modules/app-deployments/providers/app-deployments-enabled-token';
+import { auditLogsModule } from './modules/audit-logs';
+import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recorder';
+import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
 import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
 import { billingModule } from './modules/billing';
@@ -89,6 +92,7 @@ const modules = [
   schemaPolicyModule,
   collectionModule,
   appDeploymentsModule,
+  auditLogsModule,
 ];
 
 export function createRegistry({
@@ -107,6 +111,7 @@ export function createRegistry({
   cdn,
   s3,
   s3Mirror,
+  s3AuditLogs,
   encryptionSecret,
   billing,
   schemaConfig,
@@ -136,6 +141,13 @@ export function createRegistry({
     sessionToken?: string;
   };
   s3Mirror: {
+    bucketName: string;
+    endpoint: string;
+    accessKeyId: string;
+    secretAccessKeyId: string;
+    sessionToken?: string;
+  } | null;
+  s3AuditLogs: {
     bucketName: string;
     endpoint: string;
     accessKeyId: string;
@@ -182,7 +194,21 @@ export function createRegistry({
 
   const artifactStorageWriter = new ArtifactStorageWriter(s3Config, logger);
 
+  const auditLogS3Config = s3AuditLogs
+    ? new AuditLogS3Config(
+        new AwsClient({
+          accessKeyId: s3AuditLogs.accessKeyId,
+          secretAccessKey: s3AuditLogs.secretAccessKeyId,
+          sessionToken: s3AuditLogs.sessionToken,
+          service: 's3',
+        }),
+        s3.endpoint,
+        s3.bucketName,
+      )
+    : new AuditLogS3Config(s3Config[0].client, s3Config[0].endpoint, s3Config[0].bucket);
+
   const providers: Provider[] = [
+    AuditLogRecorder,
     ActivityManager,
     HttpClient,
     IdTranslator,
@@ -190,6 +216,10 @@ export function createRegistry({
     DistributedCache,
     CryptoProvider,
     Emails,
+    {
+      provide: AuditLogS3Config,
+      useValue: auditLogS3Config,
+    },
     {
       provide: ArtifactStorageWriter,
       useValue: artifactStorageWriter,
