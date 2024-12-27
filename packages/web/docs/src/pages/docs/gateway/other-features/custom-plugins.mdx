@@ -87,7 +87,6 @@ There are 2 categories of hooks:
 Gateway lifecycle allows to setup long running services, initialize in-memory cache or stores, react
 to general events.
 
-<div className="[&_a]:text-primary [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
 
 ```mermaid
 stateDiagram-v2
@@ -105,7 +104,6 @@ stateDiagram-v2
   note left of listening: <a href="#onfetch">onFetch</a> called for each outgoing HTTP request
 ```
 
-</div>
 
 #### `onYogaInit`
 
@@ -200,7 +198,6 @@ The following diagram shows the lifecycle of request in Hive Gateway.
 Each hook is given a single parameter called payload. Please see detail section of each hook to know
 what contains each of this payloads.
 
-<div className="[&_a]:text-primary [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
 
 ```mermaid
 stateDiagram-v2
@@ -276,8 +273,6 @@ stateDiagram-v2
   onResultProcess --> onResponse
   onResponse --> [*]
 ```
-
-</div>
 
 #### `onRequest`
 

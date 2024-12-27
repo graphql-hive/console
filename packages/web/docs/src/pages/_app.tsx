@@ -4,6 +4,7 @@ import '@theguild/components/style.css';
 import localFont from 'next/font/local';
 import '../components/navigation-menu/navbar-global-styles.css';
 import '../selection-styles.css';
+import '../mermaid.css';
 
 const neueMontreal = localFont({
   src: [
