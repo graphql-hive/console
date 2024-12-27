@@ -13,7 +13,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { GraphQlInputObjectType, GraphQlInterfaceType, GraphQlObjectType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
@@ -24,9 +23,21 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
       __typename
       ... on GraphQLObjectType {
         name
+        fields {
+          __typename
+          args {
+            __typename
+          }
+        }
       }
       ... on GraphQLInterfaceType {
         name
+        fields {
+          __typename
+          args {
+            __typename
+          }
+        }
       }
       ... on GraphQLUnionType {
         name
@@ -36,6 +47,9 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
       }
       ... on GraphQLInputObjectType {
         name
+        fields {
+          __typename
+        }
       }
       ... on GraphQLScalarType {
         name
@@ -71,13 +85,47 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     return grouped;
   }, [types]);
 
-  const letters = Array.from(typesGroupedByFirstLetter.keys()).sort();
+  const letters = useMemo(() => {
+    return Array.from(typesGroupedByFirstLetter.keys()).sort();
+  }, [typesGroupedByFirstLetter]);
 
   useEffect(() => {
     if (!selectedLetter) {
       setSelectedLetter(letters[0]);
     }
   }, [selectedLetter, setSelectedLetter]);
+
+  const unused = useMemo(() => {
+    const count = {
+      fields: 0,
+      fieldArguments: 0,
+      types: 0,
+    };
+
+    for (const type of types) {
+      if (type.__typename === 'GraphQLInputObjectType') {
+        count.types++;
+        count.fields += type.fields.length;
+      } else if (
+        type.__typename === 'GraphQLObjectType' ||
+        type.__typename === 'GraphQLInterfaceType'
+      ) {
+        count.types++;
+
+        for (const field of type.fields) {
+          if (field.args.length === 0) {
+            // if there are no arguments, it means the entire field is unused
+            count.fields++;
+          } else {
+            // if there are arguments, the field is used, but the arguments are not
+            count.fieldArguments += field.args.length;
+          }
+        }
+      }
+    }
+
+    return count;
+  }, [types]);
 
   if (types.length === 0) {
     return (
@@ -98,29 +146,23 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     return null;
   }
 
-  const unusedTypes = types.length ?? 0;
-  const unusedFields = types.reduce((a, b) => {
-    if (b.__typename === 'GraphQLObjectType') {
-      return a + (b as GraphQlObjectType).fields.length;
-    }
-    if (b.__typename === 'GraphQLInterfaceType') {
-      return a + (b as GraphQlInterfaceType).fields.length;
-    }
-    if (b.__typename === 'GraphQLInputObjectType') {
-      return a + (b as GraphQlInputObjectType).fields.length;
-    }
-
-    return a;
-  }, 0);
+  const unusedFieldsMessage = [
+    unused.fields ? `${unused.fields} unused fields` : null,
+    unused.fieldArguments ? `${unused.fieldArguments} unused field arguments` : null,
+  ]
+    .filter(Boolean)
+    .join(' and ');
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-gray-500">
-          You have a total of {unusedFields} unused fields within {unusedTypes} different types in
-          the selected time period
-        </p>
-      </div>
+      {unusedFieldsMessage.length ? (
+        <div>
+          <p className="text-sm text-gray-400">
+            You have a total of {unusedFieldsMessage} within {unused.types} different types in the
+            selected time period
+          </p>
+        </div>
+      ) : null}
       <div>
         <TooltipProvider>
           {letters.map(letter => (
