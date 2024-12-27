@@ -3,7 +3,7 @@
     @apply text-nextra-primary-600;
     text-decoration-line: underline;
     text-decoration-thickness: from-font;
-    text-underline-position:from-font;
+    text-underline-position: from-font;
 
     &:hover {
       text-decoration-line: none;

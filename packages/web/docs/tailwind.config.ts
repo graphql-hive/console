@@ -21,7 +21,7 @@ const config: Config = {
       colors: {
         ...baseConfig.theme.extend.colors,
         primary: baseConfig.theme.extend.colors['hive-yellow'],
-        "nextra-primary": baseConfig.theme.extend.colors.primary,
+        'nextra-primary': baseConfig.theme.extend.colors.primary,
       },
       keyframes: {
         'accordion-down': {
