@@ -8,3 +8,5 @@ Each organization now has an audit log of all user actions that can be exported 
 Exported audit logs are stored on the pre-configured S3 storage.
 
 In case you want to store exported audit logs on a separate S3 bucket, you can use the `S3_AUDIT_LOG` prefixed environment variables for the configuration.
+
+[Learn more.](https://graphql-hive.com/product-updates/2024-12-27-audit-logs)
