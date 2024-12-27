@@ -13,6 +13,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { GraphQlInputObjectType, GraphQlInterfaceType, GraphQlObjectType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
@@ -97,8 +98,29 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     return null;
   }
 
+  const unusedTypes = types.length ?? 0;
+  const unusedFields = types.reduce((a, b) => {
+    if (b.__typename === 'GraphQLObjectType') {
+      return a + (b as GraphQlObjectType).fields.length;
+    }
+    if (b.__typename === 'GraphQLInterfaceType') {
+      return a + (b as GraphQlInterfaceType).fields.length;
+    }
+    if (b.__typename === 'GraphQLInputObjectType') {
+      return a + (b as GraphQlInputObjectType).fields.length;
+    }
+
+    return a;
+  }, 0);
+
   return (
     <div className="space-y-6">
+      <div>
+        <p className="text-sm text-gray-500">
+          You have a total of {unusedFields} unused fields within {unusedTypes} different types in
+          the selected time period
+        </p>
+      </div>
       <div>
         <TooltipProvider>
           {letters.map(letter => (
