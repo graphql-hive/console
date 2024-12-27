@@ -31,7 +31,7 @@ export const AuditLogModel = z.union([
     eventType: z.literal('ORGANIZATION_POLICY_UPDATED'),
     metadata: z.object({
       allowOverrides: z.boolean(),
-      updatedFields: z.string(),
+      policy: z.string(),
     }),
   }),
   z.object({

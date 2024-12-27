@@ -468,7 +468,7 @@ const SettingsPageRenderer = (props: {
                     Export Audit Logs
                   </Button>
                   <AuditLogsOrganizationModal
-                    organization={organization.id}
+                    organizationSlug={organization.slug}
                     isOpen={isAuditLogsModalOpen}
                     toggleModalOpen={toggleAuditLogsModalOpen}
                   />
@@ -666,9 +666,9 @@ const AuditLogsSchema = z.object({
 function AuditLogsOrganizationModal(props: {
   isOpen: boolean;
   toggleModalOpen: () => void;
-  organization: string;
+  organizationSlug: string;
 }) {
-  const { organization } = props;
+  const { organizationSlug: organization } = props;
   const { toast } = useToast();
   const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
 

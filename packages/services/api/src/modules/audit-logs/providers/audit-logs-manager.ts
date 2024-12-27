@@ -7,6 +7,7 @@ import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Emails, mjml } from '../../shared/providers/emails';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
@@ -36,6 +37,7 @@ export class AuditLogManager {
     private emailProvider: Emails,
     private session: Session,
     private storage: Storage,
+    private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'AuditLogManager' });
   }
@@ -101,7 +103,7 @@ export class AuditLogManager {
     }),
   })
   async exportAndSendEmail(
-    organizationId: string,
+    organizationSlug: string,
     filter: { startDate: Date; endDate: Date },
   ): Promise<
     | {
@@ -117,6 +119,9 @@ export class AuditLogManager {
         };
       }
   > {
+    const organizationId = await this.idTranslator.translateOrganizationId({
+      organizationSlug,
+    });
     await this.session.assertPerformAction({
       action: 'auditLog:export',
       organizationId,

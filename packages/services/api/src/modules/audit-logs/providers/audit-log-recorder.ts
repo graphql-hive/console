@@ -43,7 +43,7 @@ export class AuditLogRecorder {
       const eventTime = formatToClickhouseDateTime(new Date());
       const id = randomUUID();
 
-      await this.clickHouse.query({
+      await this.clickHouse.postQuery({
         query: sql`
           INSERT INTO "audit_logs" (
             "id",

@@ -1,6 +1,6 @@
 import { endOfDay, startOfDay } from 'date-fns';
 import { graphql } from 'testkit/gql';
-import { ProjectType } from 'testkit/gql/graphql';
+import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -46,7 +46,7 @@ test.concurrent(
       variables: {
         input: {
           selector: {
-            organizationSlug: organization.id,
+            organizationSlug: organization.slug,
           },
           filter: {
             startDate: lastYear.toISOString(),
@@ -69,7 +69,7 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
     variables: {
       input: {
         selector: {
-          organizationSlug: organization.id,
+          organizationSlug: organization.slug,
         },
         filter: {
           startDate: lastYear.toISOString(),
@@ -102,4 +102,38 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
   expect(rows?.find(row => row.includes('ORGANIZATION_CREATED'))).toBeDefined();
   expect(rows?.find(row => row.includes('PROJECT_CREATED'))).toBeDefined();
   expect(rows?.find(row => row.includes('TARGET_CREATED'))).toBeDefined();
+});
+
+test.concurrent('export audit log for schema policy', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setOrganizationSchemaPolicy, organization } = await createOrg();
+  await createProject(ProjectType.Single);
+  await setOrganizationSchemaPolicy(
+    {
+      rules: [
+        {
+          configuration: { definitions: false },
+          ruleId: 'alphabetize',
+          severity: RuleInstanceSeverityLevel.Warning,
+        },
+      ],
+    },
+    true,
+  );
+
+  await execute({
+    document: ExportAllAuditLogs,
+    variables: {
+      input: {
+        selector: {
+          organizationSlug: organization.slug,
+        },
+        filter: {
+          startDate: lastYear.toISOString(),
+          endDate: today.toISOString(),
+        },
+      },
+    },
+    token: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
 });

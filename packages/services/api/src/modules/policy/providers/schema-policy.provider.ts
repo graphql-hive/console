@@ -146,9 +146,7 @@ export class SchemaPolicyProvider {
       organizationId: selector.organizationId,
       metadata: {
         allowOverrides: allowOverrides,
-        updatedFields: JSON.stringify({
-          policy: policy,
-        }),
+        policy: JSON.stringify(policy),
       },
     });
 
