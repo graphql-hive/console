@@ -1,7 +1,7 @@
 export function createConnectionString(config: {
   host: string;
   port: number;
-  password: string;
+  password: string | undefined;
   user: string;
   db: string;
   ssl: boolean;
