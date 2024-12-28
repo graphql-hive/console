@@ -170,7 +170,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
       });
-      const sdl = await loadSchema(file);
+      const sdl = await loadSchema('introspection', file);
       const git = await gitInfo(() => {
         // noop
       });
