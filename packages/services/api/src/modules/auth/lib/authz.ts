@@ -274,7 +274,7 @@ function isResourceIdMatch(
   return true;
 }
 
-export function defaultOrgIdentity(args: { organizationId: string }) {
+function defaultOrgIdentity(args: { organizationId: string }) {
   return [`organization/${args.organizationId}`];
 }
 
