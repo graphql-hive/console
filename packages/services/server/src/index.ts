@@ -12,6 +12,7 @@ import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
 import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
+import { OrganizationMembers } from 'packages/services/api/src/modules/auth/providers/organization-members';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { createRegistry, createTaskRunner, CryptoProvider, LogFn, Logger } from '@hive/api';
@@ -401,6 +402,7 @@ export async function main() {
         new SuperTokensUserAuthNStrategy({
           logger: server.log,
           storage,
+          organizationMembers: new OrganizationMembers(storage.pool, server.log),
         }),
         new TargetAccessTokenStrategy({
           logger: server.log,
