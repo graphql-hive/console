@@ -192,6 +192,7 @@ export interface Organization {
     appDeployments: boolean;
   };
   zendeskId: string | null;
+  /** ID of the user that owns the organization */
   ownerId: string;
 }
 
