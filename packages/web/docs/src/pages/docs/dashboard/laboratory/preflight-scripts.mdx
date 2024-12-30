@@ -10,34 +10,25 @@ import { Screenshot } from '../../../../components/screenshot'
 
 export const figcaptionClass = 'text-center text-sm mt-2'
 
-These scripts allow you to automatically run custom authentication processes before executing your
-GraphQL operations. They're especially useful for handling authentication flows like OAuth, where
-you may need to refresh an access token. Let's explore how it works.
+**Preflight Scripts** is a feature that enables you to automatically execute custom code before each
+GraphQL request is made. They're especially useful for handling authentication flows like OAuth,
+where you may need to claim or refresh an access token, validate credentials, or set up custom
+headers - all before the request is sent.
 
 ## Configuring Preflight Script
 
-To create a script click on the command line icon (right after Operation Collections plugin icon) in
-GraphiQL sidebar section.
+Navigate to the sidebar section and click the terminal icon to create a preflight script.
 
-<figure className="mt-6">
-  <Screenshot>![Command line icon](./command-line-icon.png)</Screenshot>
-  {/* prettier-ignore */}
-  <figcaption className={figcaptionClass}>The preflight script is accessible by clicking on the Command line icon in the GraphiQL sidebar</figcaption>
-</figure>
+The interface displays two editors:
 
-You will see Script editor (JavaScript language) which is read-only and present for a quick view of
-your saved script and Environment variables editor (JSON language) which is persistent in
-localStorage.
+- a **read-only Script editor** in JavaScript for viewing the saved script,
+- an **Environment Variables editor** in JSON that persists data in localStorage.
 
-<figure className="mt-6">
-  <Screenshot>![](./preflight-script-plugin.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Preflight script plugin view</figcaption>
-</figure>
+<Screenshot>![Active Preflight Script](./active-preflight-script.png)</Screenshot>
 
 ## Editing Preflight Script
 
-Clicking on the `Edit` button will open Modal where you can edit, test and save your script in
-database.
+Clicking the "Edit" button opens a window that allows you to edit, test, and save your script in Hive.
 
 <Callout type="warning">
   **Note**: Your script will stored as plain text in our database, don't put any secrets there, use
@@ -46,7 +37,7 @@ database.
 </Callout>
 
 You can use any JavaScript syntax (including top-level `await`) in the Script editor. Getting and
-Setting environment variables is done by accessing the `environment` property on the `lab` global
+setting environment variables is done by accessing the `environment` property on the `lab` global
 variable.
 
 ```js
@@ -56,32 +47,23 @@ lab.environment.get('myKey')
 lab.environment.set('myKey', myValue)
 ```
 
-<figure className="mt-6">
-  <Screenshot>![](./get-and-set-env-vars.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Demo how to get and set environment variables</figcaption>
-</figure>
+<Screenshot>![](./editing.png)</Screenshot>
 
-## CryptoJS
+### CryptoJS
 
 Additionally, you can access [the CryptoJS library](https://github.com/brix/crypto-js) by accessing
 the `CryptoJS` property on the `lab` global variable.
 
-<figure className="mt-6">
-  <Screenshot>![](./crypto-js.png)</Screenshot>
-  <figcaption className={figcaptionClass}>CryptoJS</figcaption>
-</figure>
+<Screenshot>![](./crypto-js.png)</Screenshot>
 
-## Global Variables and Errors
+### Global Variables and Errors
 
 Access to global variables such as `this`, `window` or `globalThis` is restricted. Errors thrown by
 the script will be displayed in Console Output.
 
-<figure className="mt-6">
-  <Screenshot>![](./unable-to-access-global-variables.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Demo restricted access to global variables</figcaption>
-</figure>
+<Screenshot>![](./unable-to-access-global-variables.png)</Screenshot>
 
-## Using Environment Variables
+### Using Environment Variables
 
 To use your environment variables in GraphiQL headers editor wraps environment keys with
 double-curly braces, e.g.:
@@ -92,8 +74,4 @@ double-curly braces, e.g.:
 }
 ```
 
-<figure className="mt-6">
-  <Screenshot>![Replace syntax in action](./replace-syntax.png)</Screenshot>
-  {/* prettier-ignore */}
-  <figcaption className={figcaptionClass}>Replace syntax is done via double open/closed curly braces, e.g. `{{ myEnvVar }}`</figcaption>
-</figure>
+<Screenshot>![](./headers.png)</Screenshot>
