@@ -24,7 +24,7 @@ const tabsTriggerVariants = cva('cursor-pointer !appearance-none text-sm font-me
     variant: {
       default:
         'ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 data-[state=active]:shadow-sm disabled:cursor-not-allowed active:disabled:pointer-events-none',
-      menu: 'text-white radix-state-active:border-b-orange-500 border-b-2 border-b-transparent px-4 py-3 hover:border-b-orange-900',
+      menu: 'text-white data-[state=active]:border-b-orange-500 border-b-2 border-b-transparent px-4 py-3 hover:border-b-orange-900',
       content:
         'mb-[-1px] rounded-none border-b first:pl-1 py-1 px-2 text-white data-[state=active]:border-orange-500 data-[state=active]:text-orange-500',
     },

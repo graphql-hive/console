@@ -9,7 +9,6 @@ export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
 export { Modal } from '@/components/v2/modal';
 export { Radio, RadioGroup } from '@/components/v2/radio-group';
-export { RadixSelect } from '@/components/v2/radix-select';
 export { Select } from '@/components/v2/select';
 export { Sortable } from '@/components/v2/sortable';
 export { default as Stat } from '@/components/v2/stat';
