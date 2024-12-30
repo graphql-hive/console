@@ -334,7 +334,7 @@ function objectEntries<$Key extends string, $Value>(
  * If you are adding new permissions to the existing system.
  * This is the place to do so.
  */
-const permissionGroups = {
+const permissionsByLevel = {
   organization: [
     z.literal('organization:describe'),
     z.literal('organization:modifySlug'),
@@ -387,40 +387,44 @@ const permissionGroups = {
   ],
 } as const;
 
-export const PermissionGroupsModel = z.object({
-  organization: z.set(z.union(permissionGroups.organization)),
-  project: z.set(z.union(permissionGroups.project)),
-  target: z.set(z.union(permissionGroups.target)),
-  service: z.set(z.union(permissionGroups.service)),
-  appDeployment: z.set(z.union(permissionGroups.appDeployment)),
+export const PermissionsPerResourceLevelAssignmentModel = z.object({
+  organization: z.set(z.union(permissionsByLevel.organization)),
+  project: z.set(z.union(permissionsByLevel.project)),
+  target: z.set(z.union(permissionsByLevel.target)),
+  service: z.set(z.union(permissionsByLevel.service)),
+  appDeployment: z.set(z.union(permissionsByLevel.appDeployment)),
 });
 
-export type PermissionGroups = z.TypeOf<typeof PermissionGroupsModel>;
+export type PermissionsPerResourceLevelAssignment = z.TypeOf<
+  typeof PermissionsPerResourceLevelAssignmentModel
+>;
 
-export const AllPermissionsModel = z.union([
-  ...permissionGroups.organization,
-  ...permissionGroups.project,
-  ...permissionGroups.target,
-  ...permissionGroups.service,
-  ...permissionGroups.appDeployment,
+type ResourceLevels = keyof PermissionsPerResourceLevelAssignment;
+
+export const PermissionsModel = z.union([
+  ...permissionsByLevel.organization,
+  ...permissionsByLevel.project,
+  ...permissionsByLevel.target,
+  ...permissionsByLevel.service,
+  ...permissionsByLevel.appDeployment,
 ]);
 
-const lookupMap = new Map<
-  z.TypeOf<typeof AllPermissionsModel>,
-  'organization' | 'project' | 'target' | 'service' | 'appDeployment'
+type Permissions = z.TypeOf<typeof PermissionsModel>;
+
+const permissionResourceLevelLookupMap = new Map<
+  z.TypeOf<typeof PermissionsModel>,
+  ResourceLevels
 >();
 
-for (const [key, permissions] of objectEntries(permissionGroups)) {
+for (const [key, permissions] of objectEntries(permissionsByLevel)) {
   for (const permission of permissions) {
-    lookupMap.set(permission.value, key);
+    permissionResourceLevelLookupMap.set(permission.value, key);
   }
 }
 
 /** Get the permission group for a specific permissions */
-export function getPermissionGroup(
-  permission: z.TypeOf<typeof AllPermissionsModel>,
-): 'organization' | 'project' | 'target' | 'service' | 'appDeployment' {
-  const group = lookupMap.get(permission);
+function getPermissionGroup(permission: Permissions): ResourceLevels {
+  const group = permissionResourceLevelLookupMap.get(permission);
 
   if (group === undefined) {
     throw new Error(`Could not find group for permission '${permission}'.`);
@@ -429,25 +433,43 @@ export function getPermissionGroup(
   return group;
 }
 
-const actionDefinitions = {
-  ...objectFromEntries(permissionGroups['organization'].map(t => [t.value, defaultOrgIdentity])),
-  ...objectFromEntries(
-    permissionGroups['project'].map(t => [t.value, defaultProjectIdentity] as const),
-  ),
-  ...objectFromEntries(
-    permissionGroups['target'].map(t => [t.value, defaultTargetIdentity] as const),
-  ),
-  ...objectFromEntries(
-    permissionGroups['service'].map(t => [t.value, schemaCheckOrPublishIdentity] as const),
-  ),
-  ...objectFromEntries(
-    permissionGroups['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity] as const),
-  ),
-} satisfies ActionDefinitionMap;
+/**
+ * Transforms a flat permission array into an object that groups the permissions per resource level.
+ */
+export function permissionsToPermissionsPerResourceLevelAssignment(
+  permissions: Array<Permissions>,
+): PermissionsPerResourceLevelAssignment {
+  const assignment: PermissionsPerResourceLevelAssignment = {
+    organization: new Set(),
+    project: new Set(),
+    target: new Set(),
+    service: new Set(),
+    appDeployment: new Set(),
+  };
+
+  for (const permission of permissions) {
+    const group = getPermissionGroup(permission);
+    (assignment[group] as Set<Permissions>).add(permission);
+  }
+
+  return assignment;
+}
 
 type ActionDefinitionMap = {
   [key: `${string}:${string}`]: (args: any) => Array<string>;
 };
+
+const actionDefinitions = {
+  ...objectFromEntries(permissionsByLevel['organization'].map(t => [t.value, defaultOrgIdentity])),
+  ...objectFromEntries(permissionsByLevel['project'].map(t => [t.value, defaultProjectIdentity])),
+  ...objectFromEntries(permissionsByLevel['target'].map(t => [t.value, defaultTargetIdentity])),
+  ...objectFromEntries(
+    permissionsByLevel['service'].map(t => [t.value, schemaCheckOrPublishIdentity]),
+  ),
+  ...objectFromEntries(
+    permissionsByLevel['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity]),
+  ),
+} satisfies ActionDefinitionMap;
 
 type Actions = keyof typeof actionDefinitions;
 

@@ -7,10 +7,10 @@ import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import {
-  AllPermissionsModel,
-  getPermissionGroup,
-  PermissionGroups,
-  PermissionGroupsModel,
+  PermissionsModel,
+  PermissionsPerResourceLevelAssignment,
+  PermissionsPerResourceLevelAssignmentModel,
+  permissionsToPermissionsPerResourceLevelAssignment,
 } from '../lib/authz';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from './scopes';
 
@@ -44,21 +44,9 @@ const RawMemberRoleModel = z.intersection(
     }),
     z.object({
       legacyScopes: z.null(),
-      permissions: z.array(AllPermissionsModel).transform(rawPermissions => {
-        const permissions = {
-          organization: new Set(),
-          project: new Set(),
-          target: new Set(),
-          service: new Set(),
-          appDeployment: new Set(),
-        };
-
-        for (const permission of rawPermissions) {
-          permissions[getPermissionGroup(permission)].add(permission);
-        }
-
-        return PermissionGroupsModel.parse(permissions);
-      }),
+      permissions: z
+        .array(PermissionsModel)
+        .transform(permissions => permissionsToPermissionsPerResourceLevelAssignment(permissions)),
     }),
   ]),
 );
@@ -102,7 +90,7 @@ type MemberRoleType = {
   id: string;
   description: string;
   isLocked: boolean;
-  permissions: PermissionGroups;
+  permissions: PermissionsPerResourceLevelAssignment;
 };
 
 export type OrganizationMembershipRoleAssignment = {
@@ -327,8 +315,8 @@ export class OrganizationMembers {
 
 function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
   scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>,
-): z.TypeOf<typeof PermissionGroupsModel> {
-  const permissions: z.TypeOf<typeof PermissionGroupsModel> = {
+): z.TypeOf<typeof PermissionsPerResourceLevelAssignmentModel> {
+  const permissions: z.TypeOf<typeof PermissionsPerResourceLevelAssignmentModel> = {
     organization: new Set(),
     project: new Set(),
     target: new Set(),
