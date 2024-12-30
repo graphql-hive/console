@@ -10,6 +10,7 @@ import type { Storage } from '../../shared/providers/storage';
 import {
   OrganizationMembers,
   OrganizationMembershipRoleAssignment,
+  ResourceAssignment,
 } from '../providers/organization-members';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
 
@@ -117,64 +118,79 @@ export class SuperTokensCookieBasedSession extends Session {
     return true;
   }
 
+  private toResourceIdentifier(organizationId: string, resource: ResourceAssignment): string;
+  private toResourceIdentifier(
+    organizationId: string,
+    resource: ResourceAssignment | Array<ResourceAssignment>,
+  ): Array<string>;
+  private toResourceIdentifier(
+    organizationId: string,
+    resource: ResourceAssignment | Array<ResourceAssignment>,
+  ): string | Array<string> {
+    if (Array.isArray(resource)) {
+      return resource.map(resource => this.toResourceIdentifier(organizationId, resource));
+    }
+
+    if (resource.type === 'organization') {
+      return `hrn:${organizationId}:organization/${resource.organizationId}`;
+    }
+
+    if (resource.type === 'project') {
+      return `hrn:${organizationId}:project/${resource.projectId}`;
+    }
+
+    if (resource.type === 'target') {
+      return `hrn:${organizationId}:project/${resource.targetId}`;
+    }
+
+    if (resource.type === 'service') {
+      return `hrn:${organizationId}:target/${resource.targetId}/service/${resource.serviceName}`;
+    }
+
+    if (resource.type === 'appDeployment') {
+      return `hrn:${organizationId}:target/${resource.targetId}/appDeployment/${resource.appDeploymentName}`;
+    }
+
+    throw new Error('never');
+  }
+
   private translateAssignedRolesToAuthorizationPolicyStatements(
     organizationId: string,
     organizationMembershipRoleAssignments: Array<OrganizationMembershipRoleAssignment>,
   ): Array<AuthorizationPolicyStatement> {
     const policyStatements: Array<AuthorizationPolicyStatement> = [];
 
-    const orgResourceId = `hrn:${organizationId}:organization/${organizationId}`;
-
     for (const assignedRole of organizationMembershipRoleAssignments) {
-      /**
-       * Currently, we have the following hierarchy
-       *
-       *        organization
-       *             v
-       *           project
-       *             v
-       *           target
-       *          v      v
-       * app deployment  service
-       *
-       * If one level specifies "*", it needs to inherit the resources defined on the next upper level.
-       */
-
-      let parentResource: Array<string> = [orgResourceId];
-
       if (assignedRole.role.permissions.organization.size) {
         policyStatements.push({
           action: Array.from(assignedRole.role.permissions.organization),
           effect: 'allow',
-          resource: parentResource,
+          resource: this.toResourceIdentifier(
+            organizationId,
+            assignedRole.resolvedResources.organization,
+          ),
         });
       }
 
       if (assignedRole.role.permissions.project.size) {
-        if (Array.isArray(assignedRole.resources.project)) {
-          parentResource = assignedRole.resources.project.map(
-            uuid => `hrn:${organizationId}:project/${uuid}`,
-          );
-        }
-
         policyStatements.push({
           action: Array.from(assignedRole.role.permissions.project),
           effect: 'allow',
-          resource: parentResource,
+          resource: this.toResourceIdentifier(
+            organizationId,
+            assignedRole.resolvedResources.project,
+          ),
         });
       }
 
       if (assignedRole.role.permissions.target.size) {
-        if (Array.isArray(assignedRole.resources.target)) {
-          parentResource = assignedRole.resources.target.map(
-            uuid => `hrn:${organizationId}:target/${uuid}`,
-          );
-        }
-
         policyStatements.push({
           action: Array.from(assignedRole.role.permissions.target),
           effect: 'allow',
-          resource: parentResource,
+          resource: this.toResourceIdentifier(
+            organizationId,
+            assignedRole.resolvedResources.target,
+          ),
         });
       }
 
@@ -182,13 +198,10 @@ export class SuperTokensCookieBasedSession extends Session {
         policyStatements.push({
           action: Array.from(assignedRole.role.permissions.service),
           effect: 'allow',
-          resource:
-            assignedRole.resources.service === '*'
-              ? parentResource
-              : assignedRole.resources.service.map(
-                  ([targetId, serviceName]) =>
-                    `hrn:${organizationId}:target/${targetId}/service/${serviceName}`,
-                ),
+          resource: this.toResourceIdentifier(
+            organizationId,
+            assignedRole.resolvedResources.service,
+          ),
         });
       }
 
@@ -196,13 +209,10 @@ export class SuperTokensCookieBasedSession extends Session {
         policyStatements.push({
           action: Array.from(assignedRole.role.permissions.appDeployment),
           effect: 'allow',
-          resource:
-            assignedRole.resources.appDeployment === '*'
-              ? parentResource
-              : assignedRole.resources.appDeployment.map(
-                  ([targetId, serviceName]) =>
-                    `hrn:${organizationId}:target/${targetId}/appDeployment/${serviceName}`,
-                ),
+          resource: this.toResourceIdentifier(
+            organizationId,
+            assignedRole.resolvedResources.appDeployment,
+          ),
         });
       }
     }
