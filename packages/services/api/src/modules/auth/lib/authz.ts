@@ -1,4 +1,5 @@
 import stringify from 'fast-json-stable-stringify';
+import { z } from 'zod';
 import { FastifyReply, FastifyRequest } from '@hive/service-common';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
@@ -273,7 +274,7 @@ function isResourceIdMatch(
   return true;
 }
 
-function defaultOrgIdentity(args: { organizationId: string }) {
+export function defaultOrgIdentity(args: { organizationId: string }) {
   return [`organization/${args.organizationId}`];
 }
 
@@ -313,55 +314,135 @@ function schemaCheckOrPublishIdentity(
   return ids;
 }
 
+/** Typed Object.fromEntries */
+function objectFromEntries<$Key extends string, $Value>(
+  entries: Array<[$Key, $Value]>,
+): Record<$Key, $Value> {
+  return Object.fromEntries(entries) as Record<$Key, $Value>;
+}
+
+function objectEntries<$Key extends string, $Value>(
+  object: Record<$Key, $Value>,
+): Array<[$Key, $Value]> {
+  return Object.entries(object) as Array<[$Key, $Value]>;
+}
+
 /**
  * Object map containing all possible actions
- * and resource identifier builder functions required for checking whether an action can be performed.
  *
  * Used within the `Session.assertPerformAction` function for a fully type-safe experience.
  * If you are adding new permissions to the existing system.
  * This is the place to do so.
  */
+const permissionGroups = {
+  organization: [
+    z.literal('organization:describe'),
+    z.literal('organization:modifySlug'),
+    z.literal('organization:delete'),
+    z.literal('gitHubIntegration:modify'),
+    z.literal('slackIntegration:modify'),
+    z.literal('oidc:modify'),
+    z.literal('support:manageTickets'),
+    z.literal('billing:describe'),
+    z.literal('billing:update'),
+    z.literal('member:describe'),
+    z.literal('member:assignRole'),
+    z.literal('member:modifyRole'),
+    z.literal('member:removeMember'),
+    z.literal('member:manageInvites'),
+    z.literal('project:create'),
+    z.literal('schemaLinting:modifyOrganizationRules'),
+    z.literal('auditLog:export'),
+  ],
+  project: [
+    z.literal('project:describe'),
+    z.literal('project:delete'),
+    z.literal('project:modifySettings'),
+    z.literal('alert:modify'),
+    z.literal('schemaLinting:modifyProjectRules'),
+    z.literal('target:create'),
+  ],
+  target: [
+    z.literal('targetAccessToken:modify'),
+    z.literal('cdnAccessToken:modify'),
+    z.literal('target:delete'),
+    z.literal('target:modifySettings'),
+    z.literal('laboratory:describe'),
+    z.literal('laboratory:modify'),
+    z.literal('laboratory:modifyPreflightScript'),
+    z.literal('appDeployment:describe'),
+    z.literal('schema:loadFromRegistry'),
+    z.literal('schema:compose'),
+  ],
+  service: [
+    z.literal('schemaCheck:create'),
+    z.literal('schemaCheck:approve'),
+    z.literal('schemaVersion:publish'),
+    z.literal('schemaVersion:deleteService'),
+  ],
+  appDeployment: [
+    z.literal('appDeployment:create'),
+    z.literal('appDeployment:publish'),
+    z.literal('appDeployment:retire'),
+  ],
+} as const;
+
+export const PermissionGroupsModel = z.object({
+  organization: z.set(z.union(permissionGroups.organization)),
+  project: z.set(z.union(permissionGroups.project)),
+  target: z.set(z.union(permissionGroups.target)),
+  service: z.set(z.union(permissionGroups.service)),
+  appDeployment: z.set(z.union(permissionGroups.appDeployment)),
+});
+
+export type PermissionGroups = z.TypeOf<typeof PermissionGroupsModel>;
+
+export const AllPermissionsModel = z.union([
+  ...permissionGroups.organization,
+  ...permissionGroups.project,
+  ...permissionGroups.target,
+  ...permissionGroups.service,
+  ...permissionGroups.appDeployment,
+]);
+
+const lookupMap = new Map<
+  z.TypeOf<typeof AllPermissionsModel>,
+  'organization' | 'project' | 'target' | 'service' | 'appDeployment'
+>();
+
+for (const [key, permissions] of objectEntries(permissionGroups)) {
+  for (const permission of permissions) {
+    lookupMap.set(permission.value, key);
+  }
+}
+
+/** Get the permission group for a specific permissions */
+export function getPermissionGroup(
+  permission: z.TypeOf<typeof AllPermissionsModel>,
+): 'organization' | 'project' | 'target' | 'service' | 'appDeployment' {
+  const group = lookupMap.get(permission);
+
+  if (group === undefined) {
+    throw new Error(`Could not find group for permission '${permission}'.`);
+  }
+
+  return group;
+}
+
 const actionDefinitions = {
-  'organization:describe': defaultOrgIdentity,
-  'organization:modifySlug': defaultOrgIdentity,
-  'organization:delete': defaultOrgIdentity,
-  'gitHubIntegration:modify': defaultOrgIdentity,
-  'slackIntegration:modify': defaultOrgIdentity,
-  'oidc:modify': defaultOrgIdentity,
-  'support:manageTickets': defaultOrgIdentity,
-  'billing:describe': defaultOrgIdentity,
-  'billing:update': defaultOrgIdentity,
-  'targetAccessToken:modify': defaultTargetIdentity,
-  'cdnAccessToken:modify': defaultTargetIdentity,
-  'member:describe': defaultOrgIdentity,
-  'member:assignRole': defaultOrgIdentity,
-  'member:modifyRole': defaultOrgIdentity,
-  'member:removeMember': defaultOrgIdentity,
-  'member:manageInvites': defaultOrgIdentity,
-  'project:create': defaultOrgIdentity,
-  'project:describe': defaultProjectIdentity,
-  'project:delete': defaultProjectIdentity,
-  'project:modifySettings': defaultProjectIdentity,
-  'alert:modify': defaultProjectIdentity,
-  'schemaLinting:modifyOrganizationRules': defaultOrgIdentity,
-  'schemaLinting:modifyProjectRules': defaultProjectIdentity,
-  'target:create': defaultProjectIdentity,
-  'target:delete': defaultTargetIdentity,
-  'target:modifySettings': defaultTargetIdentity,
-  'laboratory:describe': defaultTargetIdentity,
-  'laboratory:modify': defaultTargetIdentity,
-  'laboratory:modifyPreflightScript': defaultTargetIdentity,
-  'appDeployment:describe': defaultTargetIdentity,
-  'appDeployment:create': defaultAppDeploymentIdentity,
-  'appDeployment:publish': defaultAppDeploymentIdentity,
-  'appDeployment:retire': defaultAppDeploymentIdentity,
-  'schemaCheck:create': schemaCheckOrPublishIdentity,
-  'schemaCheck:approve': schemaCheckOrPublishIdentity,
-  'schemaVersion:publish': schemaCheckOrPublishIdentity,
-  'schemaVersion:deleteService': schemaCheckOrPublishIdentity,
-  'schema:loadFromRegistry': defaultTargetIdentity,
-  'schema:compose': defaultTargetIdentity,
-  'auditLog:export': defaultOrgIdentity,
+  ...objectFromEntries(permissionGroups['organization'].map(t => [t.value, defaultOrgIdentity])),
+  ...objectFromEntries(
+    permissionGroups['project'].map(t => [t.value, defaultProjectIdentity] as const),
+  ),
+  ...objectFromEntries(
+    permissionGroups['target'].map(t => [t.value, defaultTargetIdentity] as const),
+  ),
+  ...objectFromEntries(
+    permissionGroups['service'].map(t => [t.value, schemaCheckOrPublishIdentity] as const),
+  ),
+  ...objectFromEntries(
+    permissionGroups['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity] as const),
+  ),
 } satisfies ActionDefinitionMap;
 
 type ActionDefinitionMap = {
