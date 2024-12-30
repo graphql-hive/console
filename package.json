@@ -125,7 +125,8 @@
       "@graphiql/react": "patches/@graphiql__react.patch",
       "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
-      "@fastify/vite": "patches/@fastify__vite.patch"
+      "@fastify/vite": "patches/@fastify__vite.patch",
+      "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch"
     }
   }
 }
