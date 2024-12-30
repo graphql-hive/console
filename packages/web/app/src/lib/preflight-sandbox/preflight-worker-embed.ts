@@ -61,10 +61,20 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
         console.log('received event from worker', ev.data);
         if (ev.data.type === WorkerEvents.Outgoing.Event.ready) {
           worker.postMessage({
+            type: WorkerEvents.Incoming.Event.run,
             script: data.script,
             environmentVariables: data.environmentVariables,
-          } satisfies WorkerEvents.Incoming.MessageData);
+          } satisfies WorkerEvents.Incoming.EventData);
           return;
+        }
+
+        if (ev.data.type === WorkerEvents.Outgoing.Event.prompt) {
+          const promptResult = window.parent.prompt(ev.data.message, ev.data.defaultValue);
+          worker.postMessage({
+            type: WorkerEvents.Incoming.Event.promptResponse,
+            promptId: ev.data.promptId,
+            value: promptResult,
+          } satisfies WorkerEvents.Incoming.EventData);
         }
 
         if (ev.data.type === WorkerEvents.Outgoing.Event.result) {

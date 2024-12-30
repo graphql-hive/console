@@ -81,21 +81,48 @@ export namespace WorkerEvents {
       log = 'log',
       result = 'result',
       error = 'error',
+      prompt = 'prompt',
     }
 
     type LogEventData = { type: Event.log; message: string };
     type ErrorEventData = { type: Event.error; error: Error };
+    type PromptEventData = {
+      type: Event.prompt;
+      promptId: number;
+      message: string;
+      defaultValue: string;
+    };
     type ResultEventData = { type: Event.result; environmentVariables: Record<string, unknown> };
     type ReadyEventData = { type: Event.ready };
 
-    export type EventData = ResultEventData | LogEventData | ErrorEventData | ReadyEventData;
+    export type EventData =
+      | ResultEventData
+      | LogEventData
+      | ErrorEventData
+      | ReadyEventData
+      | PromptEventData;
     export type MessageEvent = _MessageEvent<EventData>;
   }
 
   export namespace Incoming {
-    export type MessageData = {
+    export const enum Event {
+      run = 'run',
+      promptResponse = 'promptResponse',
+    }
+
+    type PromptResponseEventData = {
+      type: Event.promptResponse;
+      promptId: number;
+      value: string | null;
+    };
+
+    type RunEventData = {
+      type: Event.run;
       script: string;
       environmentVariables: Record<string, unknown>;
     };
+
+    export type EventData = PromptResponseEventData | RunEventData;
+    export type MessageEvent = _MessageEvent<EventData>;
   }
 }
