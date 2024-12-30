@@ -103,7 +103,7 @@ export type OrganizationMembershipRoleAssignment = {
    */
   resources: ResourceAssignmentGroup;
   /**
-   * Actual resolved resource groups
+   * Resolved resource groups, used for runtime permission checks.
    */
   resolvedResources: ResolvedResourceAssignments;
 };
