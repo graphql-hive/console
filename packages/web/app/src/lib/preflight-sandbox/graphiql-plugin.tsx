@@ -428,29 +428,27 @@ function PreflightScriptContent() {
 
       {preflightScript.isPreflightScriptEnabled && (
         <>
-        <EditorTitle className="mt-6 flex items-center gap-2">
+          <EditorTitle className="mt-6 flex items-center gap-2">
             Script{' '}
             <Badge className="text-xs" variant="outline">
               JavaScript
             </Badge>
           </EditorTitle>
-          <Subtitle className='mb-3'>
-            Read-only view of the script
-            </Subtitle>
-        <MonacoEditor
-          height={128}
-          value={preflightScript.script}
-          {...monacoProps.script}
-          className={classes.monacoMini}
-          wrapperProps={{
-            ['data-cy']: 'preflight-script-editor-mini',
-          }}
-          options={{
-            ...monacoProps.script.options,
-            lineNumbers: 'off',
-            readOnly: true,
-          }}
-        />
+          <Subtitle className="mb-3">Read-only view of the script</Subtitle>
+          <MonacoEditor
+            height={128}
+            value={preflightScript.script}
+            {...monacoProps.script}
+            className={classes.monacoMini}
+            wrapperProps={{
+              ['data-cy']: 'preflight-script-editor-mini',
+            }}
+            options={{
+              ...monacoProps.script.options,
+              lineNumbers: 'off',
+              readOnly: true,
+            }}
+          />
         </>
       )}
 
@@ -462,7 +460,9 @@ function PreflightScriptContent() {
               JSON
             </Badge>
           </EditorTitle>
-          <Subtitle className='mb-3'>Declare variables to hold and manage data in the script.</Subtitle>
+          <Subtitle className="mb-3">
+            Declare variables to hold and manage data in the script.
+          </Subtitle>
           <MonacoEditor
             height={128}
             value={preflightScript.environmentVariables}

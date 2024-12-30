@@ -68,7 +68,7 @@ function Header({
       <A.Trigger
         className={clsx(
           'group',
-          'data-[state=open]:rounded-t-lg data-[state=closed]:rounded-lg',
+          'data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg',
           'focus:outline-none',
           'inline-flex w-full items-center justify-between px-4 py-2 text-left',
           triggerClassName,
