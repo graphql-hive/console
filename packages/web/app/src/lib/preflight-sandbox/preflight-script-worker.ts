@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive, JSONPrimitive } from './json';
+import { isJSONPrimitive } from './json';
 import { WorkerEvents } from './shared-types';
 
 export type LogMessage = string | Error;
@@ -15,7 +15,7 @@ let promptId = 0;
  * Map of promptId to the callback that should be called when the prompt is resolved.
  * The callback is Promise.resolve of the prompt request of a given id.
  */
-let promptCallbacks = new Map<number, (result: string | null) => void>();
+const promptCallbacks = new Map<number, (result: string | null) => void>();
 
 function sendMessage(data: WorkerEvents.Outgoing.EventData) {
   postMessage(data);
