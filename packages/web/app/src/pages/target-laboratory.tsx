@@ -515,21 +515,36 @@ function LaboratoryPageContent(props: {
           .graphiql-dialog a {
             --color-primary: 40, 89%, 60% !important;
           }
+          
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
+
+          .graphiql-doc-explorer-title,
+          .doc-explorer-title {
+            font-size: 1.125rem !important;
+            line-height: 1.75rem !important;
+            color: white;
+          }
+          
           .graphiql-container,
           .graphiql-dialog,
           .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
+          
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
             background: #030711;
           }
+          
           .graphiql-tab {
             white-space: nowrap;
+          }
+
+          .graphiql-sidebar > button.active {
+            background-color: hsla(var(--color-neutral),var(--alpha-background-light))
           }
         `}</style>
       </Helmet>

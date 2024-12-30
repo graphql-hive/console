@@ -1,6 +1,7 @@
 import {
   ComponentPropsWithoutRef,
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -8,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
+import { PowerIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Subtitle, Title } from '@/components/ui/page';
-import { Switch } from '@/components/ui/switch';
+import { Subtitle } from '@/components/ui/page';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
@@ -36,6 +37,7 @@ import {
   TriangleRightIcon,
 } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
+import { cn } from '../utils';
 import type { LogMessage } from './preflight-script-worker';
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
@@ -62,6 +64,14 @@ const classes = {
   monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
   icon: clsx('absolute -left-5 top-px'),
 };
+
+function EditorTitle(props: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('cursor-default text-base font-semibold tracking-tight', props.className)}>
+      {props.children}
+    </div>
+  );
+}
 
 const sharedMonacoProps = {
   theme: 'vs-dark',
@@ -397,20 +407,36 @@ function PreflightScriptContent() {
         </Button>
       </div>
       <Subtitle>
-        This script is run before each operation submitted, e.g. for automated authentication.
+        Before each GraphQL request begins, this script is executed automatically - for example, to
+        handle authentication.
       </Subtitle>
 
       <div className="flex items-center gap-2 text-sm">
-        <Switch
-          checked={preflightScript.isPreflightScriptEnabled}
-          onCheckedChange={v => preflightScript.setIsPreflightScriptEnabled(v)}
-          className="my-4"
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() =>
+            preflightScript.setIsPreflightScriptEnabled(!preflightScript.isPreflightScriptEnabled)
+          }
           data-cy="toggle-preflight-script"
-        />
-        <span className="w-6">{preflightScript.isPreflightScriptEnabled ? 'ON' : 'OFF'}</span>
+        >
+          <PowerIcon className="mr-2 size-4" />
+          {preflightScript.isPreflightScriptEnabled ? 'On' : 'Off'}
+        </Button>
       </div>
 
       {preflightScript.isPreflightScriptEnabled && (
+        <>
+        <EditorTitle className="mt-6 flex items-center gap-2">
+            Script{' '}
+            <Badge className="text-xs" variant="outline">
+              JavaScript
+            </Badge>
+          </EditorTitle>
+          <Subtitle className='mb-3'>
+            Read-only view of the script
+            </Subtitle>
         <MonacoEditor
           height={128}
           value={preflightScript.script}
@@ -425,25 +451,30 @@ function PreflightScriptContent() {
             readOnly: true,
           }}
         />
+        </>
       )}
 
-      <Title className="mt-6 flex items-center gap-2">
-        Environment variables{' '}
-        <Badge className="text-xs" variant="outline">
-          JSON
-        </Badge>
-      </Title>
-      <Subtitle>Define variables to use in your Headers</Subtitle>
-      <MonacoEditor
-        height={128}
-        value={preflightScript.environmentVariables}
-        onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
-        {...monacoProps.env}
-        className={classes.monacoMini}
-        wrapperProps={{
-          ['data-cy']: 'env-editor-mini',
-        }}
-      />
+      {preflightScript.isPreflightScriptEnabled ? (
+        <>
+          <EditorTitle className="mt-6 flex items-center gap-2">
+            Environment variables{' '}
+            <Badge className="text-xs" variant="outline">
+              JSON
+            </Badge>
+          </EditorTitle>
+          <Subtitle className='mb-3'>Declare variables to hold and manage data in the script.</Subtitle>
+          <MonacoEditor
+            height={128}
+            value={preflightScript.environmentVariables}
+            onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
+            {...monacoProps.env}
+            className={classes.monacoMini}
+            wrapperProps={{
+              ['data-cy']: 'env-editor-mini',
+            }}
+          />
+        </>
+      ) : null}
     </>
   );
 }
@@ -526,12 +557,12 @@ function PreflightScriptModal({
         <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
           <div className="mr-4 flex flex-col">
             <div className="flex justify-between p-2">
-              <Title className="flex gap-2">
+              <EditorTitle className="flex gap-2">
                 Script Editor
                 <Badge className="text-xs" variant="outline">
                   JavaScript
                 </Badge>
-              </Title>
+              </EditorTitle>
               <Button
                 variant="orangeLink"
                 size="icon-sm"
@@ -575,7 +606,7 @@ function PreflightScriptModal({
           </div>
           <div className="flex h-[inherit] flex-col">
             <div className="flex justify-between p-2">
-              <Title>Console Output</Title>
+              <EditorTitle>Console Output</EditorTitle>
               <Button
                 variant="orangeLink"
                 size="icon-sm"
@@ -627,12 +658,12 @@ function PreflightScriptModal({
                 return <hr key={index} className="my-2 border-dashed border-current" />;
               })}
             </section>
-            <Title className="flex gap-2 p-2">
+            <EditorTitle className="flex gap-2 p-2">
               Environment Variables
               <Badge className="text-xs" variant="outline">
                 JSON
               </Badge>
-            </Title>
+            </EditorTitle>
             <MonacoEditor
               value={envValue}
               onChange={value => onEnvValueChange(value ?? '')}
