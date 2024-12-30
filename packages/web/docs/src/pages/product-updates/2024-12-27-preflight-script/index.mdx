@@ -11,14 +11,14 @@ import { Callout } from '@theguild/components'
 
 export const figcaptionClass = 'text-center text-sm mt-2'
 
-We've added Preflight Scripts to Laboratory! These scripts allow you to automatically run custom
-authentication processes before executing your GraphQL operations. They're especially useful for
-handling authentication flows like OAuth, where you may need to refresh an access token.
+We've added Preflight Scripts our GraphQL IDE - Laboratory!
 
-<figure className="mt-6">
-  <>![](private-next-pages/docs/dashboard/laboratory/get-and-set-env-vars.png)</>
-  <figcaption className={figcaptionClass}>Demo of Preflight Scripts</figcaption>
-</figure>
+**Preflight Scripts** is a feature that enables you to automatically execute custom code before each
+GraphQL request is made. They're especially useful for handling authentication flows like OAuth,
+where you may need to claim or refresh an access token, validate credentials, or set up custom
+headers - all before the request is sent.
+
+![Demo of Preflight Scripts](../../docs/dashboard/laboratory/editing.png)
 
 Check out [the documentation on Preflight Scripts](/docs/dashboard/laboratory/preflight-scripts) for
 information on how to configure, edit, and use them.
