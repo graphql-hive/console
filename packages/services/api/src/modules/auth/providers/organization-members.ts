@@ -84,6 +84,9 @@ const ResourceAssignmentGroupModel = z.object({
   appDeployment: ServiceResourceAssignmentModel,
 });
 
+/**
+ * Resource assignments as stored within the database.
+ */
 type ResourceAssignmentGroup = z.TypeOf<typeof ResourceAssignmentGroupModel>;
 
 type MemberRoleType = {
@@ -95,7 +98,14 @@ type MemberRoleType = {
 
 export type OrganizationMembershipRoleAssignment = {
   role: MemberRoleType;
+  /**
+   * Resource assignments as stored within the database.
+   */
   resources: ResourceAssignmentGroup;
+  /**
+   * Actual resolved resource groups
+   */
+  resolvedResources: ResolvedResourceAssignments;
 };
 
 type OrganizationMembership = {
@@ -238,6 +248,13 @@ export class OrganizationMembers {
 
           // In this case we translate the legacy scopes to a single permission group on the "organization"
           // resource typ. Then assign the users organization to the group, so it has the same behavior as previously.
+          const resources: ResourceAssignmentGroup = {
+            project: '*',
+            target: '*',
+            service: '*',
+            appDeployment: '*',
+          };
+
           organizationMembership.assignedRoles.push({
             role: {
               id: 'legacy-scope-role',
@@ -248,12 +265,11 @@ export class OrganizationMembers {
               ),
             },
             // allow all permissions for all resources within the organization.
-            resources: {
-              project: '*',
-              target: '*',
-              service: '*',
-              appDeployment: '*',
-            },
+            resources,
+            resolvedResources: resolveResourceAssignment({
+              organizationId: organization.id,
+              groups: resources,
+            }),
           });
         }
         // else {
@@ -276,13 +292,18 @@ export class OrganizationMembers {
           if (!membershipRole) {
             continue;
           }
+          const resources: ResourceAssignmentGroup = {
+            project: '*',
+            target: '*',
+            service: '*',
+            appDeployment: '*',
+          };
           record.assignedRoles.push({
-            resources: {
-              project: '*',
-              target: '*',
-              service: '*',
-              appDeployment: '*',
-            },
+            resources,
+            resolvedResources: resolveResourceAssignment({
+              organizationId: organization.id,
+              groups: resources,
+            }),
             role: membershipRole,
           });
         }
@@ -406,4 +427,124 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
   }
 
   return permissions;
+}
+
+type OrganizationAssignment = {
+  type: 'organization';
+  organizationId: string;
+};
+
+type ProjectAssignment = {
+  type: 'project';
+  projectId: string;
+};
+
+type TargetAssignment = {
+  type: 'target';
+  targetId: string;
+};
+
+type ServiceAssignment = {
+  type: 'service';
+  targetId: string;
+  serviceName: string;
+};
+
+type AppDeploymentAssignment = {
+  type: 'appDeployment';
+  targetId: string;
+  appDeploymentName: string;
+};
+
+export type ResourceAssignment =
+  | OrganizationAssignment
+  | ProjectAssignment
+  | TargetAssignment
+  | ServiceAssignment
+  | AppDeploymentAssignment;
+
+type ResolvedResourceAssignments = {
+  organization: OrganizationAssignment;
+  project: OrganizationAssignment | Array<ProjectAssignment>;
+  target: OrganizationAssignment | Array<ProjectAssignment> | Array<TargetAssignment>;
+  service:
+    | OrganizationAssignment
+    | Array<ProjectAssignment>
+    | Array<TargetAssignment>
+    | Array<ServiceAssignment>;
+  appDeployment:
+    | OrganizationAssignment
+    | Array<ProjectAssignment>
+    | Array<TargetAssignment>
+    | Array<AppDeploymentAssignment>;
+};
+
+/**
+ * This function resolves the "stored-in-database", user configuration to the actual resolved structure
+ * Currently, we have the following hierarchy
+ *
+ *        organization
+ *             v
+ *           project
+ *             v
+ *           target
+ *          v      v
+ * app deployment  service
+ *
+ * If one level specifies "*", it needs to inherit the resources defined on the next upper level.
+ */
+function resolveResourceAssignment(args: {
+  organizationId: string;
+  groups: ResourceAssignmentGroup;
+}): ResolvedResourceAssignments {
+  const organization: OrganizationAssignment = {
+    type: 'organization',
+    organizationId: args.organizationId,
+  };
+
+  let project: ResolvedResourceAssignments['project'] = organization;
+
+  if (args.groups.project !== '*') {
+    project = args.groups.project.map(projectId => ({
+      type: 'project',
+      projectId,
+    }));
+  }
+
+  let target: ResolvedResourceAssignments['target'] = project;
+
+  if (args.groups.target !== '*') {
+    target = args.groups.target.map(targetId => ({
+      type: 'target',
+      targetId,
+    }));
+  }
+
+  let service: ResolvedResourceAssignments['service'] = target;
+
+  if (args.groups.service !== '*') {
+    service = args.groups.service.map(([targetId, serviceName]) => ({
+      type: 'service',
+      targetId,
+      serviceName,
+    }));
+  }
+
+  let appDeployment: ResolvedResourceAssignments['appDeployment'] = target;
+
+  if (args.groups.service !== '*') {
+    appDeployment = args.groups.service.map(([targetId, appDeploymentName]) => ({
+      type: 'appDeployment',
+      targetId,
+      appDeploymentName,
+    }));
+  }
+
+  return {
+    organization,
+    project,
+    target,
+    service,
+    appDeployment,
+  };
 }
