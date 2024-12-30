@@ -411,7 +411,7 @@ function PreflightScriptContent() {
         handle authentication.
       </Subtitle>
 
-      <div className="flex items-center gap-2 text-sm">
+      <div>
         <Button
           size="sm"
           variant="outline"
@@ -426,55 +426,60 @@ function PreflightScriptContent() {
         </Button>
       </div>
 
-      {preflightScript.isPreflightScriptEnabled && (
-        <>
-          <EditorTitle className="mt-6 flex items-center gap-2">
-            Script{' '}
-            <Badge className="text-xs" variant="outline">
-              JavaScript
-            </Badge>
-          </EditorTitle>
-          <Subtitle className="mb-3">Read-only view of the script</Subtitle>
-          <MonacoEditor
-            height={128}
-            value={preflightScript.script}
-            {...monacoProps.script}
-            className={classes.monacoMini}
-            wrapperProps={{
-              ['data-cy']: 'preflight-script-editor-mini',
-            }}
-            options={{
-              ...monacoProps.script.options,
-              lineNumbers: 'off',
-              readOnly: true,
-            }}
-          />
-        </>
-      )}
+      <EditorTitle className="mt-6 flex cursor-not-allowed items-center gap-2">
+        Script{' '}
+        <Badge className="text-xs" variant="outline">
+          JavaScript
+        </Badge>
+      </EditorTitle>
+      <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
+      <div className="relative">
+        {preflightScript.isPreflightScriptEnabled ? null : (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
+            <div className="rounded-md bg-[#0f1520] p-4 text-sm">
+              Preflight Script is disabled and will not be executed
+            </div>
+          </div>
+        )}
+        <MonacoEditor
+          height={128}
+          value={preflightScript.script}
+          {...monacoProps.script}
+          className={cn(classes.monacoMini, 'z-10')}
+          wrapperProps={{
+            ['data-cy']: 'preflight-script-editor-mini',
+          }}
+          options={{
+            ...monacoProps.script.options,
+            lineNumbers: 'off',
+            domReadOnly: true,
+            readOnly: true,
+            hover: {
+              enabled: false,
+            },
+          }}
+        />
+      </div>
 
-      {preflightScript.isPreflightScriptEnabled ? (
-        <>
-          <EditorTitle className="mt-6 flex items-center gap-2">
-            Environment variables{' '}
-            <Badge className="text-xs" variant="outline">
-              JSON
-            </Badge>
-          </EditorTitle>
-          <Subtitle className="mb-3">
-            Declare variables to hold and manage data in the script.
-          </Subtitle>
-          <MonacoEditor
-            height={128}
-            value={preflightScript.environmentVariables}
-            onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
-            {...monacoProps.env}
-            className={classes.monacoMini}
-            wrapperProps={{
-              ['data-cy']: 'env-editor-mini',
-            }}
-          />
-        </>
-      ) : null}
+      <EditorTitle className="mt-6 flex items-center gap-2">
+        Environment variables{' '}
+        <Badge className="text-xs" variant="outline">
+          JSON
+        </Badge>
+      </EditorTitle>
+      <Subtitle className="mb-3">
+        Declare variables that can be used by both the script and headers.
+      </Subtitle>
+      <MonacoEditor
+        height={128}
+        value={preflightScript.environmentVariables}
+        onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
+        {...monacoProps.env}
+        className={classes.monacoMini}
+        wrapperProps={{
+          ['data-cy']: 'env-editor-mini',
+        }}
+      />
     </>
   );
 }
