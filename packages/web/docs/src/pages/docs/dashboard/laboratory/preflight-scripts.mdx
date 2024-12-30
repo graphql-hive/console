@@ -26,6 +26,59 @@ The interface displays two editors:
 
 <Screenshot>![Active Preflight Script](./active-preflight-script.png)</Screenshot>
 
+## API Reference
+
+When writing a preflight script, you have access to some of browser APIs and majority of JavaScript
+features, including [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API),
+[console](https://developer.mozilla.org/en-US/docs/Web/API/console) or top level `await` syntax.
+Additionally, the Laboratory provides a few methods designed to simplify common workflows, such as
+handling authentication or interacting with the user.
+
+### Environment Variables
+
+You can use the `lab.environment` API to store and retrieve data between requests or to pass values
+directly to HTTP headers for executed GraphQL requests.
+
+`lab.environment.set(key: string, value: any): void`
+
+Sets the value of the environment variable with the given key.
+
+`lab.environment.get(key: string): any`
+
+Returns the value of the environment variable with the given key.
+
+```js
+lab.environment.set('myKey', 'myValue')
+lab.environment.get('myKey') // 'myValue'
+```
+
+Environment variables are persisted in the browser, they are not shared between different users or
+devices.
+
+### User Interactions
+
+{/* TODO: explain */}
+
+`lab.prompt(message: string, defaultValue?: string): Promise<string | null>`
+
+Prompts the user with a message and an optional default value. Returns a promise that resolves with
+the user's input or `null` if the user cancels the prompt.
+
+```js
+const username = await lab.prompt('Enter your username')
+const password = await lab.prompt('Enter your password')
+```
+
+### CryptoJS
+
+For certain workflows, you may need to encrypt or decrypt data. The Laboratory provides access to
+the [CryptoJS](https://cryptojs.gitbook.io/docs) library.
+
+```js
+CryptoJS.MD5('Message')
+CryptoJS.HmacSHA256('Message', 'Secret Passphrase')
+```
+
 ## Editing Preflight Script
 
 Clicking the "Edit" button opens a window that allows you to edit, test, and save your script in
@@ -37,42 +90,25 @@ Hive.
   organization, but only users with access to target Settings can edit the script code.
 </Callout>
 
-You can use any JavaScript syntax (including top-level `await`) in the Script editor. Getting and
-setting environment variables is done by accessing the `environment` property on the `lab` global
-variable.
+As you write your script, you can click the "Run" button to test it. The script will run in a
+sandboxed environment, and you can see the output in the console.
 
-```js
-// get myKey variable from the Environment variables editor
-lab.environment.get('myKey')
-// set myKey variable to the Environment variables editor (persistent in localStorage)
-lab.environment.set('myKey', myValue)
-```
+Once you're satisfied with your script, click the "Save" button to persist it for all users in your
+organization.
 
 <Screenshot>![](./editing.png)</Screenshot>
 
-### CryptoJS
+## Using Environment Variables in HTTP Headers
 
-Additionally, you can access [the CryptoJS library](https://cryptojs.gitbook.io/docs) by accessing
-the `CryptoJS` property on the `lab` global variable.
+To use environment variables in the HTTP headers of your GraphQL requests, wrap the keys in double
+curly braces, for example:
 
-<Screenshot>![](./crypto-js.png)</Screenshot>
-
-### Global Variables and Errors
-
-Access to global variables such as `this`, `window` or `globalThis` is restricted. Errors thrown by
-the script will be displayed in Console Output.
-
-<Screenshot>![](./unable-to-access-global-variables.png)</Screenshot>
-
-### Using Environment Variables
-
-To use your environment variables in GraphiQL headers editor wraps environment keys with
-double-curly braces, e.g.:
-
-```json filename="Headers" /{{myEnvVar}}/
+```json filename="Headers" /{{access_token}}/
 {
-  "Authorization": "Bearer {{myEnvVar}}"
+  "Authorization": "Bearer {{access_token}}"
 }
 ```
+
+This will replace `{{access_token}}` with the value of the `access_token` environment variable.
 
 <Screenshot>![](./headers.png)</Screenshot>
