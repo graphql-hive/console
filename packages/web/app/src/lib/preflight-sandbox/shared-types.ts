@@ -10,6 +10,7 @@ export namespace IFrameEvents {
       log = 'log',
       result = 'result',
       error = 'error',
+      prompt = 'prompt',
     }
 
     type ReadyEventData = {
@@ -39,10 +40,19 @@ export namespace IFrameEvents {
       error: Error;
     };
 
+    type PromptEventData = {
+      type: Event.prompt;
+      runId: string;
+      promptId: number;
+      message: string;
+      defaultValue?: string;
+    };
+
     export type EventData =
       | ReadyEventData
       | StartEventData
       | LogEventData
+      | PromptEventData
       | ResultEventData
       | ErrorEventData;
 
@@ -52,10 +62,11 @@ export namespace IFrameEvents {
   export namespace Incoming {
     export const enum Event {
       run = 'run',
+      promptResponse = 'promptResponse',
       abort = 'abort',
     }
 
-    export type RunEventData = {
+    type RunEventData = {
       type: Event.run;
       id: string;
       script: string;
@@ -65,11 +76,16 @@ export namespace IFrameEvents {
     type AbortEventData = {
       type: Event.abort;
       id: string;
-      script: string;
     };
 
-    type EventData = RunEventData | AbortEventData;
+    type PromptResponseEventData = {
+      type: Event.promptResponse;
+      id: string;
+      promptId: number;
+      value: string | null;
+    };
 
+    export type EventData = RunEventData | AbortEventData | PromptResponseEventData;
     export type MessageEvent = _MessageEvent<EventData>;
   }
 }

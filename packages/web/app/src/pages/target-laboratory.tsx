@@ -52,6 +52,7 @@ import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
+import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
 
 const explorer = explorerPlugin();
@@ -618,7 +619,10 @@ export function TargetLaboratoryPage(props: {
         page={Page.Laboratory}
         className="flex h-[--content-height] flex-col pb-0"
       >
-        <LaboratoryPageContent {...props} />
+        <PromptProvider>
+          <LaboratoryPageContent {...props} />
+          <PromptManager />
+        </PromptProvider>
       </TargetLayout>
     </>
   );
