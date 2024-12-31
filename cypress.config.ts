@@ -16,6 +16,10 @@ export default defineConfig({
   video: isCI,
   screenshotOnRunFailure: isCI,
   defaultCommandTimeout: 15_000, // sometimes the app takes longer to load, especially in the CI
+  // We need to disable this to stub window.prompt - cross-origin iframes
+  // The prompt is accessible and displayed to the user, but the test runner can't interact with it,
+  // meaning we can't automate the input of the prompt.
+  chromeWebSecurity: false,
   retries: 2,
   e2e: {
     setupNodeEvents(on) {

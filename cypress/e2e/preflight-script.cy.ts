@@ -1,3 +1,5 @@
+import { dedent } from '../support/testkit';
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
@@ -95,6 +97,38 @@ throw new TypeError('Test')`,
         'Error: Fatal (Line: 3, Column: 1)',
         'TypeError: Test (Line: 4, Column: 7)',
       ].join(''),
+    );
+  });
+
+  it('prompt and pass the awaited response', () => {
+    setEditorScript(script);
+
+    cy.dataCy<HTMLIFrameElement>('preflight-embed-iframe').then($iframe => {
+      const iframeWindow = $iframe[0].contentWindow;
+      // Stub `prompt` inside the iframe
+      cy.stub(iframeWindow, 'prompt').returns('test-username');
+    });
+
+    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+
+    setEditorScript(
+      dedent`
+        const username = await lab.prompt('Enter your username');
+        console.info(username);
+      `,
+    );
+
+    cy.dataCy('run-preflight-script').click();
+
+    // First log previous log message
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    // After the new logs
+    cy.dataCy('console-output').should(
+      'contain',
+      dedent`
+        Info: test-username (Line: 2, Column: 1)
+      `,
     );
   });
 

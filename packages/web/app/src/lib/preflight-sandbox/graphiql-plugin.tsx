@@ -316,11 +316,12 @@ export function usePreflightScript(args: {
         src="/__preflight-embed"
         title="preflight-worker"
         className="hidden"
+        data-cy="preflight-embed-iframe"
         /**
          * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
          * In PROD the webworker is not
          */
-        sandbox={import.meta.env.DEV ? 'allow-scripts allow-same-origin' : 'allow-scripts'}
+        sandbox={'allow-scripts allow-modals' + (import.meta.env.DEV ? ' allow-same-origin' : '')}
         ref={iframeRef}
       />
     ),

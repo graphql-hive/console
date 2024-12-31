@@ -69,7 +69,7 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
         }
 
         if (ev.data.type === WorkerEvents.Outgoing.Event.prompt) {
-          const promptResult = window.parent.prompt(ev.data.message, ev.data.defaultValue);
+          const promptResult = window.prompt(ev.data.message, ev.data.defaultValue);
           worker.postMessage({
             type: WorkerEvents.Incoming.Event.promptResponse,
             promptId: ev.data.promptId,
