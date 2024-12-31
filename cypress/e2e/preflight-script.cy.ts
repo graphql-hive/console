@@ -100,7 +100,7 @@ throw new TypeError('Test')`,
     );
   });
 
-  it.only('prompt and pass the awaited response', () => {
+  it('prompt and pass the awaited response', () => {
     cy.viewport(1600, 800);
     setEditorScript(script);
 
