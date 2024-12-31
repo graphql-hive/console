@@ -8,10 +8,6 @@ import {
 } from '../support/testkit';
 import type { Report } from './../../packages/libraries/core/src/client/usage.js';
 
-Cypress.on('uncaught:exception', (_err, _runnable) => {
-  return false;
-});
-
 function createRegistryAccessToken(params: {
   organizationSlug: string;
   projectSlug: string;
