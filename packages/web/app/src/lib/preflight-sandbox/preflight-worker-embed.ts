@@ -67,7 +67,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
     worker = new PreflightWorker();
     workers.set(runId, worker);
 
-    const timeout = setTimeout(() => {
+    timeout = setTimeout(() => {
       postMessage({
         type: IFrameEvents.Outgoing.Event.error,
         runId,
@@ -107,7 +107,6 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
             runId,
             environmentVariables: ev.data.environmentVariables,
           });
-          clearTimeout(timeout);
           terminate();
           return;
         }
@@ -127,7 +126,6 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
             runId,
             error: ev.data.error,
           });
-          clearTimeout(timeout);
           terminate();
           return;
         }

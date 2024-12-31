@@ -210,11 +210,13 @@ export function usePreflightScript(args: {
       const isFinishedD = Promise.withResolvers<void>();
       const openedPromptIds = new Set<number>();
 
+      // eslint-disable-next-line no-inner-declarations
       function setFinished() {
         isFinished = true;
         isFinishedD.resolve();
       }
 
+      // eslint-disable-next-line no-inner-declarations
       function closedOpenedPrompts() {
         if (openedPromptIds.size) {
           for (const promptId of openedPromptIds) {
@@ -224,11 +226,11 @@ export function usePreflightScript(args: {
       }
 
       // eslint-disable-next-line no-inner-declarations
-      function eventHandler(ev: IFrameEvents.Outgoing.MessageEvent) {
+      async function eventHandler(ev: IFrameEvents.Outgoing.MessageEvent) {
         if (ev.data.type === IFrameEvents.Outgoing.Event.prompt) {
           const promptId = ev.data.promptId;
           openedPromptIds.add(promptId);
-          prompt
+          await prompt
             .openPrompt({
               id: promptId,
               title: ev.data.message,
