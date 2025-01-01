@@ -9,7 +9,6 @@ import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { RegistryModel } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
 
 const ProjectPolicyPageQuery = graphql(`
   query ProjectPolicyPageQuery($organizationSlug: String!, $projectSlug: String!) {
