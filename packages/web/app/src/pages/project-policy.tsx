@@ -83,24 +83,6 @@ function ProjectPolicyContent(props: { organizationSlug: string; projectSlug: st
   const currentOrganization = query.data?.organization?.organization;
   const currentProject = query.data?.project;
 
-  useRedirect({
-    canAccess: currentProject?.viewerCanModifySchemaPolicy === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-        },
-      });
-    },
-    entity: currentProject,
-  });
-
-  if (currentProject?.viewerCanModifySchemaPolicy === false) {
-    return null;
-  }
-
   if (query.error) {
     return (
       <QueryError
@@ -164,31 +146,35 @@ function ProjectPolicyContent(props: { organizationSlug: string; projectSlug: st
                   mutation.error?.message ||
                   mutation.data?.updateSchemaPolicyForProject.error?.message
                 }
-                onSave={async newPolicy => {
-                  await mutate({
-                    selector: {
-                      organizationSlug: props.organizationSlug,
-                      projectSlug: props.projectSlug,
-                    },
-                    policy: newPolicy,
-                  }).then(result => {
-                    if (result.error || result.data?.updateSchemaPolicyForProject.error) {
-                      toast({
-                        variant: 'destructive',
-                        title: 'Error',
-                        description:
-                          result.error?.message ||
-                          result.data?.updateSchemaPolicyForProject.error?.message,
-                      });
-                    } else {
-                      toast({
-                        variant: 'default',
-                        title: 'Success',
-                        description: 'Policy updated successfully',
-                      });
-                    }
-                  });
-                }}
+                onSave={
+                  currentProject?.viewerCanModifySchemaPolicy
+                    ? async newPolicy => {
+                        await mutate({
+                          selector: {
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                          },
+                          policy: newPolicy,
+                        }).then(result => {
+                          if (result.error || result.data?.updateSchemaPolicyForProject.error) {
+                            toast({
+                              variant: 'destructive',
+                              title: 'Error',
+                              description:
+                                result.error?.message ||
+                                result.data?.updateSchemaPolicyForProject.error?.message,
+                            });
+                          } else {
+                            toast({
+                              variant: 'default',
+                              title: 'Success',
+                              description: 'Policy updated successfully',
+                            });
+                          }
+                        });
+                      }
+                    : undefined
+                }
                 currentState={currentProject.schemaPolicy}
               />
             ) : (
