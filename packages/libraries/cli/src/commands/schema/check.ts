@@ -2,6 +2,7 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchema,
@@ -169,6 +170,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
       const sdl = await loadSchema(file);
       const git = await gitInfo(() => {

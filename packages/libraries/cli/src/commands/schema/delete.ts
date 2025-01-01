@@ -2,6 +2,7 @@ import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -110,6 +111,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
 
       const result = await this.registryApi(endpoint, accessToken).request({

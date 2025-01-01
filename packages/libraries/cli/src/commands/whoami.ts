@@ -3,6 +3,7 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {
@@ -74,6 +75,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       legacyFlagName: 'token',
       args: flags,
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const result = await this.registryApi(registry, token)

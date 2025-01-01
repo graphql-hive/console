@@ -4,6 +4,7 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
@@ -83,6 +84,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const actionId: string = args.actionId;
