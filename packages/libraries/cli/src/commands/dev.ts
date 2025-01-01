@@ -11,6 +11,7 @@ import {
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
 import { loadSchema, renderErrors } from '../helpers/schema';
 import { invariant } from '../helpers/validation';
 
@@ -204,6 +205,7 @@ export default class Dev extends Command<typeof Dev> {
           legacyFlagName: 'token',
           args: flags,
           env: 'HIVE_TOKEN',
+          message: ACCESS_TOKEN_MISSING,
         });
 
         void this.watch(flags.watchInterval, serviceInputs, services =>
@@ -249,6 +251,7 @@ export default class Dev extends Command<typeof Dev> {
         legacyFlagName: 'token',
         args: flags,
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
 
       return this.compose({
