@@ -109,7 +109,7 @@
       "ws@^8.0.0": "^8.18.0",
       "ws@*": ">=8.18.0 || >=7.5.10 || >=6.2.3 || >=5.2.4",
       "cookie@<0.7.0": "0.7.2",
-      "ip": "https://registry.npmjs.org/neoip/-/neoip-2.1.0.tgz"
+      "ip": "npm:neoip@2.1.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
