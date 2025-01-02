@@ -1,3 +1,3 @@
 export default {
-  'apollo-studio': 'Apollo Studio alternative',
+  'apollo-graphos': 'Apollo GraphOS alternative',
 };

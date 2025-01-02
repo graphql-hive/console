@@ -3,14 +3,14 @@ import * as pulumi from '@pulumi/pulumi';
 import { ServiceDeployment } from '../utils/service-deployment';
 import { Environment } from './environment';
 
-const apiConfig = new pulumi.Config('api');
+const postgresConfig = new pulumi.Config('postgres');
 
 export function deployDatabaseCleanupJob(options: { environment: Environment }) {
   if (options.environment.isProduction) {
     throw new Error('Database cleanup job is not allowed in "production" environment!');
   }
 
-  const rawConnectionString = apiConfig.requireSecret('postgresConnectionString');
+  const rawConnectionString = postgresConfig.requireSecret('connectionString');
 
   const configMap = new k8s.core.v1.ConfigMap('db-cleanup-script', {
     data: {

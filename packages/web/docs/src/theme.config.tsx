@@ -10,6 +10,7 @@ import {
 import { isLandingPage, NavigationMenu } from './components/navigation-menu';
 import { ProductUpdateBlogPostHeader } from './components/product-update-blog-post-header';
 import { cn } from './lib';
+import favicon from '../public/favicon.svg';
 
 const HiveLogo = PRODUCTS.HIVE.logo;
 
@@ -85,6 +86,7 @@ export default defineConfig({
 
     return (
       <>
+        <link rel="icon" href={favicon.src} />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <link rel="canonical" href={canonicalUrl} />

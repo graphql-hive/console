@@ -1,5 +1,45 @@
 # hive
 
+## 2.1.0
+
+### Minor Changes
+
+- [#5564](https://github.com/graphql-hive/console/pull/5564)
+  [`e0eb3bd`](https://github.com/graphql-hive/console/commit/e0eb3bdb289c6349f51d71ba0570328d2f4e98d7)
+  Thanks [@dimaMachina](https://github.com/dimaMachina)! - Add preflight scripts for laboratory.
+
+  It is now possible to add a preflight script within the laboratory that executes before sending a
+  GraphQL request.
+  [Learn more.](https://the-guild.dev/graphql/hive/product-updates/2024-12-27-preflight-script)
+
+- [#5530](https://github.com/graphql-hive/console/pull/5530)
+  [`38c14e2`](https://github.com/graphql-hive/console/commit/38c14e21d8fd76f04a750ede3aac07aa10685687)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Add organization audit log.
+
+  Each organization now has an audit log of all user actions that can be exported by admins.
+  Exported audit logs are stored on the pre-configured S3 storage.
+
+  In case you want to store exported audit logs on a separate S3 bucket, you can use the
+  `S3_AUDIT_LOG` prefixed environment variables for the configuration.
+
+  [Learn more.](https://graphql-hive.com/product-updates/2024-12-27-audit-logs)
+
+- [#6234](https://github.com/graphql-hive/console/pull/6234)
+  [`eecd099`](https://github.com/graphql-hive/console/commit/eecd099309e2308f216c709a1fe23f15f6d6318b)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds
+  `lab.prompt(message, defaultValue)` to Preflight Script API
+
+### Patch Changes
+
+- [#6232](https://github.com/graphql-hive/console/pull/6232)
+  [`ff44b62`](https://github.com/graphql-hive/console/commit/ff44b62aebc4b5d4e3ff321ad3ed59694d94330a)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improvements to UI of Preflight Script
+  (Laboratory)
+
+- [#6233](https://github.com/graphql-hive/console/pull/6233)
+  [`7b0c920`](https://github.com/graphql-hive/console/commit/7b0c920c578a9220c0bad69d2f6b69023f8beece)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Tiny UI fixes
+
 ## 2.0.1
 
 ### Patch Changes
