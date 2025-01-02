@@ -190,7 +190,8 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
             : undefined,
         });
       void hive.info();
-      if (hive.experimental__persistedDocuments) {
+      const experimentalPersistedDocs = hive.experimental__persistedDocuments;
+      if (experimentalPersistedDocs) {
         addPlugin(
           usePersistedOperations({
             extractPersistedOperationId(body, request) {
@@ -207,7 +208,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               return null;
             },
             async getPersistedOperation(key, _request, context) {
-              const document = await experimental__persistedDocuments.resolve(key);
+              const document = await experimentalPersistedDocs.resolve(key);
               // after we resolve the document we need to update the cache record to contain the resolved document
               if (document) {
                 const record = contextualCache.get(context);
@@ -222,7 +223,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               return document;
             },
             allowArbitraryOperations(request) {
-              return experimental__persistedDocuments.allowArbitraryDocuments(request);
+              return experimentalPersistedDocs.allowArbitraryDocuments(request);
             },
             customErrors: {
               keyNotFound() {
