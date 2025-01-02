@@ -387,6 +387,14 @@ const permissionsByLevel = {
   ],
 } as const;
 
+export const allPermissions = [
+  ...permissionsByLevel.organization.map(v => v.value),
+  ...permissionsByLevel.project.map(v => v.value),
+  ...permissionsByLevel.target.map(v => v.value),
+  ...permissionsByLevel.service.map(v => v.value),
+  ...permissionsByLevel.appDeployment.map(v => v.value),
+] as const;
+
 export const PermissionsPerResourceLevelAssignmentModel = z.object({
   organization: z.set(z.union(permissionsByLevel.organization)),
   project: z.set(z.union(permissionsByLevel.project)),
@@ -399,7 +407,7 @@ export type PermissionsPerResourceLevelAssignment = z.TypeOf<
   typeof PermissionsPerResourceLevelAssignmentModel
 >;
 
-type ResourceLevels = keyof PermissionsPerResourceLevelAssignment;
+export type ResourceLevel = keyof PermissionsPerResourceLevelAssignment;
 
 export const PermissionsModel = z.union([
   ...permissionsByLevel.organization,
@@ -409,11 +417,11 @@ export const PermissionsModel = z.union([
   ...permissionsByLevel.appDeployment,
 ]);
 
-type Permissions = z.TypeOf<typeof PermissionsModel>;
+export type Permission = z.TypeOf<typeof PermissionsModel>;
 
 const permissionResourceLevelLookupMap = new Map<
   z.TypeOf<typeof PermissionsModel>,
-  ResourceLevels
+  ResourceLevel
 >();
 
 for (const [key, permissions] of objectEntries(permissionsByLevel)) {
@@ -423,7 +431,7 @@ for (const [key, permissions] of objectEntries(permissionsByLevel)) {
 }
 
 /** Get the permission group for a specific permissions */
-function getPermissionGroup(permission: Permissions): ResourceLevels {
+export function getPermissionGroup(permission: Permission): ResourceLevel {
   const group = permissionResourceLevelLookupMap.get(permission);
 
   if (group === undefined) {
@@ -437,7 +445,7 @@ function getPermissionGroup(permission: Permissions): ResourceLevels {
  * Transforms a flat permission array into an object that groups the permissions per resource level.
  */
 export function permissionsToPermissionsPerResourceLevelAssignment(
-  permissions: Array<Permissions>,
+  permissions: Array<Permission>,
 ): PermissionsPerResourceLevelAssignment {
   const assignment: PermissionsPerResourceLevelAssignment = {
     organization: new Set(),
@@ -449,7 +457,7 @@ export function permissionsToPermissionsPerResourceLevelAssignment(
 
   for (const permission of permissions) {
     const group = getPermissionGroup(permission);
-    (assignment[group] as Set<Permissions>).add(permission);
+    (assignment[group] as Set<Permission>).add(permission);
   }
 
   return assignment;
