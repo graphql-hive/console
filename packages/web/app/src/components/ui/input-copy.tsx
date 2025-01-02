@@ -26,12 +26,12 @@ export function InputCopy(props: { value: string }) {
 
   return (
     <div className="flex w-full max-w-2xl items-center space-x-2">
-      <div className="relative flex-grow">
+      <div className="relative grow">
         <Input
           type="text"
           value={props.value}
           readOnly
-          className="truncate bg-secondary text-white"
+          className="bg-secondary truncate text-white"
         />
       </div>
       <Button
@@ -39,12 +39,12 @@ export function InputCopy(props: { value: string }) {
         onClick={handleClick}
         variant="outline"
         size="icon"
-        className="h-10 w-10 flex-shrink-0 bg-secondary"
+        className="bg-secondary size-10 shrink-0"
       >
         {isCopied ? (
-          <CheckIcon className="h-4 w-4 text-emerald-500" />
+          <CheckIcon className="size-4 text-emerald-500" />
         ) : (
-          <CopyIcon className="h-4 w-4" />
+          <CopyIcon className="size-4" />
         )}
         <span className="sr-only">{isCopied ? 'Copied' : 'Copy'}</span>
       </Button>
