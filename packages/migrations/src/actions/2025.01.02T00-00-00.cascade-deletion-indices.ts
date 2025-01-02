@@ -6,6 +6,7 @@ import { type MigrationExecutor } from '../pg-migrator';
  */
 export default {
   name: '2025.01.02T00-00-00.cascade-deletion-indices.ts',
+  noTransaction: true,
   run: ({ sql }) => [
     {
       name: 'index schema_checks_manual_approval_user_id',
