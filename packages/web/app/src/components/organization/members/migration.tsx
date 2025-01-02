@@ -887,7 +887,7 @@ export function OrganizationMemberRolesMigration(props: {
               <OrganizationMemberRolesMigrationGroup
                 key={memberGroup.id}
                 memberGroup={memberGroup}
-                roles={organization.memberRoles}
+                roles={organization.memberRoles ?? []}
                 organizationSlug={organization.slug}
               />
             ))}

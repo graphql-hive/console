@@ -5,8 +5,8 @@ on:
         default: true
         type: boolean
       uploadJavaScriptArtifacts:
-        required: true
         type: boolean
+        default: false
       publishLatest:
         default: false
         type: boolean
@@ -34,7 +34,17 @@ on:
 
 jobs:
   build-and-dockerize:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - builder: hive-linux-x64-ubuntu2204
+            platform: linux/amd64
+            suffix: '-amd64'
+          - builder: hive-linux-arm64-ubuntu2204
+            platform: linux/arm64
+            suffix: '-arm64'
+    runs-on: ${{ matrix.builder }}
+    name: dockerize (${{ matrix.platform }})
     permissions:
       contents: read
       packages: write
@@ -70,6 +80,7 @@ jobs:
           dest: ${{ inputs.imageTag }}.zip
 
       - name: upload artifact
+        if: ${{ inputs.uploadJavaScriptArtifacts }}
         uses: randomairborne/r2-release@v1.0.2
         with:
           endpoint: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
@@ -99,15 +110,9 @@ jobs:
           file: ${{ github.workspace }}/schema.graphql
           destination: ${{ inputs.imageTag }}.schema.graphqls
 
-      - name: configure eqemu
-        if: ${{ inputs.dockerize }}
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: 'linux/arm64,linux/amd64'
-
       - name: configure docker buildx
         if: ${{ inputs.dockerize }}
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3.7.1
 
       - name: login to docker registry
         if: ${{ inputs.dockerize }}
@@ -127,28 +132,21 @@ jobs:
           string: ${{ github.head_ref || github.ref_name }}
           replace-with: '_'
 
-      - name: Prepare Bake inputs
-        id: docker-bake-inputs
-        run: |
-          targets=$(docker buildx bake -f docker/docker.hcl --print build | jq -r '.group.build.targets[]')
-          input_set=""
-          first=0
+      - uses: frabert/replace-string-action@v2.5
+        id: docker_cache_key
+        name: build cache key
+        if: ${{ inputs.dockerize }}
+        with:
+          pattern: '[\/,]'
+          flags: 'g'
+          string: ${{ github.ref }}-${{ inputs.targets }}-${{ matrix.platform }}
+          replace-with: '_'
 
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-
-          echo "set<<$EOF" >> "$GITHUB_ENV"
-          for target in $targets
-          do
-              echo "$target.cache-from=type=gha,ignore-error=true,scope=$GITHUB_REF-$target" >> "$GITHUB_ENV"
-              echo "$target.cache-to=type=gha,ignore-error=true,mode=max,scope=$GITHUB_REF-$target" >> "$GITHUB_ENV"
-          done
-          echo "$EOF" >> "$GITHUB_ENV"
-
-      - name: build docker images
-        timeout-minutes: 360
+      - name: build docker images (${{ matrix.platform }})
+        timeout-minutes: 60
         id: docker-bake
         if: ${{ inputs.dockerize }}
-        uses: docker/bake-action@v5
+        uses: docker/bake-action@v5.10.0
         env:
           DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
           COMMIT_SHA: ${{ inputs.imageTag }}
@@ -157,6 +155,8 @@ jobs:
           BUILD_TYPE: 'publish'
           PWD: ${{ github.workspace }}
           BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
+          IMAGE_SUFFIX: ${{ matrix.suffix }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false
@@ -164,15 +164,23 @@ jobs:
           files: docker/docker.hcl
           targets: ${{ inputs.targets }}
           set: |
-            ${{ steps.docker-bake-inputs.outputs.set }}
+            *.cache-from=type=gha,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
+            *.cache-to=type=gha,mode=max,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
 
       - name: docker details pr comment
         uses: marocchino/sticky-pull-request-comment@v2
         if:
           ${{ inputs.dockerize && github.event_name == 'pull_request' && inputs.publishPrComment }}
         with:
+          header: ${{ github.workflow }}
           message: |
-            🐋 This PR was built and pushed to the following [Docker images](https://github.com/graphql-hive?ecosystem=container&tab=packages&visibility=public) (tag: `${{ inputs.imageTag }}`):
+            🐋 This PR was built and pushed to the following [Docker images](https://github.com/graphql-hive?ecosystem=container&tab=packages&visibility=public):
+
+            **Targets**: `${{ inputs.targets }}`
+
+            **Platforms**: `${{ matrix.platform }}`
+
+            **Image Tag**: `${{ inputs.imageTag }}`
 
             <details>
               <summary>Docker Bake metadata</summary>
@@ -191,3 +199,54 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_RELEASE: ${{ inputs.imageTag }}
         run: pnpm upload-sourcemaps
+
+  publish_docker_manifest:
+    needs: build-and-dockerize
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.dockerize }}
+    name: publish multiarch manifest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: configure docker buildx
+        uses: docker/setup-buildx-action@v3.7.1
+
+      - name: login to docker registry
+        if: ${{ inputs.dockerize }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'publish docker multiarch manifest (tag: ${{ inputs.imageTag }})'
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "${{ inputs.targets }}" | jq -r '.group."${{ inputs.targets }}".targets[]')
+
+          for target in $targets
+          do
+              echo "publishing multi-arch manifest for $target"
+              image_name="${{ inputs.registry }}/${{ inputs.imageName }}/$target:${{ inputs.imageTag }}"
+              echo "image name: $image_name"
+
+              docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
+              docker manifest push $image_name
+          done
+
+      - name: 'publish docker multiarch manifest (tag: latest)'
+        if: ${{ inputs.publishLatest }}
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "${{ inputs.targets }}" | jq -r '.group."${{ inputs.targets }}".targets[]')
+
+          for target in $targets
+          do
+              echo "publishing multi-arch manifest for $target"
+              image_name="${{ inputs.registry }}/${{ inputs.imageName }}/$target:latest"
+              echo "image name: $image_name"
+
+              docker manifest create $image_name --amend "$image_name-arm64" --amend "$image_name-amd64"
+              docker manifest push $image_name
+          done

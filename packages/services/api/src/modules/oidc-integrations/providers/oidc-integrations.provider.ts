@@ -1,9 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
+import { maskToken } from '@hive/service-common';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { OrganizationAccessScope } from '../../auth/providers/organization-access';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
+import { Session } from '../../auth/lib/authz';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
@@ -20,10 +21,11 @@ export class OIDCIntegrationsProvider {
   constructor(
     logger: Logger,
     private storage: Storage,
-    private authManager: AuthManager,
     private crypto: CryptoProvider,
+    private auditLog: AuditLogRecorder,
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
+    private session: Session,
   ) {
     this.logger = logger.child({ source: 'OIDCIntegrationsProvider' });
   }
@@ -37,15 +39,13 @@ export class OIDCIntegrationsProvider {
       return false;
     }
 
-    try {
-      await this.authManager.ensureOrganizationAccess({
-        organizationId: organizationId,
-        scope: OrganizationAccessScope.INTEGRATIONS,
-      });
-      return true;
-    } catch {
-      return false;
-    }
+    return await this.session.canPerformAction({
+      organizationId,
+      action: 'oidc:modify',
+      params: {
+        organizationId,
+      },
+    });
   }
 
   async getOIDCIntegrationForOrganization(args: {
@@ -60,9 +60,12 @@ export class OIDCIntegrationsProvider {
       return null;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: args.organizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      action: 'oidc:modify',
+      params: {
+        organizationId: args.organizationId,
+      },
     });
 
     return await this.storage.getOIDCIntegrationForOrganization({
@@ -90,9 +93,12 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: args.organizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      action: 'oidc:modify',
+      params: {
+        organizationId: args.organizationId,
+      },
     });
 
     const organization = await this.storage.getOrganization({
@@ -126,6 +132,14 @@ export class OIDCIntegrationsProvider {
       });
 
       if (creationResult.type === 'ok') {
+        await this.auditLog.record({
+          eventType: 'OIDC_INTEGRATION_CREATED',
+          organizationId: args.organizationId,
+          metadata: {
+            integrationId: creationResult.oidcIntegration.id,
+          },
+        });
+
         return creationResult;
       }
 
@@ -194,9 +208,12 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
+      action: 'oidc:modify',
       organizationId: integration.linkedOrganizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      params: {
+        organizationId: integration.linkedOrganizationId,
+      },
     });
 
     const clientIdResult = maybe(OIDCIntegrationClientIdModel).safeParse(args.clientId);
@@ -223,6 +240,24 @@ export class OIDCIntegrationsProvider {
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
+      });
+
+      const redactedClientSecret = maskToken(oidcIntegration.clientId);
+      const redactedTokenEndpoint = maskToken(oidcIntegration.tokenEndpoint);
+      await this.auditLog.record({
+        eventType: 'OIDC_INTEGRATION_UPDATED',
+        organizationId: integration.linkedOrganizationId,
+        metadata: {
+          updatedFields: JSON.stringify({
+            updateOIDCIntegration: true,
+            clientId: args.clientId,
+            clientSecret: redactedClientSecret,
+            tokenEndpoint: redactedTokenEndpoint,
+            userinfoEndpoint: args.userinfoEndpoint,
+            authorizationEndpoint: args.authorizationEndpoint,
+          }),
+          integrationId: args.oidcIntegrationId,
+        },
       });
 
       return {
@@ -271,12 +306,23 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: integration.linkedOrganizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      action: 'oidc:modify',
+      params: {
+        organizationId: integration.linkedOrganizationId,
+      },
     });
 
     await this.storage.deleteOIDCIntegration(args);
+
+    await this.auditLog.record({
+      eventType: 'OIDC_INTEGRATION_DELETED',
+      organizationId: integration.linkedOrganizationId,
+      metadata: {
+        integrationId: args.oidcIntegrationId,
+      },
+    });
 
     return {
       type: 'ok',
@@ -303,9 +349,12 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: oidcIntegration.linkedOrganizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      action: 'oidc:modify',
+      params: {
+        organizationId: oidcIntegration.linkedOrganizationId,
+      },
     });
 
     return {
@@ -348,9 +397,12 @@ export class OIDCIntegrationsProvider {
       throw new HiveError('Integration not found.');
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: integration.linkedOrganizationId,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      action: 'oidc:modify',
+      params: {
+        organizationId: integration.linkedOrganizationId,
+      },
     });
 
     return this.pubSub.subscribe('oidcIntegrationLogs', integration.id);

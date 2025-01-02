@@ -1,6 +1,6 @@
 import { hash } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
-import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types.next';
+import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';
 
 export const SchemaCoordinateStats: SchemaCoordinateStatsResolvers = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {

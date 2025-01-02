@@ -1,5 +1,5 @@
 import { OIDCIntegrationsProvider } from '../../providers/oidc-integrations.provider';
-import type { SubscriptionResolvers } from './../../../../__generated__/types.next';
+import type { SubscriptionResolvers } from './../../../../__generated__/types';
 
 export const oidcIntegrationLog: NonNullable<SubscriptionResolvers['oidcIntegrationLog']> = {
   subscribe: (_, args, { injector }) =>

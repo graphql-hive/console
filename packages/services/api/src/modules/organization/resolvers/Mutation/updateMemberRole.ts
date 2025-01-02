@@ -1,7 +1,7 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
 import { createOrUpdateMemberRoleInputSchema } from '../../validation';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateMemberRole: NonNullable<MutationResolvers['updateMemberRole']> = async (
   _,

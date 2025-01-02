@@ -17,20 +17,30 @@ configuring or maintaining infrastructure.
 See [Bundling Problems](/docs/gateway/deployment/serverless#bundling-problem) for more details about
 how to load the supergraph and `transports` option.
 
+In the following example, we showcase how Hive Gateway can be used in a serverless environment with
+Cloudflare Workers. Notice how the implementation leverages the `using` sytax for
+[Explicit Resource Management](https://developers.cloudflare.com/workers/runtime-apis/rpc/lifecycle/#explicit-resource-management),
+this makes sure that the Hive Gateway is gracefully and properly disposed before completing the
+worker.
+
 ```ts filename="index.js"
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import http from '@graphql-mesh/transport-http'
 import supergraph from './supergraph'
 
-export const gateway = createGatewayRuntime({
-  // All options available in `gateway.config.ts` configuration can also be passed here.
-  supergraph,
-  transports: {
-    http // For example, http transport is required for subgraphs using standard GraphQL over HTTP.
+export default {
+  fetch(request, env, ctx) {
+    const gateway = createGatewayRuntime({
+      // All options available in `gateway.config.ts` configuration can also be passed here.
+      supergraph,
+      transports: {
+        http // http transport is required for subgraphs using standard GraphQL over HTTP.
+      }
+    })
+    ctx.waitUntil(gateway[Symbol.asyncDispose]())
+    return gateway(request, env, ctx)
   }
-})
-
-export default { fetch: gateway }
+}
 ```
 
 ```js filename="supergraph.js"

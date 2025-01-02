@@ -502,7 +502,7 @@ export function applyTagFilterOnSubgraphs<
   });
 
   if (!intersectionOfTypesWhereAllFieldsAreInaccessible.size) {
-    filteredSubgraphs;
+    return filteredSubgraphs;
   }
 
   return filteredSubgraphs.map(subgraph => ({

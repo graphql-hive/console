@@ -22,7 +22,6 @@ const rulesToExtends = Object.fromEntries(
       'no-else-return',
       'no-lonely-if',
       'unicorn/prefer-includes',
-      'react/self-closing-comp',
       'no-extra-boolean-cast',
     ].includes(key),
   ),
@@ -204,7 +203,7 @@ module.exports = {
       settings: {
         tailwindcss: {
           callees: tailwindCallees,
-          config: path.join(__dirname, './packages/web/app/tailwind.config.cjs'),
+          config: path.join(__dirname, './packages/web/app/tailwind.config.ts'),
           whitelist: ['drag-none'],
           cssFiles: ['packages/web/app/src/index.css', 'node_modules/graphiql/dist/style.css'],
         },
@@ -225,14 +224,17 @@ module.exports = {
         },
         tailwindcss: {
           callees: tailwindCallees,
-          whitelist: ['light'],
-          config: path.join(__dirname, './packages/web/docs/tailwind.config.cjs'),
+          whitelist: ['light', 'hive-focus', 'hive-focus-within'],
+          config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
       },
     },
     {
       files: 'cypress/**',
       extends: 'plugin:cypress/recommended',
+      rules: {
+        'cypress/no-unnecessary-waiting': 'off',
+      },
     },
   ],
 };

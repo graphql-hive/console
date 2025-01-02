@@ -1,5 +1,5 @@
 import { updateTargetSchemaComposition } from 'testkit/flow';
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { normalizeCliOutput } from '../../../scripts/serializers/cli-output';
 import { createCLI, schemaPublish } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
@@ -633,8 +633,11 @@ describe('other', () => {
       const { createOrg } = await initSeed().createOwner();
       const { inviteAndJoinMember, createProject } = await createOrg();
       await inviteAndJoinMember();
-      const { createToken } = await createProject(ProjectType.Federation);
-      const { secret, fetchSupergraph } = await createToken({});
+      const { createTargetAccessToken, createCdnAccess } = await createProject(
+        ProjectType.Federation,
+      );
+      const { secret } = await createTargetAccessToken({});
+      const { fetchSupergraphFromCDN } = await createCdnAccess();
 
       await schemaPublish([
         '--token',
@@ -650,8 +653,9 @@ describe('other', () => {
         'fixtures/federation-init.graphql',
       ]);
 
-      const supergraph = await fetchSupergraph();
-      expect(supergraph).toMatch('(name: "users", url: "https://api.com/users-subgraph")');
+      const supergraph = await fetchSupergraphFromCDN();
+      expect(supergraph.status).toEqual(200);
+      expect(supergraph.body).toMatch('(name: "users", url: "https://api.com/users-subgraph")');
     });
 
     test.concurrent(
@@ -875,6 +879,11 @@ async function prepare(targetPick: TargetOption) {
   const { targetWithLegacyComposition, targetWithNativeComposition, organization, project } =
     await prepareProject(ProjectType.Federation);
 
+  const target =
+    targetPick === 'targetWithLegacyComposition'
+      ? targetWithLegacyComposition
+      : targetWithNativeComposition;
+
   // force legacy composition
   await updateTargetSchemaComposition(
     {
@@ -883,13 +892,8 @@ async function prepare(targetPick: TargetOption) {
       targetSlug: targetWithLegacyComposition.slug,
       nativeComposition: false,
     },
-    targetWithLegacyComposition.tokens.secrets.settings,
+    targetWithLegacyComposition.ownerToken,
   );
-
-  const target =
-    targetPick === 'targetWithLegacyComposition'
-      ? targetWithLegacyComposition
-      : targetWithNativeComposition;
 
   return {
     cli: createCLI(target.tokens.secrets),
@@ -899,11 +903,14 @@ async function prepare(targetPick: TargetOption) {
 }
 
 async function prepareProject(projectType: ProjectType) {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { organization, createProject } = await createOrg();
-  const { project, createToken, targets } = await createProject(projectType, {
-    useLegacyRegistryModels: false,
-  });
+  const { project, createTargetAccessToken, createCdnAccess, targets } = await createProject(
+    projectType,
+    {
+      useLegacyRegistryModels: false,
+    },
+  );
 
   if (targets.length < 2) {
     throw new Error('Expected at least two targets');
@@ -914,40 +921,31 @@ async function prepareProject(projectType: ProjectType) {
 
   async function prepareTarget(target: (typeof targets)[number]) {
     // Create a token with write rights
-    const readWriteToken = await createToken({
-      organizationScopes: [],
-      projectScopes: [],
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
+    const readWriteToken = await createTargetAccessToken({
       target,
     });
 
     // Create a token with read-only rights
-    const readonlyToken = await createToken({
-      organizationScopes: [],
-      projectScopes: [],
-      targetScopes: [TargetAccessScope.RegistryRead],
-      target,
-    });
-
-    const settingsToken = await createToken({
-      organizationScopes: [],
-      projectScopes: [],
-      targetScopes: [TargetAccessScope.Settings],
+    const readonlyToken = await createTargetAccessToken({
+      mode: 'readOnly',
       target,
     });
 
     // Create CDN token
-    const { secretAccessToken: cdnToken, cdnUrl } = await readWriteToken.createCdnAccess();
+    const {
+      secretAccessToken: cdnToken,
+      cdnUrl,
+      fetchMetadataFromCDN,
+    } = await createCdnAccess(target);
 
     return {
       id: target.id,
       slug: target.slug,
-      fetchVersions: readonlyToken.fetchVersions,
+      ownerToken,
       tokens: {
         secrets: {
           readwrite: readWriteToken.secret,
           readonly: readonlyToken.secret,
-          settings: settingsToken.secret,
         },
         readWriteToken,
         readonlyToken,
@@ -956,7 +954,7 @@ async function prepareProject(projectType: ProjectType) {
         token: cdnToken,
         url: cdnUrl,
         fetchMetadata() {
-          return readWriteToken.fetchMetadataFromCDN();
+          return fetchMetadataFromCDN();
         },
       },
     };

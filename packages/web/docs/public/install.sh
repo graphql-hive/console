@@ -80,7 +80,11 @@
             ARCH=arm
           fi
         elif starts_with "aarch" "\$ARCH"; then
-          ARCH=arm
+          if [ "\$ARCH" = "aarch64" ]; then
+            ARCH=arm64
+          else
+            ARCH=arm
+          fi
         else
          unsupported_arch "\$OS / \$ARCH"
         fi
@@ -107,6 +111,7 @@
 
         echo "Downloaded to \$DOWNLOAD_DIR"
 
+        mkdir -p /usr/local/lib
         rm -rf "/usr/local/lib/hive"
         tar xzf "\$DOWNLOAD_DIR/hive.tar.gz" -C /usr/local/lib
         rm -rf "\$DOWNLOAD_DIR"

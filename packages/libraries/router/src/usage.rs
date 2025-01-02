@@ -1,8 +1,8 @@
 use crate::agent::{AgentError, ExecutionReport, UsageAgent};
+use crate::persisted_documents::PERSISTED_DOCUMENT_HASH_KEY;
 use apollo_router::layers::ServiceBuilderExt;
 use apollo_router::plugin::Plugin;
 use apollo_router::plugin::PluginInit;
-use apollo_router::register_plugin;
 use apollo_router::services::*;
 use apollo_router::Context;
 use core::ops::Drop;
@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::env;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::BoxError;
 use tower::ServiceBuilder;
@@ -23,7 +23,7 @@ use tower::ServiceExt;
 
 pub(crate) static OPERATION_CONTEXT: &str = "hive::operation_context";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct OperationContext {
     pub(crate) client_name: Option<String>,
     pub(crate) client_version: Option<String>,
@@ -41,15 +41,20 @@ struct OperationConfig {
     client_version_header: String,
 }
 
-struct UsagePlugin {
+pub struct UsagePlugin {
     config: OperationConfig,
     agent: Option<Arc<Mutex<UsageAgent>>>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema)]
-struct Config {
+pub struct Config {
     /// Default: true
     enabled: Option<bool>,
+    /// Hive token, can also be set using the HIVE_TOKEN environment variable
+    registry_token: Option<String>,
+    /// Hive registry token. Set to your `/usage` endpoint if you are self-hosting.
+    /// Default: https://app.graphql-hive.com/usage
+    registry_usage_endpoint: Option<String>,
     /// Sample rate to determine sampling.
     /// 0.0 = 0% chance of being sent
     /// 1.0 = 100% chance of being sent.
@@ -73,12 +78,17 @@ struct Config {
     /// Accept invalid SSL certificates
     /// Default: false
     accept_invalid_certs: Option<bool>,
+    /// Frequency of flushing the buffer to the server
+    /// Default: 5 seconds
+    flush_interval: Option<u64>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             enabled: Some(true),
+            registry_token: None,
+            registry_usage_endpoint: Some(DEFAULT_HIVE_USAGE_ENDPOINT.into()),
             sample_rate: Some(1.0),
             exclude: None,
             client_name_header: Some(String::from("graphql-client-name")),
@@ -87,6 +97,7 @@ impl Default for Config {
             buffer_size: Some(1000),
             connect_timeout: Some(5),
             request_timeout: Some(15),
+            flush_interval: Some(5),
         }
     }
 }
@@ -158,18 +169,30 @@ impl UsagePlugin {
     }
 }
 
+static DEFAULT_HIVE_USAGE_ENDPOINT: &str = "https://app.graphql-hive.com/usage";
+
 #[async_trait::async_trait]
 impl Plugin for UsagePlugin {
     type Config = Config;
 
     async fn new(init: PluginInit<Config>) -> Result<Self, BoxError> {
-        let token =
-            env::var("HIVE_TOKEN").map_err(|_| "environment variable HIVE_TOKEN not found")?;
-        let endpoint = env::var("HIVE_ENDPOINT");
-        let endpoint = match endpoint {
-            Ok(endpoint) => endpoint,
-            Err(_) => "https://app.graphql-hive.com/usage".to_string(),
-        };
+        let token = init
+            .config
+            .registry_token
+            .clone()
+            .or_else(|| env::var("HIVE_TOKEN").ok());
+
+        if let None = token {
+            return Err("Hive token is required".into());
+        }
+
+        let endpoint = init
+            .config
+            .registry_usage_endpoint
+            .clone()
+            .unwrap_or_else(|| {
+                env::var("HIVE_ENDPOINT").unwrap_or(DEFAULT_HIVE_USAGE_ENDPOINT.to_string())
+            });
 
         let default_config = Config::default();
         let user_config = init.config;
@@ -192,6 +215,10 @@ impl Plugin for UsagePlugin {
         let request_timeout = user_config
             .request_timeout
             .or(default_config.request_timeout)
+            .expect("request_timeout has no default value");
+        let flush_interval = user_config
+            .flush_interval
+            .or(default_config.flush_interval)
             .expect("request_timeout has no default value");
 
         if enabled {
@@ -217,12 +244,13 @@ impl Plugin for UsagePlugin {
             agent: match enabled {
                 true => Some(Arc::new(Mutex::new(UsageAgent::new(
                     init.supergraph_sdl.to_string(),
-                    token,
+                    token.unwrap(),
                     endpoint,
                     buffer_size,
                     connect_timeout,
                     request_timeout,
                     accept_invalid_certs,
+                    Duration::from_secs(flush_interval),
                 )))),
                 false => None,
             },
@@ -243,12 +271,19 @@ impl Plugin for UsagePlugin {
                         move |ctx: Context, fut| {
                             let agent_clone = agent.clone();
                             async move {
-                                let start = Instant::now();
+                                let start: Instant = Instant::now();
 
                                 // nested async block, bc async is unstable with closures that receive arguments
                                 let operation_context = ctx
                                     .get::<_, OperationContext>(OPERATION_CONTEXT)
                                     .unwrap_or_default()
+                                    .unwrap();
+
+                                // Injected by the persisted document plugin, if it was activated
+                                // and discovered document id
+                                let persisted_document_hash = ctx
+                                    .get::<_, String>(PERSISTED_DOCUMENT_HASH_KEY)
+                                    .ok()
                                     .unwrap();
 
                                 let result: supergraph::ServiceResult = fut.await;
@@ -289,6 +324,7 @@ impl Plugin for UsagePlugin {
                                                 errors: 1,
                                                 operation_body,
                                                 operation_name,
+                                                persisted_document_hash,
                                             },
                                         );
                                         Err(e)
@@ -318,6 +354,8 @@ impl Plugin for UsagePlugin {
                                                             errors: response.errors.len(),
                                                             operation_body: operation_body.clone(),
                                                             operation_name: operation_name.clone(),
+                                                            persisted_document_hash:
+                                                                persisted_document_hash.clone(),
                                                         },
                                                     );
 
@@ -342,9 +380,7 @@ impl Plugin for UsagePlugin {
 fn try_add_report(agent: Arc<Mutex<UsageAgent>>, execution_report: ExecutionReport) {
     agent
         .lock()
-        .map_err(|e| {
-AgentError::Lock(e.to_string())
-        })
+        .map_err(|e| AgentError::Lock(e.to_string()))
         .and_then(|a| a.add_report(execution_report))
         .unwrap_or_else(|e| {
             tracing::error!("Error adding report: {}", e);
@@ -358,7 +394,171 @@ impl Drop for UsagePlugin {
     }
 }
 
-// Register the hive.usage plugin
-pub fn register() {
-    register_plugin!("hive", "usage", UsagePlugin);
+#[cfg(test)]
+mod hive_usage_tests {
+    use apollo_router::{
+        plugin::{test::MockSupergraphService, Plugin, PluginInit},
+        services::supergraph,
+    };
+    use httpmock::{Method::POST, Mock, MockServer};
+    use jsonschema::Validator;
+    use serde_json::json;
+    use tower::ServiceExt;
+
+    use super::{Config, UsagePlugin};
+
+    lazy_static::lazy_static! {
+        static ref SCHEMA_VALIDATOR: Validator =
+                jsonschema::validator_for(&serde_json::from_str(&std::fs::read_to_string("../../services/usage/usage-report-v2.schema.json").expect("can't load json schema file")).expect("failed to parse json schema")).expect("failed to parse schema");
+    }
+
+    struct UsageTestHelper {
+        mocked_upstream: MockServer,
+        plugin: UsagePlugin,
+    }
+
+    impl UsageTestHelper {
+        async fn new() -> Self {
+            let server: MockServer = MockServer::start();
+            let usage_endpoint = server.url("/usage");
+            let mut config = Config::default();
+            config.enabled = Some(true);
+            config.registry_usage_endpoint = Some(usage_endpoint.to_string());
+            config.registry_token = Some("123".into());
+            config.buffer_size = Some(1);
+            config.flush_interval = Some(1);
+
+            let plugin_service = UsagePlugin::new(
+                PluginInit::fake_builder()
+                    .config(config)
+                    .supergraph_sdl("type Query { dummy: String! }".to_string().into())
+                    .build(),
+            )
+            .await
+            .expect("failed to init plugin");
+
+            UsageTestHelper {
+                mocked_upstream: server,
+                plugin: plugin_service,
+            }
+        }
+
+        fn wait_for_processing(&self) -> tokio::time::Sleep {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1))
+        }
+
+        fn activate_usage_mock(&self) -> Mock {
+            self.mocked_upstream.mock(|when, then| {
+                when.method(POST).path("/usage").matches(|r| {
+                    // This mock also validates that the content of the reported usage is valid
+                    // when it comes to the JSON schema validation.
+                    // if it does not match, the request matching will fail and this will lead
+                    // to a failed assertion
+                    let body = r.body.as_ref().unwrap();
+                    let body = String::from_utf8(body.to_vec()).unwrap();
+                    let body = serde_json::from_str(&body).unwrap();
+
+                    SCHEMA_VALIDATOR.is_valid(&body)
+                });
+                then.status(200);
+            })
+        }
+
+        async fn execute_operation(&self, req: supergraph::Request) -> supergraph::Response {
+            let mut supergraph_service_mock = MockSupergraphService::new();
+
+            supergraph_service_mock
+                .expect_call()
+                .times(1)
+                .returning(move |_| {
+                    Ok(supergraph::Response::fake_builder()
+                        .data(json!({
+                            "data": { "hello": "world" },
+                        }))
+                        .build()
+                        .unwrap())
+                });
+
+            let tower_service = self
+                .plugin
+                .supergraph_service(supergraph_service_mock.boxed());
+
+            let response = tower_service
+                .oneshot(req)
+                .await
+                .expect("failed to execute operation");
+
+            response
+        }
+    }
+
+    #[tokio::test]
+    async fn should_work_correctly_for_simple_query() {
+        let instance = UsageTestHelper::new().await;
+        let req = supergraph::Request::fake_builder()
+            .query("query test { hello }")
+            .operation_name("test")
+            .build()
+            .unwrap();
+        let mock = instance.activate_usage_mock();
+
+        instance.execute_operation(req).await.next_response().await;
+
+        instance.wait_for_processing().await;
+
+        mock.assert();
+        mock.assert_hits(1);
+    }
+
+    #[tokio::test]
+    async fn without_operation_name() {
+        let instance = UsageTestHelper::new().await;
+        let req = supergraph::Request::fake_builder()
+            .query("query { hello }")
+            .build()
+            .unwrap();
+        let mock = instance.activate_usage_mock();
+
+        instance.execute_operation(req).await.next_response().await;
+
+        instance.wait_for_processing().await;
+
+        mock.assert();
+        mock.assert_hits(1);
+    }
+
+    #[tokio::test]
+    async fn multiple_operations() {
+        let instance = UsageTestHelper::new().await;
+        let req = supergraph::Request::fake_builder()
+            .query("query test { hello } query test2 { hello }")
+            .operation_name("test")
+            .build()
+            .unwrap();
+        let mock = instance.activate_usage_mock();
+
+        instance.execute_operation(req).await.next_response().await;
+
+        instance.wait_for_processing().await;
+
+        mock.assert();
+        mock.assert_hits(1);
+    }
+
+    #[tokio::test]
+    async fn invalid_query_reported() {
+        let instance = UsageTestHelper::new().await;
+        let req = supergraph::Request::fake_builder()
+            .query("query {")
+            .build()
+            .unwrap();
+        let mock = instance.activate_usage_mock();
+
+        instance.execute_operation(req).await.next_response().await;
+
+        instance.wait_for_processing().await;
+
+        mock.assert();
+        mock.assert_hits(1);
+    }
 }

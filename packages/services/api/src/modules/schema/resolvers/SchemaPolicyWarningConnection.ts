@@ -1,6 +1,6 @@
 import { createDummyConnection } from '../../../shared/schema';
 import { SchemaCheckWarning } from '../providers/models/shared';
-import type { SchemaPolicyWarningConnectionResolvers } from './../../../__generated__/types.next';
+import type { SchemaPolicyWarningConnectionResolvers } from './../../../__generated__/types';
 
 const connection = createDummyConnection<SchemaCheckWarning>(warning => ({
   ...warning,

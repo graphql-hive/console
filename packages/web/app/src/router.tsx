@@ -68,19 +68,17 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
-import { TargetSettingsPage } from './pages/target-settings';
+import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
-if (globalThis.window) {
-  SuperTokens.init(frontendConfig());
-  if (env.sentry) {
-    init({
-      dsn: env.sentry.dsn,
-      enabled: true,
-      dist: 'webapp',
-      release: env.release,
-      environment: env.environment,
-    });
-  }
+SuperTokens.init(frontendConfig());
+if (env.sentry) {
+  init({
+    dsn: env.sentry.dsn,
+    enabled: true,
+    dist: 'webapp',
+    release: env.release,
+    environment: env.environment,
+  });
 }
 
 const queryClient = new QueryClient();
@@ -536,17 +534,7 @@ const targetIndexRoute = createRoute({
 });
 
 const TargetSettingRouteSearch = z.object({
-  page: z
-    .enum([
-      'general',
-      'cdn',
-      'registry-token',
-      'breaking-changes',
-      'base-schema',
-      'schema-contracts',
-    ])
-    .default('general')
-    .optional(),
+  page: TargetSettingsPageEnum.default('general').optional(),
 });
 
 const targetSettingsRoute = createRoute({
@@ -573,13 +561,16 @@ const targetSettingsRoute = createRoute({
 const targetLaboratoryRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'laboratory',
+  validateSearch: () => ({}) as { operation?: string; operationString?: string },
   component: function TargetLaboratoryRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetLaboratoryRoute.useParams();
+    const { operation } = targetLaboratoryRoute.useSearch();
     return (
       <TargetLaboratoryPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        selectedOperationId={operation}
       />
     );
   },

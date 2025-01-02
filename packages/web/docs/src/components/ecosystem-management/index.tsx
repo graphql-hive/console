@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import NextLink from 'next/link';
 import {
   CallToAction,
   DecorationIsolation,
@@ -6,6 +7,7 @@ import {
   HighlightDecoration,
 } from '@theguild/components';
 import { cn } from '../../lib';
+import { ArrowIcon } from '../arrow-icon';
 import { BookIcon } from '../book-icon';
 import { CheckIcon } from '../check-icon';
 import styles from './ecosystem-management.module.css';
@@ -23,36 +25,88 @@ export function EcosystemManagementSection({ className }: { className?: string }
     >
       <div className="relative mx-auto flex w-[1392px] max-w-full flex-col gap-x-4 gap-y-6 md:gap-y-12 lg:flex-row [@media(min-width:1400px)]:gap-x-[120px]">
         <div className="flex flex-col gap-12 lg:w-[488px]">
-          <Heading as="h3" size="sm">
-            360° GraphQL Lifecycle
+          <Heading as="h2" size="sm">
+            360° GraphQL API Management
           </Heading>
           <ul className="mx-auto flex list-none flex-col gap-y-4 text-white/80 lg:gap-y-6">
             {[
-              'A complete ecosystem covering all your dev and production needs.',
-              'Full Apollo Federation Support. Drop-in replacement for Apollo GraphOS (Apollo Studio)',
+              <div className="text-white">
+                A complete ecosystem covering all your dev and production needs.
+              </div>,
               <>
-                Use tools of your choice — either dive into our full GraphQL ecosystem,
-                or&nbsp;build your own stack, connecting GraphQL federation, Hive Gateway, GraphQL
-                Mesh and more.
+                <div className="font-medium text-white">Apollo Federation v1 and v2</div>
+                <div>
+                  Best in class{' '}
+                  <NextLink
+                    className="underline underline-offset-2"
+                    href="/federation-gateway-audit"
+                  >
+                    compatibility with Apollo Federation spec
+                  </NextLink>
+                </div>
               </>,
-              'Learn how to migrate from Apollo and keep your GraphQL stack vendor-unlocked.',
+              <>
+                <div className="font-medium text-white">
+                  Powerful and flexible{' '}
+                  <NextLink
+                    className="underline decoration-1 underline-offset-2"
+                    href="/docs/gateway"
+                  >
+                    GraphQL Gateway (Router)
+                  </NextLink>
+                </div>
+                <div>
+                  GraphQL Subscriptions support and built-in security features (RBAC, JWT, Persisted
+                  Operations)
+                </div>
+              </>,
+              <>
+                <span className="font-medium text-white">No vendor-lock</span> — dive into our full
+                GraphQL ecosystem, or&nbsp;build your own stack, connecting{' '}
+                <NextLink className="underline decoration-1 underline-offset-2" href="/federation">
+                  GraphQL federation
+                </NextLink>
+                ,{' '}
+                <NextLink
+                  className="underline decoration-1 underline-offset-2"
+                  href="/docs/gateway"
+                >
+                  Hive Gateway
+                </NextLink>
+                ,{' '}
+                <NextLink
+                  className="underline decoration-1 underline-offset-2"
+                  href="https://the-guild.dev/graphql/mesh"
+                >
+                  GraphQL Mesh
+                </NextLink>{' '}
+                and more.
+              </>,
+              <>
+                <div className="font-medium text-white">
+                  Drop-in replacement for Apollo GraphOS (Apollo Studio)
+                </div>
+                <div>100% on-prem and open-source</div>
+              </>,
             ].map((text, i) => (
               <li key={i} className="flex items-start gap-4">
                 <CheckIcon className="mt-0.5 shrink-0 text-blue-400" />
-                {text}
+                <div>{text}</div>
               </li>
             ))}
           </ul>
-          <div className="bottom-0 flex w-full flex-col gap-x-4 gap-y-2 max-lg:absolute max-lg:translate-y-[calc(100%+24px)] sm:flex-row">
+          <div className="bottom-0 flex w-full flex-col gap-x-4 gap-y-2 max-lg:absolute max-lg:translate-y-[calc(100%+24px)]">
             <CallToAction
-              href="https://the-guild.dev/graphql/hive/docs/use-cases/apollo-studio"
+              href="/federation"
               variant="primary-inverted"
+              title="Learn what GraphQL Federation is and when to use it."
             >
-              Migrate from Apollo
+              Learn GraphQL Federation
+              <ArrowIcon />
             </CallToAction>
-            <CallToAction href="https://github.com/the-guild-org" variant="secondary">
+            <CallToAction href="/docs/use-cases/apollo-graphos" variant="secondary">
               <BookIcon />
-              Explore the ecosystem
+              Migrate from Apollo GraphOS
             </CallToAction>
           </div>
         </div>
@@ -66,12 +120,12 @@ export function EcosystemManagementSection({ className }: { className?: string }
 }
 
 const edgeTexts = [
-  'Apps send requests to Hive Gateway that acts as the entrypoint to data from your GraphQL service/subgraphs.',
+  'Apps send requests to Hive Gateway that acts as the api gateway to data from your federated graph.',
   'Developers that build the apps/api clients will use GraphQL Codegen for generating type-safe code that makes writing apps safer and faster.',
   'Codegen uses Hive to pull the GraphQL schema for generating the code.',
-  'Hive Gateway pulls the composite schema / supergraph from the Hive schema registry that gives it all the information about the subgraphs and available data to serve to the outside world.',
+  'Hive Gateway pulls the supergraph from the Hive Schema Registry that gives it all the information about the subgraphs and available data to serve to the outside world.',
   'Hive Gateway delegates GraphQL requests to the corresponding Yoga subgraphs within your internal network.',
-  'Check the subgraph schema against the Hive registry before deployment to ensure integrity. After deploying a new subgraph version, publish its schema to Hive, to generate the supergraph used by Gateway.',
+  'Check the subgraph schema against the Hive Schema Registry before deployment to ensure integrity. After deploying a new subgraph version, publish its schema to Hive, to generate the supergraph used by Gateway.',
 ];
 const longestEdgeText = edgeTexts.reduce((a, b) => (a.length > b.length ? a : b));
 
@@ -285,9 +339,20 @@ function Illustration(props: { className?: string }) {
       <p className={cn('relative text-white/80', styles.text)}>
         {/* We use the longest text to ensure we have enough space. */}
         <span className="invisible">{longestEdgeText}</span>
-        <span className="absolute inset-0">
-          {highlightedEdge !== null ? edgeTexts[highlightedEdge - 1] : null}
-        </span>
+        {edgeTexts.map((text, i) => {
+          return (
+            <span
+              key={i}
+              className={cn(
+                'absolute inset-0',
+                // Makes it accessible by crawlers.
+                highlightedEdge !== null && highlightedEdge - 1 === i ? 'visible' : 'invisible',
+              )}
+            >
+              {text}
+            </span>
+          );
+        })}
       </p>
     </div>
   );

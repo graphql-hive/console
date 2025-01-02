@@ -41,7 +41,7 @@ hive-gateway supergraph \
 
 ```sh filename="Run Hive Gateway with Usage Reporting enabled." {5}
 docker run --rm --name hive-gateway -p 4000:4000 \
-  ghcr.io/ardatan/hive-gateway supergraph \
+  ghcr.io/graphql-hive/gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
   --hive-cdn-key "YOUR HIVE CDN KEY" \
   --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
@@ -72,13 +72,24 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   reporting: {
-    // The reporting service type
     type: 'hive',
     // The registry token provided by Hive Registry
-    token: 'YOUR HIVE REGISTRY TOKEN'
+    token: '<token>'
+    /**
+     * Other options
+     *
+     * selfHosting: { ... },
+     * clientInfo: { ... },
+     *
+     * See more in Hive Client reference
+     */
   }
 })
 ```
+
+If you want to control the usage reporting to the Hive Console like `selfHosting`, `clientInfo` etc,
+please look at the Hive Client documentation to learn more about other options.
+[See more in Hive Client reference](/docs/api-reference/client#configuration)
 
 </Tabs.Tab>
 

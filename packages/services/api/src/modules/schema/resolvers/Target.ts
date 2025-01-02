@@ -3,7 +3,7 @@ import { OperationsManager } from '../../operations/providers/operations-manager
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
 import { toGraphQLSchemaCheck, toGraphQLSchemaCheckCurry } from '../to-graphql-schema-check';
-import type { TargetResolvers } from './../../../__generated__/types.next';
+import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,
@@ -50,40 +50,19 @@ export const Target: Pick<
     };
   },
   latestSchemaVersion: (target, _, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestVersion({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
-    });
+    return injector.get(SchemaManager).getMaybeLatestVersion(target);
   },
   latestValidSchemaVersion: async (target, __, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestValidVersion({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-    });
+    return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
   },
   baseSchema: (target, _, { injector }) => {
-    return injector.get(SchemaManager).getBaseSchema({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
-    });
+    return injector.get(SchemaManager).getBaseSchemaForTarget(target);
   },
   hasSchema: (target, _, { injector }) => {
-    return injector.get(SchemaManager).hasSchema({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
-    });
+    return injector.get(SchemaManager).hasSchema(target);
   },
   schemaCheck: async (target, args, { injector }) => {
-    const schemaCheck = await injector.get(SchemaManager).findSchemaCheck({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
-      schemaCheckId: args.id,
-    });
+    const schemaCheck = await injector.get(SchemaManager).findSchemaCheckForTarget(target, args.id);
 
     if (schemaCheck == null) {
       return null;
@@ -98,10 +77,7 @@ export const Target: Pick<
     );
   },
   schemaChecks: async (target, args, { injector }) => {
-    const result = await injector.get(SchemaManager).getPaginatedSchemaChecksForTarget({
-      targetId: target.id,
-      projectId: target.projectId,
-      organizationId: target.orgId,
+    const result = await injector.get(SchemaManager).getPaginatedSchemaChecksForTarget(target, {
       first: args.first ?? null,
       cursor: args.after ?? null,
       filters: args.filters ?? null,

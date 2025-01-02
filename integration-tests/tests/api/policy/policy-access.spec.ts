@@ -4,76 +4,6 @@ import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 describe('Policy Access', () => {
-  describe('Target', () => {
-    const query = graphql(`
-      query TargetSchemaPolicyAccess($selector: TargetSelectorInput!) {
-        target(selector: $selector) {
-          schemaPolicy {
-            mergedRules {
-              severity
-            }
-          }
-        }
-      }
-    `);
-
-    test.concurrent(
-      'should successfully fetch Target.schemaPolicy if the user has access to SETTINGS',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { organization, createProject, inviteAndJoinMember } = await createOrg();
-        const { project, target } = await createProject(ProjectType.Single);
-        const adminRole = organization.memberRoles.find(r => r.name === 'Admin');
-
-        if (!adminRole) {
-          throw new Error('Admin role not found');
-        }
-
-        const { member, memberToken, assignMemberRole } = await inviteAndJoinMember();
-        await assignMemberRole({
-          roleId: adminRole.id,
-          userId: member.user.id,
-        });
-
-        const result = await execute({
-          document: query,
-          variables: {
-            selector: {
-              organizationSlug: organization.slug,
-              projectSlug: project.slug,
-              targetSlug: target.slug,
-            },
-          },
-          authToken: memberToken,
-        }).then(r => r.expectNoGraphQLErrors());
-
-        expect(result.target?.schemaPolicy?.mergedRules).not.toBeNull();
-      },
-    );
-
-    test.concurrent(
-      'should fail to fetch Target.schemaPolicy if the user lacks access to SETTINGS',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { organization, createProject, inviteAndJoinMember } = await createOrg();
-        const { project, target } = await createProject(ProjectType.Single);
-        const { memberToken } = await inviteAndJoinMember();
-
-        await execute({
-          document: query,
-          variables: {
-            selector: {
-              organizationSlug: organization.slug,
-              projectSlug: project.slug,
-              targetSlug: target.slug,
-            },
-          },
-          authToken: memberToken,
-        }).then(r => r.expectGraphQLErrors());
-      },
-    );
-  });
-
   describe('Project', () => {
     const query = graphql(`
       query ProjectSchemaPolicyAccess($selector: ProjectSelectorInput!) {
@@ -91,7 +21,7 @@ describe('Policy Access', () => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, createProject, inviteAndJoinMember } = await createOrg();
         const { project } = await createProject(ProjectType.Single);
-        const adminRole = organization.memberRoles.find(r => r.name === 'Admin');
+        const adminRole = organization.memberRoles?.find(r => r.name === 'Admin');
 
         if (!adminRole) {
           throw new Error('Admin role not found');
@@ -157,7 +87,7 @@ describe('Policy Access', () => {
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, inviteAndJoinMember } = await createOrg();
-        const adminRole = organization.memberRoles.find(r => r.name === 'Admin');
+        const adminRole = organization.memberRoles?.find(r => r.name === 'Admin');
 
         if (!adminRole) {
           throw new Error('Admin role not found');

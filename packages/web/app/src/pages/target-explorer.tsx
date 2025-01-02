@@ -174,7 +174,13 @@ function ExplorerPageContent(props: {
   const isFilterVisible = useRef(false);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentTarget = query.data?.target;
@@ -186,12 +192,7 @@ function ExplorerPageContent(props: {
   }
 
   return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
+    <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Explore Schema</Title>
@@ -264,7 +265,7 @@ function ExplorerPageContent(props: {
           )}
         </>
       )}
-    </TargetLayout>
+    </>
   );
 }
 
@@ -277,7 +278,14 @@ export function TargetExplorerPage(props: {
     <>
       <Meta title="Schema Explorer" />
       <SchemaExplorerProvider>
-        <ExplorerPageContent {...props} />
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <ExplorerPageContent {...props} />
+        </TargetLayout>
       </SchemaExplorerProvider>
     </>
   );

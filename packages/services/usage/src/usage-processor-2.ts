@@ -95,7 +95,7 @@ export function usageProcessorV2(
     let newOperationMapKey = newKeyMappings.get(operationMapRecord);
 
     if (!isValidOperationBody(operationMapRecord.operation)) {
-      logger.warn(`Detected invalid operation (target=%s): %s`, operationMapKey);
+      logger.warn(`Detected invalid operation (target=%s): %s`, token.target, operationMapKey);
       invalidRawOperations
         .labels({
           reason: 'invalid_operation_body',
@@ -143,7 +143,7 @@ export function usageProcessorV2(
       };
       upsertClientUsageTimestamp(name, version, operation.timestamp);
     } else {
-      client = operation.metadata?.client;
+      client = operation.metadata?.client ?? undefined;
     }
 
     report.size += 1;
@@ -181,7 +181,7 @@ export function usageProcessorV2(
       };
       upsertClientUsageTimestamp(name, version, operation.timestamp);
     } else {
-      client = operation.metadata?.client;
+      client = operation.metadata?.client ?? undefined;
     }
 
     report.size += 1;
@@ -211,10 +211,22 @@ export function usageProcessorV2(
   };
 }
 
+// The idea behind this function is to make sure we use Optional on top of the Union.
+// If the order is different, the field will be required.
+//
+// Instead of creating `Nullable` helper type, that could be used in property definitions,
+// I decided to create `OptionalAndNullable` to prevent people making the mistake I mentioned.
+const OptionalAndNullable = <T extends tb.TSchema>(schema: T) =>
+  // Makes the field optional
+  tb.Optional(
+    // Either `null` or `T` is accepted
+    tb.Type.Union([schema, tb.Type.Null()]),
+  );
+
 const OperationMapRecordSchema = tb.Object(
   {
     operation: tb.String(),
-    operationName: tb.Optional(tb.String()),
+    operationName: OptionalAndNullable(tb.String()),
     fields: tb.Array(tb.String(), {
       minItems: 1,
     }),
@@ -249,7 +261,7 @@ const ClientSchema = tb.Type.Object(
 
 const MetadataSchema = tb.Type.Object(
   {
-    client: tb.Type.Optional(ClientSchema),
+    client: OptionalAndNullable(ClientSchema),
   },
   {
     title: 'Metadata',
@@ -269,8 +281,8 @@ const RequestOperationSchema = tb.Type.Object(
     timestamp: tb.Type.Integer(),
     operationMapKey: tb.Type.String(),
     execution: ExecutionSchema,
-    metadata: tb.Type.Optional(MetadataSchema),
-    persistedDocumentHash: tb.Type.Optional(PersistedDocumentHash),
+    metadata: OptionalAndNullable(MetadataSchema),
+    persistedDocumentHash: OptionalAndNullable(PersistedDocumentHash),
   },
   {
     title: 'RequestOperation',
@@ -283,8 +295,8 @@ const SubscriptionOperationSchema = tb.Type.Object(
   {
     timestamp: tb.Type.Integer(),
     operationMapKey: tb.Type.String(),
-    metadata: tb.Type.Optional(MetadataSchema),
-    persistedDocumentHash: tb.Type.Optional(PersistedDocumentHash),
+    metadata: OptionalAndNullable(MetadataSchema),
+    persistedDocumentHash: OptionalAndNullable(PersistedDocumentHash),
   },
   {
     title: 'SubscriptionOperation',
@@ -296,8 +308,8 @@ export const ReportSchema = tb.Type.Object(
   {
     size: tb.Type.Integer(),
     map: tb.Record(tb.String(), OperationMapRecordSchema),
-    operations: tb.Optional(tb.Array(RequestOperationSchema)),
-    subscriptionOperations: tb.Optional(tb.Array(SubscriptionOperationSchema)),
+    operations: OptionalAndNullable(tb.Array(RequestOperationSchema)),
+    subscriptionOperations: OptionalAndNullable(tb.Array(SubscriptionOperationSchema)),
   },
   {
     title: 'Report',
@@ -309,7 +321,7 @@ type ReportType = tb.Static<typeof ReportSchema>;
 
 const ReportModel = tc.TypeCompiler.Compile(ReportSchema);
 
-function decodeReport(
+export function decodeReport(
   report: unknown,
 ): { success: true; report: ReportType } | { success: false; errors: tc.ValueError[] } {
   const errors = getFirstN(ReportModel.Errors(report), 5);

@@ -6,4 +6,11 @@ export default {
   's3-provider': 'S3 Storage Provider',
   telemetry: 'Telemetry / Error Reporting',
   troubleshooting: 'Troubleshooting',
+  'external-composition': 'External Composition',
+  changelog: {
+    title: 'Changelog',
+    theme: {
+      toc: false,
+    },
+  },
 };

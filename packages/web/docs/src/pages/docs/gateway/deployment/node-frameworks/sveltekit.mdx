@@ -19,7 +19,7 @@ In this example, we want to integrate Hive Gateway into Vite's routes, we'll the
 runtime.
 
 ```sh npm2yarn
-npm i @graphql-hive/gateway
+npm i @graphql-hive/gateway-runtime
 ```
 
 Keeping the [aforementioned project layout](https://kit.svelte.dev/docs/project-structure) in mind,
@@ -27,7 +27,7 @@ create a new server route in `my-project/src/routes/graphql/+server.ts` to expos
 at `/graphql` and implement using the Hive Gateway runtime like this:
 
 ```ts filename="my-project/src/routes/graphql/+server.ts"
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 
 const serve = createGatewayRuntime({
   supergraph: 'supergraph.graphql', // working directory is root of the project

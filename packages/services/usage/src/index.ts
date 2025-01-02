@@ -2,13 +2,13 @@
 import { hostname } from 'os';
 import {
   createServer,
+  maskToken,
   registerShutdown,
   reportReadiness,
   startMetrics,
 } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { env } from './environment';
-import { maskToken } from './helpers';
 import {
   collectDuration,
   droppedReports,
@@ -150,6 +150,12 @@ async function main() {
           return;
         }
 
+        const authenticatedRequestLogger = req.log.child({
+          token: maskedToken,
+          target: tokenInfo.target,
+          organization: tokenInfo.organization,
+        });
+
         stopTokensDurationTimer({
           status: 'success',
         });
@@ -163,8 +169,8 @@ async function main() {
               entityType: 'target',
             })
             .catch(error => {
-              req.log.error('Failed to check rate limit (target=%s)', tokenInfo.target);
-              req.log.error(error);
+              authenticatedRequestLogger.error('Failed to check rate limit');
+              authenticatedRequestLogger.error(error);
               Sentry.captureException(error, {
                 level: 'error',
               });
@@ -176,7 +182,12 @@ async function main() {
           droppedReports
             .labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization })
             .inc();
-          req.log.info('Rate limited (token=%s)', maskedToken);
+          authenticatedRequestLogger.info(
+            'Rate limited',
+            maskedToken,
+            tokenInfo.target,
+            tokenInfo.organization,
+          );
           void res.status(429).send();
 
           return;
@@ -184,7 +195,7 @@ async function main() {
 
         const retentionInfo =
           (await rateLimit?.getRetentionForTargetId?.(tokenInfo.target).catch(error => {
-            req.log.error(error);
+            authenticatedRequestLogger.error(error);
             Sentry.captureException(error, {
               level: 'error',
             });
@@ -192,18 +203,13 @@ async function main() {
           })) || null;
 
         if (typeof retentionInfo !== 'number') {
-          req.log.error(
-            'Failed to get retention info (token=%s, target=%s, organization=%s)',
-            maskedToken,
-            tokenInfo.target,
-            tokenInfo.organization,
-          );
+          authenticatedRequestLogger.error('Failed to get retention info');
         }
 
         const stopTimer = collectDuration.startTimer();
         try {
           if (readiness() === false) {
-            req.log.warn('Not ready to collect report (token=%s)', maskedToken);
+            authenticatedRequestLogger.warn('Not ready to collect report');
             stopTimer({
               status: 'not_ready',
             });
@@ -231,6 +237,11 @@ async function main() {
               stopTimer({
                 status: 'error',
               });
+              authenticatedRequestLogger.info(
+                'Report validation failed (errors=%j)',
+                result.errors.map(error => error.path + ': ' + error.message),
+              );
+
               void res.status(400).send({
                 errors: result.errors,
               });
@@ -246,6 +257,7 @@ async function main() {
               operations: result.operations,
             });
           } else {
+            authenticatedRequestLogger.debug("Invalid 'x-api-version' header value.");
             stopTimer({
               status: 'error',
             });
@@ -255,8 +267,8 @@ async function main() {
           stopTimer({
             status: 'error',
           });
-          req.log.error('Failed to collect report (token=%s)', maskedToken);
-          req.log.error(error, 'Failed to collect');
+          authenticatedRequestLogger.error('Failed to collect report');
+          authenticatedRequestLogger.error(error, 'Failed to collect');
           Sentry.captureException(error, {
             level: 'error',
           });

@@ -43,10 +43,11 @@ export function pickTableByPeriod(args: {
   logger?: Logger;
 }): Table {
   args.logger?.debug(
-    'Picking table by period (from: %s, to: %s, intervalUnit: %s',
+    'Picking table by period (from: %s, to: %s, intervalUnit: %s, now: %s)',
     args.period.from.toISOString(),
     args.period.to.toISOString(),
     args.intervalUnit ?? 'none',
+    args.now.toISOString(),
   );
   // The oldest data point we can fetch from the database, per table.
   // ! We subtract 2 minutes as we round the date to the nearest minute on UI
@@ -61,6 +62,12 @@ export function pickTableByPeriod(args: {
   const intervalUnit = args.intervalUnit ? intervalUnitToTable[args.intervalUnit] : undefined;
 
   let potentialTables: Array<'hourly' | 'daily' | 'minutely'> = ['daily', 'hourly', 'minutely'];
+
+  args.logger?.debug('Oldest available data points: %o', {
+    daily: tableOldestDateTimePoint.daily.toISOString(),
+    hourly: tableOldestDateTimePoint.hourly.toISOString(),
+    minutely: tableOldestDateTimePoint.minutely.toISOString,
+  });
 
   // filter out tables can't be used due to TTL
   potentialTables = potentialTables.filter(

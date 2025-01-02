@@ -415,7 +415,7 @@ export class Contracts {
 
     if (result.length === 0) {
       this.logger.debug(
-        'No schema checks found for schema check. (schemaCheckId=%s)',
+        'No contract checks found for schema check. (schemaCheckId=%s)',
         args.schemaCheckId,
       );
       return null;

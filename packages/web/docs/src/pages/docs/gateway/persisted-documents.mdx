@@ -1,3 +1,7 @@
+---
+title: 'Gateway: Persisted Documents / Operations'
+---
+
 import { Callout, Cards, Tabs } from '@theguild/components'
 
 # Persisted Documents
@@ -42,7 +46,7 @@ hive-gateway supergraph "<cdn_endpoint>" \
 
 ```sh filename="Run the Hive Gateway CLI" {3,4}
 docker run --rm --name hive-gateway -p 4000:4000 \
-  ghcr.io/ardatan/hive-gateway supergraph "<cdn_endpoint>" \
+  ghcr.io/graphql-hive/gateway supergraph "<cdn_endpoint>" \
   --hive-persisted-documents-endpoint "<cdn_endpoint>" \
   --hive-persisted-documents-token "<cdn_access_token>"
 ```
@@ -72,8 +76,10 @@ import { defineConfig } from '@graphql-hive/gateway'
 export const gatewayConfig = defineConfig({
   persistedDocuments: {
     type: 'hive',
-    endpoint: '<cdn_endpoint>',
-    token: '<cdn-access-token>'
+    // The endpoint of Hive's CDN
+    endpoint: '<endpoint>',
+    // The CDN token provided by Hive Registry
+    key: '<cdn access token>'
   }
 })
 ```
@@ -90,8 +96,11 @@ import { defineConfig } from '@graphql-hive/gateway'
 export const gatewayConfig = defineConfig({
   persistedDocuments: {
     type: 'hive',
-    endpoint: '<cdn_endpoint>',
-    token: '<cdn-access-token>',
+    // The endpoint of Hive's CDN
+    endpoint: '<endpoint>',
+    // The CDN token provided by Hive Registry
+    key: '<cdn access token>'
+    // Allow executing arbitrary documents
     allowArbitraryDocuments: true
   }
 })

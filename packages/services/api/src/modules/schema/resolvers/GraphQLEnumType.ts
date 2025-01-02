@@ -1,6 +1,6 @@
 import { Kind } from 'graphql';
 import { __isTypeOf, usage } from '../utils';
-import type { GraphQlEnumTypeResolvers } from './../../../__generated__/types.next';
+import type { GraphQlEnumTypeResolvers } from './../../../__generated__/types';
 
 export const GraphQLEnumType: GraphQlEnumTypeResolvers = {
   __isTypeOf: __isTypeOf(Kind.ENUM_TYPE_DEFINITION),

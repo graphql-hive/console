@@ -1,5 +1,5 @@
 import { OIDCIntegrationsProvider } from '../providers/oidc-integrations.provider';
-import type { OidcIntegrationResolvers } from './../../../__generated__/types.next';
+import type { OidcIntegrationResolvers } from './../../../__generated__/types';
 
 export const OIDCIntegration: OidcIntegrationResolvers = {
   id: oidcIntegration => oidcIntegration.id,

@@ -1,5 +1,5 @@
 import { nsToMs } from '../../../shared/helpers';
-import type { DurationValuesResolvers } from './../../../__generated__/types.next';
+import type { DurationValuesResolvers } from './../../../__generated__/types';
 
 export const DurationValues: DurationValuesResolvers = {
   p75: value => {

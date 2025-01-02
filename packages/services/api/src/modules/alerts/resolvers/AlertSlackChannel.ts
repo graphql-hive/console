@@ -1,4 +1,4 @@
-import type { AlertSlackChannelResolvers } from './../../../__generated__/types.next';
+import type { AlertSlackChannelResolvers } from './../../../__generated__/types';
 
 export const AlertSlackChannel: AlertSlackChannelResolvers = {
   __isTypeOf: channel => {

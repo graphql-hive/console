@@ -1,5 +1,5 @@
 import { CdnProvider } from '../providers/cdn.provider';
-import type { TargetResolvers } from './../../../__generated__/types.next';
+import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<TargetResolvers, 'cdnAccessTokens' | 'cdnUrl' | '__isTypeOf'> = {
   cdnAccessTokens: async (target, args, context) => {

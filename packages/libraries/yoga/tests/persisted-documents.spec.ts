@@ -719,3 +719,109 @@ test('deduplication of parallel requests resolving the same document from CDN', 
 
   httpScope.done();
 });
+
+test('usage reporting with batch execution and persisted documents', async () => {
+  const httpScope = nock('http://artifacts-cdn.localhost', {
+    reqheaders: {
+      'X-Hive-CDN-Key': value => {
+        expect(value).toBe('foo');
+        return true;
+      },
+    },
+  })
+    // Note: this handler is only invoked for the first call, additional calls will fail.
+    .get('/apps/client-name/client-version/a')
+    .reply(200, () => {
+      return 'query { a }';
+    })
+    .get('/apps/client-name/client-version/b')
+    .reply(200, () => {
+      return 'query { b }';
+    });
+
+  const usageReportingScope = nock('http://localhost')
+    .post('/usage', body => {
+      expect(body.map).toMatchInlineSnapshot(`
+        {
+          07188723c7bd37a812cb478cc980f83fe5b4026c: {
+            fields: [
+              Query.a,
+            ],
+            operation: {a},
+            operationName: anonymous,
+          },
+          e8571e61911eea36db5ef7a3ed222aacb0cd5ba1: {
+            fields: [
+              Query.b,
+            ],
+            operation: {b},
+            operationName: anonymous,
+          },
+        }
+      `);
+
+      return true;
+    })
+    .reply(200);
+
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          a: String
+          b: String
+        }
+      `,
+    }),
+    batching: true,
+    plugins: [
+      useHive({
+        token: 'foo',
+        enabled: true,
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'http://artifacts-cdn.localhost',
+            accessToken: 'foo',
+          },
+        },
+        agent: {
+          maxSize: 1,
+          logger: createLogger('silent'),
+          sendInterval: 1,
+        },
+        selfHosting: {
+          applicationUrl: 'http://localhost/foo',
+          graphqlEndpoint: 'http://localhost/graphql',
+          usageEndpoint: 'http://localhost/usage',
+        },
+        usage: {
+          endpoint: 'http://localhost/usage',
+          max: 2,
+        },
+      }),
+    ],
+  });
+
+  const request = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([
+      {
+        documentId: 'client-name~client-version~a',
+      },
+      {
+        documentId: 'client-name~client-version~b',
+      },
+    ]),
+  });
+  expect(request.status).toBe(200);
+  expect(await request.json()).toEqual([{ data: { a: null } }, { data: { b: null } }]);
+
+  await new Promise(res => {
+    setTimeout(res, 10);
+  });
+  httpScope.done();
+  usageReportingScope.done();
+});

@@ -1,6 +1,6 @@
 import { Kind } from 'graphql';
 import { __isTypeOf, usage } from '../utils';
-import type { GraphQlUnionTypeResolvers } from './../../../__generated__/types.next';
+import type { GraphQlUnionTypeResolvers } from './../../../__generated__/types';
 
 export const GraphQLUnionType: GraphQlUnionTypeResolvers = {
   __isTypeOf: __isTypeOf(Kind.UNION_TYPE_DEFINITION),

@@ -5,15 +5,22 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { CallToAction, Heading } from '@theguild/components';
 import { cn } from '../../lib';
 import { ArrowIcon } from '../arrow-icon';
-import { KarrotLogo, NacelleLogo, WealthsimpleLogo, type LogoProps } from '../company-logos';
+import {
+  KarrotLogo,
+  NacelleLogo,
+  ProdigyLogo,
+  WealthsimpleLogo,
+  type LogoProps,
+} from '../company-logos';
 import karrotPicture from './karrot-picture.webp';
 import nacellePicture from './nacelle-picture.webp';
+import prodigyPicture from './prodigy-picture.webp';
 import wealthsimplePicture from './wealthsimple-picture.webp';
 
 type Testimonial = {
   company: string;
   logo: (props: LogoProps) => React.ReactElement;
-  text: string;
+  text: React.ReactNode;
   picture?: {
     img: string | StaticImageData;
     className?: string;
@@ -27,7 +34,7 @@ const testimonials: Testimonial[] = [
   {
     company: 'nacelle',
     logo: NacelleLogo,
-    text: "Our migration from Apollo to Hive was incredibly straightforward. In less than a month, we had about 20 services running on Hive in production. The process was smooth, and the Hive team's friendly demeanor made it even more pleasant. Although we haven't needed direct assistance with our implementation, their openness to feedback and generally nice attitude has fostered a sense of collaboration and partnership.",
+    text: "Our migration from Apollo GraphOS to Hive was incredibly straightforward. In less than a month, we had about 20 subgraphs running on Hive in production. The process was smooth, and the Hive team's friendly demeanor made it even more pleasant. Although we haven't needed direct assistance with our implementation, their openness to feedback and generally nice attitude has fostered a sense of collaboration and partnership.",
     picture: { img: nacellePicture },
     // data: [
     //   { numbers: '65M+', description: 'daily events processed' },
@@ -38,7 +45,7 @@ const testimonials: Testimonial[] = [
   {
     company: 'Karrot',
     logo: KarrotLogo,
-    text: 'We use GraphQL Hive as schema registry and monitoring tool. As a schema registry, we can publish GraphQL Schema with decoupled any application code. As a monitoring tool, we can find useful metrics. For example operation latency, usage of deprecated field. The great thing about GraphQL Hive is that it is easy to use, we have already integrated many tools like Slack or Github.',
+    text: 'We use Hive as schema registry and monitoring tool. As a schema registry, we can publish GraphQL Schema with decoupled any application code. As a monitoring tool, we can find useful metrics. For example operation latency, usage of deprecated field. The great thing about GraphQL Hive is that it is easy to use, we have already integrated many tools like Slack or Github.',
     picture: { img: karrotPicture },
   },
   {
@@ -54,6 +61,27 @@ const testimonials: Testimonial[] = [
     picture: {
       img: wealthsimplePicture,
     },
+  },
+  {
+    company: 'Prodigy',
+    logo: props => (
+      <div className="flex h-8 items-center justify-center">
+        <ProdigyLogo {...props} height={37} />
+      </div>
+    ),
+    text: (
+      <>
+        Hive is essential to us handling more than 750M GraphQL requests every month. We ship with
+        certainty that schema changes will not break clients. The <code>atLeastOnceSampler</code> is
+        crucial to capture telemetry from less-often run operations. The schema explorer condenses
+        hours of searching through Github for client usage down to minutes.
+      </>
+    ),
+    picture: {
+      img: prodigyPicture,
+      className: 'bg-[#a9e7f599]',
+    },
+    data: [{ numbers: '>750M', description: 'requests every month' }],
   },
 ];
 
@@ -89,7 +117,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
         )}
       >
         <Heading as="h2" size="md">
-          Loved by developers, trusted by businesses
+          Loved by Developers, Trusted by Businesses
         </Heading>
         <Tabs.Root
           defaultValue={testimonials[0].company}
@@ -113,7 +141,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                   key={testimonial.company}
                   value={testimonial.company}
                   className={
-                    'flex-grow-0 [&[data-state="active"]>:first-child]:bg-blue-400' +
+                    'hive-focus flex-grow-0 [&[data-state="active"]>:first-child]:bg-blue-400' +
                     ' lg:rdx-state-active:bg-white lg:flex-grow lg:bg-transparent' +
                     ' justify-center p-0.5 lg:p-4' +
                     ' rdx-state-active:text-green-1000 lg:rdx-state-active:border-beige-600' +
@@ -165,7 +193,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     )}
                     <article className="max-lg:mt-6 lg:relative" id={getTestimonialId(company)}>
                       <Logo title={company} height={32} className="text-blue-1000 mb-6 lg:hidden" />
-                      <blockquote className="sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px]">
+                      <blockquote className="sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]">
                         {text}
                       </blockquote>
                       {person && <TestimonialPerson className="mt-6" person={person} />}

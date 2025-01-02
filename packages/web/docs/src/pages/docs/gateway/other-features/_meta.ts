@@ -1,6 +1,7 @@
 export default {
   index: 'Overview',
-  performance: 'Performance/Cache',
+  'upstream-reliability': 'Upstream Reliability',
+  performance: 'Performance & Cache',
   security: 'Security',
   'header-propagation': 'Header Propagation',
   testing: 'Testing & Debugging',

@@ -27,10 +27,10 @@ jobs:
             .eslintcache
             node_modules/.cache/prettier
           key:
-            lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.cjs',
+            lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.ts',
             'tsconfig.eslint.json', 'packages/web/app/tsconfig.json') }}-${{github.sha}}
           restore-keys: |
-            lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.cjs',
+            lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.ts',
             'tsconfig.eslint.json', 'packages/web/app/tsconfig.json') }}-
 
       - name: eslint

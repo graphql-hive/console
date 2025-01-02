@@ -128,6 +128,7 @@ export function createScheduler(config: Config) {
       db: 0,
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
+      tls: config.redis.tlsEnabled ? {} : undefined,
     });
 
     redisConnection.on('error', err => {

@@ -1,5 +1,5 @@
 import { AppDeploymentsManager } from '../../providers/app-deployments-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const retireAppDeployment: NonNullable<MutationResolvers['retireAppDeployment']> = async (
   _parent,

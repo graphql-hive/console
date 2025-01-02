@@ -36,11 +36,16 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
       - name: publish stable
         id: changesets
-        uses: changesets/action@v1.4.7
+        uses: changesets/action@v1.4.9
         with:
           publish: pnpm release
+          version: pnpm release:version
           commit: 'chore(release): update monorepo packages versions'
           title: 'Upcoming Release Changes'
         env:
@@ -79,10 +84,29 @@ jobs:
           VERSION: ${{ steps.cli.outputs.version }}
         run: pnpm oclif promote --no-xz --sha ${GITHUB_SHA:0:7} --version $VERSION
 
+      - name: extract published Crate version
+        id: rust-crate
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"hive-apollo-router-plugin"')
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > published.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive-apollo-router-plugin")).version' published.json)`
+          echo "crate_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "crate_publish=true" >> $GITHUB_OUTPUT
+
+      - name: release hive-apollo-router-plugin to Crates.io
+        if: steps.rust-crate.outputs.crate_publish == 'true'
+        run: |
+          cd packages/libraries/router
+          cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          cargo publish --allow-dirty --no-verify
+
   publish_docker_cli:
     needs: [publish]
     uses: ./.github/workflows/dockerize-cli.yaml
     if: ${{ needs.publish.outputs.publish == 'true' }}
     with:
       cliVersion: ${{ needs.publish.outputs.version }}
+      publishLatest: true
     secrets: inherit

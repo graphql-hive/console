@@ -11,6 +11,7 @@ of subschemas.
 | `REDIS_HOST`                        | **Yes**  | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                        | **Yes**  | The port of your redis instance.                                                                         | `6379`                                               |
 | `REDIS_PASSWORD`                    | **Yes**  | The password of your redis instance.                                                                     | `"apollorocks"`                                      |
+| `REDIS_TLS_ENABLED`                 | **No**   | Enable TLS for redis connection (rediss://).                                                             | `"0"`                                                |
 | `ENCRYPTION_SECRET`                 | **Yes**  | Secret for encrypting stuff.                                                                             | `8ebe95cg21c1fee355e9fa32c8c33141`                   |
 | `ENVIRONMENT`                       | No       | The environment of your Hive app. (**Note:** This will be used for Sentry reporting.)                    | `staging`                                            |
 | `BODY_LIMIT`                        | No       | Maximum payload size in bytes. Defaults to 11 MB.                                                        | `11000000`                                           |

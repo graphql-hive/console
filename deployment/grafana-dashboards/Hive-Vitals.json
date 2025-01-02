@@ -51,11 +51,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -64,6 +66,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -116,6 +119,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "azureMonitor": {
@@ -176,11 +180,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -189,6 +195,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -241,11 +248,12 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "azureMonitor": {
             "aggregation": "Average",
-            "alias": "CPU % Usage",
+            "alias": "CPU %",
             "allowedTimeGrainsMs": [
               60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
             ],
@@ -253,8 +261,12 @@
             "dimensionFilters": [],
             "metricName": "cpu_percent",
             "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
-            "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
-            "resourceName": "AZURE_POSTGRES_SERVER_NAME",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
             "timeGrain": "auto"
           },
           "datasource": {
@@ -267,7 +279,7 @@
         {
           "azureMonitor": {
             "aggregation": "Average",
-            "alias": "RAM % Usage",
+            "alias": "RAM %",
             "allowedTimeGrainsMs": [
               60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
             ],
@@ -275,8 +287,12 @@
             "dimensionFilters": [],
             "metricName": "memory_percent",
             "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
-            "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
-            "resourceName": "AZURE_POSTGRES_SERVER_NAME",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
             "timeGrain": "auto"
           },
           "datasource": {
@@ -285,6 +301,60 @@
           "hide": false,
           "queryType": "Azure Monitor",
           "refId": "B",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "alias": "IOPS Avg",
+            "allowedTimeGrainsMs": [
+              60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
+            ],
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "dimensionFilters": [],
+            "metricName": "iops",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "C",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Average",
+            "alias": "Storage %",
+            "allowedTimeGrainsMs": [
+              60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
+            ],
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "dimensionFilters": [],
+            "metricName": "storage_percent",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "D",
           "subscription": "AZURE_SUBSCRIPTION_ID"
         }
       ],
@@ -301,11 +371,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -314,6 +386,167 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 7
+      },
+      "id": 76,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0-79828",
+      "targets": [
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Max",
+            "allowedTimeGrainsMs": [1800000, 3600000, 21600000, 43200000, 86400000],
+            "dimensionFilters": [],
+            "metricName": "max_connections",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "queryType": "Azure Monitor",
+          "refId": "A",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Active",
+            "allowedTimeGrainsMs": [1800000, 3600000, 21600000, 43200000, 86400000],
+            "dimensionFilters": [],
+            "metricName": "active_connections",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "B",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        },
+        {
+          "azureMonitor": {
+            "aggregation": "Maximum",
+            "alias": "Waiting",
+            "allowedTimeGrainsMs": [
+              60000, 300000, 900000, 1800000, 3600000, 21600000, 43200000, 86400000
+            ],
+            "dimensionFilters": [],
+            "metricName": "client_connections_waiting",
+            "customNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "metricNamespace": "microsoft.dbforpostgresql/flexibleservers",
+            "resources": [
+              {
+                "resourceGroup": "AZURE_POSTGRES_RESOURCE_GROUP",
+                "resourceName": "AZURE_POSTGRES_SERVER_NAME"
+              }
+            ],
+            "timeGrain": "auto"
+          },
+          "datasource": {
+            "uid": "$Subscription"
+          },
+          "hide": false,
+          "queryType": "Azure Monitor",
+          "refId": "C",
+          "subscription": "AZURE_SUBSCRIPTION_ID"
+        }
+      ],
+      "title": "Postgres Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "uid": "$Subscription"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -366,6 +599,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "azureMonitor": {
@@ -424,11 +658,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -437,6 +673,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -489,6 +726,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "azureMonitor": {
@@ -545,11 +783,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -558,6 +798,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineStyle": {
               "fill": "solid"
@@ -613,7 +854,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.3.2-45365",
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "datasource": {
@@ -656,12 +897,14 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -670,6 +913,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 6,
@@ -722,6 +966,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "datasource": {
@@ -749,12 +994,14 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -763,6 +1010,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineStyle": {
               "fill": "solid"
@@ -814,6 +1062,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0-79146",
       "targets": [
         {
           "datasource": {
@@ -875,8 +1124,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -968,8 +1216,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1081,8 +1328,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "orange",
@@ -1175,8 +1421,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1239,8 +1484,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1333,8 +1577,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1426,8 +1669,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1519,8 +1761,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1611,8 +1852,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -1716,8 +1956,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1825,8 +2064,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1933,8 +2171,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2196,8 +2433,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2275,8 +2511,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "orange",
@@ -2410,8 +2645,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2502,8 +2736,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2602,8 +2835,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2666,8 +2898,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2758,8 +2989,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2862,8 +3092,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2987,8 +3216,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3080,8 +3308,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3177,8 +3404,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3288,8 +3514,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -3377,8 +3602,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3499,8 +3723,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3564,9 +3787,10 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "5s",
   "revision": 1,
-  "schemaVersion": 38,
+  "schemaVersion": 41,
   "style": "dark",
   "tags": ["overview", "hive"],
   "templating": {
@@ -3599,6 +3823,6 @@
   "timezone": "",
   "title": "Hive Vitals Overview",
   "uid": "u3AKN0aVk",
-  "version": 5,
+  "version": 14,
   "weekStart": ""
 }

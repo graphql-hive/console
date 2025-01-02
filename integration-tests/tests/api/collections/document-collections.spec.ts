@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 describe('Document Collections', () => {
@@ -122,14 +122,12 @@ describe('Document Collections', () => {
 
     describe('Permissions Check', () => {
       it('Prevent creating collection without the write permission to the target', async () => {
-        const { createDocumentCollection, createToken } = await initSeed()
+        const { createDocumentCollection, createTargetAccessToken } = await initSeed()
           .createOwner()
           .then(r => r.createOrg())
           .then(r => r.createProject(ProjectType.Single));
-        const { secret: readOnlyToken } = await createToken({
-          targetScopes: [TargetAccessScope.Read],
-          organizationScopes: [],
-          projectScopes: [],
+        const { secret: readOnlyToken } = await createTargetAccessToken({
+          mode: 'readOnly',
         });
 
         // Create a collection
@@ -142,27 +140,26 @@ describe('Document Collections', () => {
         ).rejects.toEqual(
           expect.objectContaining({
             message: expect.stringContaining(
-              `No access (reason: "Missing target:registry:write permission")`,
+              `No access (reason: "Missing permission for performing 'laboratory:modify' on resource")`,
             ),
           }),
         );
       });
 
       it('Prevent updating collection without the write permission to the target', async () => {
-        const { createDocumentCollection, updateDocumentCollection, createToken } = await initSeed()
-          .createOwner()
-          .then(r => r.createOrg())
-          .then(r => r.createProject(ProjectType.Single));
+        const { createDocumentCollection, updateDocumentCollection, createTargetAccessToken } =
+          await initSeed()
+            .createOwner()
+            .then(r => r.createOrg())
+            .then(r => r.createProject(ProjectType.Single));
 
         const createResult = await createDocumentCollection({
           name: 'My Collection',
           description: 'My favorite queries',
         });
 
-        const { secret: readOnlyToken } = await createToken({
-          targetScopes: [TargetAccessScope.Read],
-          organizationScopes: [],
-          projectScopes: [],
+        const { secret: readOnlyToken } = await createTargetAccessToken({
+          mode: 'readOnly',
         });
 
         await expect(
@@ -175,27 +172,26 @@ describe('Document Collections', () => {
         ).rejects.toEqual(
           expect.objectContaining({
             message: expect.stringContaining(
-              'No access (reason: "Missing target:registry:write permission")',
+              `No access (reason: "Missing permission for performing 'laboratory:modify' on resource")`,
             ),
           }),
         );
       });
 
       it('Prevent deleting collection without the write permission to the target', async () => {
-        const { createDocumentCollection, deleteDocumentCollection, createToken } = await initSeed()
-          .createOwner()
-          .then(r => r.createOrg())
-          .then(r => r.createProject(ProjectType.Single));
+        const { createDocumentCollection, deleteDocumentCollection, createTargetAccessToken } =
+          await initSeed()
+            .createOwner()
+            .then(r => r.createOrg())
+            .then(r => r.createProject(ProjectType.Single));
 
         const createResult = await createDocumentCollection({
           name: 'My Collection',
           description: 'My favorite queries',
         });
 
-        const { secret: readOnlyToken } = await createToken({
-          targetScopes: [TargetAccessScope.Read],
-          organizationScopes: [],
-          projectScopes: [],
+        const { secret: readOnlyToken } = await createTargetAccessToken({
+          mode: 'readOnly',
         });
 
         await expect(
@@ -206,7 +202,7 @@ describe('Document Collections', () => {
         ).rejects.toEqual(
           expect.objectContaining({
             message: expect.stringContaining(
-              `No access (reason: "Missing target:registry:write permission")`,
+              `No access (reason: "Missing permission for performing 'laboratory:modify' on resource")`,
             ),
           }),
         );

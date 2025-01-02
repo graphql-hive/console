@@ -2,7 +2,14 @@ import { stringify } from 'node:querystring';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { env } from '@/env/backend';
-import { graphql } from './utils';
+import { graphql } from '@/gql';
+import { graphqlRequest } from './utils';
+
+const SlackIntegration_addSlackIntegration = graphql(/* GraphQL */ `
+  mutation SlackIntegration_addSlackIntegration($input: AddSlackIntegrationInput!) {
+    addSlackIntegration(input: $input)
+  }
+`);
 
 const CallBackQuery = z.object({
   code: z.string({
@@ -50,7 +57,7 @@ export function connectSlack(server: FastifyInstance) {
 
     const token = slackResponse.access_token;
 
-    await graphql({
+    await graphqlRequest({
       url: env.graphqlPublicEndpoint,
       headers: {
         ...req.headers,
@@ -59,11 +66,7 @@ export function connectSlack(server: FastifyInstance) {
         'graphql-client-version': env.release,
       },
       operationName: 'addSlackIntegration',
-      query: /* GraphQL */ `
-        mutation addSlackIntegration($input: AddSlackIntegrationInput!) {
-          addSlackIntegration(input: $input)
-        }
-      `,
+      document: SlackIntegration_addSlackIntegration,
       variables: {
         input: {
           organizationSlug,

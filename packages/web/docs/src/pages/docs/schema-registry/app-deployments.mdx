@@ -1,3 +1,7 @@
+---
+title: 'App Deployment (Persisted Operations)'
+---
+
 import NextImage from 'next/image'
 import { Callout, Tabs } from '@theguild/components'
 
@@ -242,8 +246,10 @@ import { defineConfig } from '@graphql-hive/gateway'
 export const gatewayConfig = defineConfig({
   persistedDocuments: {
     type: 'hive',
-    endpoint: '<cdn_endpoint>',
-    token: '<cdn-access-token>'
+    // The endpoint of Hive's CDN
+    endpoint: '<supergraph endpoint>',
+    // The CDN token provided by Hive Registry
+    key: '<cdn access token>'
   }
 })
 ```
@@ -330,9 +336,27 @@ For further configuration options, please refer to the
 
 <Tabs.Tab>
 
-Using the Hive Schema Registry for persisted documents with Apollo Router is currently not
-supported. Progress of the support is tracked in
-[this GitHub issue](https://github.com/graphql-hive/platform/issues/5498).
+To use App Deployments with Apollo-Router, you can use the Hive CDN for resolving persisted
+documents.
+
+Use the [Apollo Router custom build for Hive](/docs/other-integrations/apollo-router) as an
+alternative to the official Apollo Router.
+
+Enable the Persisted Document plugin by adding the following to your `router.yaml` configuration.
+
+```yaml filename="router.yaml"
+# ... the rest of your configuration
+plugins:
+  hive.usage: {}
+  hive.persisted_documents:
+    enabled: true
+```
+
+The plugin uses the `HIVE_CDN_ENDPOINT` and `HIVE_CDN_KEY` environment variables to resolve the
+persisted documents IDs.
+
+For additional information and configuration options, please refer to the
+[Apollo-Router integration page](/docs/other-integrations/apollo-router).
 
 </Tabs.Tab>
 

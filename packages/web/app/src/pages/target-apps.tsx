@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
@@ -9,6 +9,7 @@ import { CardDescription } from '@/components/ui/card';
 import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -21,8 +22,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useRedirect } from '@/lib/access/common';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 
 const AppTableRow_AppDeploymentFragment = graphql(`
   fragment AppTableRow_AppDeploymentFragment on AppDeployment {
@@ -45,7 +47,6 @@ const TargetAppsViewQuery = graphql(`
     organization(selector: { organizationSlug: $organizationSlug }) {
       organization {
         id
-        isAppDeploymentsEnabled
       }
     }
     target(
@@ -60,6 +61,7 @@ const TargetAppsViewQuery = graphql(`
         id
         __typename
       }
+      viewerCanViewAppDeployments
       appDeployments(first: 20, after: $after) {
         pageInfo {
           hasNextPage
@@ -188,14 +190,14 @@ function TargetAppsView(props: {
     },
   });
   const client = useClient();
-  const router = useRouter();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const isAppDeploymentsEnabled =
-    !data.fetching && !data.stale && !data.data?.organization?.organization.isAppDeploymentsEnabled;
+  const project = data.data?.target;
 
-  useEffect(() => {
-    if (isAppDeploymentsEnabled) {
+  useRedirect({
+    entity: project,
+    canAccess: project?.viewerCanViewAppDeployments === true,
+    redirectTo(router) {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug/$targetSlug',
         params: {
@@ -205,8 +207,22 @@ function TargetAppsView(props: {
         },
         replace: true,
       });
-    }
-  }, [isAppDeploymentsEnabled]);
+    },
+  });
+
+  if (data.error) {
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={data.error}
+        showLogoutButton={false}
+      />
+    );
+  }
+
+  if (project?.viewerCanViewAppDeployments === false) {
+    return null;
+  }
 
   return (
     <div className="flex flex-1 flex-col py-6">

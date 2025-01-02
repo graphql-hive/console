@@ -10,13 +10,11 @@ test.concurrent(
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createToken } = await createProject(ProjectType.Single);
-    const {
-      publishSchema,
-      collectLegacyOperations: collectOperations,
-      readOperationsStats,
-      readOperationBody,
-    } = await createToken({});
+    const { createTargetAccessToken, readOperationsStats, readOperationBody } = await createProject(
+      ProjectType.Single,
+    );
+    const { publishSchema, collectLegacyOperations: collectOperations } =
+      await createTargetAccessToken({});
 
     const result = await publishSchema({
       sdl: `type Query { ping: String }`,

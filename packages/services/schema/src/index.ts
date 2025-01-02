@@ -98,6 +98,7 @@ async function main() {
     db: 0,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
   try {

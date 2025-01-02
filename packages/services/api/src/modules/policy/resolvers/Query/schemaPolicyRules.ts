@@ -1,5 +1,5 @@
 import { SchemaPolicyApiProvider } from '../../providers/schema-policy-api.provider';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const schemaPolicyRules: NonNullable<QueryResolvers['schemaPolicyRules']> = async (
   _,

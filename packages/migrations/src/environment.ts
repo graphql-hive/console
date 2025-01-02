@@ -34,6 +34,7 @@ const EnvironmentModel = zod.object({
   CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD: zod
     .union([zod.literal('1'), zod.literal('0')])
     .optional(),
+  GRAPHQL_HIVE_ENVIRONMENT: emptyString(zod.enum(['prod', 'staging', 'dev']).optional()),
 });
 
 const PostgresModel = zod.object({
@@ -114,4 +115,5 @@ export const env = {
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',
+  hiveCloudEnvironment: base.GRAPHQL_HIVE_ENVIRONMENT ?? null,
 } as const;

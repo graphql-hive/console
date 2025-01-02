@@ -1,6 +1,6 @@
 import { hash } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
-import type { ClientStatsResolvers } from './../../../__generated__/types.next';
+import type { ClientStatsResolvers } from './../../../__generated__/types';
 
 export const ClientStats: ClientStatsResolvers = {
   totalRequests: ({ organization, project, target, period, clientName }, _, { injector }) => {

@@ -12,7 +12,7 @@ networks:
 
 services:
   local_cdn:
-    image: node:22.8.0-alpine3.20
+    image: node:22.12.0-alpine3.20
     working_dir: /app
     command: ['node', 'index.js']
     networks:
@@ -38,7 +38,7 @@ services:
       S3_BUCKET_NAME: artifacts
 
   local_broker:
-    image: node:22.8.0-alpine3.20
+    image: node:22.12.0-alpine3.20
     working_dir: /app
     command: ['node', 'broker.js']
     networks:
@@ -59,6 +59,18 @@ services:
       LOG_LEVEL: debug
       CF_BROKER_SIGNATURE: secretSignature
 
+  mock_server:
+    image: mockserver/mockserver:5.15.0
+    # healthcheck - no time to implement it
+    # The image does not contain curl or wget.
+    networks:
+      - 'stack'
+    ports:
+      - 3042:3042
+    environment:
+      MOCKSERVER_LOG_LEVEL: DEBUG
+      MOCKSERVER_SERVER_PORT: 3042
+
   composition_federation_2:
     image: '${DOCKER_REGISTRY}composition-federation-2${DOCKER_TAG}'
     networks:
@@ -78,7 +90,7 @@ services:
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
   external_composition:
-    image: node:22.8.0-alpine3.20
+    image: node:22.12.0-alpine3.20
     working_dir: /app
     command: ['node', 'example.mjs']
     networks:
@@ -181,7 +193,7 @@ services:
       GRAPHQL_PUBLIC_ORIGIN: http://localhost:8082
 
   broker:
-    image: vectorized/redpanda:latest
+    image: redpandadata/redpanda:latest
     hostname: broker
     networks:
       - 'stack'
@@ -268,10 +280,10 @@ services:
 
   # It's not part of integration tests
   app:
-    image: node:22.8.0-alpine3.20
+    image: node:22.12.0-alpine3.20
     command: ['npx', 'http-server']
 
   # Redpand is used for integration tests, instead of Kafka. Zookeeper is no longer needed
   zookeeper:
-    image: node:22.8.0-alpine3.20
+    image: node:22.12.0-alpine3.20
     command: ['npx', 'http-server']

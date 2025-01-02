@@ -38,4 +38,27 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-[See more](https://the-guild.dev/graphql/yoga-server/docs/features/defer-stream#using-defer)
+## Using Defer
+
+The `@defer` directive allows you to post-pone the delivery of one or more (slow) fields grouped in
+an inlined or spread fragment.
+
+```graphql filename="GraphQL Operation using @defer" {2}
+query SlowAndFastFieldWithDefer {
+  ... on Query @defer {
+    slowField
+  }
+  fastField
+}
+```
+
+## Using Stream
+
+The `@stream` directive allows you to stream the individual items of a field of the list type as the
+items are available.
+
+```graphql filename="GraphQL Operation using @stream" {2}
+query StreamAlphabet {
+  alphabet @stream
+}
+```

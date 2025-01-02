@@ -1,4 +1,4 @@
-import type { OrganizationGetStartedResolvers } from './../../../__generated__/types.next';
+import type { OrganizationGetStartedResolvers } from './../../../__generated__/types';
 
 export const OrganizationGetStarted: Pick<
   OrganizationGetStartedResolvers,

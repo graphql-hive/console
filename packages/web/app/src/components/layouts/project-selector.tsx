@@ -64,12 +64,18 @@ export function ProjectSelector(props: {
               });
             }}
           >
-            <SelectTrigger variant="default">
-              <div className="font-medium">{currentProject.slug}</div>
+            <SelectTrigger variant="default" data-cy="project-picker-trigger">
+              <div className="font-medium" data-cy="project-picker-current">
+                {currentProject.slug}
+              </div>
             </SelectTrigger>
             <SelectContent>
               {projects.map(project => (
-                <SelectItem key={project.slug} value={project.slug}>
+                <SelectItem
+                  key={project.slug}
+                  value={project.slug}
+                  data-cy={`project-picker-option-${project.slug}`}
+                >
                   {project.slug}
                 </SelectItem>
               ))}

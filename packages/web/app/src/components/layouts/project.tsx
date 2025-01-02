@@ -16,12 +16,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
-import { canAccessProject, ProjectAccessScope, useProjectAccess } from '@/lib/access/project';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
 import { ProjectMigrationToast } from '../project/migration-toast';
+import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
@@ -35,29 +35,27 @@ export enum Page {
 }
 
 const ProjectLayoutQuery = graphql(`
-  query ProjectLayoutQuery {
+  query ProjectLayoutQuery($organizationSlug: String!, $projectSlug: String!) {
     me {
       id
       ...UserMenu_MeFragment
     }
     organizations {
-      nodes {
-        id
-        slug
-        me {
-          id
-          ...CanAccessProject_MemberFragment
-        }
-        projects {
-          nodes {
-            id
-            slug
-            registryModel
-          }
-        }
-      }
       ...ProjectSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
+    }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        registryModel
+        viewerCanModifySchemaPolicy
+        viewerCanCreateTarget
+        viewerCanModifyAlerts
+        viewerCanModifySettings
+      }
     }
   }
 `);
@@ -78,23 +76,15 @@ export function ProjectLayout({
   const [query] = useQuery({
     query: ProjectLayoutQuery,
     requestPolicy: 'cache-first',
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+    },
   });
 
   const me = query.data?.me;
-  const currentOrganization = query.data?.organizations.nodes.find(
-    node => node.slug === props.organizationSlug,
-  );
-  const currentProject = currentOrganization?.projects.nodes.find(
-    node => node.slug === props.projectSlug,
-  );
-
-  useProjectAccess({
-    scope: ProjectAccessScope.Read,
-    member: currentOrganization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-  });
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
@@ -119,95 +109,104 @@ export function ProjectLayout({
           </div>
         </div>
       </header>
-
-      {page === Page.Settings || currentProject?.registryModel !== 'LEGACY' ? null : (
-        <ProjectMigrationToast
-          organizationSlug={props.organizationSlug}
-          projectSlug={currentProject.slug}
-        />
-      )}
-
-      <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
-        <div className="container flex items-center justify-between">
-          {currentOrganization && currentProject ? (
-            <Tabs value={page}>
-              <TabsList variant="menu">
-                <TabsTrigger variant="menu" value={Page.Targets} asChild>
-                  <Link
-                    to="/$organizationSlug/$projectSlug"
-                    params={{
-                      organizationSlug: currentOrganization.slug,
-                      projectSlug: currentProject.slug,
-                    }}
-                  >
-                    Targets
-                  </Link>
-                </TabsTrigger>
-                {canAccessProject(ProjectAccessScope.Alerts, currentOrganization.me) && (
-                  <TabsTrigger variant="menu" value={Page.Alerts} asChild>
-                    <Link
-                      to="/$organizationSlug/$projectSlug/view/alerts"
-                      params={{
-                        organizationSlug: currentOrganization.slug,
-                        projectSlug: currentProject.slug,
-                      }}
-                    >
-                      Alerts
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {canAccessProject(ProjectAccessScope.Settings, currentOrganization.me) && (
-                  <>
-                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/view/policy"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                        }}
-                      >
-                        Policy
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/view/settings"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                        }}
-                      >
-                        Settings
-                      </Link>
-                    </TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-            </Tabs>
-          ) : (
-            <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-            </div>
+      {query.fetching === false &&
+      query.stale === false &&
+      (currentProject === null || currentOrganization === null) ? (
+        <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
+      ) : (
+        <>
+          {page === Page.Settings || currentProject?.registryModel !== 'LEGACY' ? null : (
+            <ProjectMigrationToast
+              organizationSlug={props.organizationSlug}
+              projectSlug={currentProject.slug}
+            />
           )}
-          {currentProject ? (
-            <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
-              <PlusIcon size={16} className="mr-2" />
-              New target
-            </Button>
-          ) : null}
-          <CreateTargetModal
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            isOpen={isModalOpen}
-            toggleModalOpen={toggleModalOpen}
-          />
-        </div>
-      </div>
-      <div className="container min-h-[var(--content-height)] pb-7">
-        <div className={className}>{children}</div>
-      </div>
+
+          <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
+            <div className="container flex items-center justify-between">
+              {currentOrganization && currentProject ? (
+                <Tabs value={page}>
+                  <TabsList variant="menu">
+                    <TabsTrigger variant="menu" value={Page.Targets} asChild>
+                      <Link
+                        to="/$organizationSlug/$projectSlug"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                        }}
+                      >
+                        Targets
+                      </Link>
+                    </TabsTrigger>
+                    {currentProject.viewerCanModifyAlerts && (
+                      <TabsTrigger variant="menu" value={Page.Alerts} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/view/alerts"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                          }}
+                        >
+                          Alerts
+                        </Link>
+                      </TabsTrigger>
+                    )}
+                    {currentProject.viewerCanModifySchemaPolicy && (
+                      <>
+                        <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                          <Link
+                            to="/$organizationSlug/$projectSlug/view/policy"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                              projectSlug: props.projectSlug,
+                            }}
+                          >
+                            Policy
+                          </Link>
+                        </TabsTrigger>
+                      </>
+                    )}
+                    {currentProject.viewerCanModifySettings && (
+                      <TabsTrigger variant="menu" value={Page.Settings} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/view/settings"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                          }}
+                        >
+                          Settings
+                        </Link>
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                </Tabs>
+              ) : (
+                <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
+                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                </div>
+              )}
+              {currentProject?.viewerCanCreateTarget ? (
+                <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
+                  <PlusIcon size={16} className="mr-2" />
+                  New target
+                </Button>
+              ) : null}
+              <CreateTargetModal
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                isOpen={isModalOpen}
+                toggleModalOpen={toggleModalOpen}
+              />
+            </div>
+          </div>
+          <div className="container min-h-[var(--content-height)] pb-7">
+            <div className={className}>{children}</div>
+          </div>
+        </>
+      )}
     </>
   );
 }

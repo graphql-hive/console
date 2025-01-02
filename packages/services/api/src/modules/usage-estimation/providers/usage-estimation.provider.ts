@@ -1,13 +1,16 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
-import type { UsageEstimatorApi, UsageEstimatorApiInput } from '@hive/usage-estimator';
+import type { UsageEstimatorApi } from '@hive/usage-estimator';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { Session } from '../../auth/lib/authz';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import type { UsageEstimationServiceConfig } from './tokens';
 import { USAGE_ESTIMATION_SERVICE_CONFIG } from './tokens';
 
 @Injectable({
-  scope: Scope.Singleton,
+  scope: Scope.Operation,
+  global: true,
 })
 export class UsageEstimationProvider {
   private logger: Logger;
@@ -17,6 +20,8 @@ export class UsageEstimationProvider {
     logger: Logger,
     @Inject(USAGE_ESTIMATION_SERVICE_CONFIG)
     usageEstimationConfig: UsageEstimationServiceConfig,
+    private idTranslator: IdTranslator,
+    private session: Session,
   ) {
     this.logger = logger.child({ service: 'UsageEstimationProvider' });
     this.usageEstimator = usageEstimationConfig.endpoint
@@ -39,9 +44,11 @@ export class UsageEstimationProvider {
       'hive.usageEstimation.operations.estimated': result ?? 0,
     }),
   })
-  async estimateOperationsForOrganization(
-    input: UsageEstimatorApiInput['estimateOperationsForOrganization'],
-  ): Promise<number | null> {
+  async _estimateOperationsForOrganization(input: {
+    organizationId: string;
+    month: number;
+    year: number;
+  }): Promise<number | null> {
     this.logger.debug('Estimation operations, input: %o', input);
 
     if (!this.usageEstimator) {
@@ -50,8 +57,36 @@ export class UsageEstimationProvider {
       return null;
     }
 
-    const result = await this.usageEstimator.estimateOperationsForOrganization.query(input);
+    const result = await this.usageEstimator.estimateOperationsForOrganization.query({
+      organizationId: input.organizationId,
+      year: input.year,
+      month: input.month,
+    });
 
     return result.totalOperations;
+  }
+
+  async estimateOperationsForOrganization(input: {
+    organizationSlug: string;
+    month: number;
+    year: number;
+  }): Promise<number | null> {
+    const organizationId = await this.idTranslator.translateOrganizationId({
+      organizationSlug: input.organizationSlug,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'billing:describe',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+
+    return await this._estimateOperationsForOrganization({
+      organizationId,
+      year: input.year,
+      month: input.month,
+    });
   }
 }

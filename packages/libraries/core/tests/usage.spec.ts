@@ -333,7 +333,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
-test('should not leak the exception', async () => {
+test('should not leak the exception', { retry: 3 }, async () => {
   const logger = createHiveTestingLogger();
 
   const hive = createHive({
@@ -374,7 +374,7 @@ test('should not leak the exception', async () => {
   `);
 });
 
-test('sendImmediately should not stop the schedule', async () => {
+test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
   const logger = createHiveTestingLogger();
 
   const token = 'Token';

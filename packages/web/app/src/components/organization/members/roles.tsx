@@ -785,16 +785,12 @@ export function OrganizationMemberRoles(props: {
     props.organization,
   );
 
+  type Role = Exclude<typeof organization.memberRoles, null | undefined>[number] | null;
+
   const [deleteRoleState, deleteRole] = useMutation(OrganizationMemberRoles_DeleteMemberRole);
-  const [roleToEdit, setRoleToEdit] = useState<(typeof organization.memberRoles)[number] | null>(
-    null,
-  );
-  const [roleToShow, setRoleToShow] = useState<(typeof organization.memberRoles)[number] | null>(
-    null,
-  );
-  const [roleToDelete, setRoleToDelete] = useState<
-    (typeof organization.memberRoles)[number] | null
-  >(null);
+  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
+  const [roleToShow, setRoleToShow] = useState<Role | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   return (
     <>
@@ -914,7 +910,7 @@ export function OrganizationMemberRoles(props: {
             </tr>
           </thead>
           <tbody className="divide-y-[1px] divide-gray-500/20">
-            {organization.memberRoles.map(role => (
+            {organization.memberRoles?.map(role => (
               <OrganizationMemberRoleRow
                 key={role.id}
                 role={role}

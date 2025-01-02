@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TokenManager } from '../../providers/token-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const tokens: NonNullable<QueryResolvers['tokens']> = async (
   _parent,

@@ -4,23 +4,25 @@ import { helmChart } from './helm';
 import { Values as OpenTelemetryCollectorValues } from './opentelemetry-collector.types';
 import { VectorValues } from './vector.types';
 
-export type ObservabilityConfig = {
-  loki: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-  prom: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-  tempo: {
-    endpoint: Output<string> | string;
-    username: Output<string> | string;
-    password: Output<string>;
-  };
-};
+export type ObservabilityConfig =
+  | 'local'
+  | {
+      loki: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+      prom: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+      tempo: {
+        endpoint: Output<string> | string;
+        username: Output<string> | string;
+        password: Output<string>;
+      };
+    };
 
 // prettier-ignore
 export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.96.0');
@@ -40,6 +42,65 @@ export class Observability {
         name: nsName,
       },
     });
+
+    const extensions =
+      this.config === 'local'
+        ? {}
+        : {
+            'basicauth/grafana_cloud_traces': {
+              client_auth: {
+                username: this.config.tempo.username,
+                password: this.config.tempo.password,
+              },
+            },
+          };
+
+    const exporters =
+      this.config === 'local'
+        ? {}
+        : {
+            prometheusremotewrite: {
+              endpoint: interpolate`https://${this.config.prom.username}:${this.config.prom.password}@${this.config.prom.endpoint}`,
+            },
+            'otlp/grafana_cloud_traces': {
+              endpoint: this.config.tempo.endpoint,
+              auth: {
+                authenticator: 'basicauth/grafana_cloud_traces',
+              },
+            },
+          };
+
+    const sinks =
+      this.config === 'local'
+        ? {
+            stdout: {
+              type: 'console',
+              inputs: ['kubernetes_logs'],
+              encoding: { codec: 'json' },
+            },
+          }
+        : {
+            grafana_lab: {
+              type: 'loki',
+              inputs: ['kubernetes_logs', 'envoy_error_logs'],
+              endpoint: interpolate`https://${this.config.loki.endpoint}`,
+              auth: {
+                strategy: 'basic',
+                user: this.config.loki.username,
+                password: this.config.loki.password,
+              },
+              labels: {
+                namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
+                container_name: '{{`{{ kubernetes.container_name }}`}}',
+                env: this.envName,
+              },
+              encoding: {
+                codec: 'text',
+              },
+              out_of_order_action: 'accept',
+              remove_timestamp: false,
+            },
+          };
 
     // https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml
     const chartValues: OpenTelemetryCollectorValues = {
@@ -106,26 +167,13 @@ export class Observability {
       },
       config: {
         exporters: {
-          'otlp/grafana_cloud_traces': {
-            endpoint: this.config.tempo.endpoint,
-            auth: {
-              authenticator: 'basicauth/grafana_cloud_traces',
-            },
-          },
+          ...exporters,
           logging: {
             verbosity: 'basic',
           },
-          prometheusremotewrite: {
-            endpoint: interpolate`https://${this.config.prom.username}:${this.config.prom.password}@${this.config.prom.endpoint}`,
-          },
         },
         extensions: {
-          'basicauth/grafana_cloud_traces': {
-            client_auth: {
-              username: this.config.tempo.username,
-              password: this.config.tempo.password,
-            },
-          },
+          ...extensions,
           health_check: {},
         },
         processors: {
@@ -295,7 +343,10 @@ export class Observability {
           },
         },
         service: {
-          extensions: ['health_check', 'basicauth/grafana_cloud_traces'],
+          extensions:
+            this.config === 'local'
+              ? ['health_check']
+              : ['health_check', 'basicauth/grafana_cloud_traces'],
           pipelines: {
             traces: {
               receivers: ['otlp'],
@@ -306,10 +357,12 @@ export class Observability {
                 'filter/traces',
                 'batch',
               ],
-              exporters: ['logging', 'otlp/grafana_cloud_traces'],
+              exporters:
+                this.config === 'local' ? ['logging'] : ['logging', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters: ['logging', 'prometheusremotewrite'],
+              exporters:
+                this.config === 'local' ? ['logging'] : ['logging', 'prometheusremotewrite'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },
@@ -379,26 +432,7 @@ export class Observability {
             inputs: ['envoy_json_logs.dropped'],
             encoding: { codec: 'json' },
           },
-          grafana_lab: {
-            type: 'loki',
-            inputs: ['kubernetes_logs', 'envoy_error_logs'],
-            endpoint: interpolate`https://${this.config.loki.endpoint}`,
-            auth: {
-              strategy: 'basic',
-              user: this.config.loki.username,
-              password: this.config.loki.password,
-            },
-            labels: {
-              namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
-              container_name: '{{`{{ kubernetes.container_name }}`}}',
-              env: this.envName,
-            },
-            encoding: {
-              codec: 'text',
-            },
-            out_of_order_action: 'accept',
-            remove_timestamp: false,
-          },
+          ...sinks,
         },
       },
     };

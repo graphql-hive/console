@@ -148,6 +148,7 @@ export default gql`
 
   extend type Project {
     targets: TargetConnection!
+    targetBySlug(targetSlug: String!): Target
   }
 
   type TargetConnection {
@@ -167,6 +168,11 @@ export default gql`
     graphqlEndpointUrl: String
     validationSettings: TargetValidationSettings!
     experimental_forcedLegacySchemaComposition: Boolean!
+    viewerCanAccessSettings: Boolean!
+    viewerCanModifySettings: Boolean!
+    viewerCanModifyTargetAccessToken: Boolean!
+    viewerCanModifyCDNAccessToken: Boolean!
+    viewerCanDelete: Boolean!
   }
 
   type TargetValidationSettings {

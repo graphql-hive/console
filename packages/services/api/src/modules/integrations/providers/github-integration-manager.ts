@@ -1,12 +1,12 @@
 import { Inject, Injectable, InjectionToken, Scope } from 'graphql-modules';
 import { App } from '@octokit/app';
 import { Octokit } from '@octokit/core';
+import { retry } from '@octokit/plugin-retry';
 import { RequestError } from '@octokit/request-error';
-import type { IntegrationsModule } from '../__generated__/types';
+import type { GitHubIntegration } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import { ProjectAccessScope } from '../../auth/providers/scopes';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
+import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
 
@@ -19,18 +19,23 @@ export const GITHUB_APP_CONFIG = new InjectionToken<GitHubApplicationConfig>(
   'GitHubApplicationConfig',
 );
 
+type Constructor<T> = new (...args: any[]) => T;
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
 })
 export class GitHubIntegrationManager {
   private logger: Logger;
-  private app?: App;
+  private app?: App<{
+    Octokit: typeof Octokit & Constructor<ReturnType<typeof retry>>;
+  }>;
 
   constructor(
     logger: Logger,
-    private authManager: AuthManager,
+    private session: Session,
     private storage: Storage,
+    private auditLog: AuditLogRecorder,
     @Inject(GITHUB_APP_CONFIG) private config: GitHubApplicationConfig | null,
   ) {
     this.logger = logger.child({
@@ -42,7 +47,7 @@ export class GitHubIntegrationManager {
         appId: this.config.appId,
         privateKey: this.config.privateKey,
         log: this.logger,
-        Octokit: Octokit.defaults({
+        Octokit: Octokit.plugin(retry).defaults({
           request: {
             fetch,
           },
@@ -65,27 +70,58 @@ export class GitHubIntegrationManager {
       input.organizationId,
       input.installationId,
     );
-    await this.authManager.ensureOrganizationAccess({
-      ...input,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+    await this.session.assertPerformAction({
+      action: 'gitHubIntegration:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+      },
     });
     this.logger.debug('Updating organization');
-    await this.storage.addGitHubIntegration({
+    const result = await this.storage.addGitHubIntegration({
       organizationId: input.organizationId,
       installationId: input.installationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.installationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'ENABLED',
+      },
+    });
+
+    return result;
   }
 
   async unregister(input: OrganizationSelector): Promise<void> {
     this.logger.debug('Removing GitHub integration (organization=%s)', input.organizationId);
-    await this.authManager.ensureOrganizationAccess({
-      ...input,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+
+    await this.session.assertPerformAction({
+      action: 'gitHubIntegration:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+      },
     });
     this.logger.debug('Updating organization');
-    await this.storage.deleteGitHubIntegration({
+    const result = await this.storage.deleteGitHubIntegration({
       organizationId: input.organizationId,
     });
+
+    await this.auditLog.record({
+      eventType: 'ORGANIZATION_UPDATED_INTEGRATION',
+      organizationId: input.organizationId,
+      metadata: {
+        integrationId: input.organizationId,
+        integrationType: 'GITHUB',
+        integrationStatus: 'DISABLED',
+      },
+    });
+
+    return result;
   }
 
   async isAvailable(selector: OrganizationSelector): Promise<boolean> {
@@ -139,7 +175,7 @@ export class GitHubIntegrationManager {
     return installationId;
   }
 
-  private async getOctokitForOrganization(selector: OrganizationSelector): Promise<Octokit | null> {
+  private async getOctokitForOrganization(selector: OrganizationSelector) {
     const installationId = await this.getInstallationId(selector);
 
     if (!installationId) {
@@ -160,7 +196,7 @@ export class GitHubIntegrationManager {
    */
   async getRepositories(
     selector: OrganizationSelector,
-  ): Promise<IntegrationsModule.GitHubIntegration['repositories'] | null> {
+  ): Promise<GitHubIntegration['repositories'] | null> {
     this.logger.debug('Fetching repositories');
     const octokit = await this.getOctokitForOrganization(selector);
 
@@ -193,9 +229,12 @@ export class GitHubIntegrationManager {
       return null;
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
+      action: 'gitHubIntegration:modify',
       organizationId: organization.id,
-      scope: OrganizationAccessScope.INTEGRATIONS,
+      params: {
+        organizationId: organization.id,
+      },
     });
 
     return organization;
@@ -284,6 +323,13 @@ export class GitHubIntegrationManager {
           return {
             success: false,
             error: `Your GitHub Organization has an IP allow list enabled, and our IP address is not permitted to access this resource. Please contact our support team to obtain the IP address.`,
+          };
+        }
+
+        if (error.status >= 500) {
+          return {
+            success: false,
+            error: `GitHub API couldn't respond to your request in time. Please check Github status page for more information.`,
           };
         }
 
@@ -419,9 +465,13 @@ export class GitHubIntegrationManager {
   }
 
   async enableProjectNameInGithubCheck(input: ProjectSelector) {
-    await this.authManager.ensureProjectAccess({
-      ...input,
-      scope: ProjectAccessScope.SETTINGS,
+    await this.session.assertPerformAction({
+      action: 'project:modifySettings',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
     });
 
     const project = await this.storage.getProject(input);

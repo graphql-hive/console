@@ -1,9 +1,9 @@
 import { SupportManager } from '../providers/support-manager';
-import type { OrganizationResolvers } from './../../../__generated__/types.next';
+import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'supportTicket' | 'supportTickets' | '__isTypeOf'
+  'supportTicket' | 'supportTickets' | 'viewerCanManageSupportTickets' | '__isTypeOf'
 > = {
   supportTickets: async (org, args, { injector }) => {
     const response = await injector.get(SupportManager).getTickets(org.id);
@@ -45,5 +45,19 @@ export const Organization: Pick<
       createdAt: ticket.created_at,
       updatedAt: ticket.updated_at,
     };
+  },
+  viewerCanManageSupportTickets: async (organization, _arg, { session, injector }) => {
+    try {
+      injector.get(SupportManager);
+    } catch (err) {
+      return false;
+    }
+    return await session.canPerformAction({
+      action: 'support:manageTickets',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };

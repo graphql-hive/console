@@ -1,0 +1,42 @@
+## Frequently Asked Questions About GraphQL Federation
+
+- What is the difference between schema stitching and federation in GraphQL?
+
+  **Schema Stitching** manually combines multiple GraphQL schemas through a gateway, requiring
+  explicit definitions for schema merging and data fetching.
+
+  **GraphQL federation**, however, is an automated approach where independent services (called
+  subgraphs) define their own schemas and resolvers, which are automatically composed into a unified
+  schema (supergraph) by a process called schema composition, using special directives to manage
+  cross-service references, and a gateway to route queries to the appropriate subgraphs.
+
+- What is the difference between BFF and Federation in GraphQL?
+
+  **BFF** (Backend-for-Frontend) creates custom backends for specific frontend clients (like mobile
+  or web), tailoring data and logic to each client's needs.
+
+  In contrast, **GraphQL Federation** composes multiple GraphQL services into a single API, allowing
+  teams to manage parts of a schema independently while providing a unified API.
+
+  BFF focuses on client-specific optimization, while Federation is like having puzzle pieces that
+  fit together to create one complete API.
+
+- Which companies use GraphQL Federation in production?
+
+  Many industry leaders successfully use GraphQL federation at scale. Notable examples include
+  [**Netlifx**](https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2 'How Netflix Scales its API with GraphQL Federation'),
+  [**Expedia Group**](https://youtu.be/kpeVT7J6Bsw?si=srGWsoxf3kTmneTu&t=79 'Schema First, Code First, or Both? Adopting Schema First Development - Dan Adajian, Expedia Group'),
+  [**Volvo**](https://www.apollographql.com/blog/volvo-cars-drives-into-the-future-of-online-car-shopping-with-the-supergraph 'Volvo drives into the future of online car shopping with the supergraph'),
+  and
+  [**Booking**](https://youtu.be/2KsP_x50tGk?si=mu-MOG-xZQSDNDjh&t=478 'Deep Learnings Migrating legacy services to Federated GraphQL - Christian Ernst, Booking.com').
+  These companies prove that Federation works reliably for large-scale production applications.
+
+- How to federate a monolithic GraphQL API?
+
+  Treat your GraphQL API as a single subgraph and use a federation gateway on top. Start
+  decomposition process by identifying clear domain boundaries within your schema and extract them
+  into a separate services. Start with a schema that has minimal dependencies and gradually move to
+  other parts of the schema.
+
+  Learn how **Coinbase** transitioned from a monolith GraphQL API to GraphQL Federation in
+  [**this conference talk**](https://www.youtube.com/watch?v=OIIIMg7Trc0 'Coinbase journey to GraphQL Federation').

@@ -1,5 +1,5 @@
 import { usage } from '../utils';
-import type { GraphQlFieldResolvers } from './../../../__generated__/types.next';
+import type { GraphQlFieldResolvers } from './../../../__generated__/types';
 
 export const GraphQLField: GraphQlFieldResolvers = {
   name: f => f.entity.name,

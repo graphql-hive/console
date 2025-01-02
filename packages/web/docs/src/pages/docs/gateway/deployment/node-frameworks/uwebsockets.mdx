@@ -15,16 +15,11 @@ Despite its name, it is not a WebSocket-only server, it does HTTP as well.
 Since Hive Gateway is framework and environment agnostic, it supports µWebSockets.js out of the box
 with a simple configuration.
 
-<Callout>
-  If you use Gateway CLI within Node.js, it already uses µWebSockets.js. You don't need to do
-  anything extra within CLI. Use this guide only if you really need to use µWebSockets.js directly.
-</Callout>
-
 ## Example
 
 ```ts filename="index.ts"
 import { App, HttpRequest, HttpResponse } from 'uWebSockets.js'
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 
 interface ServerContext {
   req: HttpRequest
@@ -52,7 +47,7 @@ npm i graphql-ws
 import { execute, ExecutionArgs, subscribe } from 'graphql'
 import { makeBehavior } from 'graphql-ws/lib/use/uWebSockets'
 import { App, HttpRequest, HttpResponse } from 'uWebSockets.js'
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 
 interface ServerContext {
   req: HttpRequest

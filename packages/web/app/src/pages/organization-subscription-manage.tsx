@@ -19,16 +19,12 @@ import { Slider } from '@/components/v2/slider';
 import Stat from '@/components/v2/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
 
 const ManageSubscriptionInner_OrganizationFragment = graphql(`
   fragment ManageSubscriptionInner_OrganizationFragment on Organization {
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-    }
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -126,13 +122,6 @@ function Inner(props: {
   );
   const stripe = useStripe();
   const elements = useElements();
-  const canAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me,
-    redirect: true,
-    organizationSlug: organization.slug,
-  });
-
   const [query] = useQuery({ query: BillingsPlanQuery });
 
   const [paymentDetailsValid, setPaymentDetailsValid] = useState(
@@ -270,10 +259,6 @@ function Inner(props: {
       },
     });
   }, [organization.slug, operationsRateLimit, updateOrgRateLimitMutation, isFetching]);
-
-  if (!canAccess) {
-    return null;
-  }
 
   const renderActions = () => {
     if (plan === organization.plan) {
@@ -453,17 +438,6 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
 
   const currentOrganization = query.data?.organization?.organization;
   const billingPlans = query.data?.billingPlans;
-
-  const organization = useFragment(
-    ManageSubscriptionInner_OrganizationFragment,
-    currentOrganization,
-  );
-  useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;

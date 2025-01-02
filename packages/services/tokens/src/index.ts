@@ -18,9 +18,8 @@ import {
 } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { Context, tokensApiRouter } from './api';
-import { useCache } from './cache';
 import { env } from './environment';
-import { createStorage } from './storage';
+import { createStorage } from './multi-tier-storage';
 
 export async function main() {
   let tracing: TracingInstance | undefined;
@@ -80,12 +79,14 @@ export async function main() {
     maxRetriesPerRequest: 20,
     db: 0,
     enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
   });
 
-  const { start, stop, readiness, getStorage } = useCache(
-    createStorage(env.postgres, tracing ? [tracing.instrumentSlonik()] : []),
+  const storage = await createStorage(
+    env.postgres,
     redis,
     server.log,
+    tracing ? [tracing.instrumentSlonik()] : [],
   );
 
   const stopHeartbeats = env.heartbeat
@@ -94,14 +95,14 @@ export async function main() {
         endpoint: env.heartbeat.endpoint,
         intervalInMS: 20_000,
         onError: e => server.log.error(e, `Heartbeat failed with error`),
-        isReady: readiness,
+        isReady: storage.isReady,
       })
     : startHeartbeats({ enabled: false });
 
   async function shutdown() {
     stopHeartbeats();
     await server.close();
-    await stop();
+    await storage.close();
   }
 
   try {
@@ -145,7 +146,7 @@ export async function main() {
         return {
           req,
           errorHandler,
-          getStorage,
+          storage,
           tokenReadFailuresCache,
         };
       },
@@ -163,7 +164,7 @@ export async function main() {
       method: ['GET', 'HEAD'],
       url: '/_readiness',
       async handler(_, res) {
-        const isReady = await readiness();
+        const isReady = await storage.isReady();
         reportReadiness(isReady);
         void res.status(isReady ? 200 : 400).send();
       },
@@ -177,8 +178,6 @@ export async function main() {
       port: env.http.port,
       host: '::',
     });
-
-    await start();
   } catch (error) {
     server.log.fatal(error);
     Sentry.captureException(error, {

@@ -1,6 +1,6 @@
 import { hash } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
-import type { OperationsStatsResolvers } from './../../../__generated__/types.next';
+import type { OperationsStatsResolvers } from './../../../__generated__/types';
 
 export const OperationsStats: OperationsStatsResolvers = {
   operations: async (

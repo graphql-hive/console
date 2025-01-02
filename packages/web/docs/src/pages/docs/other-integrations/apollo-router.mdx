@@ -47,11 +47,19 @@ will be used for authenticating the supergraph polling from the CDN.
 
 <Tabs items={['Binary', 'Docker', 'Custom']}>
   <Tabs.Tab>
-    Download Apollo Router for Linux (`x86_64`), MacOS (`x86_64`) or Windows (`x86_64`):
+    Download Apollo Router for Linux (`x86_64`), MacOS (`x86_64`) or Windows (`x86_64`). To download the latest version of the router, use the following script:
 
     ```bash
     curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash
     ```
+
+    To download a specfic version of the router, use the `-v` or `--version` flag:
+
+    ```bash
+    curl -fsSL https://graphql-hive.com/apollo-router-download.sh | bash -s -- --version router1.57.1-plugin1.0.0
+    ```
+
+    > The full list of releases can be found in the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router)
 
     Start the router:
 
@@ -63,14 +71,16 @@ will be used for authenticating the supergraph polling from the CDN.
 
   </Tabs.Tab>
   <Tabs.Tab>
-      Running Apollo Router with Hive's Schema Registry:
+      To run Apollo Router with Hive plugin, use the following Docker command.
+
+      Make sure to replace `IMAGE_TAG_HERE` with the image tag. You can use `latest` for development, or pick a specific version for production from the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
 
       ```bash
       docker run -p 4000:4000 \
         --env HIVE_CDN_ENDPOINT="..." \ # The endpoint of your CDN access token
         --env HIVE_CDN_KEY="..." \ # The CDN access token
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE
       ```
 
       Passing command-line arguments:
@@ -80,7 +90,7 @@ will be used for authenticating the supergraph polling from the CDN.
         --env HIVE_CDN_ENDPOINT="..." \ # The endpoint of your CDN access token
         --env HIVE_CDN_KEY="..." \ # The CDN access token
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest --log debug
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE --log debug
       ```
 
   </Tabs.Tab>
@@ -89,10 +99,21 @@ will be used for authenticating the supergraph polling from the CDN.
     Creating a custom Apollo Router binary requires compiling it from source.
     To setup a project, please follow ["Create a new project"](https://www.apollographql.com/docs/router/customizations/custom-binary/#1-create-a-new-project) section of "Creating a custom Apollo Router binary" guide.
 
-    Once your project is ready, update `Cargo.toml` file with the following dependencies:
+    Once your project is ready, update `Cargo.toml` file with the [`hive_apollo_router_plugin`](https://crates.io/crates/hive-apollo-router-plugin) Crate dependency:
 
     ```toml filename="Cargo.toml"
-    graphql-hive-router = { git = "https://github.com/graphql-hive/platform", branch = "main" }
+    [dependencies]
+    # You can find the version additional information in Crates.io:
+    # https://crates.io/crates/hive-apollo-router-plugin
+    hive_apollo_router_plugin = "..."
+    ```
+
+    Alternatively, you can point to a Git if you need a specific commit or version of the plugin:
+
+    ```toml filename="Cargo.toml"
+    [dependencies]
+    # You can use a "branch", or commit id with "rev" key
+    hive_apollo_router_plugin = { git = "https://github.com/graphql-hive/console", branch = "main" }
     ```
 
     Next, update `src/main.rs` file with the following content to add GraphQL Hive:
@@ -101,7 +122,7 @@ will be used for authenticating the supergraph polling from the CDN.
       mod plugins;
 
       use anyhow::Result;
-    + use graphql_hive_router::registry;
+    + use hive_apollo_router_plugin::registry;
 
       fn main() -> Result<()> {
     -   apollo_router::main()
@@ -121,6 +142,18 @@ will be used for authenticating the supergraph polling from the CDN.
 
   </Tabs.Tab>
 </Tabs>
+
+### Version Structure
+
+The Docker image's and the binary artifact's versioning follows the pattern
+`routerX.Y.Z-pluginX.Y.Z`, combining both the core
+[Apollo Router](https://crates.io/crates/apollo-router) and
+[Hive plugin](https://crates.io/crates/hive-apollo-router-plugin) versions.
+
+For example: `router1.57.1-plugin1.0.0`.
+
+You can find the list of releases in the
+[releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
 
 ## Configuration
 
@@ -145,8 +178,10 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
 
 ### Configuration
 
-- `HIVE_TOKEN` - Your 'Registry Access Token' as configured in hive For self hosted Hive:
-- `HIVE_ENDPOINT` - The usage endpoint (defaults to https://app.graphql-hive.com/usage)
+- `HIVE_TOKEN` (**required**) - Your
+  [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.
+- `HIVE_ENDPOINT` (**optional**) - For self-hosting, you can override `/usage` endpoint (defaults to
+  `https://app.graphql-hive.com/usage`)
 
 <Tabs items={['Binary', 'Docker', 'Custom']}>
   <Tabs.Tab>
@@ -161,7 +196,10 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
 
   </Tabs.Tab>
   <Tabs.Tab>
-      Running Apollo Router with Hive's Schema Registry and Usage Reporting:
+      To run Apollo Router with Hive plugin with usage reporting, use the following Docker command.
+
+      Make sure to replace `IMAGE_TAG_HERE` with the image tag. You can use `latest` for development, or pick a specific version for production from the [releases registry page](https://github.com/graphql-hive/console/pkgs/container/apollo-router).
+
 
       ```bash
       docker run -p 4000:4000 \
@@ -170,7 +208,7 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
         --env HIVE_CDN_KEY="..." \
         --mount "type=bind,source=/home/usr/src/hive/router.yaml,target=/dist/config/router.yaml" \
         --rm \
-        ghcr.io/graphql-hive/apollo-router:latest
+        ghcr.io/graphql-hive/apollo-router:IMAGE_TAG_HERE
       ```
 
       To follow the same convention as Apollo Router's official Docker image, the config file is also located at `/dist/config/router.yaml`.
@@ -181,10 +219,21 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
     Creating a custom Apollo Router binary requires compiling it from source.
     To setup a project, please follow ["Create a new project"](https://www.apollographql.com/docs/router/customizations/custom-binary/#1-create-a-new-project) section of "Creating a custom Apollo Router binary" guide.
 
-    Once your project is ready, update `Cargo.toml` file with the following dependencies:
+    Once your project is ready, update `Cargo.toml` file with the [`hive_apollo_router_plugin`](https://crates.io/crates/hive-apollo-router-plugin) Crate dependency:
 
     ```toml filename="Cargo.toml"
-    graphql-hive-router = { git = "https://github.com/graphql-hive/platform", branch = "main" }
+    [dependencies]
+    # You can find the version additional information in Crates.io:
+    # https://crates.io/crates/hive-apollo-router-plugin
+    hive_apollo_router_plugin = "..."
+    ```
+
+    Alternatively, you can point to a Git if you need a specific commit or version of the plugin:
+
+    ```toml filename="Cargo.toml"
+    [dependencies]
+    # You can use a "branch", or commit id with "rev" key
+    hive_apollo_router_plugin = { git = "https://github.com/graphql-hive/console", branch = "main" }
     ```
 
     Next, update `src/main.rs` file with the following content to add GraphQL Hive:
@@ -193,8 +242,8 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
       mod plugins;
 
       use anyhow::Result;
-    + use graphql_hive_router::registry;
-    + use graphql_hive_router::usage;
+    + use hive_apollo_router_plugin::registry;
+    + use hive_apollo_router_plugin::usage;
 
       fn main() -> Result<()> {
     -   apollo_router::main()
@@ -249,7 +298,73 @@ plugins:
     # accept_invalid_certs: true
 ```
 
+## Persisted Documents (App Deployments)
+
+To activate [App Deployments](/docs/schema-registry/app-deployments) in your Apollo Router, you need
+to enable the `hive.persisted_documents` plugin. The plugin uses the `HIVE_CDN_ENDPOINT` and
+`HIVE_CDN_KEY` environment variables to resolve the persisted documents IDs.
+
+```yaml filename="router.yaml"
+# ... the rest of your configuration
+plugins:
+  hive.usage: {}
+  hive.persisted_documents:
+    enabled: true
+```
+
+Once enabled, follow the
+[App Deployments guide](/docs/schema-registry/app-deployments#sending-persisted-document-requests-from-your-app)
+to send persisted document requests from your app, using the Hive CDN for resolving the document
+IDs.
+
+### Configuration
+
+The following environment variables are required:
+
+- `HIVE_CDN_ENDPOINT` - the endpoint Hive generated for you in the previous step (for example:
+  `https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/supergraph`)
+- `HIVE_CDN_KEY` - the access key to Hive CDN
+
+You may configure the plugin with the following options:
+
+```yaml filename="router.yaml"
+# ... the rest of your configuration
+plugins:
+  hive.usage: {}
+  hive.persisted_documents:
+    # Enables/disables the plugin
+    # Default: true
+    enabled: true
+    # The endpoint of the Hive CDN. You can either specify it here, or use the existing HIVE_CDN_ENDPOINT environment variable.
+    # Required
+    endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/supergraph'
+    # The access key to the Hive CDN. You can either specify it here, or use the existing HIVE_CDN_KEY environment variable.
+    # Required
+    key: '...'
+    # Enables/disables the option to allow arbitrary documents to be executed.
+    # Optional
+    # Default: false
+    allow_arbitrary_documents: false
+    # HTTP connect timeout in seconds for the Hive CDN requests.
+    # Optional
+    # Default: 5
+    connect_timeout: 5
+    # HTTP request timeout in seconds for the Hive CDN requests.
+    # Optional
+    # Default: 15
+    request_timeout: 15
+    # Accepts invalid SSL certificates for the Hive CDN requests.
+    # Optional
+    # Default: false
+    accept_invalid_certs: false
+    # The maximum number of documents to hold in a LRU cache.
+    # Optional
+    # Default: 1000
+    cache_size: 1000
+```
+
 ## Additional Resources
 
 - [Get started with Apollo Federation and Hive guide](/docs/get-started/apollo-federation)
 - [Apollo Router documentation](https://www.apollographql.com/docs/router/)
+- [Hive Plugin for Apollo-Router @ Crates.io](https://crates.io/crates/hive-apollo-router-plugin)

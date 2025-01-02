@@ -92,12 +92,18 @@ export function TargetSelector(props: {
               });
             }}
           >
-            <SelectTrigger variant="default">
-              <div className="font-medium">{currentTarget.slug}</div>
+            <SelectTrigger variant="default" data-cy="target-picker-trigger">
+              <div className="font-medium" data-cy="target-picker-current">
+                {currentTarget.slug}
+              </div>
             </SelectTrigger>
             <SelectContent>
               {targets.map(target => (
-                <SelectItem key={target.slug} value={target.slug}>
+                <SelectItem
+                  key={target.slug}
+                  value={target.slug}
+                  data-cy={`target-picker-option-${target.slug}`}
+                >
                   {target.slug}
                 </SelectItem>
               ))}

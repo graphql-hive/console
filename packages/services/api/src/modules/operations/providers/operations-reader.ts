@@ -2,9 +2,8 @@ import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
-import { batch } from '@theguild/buddy';
 import type { DateRange } from '../../../shared/entities';
-import { batchBy } from '../../../shared/helpers';
+import { batch, batchBy } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
@@ -1296,10 +1295,6 @@ export class OperationsReader {
       }>
     >
   > {
-    const ORs = args.typeNames.map(
-      typeName => sql`( cdi.coordinate = ${typeName} OR cdi.coordinate LIKE ${typeName + '.%'} )`,
-    );
-
     const result = await this.clickHouse.query<{
       total: string;
       hash: string;
@@ -1320,7 +1315,10 @@ export class OperationsReader {
                 ${this.createFilter({
                   target: args.targetId,
                   period: args.period,
-                  extra: [sql`cdi.coordinate NOT LIKE '%.%.%'`, sql`(${sql.join(ORs, ' OR ')})`],
+                  extra: [
+                    sql`cdi.coordinate NOT LIKE '%.%.%'`,
+                    sql`substringIndex(cdi.coordinate, '.', 1) IN (${sql.array(args.typeNames, 'String')})`,
+                  ],
                   namespace: 'cdi',
                 })}
               GROUP BY cdi.hash, cdi.coordinate ORDER by total DESC, cdi.hash ASC LIMIT ${sql.raw(

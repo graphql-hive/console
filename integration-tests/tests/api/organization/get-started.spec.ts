@@ -1,9 +1,4 @@
-import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  ProjectType,
-  TargetAccessScope,
-} from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { waitFor } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
@@ -28,7 +23,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, fetchOrganizationInfo, createProject } = await createOrg();
-    const { target, project, createToken } = await createProject(ProjectType.Single);
+    const { target, project, createTargetAccessToken, toggleTargetValidation } =
+      await createProject(ProjectType.Single);
 
     const { getStarted: steps } = await fetchOrganizationInfo();
     expect(steps?.creatingProject).toBe(true); // modified
@@ -46,17 +42,7 @@ test.concurrent(
       publishSchema,
       checkSchema,
       collectLegacyOperations: collectOperations,
-      toggleTargetValidation,
-    } = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-      projectScopes: [ProjectAccessScope.Read],
-      organizationScopes: [OrganizationAccessScope.Read],
-    });
+    } = await createTargetAccessToken({});
 
     // Step: publish schema
     await publishSchema({ sdl: 'type Query { foo: String }' }).then(r => r.expectNoGraphQLErrors());

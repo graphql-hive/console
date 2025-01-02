@@ -24,31 +24,37 @@ which will print out the following:
 ```
 Usage: hive-gateway [options] [command]
 
-serve GraphQL federated architecture for any API service(s)
+Federated GraphQL Gateway
 
 Options:
-  --fork <count>                          count of workers to spawn. defaults to "os.availableParallelism()" when NODE_ENV is "production", otherwise only one (the main) worker
-                                          (default: 1 (env: FORK)
-  -c, --config-path <path>                path to the configuration file. defaults to the following files respectively in the current working directory: gateway.config.ts,
-                                          gateway.config.mts, gateway.config.cts, gateway.config.js, gateway.config.mjs, gateway.config.cjs (env: CONFIG_PATH)
-  -h, --host <hostname>                   host to use for serving (default: "127.0.0.1" (default: "127.0.0.1")
-  -p, --port <number>                     port to use for serving (default: 4000 (env: PORT)
-  --polling <duration>                    schema polling interval in human readable duration (default: "10s") (env: POLLING)
-  --no-masked-errors                      don't mask unexpected errors in responses
-  --masked-errors                         mask unexpected errors in responses (default: true)
-  --hive-registry-token <token>           Hive registry token for usage metrics reporting (env: HIVE_REGISTRY_TOKEN)
-  --apollo-graph-ref <graphRef>           Apollo graph ref of the managed federation graph (<YOUR_GRAPH_ID>@<VARIANT>) (env: APOLLO_GRAPH_REF)
-  --apollo-key <apiKey>                   Apollo API key to use to authenticate with the managed federation up link (env: APOLLO_KEY)
-  --help                                  display help for command
+  --fork <count>                                  count of workers to spawn. uses "12" (available parallelism) workers when NODE_ENV is "production", otherwise "1" (the main) worker (default: 1 (env: FORK)
+  -c, --config-path <path>                        path to the configuration file. defaults to the following files respectively in the current working directory: gateway.ts, gateway.mts, gateway.cts, gateway.js, gateway.mjs, gateway.cjs (env: CONFIG_PATH)
+  -h, --host <hostname>                           host to use for serving (default: "0.0.0.0" (default: "0.0.0.0")
+  -p, --port <number>                             port to use for serving (default: 4000 (env: PORT)
+  --polling <duration>                            schema polling interval in human readable duration (default: "10s") (env: POLLING)
+  --no-masked-errors                              don't mask unexpected errors in responses
+  --masked-errors                                 mask unexpected errors in responses (default: true)
+  --hive-registry-token <token>                   Hive registry token for usage metrics reporting (env: HIVE_REGISTRY_TOKEN)
+  --hive-persisted-documents-endpoint <endpoint>  [EXPERIMENTAL] Hive CDN endpoint for fetching the persisted documents. requires the "--hive-persisted-documents-token <token>" option
+  --hive-persisted-documents-token <token>        [EXPERIMENTAL] Hive persisted documents CDN endpoint token. requires the "--hive-persisted-documents-endpoint <endpoint>" option
+  --hive-cdn-endpoint <endpoint>                  Hive CDN endpoint for fetching the schema (env: HIVE_CDN_ENDPOINT)
+  --hive-cdn-key <key>                            Hive CDN API key for fetching the schema. implies that the "schemaPathOrUrl" argument is a url (env: HIVE_CDN_KEY)
+  --apollo-graph-ref <graphRef>                   Apollo graph ref of the managed federation graph (<YOUR_GRAPH_ID>@<VARIANT>) (env: APOLLO_GRAPH_REF)
+  --apollo-key <apiKey>                           Apollo API key to use to authenticate with the managed federation up link (env: APOLLO_KEY)
+  --disable-websockets                            Disable WebSockets support
+  --jit                                           Enable Just-In-Time compilation of GraphQL documents (env: JIT)
+  -V, --version                                   output the version number
+  --help                                          display help for command
 
 Commands:
-  supergraph [options] [schemaPathOrUrl]  serve a Federation supergraph provided by a compliant composition tool such as GraphQL Mesh or Apollo Rover
-  subgraph [schemaPathOrUrl]              serve a Federation subgraph that can be used with any Federation compatible router like Hive Gateway or Apollo Router
-  proxy [options] [endpoint]              serve a proxy to a GraphQL API and add additional features such as monitoring/tracing, caching, rate limiting, security, and more
-  help [command]                          display help for command
+  supergraph [options] [schemaPathOrUrl]          serve a Federation supergraph provided by a compliant composition tool such as Mesh Compose or Apollo Rover
+  subgraph [schemaPathOrUrl]                      serve a Federation subgraph that can be used with any Federation compatible router like Apollo Router/Gateway
+  proxy [options] [endpoint]                      serve a proxy to a GraphQL API and add additional features such as monitoring/tracing, caching, rate limiting, security, and more
+  help [command]                                  display help for command
+
 ```
 
-<Callout>All arguments can also be configured in the config file.</Callout>
+All arguments can also be configured in the config file.
 
 ### Environment Variables
 

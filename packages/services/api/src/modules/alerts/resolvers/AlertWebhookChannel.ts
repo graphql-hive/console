@@ -1,4 +1,4 @@
-import type { AlertWebhookChannelResolvers } from './../../../__generated__/types.next';
+import type { AlertWebhookChannelResolvers } from './../../../__generated__/types';
 
 export const AlertWebhookChannel: AlertWebhookChannelResolvers = {
   __isTypeOf: channel => {

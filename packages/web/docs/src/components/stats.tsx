@@ -35,7 +35,7 @@ export function StatsList(props: { children: ReactNode; className?: string }) {
   return (
     <section className={cn('p-6 sm:py-20 md:py-24 xl:px-[120px]', props.className)}>
       <Heading as="h2" size="md" className="text-center">
-        Living and breathing GraphQL
+        Living and Breathing GraphQL Federation
       </Heading>
       <div className="mx-auto mt-8 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-6 lg:mt-16 lg:grid-cols-4">
         {props.children}

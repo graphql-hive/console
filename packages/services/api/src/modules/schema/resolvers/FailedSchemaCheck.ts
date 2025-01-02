@@ -1,7 +1,7 @@
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaCheckManager } from '../providers/schema-check-manager';
 import { SchemaManager } from '../providers/schema-manager';
-import type { FailedSchemaCheckResolvers } from './../../../__generated__/types.next';
+import type { FailedSchemaCheckResolvers } from './../../../__generated__/types';
 
 export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
   schemaVersion: (schemaCheck, _, { injector }) => {

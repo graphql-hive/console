@@ -24,8 +24,8 @@ describe('dev', () => {
   test('composes only the locally provided service', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     await cli.publish({
@@ -58,8 +58,8 @@ describe('dev --remote', () => {
   test('not available for SINGLE project', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     const cmd = cli.dev({
@@ -79,8 +79,8 @@ describe('dev --remote', () => {
   test('not available for STITCHING project', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Stitching);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken } = await createProject(ProjectType.Stitching);
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     const cmd = cli.dev({
@@ -100,8 +100,8 @@ describe('dev --remote', () => {
   test('adds a service', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     await cli.publish({
@@ -131,8 +131,8 @@ describe('dev --remote', () => {
   test('replaces a service', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     await cli.publish({
@@ -169,8 +169,10 @@ describe('dev --remote', () => {
   test('uses latest composable version by default', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
-    const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken, setNativeFederation } = await createProject(
+      ProjectType.Federation,
+    );
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     // Once we ship native federation v2 composition by default, we can remove these two lines
@@ -247,8 +249,10 @@ describe('dev --remote', () => {
   test('uses latest version when requested', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
-    const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
-    const { secret } = await createToken({});
+    const { createTargetAccessToken, setNativeFederation } = await createProject(
+      ProjectType.Federation,
+    );
+    const { secret } = await createTargetAccessToken({});
     const cli = createCLI({ readwrite: secret, readonly: secret });
 
     // Once we ship native federation v2 composition by default, we can remove these two lines

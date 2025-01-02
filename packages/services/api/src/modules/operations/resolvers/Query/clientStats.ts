@@ -1,6 +1,6 @@
 import { parseDateRangeInput } from '../../../../shared/helpers';
 import { IdTranslator } from '../../../shared/providers/id-translator';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const clientStats: NonNullable<QueryResolvers['clientStats']> = async (
   _,

@@ -1,5 +1,5 @@
 import { OrganizationAccessScope as OrganizationAccessScopeEnum } from '../providers/organization-access';
-import type { OrganizationAccessScopeResolvers } from './../../../__generated__/types.next';
+import type { OrganizationAccessScopeResolvers } from './../../../__generated__/types';
 
 export const OrganizationAccessScope: OrganizationAccessScopeResolvers = {
   READ: OrganizationAccessScopeEnum.READ,

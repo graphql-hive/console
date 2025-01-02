@@ -18,6 +18,7 @@ export function createScheduler(config: {
     host: string;
     port: number;
     password: string;
+    tlsEnabled: boolean;
   };
   queueName: string;
   emailProvider: EmailProvider;
@@ -126,6 +127,7 @@ export function createScheduler(config: {
       db: 0,
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
+      tls: config.redis.tlsEnabled ? {} : undefined,
     });
 
     redisConnection.on('error', err => {

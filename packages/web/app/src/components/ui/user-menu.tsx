@@ -55,6 +55,7 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
       id
       slug
       me {
+        id
         ...UserMenu_MemberFragment
       }
       getStarted {

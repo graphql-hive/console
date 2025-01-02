@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { HiveError } from '../../../../shared/errors';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SlackIntegrationManager } from '../../providers/slack-integration-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 /**
  * Current token size is 255 characters.

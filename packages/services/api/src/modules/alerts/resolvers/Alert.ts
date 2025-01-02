@@ -1,6 +1,6 @@
 import { TargetManager } from '../../target/providers/target-manager';
 import { AlertsManager } from '../providers/alerts-manager';
-import type { AlertResolvers } from './../../../__generated__/types.next';
+import type { AlertResolvers } from './../../../__generated__/types';
 
 export const Alert: AlertResolvers = {
   channel: async (alert, _, { injector }) => {

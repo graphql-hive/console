@@ -8,7 +8,7 @@ const meta: Meta<typeof Template> = {
   argTypes: {
     variant: {
       control: { type: 'inline-radio' },
-      options: ['default', 'menu'],
+      options: ['default', 'menu', 'content'],
     },
     tabs: {
       control: { type: 'object' },
@@ -24,7 +24,7 @@ export default meta;
 
 type Story = StoryObj<typeof Template>;
 
-function Template({ tabs, variant }: { tabs: string[]; variant: 'default' | 'menu' }) {
+function Template({ tabs, variant }: { tabs: string[]; variant: 'default' | 'menu' | 'content' }) {
   const [page, setPage] = useState(tabs[0]);
 
   const handleClick = useCallback((event: MouseEvent<HTMLElement>) => {
@@ -60,5 +60,11 @@ export const Default: Story = {};
 export const Menu: Story = {
   args: {
     variant: 'menu',
+  },
+};
+
+export const Content: Story = {
+  args: {
+    variant: 'content',
   },
 };

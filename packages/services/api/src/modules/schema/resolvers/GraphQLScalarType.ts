@@ -1,6 +1,6 @@
 import { Kind } from 'graphql';
 import { __isTypeOf, usage } from '../utils';
-import type { GraphQlScalarTypeResolvers } from './../../../__generated__/types.next';
+import type { GraphQlScalarTypeResolvers } from './../../../__generated__/types';
 
 export const GraphQLScalarType: GraphQlScalarTypeResolvers = {
   __isTypeOf: __isTypeOf(Kind.SCALAR_TYPE_DEFINITION),

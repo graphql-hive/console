@@ -1,5 +1,5 @@
 import { OIDCIntegrationsProvider } from '../providers/oidc-integrations.provider';
-import type { OrganizationResolvers } from './../../../__generated__/types.next';
+import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,

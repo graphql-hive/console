@@ -83,6 +83,8 @@ export default gql`
 
   extend type Organization {
     projects: ProjectConnection!
+    viewerCanCreateProject: Boolean!
+    projectBySlug(projectSlug: String!): Project
   }
 
   type Project {
@@ -94,6 +96,22 @@ export default gql`
     buildUrl: String
     validationUrl: String
     experimental_nativeCompositionPerTarget: Boolean!
+    """
+    Whether the viewer can create a new target within this project.
+    """
+    viewerCanCreateTarget: Boolean!
+    """
+    Whether the viewer can view and modify alerts with this project.
+    """
+    viewerCanModifyAlerts: Boolean!
+    """
+    Whether the viewer can access the settings page and modify settings of this project.
+    """
+    viewerCanModifySettings: Boolean!
+    """
+    Whether the viewer can delete this project.
+    """
+    viewerCanDelete: Boolean!
   }
 
   type ProjectConnection {

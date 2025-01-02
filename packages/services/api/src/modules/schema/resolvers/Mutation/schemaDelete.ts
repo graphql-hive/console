@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
-import { AuthManager } from '../../../auth/providers/auth-manager';
+import { Session } from '../../../auth/lib/authz';
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { ProjectManager } from '../../../project/providers/project-manager';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaPublisher } from '../../providers/schema-publisher';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = async (
   _,
@@ -18,7 +18,7 @@ export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = asyn
     injector.get(TargetManager).getTargetFromToken(),
   ]);
 
-  const token = injector.get(AuthManager).ensureApiToken();
+  const token = injector.get(Session).getLegacySelector();
 
   const checksum = createHash('md5')
     .update(
@@ -27,7 +27,7 @@ export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = asyn
         serviceName: input.serviceName.toLowerCase(),
       }),
     )
-    .update(token)
+    .update(token.token)
     .digest('base64');
 
   const result = await injector.get(SchemaPublisher).delete(

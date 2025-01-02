@@ -1,5 +1,5 @@
 import { ContractsManager } from '../providers/contracts-manager';
-import type { ContractVersionResolvers } from './../../../__generated__/types.next';
+import type { ContractVersionResolvers } from './../../../__generated__/types';
 
 export const ContractVersion: ContractVersionResolvers = {
   isComposable: contractVersion => {

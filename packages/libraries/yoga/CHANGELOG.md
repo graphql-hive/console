@@ -1,5 +1,27 @@
 # @graphql-hive/yoga
 
+## 0.39.1
+
+### Patch Changes
+
+- [#6057](https://github.com/graphql-hive/console/pull/6057)
+  [`e4f8b0a`](https://github.com/graphql-hive/console/commit/e4f8b0a51d1158da966a719f321bc13e5af39ea0)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Explain what Hive is in README
+
+## 0.39.0
+
+### Minor Changes
+
+- [#5875](https://github.com/graphql-hive/platform/pull/5875)
+  [`4931aec`](https://github.com/graphql-hive/platform/commit/4931aecc21566715c5c6c8425daf58d22c1b7e9c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump `graphql-yoga` peer dependency to `5.9.0`.
+
+### Patch Changes
+
+- [#5875](https://github.com/graphql-hive/platform/pull/5875)
+  [`4931aec`](https://github.com/graphql-hive/platform/commit/4931aecc21566715c5c6c8425daf58d22c1b7e9c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Properly report usage for batched GraphQL requests.
+
 ## 0.38.2
 
 ### Patch Changes

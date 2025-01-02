@@ -1,0 +1,167 @@
+name: apollo-router-release
+on:
+  # For PRs, this pipeline will use the commit ID as Docker image tag and R2 artifact prefix.
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'packages/libraries/router/**'
+      - 'docker/router.dockerfile'
+      - 'scripts/compress/**'
+      - 'configs/cargo/Cargo.lock'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+  # For `main` changes, this pipeline will look for changes in Rust crates or plugin versioning, and
+  # publish them only if changes are found and image does not exists in GH Packages.
+  push:
+    paths:
+      - 'packages/libraries/router/**'
+      - 'docker/router.dockerfile'
+      - 'scripts/compress/**'
+      - 'configs/cargo/Cargo.lock'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+    branches:
+      - main
+
+jobs:
+  # This script is doing the following:
+  # 1. Get the version of the apollo-router and the plugin from the Cargo.toml and package.json files
+  # 2. Check if there are changes in the Cargo.toml and package.json files in the current commit
+  # 3. If there are changes, check if the image tag exists in the GitHub Container Registry
+  find-changes:
+    runs-on: ubuntu-22.04
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    outputs:
+      should_release: ${{ steps.find_changes.outputs.should_release }}
+      release_version: ${{ steps.find_changes.outputs.release_version }}
+      release_latest: ${{ steps.find_changes.outputs.release_latest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: find changes in versions
+        id: find_changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+            echo "Running in a PR, using commit ID as tag"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "release_latest=false" >> $GITHUB_OUTPUT
+            echo "release_version=$GITHUB_SHA" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Running on push event, looking for changes in Rust crates or plugin versioning"
+
+          image_name="apollo-router"
+          github_org="graphql-hive"
+          router_version=$(cargo tree -i apollo-router --quiet | head -n 1 | awk -F" v" '{print $2}')
+          plugin_version=$(jq -r '.version' packages/libraries/router/package.json)
+          has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'Cargo.lock' 'configs/cargo/Cargo.lock' 'packages/libraries/router/package.json')
+
+          if [ "$has_changes" ]; then
+            image_tag_version="router${router_version}-plugin${plugin_version}"
+
+            response=$(curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -s \
+              https://api.github.com/orgs/${github_org}/packages/container/${image_name}/versions)
+            tag_exists=$(echo "$response" | jq -r ".[] | .metadata.container.tags[] | select(. | contains(\"${image_tag_version}\"))")
+
+            if [ ! "$tag_exists" ]; then
+              echo "Found changes in version $version_to_publish"
+              echo "release_version=$image_tag_version" >> $GITHUB_OUTPUT
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "release_latest=true" >> $GITHUB_OUTPUT
+            else 
+              echo "No changes found in version $image_tag_version"
+            fi
+          fi
+
+  # Builds Rust crates, and creates Docker images
+  dockerize:
+    uses: ./.github/workflows/build-and-dockerize.yaml
+    name: image-build
+    needs:
+      - find-changes
+    if: ${{ needs.find-changes.outputs.should_release == 'true' }}
+    with:
+      imageTag: ${{ needs.find-changes.outputs.release_version }}
+      publishLatest: ${{ needs.find-changes.outputs.release_latest == 'true' }}
+      targets: apollo-router-hive-build
+      build: false
+      publishPrComment: true
+    secrets: inherit
+
+  # Test the Docker image, if it was published
+  test-image:
+    name: test apollo-router docker image
+    needs:
+      - dockerize
+      - find-changes
+    runs-on: ubuntu-22.04
+    env:
+      HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
+    steps:
+      - name: Run Docker image
+        run: |
+          # Create router.yaml
+          cat << EOF > router.yaml
+          supergraph:
+            listen: 0.0.0.0:4000
+          health_check:
+            listen: 0.0.0.0:8088
+            enabled: true
+            path: /health
+          plugins:
+            hive.usage:
+              enabled: false
+          EOF
+
+          # Download supergraph
+          curl -sSL https://supergraph.demo.starstuff.dev/ > ./supergraph.graphql
+
+          # Run Docker image
+          docker run -p 4000:4000 -p 8088:8088 --name apollo_router_test -d \
+            --env HIVE_TOKEN="fake" \
+            --mount "type=bind,source=/$(pwd)/router.yaml,target=/dist/config/router.yaml" \
+            --mount "type=bind,source=/$(pwd)/supergraph.graphql,target=/dist/config/supergraph.graphql" \
+            ghcr.io/graphql-hive/apollo-router:${{ needs.find-changes.outputs.release_version }} \
+            --log debug \
+            --supergraph /dist/config/supergraph.graphql \
+            --config /dist/config/router.yaml
+
+          # Wait for the container to be ready
+          echo "Waiting for the container to be ready..."
+          sleep 20
+          HTTP_RESPONSE=$(curl --retry 5 --retry-delay 5 --max-time 30 --write-out "%{http_code}" --silent --output /dev/null "http://127.0.0.1:8088/health")
+
+          # Check if the HTTP response code is 200 (OK)
+          if [ $HTTP_RESPONSE -eq 200 ]; then
+            echo "Health check successful."
+            docker stop apollo_router_test
+            docker rm apollo_router_test
+            exit 0
+          else
+            echo "Health check failed with HTTP status code $HTTP_RESPONSE."
+            docker stop apollo_router_test
+            docker rm apollo_router_test
+            exit 1
+          fi
+
+  # Build and publish Rust crates and binaries
+  binary:
+    uses: ./.github/workflows/publish-rust.yaml
+    secrets: inherit
+    needs:
+      - find-changes
+    if: ${{ needs.find-changes.outputs.should_release == 'true' }}
+    with:
+      publish: true
+      latest: ${{ needs.find-changes.outputs.release_latest == 'true' }}
+      version: ${{ needs.find-changes.outputs.release_version }}

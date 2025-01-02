@@ -1,6 +1,7 @@
 import { createModule } from 'graphql-modules';
+import { AuditLogManager } from '../audit-logs/providers/audit-logs-manager';
 import { CollectionProvider } from './providers/collection.provider';
-import { resolvers } from './resolvers';
+import { resolvers } from './resolvers.generated';
 import { typeDefs } from './module.graphql';
 
 export const collectionModule = createModule({
@@ -8,5 +9,5 @@ export const collectionModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [CollectionProvider],
+  providers: [CollectionProvider, AuditLogManager],
 });

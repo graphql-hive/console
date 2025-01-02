@@ -2,7 +2,7 @@ import { createConnection } from '../../../shared/schema';
 import type {
   ResolversTypes,
   SchemaWarningConnectionResolvers,
-} from './../../../__generated__/types.next';
+} from './../../../__generated__/types';
 
 const connection = createConnection<ResolversTypes['SchemaCheckWarning']>();
 

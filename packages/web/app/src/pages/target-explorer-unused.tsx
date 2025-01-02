@@ -23,9 +23,21 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
       __typename
       ... on GraphQLObjectType {
         name
+        fields {
+          __typename
+          args {
+            __typename
+          }
+        }
       }
       ... on GraphQLInterfaceType {
         name
+        fields {
+          __typename
+          args {
+            __typename
+          }
+        }
       }
       ... on GraphQLUnionType {
         name
@@ -35,6 +47,9 @@ const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
       }
       ... on GraphQLInputObjectType {
         name
+        fields {
+          __typename
+        }
       }
       ... on GraphQLScalarType {
         name
@@ -70,13 +85,47 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     return grouped;
   }, [types]);
 
-  const letters = Array.from(typesGroupedByFirstLetter.keys()).sort();
+  const letters = useMemo(() => {
+    return Array.from(typesGroupedByFirstLetter.keys()).sort();
+  }, [typesGroupedByFirstLetter]);
 
   useEffect(() => {
     if (!selectedLetter) {
       setSelectedLetter(letters[0]);
     }
   }, [selectedLetter, setSelectedLetter]);
+
+  const unused = useMemo(() => {
+    const count = {
+      fields: 0,
+      fieldArguments: 0,
+      types: 0,
+    };
+
+    for (const type of types) {
+      if (type.__typename === 'GraphQLInputObjectType') {
+        count.types++;
+        count.fields += type.fields.length;
+      } else if (
+        type.__typename === 'GraphQLObjectType' ||
+        type.__typename === 'GraphQLInterfaceType'
+      ) {
+        count.types++;
+
+        for (const field of type.fields) {
+          if (field.args.length === 0) {
+            // if there are no arguments, it means the entire field is unused
+            count.fields++;
+          } else {
+            // if there are arguments, the field is used, but the arguments are not
+            count.fieldArguments += field.args.length;
+          }
+        }
+      }
+    }
+
+    return count;
+  }, [types]);
 
   if (types.length === 0) {
     return (
@@ -97,8 +146,23 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     return null;
   }
 
+  const unusedFieldsMessage = [
+    unused.fields ? `${unused.fields} unused fields` : null,
+    unused.fieldArguments ? `${unused.fieldArguments} unused field arguments` : null,
+  ]
+    .filter(Boolean)
+    .join(' and ');
+
   return (
     <div className="space-y-6">
+      {unusedFieldsMessage.length ? (
+        <div>
+          <p className="text-sm text-gray-400">
+            You have a total of {unusedFieldsMessage} within {unused.types} different types in the
+            selected time period
+          </p>
+        </div>
+      ) : null}
       <div>
         <TooltipProvider>
           {letters.map(letter => (
@@ -215,7 +279,13 @@ function UnusedSchemaExplorer(props: {
   }, [dateRangeController.resolvedRange]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
@@ -333,38 +403,41 @@ function ExplorerUnusedSchemaPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentOrganization = query.data?.organization?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (!hasCollectedOperations) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
+
   return (
-    <TargetLayout
+    <UnusedSchemaExplorer
+      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <UnusedSchemaExplorer
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -376,7 +449,14 @@ export function TargetExplorerUnusedPage(props: {
   return (
     <>
       <Meta title="Unused Schema Explorer" />
-      <ExplorerUnusedSchemaPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Explorer}
+      >
+        <ExplorerUnusedSchemaPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

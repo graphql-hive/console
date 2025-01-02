@@ -1,4 +1,4 @@
-import type { GraphQlDocumentResolvers } from './../../../__generated__/types.next';
+import type { GraphQlDocumentResolvers } from './../../../__generated__/types';
 
 /*
  * Note: This object type is generated because "GraphQLDocumentMapper" is declared. This is to ensure runtime safety.

@@ -1,7 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import LRU from 'lru-cache';
 import { HiveError } from '../../../shared/errors';
-import { AuthManager } from '../../auth/providers/auth-manager';
+import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 
 @Injectable({
@@ -48,7 +48,7 @@ export class InMemoryRateLimiter {
   constructor(
     private logger: Logger,
     private store: InMemoryRateLimitStore,
-    private authManager: AuthManager,
+    private session: Session,
   ) {
     this.logger = logger.child({ service: 'InMemoryRateLimiter' });
   }
@@ -60,11 +60,13 @@ export class InMemoryRateLimiter {
       windowSizeInMs,
       maxActions,
     );
-    if (!this.authManager.isUser()) {
+
+    if (!this.session.isViewer()) {
       throw new Error('Expected to be called for an authenticated user.');
     }
 
-    const user = await this.authManager.getCurrentUser();
+    const user = await this.session.getViewer();
+
     const limiter = this.store.ensureLimiter(action, windowSizeInMs, maxActions);
 
     if (!limiter.isAllowed(user.id)) {

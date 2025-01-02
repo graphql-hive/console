@@ -12,9 +12,11 @@ jobs:
 
       - name: Get changed files
         id: website-files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
+          # Includes CHANGELOG.md, because we render it in our documentation
           files: |
+            deployment/CHANGELOG.md
             packages/web/docs/**
             packages/web/landing-page/**
 

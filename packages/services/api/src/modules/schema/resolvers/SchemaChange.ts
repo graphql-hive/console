@@ -1,6 +1,6 @@
 import { CriticalityLevel as CriticalityLevelEnum } from '@graphql-inspector/core';
 import { BreakingSchemaChangeUsageHelper } from '../providers/breaking-schema-changes-helper';
-import type { CriticalityLevel, SchemaChangeResolvers } from './../../../__generated__/types.next';
+import type { CriticalityLevel, SchemaChangeResolvers } from './../../../__generated__/types';
 
 const criticalityMap: Record<CriticalityLevelEnum, CriticalityLevel> = {
   [CriticalityLevelEnum.Breaking]: 'Breaking',

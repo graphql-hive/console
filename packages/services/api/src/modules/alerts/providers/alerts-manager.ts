@@ -1,9 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Alert, AlertChannel } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { ProjectAccessScope } from '../../auth/providers/project-access';
-import { TargetAccessScope } from '../../auth/providers/target-access';
+import { Session } from '../../auth/lib/authz';
 import { IntegrationsAccessContext } from '../../integrations/providers/integrations-access-context';
 import { SlackIntegrationManager } from '../../integrations/providers/slack-integration-manager';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
@@ -25,7 +23,7 @@ export class AlertsManager {
 
   constructor(
     logger: Logger,
-    private authManager: AuthManager,
+    private session: Session,
     private slackIntegrationManager: SlackIntegrationManager,
     private slack: SlackCommunicationAdapter,
     private webhook: WebhookCommunicationAdapter,
@@ -51,10 +49,13 @@ export class AlertsManager {
       input.projectId,
       input.type,
     );
-    await this.authManager.ensureProjectAccess({
-      scope: ProjectAccessScope.ALERTS,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
       organizationId: input.organizationId,
-      projectId: input.projectId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
     });
 
     const channel = await this.storage.addAlertChannel({
@@ -87,11 +88,15 @@ export class AlertsManager {
       input.projectId,
       input.channelIds.length,
     );
-    await this.authManager.ensureProjectAccess({
-      scope: ProjectAccessScope.ALERTS,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
       organizationId: input.organizationId,
-      projectId: input.projectId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
     });
+
     const channels = await this.storage.deleteAlertChannels({
       organizationId: input.organizationId,
       projectId: input.projectId,
@@ -119,9 +124,13 @@ export class AlertsManager {
       selector.organizationId,
       selector.projectId,
     );
-    await this.authManager.ensureProjectAccess({
-      ...selector,
-      scope: ProjectAccessScope.READ,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
     });
     return this.storage.getAlertChannels(selector);
   }
@@ -139,10 +148,13 @@ export class AlertsManager {
       input.projectId,
       input.type,
     );
-    await this.authManager.ensureProjectAccess({
-      scope: ProjectAccessScope.ALERTS,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
       organizationId: input.organizationId,
-      projectId: input.projectId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
     });
 
     return this.storage.addAlert({
@@ -165,9 +177,13 @@ export class AlertsManager {
       input.projectId,
       input.alerts.length,
     );
-    await this.authManager.ensureProjectAccess({
-      ...input,
-      scope: ProjectAccessScope.ALERTS,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
     });
     return this.storage.deleteAlerts({
       organizationId: input.organizationId,
@@ -182,9 +198,13 @@ export class AlertsManager {
       selector.organizationId,
       selector.projectId,
     );
-    await this.authManager.ensureProjectAccess({
-      ...selector,
-      scope: ProjectAccessScope.READ,
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
     });
     return this.storage.getAlerts(selector);
   }
@@ -213,16 +233,9 @@ export class AlertsManager {
       event.schema.id,
     );
 
-    await this.authManager.ensureTargetAccess({
-      organizationId: organization,
-      projectId: project,
-      targetId: target,
-      scope: TargetAccessScope.REGISTRY_WRITE,
-    });
-
     const [channels, alerts] = await Promise.all([
-      this.getChannels({ organizationId: organization, projectId: project }),
-      this.getAlerts({ organizationId: organization, projectId: project }),
+      this.storage.getAlertChannels({ organizationId: organization, projectId: project }),
+      this.storage.getAlerts({ organizationId: organization, projectId: project }),
     ]);
 
     const matchingAlerts = alerts.filter(

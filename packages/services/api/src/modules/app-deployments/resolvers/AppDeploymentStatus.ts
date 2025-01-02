@@ -1,4 +1,4 @@
-import type { AppDeploymentStatusResolvers } from './../../../__generated__/types.next';
+import type { AppDeploymentStatusResolvers } from './../../../__generated__/types';
 
 /*
  * Note: This enum file is generated because "AppDeploymentStatusMapper" is declared. This is to ensure runtime safety.

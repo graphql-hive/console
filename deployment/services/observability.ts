@@ -19,23 +19,30 @@ export function deployObservability(config: {
     };
   }
 
-  const observability = new ObservabilityInstance(config.envName, {
-    prom: {
-      endpoint: observabilityConfig.require('promEndpoint'),
-      username: observabilityConfig.require('promUsername'),
-      password: observabilityConfig.requireSecret('promPassword'),
-    },
-    loki: {
-      endpoint: observabilityConfig.require('lokiEndpoint'),
-      username: observabilityConfig.require('lokiUsername'),
-      password: observabilityConfig.requireSecret('lokiPassword'),
-    },
-    tempo: {
-      endpoint: observabilityConfig.require('tempoEndpoint'),
-      username: observabilityConfig.require('tempoUsername'),
-      password: observabilityConfig.requireSecret('tempoPassword'),
-    },
-  });
+  const useLocal = observabilityConfig.getBoolean('local');
+
+  const observability = new ObservabilityInstance(
+    config.envName,
+    useLocal
+      ? 'local'
+      : {
+          prom: {
+            endpoint: observabilityConfig.require('promEndpoint'),
+            username: observabilityConfig.require('promUsername'),
+            password: observabilityConfig.requireSecret('promPassword'),
+          },
+          loki: {
+            endpoint: observabilityConfig.require('lokiEndpoint'),
+            username: observabilityConfig.require('lokiUsername'),
+            password: observabilityConfig.requireSecret('lokiPassword'),
+          },
+          tempo: {
+            endpoint: observabilityConfig.require('tempoEndpoint'),
+            username: observabilityConfig.require('tempoUsername'),
+            password: observabilityConfig.requireSecret('tempoPassword'),
+          },
+        },
+  );
 
   const observabilityInstance = observability.deploy();
 
@@ -48,7 +55,7 @@ export function deployObservability(config: {
       host => `http://${host}:4318/v1/traces`,
     ),
     observability: observabilityInstance,
-    grafana: deployGrafana(config.envName, config.tableSuffix),
+    grafana: useLocal ? undefined : deployGrafana(config.envName, config.tableSuffix),
     enabled: true,
   };
 }

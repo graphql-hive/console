@@ -4,7 +4,7 @@ import {
   displayNameLengthBoundaries,
   fullNameLengthBoundaries,
 } from '../../providers/user-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateMe: NonNullable<MutationResolvers['updateMe']> = async (
   _,

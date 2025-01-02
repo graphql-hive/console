@@ -190,14 +190,6 @@ export interface Storage {
     ReadonlyArray<ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>>
   >;
 
-  hasOrganizationMemberPairs(
-    _: readonly (OrganizationSelector & { userId: string })[],
-  ): Promise<readonly boolean[]>;
-
-  hasOrganizationProjectMemberPairs(
-    _: readonly (ProjectSelector & { userId: string })[],
-  ): Promise<readonly boolean[]>;
-
   addOrganizationMemberViaInvitationCode(
     _: OrganizationSelector & {
       code: string;
@@ -447,18 +439,6 @@ export interface Storage {
   }>;
   getSchemasOfVersion(_: { versionId: string; includeMetadata?: boolean }): Promise<Schema[]>;
   getSchemaByNameOfVersion(_: { versionId: string; serviceName: string }): Promise<Schema | null>;
-  getSchemasOfPreviousVersion(
-    _: {
-      versionId: string;
-      onlyComposable: boolean;
-    } & TargetSelector,
-  ): Promise<
-    | {
-        schemas: readonly Schema[];
-        id?: string;
-      }
-    | never
-  >;
   getServiceSchemaOfVersion(args: {
     schemaVersionId: string;
     serviceName: string;
@@ -816,7 +796,7 @@ export interface Storage {
   /**
    * Find schema check for a given ID and target.
    */
-  findSchemaCheck(input: { schemaCheckId: string }): Promise<SchemaCheck | null>;
+  findSchemaCheck(input: { targetId: string; schemaCheckId: string }): Promise<SchemaCheck | null>;
   /**
    * Retrieve paginated schema checks for a given target.
    */
@@ -850,6 +830,7 @@ export interface Storage {
    * Overwrite and approve a schema check.
    */
   approveFailedSchemaCheck(input: {
+    targetId: string;
     /** We inject this here as a dirty way to avoid chicken egg issues :) */
     contracts: Contracts;
     schemaCheckId: string;

@@ -1,7 +1,7 @@
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SlackIntegrationManager } from '../../providers/slack-integration-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteSlackIntegration: NonNullable<
   MutationResolvers['deleteSlackIntegration']

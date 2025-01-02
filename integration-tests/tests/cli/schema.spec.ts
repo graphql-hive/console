@@ -23,10 +23,10 @@ describe.each`
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createToken } = await createProject(projectType, {
+    const { createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createToken({});
+    const { secret } = await createTargetAccessToken({});
 
     await schemaPublish([
       '--registry.accessToken',
@@ -53,10 +53,10 @@ describe.each`
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createToken } = await createProject(projectType, {
+    const { createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createToken({});
+    const { secret } = await createTargetAccessToken({});
 
     await schemaPublish([
       '--registry.accessToken',
@@ -94,10 +94,10 @@ describe.each`
       const { createOrg } = await initSeed().createOwner();
       const { inviteAndJoinMember, createProject } = await createOrg();
       await inviteAndJoinMember();
-      const { createToken } = await createProject(projectType, {
+      const { createTargetAccessToken } = await createProject(projectType, {
         useLegacyRegistryModels: model === 'legacy',
       });
-      const { secret } = await createToken({});
+      const { secret } = await createTargetAccessToken({});
 
       const allocatedError = new Error('Should have thrown.');
       try {
@@ -127,10 +127,10 @@ describe.each`
     const { createOrg } = await initSeed().createOwner();
     const { organization, inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { project, target, createToken } = await createProject(projectType, {
+    const { project, target, createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createToken({});
+    const { secret } = await createTargetAccessToken({});
 
     await expect(
       schemaPublish([
@@ -161,10 +161,10 @@ describe.each`
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createToken } = await createProject(projectType, {
+    const { createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createToken({});
+    const { secret } = await createTargetAccessToken({});
 
     await expect(
       schemaCheck([
@@ -180,10 +180,10 @@ describe.each`
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createToken } = await createProject(projectType, {
+    const { createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createToken({});
+    const { secret } = await createTargetAccessToken({});
 
     const output = schemaCheck([
       ...serviceNameArgs,
@@ -216,10 +216,11 @@ describe.each`
       const { createOrg } = await initSeed().createOwner();
       const { inviteAndJoinMember, createProject } = await createOrg();
       await inviteAndJoinMember();
-      const { createToken } = await createProject(projectType, {
-        useLegacyRegistryModels: model === 'legacy',
-      });
-      const { secret, fetchVersions, compareToPreviousVersion } = await createToken({});
+      const { createTargetAccessToken, compareToPreviousVersion, fetchVersions } =
+        await createProject(projectType, {
+          useLegacyRegistryModels: model === 'legacy',
+        });
+      const { secret } = await createTargetAccessToken({});
       const cli = createCLI({
         readonly: secret,
         readwrite: secret,

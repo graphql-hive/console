@@ -1,5 +1,5 @@
 import { ProjectAccessScope as ProjectAccessScopeEnum } from '../providers/project-access';
-import type { ProjectAccessScopeResolvers } from './../../../__generated__/types.next';
+import type { ProjectAccessScopeResolvers } from './../../../__generated__/types';
 
 export const ProjectAccessScope: ProjectAccessScopeResolvers = {
   READ: ProjectAccessScopeEnum.READ,

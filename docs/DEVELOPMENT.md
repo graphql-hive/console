@@ -22,6 +22,23 @@ ENVIRONMENT=local
 
 - Run `pnpm i` at the root to install all the dependencies and run the hooks
 - Run `pnpm local:setup` to run Docker compose dependencies, create databases and migrate database
+
+Solving permission problems on this step:
+
+```bash
+export UID=$(id -u)
+export GID=$(id -g)
+```
+
+Add "user" field to docker-compose.dev.yml
+
+```
+  clickhouse:
+    user: '${UID}:${GID}'
+  db:
+    user: '${UID}:${GID}'
+```
+
 - Run `pnpm generate` to generate the typings from the graphql files (use `pnpm graphql:generate` if
   you only need to run GraphQL Codegen)
 - Run `pnpm build` to build all services

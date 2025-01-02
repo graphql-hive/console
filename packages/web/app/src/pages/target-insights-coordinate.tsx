@@ -425,39 +425,41 @@ function TargetSchemaCoordinatePageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
+
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (query.data?.hasCollectedOperations === false) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
 
   return (
-    <TargetLayout
+    <SchemaCoordinateView
+      coordinate={props.coordinate}
+      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Insights}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <SchemaCoordinateView
-            coordinate={props.coordinate}
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -470,7 +472,14 @@ export function TargetInsightsCoordinatePage(props: {
   return (
     <>
       <Meta title={`${props.coordinate} - schema coordinate`} />
-      <TargetSchemaCoordinatePageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Insights}
+      >
+        <TargetSchemaCoordinatePageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

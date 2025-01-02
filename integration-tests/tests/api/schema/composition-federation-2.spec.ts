@@ -1,4 +1,4 @@
-import { ProjectAccessScope, ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { enableExternalSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { generateUnique, getServiceHost } from '../../../testkit/utils';
@@ -8,16 +8,14 @@ import { generateUnique, getServiceHost } from '../../../testkit/utils';
 const dockerAddress = await getServiceHost('composition_federation_2', 3069, false);
 
 test.concurrent('call an external service to compose and validate services', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createToken, project, setNativeFederation } = await createProject(ProjectType.Federation);
+  const { createTargetAccessToken, project, setNativeFederation } = await createProject(
+    ProjectType.Federation,
+  );
 
   // Create a token with write rights
-  const writeToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-    organizationScopes: [],
-  });
+  const writeToken = await createTargetAccessToken({});
   const usersServiceName = generateUnique();
   const publishUsersResult = await writeToken
     .publishSchema({
@@ -48,7 +46,7 @@ test.concurrent('call an external service to compose and validate services', asy
       projectSlug: project.slug,
       organizationSlug: organization.slug,
     },
-    writeToken.secret,
+    ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
     externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition

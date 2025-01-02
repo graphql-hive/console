@@ -1,6 +1,6 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
-import type { ProjectResolvers } from './../../../__generated__/types.next';
+import type { ProjectResolvers } from './../../../__generated__/types';
 
 export const Project: Pick<ProjectResolvers, 'requestsOverTime' | 'totalRequests' | '__isTypeOf'> =
   {

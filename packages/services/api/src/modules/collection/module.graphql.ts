@@ -7,7 +7,6 @@ export const typeDefs = gql`
     description: String
     createdAt: DateTime!
     updatedAt: DateTime!
-    createdBy: User!
     operations(first: Int = 100, after: String = null): DocumentCollectionOperationsConnection!
   }
 
@@ -157,6 +156,8 @@ export const typeDefs = gql`
   }
 
   extend type Target {
+    viewerCanViewLaboratory: Boolean!
+    viewerCanModifyLaboratory: Boolean!
     documentCollection(id: ID!): DocumentCollection
     documentCollections(first: Int = 100, after: String = null): DocumentCollectionConnection!
     documentCollectionOperation(id: ID!): DocumentCollectionOperation

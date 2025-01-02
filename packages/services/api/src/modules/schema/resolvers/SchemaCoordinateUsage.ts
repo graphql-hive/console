@@ -1,5 +1,5 @@
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import type { SchemaCoordinateUsageResolvers } from './../../../__generated__/types.next';
+import type { SchemaCoordinateUsageResolvers } from './../../../__generated__/types';
 
 export const SchemaCoordinateUsage: SchemaCoordinateUsageResolvers = {
   topOperations: (source, { limit }, { injector }) => {

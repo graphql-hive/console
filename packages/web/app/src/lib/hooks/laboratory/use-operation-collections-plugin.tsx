@@ -26,8 +26,6 @@ import { Link } from '@/components/ui/link';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql } from '@/gql';
-import { TargetAccessScope } from '@/gql/graphql';
-import { canAccessTarget } from '@/lib/access/target';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
@@ -104,6 +102,9 @@ export const TargetLaboratoryPageQuery = graphql(`
         id
         sdl
       }
+      viewerCanViewLaboratory
+      viewerCanModifyLaboratory
+      ...PreflightScript_TargetFragment
     }
     ...Laboratory_IsCDNEnabledFragment
   }
@@ -123,11 +124,9 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
 };
 
 export function Content() {
-  const { organizationSlug, projectSlug, targetSlug } = useParams({ strict: false }) as {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-  };
+  const { organizationSlug, projectSlug, targetSlug } = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
+  });
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -136,9 +135,8 @@ export function Content() {
       targetSlug,
     },
   });
-  const currentOrganization = query.data?.organization?.organization;
-  const canEdit = canAccessTarget(TargetAccessScope.Settings, currentOrganization?.me ?? null);
-  const canDelete = canAccessTarget(TargetAccessScope.Delete, currentOrganization?.me ?? null);
+  const canEdit = query.data?.target?.viewerCanModifyLaboratory === true;
+  const canDelete = query.data?.target?.viewerCanModifyLaboratory === true;
 
   const [isCollectionModalOpen, toggleCollectionModal] = useToggle();
   const { collections, fetching: loading } = useCollections({
@@ -309,8 +307,8 @@ export function Content() {
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
       <AccordionHeader className="flex items-center justify-between">
         <AccordionTriggerPrimitive className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10">
-          <FolderIcon className="group-radix-state-open:hidden size-4" />
-          <FolderOpenIcon className="group-radix-state-closed:hidden size-4" />
+          <FolderIcon className="size-4 group-data-[state=open]:hidden" />
+          <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (
@@ -426,34 +424,38 @@ export function Content() {
     </AccordionItem>
   ));
 
+  const target = query.data?.target;
+
   return (
     <>
       <div className="mb-5 flex items-center justify-between gap-1">
         <div className="graphiql-doc-explorer-title">Operations</div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className={clsx(
-                  'flex w-auto items-center gap-1',
-                  'min-w-0', // trick to make work truncate
-                )}
-                onClick={() => {
-                  if (collectionId) {
-                    setCollectionId('');
-                  }
-                  toggleCollectionModal();
-                }}
-              >
-                <PlusIcon className="size-4 shrink-0" />
-                <span className="truncate">New collection</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create a new collection of GraphQL Operations</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {target?.viewerCanModifyLaboratory && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="orangeLink"
+                  size="icon-sm"
+                  className={clsx(
+                    'flex w-auto items-center gap-1',
+                    'min-w-0', // trick to make work truncate
+                  )}
+                  onClick={() => {
+                    if (collectionId) {
+                      setCollectionId('');
+                    }
+                    toggleCollectionModal();
+                  }}
+                >
+                  <PlusIcon className="size-4 shrink-0" />
+                  <span className="truncate">New collection</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Create a new collection of GraphQL Operations</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
       {loading ? (
         <div className="flex flex-col items-center gap-4 text-xs">

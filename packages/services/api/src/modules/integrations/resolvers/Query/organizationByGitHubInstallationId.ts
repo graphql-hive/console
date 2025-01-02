@@ -1,5 +1,5 @@
 import { GitHubIntegrationManager } from '../../providers/github-integration-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const organizationByGitHubInstallationId: NonNullable<
   QueryResolvers['organizationByGitHubInstallationId']

@@ -625,6 +625,7 @@ export interface ContourValues {
         [k: string]: unknown;
       };
       clusterIP?: string;
+      exposeMetrics?: boolean;
       externalIPs?: unknown[];
       externalTrafficPolicy?: string;
       extraPorts?: unknown[];
@@ -645,6 +646,7 @@ export interface ContourValues {
       nodePorts?: {
         http?: string;
         https?: string;
+        metrics?: string;
         [k: string]: unknown;
       };
       ports?: {
@@ -779,6 +781,10 @@ export interface ContourValues {
   existingConfigMap?: string;
   extraDeploy?: unknown[];
   fullnameOverride?: string;
+  gatewayAPI?: {
+    manageCRDs?: boolean;
+    [k: string]: unknown;
+  };
   global?: {
     compatibility?: {
       openshift?: {

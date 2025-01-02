@@ -2,7 +2,7 @@ version: '3.8'
 name: 'hive-dev'
 services:
   db:
-    image: postgres:14.13-alpine
+    image: postgres:16.4-alpine
     mem_limit: 300m
     networks:
       - 'stack'
@@ -22,7 +22,7 @@ services:
       - '5432:5432'
 
   redis:
-    image: bitnami/redis:7.4.0
+    image: bitnami/redis:7.4.1
     mem_limit: 50m
     networks:
       - 'stack'
@@ -93,10 +93,9 @@ services:
       - 'stack'
 
   broker:
-    image: redpandadata/redpanda:v23.3.20
+    image: redpandadata/redpanda:v23.3.21
     mem_limit: 300m
     mem_reservation: 100m
-    container_name: broker
     hostname: broker
     networks:
       - 'stack'
@@ -125,7 +124,7 @@ services:
       - ./.hive-dev/broker/db:/var/lib/kafka/data
 
   supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql:7.0
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3
     mem_limit: 300m
     depends_on:
       db:
@@ -145,7 +144,6 @@ services:
 
   oidc-server-mock:
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
-    container_name: oidc-server-mock
     mem_limit: 150m
     ports:
       - '7043:80'

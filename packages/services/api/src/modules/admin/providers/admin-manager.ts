@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { atomic } from '../../../shared/helpers';
-import { AuthManager } from '../../auth/providers/auth-manager';
+import { Session } from '../../auth/lib/authz';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -19,7 +19,7 @@ export class AdminManager {
   constructor(
     logger: Logger,
     private storage: Storage,
-    private authManager: AuthManager,
+    private session: Session,
     private operationsReader: OperationsReader,
   ) {
     this.logger = logger.child({ source: 'AdminManager' });
@@ -27,7 +27,7 @@ export class AdminManager {
 
   async getStats(period: { from: Date; to: Date }) {
     this.logger.debug('Fetching admin stats');
-    const user = await this.authManager.getCurrentUser();
+    const user = await this.session.getViewer();
 
     if (!user.isAdmin) {
       throw new GraphQLError('GO AWAY');
@@ -52,7 +52,7 @@ export class AdminManager {
       period.to,
       resolution,
     );
-    const user = await this.authManager.getCurrentUser();
+    const user = await this.session.getViewer();
 
     if (!user.isAdmin) {
       throw new GraphQLError('GO AWAY');
@@ -76,7 +76,7 @@ export class AdminManager {
       period.from,
       period.to,
     );
-    const user = await this.authManager.getCurrentUser();
+    const user = await this.session.getViewer();
 
     if (user.isAdmin) {
       const pairs = await this.storage.adminGetOrganizationsTargetPairs();

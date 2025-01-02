@@ -122,6 +122,7 @@ export function useRedirect({
 }: {
   canAccess: boolean;
   redirectTo?: (router: ReturnType<typeof useRouter>) => void;
+  /** The entity that must be non-null for the redirect to happen. */
   entity?: any;
 }) {
   const router = useRouter();

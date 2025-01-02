@@ -6,11 +6,11 @@
     "deploy": "wrangler deploy src/main.ts"
   },
   "dependencies": {
-    "@apollo/subgraph": "2.8.4",
+    "@apollo/subgraph": "2.9.3",
     "graphql": "16.9.0",
-    "graphql-yoga": "5.7.0"
+    "graphql-yoga": "5.9.0"
   },
   "devDependencies": {
-    "wrangler": "3.61.0"
+    "wrangler": "3.99.0"
   }
 }

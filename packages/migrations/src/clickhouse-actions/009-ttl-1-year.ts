@@ -9,8 +9,8 @@ const SystemTablesModel = z.array(
 );
 
 // This migration sets TTL for all tables to at least (read comments) 1 year.
-export const action: Action = async (exec, query, isHiveCloud) => {
-  if (!isHiveCloud) {
+export const action: Action = async (exec, query, hiveCloudEnvironment) => {
+  if (hiveCloudEnvironment === 'prod') {
     console.log('Skipping ClickHouse migration');
     // This migration is only for Hive Cloud, self-hosted Hive depends on the user's configuration of data retention.
     return;

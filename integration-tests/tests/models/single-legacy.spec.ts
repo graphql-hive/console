@@ -1,4 +1,4 @@
-import { ProjectType, RegistryModel, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType, RegistryModel } from 'testkit/gql/graphql';
 import { createCLI } from '../../testkit/cli';
 import { prepareProject } from '../../testkit/registry-models';
 import { initSeed } from '../../testkit/seed';
@@ -322,15 +322,11 @@ describe('other', () => {
   test.concurrent('marking versions as valid', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single, {
-      useLegacyRegistryModels: true,
-    });
-    const { publishSchema, fetchVersions, fetchLatestValidSchema, updateSchemaVersionStatus } =
-      await createToken({
-        organizationScopes: [],
-        projectScopes: [],
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
+    const { createTargetAccessToken, fetchVersions, updateSchemaVersionStatus } =
+      await createProject(ProjectType.Single, {
+        useLegacyRegistryModels: true,
       });
+    const { publishSchema, fetchLatestValidSchema } = await createTargetAccessToken({});
 
     // Initial schema
     let result = await publishSchema({
@@ -395,20 +391,12 @@ describe('other', () => {
     async () => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { createToken } = await createProject(ProjectType.Single, {
-        useLegacyRegistryModels: true,
-      });
-      const {
-        publishSchema,
-        fetchVersions,
-        updateSchemaVersionStatus,
-        fetchSchemaFromCDN,
-        fetchMetadataFromCDN,
-      } = await createToken({
-        organizationScopes: [],
-        projectScopes: [],
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      });
+      const { createTargetAccessToken, createCdnAccess, fetchVersions, updateSchemaVersionStatus } =
+        await createProject(ProjectType.Single, {
+          useLegacyRegistryModels: true,
+        });
+      const { publishSchema } = await createTargetAccessToken({});
+      const { fetchSchemaFromCDN, fetchMetadataFromCDN } = await createCdnAccess();
 
       // Initial schema
       let result = await publishSchema({

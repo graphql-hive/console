@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
@@ -9,22 +10,18 @@ import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
+import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
   fragment OrganizationMembersPage_OrganizationFragment on Organization {
-    me {
-      id
-      isAdmin
-      ...CanAccessOrganization_MemberFragment
-      ...OrganizationMemberRoleSwitcher_MemberFragment
-    }
-    slug
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
     ...OrganizationMemberRolesMigration_OrganizationFragment
+    viewerCanManageInvitations
+    viewerCanManageRoles
+    viewerCanMigrateLegacyMemberRoles
   }
 `);
 
@@ -60,25 +57,33 @@ function PageContent(props: {
     props.organization,
   );
 
-  const hasAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Members,
-    redirect: true,
-    member: organization.me,
-    organizationSlug: organization.slug,
-  });
+  const filteredSubPages = useMemo(() => {
+    return subPages.filter(page => {
+      if (!organization.viewerCanManageInvitations && page.key === 'invitations') {
+        return false;
+      }
+      if (!organization.viewerCanManageRoles && page.key === 'roles') {
+        return false;
+      }
+      if (!organization.viewerCanMigrateLegacyMemberRoles && page.key === 'migration') {
+        return false;
+      }
+      return true;
+    });
+  }, [
+    organization.viewerCanManageInvitations,
+    organization.viewerCanManageRoles,
+    organization.viewerCanMigrateLegacyMemberRoles,
+  ]);
 
-  if (!organization || !hasAccess) {
+  if (!organization) {
     return null;
   }
 
   return (
     <PageLayout>
       <NavLayout>
-        {subPages.map(subPage => {
-          // hide migration page from non-admins
-          if (subPage.key === 'migration' && !organization.me.isAdmin) {
-            return null;
-          }
+        {filteredSubPages.map(subPage => {
           return (
             <Button
               key={subPage.key}
@@ -97,17 +102,19 @@ function PageContent(props: {
         })}
       </NavLayout>
       <PageLayoutContent>
-        {props.page === 'roles' ? <OrganizationMemberRoles organization={organization} /> : null}
         {props.page === 'list' ? (
           <OrganizationMembers refetchMembers={props.refetchQuery} organization={organization} />
         ) : null}
-        {props.page === 'invitations' ? (
+        {props.page === 'roles' && organization.viewerCanManageRoles ? (
+          <OrganizationMemberRoles organization={organization} />
+        ) : null}
+        {props.page === 'invitations' && organization.viewerCanManageInvitations ? (
           <OrganizationInvitations
             refetchInvitations={props.refetchQuery}
             organization={organization}
           />
         ) : null}
-        {props.page === 'migration' && organization.me.isAdmin ? (
+        {props.page === 'migration' && organization.viewerCanMigrateLegacyMemberRoles ? (
           <OrganizationMemberRolesMigration organization={organization} />
         ) : null}
       </PageLayoutContent>
@@ -120,6 +127,7 @@ const OrganizationMembersPageQuery = graphql(`
     organization(selector: $selector) {
       organization {
         ...OrganizationMembersPage_OrganizationFragment
+        viewerCanSeeMembers
       }
     }
   }
@@ -139,11 +147,28 @@ function OrganizationMembersPageContent(props: {
     },
   });
 
+  const currentOrganization = query.data?.organization?.organization;
+
+  useRedirect({
+    canAccess: currentOrganization?.viewerCanSeeMembers === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+        },
+      });
+    },
+    entity: currentOrganization,
+  });
+
+  if (currentOrganization?.viewerCanSeeMembers === false) {
+    return null;
+  }
+
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
-
-  const currentOrganization = query.data?.organization?.organization;
 
   return (
     <OrganizationLayout

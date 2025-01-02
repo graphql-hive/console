@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { sql, type CommonQueryMethods } from 'slonik';
 /* eslint-disable no-process-env */
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { test } from 'vitest';
 import { initSeed } from '../../../testkit/seed';
 
@@ -926,12 +926,8 @@ async function prepare(projectType: ProjectType = ProjectType.Single) {
   const { createOwner, createDbConnection } = initSeed();
   const { createOrg } = await createOwner();
   const { createProject, organization } = await createOrg();
-  const { createToken, project, target } = await createProject(projectType);
-  const token = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, project, target } = await createProject(projectType);
+  const token = await createTargetAccessToken({});
 
   return {
     createDbConnection,

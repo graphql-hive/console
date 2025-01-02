@@ -134,4 +134,5 @@ jobs:
     if: ${{ needs.extract-cli-version.outputs.published == 'true' }}
     with:
       cliVersion: ${{ needs.extract-cli-version.outputs.version }}
+      publishLatest: false
     secrets: inherit

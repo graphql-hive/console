@@ -68,29 +68,18 @@ To run integration tests locally, from the pre-build Docker image, follow:
 e2e Tests are based on Cypress, and matches files that ends with `.cy.ts`. The tests flow runs from
 a pre-build Docker image.
 
-#### Running from Source Code
+#### Running on built Docker images from source code
 
 To run e2e tests locally, from the local source code, follow:
 
 1. Make sure you have Docker installed. If you are having issues, try to run `docker system prune`
    to clean the Docker caches.
 2. Install all deps: `pnpm i`
-3. Generate types: `pnpm graphql:generate`
-4. Build source code: `pnpm build`
-5. Set env vars:
-   ```bash
-   export COMMIT_SHA="local"
-   export RELEASE="local"
-   export BRANCH_NAME="local"
-   export BUILD_TYPE=""
-   export DOCKER_TAG=":local"
-   ```
-6. Compile a local Docker image by running: `docker buildx bake -f docker/docker.hcl build --load`
-7. Run the e2e environment, by running:
-   `docker compose -f ./docker/docker-compose.community.yml -f ./docker/docker-compose.end2end.yml --env-file ./integration-tests/.env up -d --wait`
-8. Run Cypress: `pnpm test:e2e`
+3. Move into the `cypress` folder (`cd cypress`)
+4. Run `./local.sh` for building the project and starting the Docker containers
+5. Follow the output instruction from the script for starting the tests
 
-#### Running from Pre-Built Docker Image
+#### Running from pre-built Docker image
 
 To run integration tests locally, from the pre-build Docker image, follow:
 
@@ -105,7 +94,13 @@ To run integration tests locally, from the pre-build Docker image, follow:
    export DOCKER_TAG=":IMAGE_TAG_HERE"
    ```
 6. Run the e2e environment, by running:
-   `docker compose -f ./docker/docker-compose.community.yml --env-file ./integration-tests/.env up -d --wait`
+   ```
+   docker compose \
+     -f ./docker/docker-compose.community.yml \
+     -f ./docker/docker-compose.end2end.yml \
+     --env-file ./integration-tests/.env \
+     up -d --wait
+   ```
 7. Run Cypress: `pnpm test:e2e`
 
 #### Docker Compose Configuration

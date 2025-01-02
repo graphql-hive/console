@@ -2,7 +2,6 @@ version: '3.8'
 name: 'hive-e2e'
 services:
   oidc-server-mock:
-    container_name: oidc-server-mock
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
     ports:
       - '7043:80'
@@ -34,6 +33,10 @@ services:
       - ./configs/oidc-server-mock/users-config.json:/tmp/config/users-config.json:ro
     networks:
       - 'stack'
+
+  supertokens:
+    ports:
+      - '3567:3567'
 
 networks:
   stack: {}

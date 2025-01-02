@@ -97,6 +97,7 @@ export const PermissionScopeItem = <
   canManageScope: boolean;
   noDowngrade?: boolean;
   possibleScope: T[];
+  dataCy?: string;
 }): React.ReactElement => {
   const initialScope = props.initialScope ?? NoAccess;
 
@@ -107,6 +108,7 @@ export const PermissionScopeItem = <
         'flex flex-row items-center justify-between space-x-4 py-2',
         props.canManageScope === false ? 'cursor-not-allowed opacity-50' : null,
       )}
+      data-cy={props.dataCy}
     >
       <div>
         <div className="font-semibold text-white">{props.scope.name}</div>
@@ -119,10 +121,10 @@ export const PermissionScopeItem = <
           props.onChange(value as T | typeof NoAccess);
         }}
       >
-        <SelectTrigger className="w-[150px] shrink-0">
+        <SelectTrigger className="w-[150px] shrink-0" data-cy="select-trigger">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent data-cy={props.dataCy ? `${props.dataCy}-select-content` : ''}>
           {[
             { value: NoAccess, label: 'No access' },
             props.scope.mapping['read-only'] &&
@@ -149,7 +151,12 @@ export const PermissionScopeItem = <
 
               return (
                 <>
-                  <SelectItem key={item.value} value={item.value} disabled={isDisabled}>
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}
+                    disabled={isDisabled}
+                    data-cy={`select-option-${item.value}`}
+                  >
                     {item.label}
                     {isDisabled ? (
                       <span className="block text-xs italic">Can't downgrade</span>

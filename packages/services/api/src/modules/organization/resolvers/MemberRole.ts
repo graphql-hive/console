@@ -1,9 +1,9 @@
-import { AuthManager } from '../../auth/providers/auth-manager';
+import { Session } from '../../auth/lib/authz';
 import { isOrganizationScope } from '../../auth/providers/organization-access';
 import { isProjectScope } from '../../auth/providers/project-access';
 import { isTargetScope } from '../../auth/providers/target-access';
 import { OrganizationManager } from '../providers/organization-manager';
-import type { MemberRoleResolvers } from './../../../__generated__/types.next';
+import type { MemberRoleResolvers } from './../../../__generated__/types';
 
 export const MemberRole: MemberRoleResolvers = {
   organizationAccessScopes: role => {
@@ -33,7 +33,7 @@ export const MemberRole: MemberRoleResolvers = {
       return false;
     }
 
-    const currentUser = await injector.get(AuthManager).getCurrentUser();
+    const currentUser = await injector.get(Session).getViewer();
     const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
       organizationId: role.organizationId,
       userId: currentUser.id,
@@ -49,7 +49,7 @@ export const MemberRole: MemberRoleResolvers = {
     if (role.locked) {
       return false;
     }
-    const currentUser = await injector.get(AuthManager).getCurrentUser();
+    const currentUser = await injector.get(Session).getViewer();
     const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
       organizationId: role.organizationId,
       userId: currentUser.id,
@@ -62,7 +62,7 @@ export const MemberRole: MemberRoleResolvers = {
     return result.ok;
   },
   canInvite: async (role, _, { injector }) => {
-    const currentUser = await injector.get(AuthManager).getCurrentUser();
+    const currentUser = await injector.get(Session).getViewer();
     const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
       organizationId: role.organizationId,
       userId: currentUser.id,

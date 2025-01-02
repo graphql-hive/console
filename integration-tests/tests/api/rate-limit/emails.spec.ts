@@ -1,9 +1,4 @@
-import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  ProjectType,
-  TargetAccessScope,
-} from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import * as emails from '../../../testkit/emails';
 import { updateOrgRateLimit, waitFor } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
@@ -20,7 +15,7 @@ function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
 test('rate limit approaching and reached for organization', async () => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Single);
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
 
   await updateOrgRateLimit(
     {
@@ -32,15 +27,7 @@ test('rate limit approaching and reached for organization', async () => {
     ownerToken,
   );
 
-  const { collectLegacyOperations: collectOperations } = await createToken({
-    targetScopes: [
-      TargetAccessScope.Read,
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-    ],
-    projectScopes: [ProjectAccessScope.Read],
-    organizationScopes: [OrganizationAccessScope.Read],
-  });
+  const { collectLegacyOperations: collectOperations } = await createTargetAccessToken({});
 
   const op = {
     operation: 'query ping { ping }',

@@ -1,4 +1,4 @@
-import { ComponentProps, PropsWithoutRef, useCallback, useState } from 'react';
+import { ComponentProps, PropsWithoutRef, useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { formatISO } from 'date-fns';
 import { useFormik } from 'formik';
@@ -44,37 +44,13 @@ import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { useRedirect } from '@/lib/access/common';
 import { canAccessTarget, TargetAccessScope } from '@/lib/access/target';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const TargetSettings_TargetValidationSettingsFragment = graphql(`
-  fragment TargetSettings_TargetValidationSettingsFragment on TargetValidationSettings {
-    enabled
-    period
-    percentage
-    targets {
-      id
-      slug
-    }
-    excludedClients
-  }
-`);
-
-const SetTargetValidationMutation = graphql(`
-  mutation Settings_SetTargetValidation($input: SetTargetValidationInput!) {
-    setTargetValidation(input: $input) {
-      id
-      validationSettings {
-        ...TargetSettings_TargetValidationSettingsFragment
-      }
-    }
-  }
-`);
 
 const RegistryAccessTokens_MeFragment = graphql(`
   fragment RegistryAccessTokens_MeFragment on Member {
@@ -170,10 +146,17 @@ function RegistryAccessTokens(props: {
         }
       />
       {canManage && (
-        <div className="my-3.5 flex justify-between">
-          <Button onClick={toggleModalOpen}>Create new registry token</Button>
+        <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
+          <Button data-cy="new-button" onClick={toggleModalOpen}>
+            Create new registry token
+          </Button>
           {checked.length === 0 ? null : (
-            <Button variant="destructive" disabled={deleting} onClick={deleteTokens}>
+            <Button
+              data-cy="delete-button"
+              variant="destructive"
+              disabled={deleting}
+              onClick={deleteTokens}
+            >
               Delete ({checked.length || null})
             </Button>
           )}
@@ -397,6 +380,19 @@ function ClientExclusion(
   );
 }
 
+const TargetSettings_TargetValidationSettingsFragment = graphql(`
+  fragment TargetSettings_TargetValidationSettingsFragment on TargetValidationSettings {
+    enabled
+    period
+    percentage
+    targets {
+      id
+      slug
+    }
+    excludedClients
+  }
+`);
+
 const TargetSettingsPage_TargetSettingsQuery = graphql(`
   query TargetSettingsPage_TargetSettingsQuery(
     $selector: TargetSelectorInput!
@@ -406,13 +402,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     target(selector: $selector) {
       id
       validationSettings {
-        enabled
-        percentage
-        period
-        targets {
-          id
-        }
-        excludedClients
+        ...TargetSettings_TargetValidationSettingsFragment
       }
     }
     targets(selector: $targetsSelector) {
@@ -427,6 +417,17 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
         rateLimit {
           retentionInDays
         }
+      }
+    }
+  }
+`);
+
+const SetTargetValidationMutation = graphql(`
+  mutation Settings_SetTargetValidation($input: SetTargetValidationInput!) {
+    setTargetValidation(input: $input) {
+      id
+      validationSettings {
+        ...TargetSettings_TargetValidationSettingsFragment
       }
     }
   }
@@ -488,7 +489,10 @@ const ConditionalBreakingChanges = (props: {
     },
   });
 
-  const settings = targetSettings.data?.target?.validationSettings;
+  const settings = useFragment(
+    TargetSettings_TargetValidationSettingsFragment,
+    targetSettings.data?.target?.validationSettings,
+  );
   const isEnabled = settings?.enabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
   const { toast } = useToast();
@@ -692,13 +696,13 @@ const ConditionalBreakingChanges = (props: {
                       checked={values.targetIds.includes(pt.id)}
                       onCheckedChange={async isChecked => {
                         await setFieldValue(
-                          'targets',
+                          'targetIds',
                           isChecked
                             ? [...values.targetIds, pt.id]
                             : values.targetIds.filter(value => value !== pt.id),
                         );
                       }}
-                      onBlur={() => setFieldTouched('targets', true)}
+                      onBlur={() => setFieldTouched('targetIds', true)}
                     />{' '}
                     {pt.slug}
                   </div>
@@ -1004,14 +1008,6 @@ const TargetSettingsPage_UpdateTargetSlugMutation = graphql(`
   }
 `);
 
-const TargetSettingsPage_TargetFragment = graphql(`
-  fragment TargetSettingsPage_TargetFragment on Target {
-    id
-    slug
-    baseSchema
-  }
-`);
-
 const TargetSettingsPage_OrganizationFragment = graphql(`
   fragment TargetSettingsPage_OrganizationFragment on Organization {
     me {
@@ -1096,45 +1092,21 @@ const TargetSettingsPageQuery = graphql(`
       id
       slug
       graphqlEndpointUrl
-      ...TargetSettingsPage_TargetFragment
+      viewerCanAccessSettings
+      baseSchema
+      viewerCanModifySettings
+      viewerCanModifyCDNAccessToken
+      viewerCanModifyTargetAccessToken
+      viewerCanDelete
     }
   }
 `);
-
-const subPages = [
-  {
-    key: 'general',
-    title: 'General',
-  },
-  {
-    key: 'registry-token',
-    title: 'Registry Tokens',
-  },
-  {
-    key: 'cdn',
-    title: 'CDN Tokens',
-  },
-  {
-    key: 'breaking-changes',
-    title: 'Breaking Changes',
-  },
-  {
-    key: 'schema-contracts',
-    title: 'Schema Contracts',
-  },
-  {
-    key: 'base-schema',
-    title: 'Base Schema',
-  },
-] as const;
-
-type SubPage = (typeof subPages)[number]['key'];
 
 function TargetSettingsContent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  page?: SubPage;
+  page?: TargetSettingsSubPage;
 }) {
   const router = useRouter();
   const [query] = useQuery({
@@ -1154,160 +1126,235 @@ function TargetSettingsContent(props: {
     currentOrganization,
   );
 
-  const targetForSettings = useFragment(TargetSettingsPage_TargetFragment, currentTarget);
+  useRedirect({
+    canAccess: currentTarget?.viewerCanAccessSettings === true,
+    entity: currentTarget,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      });
+    },
+  });
 
-  const hasTokensWriteAccess = canAccessTarget(
-    TargetAccessScope.TokensWrite,
-    organizationForSettings?.me ?? null,
-  );
-  const hasReadAccess = canAccessTarget(
-    TargetAccessScope.Read,
-    organizationForSettings?.me ?? null,
-  );
-  const hasDeleteAccess = canAccessTarget(
-    TargetAccessScope.Delete,
-    organizationForSettings?.me ?? null,
-  );
-  const hasSettingsAccess = canAccessTarget(
-    TargetAccessScope.Settings,
-    organizationForSettings?.me ?? null,
-  );
-  const hasRegistryWriteAccess = canAccessTarget(
-    TargetAccessScope.RegistryWrite,
-    organizationForSettings?.me ?? null,
-  );
+  const subPages = useMemo(() => {
+    const pages: Array<{
+      key: TargetSettingsSubPage;
+      title: string;
+    }> = [];
+
+    if (currentTarget?.viewerCanModifySettings) {
+      pages.push(
+        {
+          key: 'general',
+          title: 'General',
+        },
+        {
+          key: 'base-schema',
+          title: 'Base Schema',
+        },
+        {
+          key: 'breaking-changes',
+          title: 'Breaking Changes',
+        },
+      );
+      if (currentProject?.type === ProjectType.Federation) {
+        pages.push({
+          key: 'schema-contracts',
+          title: 'Schema Contracts',
+        });
+      }
+    }
+
+    if (currentTarget?.viewerCanModifyTargetAccessToken) {
+      pages.push({
+        key: 'registry-token',
+        title: 'Registry Tokens',
+      });
+    }
+
+    if (currentTarget?.viewerCanModifyCDNAccessToken) {
+      pages.push({
+        key: 'cdn',
+        title: 'CDN Tokens',
+      });
+    }
+
+    return pages;
+  }, [currentTarget]);
+
+  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+
+  useRedirect({
+    canAccess: resolvedPage !== undefined,
+    entity: currentTarget,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      });
+    },
+  });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
+  }
+
+  if (
+    !resolvedPage ||
+    !currentOrganization ||
+    !currentProject ||
+    !currentTarget ||
+    !organizationForSettings
+  ) {
+    return null;
   }
 
   return (
-    <TargetLayout
-      targetSlug={props.targetSlug}
-      projectSlug={props.projectSlug}
-      organizationSlug={props.organizationSlug}
-      page={Page.Settings}
-    >
-      {currentOrganization && currentProject && currentTarget && organizationForSettings ? (
-        <PageLayout>
-          <NavLayout>
-            {subPages.map(subPage => {
-              if (
-                subPage.key === 'schema-contracts' &&
-                currentProject.type !== ProjectType.Federation
-              ) {
-                return null;
-              }
-              return (
-                <Button
-                  key={subPage.key}
-                  variant="ghost"
-                  onClick={() => {
-                    void router.navigate({
-                      search: {
-                        page: subPage.key,
-                      },
-                    });
-                  }}
-                  className={cn(
-                    props.page === subPage.key
-                      ? 'bg-muted hover:bg-muted'
-                      : 'hover:bg-transparent hover:underline',
-                    'w-full justify-start text-left',
-                  )}
-                >
-                  {subPage.title}
-                </Button>
-              );
-            })}
-          </NavLayout>
-          <PageLayoutContent>
-            {currentOrganization && currentProject && currentTarget && organizationForSettings ? (
-              <div className="space-y-12">
-                {props.page === 'general' && hasSettingsAccess ? (
-                  <>
-                    <TargetSlug
-                      targetSlug={props.targetSlug}
-                      projectSlug={props.projectSlug}
-                      organizationSlug={props.organizationSlug}
-                    />
-                    <GraphQLEndpointUrl
-                      targetSlug={currentTarget.slug}
-                      projectSlug={currentProject.slug}
-                      organizationSlug={currentOrganization.slug}
-                      graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
-                    />
-                    {hasDeleteAccess && (
-                      <TargetDelete
-                        targetSlug={currentTarget.slug}
-                        projectSlug={currentProject.slug}
-                        organizationSlug={currentOrganization.slug}
-                      />
-                    )}
-                  </>
-                ) : null}
-                {props.page === 'cdn' && hasReadAccess ? (
-                  <CDNAccessTokens
-                    me={organizationForSettings.me}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
+    <PageLayout>
+      <NavLayout>
+        {subPages.map(subPage => {
+          return (
+            <Button
+              key={subPage.key}
+              data-cy={`target-settings-${subPage.key}-link`}
+              variant="ghost"
+              onClick={() => {
+                void router.navigate({
+                  search: {
+                    page: subPage.key,
+                  },
+                });
+              }}
+              className={cn(
+                resolvedPage.key === subPage.key
+                  ? 'bg-muted hover:bg-muted'
+                  : 'hover:bg-transparent hover:underline',
+                'w-full justify-start text-left',
+              )}
+            >
+              {subPage.title}
+            </Button>
+          );
+        })}
+      </NavLayout>
+      <PageLayoutContent>
+        {currentOrganization && currentProject && currentTarget && organizationForSettings ? (
+          <div className="space-y-12">
+            {resolvedPage.key === 'general' ? (
+              <>
+                <TargetSlug
+                  targetSlug={props.targetSlug}
+                  projectSlug={props.projectSlug}
+                  organizationSlug={props.organizationSlug}
+                />
+                <GraphQLEndpointUrl
+                  targetSlug={currentTarget.slug}
+                  projectSlug={currentProject.slug}
+                  organizationSlug={currentOrganization.slug}
+                  graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
+                />
+                {currentTarget?.viewerCanDelete && (
+                  <TargetDelete
+                    targetSlug={currentTarget.slug}
+                    projectSlug={currentProject.slug}
+                    organizationSlug={currentOrganization.slug}
                   />
-                ) : null}
-                {props.page === 'registry-token' && hasTokensWriteAccess ? (
-                  <RegistryAccessTokens
-                    me={organizationForSettings.me}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ) : null}
-                {props.page === 'breaking-changes' && hasSettingsAccess ? (
-                  <ConditionalBreakingChanges
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ) : null}
-                {props.page === 'base-schema' && hasRegistryWriteAccess ? (
-                  <ExtendBaseSchema
-                    baseSchema={targetForSettings?.baseSchema ?? ''}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ) : null}
-                {props.page === 'schema-contracts' && hasSettingsAccess ? (
-                  <SchemaContracts
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ) : null}
-              </div>
+                )}
+              </>
             ) : null}
-          </PageLayoutContent>
-        </PageLayout>
-      ) : null}
-    </TargetLayout>
+            {resolvedPage.key === 'cdn' ? (
+              <CDNAccessTokens
+                me={organizationForSettings.me}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : null}
+            {resolvedPage.key === 'registry-token' ? (
+              <RegistryAccessTokens
+                me={organizationForSettings.me}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : null}
+            {resolvedPage.key === 'breaking-changes' ? (
+              <ConditionalBreakingChanges
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : null}
+            {resolvedPage.key === 'base-schema' ? (
+              <ExtendBaseSchema
+                baseSchema={currentTarget?.baseSchema ?? ''}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : null}
+            {resolvedPage.key === 'schema-contracts' ? (
+              <SchemaContracts
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </PageLayoutContent>
+    </PageLayout>
   );
 }
+
+export const TargetSettingsPageEnum = z.enum([
+  'general',
+  'cdn',
+  'registry-token',
+  'breaking-changes',
+  'base-schema',
+  'schema-contracts',
+]);
+
+export type TargetSettingsSubPage = z.TypeOf<typeof TargetSettingsPageEnum>;
 
 export function TargetSettingsPage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  page?: SubPage;
+  page?: TargetSettingsSubPage;
 }) {
   return (
     <>
       <Meta title="Settings" />
-      <TargetSettingsContent
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
+      <TargetLayout
         targetSlug={props.targetSlug}
-        page={props.page}
-      />
+        projectSlug={props.projectSlug}
+        organizationSlug={props.organizationSlug}
+        page={Page.Settings}
+      >
+        <TargetSettingsContent
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={props.page}
+        />
+      </TargetLayout>
     </>
   );
 }

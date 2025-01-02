@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TokenManager } from '../../providers/token-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteTokens: NonNullable<MutationResolvers['deleteTokens']> = async (
   _parent,

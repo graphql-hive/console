@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { ProjectManager } from '../../providers/project-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteProject: NonNullable<MutationResolvers['deleteProject']> = async (
   _,

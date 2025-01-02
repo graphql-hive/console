@@ -1,7 +1,7 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaManager } from '../../providers/schema-manager';
 import { toGraphQLSchemaCheck } from '../../to-graphql-schema-check';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const approveFailedSchemaCheck: NonNullable<
   MutationResolvers['approveFailedSchemaCheck']

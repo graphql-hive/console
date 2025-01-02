@@ -1,7 +1,7 @@
 import { HiveError } from '../../../../shared/errors';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { CdnProvider } from '../../providers/cdn.provider';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createCdnAccessToken: NonNullable<MutationResolvers['createCdnAccessToken']> = async (
   _,

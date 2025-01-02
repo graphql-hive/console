@@ -1,6 +1,6 @@
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { OIDCIntegrationsProvider } from '../../providers/oidc-integrations.provider';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createOIDCIntegration: NonNullable<
   MutationResolvers['createOIDCIntegration']

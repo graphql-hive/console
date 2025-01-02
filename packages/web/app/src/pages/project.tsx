@@ -303,155 +303,154 @@ const ProjectsPageContent = (
   }, [targetConnection?.nodes]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   return (
-    <ProjectLayout
-      page={Page.Targets}
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      className="flex justify-between gap-12"
-    >
-      <div className="grow">
-        <div className="flex flex-row items-center justify-between py-6">
-          <div>
-            <Title>Targets</Title>
-            <Subtitle>A list of available targets in your project.</Subtitle>
-          </div>
-          <div>
-            <div className="flex flex-row items-center gap-x-2">
-              <div className="relative">
-                <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  value={props.search}
-                  onChange={event => {
-                    void router.navigate({
-                      search(params) {
-                        return {
-                          ...params,
-                          search: event.target.value,
-                        };
-                      },
-                    });
-                  }}
-                  className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
-                />
-              </div>
-              <Separator orientation="vertical" className="mx-4 h-8" />
-              <Select
-                value={props.sortBy ?? 'requests'}
-                onValueChange={value => {
-                  void router.navigate({
-                    search(params) {
-                      return {
-                        ...params,
-                        sortBy: value,
-                      };
-                    },
-                  });
-                }}
-              >
-                <SelectTrigger className="hover:bg-accent bg-transparent">
-                  {props.sortBy === 'versions'
-                    ? 'Schema Versions'
-                    : props.sortBy === 'name'
-                      ? 'Name'
-                      : 'Requests'}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="requests">
-                    <div className="font-bold">Requests</div>
-                    <div className="text-muted-foreground text-xs">
-                      GraphQL requests made in the last {days} days.
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="versions">
-                    <div className="font-bold">Schema Versions</div>
-                    <div className="text-muted-foreground text-xs">
-                      Schemas published in last {days} days.
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="name">
-                    <div className="font-bold">Name</div>
-                    <div className="text-muted-foreground text-xs">Sort by target name.</div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                className="shrink-0"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  void router.navigate({
-                    search(params) {
-                      return {
-                        ...params,
-                        sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
-                      };
-                    },
-                  });
-                }}
-              >
-                {props.sortOrder === 'asc' ? (
-                  <MoveUpIcon className="size-4" />
-                ) : (
-                  <MoveDownIcon className="size-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+    <div className="grow">
+      <div className="flex flex-row items-center justify-between py-6">
+        <div>
+          <Title>Targets</Title>
+          <Subtitle>A list of available targets in your project.</Subtitle>
         </div>
-        <div
-          className={cn(
-            'grow',
-            targetConnection?.total === 0
-              ? ''
-              : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
-          )}
-        >
-          {targetConnection ? (
-            targetConnection?.total === 0 ? (
-              <EmptyList
-                title="Hive is waiting for your first target"
-                description='You can create a target by clicking the "New Target" button'
-                docsUrl="/management/targets#create-a-new-target"
+        <div>
+          <div className="flex flex-row items-center gap-x-2">
+            <div className="relative">
+              <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                value={props.search}
+                onChange={event => {
+                  void router.navigate({
+                    search(params) {
+                      return {
+                        ...params,
+                        search: event.target.value,
+                      };
+                    },
+                  });
+                }}
+                className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
               />
-            ) : (
-              targets.map(target => (
-                <TargetCard
-                  key={target.id}
-                  target={target}
-                  days={days}
-                  highestNumberOfRequests={highestNumberOfRequests}
-                  requestsOverTime={target.requestsOverTime}
-                  schemaVersionsCount={target.schemaVersionsCount}
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                />
-              ))
-            )
-          ) : (
-            <>
-              {Array.from({ length: 4 }).map((_, index) => (
-                <TargetCard
-                  key={index}
-                  target={null}
-                  days={days}
-                  highestNumberOfRequests={highestNumberOfRequests}
-                  requestsOverTime={null}
-                  schemaVersionsCount={null}
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                />
-              ))}
-            </>
-          )}
+            </div>
+            <Separator orientation="vertical" className="mx-4 h-8" />
+            <Select
+              value={props.sortBy ?? 'requests'}
+              onValueChange={value => {
+                void router.navigate({
+                  search(params) {
+                    return {
+                      ...params,
+                      sortBy: value,
+                    };
+                  },
+                });
+              }}
+            >
+              <SelectTrigger className="hover:bg-accent bg-transparent">
+                {props.sortBy === 'versions'
+                  ? 'Schema Versions'
+                  : props.sortBy === 'name'
+                    ? 'Name'
+                    : 'Requests'}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="requests">
+                  <div className="font-bold">Requests</div>
+                  <div className="text-muted-foreground text-xs">
+                    GraphQL requests made in the last {days} days.
+                  </div>
+                </SelectItem>
+                <SelectItem value="versions">
+                  <div className="font-bold">Schema Versions</div>
+                  <div className="text-muted-foreground text-xs">
+                    Schemas published in last {days} days.
+                  </div>
+                </SelectItem>
+                <SelectItem value="name">
+                  <div className="font-bold">Name</div>
+                  <div className="text-muted-foreground text-xs">Sort by target name.</div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              className="shrink-0"
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                void router.navigate({
+                  search(params) {
+                    return {
+                      ...params,
+                      sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
+                    };
+                  },
+                });
+              }}
+            >
+              {props.sortOrder === 'asc' ? (
+                <MoveUpIcon className="size-4" />
+              ) : (
+                <MoveDownIcon className="size-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
-    </ProjectLayout>
+      <div
+        className={cn(
+          'grow',
+          targetConnection?.total === 0
+            ? ''
+            : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
+        )}
+      >
+        {targetConnection ? (
+          targetConnection?.total === 0 ? (
+            <EmptyList
+              title="Hive is waiting for your first target"
+              description='You can create a target by clicking the "New Target" button'
+              docsUrl="/management/targets#create-a-new-target"
+            />
+          ) : (
+            targets.map(target => (
+              <TargetCard
+                key={target.id}
+                target={target}
+                days={days}
+                highestNumberOfRequests={highestNumberOfRequests}
+                requestsOverTime={target.requestsOverTime}
+                schemaVersionsCount={target.schemaVersionsCount}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+              />
+            ))
+          )
+        ) : (
+          <>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <TargetCard
+                key={index}
+                target={null}
+                days={days}
+                highestNumberOfRequests={highestNumberOfRequests}
+                requestsOverTime={null}
+                schemaVersionsCount={null}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+              />
+            ))}
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -485,13 +484,20 @@ export function ProjectPage(
   return (
     <>
       <Meta title="Targets" />
-      <ProjectsPageContent
+      <ProjectLayout
+        page={Page.Targets}
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
-        search={props.search}
-        sortBy={props.sortBy}
-        sortOrder={props.sortOrder}
-      />
+        className="flex justify-between gap-12"
+      >
+        <ProjectsPageContent
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          search={props.search}
+          sortBy={props.sortBy}
+          sortOrder={props.sortOrder}
+        />
+      </ProjectLayout>
     </>
   );
 }

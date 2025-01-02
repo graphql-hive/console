@@ -411,7 +411,7 @@ export function AdminStats({
               <pre title="owner">{node.organization.owner.user.email}</pre>
             </div>
           ),
-          members: (node.organization.members.nodes || []).map(v => v.user.email).join(', '),
+          members: (node.organization.members?.nodes || []).map(v => v.user.email).join(', '),
           users: node.users,
           projects: node.projects,
           targets: node.targets,

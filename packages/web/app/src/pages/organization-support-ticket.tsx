@@ -15,7 +15,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { useNotifications } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -179,12 +178,6 @@ function SupportTicket(props: {
 }) {
   const ticket = useFragment(SupportTicket_SupportTicketFragment, props.ticket);
   const organization = useFragment(SupportTicket_OrganizationFragment, props.organization);
-  useOrganizationAccess({
-    scope: OrganizationAccessScope.Read,
-    member: organization.me,
-    redirect: true,
-    organizationSlug: organization.slug,
-  });
 
   const commentEdges = ticket.comments?.edges;
   const comments = useMemo(() => {
@@ -273,10 +266,6 @@ const SupportTicket_OrganizationFragment = graphql(`
   fragment SupportTicket_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-      isOwner
-    }
   }
 `);
 

@@ -81,14 +81,15 @@ async function runMigration(connection: CommonQueryMethods, migration: Migration
 
 export async function runMigrations(args: {
   slonik: DatabasePool;
-  migrations: Array<MigrationExecutor>;
+  migrations: Array<MigrationExecutor | { default: MigrationExecutor }>;
   runTo?: string;
 }) {
   console.log('Running PG migrations.');
 
   await seedMigrationsIfNotExists({ connection: args.slonik });
 
-  for (const migration of args.migrations) {
+  for (let migration of args.migrations) {
+    migration = 'default' in migration ? migration.default : migration;
     if (migration.noTransaction === true) {
       await runMigration(args.slonik, migration);
     } else {

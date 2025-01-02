@@ -2,7 +2,7 @@ import { HiveError } from '../../../../shared/errors';
 import { ProjectManager } from '../../../project/providers/project-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { AlertsManager } from '../../providers/alerts-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteAlerts: NonNullable<MutationResolvers['deleteAlerts']> = async (
   _,

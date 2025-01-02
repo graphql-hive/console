@@ -64,7 +64,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
 
   const parsedDocumentCache = LRU<DocumentNode>(10_000);
   let latestSchema: GraphQLSchema | null = null;
-  const cache = new WeakMap<Request, CacheRecord>();
+  const contextualCache = new WeakMap<object, CacheRecord>();
 
   return {
     onSchemaChange({ schema }) {
@@ -74,7 +74,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onParams(context) {
       // we set the params if there is either a query or documentId in the request
       if ((context.params.query || 'documentId' in context.params) && latestSchema) {
-        cache.set(context.request, {
+        contextualCache.set(context.context, {
           callback: hive.collectUsage(),
           paramsArgs: context.params,
         });
@@ -84,7 +84,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onParse(parseCtx) {
       return ctx => {
         if (ctx.result.kind === Kind.DOCUMENT) {
-          const record = cache.get(ctx.context.request);
+          const record = contextualCache.get(ctx.context);
           if (record) {
             record.parsedDocument = ctx.result;
             parsedDocumentCache.set(parseCtx.params.source, ctx.result);
@@ -95,7 +95,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
     onExecute() {
       return {
         onExecuteDone({ args, result }) {
-          const record = cache.get(args.contextValue.request);
+          const record = contextualCache.get(args.contextValue);
           if (!record) {
             return;
           }
@@ -103,6 +103,14 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
           record.executionArgs = args;
 
           if (!isAsyncIterable(result)) {
+            void record.callback(
+              {
+                ...record.executionArgs,
+                document: record.parsedDocument ?? record.executionArgs.document,
+              },
+              result,
+              record.experimental__documentId,
+            );
             return;
           }
 
@@ -127,7 +135,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       };
     },
     onSubscribe(context) {
-      const record = cache.get(context.args.contextValue.request);
+      const record = contextualCache.get(context.args.contextValue);
 
       return {
         onSubscribeResult() {
@@ -140,22 +148,14 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       };
     },
     onResultProcess(context) {
-      const record = cache.get(context.request);
+      const record = contextualCache.get(context.serverContext);
 
-      if (!record || Array.isArray(context.result) || isAsyncIterable(context.result)) {
-        return;
-      }
-
-      // Report if execution happened (aka executionArgs have been set within onExecute)
-      if (record.executionArgs) {
-        void record.callback(
-          {
-            ...record.executionArgs,
-            document: record.parsedDocument ?? record.executionArgs.document,
-          },
-          context.result,
-          record.experimental__documentId,
-        );
+      if (
+        !record ||
+        Array.isArray(context.result) ||
+        isAsyncIterable(context.result) ||
+        record.executionArgs
+      ) {
         return;
       }
 
@@ -206,11 +206,11 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
 
             return null;
           },
-          async getPersistedOperation(key, request) {
+          async getPersistedOperation(key, request, context) {
             const document = await experimental__persistedDocuments.resolve(key);
             // after we resolve the document we need to update the cache record to contain the resolved document
             if (document) {
-              const record = cache.get(request);
+              const record = contextualCache.get(context);
               if (record) {
                 record.experimental__documentId = key;
                 record.paramsArgs = {

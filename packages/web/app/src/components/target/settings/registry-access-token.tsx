@@ -15,9 +15,9 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
-import { CopyValue } from '@/components/v2/copy-value';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
@@ -221,11 +221,14 @@ export function CreatedTokenContent(props: {
   toggleModalOpen: () => void;
 }) {
   return (
-    <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+    <DialogContent
+      className="container w-4/5 max-w-[600px] md:w-3/5"
+      data-cy="registry-token-created"
+    >
       <DialogHeader className="flex flex-col gap-5">
         <DialogTitle>Token successfully created!</DialogTitle>
         <DialogDescription className="flex flex-col gap-5">
-          <CopyValue value={props.mutation.data.createToken.ok.secret} />
+          <InputCopy value={props.mutation.data.createToken.ok.secret} />
           <Tag color="green">
             This is your unique API key and it is non-recoverable. If you lose this key, you will
             need to create a new one.
@@ -233,7 +236,9 @@ export function CreatedTokenContent(props: {
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button onClick={props.toggleModalOpen}>Ok, got it!</Button>
+        <Button data-cy="close" onClick={props.toggleModalOpen}>
+          Ok, got it!
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -253,6 +258,7 @@ export function GenerateTokenContent(props: {
       <Form {...props.form}>
         <form
           className="flex grow flex-col gap-5"
+          data-cy="create-registry-token-form"
           onSubmit={props.form.handleSubmit(props.onSubmit)}
         >
           <DialogHeader>
@@ -267,7 +273,12 @@ export function GenerateTokenContent(props: {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Token description" autoComplete="off" {...field} />
+                  <Input
+                    placeholder="Token description"
+                    data-cy="description"
+                    autoComplete="off"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -279,6 +290,7 @@ export function GenerateTokenContent(props: {
                 <Accordion.Header>Registry & Usage</Accordion.Header>
                 <Accordion.Content>
                   <PermissionScopeItem
+                    dataCy="registry-access-scope"
                     key={props.selectedScope}
                     scope={RegistryAccessScope}
                     canManageScope={
@@ -314,6 +326,7 @@ export function GenerateTokenContent(props: {
             </Button>
             <Button
               type="submit"
+              data-cy="submit"
               disabled={!props.form.formState.isValid || props.noPermissionsSelected}
             >
               Generate Token

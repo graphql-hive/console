@@ -1,17 +1,17 @@
 import { readTokenInfo, waitFor } from 'testkit/flow';
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from '../../testkit/seed';
 
 test.concurrent('deleting a token should clear the cache', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject } = await createOrg();
   await inviteAndJoinMember();
-  const { createToken, removeTokens } = await createProject(ProjectType.Single);
+  const { createTargetAccessToken, removeTokens } = await createProject(ProjectType.Single);
   const {
     secret,
     token: createdToken,
     fetchTokenInfo,
-  } = await createToken({ targetScopes: [], projectScopes: [], organizationScopes: [] });
+  } = await createTargetAccessToken({ mode: 'noAccess' });
 
   expect(secret).toBeDefined();
 
@@ -59,11 +59,9 @@ test.concurrent('invalid token yields correct error message', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject } = await createOrg();
   await inviteAndJoinMember();
-  const { createToken } = await createProject(ProjectType.Single);
-  const { secret } = await createToken({
-    targetScopes: [],
-    projectScopes: [],
-    organizationScopes: [],
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { secret } = await createTargetAccessToken({
+    mode: 'noAccess',
   });
 
   const token = new Array(secret.split('').length).fill('x').join('');
@@ -76,19 +74,8 @@ test.concurrent('cdn token yields correct error message when used for registry',
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject } = await createOrg();
   await inviteAndJoinMember();
-  const { createToken } = await createProject(ProjectType.Single);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.Delete,
-      TargetAccessScope.Read,
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-      TargetAccessScope.TokensRead,
-      TargetAccessScope.TokensWrite,
-    ],
-  });
-  const cdnAccessToken = await token.createCdnAccess();
+  const { createCdnAccess } = await createProject(ProjectType.Single);
+  const cdnAccessToken = await createCdnAccess();
 
   const result = await readTokenInfo(cdnAccessToken.secretAccessToken).then(res =>
     res.expectGraphQLErrors(),

@@ -2,16 +2,8 @@ import { createHash } from 'node:crypto';
 import type { InjectionToken } from 'graphql-modules';
 import ms from 'ms';
 import { UTCDate } from '@date-fns/utc';
-import type { DateRangeInput } from '../__generated__/types.next';
+import type { DateRangeInput } from '../__generated__/types';
 import { DateRange } from './entities';
-
-export {
-  msToNs,
-  nsToMs,
-  atomicPromise as atomic,
-  sharePromise as share,
-  cacheResult as cache,
-} from '@theguild/buddy';
 
 export type NullableAndPartial<T> = {
   [P in keyof T]?: T[P] | undefined | null;
@@ -289,4 +281,135 @@ export function assertOk<TOk extends { ok: true }, TNot extends { ok: false; mes
   if (!result.ok) {
     throw new Error(`${message}: ${result.message}`);
   }
+}
+
+export function batch<A, R>(loader: (args: A[]) => Promise<Promise<R>[]>): (arg: A) => Promise<R> {
+  let currentBatch: {
+    args: A[];
+    callbacks: Array<{ resolve(r: R): void; reject(error: Error): void }>;
+  } = {
+    args: [],
+    callbacks: [],
+  };
+
+  return (arg: A) => {
+    const schedule = currentBatch.args.length === 0;
+
+    if (schedule) {
+      process.nextTick(() => {
+        const tickArgs = [...currentBatch.args];
+        const tickCallbacks = [...currentBatch.callbacks];
+
+        // reset the batch
+        currentBatch = {
+          args: [],
+          callbacks: [],
+        };
+
+        loader(tickArgs)
+          .then(promises => {
+            for (let i = 0; i < tickCallbacks.length; i++) {
+              promises[i].then(
+                result => {
+                  tickCallbacks[i].resolve(result);
+                },
+                error => {
+                  tickCallbacks[i].reject(error);
+                },
+              );
+            }
+          })
+          .catch(err => {
+            tickCallbacks.forEach(callback => callback.reject(err));
+          });
+      });
+    }
+
+    currentBatch.args.push(arg);
+    return new Promise<R>((resolve, reject) => {
+      currentBatch.callbacks.push({ resolve, reject });
+    });
+  };
+}
+
+const atomicPromises = new Map<string, Promise<any>>();
+
+export function atomic<A>(hashFn: (arg: A) => string) {
+  return (_target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = function (arg: A, ...rest: any[]) {
+      if (rest.length) {
+        console.warn(`@atomicPromise detected more than 1 argument in "${propertyKey}"`);
+      }
+
+      const key = `${propertyKey}_${hashFn(arg)}`;
+
+      if (atomicPromises.has(key)) {
+        return atomicPromises.get(key);
+      }
+
+      const promise = originalMethod.call(this, arg);
+      atomicPromises.set(key, promise);
+
+      return promise.finally(() => {
+        atomicPromises.delete(key);
+      });
+    };
+  };
+}
+
+export function share<T>(setter: () => Promise<T>): () => Promise<T> {
+  let sharedPromise: Promise<T> | null = null;
+
+  return () => {
+    if (!sharedPromise) {
+      sharedPromise = Promise.resolve().then(setter);
+    }
+    return sharedPromise;
+  };
+}
+
+export function cache<TInput>(cacheKeyFn: (arg: TInput) => string): MethodDecorator {
+  return (_target, _propertyKey, descriptor) => {
+    const cacheSymbol = Symbol('@cache');
+    const originalMethod = descriptor.value;
+
+    function ensureCache(obj: any): Map<string, any> {
+      if (!obj[cacheSymbol]) {
+        obj[cacheSymbol] = new Map<string, any>();
+      }
+
+      return obj[cacheSymbol];
+    }
+
+    return {
+      ...descriptor,
+      value(this: any, arg: TInput) {
+        const cacheMap = ensureCache(this);
+        const key = cacheKeyFn(arg);
+        const cachedValue = cacheMap.get(key);
+
+        if (cachedValue !== null && typeof cachedValue !== 'undefined') {
+          return cachedValue;
+        }
+
+        const result = (originalMethod as any).call(this, arg);
+
+        cacheMap.set(key, result);
+
+        return result;
+      },
+    } as TypedPropertyDescriptor<any>;
+  };
+}
+
+const NS_TO_MS = 1e6;
+
+export function nsToMs(ns: number) {
+  return ns / NS_TO_MS;
+}
+
+export function msToNs(ms: number) {
+  return ms * NS_TO_MS;
 }

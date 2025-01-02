@@ -1,28 +1,14 @@
 import { GraphQLError } from 'graphql';
-import { AuthManager } from '../../../auth/providers/auth-manager';
-import { IdTranslator } from '../../../shared/providers/id-translator';
 import { UsageEstimationProvider } from '../../providers/usage-estimation.provider';
-import {
-  OrganizationAccessScope,
-  type QueryResolvers,
-} from './../../../../__generated__/types.next';
+import { type QueryResolvers } from './../../../../__generated__/types';
 
 export const usageEstimation: NonNullable<QueryResolvers['usageEstimation']> = async (
   _parent,
   args,
   { injector },
 ) => {
-  const organizationId = await injector.get(IdTranslator).translateOrganizationId({
-    organizationSlug: args.input.organizationSlug,
-  });
-
-  await injector.get(AuthManager).ensureOrganizationAccess({
-    organizationId: organizationId,
-    scope: OrganizationAccessScope.SETTINGS,
-  });
-
   const result = await injector.get(UsageEstimationProvider).estimateOperationsForOrganization({
-    organizationId: organizationId,
+    organizationSlug: args.input.organizationSlug,
     month: args.input.month,
     year: args.input.year,
   });

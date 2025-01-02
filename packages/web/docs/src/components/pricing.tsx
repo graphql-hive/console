@@ -1,11 +1,14 @@
-import { ReactElement, ReactNode } from 'react';
+import { HTMLAttributes, ReactElement, ReactNode, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, Heading } from '@theguild/components';
+import { CallToAction, cn } from '@theguild/components';
+import { Slider } from './slider';
 
 function Tooltip({ content, children }: { content: string; children: ReactNode }) {
   return (
     <Root delayDuration={0}>
-      <Trigger className="text-left">{children}</Trigger>
+      <Trigger className="hive-focus -mx-1 -my-0.5 rounded px-1 py-0.5 text-left">
+        {children}
+      </Trigger>
       <Content
         sideOffset={5}
         className="bg-green-1000 z-20 rounded p-2 text-sm font-normal leading-4 text-white shadow"
@@ -17,14 +20,11 @@ function Tooltip({ content, children }: { content: string; children: ReactNode }
   );
 }
 
-const PlanFeaturesSeparator = Symbol('PlanFeaturesSeparator');
-type PlanFeaturesSeparator = typeof PlanFeaturesSeparator;
-
 function Plan(props: {
   name: string;
   description: string;
   price: ReactNode | string;
-  features: (ReactNode | string | PlanFeaturesSeparator)[];
+  features: ReactNode;
   linkText: string;
   linkOnClick?: () => void;
   adjustable: boolean;
@@ -35,15 +35,15 @@ function Plan(props: {
         <div className="flex flex-row items-center gap-2">
           <h2 className="text-2xl font-medium">{props.name}</h2>
           {props.adjustable && (
-            <span className="whitespace-nowrap rounded-full bg-green-200 px-3 py-1 text-sm font-medium leading-5">
+            <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium leading-5">
               Adjust your plan at any time
             </span>
           )}
         </div>
         <p className="mt-2">{props.description}</p>
       </header>
-      <div className="mt-8 text-5xl leading-[56px] tracking-[-0.48px]">{props.price}</div>
-      <div className="pt-6">
+      <div className="mt-4 text-5xl leading-[56px] tracking-[-0.48px]">{props.price}</div>
+      <div className="mt-4">
         <CallToAction
           variant="primary"
           {...(props.linkOnClick
@@ -59,62 +59,68 @@ function Plan(props: {
           {props.linkText}
         </CallToAction>
       </div>
-      <ul className="mt-8 text-green-800">
-        {props.features.map((feature, i) =>
-          feature === PlanFeaturesSeparator ? (
-            <li key={i} className="py-2 font-medium">
-              Plus:
-            </li>
-          ) : (
-            <li key={i} className="border-green-200 py-2 [&+&]:border-t">
-              {feature}
-            </li>
-          ),
-        )}
-      </ul>
+      <ul className="mt-4 text-green-800">{props.features}</ul>
     </article>
   );
+}
+
+function PlanFeaturesListItem(props: HTMLAttributes<HTMLLIElement>) {
+  return <li className="border-beige-200 py-2 [&:not(:last-child)]:border-b" {...props} />;
 }
 
 const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are stored on Hive';
 const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
 
-export function Pricing(): ReactElement {
+export function Pricing({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}): ReactElement {
   return (
-    <section className="py-12 sm:py-24">
+    <section className={cn('py-12 sm:py-20', className)}>
       <div className="mx-auto box-border w-full max-w-[1200px]">
-        <header className="px-6">
-          <Heading as="h2" size="md" className="text-green-1000 text-center">
-            <a id="pricing">Pricing</a>
-          </Heading>
-          <p className="mx-auto mt-4 max-w-xl text-balance text-center text-green-800 lg:text-wrap">
-            All features are available on all plans — including the free&nbsp;plan. Our pricing is
-            honest and based only on your real usage.
-          </p>
-        </header>
+        {children}
 
         <div
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="-mx-1 overflow-auto px-1"
+          className="-mx-2 overflow-auto px-2"
         >
-          <div className="mt-16 flex min-w-[1000px] flex-row items-stretch gap-8 px-6 lg:mt-24 lg:gap-10 xl:gap-12 xl:px-0">
+          <div
+            className={cn(
+              'flex min-w-[1000px] flex-row items-stretch gap-8 px-6 lg:gap-10 xl:gap-12 xl:px-0',
+              children && 'mt-16 lg:mt-24',
+            )}
+          >
             <Plan
               name="Hobby"
               description="For personal or small projects"
               adjustable={false}
               price="Free forever"
               linkText="Start for free"
-              features={[
-                'Unlimited seats, projects and organizations',
-                'Unlimited schema pushes & checks',
-                <>Full access to all features (including&nbsp;SSO)</>,
-                <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                  1M operations per month
-                </Tooltip>,
-                <Tooltip key="t2" content={USAGE_DATA_RETENTION_EXPLAINER}>
-                  7 days of usage data retention
-                </Tooltip>,
-              ]}
+              features={
+                <>
+                  <PlanFeaturesListItem>
+                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
+                      <strong>7 days</strong> of usage data retention
+                    </Tooltip>
+                  </PlanFeaturesListItem>
+                  <li className="mb-2 mt-8">Includes:</li>
+                  <PlanFeaturesListItem>
+                    Unlimited seats, projects and organizations
+                  </PlanFeaturesListItem>
+                  <PlanFeaturesListItem>Unlimited schema pushes & checks</PlanFeaturesListItem>
+                  <PlanFeaturesListItem>
+                    Full access to all features (including&nbsp;SSO)
+                  </PlanFeaturesListItem>
+                  <PlanFeaturesListItem>
+                    <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
+                      1M operations per month
+                    </Tooltip>
+                  </PlanFeaturesListItem>
+                </>
+              }
             />
             <Plan
               name="Pro"
@@ -122,25 +128,26 @@ export function Pricing(): ReactElement {
               adjustable
               price={
                 <Tooltip content="Base price charged monthly">
-                  $10<span className="text-base leading-normal text-green-800"> / month</span>
+                  $20<span className="text-base leading-normal text-green-800"> / month</span>
                 </Tooltip>
               }
               linkText="🎉 Try free for 30 days"
-              features={[
-                'Unlimited seats, projects and organizations',
-                'Unlimited schema pushes & checks',
-                <>Full access to all features (including&nbsp;SSO)</>,
-                <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                  1M operations per month
-                </Tooltip>,
-                <Tooltip key="t2" content={USAGE_DATA_RETENTION_EXPLAINER}>
-                  90 days of usage data retention
-                </Tooltip>,
-                PlanFeaturesSeparator,
-                <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                  $10 per additional 1M operations
-                </Tooltip>,
-              ]}
+              features={
+                <>
+                  <PlanFeaturesListItem>
+                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
+                      <strong>90 days</strong> of usage data retention
+                    </Tooltip>
+                  </PlanFeaturesListItem>
+                  <li className="mb-2 mt-8">Everything in Hobby, plus:</li>
+                  <PlanFeaturesListItem>
+                    <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
+                      $10 per additional 1M operations
+                    </Tooltip>
+                  </PlanFeaturesListItem>
+                  <PricingSlider className="pt-4" />
+                </>
+              }
             />
             <Plan
               name="Enterprise"
@@ -156,38 +163,83 @@ export function Pricing(): ReactElement {
                   Contact us
                 </span>
               }
-              linkText="Contact us for a custom plan"
+              linkText="Shape a custom plan for your business"
               linkOnClick={() => {
                 (window as any).$crisp?.push(['do', 'chat:open']);
               }}
-              features={[
-                'Unlimited seats, projects and organizations',
-                'Unlimited schema pushes & checks',
-                <>Full access to all features (including&nbsp;SSO)</>,
-                <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                  Custom limit of operations
-                </Tooltip>,
-                <Tooltip key="t2" content={USAGE_DATA_RETENTION_EXPLAINER}>
-                  12 months of usage data retention
-                </Tooltip>,
-                PlanFeaturesSeparator,
-                'Improved pricing as you scale',
-                <span>
-                  GraphQL / APIs support and guidance from{' '}
-                  <a
-                    href="https://the-guild.dev"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline hover:text-blue-700"
-                  >
-                    The&nbsp;Guild
-                  </a>
-                </span>,
-              ]}
+              features={
+                <>
+                  <PlanFeaturesListItem>
+                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
+                      <strong>Custom</strong> data retention
+                    </Tooltip>
+                  </PlanFeaturesListItem>
+                  <li className="mb-2 mt-8">Everything in Pro, plus:</li>
+                  <PlanFeaturesListItem>Dedicated Slack channel for support</PlanFeaturesListItem>
+                  <PlanFeaturesListItem>White-glove onboarding</PlanFeaturesListItem>
+                  <PlanFeaturesListItem>Bulk volume discount</PlanFeaturesListItem>
+                  <PlanFeaturesListItem>
+                    <span>
+                      GraphQL / APIs support and guidance from{' '}
+                      <a
+                        href="https://the-guild.dev"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hive-focus -mx-1 -my-0.5 rounded px-1 py-0.5 underline hover:text-blue-700"
+                      >
+                        The&nbsp;Guild
+                      </a>
+                    </span>
+                  </PlanFeaturesListItem>
+                </>
+              }
             />
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function PricingSlider({ className, ...rest }: { className?: string }) {
+  const min = 1;
+  const max = 300;
+
+  const [millionsOfOperations, setMillionsOfOperations] = useState(min);
+
+  return (
+    <label className={cn(className, 'block')} {...rest}>
+      <div className="text-green-1000 font-medium">Expected monthly operations?</div>
+      <div className="text-green-1000 flex items-center gap-2 pt-12 text-sm">
+        <span className="font-medium">{min}M</span>
+        <Slider
+          min={min}
+          max={max}
+          defaultValue={min}
+          // 10$ base price + 10$ per 1M
+          style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
+          counter="after:content-[''_counter(ops)_'M_operations,_$'_counter(price)_'_/_month'] after:[counter-set:ops_calc(var(--ops))_price_calc(var(--price))]"
+          onChange={event => {
+            const value = event.currentTarget.valueAsNumber;
+            setMillionsOfOperations(value);
+            event.currentTarget.parentElement!.style.setProperty('--ops', `${value}`);
+          }}
+        />
+        <span className="font-medium">{max}M</span>
+      </div>
+      <p
+        className="mt-4 rounded-xl bg-green-100 p-3 transition"
+        style={{ opacity: millionsOfOperations >= max * 0.95 ? 1 : 0 }}
+      >
+        <span className="font-medium">Running {max}M+ operations?</span>
+        <br />
+        <button
+          className="underline hover:text-blue-700"
+          onClick={() => (window as any).$crisp?.push(['do', 'chat:open'])}
+        >
+          Talk to us
+        </button>
+      </p>
+    </label>
   );
 }

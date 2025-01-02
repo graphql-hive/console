@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaManager } from '../../providers/schema-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const testExternalSchemaComposition: NonNullable<
   QueryResolvers['testExternalSchemaComposition']

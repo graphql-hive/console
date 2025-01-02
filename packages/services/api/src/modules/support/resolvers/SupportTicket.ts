@@ -1,5 +1,5 @@
 import { SupportManager } from '../providers/support-manager';
-import type { SupportTicketResolvers } from './../../../__generated__/types.next';
+import type { SupportTicketResolvers } from './../../../__generated__/types';
 
 export const SupportTicket: SupportTicketResolvers = {
   comments: async (ticket, _args, { injector }) => {

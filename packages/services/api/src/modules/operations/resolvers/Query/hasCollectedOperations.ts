@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OperationsManager } from '../../providers/operations-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const hasCollectedOperations: NonNullable<QueryResolvers['hasCollectedOperations']> = async (
   _,

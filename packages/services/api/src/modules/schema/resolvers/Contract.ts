@@ -1,6 +1,6 @@
 import { TargetManager } from '../../target/providers/target-manager';
 import { ContractsManager } from '../providers/contracts-manager';
-import type { ContractResolvers } from './../../../__generated__/types.next';
+import type { ContractResolvers } from './../../../__generated__/types';
 
 export const Contract: Pick<
   ContractResolvers,

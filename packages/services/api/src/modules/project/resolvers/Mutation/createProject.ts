@@ -7,7 +7,7 @@ import { Logger } from '../../../shared/providers/logger';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { ProjectManager } from '../../providers/project-manager';
 import { ProjectSlugModel } from '../../validation';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createProject: NonNullable<MutationResolvers['createProject']> = async (
   _,

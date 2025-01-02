@@ -22,7 +22,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -30,32 +37,12 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
-import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import {
-  canAccessOrganization,
-  OrganizationAccessScope,
-  useOrganizationAccess,
-} from '@/lib/access/organization';
+import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
-
-const Integrations_CheckIntegrationsQuery = graphql(`
-  query Integrations_CheckIntegrationsQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        id
-        viewerCanManageOIDCIntegration
-        ...OIDCIntegrationSection_OrganizationFragment
-        hasSlackIntegration
-        hasGitHubIntegration
-      }
-    }
-    isGitHubIntegrationFeatureEnabled
-  }
-`);
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -79,99 +66,90 @@ const DeleteGitHubIntegrationMutation = graphql(`
   }
 `);
 
-function Integrations(props: { organizationSlug: string }) {
-  const [checkIntegrations] = useQuery({
-    query: Integrations_CheckIntegrationsQuery,
-    variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
-    },
-  });
-
-  const [deleteSlackMutation, deleteSlack] = useMutation(DeleteSlackIntegrationMutation);
-  const [deleteGitHubMutation, deleteGitHub] = useMutation(DeleteGitHubIntegrationMutation);
-
-  if (checkIntegrations.fetching) {
-    return null;
+const GitHubIntegrationSection_OrganizationFragment = graphql(`
+  fragment GitHubIntegrationSection_OrganizationFragment on Organization {
+    hasGitHubIntegration
+    slug
   }
+`);
 
-  const isGitHubIntegrationFeatureEnabled =
-    checkIntegrations.data?.isGitHubIntegrationFeatureEnabled;
-  const hasGitHubIntegration =
-    checkIntegrations.data?.organization?.organization.hasGitHubIntegration === true;
-  const hasSlackIntegration =
-    checkIntegrations.data?.organization?.organization.hasSlackIntegration === true;
+function GitHubIntegrationSection(props: {
+  organization: FragmentType<typeof GitHubIntegrationSection_OrganizationFragment>;
+}) {
+  const [deleteGitHubMutation, deleteGitHub] = useMutation(DeleteGitHubIntegrationMutation);
+  const organization = useFragment(
+    GitHubIntegrationSection_OrganizationFragment,
+    props.organization,
+  );
 
-  return (
-    <>
-      {env.integrations.slack === false ? null : (
-        <div className="flex items-center gap-x-4">
-          {hasSlackIntegration ? (
-            <Button
-              variant="destructive"
-              disabled={deleteSlackMutation.fetching}
-              onClick={async () => {
-                await deleteSlack({
-                  input: {
-                    organizationSlug: props.organizationSlug,
-                  },
-                });
-              }}
-            >
-              <SlackIcon className="mr-2" />
-              Disconnect Slack
-            </Button>
-          ) : (
-            <Button variant="secondary" asChild>
-              <a href={`/api/slack/connect/${props.organizationSlug}`}>
-                <SlackIcon className="mr-2" />
-                Connect Slack
-              </a>
-            </Button>
-          )}
-          <Tag>Alerts and notifications</Tag>
-        </div>
-      )}
-      {isGitHubIntegrationFeatureEnabled === false ? null : (
-        <div className="flex items-center gap-x-4">
-          <>
-            {hasGitHubIntegration ? (
-              <>
-                <Button
-                  variant="destructive"
-                  disabled={deleteGitHubMutation.fetching}
-                  onClick={async () => {
-                    await deleteGitHub({
-                      input: {
-                        organizationSlug: props.organizationSlug,
-                      },
-                    });
-                  }}
-                >
-                  <GitHubIcon className="mr-2" />
-                  Disconnect GitHub
-                </Button>
-                <Button variant="link" asChild>
-                  <a href={`/api/github/connect/${props.organizationSlug}`}>Adjust permissions</a>
-                </Button>
-              </>
-            ) : (
-              <Button variant="secondary" asChild>
-                <a href={`/api/github/connect/${props.organizationSlug}`}>
-                  <GitHubIcon className="mr-2" />
-                  Connect GitHub
-                </a>
-              </Button>
-            )}
-            <Tag>Allow Hive to communicate with GitHub</Tag>
-          </>
-        </div>
-      )}
-      {checkIntegrations.data?.organization?.organization.viewerCanManageOIDCIntegration ? (
-        <OIDCIntegrationSection organization={checkIntegrations.data?.organization?.organization} />
-      ) : null}
-    </>
+  return organization.hasGitHubIntegration ? (
+    <div className="flex flex-row justify-start gap-3">
+      <Button
+        variant="destructive"
+        disabled={deleteGitHubMutation.fetching}
+        onClick={async () => {
+          await deleteGitHub({
+            input: {
+              organizationSlug: organization.slug,
+            },
+          });
+        }}
+      >
+        <GitHubIcon className="mr-2" />
+        Disconnect GitHub
+      </Button>
+      <Button variant="destructive" asChild>
+        <a href={`/api/github/connect/${organization.slug}`}>Adjust permissions</a>
+      </Button>
+    </div>
+  ) : (
+    <Button variant="default" asChild>
+      <a href={`/api/github/connect/${organization.slug}`}>
+        <GitHubIcon className="mr-2" />
+        Connect GitHub
+      </a>
+    </Button>
+  );
+}
+
+const SlackIntegrationSection_OrganizationFragment = graphql(`
+  fragment SlackIntegrationSection_OrganizationFragment on Organization {
+    hasSlackIntegration
+    slug
+  }
+`);
+
+function SlackIntegrationSection(props: {
+  organization: FragmentType<typeof SlackIntegrationSection_OrganizationFragment>;
+}) {
+  const [deleteSlackMutation, deleteSlack] = useMutation(DeleteSlackIntegrationMutation);
+  const organization = useFragment(
+    SlackIntegrationSection_OrganizationFragment,
+    props.organization,
+  );
+
+  return organization.hasSlackIntegration ? (
+    <Button
+      variant="destructive"
+      disabled={deleteSlackMutation.fetching}
+      onClick={async () => {
+        await deleteSlack({
+          input: {
+            organizationSlug: organization.slug,
+          },
+        });
+      }}
+    >
+      <SlackIcon className="mr-2" />
+      Disconnect Slack
+    </Button>
+  ) : (
+    <Button variant="default" asChild>
+      <a href={`/api/slack/connect/${organization.slug}`}>
+        <SlackIcon className="mr-2" />
+        Connect Slack
+      </a>
+    </Button>
   );
 }
 
@@ -200,11 +178,17 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
   fragment SettingsPageRenderer_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-      isOwner
-    }
+    viewerCanDelete
+    viewerCanTransferOwnership
+    viewerCanModifySlug
+    viewerCanManageOIDCIntegration
+    viewerCanModifySlackIntegration
+    viewerCanModifyGitHubIntegration
+    viewerCanExportAuditLogs
+    ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
+    ...GitHubIntegrationSection_OrganizationFragment
+    ...SlackIntegrationSection_OrganizationFragment
   }
 `);
 
@@ -225,15 +209,10 @@ const SettingsPageRenderer = (props: {
   organizationSlug: string;
 }) => {
   const organization = useFragment(SettingsPageRenderer_OrganizationFragment, props.organization);
-  const hasAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization.me,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
   const [isTransferModalOpen, toggleTransferModalOpen] = useToggle();
+  const [isAuditLogsModalOpen, toggleAuditLogsModalOpen] = useToggle();
   const { toast } = useToast();
 
   const [_slugMutation, slugMutate] = useMutation(UpdateOrganizationSlugMutation);
@@ -292,9 +271,8 @@ const SettingsPageRenderer = (props: {
         <Title>Organization Settings</Title>
         <Subtitle>Manage your organization settings and integrations.</Subtitle>
       </div>
-
-      {hasAccess ? (
-        <div className="flex flex-col gap-y-4">
+      <div className="flex flex-col gap-y-4">
+        {organization.viewerCanModifySlug && (
           <Form {...slugForm}>
             <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
               <Card>
@@ -344,100 +322,162 @@ const SettingsPageRenderer = (props: {
               </Card>
             </form>
           </Form>
+        )}
 
-          {canAccessOrganization(OrganizationAccessScope.Integrations, organization.me) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Integrations</CardTitle>
-                <CardDescription>
-                  Authorize external services to make them available for your the projects under
-                  this organization.
-                  <br />
-                  <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/organizations#integrations"
-                  >
-                    You can find here instructions and full documentation for the available
-                    integration
-                  </DocsLink>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-y-4 text-gray-500">
-                  <Integrations organizationSlug={props.organizationSlug} />
+        {organization.viewerCanManageOIDCIntegration && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Single Sign On Provider</CardTitle>
+              <CardDescription>
+                Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
+                Entra ID via OpenID Connect.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/sso-oidc-provider"
+                >
+                  Instructions for connecting your provider.
+                </DocsLink>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-y-4 text-gray-500">
+                <OIDCIntegrationSection organization={organization} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {organization.viewerCanModifySlackIntegration && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Slack Integration</CardTitle>
+              <CardDescription>
+                Link your Hive organization with Slack for schema change notifications.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/organizations#slack"
+                >
+                  Learn more.
+                </DocsLink>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SlackIntegrationSection organization={organization} />
+            </CardContent>
+          </Card>
+        )}
+
+        {organization.viewerCanModifyGitHubIntegration && (
+          <Card>
+            <CardHeader>
+              <CardTitle>GitHub Integration</CardTitle>
+              <CardDescription>
+                Link your Hive organization with GitHub.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/organizations#github"
+                >
+                  Learn more.
+                </DocsLink>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GitHubIntegrationSection organization={organization} />
+            </CardContent>
+          </Card>
+        )}
+
+        {organization.viewerCanTransferOwnership && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Transfer Ownership</CardTitle>
+              <CardDescription>
+                <strong>You are currently the owner of the organization.</strong> You can transfer
+                the organization to another member of the organization, or to an external user.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/organizations#transfer-ownership"
+                >
+                  Learn more about the process
+                </DocsLink>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
+                    Transfer Ownership
+                  </Button>
+                  <TransferOrganizationOwnershipModal
+                    isOpen={isTransferModalOpen}
+                    toggleModalOpen={toggleTransferModalOpen}
+                    organization={organization}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {organization.me.isOwner && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Transfer Ownership</CardTitle>
-                <CardDescription>
-                  <strong>You are currently the owner of the organization.</strong> You can transfer
-                  the organization to another member of the organization, or to an external user.
-                  <br />
-                  <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/organizations#transfer-ownership"
-                  >
-                    Learn more about the process
-                  </DocsLink>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Button
-                      variant="destructive"
-                      onClick={toggleTransferModalOpen}
-                      className="px-5"
-                    >
-                      Transfer Ownership
-                    </Button>
-                    <TransferOrganizationOwnershipModal
-                      isOpen={isTransferModalOpen}
-                      toggleModalOpen={toggleTransferModalOpen}
-                      organization={organization}
-                    />
-                  </div>
+        {organization.viewerCanDelete && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Delete Organization</CardTitle>
+              <CardDescription>
+                Deleting an organization will delete all the projects, targets, schemas and data
+                associated with it.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/organizations#delete-an-organization"
+                >
+                  <strong>This action is not reversible!</strong> You can find more information
+                  about this process in the documentation
+                </DocsLink>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
+                Delete Organization
+              </Button>
+              <DeleteOrganizationModal
+                organizationSlug={props.organizationSlug}
+                isOpen={isDeleteModalOpen}
+                toggleModalOpen={toggleDeleteModalOpen}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {organization.viewerCanExportAuditLogs && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Audit Logs</CardTitle>
+              <CardDescription>
+                View a history of changes made to the organization settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
+                    Export Audit Logs
+                  </Button>
+                  <AuditLogsOrganizationModal
+                    organizationSlug={organization.slug}
+                    isOpen={isAuditLogsModalOpen}
+                    toggleModalOpen={toggleAuditLogsModalOpen}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {canAccessOrganization(OrganizationAccessScope.Delete, organization.me) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Delete Organization</CardTitle>
-                <CardDescription>
-                  Deleting an organization will delete all the projects, targets, schemas and data
-                  associated with it.
-                  <br />
-                  <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/organizations#delete-an-organization"
-                  >
-                    <strong>This action is not reversible!</strong> You can find more information
-                    about this process in the documentation
-                  </DocsLink>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
-                  Delete Organization
-                </Button>
-                <DeleteOrganizationModal
-                  organizationSlug={props.organizationSlug}
-                  isOpen={isDeleteModalOpen}
-                  toggleModalOpen={toggleDeleteModalOpen}
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
@@ -447,6 +487,7 @@ const OrganizationSettingsPageQuery = graphql(`
     organization(selector: $selector) {
       organization {
         ...SettingsPageRenderer_OrganizationFragment
+        viewerCanAccessSettings
       }
     }
   }
@@ -462,11 +503,28 @@ function SettingsPageContent(props: { organizationSlug: string }) {
     },
   });
 
+  const currentOrganization = query.data?.organization?.organization;
+
+  useRedirect({
+    canAccess: currentOrganization?.viewerCanAccessSettings === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+        },
+      });
+    },
+    entity: currentOrganization,
+  });
+
+  if (currentOrganization?.viewerCanAccessSettings === false) {
+    return null;
+  }
+
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
-
-  const currentOrganization = query.data?.organization?.organization;
 
   return (
     <OrganizationLayout
@@ -581,6 +639,139 @@ export function DeleteOrganizationModalContent(props: {
             Delete
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const AuditLogsOrganizationSettingsPageMutation = graphql(`
+  mutation AuditLogsOrganizationSettingsPageMutation($input: ExportOrganizationAuditLogInput!) {
+    exportOrganizationAuditLog(input: $input) {
+      ok {
+        url
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+const AuditLogsSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  userId: z.string().optional(),
+});
+
+function AuditLogsOrganizationModal(props: {
+  isOpen: boolean;
+  toggleModalOpen: () => void;
+  organizationSlug: string;
+}) {
+  const { organizationSlug: organization } = props;
+  const { toast } = useToast();
+  const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
+
+  const today = new Date().toISOString().split('T')[0];
+  const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+    .toISOString()
+    .split('T')[0];
+
+  const form = useForm<z.infer<typeof AuditLogsSchema>>({
+    mode: 'onSubmit',
+    resolver: zodResolver(AuditLogsSchema),
+    defaultValues: {
+      startDate: lastYear,
+      endDate: today,
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof AuditLogsSchema>) {
+    const formattedStartDate = new Date(data.startDate).toISOString();
+    const formattedEndDate = new Date(data.endDate).toISOString();
+
+    const result = await exportAuditLogs({
+      input: {
+        selector: {
+          organizationSlug: organization,
+        },
+        filter: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+        },
+      },
+    });
+
+    if (result.data?.exportOrganizationAuditLog.error) {
+      toast({
+        title: 'Failed to start audit logs report',
+        description: result.data.exportOrganizationAuditLog.error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    props.toggleModalOpen();
+    form.reset();
+    toast({
+      variant: 'warning',
+      title: 'Audit logs report started',
+      description: 'Your audit logs report is being generated. You will receive an email shortly.',
+    });
+  }
+
+  return (
+    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
+      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Audit Logs</DialogTitle>
+              <DialogDescription>
+                Select a date range to generate an audit logs report.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-8">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-8">
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                className="w-full"
+                type="submit"
+                disabled={!form.formState.isValid || form.formState.isSubmitting}
+              >
+                Generate Report
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

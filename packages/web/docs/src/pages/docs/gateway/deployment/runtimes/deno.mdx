@@ -26,16 +26,16 @@ Create a `deno-hive-gateway.ts` file:
 ```json filename="deno.json" {3}
 {
   "imports": {
-    "@graphql-hive/gateway": "npm:@graphql-hive/gateway@^0.1.0"
+    "@graphql-hive/gateway-runtime": "npm:@graphql-hive/gateway-runtime@latest"
   }
 }
 ```
 
 ```ts filename="deno-hive-gateway.ts"
 import { serve } from 'https://deno.land/std@0.157.0/http/server.ts'
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 
-const gatewayRuntime = createGatewayRuntime(/* Your configuration */)
+const gatewayRuntime = createGatewayRuntime(/* Your programmatic configuration */)
 
 serve(gatewayRuntime, {
   onListen({ hostname, port }) {

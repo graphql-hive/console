@@ -291,6 +291,7 @@ async function callExternalService(
   });
 
   try {
+    logger.debug('Calling external composition service (url=%s)', input.url);
     const response = await got(input.url, {
       method: 'POST',
       headers: input.headers,
@@ -318,7 +319,12 @@ async function callExternalService(
         span.setAttribute('error.message', error.message);
         span.setAttribute('error.type', error.name);
 
-        logger.info('Network error without response. (%s)', error.message);
+        logger.error(
+          'Network error without response. (errorName=%s, errorMessage=%s)',
+          error.name,
+          error.message,
+        );
+
         return {
           type: 'failure',
           result: {
@@ -362,8 +368,8 @@ async function callExternalService(
           }
         }
 
-        logger.info(
-          'Network error so return failure (url=%s, status=%s, message=%s)',
+        logger.error(
+          'Network error, will return failure (url=%s, status=%s, message=%s)',
           input.url,
           error.response.statusCode,
           error.message,
@@ -388,6 +394,8 @@ async function callExternalService(
         };
       }
     }
+
+    logger.error('encountered an unexpected error, throwing. error=%o', error);
 
     throw error;
   } finally {
@@ -520,26 +528,31 @@ async function composeExternalFederation(args: {
     body,
   };
 
-  const parseResult = EXTERNAL_COMPOSITION_RESULT.safeParse(
-    await (args.external.broker
-      ? callExternalServiceViaBroker(
-          args.external.broker,
-          {
-            method: 'POST',
-            ...request,
-          },
-          args.logger,
-          args.cache.timeoutMs,
-          args.requestId,
-        )
-      : callExternalService(request, args.logger, args.cache.timeoutMs)),
-  );
+  const externalResponse = await (args.external.broker
+    ? callExternalServiceViaBroker(
+        args.external.broker,
+        {
+          method: 'POST',
+          ...request,
+        },
+        args.logger,
+        args.cache.timeoutMs,
+        args.requestId,
+      )
+    : callExternalService(request, args.logger, args.cache.timeoutMs));
+
+  args.logger.debug('Got response from external composition service, trying to safe parse');
+  const parseResult = EXTERNAL_COMPOSITION_RESULT.safeParse(externalResponse);
 
   if (!parseResult.success) {
+    args.logger.error('External composition failure: invalid shape of data: %o', parseResult.error);
+
     throw new Error(`External composition failure: invalid shape of data`);
   }
 
   if (parseResult.data.type === 'success') {
+    args.logger.debug('External composition successful, checking compatibility');
+
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
     return {

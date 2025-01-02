@@ -18,3 +18,15 @@ export class Logger {
   debug: LogFn = notImplemented('debug');
   child: (bindings: Record<string, unknown>) => Logger = notImplemented('child');
 }
+
+function noop() {}
+
+export class NoopLogger extends Logger {
+  info = noop;
+  warn = noop;
+  error = noop;
+  fatal = noop;
+  trace = noop;
+  debug = noop;
+  child = () => this;
+}

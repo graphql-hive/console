@@ -4,6 +4,7 @@ export default gql`
   extend type Organization {
     supportTickets(first: Int, after: String): SupportTicketConnection
     supportTicket(id: ID!): SupportTicket
+    viewerCanManageSupportTickets: Boolean!
   }
 
   extend type Mutation {

@@ -1,0 +1,36 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { buildDynamicMDX } from 'nextra/remote'
+import { RemoteContent } from '@theguild/components'
+
+export async function getStaticProps() {
+  // NOTE: if you add any white space between lines in this function, prettier will destroy this file
+  // Unfortunately, it seems impossible to use `<RemoteContent />` within a default export of a `.tsx` file.
+  const data = (
+    await fs.readFile(path.join(process.cwd(), '../../../deployment/CHANGELOG.md'), 'utf-8')
+  )
+    // remove the heading
+    .split('\n')
+    .slice(1)
+    .join('\n')
+  const dynamicMdx = await buildDynamicMDX(data)
+  return {
+    props: {
+      ...dynamicMdx,
+      __nextra_dynamic_opts: {
+        title: 'Self Hosting Changelog',
+        frontMatter: {
+          description: 'Changelog for self-hosting Hive'
+        }
+      }
+    }
+  }
+}
+
+# Self-Hosting Changelog
+
+Here you can find all the recent improvements and updates about the self-hosting images. The Docker
+images published to the GitHub registry using the same tags. For a high-level overview of
+improvements please refer to [our product updates](/product-updates).
+
+<RemoteContent />

@@ -1,5 +1,5 @@
 import { usage } from '../utils';
-import type { GraphQlEnumValueResolvers } from './../../../__generated__/types.next';
+import type { GraphQlEnumValueResolvers } from './../../../__generated__/types';
 
 export const GraphQLEnumValue: GraphQlEnumValueResolvers = {
   name: v => v.entity.name,

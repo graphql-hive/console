@@ -253,7 +253,13 @@ function ChecksPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const hasSchemaChecks = !!query.data?.target?.schemaChecks?.edges?.length;
@@ -293,96 +299,88 @@ function ChecksPageContent(props: {
 
   return (
     <>
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Checks}
-        className={cn('flex', hasSchemaChecks || hasActiveSchemaCheck ? 'flex-row gap-x-6' : '')}
-      >
-        <div>
-          <div className="w-[300px] py-6">
-            <Title>Schema Checks</Title>
-            <Subtitle>Recently checked schemas.</Subtitle>
-          </div>
-          {query.fetching || query.stale ? null : hasSchemaChecks ? (
-            <div className="flex flex-col gap-5">
-              <div>
-                <div className="flex h-9 flex-row items-center justify-between">
-                  <Label
-                    htmlFor="filter-toggle-has-changes"
-                    className="text-sm font-normal text-gray-100"
-                  >
-                    Show only changed schemas
-                  </Label>
-                  <Switch
-                    checked={filters.showOnlyChanged ?? false}
-                    onCheckedChange={handleShowOnlyFilterChange}
-                    id="filter-toggle-has-changes"
-                  />
-                </div>
-                <div className="flex h-9 flex-row items-center justify-between">
-                  <Label
-                    htmlFor="filter-toggle-status-failed"
-                    className="text-sm font-normal text-gray-100"
-                  >
-                    Show only failed checks
-                  </Label>
-                  <Switch
-                    checked={filters.showOnlyFailed ?? false}
-                    onCheckedChange={handleShowOnlyFilterFailed}
-                    id="filter-toggle-status-failed"
-                  />
-                </div>
-              </div>
-              {hasFilteredSchemaChecks ? (
-                <div className="flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 p-2.5">
-                  {paginationVariables.map((cursor, index) => (
-                    <Navigation
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
-                      schemaCheckId={schemaCheckId}
-                      after={cursor}
-                      isLastPage={index + 1 === paginationVariables.length}
-                      onLoadMore={cursor => setPaginationVariables(cursors => [...cursors, cursor])}
-                      key={cursor ?? 'first'}
-                      filters={filters}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="cursor-default text-sm">
-                  No schema checks found with the current filters
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div className="cursor-default text-sm">
-                {hasActiveSchemaCheck ? 'List is empty' : 'Your schema check list is empty'}
-              </div>
-              <DocsLink href="/features/schema-registry#check-a-schema">
-                {hasActiveSchemaCheck
-                  ? 'Check you first schema'
-                  : 'Learn how to check your first schema with Hive CLI'}
-              </DocsLink>
-            </div>
-          )}
+      <div>
+        <div className="w-[300px] py-6">
+          <Title>Schema Checks</Title>
+          <Subtitle>Recently checked schemas.</Subtitle>
         </div>
+        {query.fetching || query.stale ? null : hasSchemaChecks ? (
+          <div className="flex flex-col gap-5">
+            <div>
+              <div className="flex h-9 flex-row items-center justify-between">
+                <Label
+                  htmlFor="filter-toggle-has-changes"
+                  className="text-sm font-normal text-gray-100"
+                >
+                  Show only changed schemas
+                </Label>
+                <Switch
+                  checked={filters.showOnlyChanged ?? false}
+                  onCheckedChange={handleShowOnlyFilterChange}
+                  id="filter-toggle-has-changes"
+                />
+              </div>
+              <div className="flex h-9 flex-row items-center justify-between">
+                <Label
+                  htmlFor="filter-toggle-status-failed"
+                  className="text-sm font-normal text-gray-100"
+                >
+                  Show only failed checks
+                </Label>
+                <Switch
+                  checked={filters.showOnlyFailed ?? false}
+                  onCheckedChange={handleShowOnlyFilterFailed}
+                  id="filter-toggle-status-failed"
+                />
+              </div>
+            </div>
+            {hasFilteredSchemaChecks ? (
+              <div className="flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 p-2.5">
+                {paginationVariables.map((cursor, index) => (
+                  <Navigation
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    targetSlug={props.targetSlug}
+                    schemaCheckId={schemaCheckId}
+                    after={cursor}
+                    isLastPage={index + 1 === paginationVariables.length}
+                    onLoadMore={cursor => setPaginationVariables(cursors => [...cursors, cursor])}
+                    key={cursor ?? 'first'}
+                    filters={filters}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="cursor-default text-sm">
+                No schema checks found with the current filters
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div className="cursor-default text-sm">
+              {hasActiveSchemaCheck ? 'List is empty' : 'Your schema check list is empty'}
+            </div>
+            <DocsLink href="/features/schema-registry#check-a-schema">
+              {hasActiveSchemaCheck
+                ? 'Check you first schema'
+                : 'Learn how to check your first schema with Hive CLI'}
+            </DocsLink>
+          </div>
+        )}
+      </div>
 
-        {hasActiveSchemaCheck ? (
-          schemaCheckId ? (
-            <Outlet />
-          ) : null
-        ) : hasSchemaChecks ? (
-          <EmptyList
-            className="my-4 mt-6 justify-center border-0 py-8"
-            title="Select a schema check"
-            description="A list of your schema checks is available on the left."
-          />
-        ) : null}
-      </TargetLayout>
+      {hasActiveSchemaCheck ? (
+        schemaCheckId ? (
+          <Outlet />
+        ) : null
+      ) : hasSchemaChecks ? (
+        <EmptyList
+          className="my-4 mt-6 justify-center border-0 py-8"
+          title="Select a schema check"
+          description="A list of your schema checks is available on the left."
+        />
+      ) : null}
     </>
   );
 }
@@ -395,7 +393,15 @@ export function TargetChecksPage(props: {
   return (
     <>
       <Meta title="Schema Checks" />
-      <ChecksPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Checks}
+        className={cn('flex flex-row gap-x-6')}
+      >
+        <ChecksPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

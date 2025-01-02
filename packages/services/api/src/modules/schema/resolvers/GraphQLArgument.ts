@@ -1,5 +1,5 @@
 import { stringifyDefaultValue, usage } from '../utils';
-import type { GraphQlArgumentResolvers } from './../../../__generated__/types.next';
+import type { GraphQlArgumentResolvers } from './../../../__generated__/types';
 
 export const GraphQLArgument: GraphQlArgumentResolvers = {
   name: a => a.entity.name,

@@ -14,30 +14,54 @@ that allows us to create a wrapper between `node:http` and Fetch API.
 <Callout>
 Check the following sections to see how to deploy your gateway in different environments on the left menu.
 
-**If your environment is not listed here**, that doesn't mean you can't deploy your gateway. Thanks
-to our adapter system, **you can create your own implementation for your environment**.
-
-Feel free to contribute the documentation for your favorite server implementation if we don't have
-it in the list.
+If your environment is not listed, **that doesn't mean you can't deploy your gateway**. Thanks to
+our adapter system, you can create your own implementation. See the
+[Other Environments (not listed) section](#other-environments-not-listed) below.
 
 </Callout>
 
-## Other Environments (Custom)
+## Programmatic Usage
 
-Let's say you have an environment that is not listed here, you can still deploy your gateway. In
-this case, we will show here how to pass the request information from your environment to Gateway,
-then get the response for your environment back.
+In all of the deployment examples listed, **except for [Docker](/docs/gateway/deployment/docker) and
+[Google Cloud Run](/docs/gateway/deployment/serverless/google-cloud-platform#cloud-run)**, you will
+be using the Hive Gateway programmatically through its programmatic API.
+
+The runtime of Hive Gateway, our recommended way of using the gateway programmatically comes in a
+separate package `@graphql-hive/gateway-runtime`.
+
+```sh npm2yarn
+npm i @graphql-hive/gateway-runtime
+```
+
+Improving the experince of Hive Gateway in various JavaScript environments (especially
+[serverless/on-the-edge](/docs/gateway/deployment/serverless)), the `@graphql-hive/gateway-runtime`
+comes in a slimmer version set up for optimized runtime and smaller size. This leads to a difference
+in the configuration options compared to the CLI version `@graphql-hive/gateway`.
+
+See the [Hive Gateway Configuration Rereference](/docs/api-reference/gateway-config) for more
+details about these differences.
+
+<Callout>
+  None of the transports and none of the built-in plugins are included in the slimmed down runtime
+  version of the Hive Gateway `@graphql-hive/gateway-runtime`.
+</Callout>
+
+## Other Environments (Not Listed)
+
+Let's say you have an environment that is not listed here, you can still deploy your Hive Gateway
+using its progammatic API. In this case, we will show here how to pass the request information from
+your environment to Hive Gateway, then get the response for your environment back.
 
 ```ts
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import type {
   ImaginaryEnvironmentRequest,
   ImaginaryEnvironmentServerContext
 } from '@imaginary-environment/types'
 import { getMySupergraph } from './my-supergraph.js'
 
-// First pass it to the runtime as a context
-const gatewayRuntime = createGatewayRuntime<ImaginaryEnvironmentServerContext>({
+// Initialise and configure the Hive Gateway runtime
+const gateway = createGatewayRuntime<ImaginaryEnvironmentServerContext>({
   supergraph: () => getMySupergraph()
 })
 
@@ -46,8 +70,8 @@ export async function gatewayEndpoint(
   envRequest: ImaginaryEnvironmentRequest,
   envContext: ImaginaryEnvironmentServerContext
 ) {
-  // Serve Runtime provides a fetch function which has exactly the same signature with regular `fetch`
-  const res = await gatewayRuntime.fetch(
+  // The runtime provides a fetch function which has exactly the same signature with regular `fetch`
+  const res = await gateway.fetch(
     envRequest.url,
     {
       method: envRequest.method,
@@ -56,6 +80,7 @@ export async function gatewayEndpoint(
     },
     envContext
   )
+
   // You can create an object from [`Headers`](https://developer.mozilla.org/en-US/docs/Web/API/Headers) object
   const headersObj: Record<string, string> = {}
   res.headers.forEach((value, key) => {

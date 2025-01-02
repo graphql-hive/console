@@ -1,5 +1,5 @@
 import { TargetManager } from '../../target/providers/target-manager';
-import type { BreakingChangeMetadataTargetResolvers } from './../../../__generated__/types.next';
+import type { BreakingChangeMetadataTargetResolvers } from './../../../__generated__/types';
 
 export const BreakingChangeMetadataTarget: BreakingChangeMetadataTargetResolvers = {
   target: (record, _, { injector }) => {

@@ -10,10 +10,12 @@ export function QueryError({
   error,
   showError,
   organizationSlug,
+  showLogoutButton = true,
 }: {
   error: CombinedError;
   showError?: boolean;
   organizationSlug: string | null;
+  showLogoutButton?: boolean;
 }): ReactElement {
   const router = useRouter();
   const requestId =
@@ -30,24 +32,26 @@ export function QueryError({
 
   return (
     <div className="flex size-full items-center justify-center">
-      <Button
-        variant="outline"
-        onClick={() =>
-          router.navigate({
-            to: '/logout',
-          })
-        }
-        className="absolute right-6 top-6"
-      >
-        <LogOutIcon className="mr-2 size-4" /> Sign out
-      </Button>
+      {showLogoutButton && (
+        <Button
+          variant="outline"
+          onClick={() =>
+            router.navigate({
+              to: '/logout',
+            })
+          }
+          className="absolute right-6 top-6"
+        >
+          <LogOutIcon className="mr-2 size-4" /> Sign out
+        </Button>
+      )}
       <div className="flex max-w-[960px] flex-col items-center gap-x-6 sm:flex-row">
         <img src="/images/figures/connection.svg" alt="Ghost" className="block size-[200px]" />
         <div className="grow text-center sm:text-left">
           <h1 className="text-xl font-semibold">Oops, something went wrong.</h1>
           <div className="mt-2">
             {shouldShowError ? (
-              <div className="text-sm">{error.graphQLErrors[0].message}</div>
+              <div className="text-sm">{error.graphQLErrors?.[0].message}</div>
             ) : (
               <div className="text-sm">
                 <p>Don't worry, our technical support got this error reported automatically.</p>

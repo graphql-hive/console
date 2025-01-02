@@ -9,6 +9,7 @@ export default gql`
       selector: OrganizationTransferRequestSelector!
     ): OrganizationTransfer
     myDefaultOrganization(previouslyVisitedOrganizationId: ID): OrganizationPayload
+    organizationBySlug(organizationSlug: String!): Organization
   }
 
   extend type Mutation {
@@ -212,15 +213,55 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member!
     me: Member!
-    members: MemberConnection!
-    invitations: OrganizationInvitationConnection!
+    members: MemberConnection
+    invitations: OrganizationInvitationConnection
     getStarted: OrganizationGetStarted!
-    memberRoles: [MemberRole!]!
+    memberRoles: [MemberRole!]
     """
     Only available to members with the Admin role.
     Returns a list of members that are not assigned to any role.
     """
     unassignedMembersToMigrate: [MemberRoleMigrationGroup!]!
+    """
+    Whether the viewer should be able to access the settings page within the app
+    """
+    viewerCanAccessSettings: Boolean!
+    """
+    Whether the viewer can modify the organization slug
+    """
+    viewerCanModifySlug: Boolean!
+    """
+    Whether the viewer can transfer ownership of the organization
+    """
+    viewerCanTransferOwnership: Boolean!
+    """
+    Whether the viewer can delete the organization
+    """
+    viewerCanDelete: Boolean!
+    """
+    Whether the viewer can see the members within the organization
+    """
+    viewerCanSeeMembers: Boolean!
+    """
+    Whether the viewer can manage member invites
+    """
+    viewerCanManageInvitations: Boolean!
+    """
+    Whether the viewer can assign roles to users
+    """
+    viewerCanAssignUserRoles: Boolean!
+    """
+    Whether the viewer can modify roles of members within the organization
+    """
+    viewerCanManageRoles: Boolean!
+    """
+    Whether the viewer can migrate the legacy member roles
+    """
+    viewerCanMigrateLegacyMemberRoles: Boolean!
+    """
+    The organization's audit logs. This field is only available to members with the Admin role.
+    """
+    viewerCanExportAuditLogs: Boolean!
   }
 
   type OrganizationConnection {
@@ -285,6 +326,10 @@ export default gql`
     canLeaveOrganization: Boolean!
     role: MemberRole
     isAdmin: Boolean!
+    """
+    Whether the viewer can remove this member from the organization.
+    """
+    viewerCanRemove: Boolean!
   }
 
   type MemberRole {

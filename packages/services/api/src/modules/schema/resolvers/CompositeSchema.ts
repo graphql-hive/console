@@ -1,4 +1,4 @@
-import type { CompositeSchemaResolvers } from './../../../__generated__/types.next';
+import type { CompositeSchemaResolvers } from './../../../__generated__/types';
 
 export const CompositeSchema: CompositeSchemaResolvers = {
   __isTypeOf: obj => {

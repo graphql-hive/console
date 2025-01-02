@@ -1,6 +1,8 @@
 import { local } from '@pulumi/command';
 import type { GraphQL } from '../services/graphql';
 
+const dockerImage = 'ghcr.io/graphql-hive/cli:0.44.4';
+
 /** Publish API GraphQL schema to Hive schema registry. */
 export function publishGraphQLSchema(args: {
   graphql: GraphQL;
@@ -19,7 +21,7 @@ export function publishGraphQLSchema(args: {
     'publish-graphql-schema',
     {
       create:
-        `docker run --name "publish-graphql-schema" -v ${args.schemaPath}:/usr/src/app/schema.graphqls ghcr.io/kamilkisiela/graphql-hive/cli:0.36.0 ` +
+        `docker run --name "publish-graphql-schema" -v ${args.schemaPath}:/usr/src/app/schema.graphqls ${dockerImage} ` +
         command,
     },
     {

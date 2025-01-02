@@ -1,4 +1,4 @@
-import type { Scalars } from '../../__generated__/types.next';
+import type { Scalars } from '../../__generated__/types';
 import type { AdminOrganizationStats } from '../../shared/entities';
 
 export type AdminQueryMapper = {};

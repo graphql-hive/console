@@ -1,4 +1,5 @@
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
+import { maskToken } from '@hive/service-common';
 import type { TokensApi } from '@hive/tokens';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import type { Token } from '../../../shared/entities';
@@ -11,10 +12,6 @@ import { Logger } from '../../shared/providers/logger';
 import type { TargetSelector } from '../../shared/providers/storage';
 import type { TokensConfig } from './tokens';
 import { TOKENS_CONFIG } from './tokens';
-
-function maskToken(token: string) {
-  return token.substring(0, 3) + '*'.repeat(token.length - 6) + token.substring(token.length - 3);
-}
 
 export interface TokenSelector {
   token: string;
@@ -123,6 +120,7 @@ export class TokenStorage {
         this.logger.error(error);
       }
 
+      this.logger.error('Failed to fetch token', error);
       throw new HiveError('Invalid token provided', {
         originalError: error,
       });

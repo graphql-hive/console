@@ -2,10 +2,11 @@ import bcryptjs from 'bcryptjs';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { encodeCdnToken, generatePrivateKey } from '@hive/cdn-script/cdn-token';
+import { maskToken } from '@hive/service-common';
 import { HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { TargetAccessScope } from '../../auth/providers/scopes';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
+import { Session } from '../../auth/lib/authz';
 import type { Contract } from '../../schema/providers/contracts';
 import { Logger } from '../../shared/providers/logger';
 import { S3_CONFIG, type S3Config } from '../../shared/providers/s3-config';
@@ -23,7 +24,8 @@ export class CdnProvider {
 
   constructor(
     logger: Logger,
-    @Inject(AuthManager) private authManager: AuthManager,
+    private session: Session,
+    private auditLog: AuditLogRecorder,
     @Inject(CDN_CONFIG) private config: CDNConfig,
     @Inject(S3_CONFIG) private s3Config: S3Config,
     @Inject(Storage) private storage: Storage,
@@ -86,11 +88,14 @@ export class CdnProvider {
       } as const;
     }
 
-    await this.authManager.ensureTargetAccess({
+    await this.session.assertPerformAction({
+      action: 'cdnAccessToken:modify',
       organizationId: args.organizationId,
-      projectId: args.projectId,
-      targetId: args.targetId,
-      scope: TargetAccessScope.READ,
+      params: {
+        organizationId: args.organizationId,
+        projectId: args.projectId,
+        targetId: args.targetId,
+      },
     });
 
     // generate all things upfront so we do net get surprised by encoding issues after writing to the destination.
@@ -220,6 +225,18 @@ export class CdnProvider {
       cdnAccessTokenRecord.id,
     );
 
+    const maskedToken = maskToken(cdnAccessToken);
+    await this.auditLog.record({
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_CREATED',
+      organizationId: args.organizationId,
+      metadata: {
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: args.alias,
+        token: maskedToken,
+      },
+    });
+
     return {
       type: 'success',
       cdnAccessToken: cdnAccessTokenRecord,
@@ -241,11 +258,14 @@ export class CdnProvider {
       args.cdnAccessTokenId,
     );
 
-    await this.authManager.ensureTargetAccess({
+    await this.session.assertPerformAction({
+      action: 'cdnAccessToken:modify',
       organizationId: args.organizationId,
-      projectId: args.projectId,
-      targetId: args.targetId,
-      scope: TargetAccessScope.SETTINGS,
+      params: {
+        organizationId: args.organizationId,
+        projectId: args.projectId,
+        targetId: args.targetId,
+      },
     });
 
     if (isUUID(args.cdnAccessTokenId) === false) {
@@ -314,6 +334,16 @@ export class CdnProvider {
       cdnAccessTokenId: args.cdnAccessTokenId,
     });
 
+    await this.auditLog.record({
+      eventType: 'TARGET_CDN_ACCESS_TOKEN_DELETED',
+      organizationId: args.organizationId,
+      metadata: {
+        targetId: args.targetId,
+        projectId: args.projectId,
+        alias: record.alias,
+      },
+    });
+
     return {
       type: 'success',
     } as const;
@@ -326,11 +356,14 @@ export class CdnProvider {
     first: number | null;
     cursor: string | null;
   }) {
-    await this.authManager.ensureTargetAccess({
+    await this.session.assertPerformAction({
+      action: 'cdnAccessToken:modify',
       organizationId: args.organizationId,
-      projectId: args.projectId,
-      targetId: args.targetId,
-      scope: TargetAccessScope.SETTINGS,
+      params: {
+        organizationId: args.organizationId,
+        projectId: args.projectId,
+        targetId: args.targetId,
+      },
     });
 
     const paginatedResult = await this.storage.getPaginatedCDNAccessTokensForTarget({

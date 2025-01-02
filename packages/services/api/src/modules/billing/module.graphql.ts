@@ -4,6 +4,8 @@ export default gql`
   extend type Organization {
     plan: BillingPlanType!
     billingConfiguration: BillingConfiguration!
+    viewerCanDescribeBilling: Boolean!
+    viewerCanModifyBilling: Boolean!
   }
 
   type BillingConfiguration {

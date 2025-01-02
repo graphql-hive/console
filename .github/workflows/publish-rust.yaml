@@ -5,6 +5,14 @@ on:
         default: false
         type: boolean
         required: true
+      latest:
+        default: false
+        type: boolean
+        required: true
+      version:
+        default: ${{ github.sha }}
+        type: string
+        required: true
 
 jobs:
   detect-changes:
@@ -109,7 +117,7 @@ jobs:
           name: router-${{ env.RUST_TARGET_OS }}
           path: router.tar.gz
 
-      - name: Upload to R2
+      - name: Upload to R2 (${{ inputs.version }})
         if: ${{ inputs.publish }}
         uses: randomairborne/r2-release@v1.0.2
         with:
@@ -118,10 +126,10 @@ jobs:
           secretaccesskey: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           bucket: apollo-router
           file: router.tar.gz
-          destination: ${{ github.sha }}/${{ env.RUST_TARGET_OS }}/router.tar.gz
+          destination: ${{ inputs.version }}/${{ env.RUST_TARGET_OS }}/router.tar.gz
 
-      - name: Upload to R2 as latest
-        if: ${{ inputs.publish }}
+      - name: Upload to R2 (latest)
+        if: ${{ inputs.publish && inputs.latest }}
         uses: randomairborne/r2-release@v1.0.2
         with:
           endpoint: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com

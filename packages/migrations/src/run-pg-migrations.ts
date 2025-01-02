@@ -69,7 +69,7 @@ import migration_2024_07_17T00_00_00_app_deployments from './actions/2024.07.17T
 import migration_2024_07_23T_09_36_00_schema_cleanup_tracker from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
 import { runMigrations } from './pg-migrator';
 
-export const runPGMigrations = (args: { slonik: DatabasePool; runTo?: string }) =>
+export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: string }) =>
   runMigrations({
     slonik: args.slonik,
     runTo: args.runTo,
@@ -142,5 +142,13 @@ export const runPGMigrations = (args: { slonik: DatabasePool; runTo?: string }) 
       migration_2024_07_16T13_44_00_oidc_only_access,
       migration_2024_07_17T00_00_00_app_deployments,
       migration_2024_07_23T_09_36_00_schema_cleanup_tracker,
+      await import('./actions/2024.11.11T00-00-00.supertokens-8.0'),
+      await import('./actions/2024.11.12T00-00-00.supertokens-9.0'),
+      await import('./actions/2024.11.12T00-00-00.supertokens-9.1'),
+      await import('./actions/2024.11.12T00-00-00.supertokens-9.2'),
+      await import('./actions/2024.11.12T00-00-00.supertokens-9.3'),
+      await import('./actions/2024.12.23T00-00-00.improve-version-index'),
+      await import('./actions/2024.12.24T00-00-00.improve-version-index-2'),
+      await import('./actions/2024.12.27T00.00.00.create-preflight-scripts'),
     ],
   });

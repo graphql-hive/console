@@ -10,18 +10,14 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
-import { OrganizationAccessScope, RegistryModel } from '@/gql/graphql';
-import { useOrganizationAccess } from '@/lib/access/organization';
+import { RegistryModel } from '@/gql/graphql';
+import { useRedirect } from '@/lib/access/common';
 
 const OrganizationPolicyPageQuery = graphql(`
   query OrganizationPolicyPageQuery($selector: OrganizationSelectorInput!) {
     organization(selector: $selector) {
       organization {
         id
-        me {
-          id
-          ...CanAccessOrganization_MemberFragment
-        }
         projects {
           nodes {
             id
@@ -34,6 +30,7 @@ const OrganizationPolicyPageQuery = graphql(`
           updatedAt
           ...PolicySettings_SchemaPolicyFragment
         }
+        viewerCanModifySchemaPolicy
       }
     }
   }
@@ -82,16 +79,26 @@ function PolicyPageContent(props: { organizationSlug: string }) {
 
   const currentOrganization = query.data?.organization?.organization;
 
-  const hasAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: currentOrganization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
-
   const legacyProjects = currentOrganization?.projects.nodes.filter(
     p => p.registryModel === RegistryModel.Legacy,
   );
+
+  useRedirect({
+    canAccess: currentOrganization?.viewerCanModifySchemaPolicy === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+        },
+      });
+    },
+    entity: currentOrganization,
+  });
+
+  if (currentOrganization?.viewerCanModifySchemaPolicy === false) {
+    return null;
+  }
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -111,7 +118,7 @@ function PolicyPageContent(props: { organizationSlug: string }) {
             schema.
           </Subtitle>
         </div>
-        {hasAccess && currentOrganization ? (
+        {currentOrganization ? (
           <Card>
             <CardHeader>
               <CardTitle>Rules</CardTitle>

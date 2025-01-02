@@ -1,6 +1,6 @@
 import { Kind } from 'graphql';
 import { __isTypeOf, usage } from '../utils';
-import type { GraphQlInputObjectTypeResolvers } from './../../../__generated__/types.next';
+import type { GraphQlInputObjectTypeResolvers } from './../../../__generated__/types';
 
 export const GraphQLInputObjectType: GraphQlInputObjectTypeResolvers = {
   __isTypeOf: __isTypeOf(Kind.INPUT_OBJECT_TYPE_DEFINITION),

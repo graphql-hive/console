@@ -219,7 +219,13 @@ function DeprecatedSchemaExplorer(props: {
   }, [dateRangeController.resolvedRange]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const latestSchemaVersion = query.data?.target?.latestSchemaVersion;
@@ -335,38 +341,41 @@ function ExplorerDeprecatedSchemaPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentOrganization = query.data?.organization?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (!hasCollectedOperations) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
+
   return (
-    <TargetLayout
+    <DeprecatedSchemaExplorer
+      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <DeprecatedSchemaExplorer
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+    />
   );
 }
 
@@ -378,7 +387,14 @@ export function TargetExplorerDeprecatedPage(props: {
   return (
     <>
       <Meta title="Deprecated Schema Explorer" />
-      <ExplorerDeprecatedSchemaPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Explorer}
+      >
+        <ExplorerDeprecatedSchemaPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

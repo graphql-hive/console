@@ -1,6 +1,6 @@
 import { Kind } from 'graphql';
 import { __isTypeOf, usage } from '../utils';
-import type { GraphQlInterfaceTypeResolvers } from './../../../__generated__/types.next';
+import type { GraphQlInterfaceTypeResolvers } from './../../../__generated__/types';
 
 export const GraphQLInterfaceType: GraphQlInterfaceTypeResolvers = {
   __isTypeOf: __isTypeOf(Kind.INTERFACE_TYPE_DEFINITION),

@@ -77,6 +77,7 @@ const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleSwitcher_OrganizationFragment on Organization {
     id
     slug
+    viewerCanAssignUserRoles
     me {
       id
       isAdmin
@@ -135,14 +136,14 @@ function OrganizationMemberRoleSwitcher(props: {
   const isOwner = props.memberId === organization.owner.id;
   const isMe = props.memberId === me.id;
   // A user can't change its own role
-  const canAssignRole = !isOwner && !isMe;
-  const roles = organization.memberRoles;
+  const canAssignRole = !isOwner && !isMe && organization.viewerCanAssignUserRoles;
+  const roles = organization.memberRoles ?? [];
   const { toast } = useToast();
   const [assignRoleState, assignRole] = useMutation(
     OrganizationMemberRoleSwitcher_AssignRoleMutation,
   );
   const [isPermissionsModalOpen, togglePermissionsModalOpen] = useToggle(false);
-  const memberRole = roles.find(role => role.id === props.memberRoleId);
+  const memberRole = roles?.find(role => role.id === props.memberRoleId);
 
   if (!memberRole || !member) {
     console.error('No role or member provided to OrganizationMemberRoleSwitcher');
@@ -344,7 +345,8 @@ const OrganizationMemberRow_MemberFragment = graphql(`
       id
       name
     }
-
+    isOwner
+    viewerCanRemove
     ...ChangePermissionsModal_MemberFragment
     ...OrganizationMemberRoleSwitcher_MemberFragment
   }
@@ -437,26 +439,42 @@ function OrganizationMemberRow(props: {
           <h4 className="text-xs text-gray-400">{member.user.email}</h4>
         </td>
         <td className="relative py-3 text-center text-sm">
-          <OrganizationMemberRoleSwitcher
-            organization={organization}
-            memberId={member.id}
-            memberName={member.user.displayName}
-            memberRoleId={member.role?.id}
-            member={member}
-          />
+          {member.isOwner ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <span className="font-bold">Owner</span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px] text-left">
+                  The organization owner has full access to everything within the organization. The
+                  role of the owner can not be changed.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <OrganizationMemberRoleSwitcher
+              organization={organization}
+              memberId={member.id}
+              memberName={member.user.displayName}
+              memberRoleId={member.role?.id}
+              member={member}
+            />
+          )}
         </td>
         <td className="py-3 text-right text-sm">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
-                <MoreHorizontalIcon className="size-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {member.viewerCanRemove && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+                  <MoreHorizontalIcon className="size-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px]">
+                <DropdownMenuItem onSelect={() => setOpen(true)}>Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </td>
       </tr>
     </>
@@ -487,6 +505,8 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       }
       total
     }
+    viewerCanManageInvitations
+    viewerCanMigrateLegacyMemberRoles
     ...OrganizationMemberRoleSwitcher_OrganizationFragment
     ...MemberInvitationForm_OrganizationFragment
   }
@@ -497,7 +517,7 @@ export function OrganizationMembers(props: {
   refetchMembers(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
-  const members = organization.members.nodes;
+  const members = organization.members?.nodes;
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc' | null>(null);
   const [sortByKey, setSortByKey] = useState<'name' | 'role'>('name');
 
@@ -545,10 +565,12 @@ export function OrganizationMembers(props: {
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
       >
-        <MemberInvitationButton
-          refetchInvitations={props.refetchMembers}
-          organization={organization}
-        />
+        {organization.viewerCanManageInvitations && (
+          <MemberInvitationButton
+            refetchInvitations={props.refetchMembers}
+            organization={organization}
+          />
+        )}
       </SubPageLayoutHeader>
       <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
         <thead>

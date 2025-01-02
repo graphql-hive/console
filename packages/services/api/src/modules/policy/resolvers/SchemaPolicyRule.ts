@@ -1,4 +1,4 @@
-import type { SchemaPolicyRuleResolvers } from './../../../__generated__/types.next';
+import type { SchemaPolicyRuleResolvers } from './../../../__generated__/types';
 
 export const SchemaPolicyRule: SchemaPolicyRuleResolvers = {
   id: r => r.name,

@@ -1,6 +1,6 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { AdminManager } from '../providers/admin-manager';
-import type { AdminGeneralStatsResolvers } from './../../../__generated__/types.next';
+import type { AdminGeneralStatsResolvers } from './../../../__generated__/types';
 
 export const AdminGeneralStats: AdminGeneralStatsResolvers = {
   operationsOverTime: ({ period, resolution }, _, { injector }) => {

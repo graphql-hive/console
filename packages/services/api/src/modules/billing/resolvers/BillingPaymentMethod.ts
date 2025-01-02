@@ -1,4 +1,4 @@
-import type { BillingPaymentMethodResolvers } from './../../../__generated__/types.next';
+import type { BillingPaymentMethodResolvers } from './../../../__generated__/types';
 
 export const BillingPaymentMethod: BillingPaymentMethodResolvers = {
   brand: bpm => bpm.brand,

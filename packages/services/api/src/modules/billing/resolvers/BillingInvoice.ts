@@ -1,7 +1,4 @@
-import type {
-  BillingInvoiceResolvers,
-  BillingInvoiceStatus,
-} from './../../../__generated__/types.next';
+import type { BillingInvoiceResolvers, BillingInvoiceStatus } from './../../../__generated__/types';
 
 export const BillingInvoice: BillingInvoiceResolvers = {
   id: i => (i && 'id' in i ? i.id : 'upcoming'),

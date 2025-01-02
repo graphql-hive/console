@@ -1,7 +1,7 @@
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { TargetManager } from '../../target/providers/target-manager';
-import type { TokenInfoResolvers } from './../../../__generated__/types.next';
+import type { TokenInfoResolvers } from './../../../__generated__/types';
 
 export const TokenInfo: TokenInfoResolvers = {
   __isTypeOf(token) {

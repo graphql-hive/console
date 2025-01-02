@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/node';
 import { useRequestLogging } from './request-logs';
 import { useSentryErrorHandler } from './sentry';
 
-export type { FastifyBaseLogger, FastifyRequest } from 'fastify';
+export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 
 export async function createServer(options: {
   sentryErrorHandler: boolean;
@@ -21,6 +21,7 @@ export async function createServer(options: {
     bodyLimit: options.bodyLimit ?? 15e6, // 15mb by default
     logger: {
       level: options.log.level,
+      redact: ['request.options', 'options', 'request.headers.authorization'],
     },
     maxParamLength: 5000,
     requestIdHeader: 'x-request-id',

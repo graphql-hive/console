@@ -1,9 +1,13 @@
 import { BillingProvider } from '../providers/billing.provider';
-import type { BillingPlanType, OrganizationResolvers } from './../../../__generated__/types.next';
+import type { BillingPlanType, OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'billingConfiguration' | 'plan' | '__isTypeOf'
+  | 'billingConfiguration'
+  | 'plan'
+  | 'viewerCanDescribeBilling'
+  | 'viewerCanModifyBilling'
+  | '__isTypeOf'
 > = {
   plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
   billingConfiguration: async (org, _args, { injector }) => {
@@ -87,5 +91,23 @@ export const Organization: Pick<
       invoices,
       upcomingInvoice,
     };
+  },
+  viewerCanDescribeBilling: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'billing:describe',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+  },
+  viewerCanModifyBilling: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'billing:update',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };

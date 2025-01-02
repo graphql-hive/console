@@ -1,6 +1,6 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
-import type { TargetResolvers } from './../../../__generated__/types.next';
+import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,

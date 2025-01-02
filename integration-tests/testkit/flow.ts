@@ -1,7 +1,10 @@
 import { graphql } from './gql';
 import type {
+  AddAlertChannelInput,
+  AddAlertInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
+  ClientStatsInput,
   CreateMemberRoleInput,
   CreateOrganizationInput,
   CreateProjectInput,
@@ -528,6 +531,149 @@ export function readTokenInfo(token: string) {
   });
 }
 
+export function addAlertChannel(input: AddAlertChannelInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddAlertChannel($input: AddAlertChannelInput!) {
+        addAlertChannel(input: $input) {
+          ok {
+            addedAlertChannel {
+              id
+              name
+              type
+              ... on AlertSlackChannel {
+                channel
+              }
+              ... on AlertWebhookChannel {
+                endpoint
+              }
+              ... on TeamsWebhookChannel {
+                endpoint
+              }
+            }
+          }
+          error {
+            message
+            inputErrors {
+              webhookEndpoint
+              slackChannel
+              name
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function addAlert(input: AddAlertInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_AddAlert($input: AddAlertInput!) {
+        addAlert(input: $input) {
+          ok {
+            addedAlert {
+              id
+              type
+              channel {
+                id
+                name
+                type
+              }
+              target {
+                id
+                slug
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function readOrganizationInfo(
+  selector: {
+    organizationSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readOrganizationInfo($selector: OrganizationSelectorInput!) {
+        organization(selector: $selector) {
+          organization {
+            id
+            slug
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
+export function readProjectInfo(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readProjectInfo($selector: ProjectSelectorInput!) {
+        project(selector: $selector) {
+          id
+          slug
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
+export function readTargetInfo(
+  selector: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  },
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      query readTargetInfo($selector: TargetSelectorInput!) {
+        target(selector: $selector) {
+          id
+          slug
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      selector,
+    },
+  });
+}
+
 export function createMemberRole(input: CreateMemberRoleInput, authToken: string) {
   return execute({
     document: graphql(`
@@ -892,6 +1038,35 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   });
 }
 
+export function readClientStats(selector: ClientStatsInput, token: string) {
+  return execute({
+    document: graphql(`
+      query IntegrationTests_ClientStat($selector: ClientStatsInput!) {
+        clientStats(selector: $selector) {
+          totalRequests
+          totalVersions
+          operations {
+            nodes {
+              id
+              name
+              operationHash
+              count
+            }
+          }
+          versions(limit: 25) {
+            version
+            count
+          }
+        }
+      }
+    `),
+    token,
+    variables: {
+      selector,
+    },
+  });
+}
+
 export function readOperationsStats(input: OperationsStatsSelectorInput, token: string) {
   return execute({
     document: graphql(`
@@ -912,6 +1087,16 @@ export function readOperationsStats(input: OperationsStatsSelectorInput, token: 
                 p95
                 p99
               }
+            }
+          }
+          clients {
+            nodes {
+              name
+              versions {
+                version
+                count
+              }
+              count
             }
           }
         }
@@ -1245,16 +1430,10 @@ export function createCdnAccess(selector: TargetSelectorInput, token: string) {
   });
 }
 
-export async function fetchSchemaFromCDN(selector: TargetSelectorInput, token: string) {
-  const cdnAccessResult = await createCdnAccess(selector, token).then(r =>
-    r.expectNoGraphQLErrors(),
-  );
-
-  const cdn = cdnAccessResult.createCdnAccessToken.ok!;
-
-  const res = await fetch(cdn.cdnUrl + '/sdl', {
+export async function fetchSchemaFromCDN(cdnUrl: string, secretAccessToken: string) {
+  const res = await fetch(cdnUrl + '/sdl', {
     headers: {
-      'X-Hive-CDN-Key': cdn.secretAccessToken,
+      'X-Hive-CDN-Key': secretAccessToken,
     },
   });
 
@@ -1264,16 +1443,10 @@ export async function fetchSchemaFromCDN(selector: TargetSelectorInput, token: s
   };
 }
 
-export async function fetchSupergraphFromCDN(selector: TargetSelectorInput, token: string) {
-  const cdnAccessResult = await createCdnAccess(selector, token).then(r =>
-    r.expectNoGraphQLErrors(),
-  );
-
-  const cdn = cdnAccessResult.createCdnAccessToken.ok!;
-
-  const res = await fetch(cdn.cdnUrl + '/supergraph', {
+export async function fetchSupergraphFromCDN(cdnUrl: string, secretAccessToken: string) {
+  const res = await fetch(cdnUrl + '/supergraph', {
     headers: {
-      'X-Hive-CDN-Key': cdn.secretAccessToken,
+      'X-Hive-CDN-Key': secretAccessToken,
     },
   });
 
@@ -1285,17 +1458,11 @@ export async function fetchSupergraphFromCDN(selector: TargetSelectorInput, toke
   };
 }
 
-export async function fetchMetadataFromCDN(selector: TargetSelectorInput, token: string) {
-  const cdnAccessResult = await createCdnAccess(selector, token).then(r =>
-    r.expectNoGraphQLErrors(),
-  );
-
-  const cdn = cdnAccessResult.createCdnAccessToken.ok!;
-
-  const res = await fetch(cdn.cdnUrl + '/metadata', {
+export async function fetchMetadataFromCDN(cdnUrl: string, secretAccessToken: string) {
+  const res = await fetch(cdnUrl + '/metadata', {
     headers: {
       Accept: 'application/json',
-      'X-Hive-CDN-Key': cdn.secretAccessToken,
+      'X-Hive-CDN-Key': secretAccessToken,
     },
   });
 

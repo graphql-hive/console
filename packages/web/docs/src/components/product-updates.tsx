@@ -38,21 +38,22 @@ export async function getChangelogs(): Promise<Changelog[]> {
   return productUpdatesFolder
     .slice(1) // cut `_meta.ts` which always comes first
     .map(item => {
-      if (!item.children) {
+      if (!('children' in item)) {
         if (!('title' in item.frontMatter!)) {
           throw new Error(`Incorrect Front matter on page ${item.route}`);
         }
 
         // Regular mdx page
         return {
-          title: item.frontMatter.title,
-          date: item.frontMatter.date.toISOString(),
-          description: item.frontMatter.description,
+          title: item.frontMatter.title || '',
+          date: 'date' in item.frontMatter ? item.frontMatter.date.toISOString() : '',
+          description: item.frontMatter.description || '',
           route: item.route!,
         };
       }
       // Folder
-      const indexPage = item.children.find(item => item.name === 'index');
+      const indexPage = 'children' in item && item.children?.find(item => item.name === 'index');
+
       if (!indexPage) {
         throw new Error('Changelog folder must have an "index.mdx" page');
       }

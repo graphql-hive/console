@@ -140,38 +140,41 @@ function TargetOperationsPageContent(props: {
   });
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentOrganization = query.data?.organization?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
+  if (!currentOrganization) {
+    return null;
+  }
+
+  if (!hasCollectedOperations) {
+    return (
+      <div className="py-8">
+        <EmptyList
+          title="Hive is waiting for your first collected operation"
+          description="You can collect usage of your GraphQL API with Hive Client"
+          docsUrl="/features/usage-reporting"
+        />
+      </div>
+    );
+  }
+
   return (
-    <TargetLayout
+    <OperationsView
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      page={Page.Insights}
-    >
-      {currentOrganization ? (
-        hasCollectedOperations ? (
-          <OperationsView
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
-          />
-        ) : (
-          <div className="py-8">
-            <EmptyList
-              title="Hive is waiting for your first collected operation"
-              description="You can collect usage of your GraphQL API with Hive Client"
-              docsUrl="/features/usage-reporting"
-            />
-          </div>
-        )
-      ) : null}
-    </TargetLayout>
+      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+    />
   );
 }
 
@@ -183,7 +186,14 @@ export function TargetInsightsPage(props: {
   return (
     <>
       <Meta title="Insights" />
-      <TargetOperationsPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.Insights}
+      >
+        <TargetOperationsPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

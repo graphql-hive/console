@@ -1,4 +1,4 @@
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
@@ -31,20 +31,16 @@ const CreateContractMutation = graphql(`
 `);
 
 test.concurrent('schema check with successful contract checks', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();
-  const { createToken, target, setNativeFederation } = await createProject(ProjectType.Federation);
+  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
+    ProjectType.Federation,
+  );
   await setFeatureFlag('compareToPreviousComposableVersion', true);
   await setNativeFederation(true);
 
   // Create a token with write rights
-  const writeToken = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const writeToken = await createTargetAccessToken({});
 
   // Publish schema with write rights
   const publishResult = await writeToken
@@ -77,7 +73,7 @@ test.concurrent('schema check with successful contract checks', async ({ expect 
         excludeTags: ['toyota'],
       },
     },
-    authToken: writeToken.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(createContractResult.createContract.error).toBeNull();
@@ -102,20 +98,16 @@ test.concurrent('schema check with successful contract checks', async ({ expect 
 });
 
 test.concurrent('schema check with failing contract composition', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag } = await createOrg();
-  const { createToken, target, setNativeFederation } = await createProject(ProjectType.Federation);
+  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
+    ProjectType.Federation,
+  );
   await setFeatureFlag('compareToPreviousComposableVersion', true);
   await setNativeFederation(true);
 
   // Create a token with write rights
-  const writeToken = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const writeToken = await createTargetAccessToken({});
 
   // Publish schema with write rights
   const publishResult = await writeToken
@@ -148,7 +140,7 @@ test.concurrent('schema check with failing contract composition', async ({ expec
         excludeTags: ['toyota'],
       },
     },
-    authToken: writeToken.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(createContractResult.createContract.error).toBeNull();
@@ -187,22 +179,16 @@ test.concurrent('schema check with failing contract composition', async ({ expec
 test.concurrent(
   'schema check with failing contract composition (multiple contracts)',
   async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
-    const { createToken, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     // Publish schema with write rights
     const publishResult = await writeToken
@@ -235,7 +221,7 @@ test.concurrent(
           excludeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -250,7 +236,7 @@ test.concurrent(
           includeTags: ['fiat'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -396,21 +382,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -426,7 +405,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -454,11 +433,7 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readToken = await createTargetAccessToken({});
 
     // Check schema with read rights
     const checkResult = await readToken
@@ -528,7 +503,7 @@ test.concurrent(
         },
         id: schemaCheckId,
       },
-      authToken: readToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(schemaCheck?.target?.schemaCheck).toMatchObject({
@@ -569,21 +544,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -600,7 +568,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -628,10 +596,8 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     // Check schema with read rights
@@ -733,7 +699,7 @@ test.concurrent(
         },
         id: newSchemaCheckId,
       },
-      authToken: readToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(newSchemaCheck?.target?.schemaCheck).toMatchObject({
@@ -774,21 +740,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -805,7 +764,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -833,10 +792,8 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     // Check schema with read rights
@@ -938,7 +895,7 @@ test.concurrent(
         },
         id: newSchemaCheckId,
       },
-      authToken: readToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(newSchemaCheck?.target?.schemaCheck).toMatchObject({
@@ -972,21 +929,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -1003,7 +953,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -1031,10 +981,8 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     // Check schema with read rights
@@ -1136,7 +1084,7 @@ test.concurrent(
         },
         id: newSchemaCheckId,
       },
-      authToken: readToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(newSchemaCheck?.target?.schemaCheck).toMatchObject({
@@ -1181,21 +1129,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -1211,7 +1152,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -1238,10 +1179,8 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     // Check schema with read rights
@@ -1299,21 +1238,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization, setFeatureFlag } = await createOrg();
-    const { createToken, project, target, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
     await setFeatureFlag('compareToPreviousComposableVersion', true);
     await setNativeFederation(true);
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const service = 'hello';
     const serviceUrl = 'http://hello.com';
@@ -1329,7 +1261,7 @@ test.concurrent(
           includeTags: ['toyota'],
         },
       },
-      authToken: writeToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(createContractResult.createContract.error).toBeNull();
@@ -1355,10 +1287,8 @@ test.concurrent(
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     // Create a token with read rights
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     // Check schema with read rights
@@ -1398,7 +1328,7 @@ test.concurrent(
         },
         id: schemaCheckId,
       },
-      authToken: readToken.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(schemaCheck?.target?.schemaCheck).toMatchObject({

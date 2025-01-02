@@ -1,5 +1,13 @@
 # @graphql-hive/envelop
 
+## 0.33.11
+
+### Patch Changes
+
+- [#6057](https://github.com/graphql-hive/console/pull/6057)
+  [`e4f8b0a`](https://github.com/graphql-hive/console/commit/e4f8b0a51d1158da966a719f321bc13e5af39ea0)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Explain what Hive is in README
+
 ## 0.33.10
 
 ### Patch Changes

@@ -1,4 +1,4 @@
-import { ProjectType, RegistryModel, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType, RegistryModel } from 'testkit/gql/graphql';
 import { initSeed } from './seed';
 
 export async function prepareProject(
@@ -8,31 +8,27 @@ export async function prepareProject(
   const { createOrg } = await initSeed().createOwner();
   const { organization, createProject, setFeatureFlag, setOrganizationSchemaPolicy } =
     await createOrg();
-  const { project, createToken, target, targets, setProjectSchemaPolicy, setNativeFederation } =
-    await createProject(projectType, {
-      useLegacyRegistryModels: model === RegistryModel.Legacy,
-    });
-
-  // Create a token with write rights
   const {
-    secret: readwriteToken,
+    project,
+    createTargetAccessToken,
     createCdnAccess,
-    fetchMetadataFromCDN,
-  } = await createToken({
-    organizationScopes: [],
-    projectScopes: [],
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
+    target,
+    targets,
+    setProjectSchemaPolicy,
+    setNativeFederation,
+    fetchVersions,
+  } = await createProject(projectType, {
+    useLegacyRegistryModels: model === RegistryModel.Legacy,
   });
 
-  // Create a token with read-only rights
-  const { secret: readonlyToken, fetchVersions } = await createToken({
-    organizationScopes: [],
-    projectScopes: [],
-    targetScopes: [TargetAccessScope.RegistryRead],
+  const { secret: readwriteToken } = await createTargetAccessToken({});
+
+  const { secret: readonlyToken } = await createTargetAccessToken({
+    mode: 'readOnly',
   });
 
   // Create CDN token
-  const { secretAccessToken: cdnToken, cdnUrl } = await createCdnAccess();
+  const { secretAccessToken: cdnToken, cdnUrl, fetchMetadataFromCDN } = await createCdnAccess();
 
   return {
     organization,

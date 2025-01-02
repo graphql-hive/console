@@ -1,6 +1,6 @@
 import { USAGE_DEFAULT_LIMITATIONS } from '../../constants';
 import { BillingProvider } from '../../providers/billing.provider';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const billingPlans: NonNullable<QueryResolvers['billingPlans']> = async (
   _,

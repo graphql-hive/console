@@ -1,5 +1,5 @@
 import { SchemaManager } from '../../providers/schema-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const schemaVersionForActionId: NonNullable<
   QueryResolvers['schemaVersionForActionId']

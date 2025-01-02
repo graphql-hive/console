@@ -1,6 +1,6 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaPublisher } from '../../providers/schema-publisher';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateSchemaVersionStatus: NonNullable<
   MutationResolvers['updateSchemaVersionStatus']

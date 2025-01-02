@@ -35,7 +35,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { canAccessProject, ProjectAccessScope, useProjectAccess } from '@/lib/access/project';
+import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useNotifications, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -327,6 +327,8 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     slug
     type
     isProjectNameInGitHubCheckEnabled
+    viewerCanDelete
+    viewerCanModifySettings
     ...ModelMigrationSettings_ProjectFragment
     ...ExternalCompositionSettings_ProjectFragment
     ...NativeCompositionSettings_ProjectFragment
@@ -363,91 +365,98 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
 
   const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
   const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);
-  const hasAccess = useProjectAccess({
-    scope: ProjectAccessScope.Settings,
-    member: organization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
+
+  // Verify wether user is allowed to access the settings
+  // Otherwise redirect to the project overview.
+  useRedirect({
+    canAccess: project?.viewerCanModifySettings === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+        },
+      });
+    },
+    entity: project,
   });
 
+  if (project?.viewerCanModifySettings === false) {
+    return null;
+  }
+
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   return (
-    <ProjectLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      page={Page.Settings}
-      className="flex flex-col gap-y-10"
-    >
-      <div>
-        <div className="py-6">
-          <Title>Settings</Title>
-          <Subtitle>Manage your project settings</Subtitle>
-        </div>
-        {hasAccess ? (
-          <div className="flex flex-col gap-y-4">
-            {project && organization ? (
-              <>
-                <ModelMigrationSettings project={project} organizationSlug={organization.slug} />
-                <ProjectSettingsPage_SlugForm
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                />
-                {query.data?.isGitHubIntegrationFeatureEnabled &&
-                !project.isProjectNameInGitHubCheckEnabled ? (
-                  <GitHubIntegration
-                    organizationSlug={organization.slug}
-                    projectSlug={project.slug}
-                  />
-                ) : null}
-
-                {project.type === ProjectType.Federation ? (
-                  <ExternalCompositionSettings project={project} organization={organization} />
-                ) : null}
-
-                {project.type === ProjectType.Federation ? (
-                  <NativeCompositionSettings project={project} organization={organization} />
-                ) : null}
-
-                {canAccessProject(ProjectAccessScope.Delete, organization.me) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Delete Project</CardTitle>
-                      <CardDescription>
-                        Deleting an project will delete all the targets, schemas and data associated
-                        with it.
-                        <br />
-                        <DocsLink
-                          className="text-muted-foreground text-sm"
-                          href="/management/projects#delete-a-project"
-                        >
-                          <strong>This action is not reversible!</strong> You can find more
-                          information about this process in the documentation
-                        </DocsLink>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter>
-                      <Button variant="destructive" onClick={toggleModalOpen}>
-                        Delete Project
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                )}
-                <DeleteProjectModal
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
-                  isOpen={isModalOpen}
-                  toggleModalOpen={toggleModalOpen}
-                />
-              </>
+    <div>
+      <div className="py-6">
+        <Title>Settings</Title>
+        <Subtitle>Manage your project settings</Subtitle>
+      </div>
+      <div className="flex flex-col gap-y-4">
+        {project && organization ? (
+          <>
+            <ModelMigrationSettings project={project} organizationSlug={organization.slug} />
+            <ProjectSettingsPage_SlugForm
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+            />
+            {query.data?.isGitHubIntegrationFeatureEnabled &&
+            !project.isProjectNameInGitHubCheckEnabled ? (
+              <GitHubIntegration organizationSlug={organization.slug} projectSlug={project.slug} />
             ) : null}
-          </div>
+
+            {project.type === ProjectType.Federation ? (
+              <ExternalCompositionSettings project={project} organization={organization} />
+            ) : null}
+
+            {project.type === ProjectType.Federation ? (
+              <NativeCompositionSettings project={project} organization={organization} />
+            ) : null}
+
+            {project.viewerCanDelete && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Delete Project</CardTitle>
+                  <CardDescription>
+                    Deleting an project will delete all the targets, schemas and data associated
+                    with it.
+                    <br />
+                    <DocsLink
+                      className="text-muted-foreground text-sm"
+                      href="/management/projects#delete-a-project"
+                    >
+                      <strong>This action is not reversible!</strong> You can find more information
+                      about this process in the documentation
+                    </DocsLink>
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                  <Button variant="destructive" onClick={toggleModalOpen}>
+                    Delete Project
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+            <DeleteProjectModal
+              projectSlug={props.projectSlug}
+              organizationSlug={props.organizationSlug}
+              isOpen={isModalOpen}
+              toggleModalOpen={toggleModalOpen}
+            />
+          </>
         ) : null}
       </div>
-    </ProjectLayout>
+    </div>
   );
 }
 
@@ -455,10 +464,17 @@ export function ProjectSettingsPage(props: { organizationSlug: string; projectSl
   return (
     <>
       <Meta title="Project settings" />
-      <ProjectSettingsContent
+      <ProjectLayout
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
-      />
+        page={Page.Settings}
+        className="flex flex-col gap-y-10"
+      >
+        <ProjectSettingsContent
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+        />
+      </ProjectLayout>
     </>
   );
 }

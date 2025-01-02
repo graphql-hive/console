@@ -3,7 +3,6 @@ import { Callout, Tabs } from '@theguild/components'
 import orgImage from '../../../../public/docs/pages/first-steps/org.png'
 import newOrgImage from '../../../../public/docs/pages/management/create-an-organization-button.png'
 import orgCustomRoleImage from '../../../../public/docs/pages/management/org-custom-role.png'
-import githubIntegrationImage from '../../../../public/docs/pages/management/org-github-integration.png'
 import orgInviteLinkImage from '../../../../public/docs/pages/management/org-invite-link.png'
 import orgInviteMemberImage from '../../../../public/docs/pages/management/org-invite-member.png'
 import orgMembersImage from '../../../../public/docs/pages/management/org-members.png'
@@ -130,15 +129,12 @@ GraphQL schema checks and pushes, and will integrate
 [GitHub's Check Suite](https://docs.github.com/en/rest/checks/suites?apiVersion=2022-11-28) feature
 with Hive.
 
-<NextImage
-  alt="Hive and GitHub Integration"
-  src={githubIntegrationImage}
-  className="mt-8 max-w-2xl rounded-lg drop-shadow-md"
-/>
+To activate this feature in your organization:
 
-To activate this feature in your organization, go to the **Integrations** section of your
-**Settings** page, and click **Connect GitHub** button. You'll get redirected to **GitHub** to
-authorize and approve the GitHub App installation.
+1. Go to the **Github Integration** section of your organization's **Settings** page
+2. Click **Connect GitHub** button.
+
+You'll get redirected to **GitHub** to authorize and approve the GitHub App installation.
 
 <Callout type="info">
   Make sure to select the GitHub repositories you plan to run Hive CLI in. If you use the Hive CLI

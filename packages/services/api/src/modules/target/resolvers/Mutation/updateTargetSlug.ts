@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../providers/target-manager';
 import { TargetSlugModel } from '../../validation';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 const UpdateTargetSlugModel = z.object({
   slug: TargetSlugModel,

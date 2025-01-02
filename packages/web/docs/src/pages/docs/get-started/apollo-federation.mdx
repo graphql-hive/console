@@ -17,8 +17,10 @@ import tokenImage from '../../../../public/docs/pages/guides/token.png'
 
 # Get started with Apollo Federation
 
-Once you've created a Hive project of type **Apollo Federation**, you can start pushing your Apollo
+Once you've created a Hive project of type **Federation**, you can start pushing your GraphQL
 Federation subgraph schemas to the Hive registry.
+
+> Learn more about [GraphQL federation and its benefits](/federation).
 
 This guide will walk you through the basics of schema pushing, checking, and spin up the Hive
 Gateway serving the federated GraphQL schema.
@@ -471,7 +473,7 @@ Hive Gateway is the Federation Gateway that seamlessly integrates with the Hive 
 run Hive Gateay either as a Docker image, binary or NPM package.
 
 <Tabs items={['Binary', 'Docker', 'Node.js Package']}>
-  
+
 {/* Binary */}
 
 <Tabs.Tab>
@@ -507,7 +509,7 @@ following command to start a Hive Gateway instance from your existing Hive targe
 
 ```sh
 docker run --name hive-gateway -rm \
-  ghcr.io/ardatan/hive-gateway supergraph \
+  ghcr.io/graphql-hive/gateway supergraph \
   "<hive_cdn_endpoint>" \
   --hive-cdn-key "<hive_cdn_access_key>"
 ```
@@ -631,7 +633,7 @@ following command to start a Hive Gateway instance from your existing Hive targe
 
 ```sh
 docker run --name hive-gateway -rm \
-  ghcr.io/ardatan/hive-gateway supergraph \
+  ghcr.io/graphql-hive/gateway supergraph \
   "<hive_cdn_endpoint>" \
   --hive-cdn-key "<hive_cdn_access_key>" \
   --hive-registry-token "<hive_registry_token>"

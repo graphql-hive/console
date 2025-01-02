@@ -164,7 +164,7 @@ export const TransferOrganizationOwnershipModal = ({
     [setSelected, setFieldValue],
   );
 
-  const members = (query.data?.organization?.organization.members.nodes ?? []).filter(
+  const members = (query.data?.organization?.organization.members?.nodes ?? []).filter(
     member => !member.isOwner,
   );
 

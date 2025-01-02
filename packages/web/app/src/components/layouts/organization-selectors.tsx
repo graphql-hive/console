@@ -37,14 +37,18 @@ export function OrganizationSelector(props: {
         });
       }}
     >
-      <SelectTrigger variant="default">
+      <SelectTrigger variant="default" data-cy="organization-picker-trigger">
         <div className="font-medium" data-cy="organization-picker-current">
           {currentOrganization?.slug}
         </div>
       </SelectTrigger>
       <SelectContent>
         {organizations.map(org => (
-          <SelectItem key={org.slug} value={org.slug}>
+          <SelectItem
+            key={org.slug}
+            value={org.slug}
+            data-cy={`organization-picker-option-${org.slug}`}
+          >
             {org.slug}
           </SelectItem>
         ))}

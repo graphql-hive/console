@@ -1,4 +1,4 @@
-import type { TeamsWebhookChannelResolvers } from './../../../__generated__/types.next';
+import type { TeamsWebhookChannelResolvers } from './../../../__generated__/types';
 
 export const TeamsWebhookChannel: TeamsWebhookChannelResolvers = {
   __isTypeOf: channel => {

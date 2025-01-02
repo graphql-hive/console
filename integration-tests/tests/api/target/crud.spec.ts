@@ -51,7 +51,7 @@ test.concurrent(
   `changing a target's slug to a taken value should result in an error`,
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, organization, projects } = await createOrg();
+    const { createProject, organization } = await createOrg();
     const { project, targets } = await createProject(ProjectType.Single);
 
     const firstTarget = targets[0];
@@ -136,3 +136,29 @@ test.concurrent(
     expect(renameResult.updateTargetSlug.error?.message).toBeDefined();
   },
 );
+
+test.concurrent('organization member user can create a target', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { ownerEmail: orgMemberEmail, ownerToken: orgMemberToken } = await initSeed().createOwner();
+  const { createProject, inviteMember, joinMemberUsingCode } = await createOrg();
+  const inviteMemberResult = await inviteMember(orgMemberEmail);
+
+  if (inviteMemberResult.ok == null) {
+    throw new Error('Invite did not succeed' + JSON.stringify(inviteMemberResult));
+  }
+
+  const joinMemberUsingCodeResult = await joinMemberUsingCode(
+    inviteMemberResult.ok.code,
+    orgMemberToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(joinMemberUsingCodeResult.joinOrganization.__typename).toEqual('OrganizationPayload');
+
+  const { createTarget } = await createProject(ProjectType.Single);
+
+  const createTargetResult = await createTarget({
+    accessToken: orgMemberToken,
+  }).then(r => r.expectNoGraphQLErrors());
+  expect(createTargetResult.createTarget.error).toEqual(null);
+  expect(createTargetResult.createTarget.ok).not.toBeNull();
+});

@@ -2,10 +2,8 @@ import { useState } from 'react';
 import {
   addDays,
   addHours,
-  endOfHour,
   endOfMinute,
   formatISO,
-  startOfHour,
   startOfMinute,
   subHours,
   subMilliseconds,
@@ -128,6 +126,26 @@ function getUTCStartOfDay(date: Date) {
 /** Get the UTC end date of a day */
 function getUTCEndOfDay(date: Date) {
   return subMilliseconds(getUTCStartOfDay(addDays(date, 1)), 1);
+}
+
+function startOfHour(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours()),
+  );
+}
+
+function endOfHour(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      date.getUTCHours(),
+      59,
+      59,
+      999,
+    ),
+  );
 }
 
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {

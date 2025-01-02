@@ -46,11 +46,11 @@ const signingKey = 'my-secret-key'
 export const gatewayConfig = defineConfig({
   jwt: {
     // Look and extract for the token in the 'authorization' header, with the 'Bearer' prefix.
-    lookupLocations: [extractFromHeader({ name: 'authorization', prefix: 'Bearer' })],
+    tokenLookupLocations: [extractFromHeader({ name: 'authorization', prefix: 'Bearer' })],
     // Decode and validate the token using the provided signing key.
     singingKeyProviders: [createInlineSigningKeyProvider(signingKey)],
     // Forward the verified token payload to the upstream GraphQL subgraphs.
-    forwared: {
+    forward: {
       payload: true
     }
   }
@@ -66,10 +66,10 @@ import { defineConfig, createInlineSigningKeyProvider, createRemoteJwksSigningKe
 export const gatewayConfig = defineConfig({
   jwt: {
       // Forward the extracted token and claims to the upstream GraphQL subgraphs.
-      forwarded: {
-        payload: true, // optional, defualt is "true"
-        token: false, // optional, defualt is "false"
-        extensionsFieldName: "jwt", // optional, defualt is "jwt"
+      forward: {
+        payload: true, // optional, default is "true"
+        token: false, // optional, default is "false"
+        extensionsFieldName: "jwt", // optional, default is "jwt"
       },
       // Configure your signing providers: either a local signing-key or a remote JWKS are supported.
       singingKeyProviders: [
@@ -78,7 +78,7 @@ export const gatewayConfig = defineConfig({
       ]
       // Configure where to look for the JWT token: in the headers, or cookies.
       // By default, the plugin will look for the token in the 'authorization' header only.
-      lookupLocations: [
+      tokentokenLookupLocations: [
         extractFromHeader({ name: 'authorization', prefix: 'Bearer' }),
         extractFromCookie({ name: 'auth' }),
       ],
@@ -143,8 +143,8 @@ To pass the full token payload, you can use the `forwarded.claims` option:
 
 ```ts
 {
-  forwarded: {
-    payload: true // optional, defualt is "true"
+  forward: {
+    payload: true // optional, default is "true"
   }
 }
 ```
@@ -164,13 +164,13 @@ The token payload will be injected into `extensions.jwt.payload` of the upstream
 }
 ```
 
-You can also pass the full token, using the `forwared.token` option:
+You can also pass the full token, using the `forwarded.token` option:
 
 ```ts
 {
-  forwared: {
-    payload: true, // optional, defualt is "true"
-    token: true // optional, defualt is "false"
+  forward: {
+    payload: true, // optional, default is "true"
+    token: true // optional, default is "false"
   }
 }
 ```
@@ -200,8 +200,8 @@ Additionally, if you wish to change the name of the `jwt` field in the extension
 
 ```ts
 {
-  forwarded: {
-    extensionsFieldName: 'myJwt' // optional, defualt is "jwt"
+  forward: {
+    extensionsFieldName: 'myJwt' // optional, default is "jwt"
   }
 }
 ```
@@ -372,7 +372,7 @@ export const gatewayConfig = defineConfig({
   // ...
   jwt: {
     // ...
-    lookupLocations: [extractFromHeader({ name: 'x-auth-token', prefix: 'Bearer' })]
+    tokenLookupLocations: [extractFromHeader({ name: 'x-auth-token', prefix: 'Bearer' })]
   }
 })
 ```
@@ -393,7 +393,7 @@ export const gatewayConfig = defineConfig({
   // ...
   jwt: {
     // ...
-    lookupLocations: [extractFromCookie({ name: 'my-cookie' })]
+    tokenLookupLocations: [extractFromCookie({ name: 'my-cookie' })]
   }
   // Make sure you enabled cookie parsing in the gateway
   cookies: true,
@@ -419,7 +419,7 @@ export const gatewayConfig = defineConfig({
   // ...
   jwt: {
     // ...
-    lookupLocations: [getToken]
+    tokenLookupLocations: [getToken]
   }
 })
 ```
@@ -440,7 +440,7 @@ export const gatewayConfig = defineConfig({
   // ...
   jwt: {
     // ...
-    lookupLocations: [
+    tokenLookupLocations: [
       extractFromHeader({ name: 'authorization', prefix: 'Bearer' }),
       extractFromHeader({ name: 'x-legacy-auth' }),
       extractFromHeader({ name: 'x-api-key', prefix: 'API-Access' }),
@@ -629,7 +629,7 @@ export const gatewayConfig = defineConfig({
     // Then set generic auth plugin to use granular mode
     mode: 'protect-granular',
     // Set where to extract the payload
-    resolveUser: ctx => ctx.jwt?.payload,
+    resolveUserFn: ctx => ctx.jwt?.payload,
     // If you want to continue execution even if some fields are rejected
     rejectUnauthenticated: false
   }
@@ -674,11 +674,10 @@ this behavior by providing a custom `extractScopes` function.
 
 ```ts
 {
-  resolveUserFn,
   validateUser,
   mode: 'protect-granular',
   // Set where to extract the payload
-  resolveUser: ctx => ctx.jwt?.payload,
+  resolveUserFn: ctx => ctx.jwt?.payload,
   extractScopes: jwtPayload => jwtPayload?.scopes // Expected to return an array of strings
 }
 ```

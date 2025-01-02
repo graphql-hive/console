@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as cf from '@pulumi/cloudflare';
 import * as pulumi from '@pulumi/pulumi';
+import { Environment } from './environment';
 
 const webAppPkgJsonFilepath = join(__dirname, '../../packages/web/app/package.json');
 const webAppPkg = JSON.parse(readFileSync(webAppPkgJsonFilepath, 'utf8'));
@@ -14,16 +15,17 @@ function toExpressionList(items: string[]): string {
 }
 
 export function deployCloudFlareSecurityTransform(options: {
-  envName: string;
+  environment: Environment;
   ignoredPaths: string[];
   ignoredHosts: string[];
 }) {
   // We deploy it only once, because CloudFlare is not super friendly for multiple deployments of "http_response_headers_transform" rules
   // The single rule, deployed to prod, covers all other envs, and infers the hostname dynamically.
-  if (options.envName !== 'prod') {
+  if (!options.environment.isProduction) {
     console.warn(
-      `Skipped deploy security headers (see "cloudflare-security.ts") for env ${options.envName}`,
+      `Skipped deploy security headers (see "cloudflare-security.ts") for env ${options.environment.envName}`,
     );
+
     return;
   }
 
@@ -31,6 +33,7 @@ export function deployCloudFlareSecurityTransform(options: {
     options.ignoredPaths,
   )} } and not http.host in { ${toExpressionList(options.ignoredHosts)} }`;
 
+  // TODO: When Preflight PR is merged, we'll need to change this to build this host in a better way.
   const monacoCdnDynamicBasePath: `https://${string}/` = `https://cdn.jsdelivr.net/npm/monaco-editor@${monacoEditorVersion}/`;
   const monacoCdnStaticBasePath: `https://${string}/` = `https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/`;
   const crispHost = 'client.crisp.chat';
@@ -51,8 +54,7 @@ export function deployCloudFlareSecurityTransform(options: {
 
   const contentSecurityPolicy = `
   default-src 'self';
-  frame-src ${stripeHost} https://game.crisp.chat;
-  worker-src 'self' blob:;
+  frame-src ${stripeHost} https://game.crisp.chat https://{DYNAMIC_HOST_PLACEHOLDER};
   style-src 'self' 'unsafe-inline' ${crispHost} fonts.googleapis.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath};
   script-src 'self' 'unsafe-eval' 'unsafe-inline' {DYNAMIC_HOST_PLACEHOLDER} ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${cspHosts};
   connect-src 'self' * {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts}; 
@@ -60,6 +62,7 @@ export function deployCloudFlareSecurityTransform(options: {
   style-src-elem 'self' 'unsafe-inline' ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} fonts.googleapis.com rsms.me ${crispHost};
   font-src 'self' data: fonts.gstatic.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${crispHost};
   img-src * 'self' data: https: https://image.crisp.chat https://storage.crisp.chat ${gtmHost} ${crispHost};
+  worker-src 'self' blob:;
 `;
 
   const mergedCsp = contentSecurityPolicy.replace(/\s{2,}/g, ' ').trim();
@@ -115,7 +118,7 @@ export function deployCloudFlareSecurityTransform(options: {
             {
               operation: 'set',
               name: 'X-Frame-Options',
-              value: 'DENY',
+              value: 'SAMEORIGIN',
             },
             {
               operation: 'set',

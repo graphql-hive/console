@@ -200,7 +200,13 @@ function TypeExplorerPageContent(props: {
   }, [setDataRetentionInDays, retentionInDays]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
   const currentTarget = query.data?.target;
@@ -208,12 +214,7 @@ function TypeExplorerPageContent(props: {
   const latestSchemaVersion = currentTarget?.latestSchemaVersion;
 
   return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.Explorer}
-    >
+    <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Explore</Title>
@@ -258,7 +259,7 @@ function TypeExplorerPageContent(props: {
       ) : (
         <div>Not found</div>
       )}
-    </TargetLayout>
+    </>
   );
 }
 
@@ -272,7 +273,14 @@ export function TargetExplorerTypePage(props: {
     <>
       <Meta title={`Type ${props.typename}`} />
       <SchemaExplorerProvider>
-        <TypeExplorerPageContent {...props} />
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <TypeExplorerPageContent {...props} />
+        </TargetLayout>
       </SchemaExplorerProvider>
     </>
   );

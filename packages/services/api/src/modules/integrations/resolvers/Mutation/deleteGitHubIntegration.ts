@@ -1,7 +1,7 @@
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { GitHubIntegrationManager } from '../../providers/github-integration-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteGitHubIntegration: NonNullable<
   MutationResolvers['deleteGitHubIntegration']

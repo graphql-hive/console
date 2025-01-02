@@ -21,12 +21,13 @@ interface QueryResponse<T> {
 export type Action = (
   exec: (query: string, settings?: Record<string, string>) => Promise<void>,
   query: (queryString: string) => Promise<QueryResponse<unknown>>,
-  isGraphQLHiveCloud: boolean,
+  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
 ) => Promise<void>;
 
 export async function migrateClickHouse(
   isClickHouseMigrator: boolean,
   isHiveCloud: boolean,
+  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
   clickhouse: {
     protocol: string;
     host: string;
@@ -47,6 +48,7 @@ export async function migrateClickHouse(
   console.log('Username:          ', clickhouse.username);
   console.log('Password:          ', clickhouse.password.length);
   console.log('isGraphQLHiveCloud:', isHiveCloud);
+  console.log('Hive Environment  :', hiveCloudEnvironment);
 
   // Warm up ClickHouse instance.
   // This is needed because ClickHouse takes a while to start up
@@ -166,6 +168,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/008-daily-operations-log'),
     import('./clickhouse-actions/009-ttl-1-year'),
     import('./clickhouse-actions/010-app-deployment-operations'),
+    import('./clickhouse-actions/011-audit-logs'),
   ]);
 
   async function actionRunner(action: Action, index: number) {
@@ -183,7 +186,7 @@ export async function migrateClickHouse(
           await exec(query, settings);
         },
         query,
-        isHiveCloud,
+        hiveCloudEnvironment,
       );
     } catch (error) {
       console.error(error);

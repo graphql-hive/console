@@ -221,55 +221,55 @@ function HistoryPageContent(props: {
   }, [versionId, currentTarget?.latestSchemaVersion?.id]);
 
   if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
   }
 
-  return (
-    <TargetLayout
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      page={Page.History}
-      className="flex flex-row gap-x-6"
-    >
-      {hasVersions ? (
-        <>
-          <div>
-            <div className="py-6">
-              <Title>Versions</Title>
-              <Subtitle>Recently published schemas.</Subtitle>
-            </div>
-            <div className="flex flex-col gap-5">
-              <div className="flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 bg-gray-900/50 p-2.5">
-                {pageVariables.map((variables, i) => (
-                  <ListPage
-                    key={variables.after || 'initial'}
-                    variables={variables}
-                    isLastPage={i === pageVariables.length - 1}
-                    onLoadMore={after => {
-                      setPageVariables([...pageVariables, { after, first: 10 }]);
-                    }}
-                    versionId={versionId}
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <Outlet />
-        </>
-      ) : (
-        <div className="w-full">
+  if (hasVersions) {
+    return (
+      <>
+        <div>
           <div className="py-6">
             <Title>Versions</Title>
             <Subtitle>Recently published schemas.</Subtitle>
           </div>
-          {query.fetching ? null : noSchemaVersion}
+          <div className="flex flex-col gap-5">
+            <div className="flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 bg-gray-900/50 p-2.5">
+              {pageVariables.map((variables, i) => (
+                <ListPage
+                  key={variables.after || 'initial'}
+                  variables={variables}
+                  isLastPage={i === pageVariables.length - 1}
+                  onLoadMore={after => {
+                    setPageVariables([...pageVariables, { after, first: 10 }]);
+                  }}
+                  versionId={versionId}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                />
+              ))}
+            </div>
+          </div>
         </div>
-      )}
-    </TargetLayout>
+        <Outlet />
+      </>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="py-6">
+        <Title>Versions</Title>
+        <Subtitle>Recently published schemas.</Subtitle>
+      </div>
+      {query.fetching ? null : noSchemaVersion}
+    </div>
   );
 }
 
@@ -281,7 +281,15 @@ export function TargetHistoryPage(props: {
   return (
     <>
       <Meta title="History" />
-      <HistoryPageContent {...props} />
+      <TargetLayout
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        page={Page.History}
+        className="flex flex-row gap-x-6"
+      >
+        <HistoryPageContent {...props} />
+      </TargetLayout>
     </>
   );
 }

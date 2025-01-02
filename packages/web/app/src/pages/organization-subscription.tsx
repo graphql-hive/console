@@ -17,7 +17,6 @@ import { QueryError } from '@/components/ui/query-error';
 import { Card } from '@/components/v2/card';
 import Stat from '@/components/v2/stat';
 import { graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, useOrganizationAccess } from '@/lib/access/organization';
 import { formatNumber } from '@/lib/hooks';
 import { useChartStyles } from '@/utils';
 import { Link } from '@tanstack/react-router';
@@ -34,9 +33,7 @@ const SubscriptionPage_OrganizationFragment = graphql(`
   fragment SubscriptionPage_OrganizationFragment on Organization {
     id
     slug
-    me {
-      ...CanAccessOrganization_MemberFragment
-    }
+    viewerCanModifyBilling
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -93,12 +90,6 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
   const styles = useChartStyles();
-  const canAccess = useOrganizationAccess({
-    scope: OrganizationAccessScope.Settings,
-    member: organization?.me ?? null,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(
@@ -118,10 +109,6 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
     return null;
   }
 
-  if (!canAccess) {
-    return null;
-  }
-
   const today = startOfDay(new Date());
   const start = startOfMonth(today);
   const end = endOfMonth(today);
@@ -138,16 +125,18 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
             <Title>Your subscription</Title>
             <Subtitle>Explore your current plan and usage.</Subtitle>
           </div>
-          <div>
-            <Button asChild>
-              <Link
-                to="/$organizationSlug/view/manage-subscription"
-                params={{ organizationSlug: currentOrganization.slug }}
-              >
-                Manage subscription
-              </Link>
-            </Button>
-          </div>
+          {organization.viewerCanModifyBilling && (
+            <div>
+              <Button asChild>
+                <Link
+                  to="/$organizationSlug/view/manage-subscription"
+                  params={{ organizationSlug: currentOrganization.slug }}
+                >
+                  Manage subscription
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
         <div>
           <Card>

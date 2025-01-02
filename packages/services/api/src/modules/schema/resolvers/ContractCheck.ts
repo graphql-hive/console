@@ -1,5 +1,5 @@
 import { ContractsManager } from '../providers/contracts-manager';
-import type { ContractCheckResolvers } from './../../../__generated__/types.next';
+import type { ContractCheckResolvers } from './../../../__generated__/types';
 
 export const ContractCheck: ContractCheckResolvers = {
   contractVersion: (contractCheck, _, context) => {

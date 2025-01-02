@@ -24,14 +24,8 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
-import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import {
-  canAccessOrganization,
-  OrganizationAccessScope,
-  useOrganizationAccess,
-} from '@/lib/access/organization';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
@@ -60,6 +54,12 @@ const OrganizationLayout_OrganizationFragment = graphql(`
   fragment OrganizationLayout_OrganizationFragment on Organization {
     id
     slug
+    viewerCanModifySchemaPolicy
+    viewerCanCreateProject
+    viewerCanManageSupportTickets
+    viewerCanDescribeBilling
+    viewerCanAccessSettings
+    viewerCanSeeMembers
     me {
       ...CanAccessOrganization_MemberFragment
     }
@@ -107,16 +107,7 @@ export function OrganizationLayout({
   );
   const currentOrganization = organizations?.find(org => org.slug === props.organizationSlug);
 
-  useOrganizationAccess({
-    member: currentOrganization?.me ?? null,
-    scope: OrganizationAccessScope.Read,
-    redirect: true,
-    organizationSlug: props.organizationSlug,
-  });
-
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
-
-  const meInCurrentOrg = currentOrganization?.me;
 
   if (query.error) {
     return <QueryError error={query.error} organizationSlug={props.organizationSlug} />;
@@ -144,7 +135,7 @@ export function OrganizationLayout({
       </header>
       <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
         <div className="container flex items-center justify-between">
-          {currentOrganization && meInCurrentOrg ? (
+          {currentOrganization ? (
             <Tabs value={page} className="min-w-[600px]">
               <TabsList variant="menu">
                 <TabsTrigger variant="menu" value={Page.Overview} asChild>
@@ -155,7 +146,7 @@ export function OrganizationLayout({
                     Overview
                   </Link>
                 </TabsTrigger>
-                {canAccessOrganization(OrganizationAccessScope.Members, meInCurrentOrg) && (
+                {currentOrganization.viewerCanSeeMembers && (
                   <TabsTrigger variant="menu" value={Page.Members} asChild>
                     <Link
                       to="/$organizationSlug/view/members"
@@ -166,48 +157,46 @@ export function OrganizationLayout({
                     </Link>
                   </TabsTrigger>
                 )}
-                {canAccessOrganization(OrganizationAccessScope.Settings, meInCurrentOrg) && (
-                  <>
-                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                      <Link
-                        to="/$organizationSlug/view/policy"
-                        params={{ organizationSlug: currentOrganization.slug }}
-                      >
-                        Policy
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                      <Link
-                        to="/$organizationSlug/view/settings"
-                        params={{ organizationSlug: currentOrganization.slug }}
-                      >
-                        Settings
-                      </Link>
-                    </TabsTrigger>
-                  </>
+                {currentOrganization.viewerCanModifySchemaPolicy && (
+                  <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                    <Link
+                      to="/$organizationSlug/view/policy"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Policy
+                    </Link>
+                  </TabsTrigger>
                 )}
-                {canAccessOrganization(OrganizationAccessScope.Read, meInCurrentOrg) &&
-                  env.zendeskSupport && (
-                    <TabsTrigger variant="menu" value={Page.Support} asChild>
-                      <Link
-                        to="/$organizationSlug/view/support"
-                        params={{ organizationSlug: currentOrganization.slug }}
-                      >
-                        Support
-                      </Link>
-                    </TabsTrigger>
-                  )}
-                {getIsStripeEnabled() &&
-                  canAccessOrganization(OrganizationAccessScope.Settings, meInCurrentOrg) && (
-                    <TabsTrigger variant="menu" value={Page.Subscription} asChild>
-                      <Link
-                        to="/$organizationSlug/view/subscription"
-                        params={{ organizationSlug: currentOrganization.slug }}
-                      >
-                        Subscription
-                      </Link>
-                    </TabsTrigger>
-                  )}
+                {currentOrganization.viewerCanAccessSettings && (
+                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
+                    <Link
+                      to="/$organizationSlug/view/settings"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Settings
+                    </Link>
+                  </TabsTrigger>
+                )}
+                {currentOrganization.viewerCanManageSupportTickets && (
+                  <TabsTrigger variant="menu" value={Page.Support} asChild>
+                    <Link
+                      to="/$organizationSlug/view/support"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Support
+                    </Link>
+                  </TabsTrigger>
+                )}
+                {getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling && (
+                  <TabsTrigger variant="menu" value={Page.Subscription} asChild>
+                    <Link
+                      to="/$organizationSlug/view/subscription"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Subscription
+                    </Link>
+                  </TabsTrigger>
+                )}
               </TabsList>
             </Tabs>
           ) : (
@@ -217,9 +206,14 @@ export function OrganizationLayout({
               <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
             </div>
           )}
-          {currentOrganization ? (
+          {currentOrganization?.viewerCanCreateProject ? (
             <>
-              <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
+              <Button
+                onClick={toggleModalOpen}
+                variant="link"
+                className="text-orange-500"
+                data-cy="new-project-button"
+              >
                 <PlusIcon size={16} className="mr-2" />
                 New project
               </Button>
@@ -381,7 +375,7 @@ export function CreateProjectModalContent(props: {
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
       <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
         <Form {...props.form}>
-          <form onSubmit={props.form.handleSubmit(props.onSubmit)}>
+          <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
             <DialogHeader className="mb-8">
               <DialogTitle>Create a project</DialogTitle>
               <DialogDescription>
@@ -397,7 +391,12 @@ export function CreateProjectModalContent(props: {
                     <FormItem className="mt-0">
                       <FormLabel>Slug of your project</FormLabel>
                       <FormControl>
-                        <Input placeholder="my-project" autoComplete="off" {...field} />
+                        <Input
+                          placeholder="my-project"
+                          data-cy="slug"
+                          autoComplete="off"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -452,6 +451,7 @@ export function CreateProjectModalContent(props: {
               <Button
                 className="w-full"
                 type="submit"
+                data-cy="submit"
                 disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
               >
                 {props.form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}

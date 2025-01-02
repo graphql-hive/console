@@ -1,4 +1,4 @@
-import type { BillingDetailsResolvers } from './../../../__generated__/types.next';
+import type { BillingDetailsResolvers } from './../../../__generated__/types';
 
 export const BillingDetails: BillingDetailsResolvers = {
   city: bd => bd.address?.city || null,

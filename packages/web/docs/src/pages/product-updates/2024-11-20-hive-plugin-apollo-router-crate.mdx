@@ -1,0 +1,65 @@
+---
+title: Hive Plugin for Apollo-Router now available on Crates.io
+description:
+  We've published the Hive Plugin for Apollo-Router on Crates.io. Learn how to use it in your custom
+  Apollo-Router projects.
+date: 2024-11-20
+authors: [dotan]
+---
+
+We're excited to announce that the
+[Hive Plugin for Apollo-Router is now available on Crates.io](https://crates.io/crates/hive-apollo-router-plugin)!
+
+## Why?
+
+The Hive Plugin for Apollo-Router is an integration plugin that allows you to easily integrate
+Hive's features into your Apollo-Router projects.
+
+By using Hive Plugin for Apollo-Router, you can leverage Hive's powerful features such as:
+
+- [Fetching Supergraph from Hive CDN](/docs/high-availability-cdn)
+- [Sending usage information](/docs/schema-registry/usage-reporting)
+- (Coming Soon!)
+  [Persisted Documents (using App Deployments)](/docs/schema-registry/app-deployments)
+
+Hive provides a
+[drop-in replacement for Apollo-Router binary/Docker image](/docs/other-integrations/apollo-router)
+that you can use directly, without compiling or installing dependencies.
+
+But, **for more advanced users who want to build a custom Apollo-Router with their own native
+plugins, you can now use the Hive plugin directly from Crates.io!**
+
+## How to use?
+
+Start by adding the Hive plugin dependency to your `Cargo.toml`:
+
+```toml
+[dependencies]
+hive-apollo-router-plugin = "..."
+```
+
+And then intergrate the plugin in your codebase:
+
+```rs
+// import the registry instance and the plugin registration function
+use hive_apollo_router_plugin::registry::HiveRegistry;
+use hive_apollo_router_plugin::usage::register;
+
+// In your main function, make sure to register the plugin before you create or initialize Apollo-Router
+fn main() {
+    // Register the Hive usage_reporting plugin
+    register();
+
+    // Initialize the Hive Registry instance and start the Apollo Router
+    match HiveRegistry::new(None).and(apollo_router::main()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    }
+}
+```
+
+For additional information about using Hive with Apollo-Router, please refer to our
+[integration documentation](/docs/other-integrations/apollo-router).

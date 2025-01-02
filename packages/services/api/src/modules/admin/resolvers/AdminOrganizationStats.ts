@@ -1,5 +1,5 @@
 import { AdminManager } from '../providers/admin-manager';
-import type { AdminOrganizationStatsResolvers } from './../../../__generated__/types.next';
+import type { AdminOrganizationStatsResolvers } from './../../../__generated__/types';
 
 export const AdminOrganizationStats: AdminOrganizationStatsResolvers = {
   operations: async (stats, _arg, { injector }) => {

@@ -98,7 +98,7 @@ test.concurrent(
       userId: member.user.id,
     });
 
-    const adminRoleId = organization.memberRoles.find(r => r.name === 'Admin')?.id;
+    const adminRoleId = organization.memberRoles?.find(r => r.name === 'Admin')?.id;
 
     if (!adminRoleId) {
       throw new Error('Admin role not found');
@@ -301,7 +301,7 @@ test.concurrent('cannot invite a member with more access than the inviter', asyn
     assignMemberRole,
   } = await inviteAndJoinMember();
 
-  const adminRoleId = organization.memberRoles.find(r => r.name === 'Admin')?.id;
+  const adminRoleId = organization.memberRoles?.find(r => r.name === 'Admin')?.id;
   if (!adminRoleId) {
     throw new Error('Admin role not found');
   }

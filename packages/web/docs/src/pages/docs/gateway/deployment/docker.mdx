@@ -29,8 +29,8 @@ For example, changing the supergraph to use the `my-schema.graphql` schema inste
 ```sh
 docker run \
   -p 4000:4000 \
-  -v "$(pwd)/my-schema.graphql:/serve/my-schema.graphql" \
-  ghcr.io/ardatan/hive-gateway supergraph my-schema.graphql
+  -v "$(pwd)/my-schema.graphql:/gateway/my-schema.graphql" \
+  ghcr.io/graphql-hive/gateway supergraph my-schema.graphql
 ```
 
 For a full list of CLI arguments, please refer to the
@@ -56,8 +56,8 @@ export const gatewayConfig = defineConfig({
 ```sh
 docker run \
   -p 4000:4000 \
-  -v "$(pwd)/gateway.config.ts:/serve/gateway.config.ts" \
-  ghcr.io/ardatan/hive-gateway proxy
+  -v "$(pwd)/gateway.config.ts:/gateway/gateway.config.ts" \
+  ghcr.io/graphql-hive/gateway proxy
 ```
 
 For a full list of CLI arguments, please refer to the
@@ -76,8 +76,8 @@ running the image:
 ```sh
 docker run \
   -p 8080:8080 \
-  -v "$(pwd)/supergraph.graphql:/serve/supergraph.graphql" \
-  ghcr.io/ardatan/hive-gateway supergraph --port=8080
+  -v "$(pwd)/supergraph.graphql:/gateway/supergraph.graphql" \
+  ghcr.io/graphql-hive/gateway supergraph --port=8080
 ```
 
 ## Running
@@ -88,8 +88,8 @@ running the Docker image is as easy as:
 ```sh
 docker run \
   -p 4000:4000 \
-  -v "$(pwd)/supergraph.graphql:/serve/gateway.config.ts" \
-  ghcr.io/ardatan/hive-gateway supergraph
+  -v "$(pwd)/supergraph.graphql:/gateway/gateway.config.ts" \
+  ghcr.io/graphql-hive/gateway supergraph
 ```
 
 ## Docker Compose
@@ -102,7 +102,7 @@ Start by defining the `docker-compose.yml`
 ```yaml
 services:
   hive-gateway:
-    image: ghcr.io/ardatan/hive-gateway
+    image: ghcr.io/graphql-hive/gateway
     command: supergraph
     ports:
       - '4000:4000'
@@ -112,7 +112,7 @@ services:
     #   HIVE_CDN_KEY: <secret>
     #   HIVE_REGISTRY_TOKEN: <secret>
     volumes:
-      - ./gateway.config.ts:/serve/gateway.config.ts
+      - ./gateway.config.ts:/gateway/gateway.config.ts
 ```
 
 And then simply start the services with:
@@ -126,7 +126,7 @@ docker compose up
 ### Install Plugin
 
 You may want to add additional functionality, or plugins to the base image - you just need to create
-a new Dockerfile basing the image off `ghcr.io/ardatan/hive-gateway`.
+a new Dockerfile basing the image off `ghcr.io/graphql-hive/gateway`.
 
 If need only a handful of plugins (or some other dependencies), you can simply extend the image and
 install the modules with `npm i`:
@@ -136,7 +136,7 @@ For example, adding
 the container would look like this:
 
 ```dockerfile filename="Dockerfile"
-FROM ghcr.io/ardatan/hive-gateway
+FROM ghcr.io/graphql-hive/gateway
 
 RUN npm i @escape.tech/graphql-armor-block-field-suggestions
 ```
@@ -168,7 +168,7 @@ And then simply start the new image with the config file mounted:
 ```sh
 docker run \
   -p 4000:4000 \
-  -v "$(pwd)/gateway.config.ts:/serve/gateway.config.ts" \
+  -v "$(pwd)/gateway.config.ts:/gateway/gateway.config.ts" \
   hive-gateway-w-block-suggestions supergraph
 ```
 
@@ -242,7 +242,7 @@ export const gatewayConfig = defineConfig({
 Your Dockerfile should then look something like this:
 
 ```dockerfile filename="Dockerfile"
-FROM ghcr.io/ardatan/hive-gateway
+FROM ghcr.io/graphql-hive/gateway
 
 # we dont install dev deps because:
 #   1. we need them for type checking only
@@ -272,8 +272,8 @@ docker run -p 4000:4000 hive-gateway-w-my-timing supergraph
 
 ```sh
 docker run -p 4000:4000 \
-  -v "$(pwd)/gateway.config.ts":/serve/gateway.config.ts \
-  -v "$(pwd)/my-timing.ts":/serve/my-timing.ts \
+  -v "$(pwd)/gateway.config.ts":/gateway/gateway.config.ts \
+  -v "$(pwd)/my-timing.ts":/gateway/my-timing.ts \
   hive-gateway-w-my-timing supergraph
 ```
 
@@ -321,7 +321,7 @@ export const gatewayConfig = defineConfig({ additionalResolvers })
 Your Dockerfile should then look something like this:
 
 ```dockerfile filename="Dockerfile"
-FROM ghcr.io/ardatan/hive-gateway
+FROM ghcr.io/graphql-hive/gateway
 
 # we dont install dev deps because:
 #   1. we need them for type checking only

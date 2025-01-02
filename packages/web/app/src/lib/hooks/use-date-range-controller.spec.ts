@@ -40,6 +40,121 @@ describe('useDateRangeController', () => {
         to: '1992-10-21T10:59:59.999Z', // endOfHour as it cannot use minutely aggregation
       },
     },
+    //
+    //
+    // Testing a date range,
+    // where potentially daily aggregation will be used.
+    // UTC+5:30
+    {
+      now: '1992-11-07T03:19:59+05:30', // it's 1992-11-06T21:49:59.000Z
+      from: 'now-7d',
+      to: 'now',
+      expected: {
+        from: '1992-10-30T21:00:00.000Z',
+        to: '1992-11-06T21:59:59.999Z',
+      },
+    },
+    // Testing a date range,
+    // where potentially daily aggregation will be used.
+    // The same as above but with a different time zone
+    {
+      now: '1992-11-06T21:49:59.000Z',
+      from: 'now-7d',
+      to: 'now',
+      expected: {
+        from: '1992-10-30T21:00:00.000Z',
+        to: '1992-11-06T21:59:59.999Z',
+      },
+    },
+    //
+    //
+    // Testing a date range,
+    // where potentially daily aggregation will be used.
+    // UTC-4:15
+    {
+      now: '1992-11-07T03:19:59-04:15', // it's 1992-11-07T07:34:59.000Z
+      from: 'now-7d',
+      to: 'now',
+      expected: {
+        from: '1992-10-31T07:00:00.000Z',
+        to: '1992-11-07T07:59:59.999Z',
+      },
+    },
+    // Testing a date range,
+    // where potentially daily aggregation will be used.
+    // The same as above but with a different time zone
+    {
+      now: '1992-11-07T07:34:59.000Z',
+      from: 'now-7d',
+      to: 'now',
+      expected: {
+        from: '1992-10-31T07:00:00.000Z',
+        to: '1992-11-07T07:59:59.999Z',
+      },
+    },
+    //
+    //
+    // Testing a date range,
+    // where potentially hourly aggregation will be used.
+    // UTC+5:30
+    {
+      now: '1992-11-07T03:19:59+05:30', // it's 1992-11-06T21:49:59.000Z
+      from: 'now-3d',
+      to: 'now',
+      expected: {
+        from: '1992-11-03T21:00:00.000Z',
+        to: '1992-11-06T21:59:59.999Z',
+      },
+    },
+    // Testing a date range,
+    // where potentially hourly aggregation will be used.
+    // The same as above but with a different time zone
+    {
+      now: '1992-11-06T21:49:59.000Z',
+      from: 'now-3d',
+      to: 'now',
+      expected: {
+        from: '1992-11-03T21:00:00.000Z',
+        to: '1992-11-06T21:59:59.999Z',
+      },
+    },
+    //
+    //
+    // Testing a date range,
+    // where potentially minutely aggregation will be used.
+    // UTC+5:30
+    {
+      now: '1992-11-07T03:19:59+05:30', // it's 1992-11-06T21:49:59.000Z
+      from: 'now-1d',
+      to: 'now',
+      expected: {
+        from: '1992-11-05T21:49:00.000Z',
+        to: '1992-11-06T21:49:59.999Z',
+      },
+    },
+    // Testing a date range,
+    // where potentially minutely aggregation will be used.
+    // The same as above but with a different time zone
+    {
+      now: '1992-11-06T21:49:59.000Z',
+      from: 'now-1d',
+      to: 'now',
+      expected: {
+        from: '1992-11-05T21:49:00.000Z',
+        to: '1992-11-06T21:49:59.999Z',
+      },
+    },
+    //
+    //
+    {
+      now: '1992-10-21T10:19:54.000Z',
+      from: 'now-7d',
+      to: 'now',
+      expected: {
+        from: '1992-10-14T10:00:00.000Z',
+        to: '1992-10-21T10:59:59.999Z', // endOfHour as it cannot use minutely aggregation
+      },
+    },
     {
       now: '1992-10-21T10:10:00.000Z',
       from: 'now-48d',

@@ -4,7 +4,7 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaPolicyApiProvider } from '../../providers/schema-policy-api.provider';
 import { SchemaPolicyProvider } from '../../providers/schema-policy.provider';
 import { formatTRPCErrors, policyInputToConfigObject } from '../../utils';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateSchemaPolicyForOrganization: NonNullable<
   MutationResolvers['updateSchemaPolicyForOrganization']

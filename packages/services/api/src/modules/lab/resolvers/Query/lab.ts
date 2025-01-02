@@ -1,32 +1,33 @@
-import { AuthManager } from '../../../auth/providers/auth-manager';
-import { TargetAccessScope } from '../../../auth/providers/target-access';
+import { Session } from '../../../auth/lib/authz';
 import { SchemaManager } from '../../../schema/providers/schema-manager';
 import { SchemaVersionHelper } from '../../../schema/providers/schema-version-helper';
 import { IdTranslator } from '../../../shared/providers/id-translator';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import { TargetManager } from '../../../target/providers/target-manager';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const lab: NonNullable<QueryResolvers['lab']> = async (_, { selector }, { injector }) => {
   const translator = injector.get(IdTranslator);
-  const [organization, project, target] = await Promise.all([
+  const [organization, project, targetId] = await Promise.all([
     translator.translateOrganizationId(selector),
     translator.translateProjectId(selector),
     translator.translateTargetId(selector),
   ]);
 
-  await injector.get(AuthManager).ensureTargetAccess({
+  await injector.get(Session).assertPerformAction({
+    action: 'laboratory:describe',
     organizationId: organization,
-    projectId: project,
-    targetId: target,
-    scope: TargetAccessScope.REGISTRY_READ,
+    params: {
+      organizationId: organization,
+      projectId: project,
+      targetId,
+    },
   });
+
+  const target = await injector.get(TargetManager).getTargetById({ targetId });
 
   const schemaManager = injector.get(SchemaManager);
 
-  const latestSchema = await schemaManager.getMaybeLatestValidVersion({
-    organizationId: organization,
-    projectId: project,
-    targetId: target,
-  });
+  const latestSchema = await schemaManager.getMaybeLatestValidVersion(target);
 
   if (!latestSchema) {
     return null;

@@ -44,7 +44,7 @@ It is probably the most straight forward way to deploy a Hive Gateway to GCP.
 ### Installation
 
 ```sh npm2yarn
-npm i @google-cloud/functions-framework @graphql-hive/gateway graphql
+npm i @google-cloud/functions-framework @graphql-hive/gateway-runtime graphql
 ```
 
 <Callout type="info">
@@ -67,12 +67,11 @@ See [Bundling Problems](/docs/gateway/deployment/serverless#bundling-problem) fo
 how to load the supergraph and `transports` option.
 
 ```js filename=index.js
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import http from '@graphql-mesh/transport-http'
 import supergraph from './supergraph.js'
 
 export const graphql = createGatewayRuntime({
-  // All options available in `gateway.config.ts` configuration can also be passed here.
   supergraph,
   transports: {
     http // For example, http transport is required for subgraphs using standard GraphQL over HTTP.
@@ -83,7 +82,7 @@ export const graphql = createGatewayRuntime({
 You can now deploy your function with `gcloud` CLI:
 
 ```bash
-$ gcloud functions deploy graphql --runtime nodejs18 --trigger-http --allow-unauthenticated
+gcloud functions deploy graphql --runtime nodejs18 --trigger-http --allow-unauthenticated
 ```
 
 You can now test your function by using the URL found in the `httpsTrigger.url` property returned by
@@ -111,7 +110,7 @@ npm i @graphql-hive/gateway graphql
 
 Add a `start` script to your `package.json`. Cloud Run needs to know how to start your application.
 
-<Callout>You can use Gateway CLI as usual with `gateway.config.ts`</Callout>
+<Callout>You can use Hive Gateway CLI as usual with `gateway.config.ts`</Callout>
 
 ```json
 {
@@ -132,7 +131,7 @@ You can now deploy to Cloud Run. You can use all default values, except the last
 unauthenticated access to your service.
 
 ```bash
-$ gcloud run deploy --source .
+gcloud run deploy --source .
 ```
 
 <Callout type="info">

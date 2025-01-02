@@ -1,6 +1,6 @@
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { buildGraphQLTypesFromSDL, withUsedByClients } from '../utils';
-import type { DeprecatedSchemaExplorerResolvers } from './../../../__generated__/types.next';
+import type { DeprecatedSchemaExplorerResolvers } from './../../../__generated__/types';
 
 export const DeprecatedSchemaExplorer: DeprecatedSchemaExplorerResolvers = {
   types: ({ sdl, supergraph, usage }, _, { injector }) => {

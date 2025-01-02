@@ -7,31 +7,34 @@ date: 2024-09-10
 authors: [laurin, kamil, arda]
 ---
 
-**TL;DR** We release Hive Gateway v1.0.0, a new GraphQL Federation Gateway that seamlessly
-integrates with the Hive Schema Registry. [Check out our new Gateway documentation](/docs/gateway).
+**TL;DR** We release Hive Gateway v1.0.0, a new [GraphQL Federation](/federation) Gateway that
+seamlessly integrates with the Hive Schema Registry.
+[Check out our new Gateway documentation](/docs/gateway).
 
 Hive Gateway is our fully open source and MIT-licensed GraphQL Gateway with native support for
 GraphQL Federation.
 
-Hive Gateway is built on top of our existing and widely used open-source packages such as GraphQL
-Yoga and GraphQL Tools.
+Hive Gateway is built on top of our existing and widely used open-source packages such as
+[GraphQL Yoga](https://the-guild.dev/graphql/yoga-server) and
+[GraphQL Tools](https://the-guild.dev/graphql/tools).
 
 With Hive Gateway you get access to the following features, that are currently behind a paywall in
 other gateway/router solutions.
 
-- GraphQL Subscriptions
-- Persisted Documents
+- [GraphQL Subscriptions](/docs/gateway/subscriptions)
+- [Persisted Documents](/docs/gateway/persisted-documents)
 - GraphQL API Usage and Analytics Reporting
-- Authentication and Authorization
-- Role-based Access Control
-- Observability with Open Telemetry and Prometheus
+- [Authentication and Authorization](/docs/gateway/authorization-authentication)
+- [Role-based Access Control](/docs/gateway/authorization-authentication#rolescope-based-authentication-rbac-with-requiresscope-directive)
+- Observability with [Open Telemetry and Prometheus](/docs/gateway/monitoring-tracing)
 
-We don't believe in gatekeeping essential features, and want to make them accessible to everyone.
+We don't believe in gate-keeping essential features, and want to make them accessible to everyone.
 
 To get started check out or new updated
-[getting started guide for Apollo Federation](/docs/get-started/apollo-federation) or immediatly
+[getting started guide for Apollo Federation](/docs/get-started/apollo-federation) or immediately
 dive into [our new gateway documentation](/docs/gateway).
 
-You can learn more about our decission to split the GraphQL Mesh and Hive Gateway projects in our
-blog post
+You can learn more about our decision to split the
+[GraphQL Mesh](https://the-guild.dev/graphql/mesh) and [Hive Gateway](/docs/gateway) projects in our
+blog post -
 [Introducing GraphQL Mesh v1 and Hive Gateway v1](https://the-guild.dev/blog/graphql-mesh-v1-hive-gateway-v1).

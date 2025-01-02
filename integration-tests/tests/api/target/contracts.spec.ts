@@ -1,5 +1,5 @@
 import { graphql } from 'testkit/gql';
-import { ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
 
@@ -31,16 +31,9 @@ const CreateContractMutation = graphql(`
 `);
 
 test.concurrent('create contract for Federation project', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -53,7 +46,7 @@ test.concurrent('create contract for Federation project', async ({ expect }) => 
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(result).toMatchObject({
@@ -77,16 +70,9 @@ test.concurrent('create contract for Federation project', async ({ expect }) => 
 test.concurrent(
   'intersection of includeTags and excludeTags results in error',
   async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken, target } = await createProject(ProjectType.Federation);
-    const token = await createToken({
-      targetScopes: [
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const { target } = await createProject(ProjectType.Federation);
 
     const result = await execute({
       document: CreateContractMutation,
@@ -99,7 +85,7 @@ test.concurrent(
           removeUnreachableTypesFromPublicApiSchema: true,
         },
       },
-      authToken: token.secret,
+      authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(result).toMatchInlineSnapshot(`
@@ -122,16 +108,9 @@ test.concurrent(
 );
 
 test.concurrent('tags can not be empty', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -144,7 +123,7 @@ test.concurrent('tags can not be empty', async ({ expect }) => {
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(result).toMatchInlineSnapshot(`
@@ -166,16 +145,9 @@ test.concurrent('tags can not be empty', async ({ expect }) => {
 });
 
 test.concurrent('includeTags only', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -187,7 +159,7 @@ test.concurrent('includeTags only', async ({ expect }) => {
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(result).toMatchObject({
@@ -209,16 +181,9 @@ test.concurrent('includeTags only', async ({ expect }) => {
 });
 
 test.concurrent('exclude tags only', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -230,7 +195,7 @@ test.concurrent('exclude tags only', async ({ expect }) => {
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(result).toMatchObject({
@@ -252,16 +217,9 @@ test.concurrent('exclude tags only', async ({ expect }) => {
 });
 
 test.concurrent('conflicting contractName results in error', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   let result = await execute({
     document: CreateContractMutation,
@@ -273,7 +231,7 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   result = await execute({
@@ -286,7 +244,7 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
   expect(result).toMatchInlineSnapshot(`
@@ -308,16 +266,9 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
 });
 
 test.concurrent('contractName must be at least 2 characters long', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -329,7 +280,7 @@ test.concurrent('contractName must be at least 2 characters long', async ({ expe
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
   expect(result).toMatchInlineSnapshot(`
       {
@@ -350,16 +301,9 @@ test.concurrent('contractName must be at least 2 characters long', async ({ expe
 });
 
 test.concurrent('contractName must be at most 64 characters long', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken, target } = await createProject(ProjectType.Federation);
-  const token = await createToken({
-    targetScopes: [
-      TargetAccessScope.RegistryRead,
-      TargetAccessScope.RegistryWrite,
-      TargetAccessScope.Settings,
-    ],
-  });
+  const { target } = await createProject(ProjectType.Federation);
 
   const result = await execute({
     document: CreateContractMutation,
@@ -371,7 +315,7 @@ test.concurrent('contractName must be at most 64 characters long', async ({ expe
         removeUnreachableTypesFromPublicApiSchema: true,
       },
     },
-    authToken: token.secret,
+    authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
   expect(result).toMatchInlineSnapshot(`
       {

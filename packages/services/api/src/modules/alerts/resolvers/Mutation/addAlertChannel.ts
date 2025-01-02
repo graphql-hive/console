@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ProjectManager } from '../../../project/providers/project-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { AlertsManager } from '../../providers/alerts-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 const AlertChannelNameModel = z.string().min(1).max(100);
 const SlackChannelNameModel = z.string().min(1).max(80);

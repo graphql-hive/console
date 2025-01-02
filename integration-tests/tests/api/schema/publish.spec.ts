@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { createPool, sql } from 'slonik';
 import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
-import { ProjectAccessScope, ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -19,11 +19,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead],
-      projectScopes: [],
-      organizationScopes: [],
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const readToken = await createTargetAccessToken({
+      mode: 'readOnly',
     });
 
     const resultErrors = await readToken
@@ -37,19 +35,17 @@ test.concurrent(
       .then(r => r.expectGraphQLErrors());
 
     expect(resultErrors).toHaveLength(1);
-    expect(resultErrors[0].message).toMatch('target:registry:write');
+    expect(resultErrors[0].message).toMatch(
+      `No access (reason: "Missing permission for performing 'schemaVersion:publish' on resource")`,
+    );
   },
 );
 
 test.concurrent('can publish a schema with target:registry:write access', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Single);
-  const readWriteToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Single);
+  const readWriteToken = await createTargetAccessToken({});
 
   const result1 = await readWriteToken
     .publishSchema({
@@ -76,7 +72,7 @@ test.concurrent('can publish a schema with target:registry:write access', async 
 
   expect(result2.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-  const versionsResult = await readWriteToken.fetchVersions(3);
+  const versionsResult = await fetchVersions(3);
   expect(versionsResult).toHaveLength(2);
 });
 
@@ -85,12 +81,10 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single);
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken, updateBaseSchema, fetchVersions } = await createProject(
+      ProjectType.Single,
+    );
+    const readWriteToken = await createTargetAccessToken({});
 
     // Publish schema with write rights
     const publishResult = await readWriteToken
@@ -103,7 +97,7 @@ test.concurrent(
     // Schema publish should be successful
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    await readWriteToken.updateBaseSchema(`
+    await updateBaseSchema(`
     directive @auth on OBJECT | FIELD_DEFINITION
   `);
 
@@ -115,7 +109,7 @@ test.concurrent(
       .then(r => r.expectNoGraphQLErrors());
     expect(extendedPublishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    const versionsResult = await readWriteToken.fetchVersions(5);
+    const versionsResult = await fetchVersions(5);
     expect(versionsResult).toHaveLength(2);
 
     const latestResult = await readWriteToken.latestSchema();
@@ -146,14 +140,10 @@ test.concurrent.each(['legacy', 'modern'])(
   async mode => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation, {
+    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Federation, {
       useLegacyRegistryModels: mode === 'legacy',
     });
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     // Publish schema with write rights
     const publishResult = await readWriteToken
@@ -167,7 +157,7 @@ test.concurrent.each(['legacy', 'modern'])(
 
     // Schema publish should be successful
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
-    const versionsResult = await readWriteToken.fetchVersions(5);
+    const versionsResult = await fetchVersions(5);
     expect(versionsResult).toHaveLength(1);
 
     const latestResult = await readWriteToken.latestSchema();
@@ -189,14 +179,10 @@ test.concurrent.each(['legacy', 'modern'])(
   async mode => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Stitching, {
+    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Stitching, {
       useLegacyRegistryModels: mode === 'legacy',
     });
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     // Publish schema with write rights
     const publishResult = await readWriteToken
@@ -212,7 +198,7 @@ test.concurrent.each(['legacy', 'modern'])(
     // Schema publish should be successful
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    const versionsResult = await readWriteToken.fetchVersions(5);
+    const versionsResult = await fetchVersions(5);
     expect(versionsResult).toHaveLength(1);
 
     const latestResult = await readWriteToken.latestSchema();
@@ -234,14 +220,10 @@ test.concurrent.each(['legacy', 'modern'])(
   async mode => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single, {
+    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Single, {
       useLegacyRegistryModels: mode === 'legacy',
     });
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
     // Publish schema with write rights
     const publishResult = await readWriteToken
       .publishSchema({
@@ -256,7 +238,7 @@ test.concurrent.each(['legacy', 'modern'])(
     // Schema publish should be successful
     expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-    const versionsResult = await readWriteToken.fetchVersions(5);
+    const versionsResult = await fetchVersions(5);
     expect(versionsResult).toHaveLength(1);
 
     const latestResult = await readWriteToken.latestSchema();
@@ -276,12 +258,8 @@ test.concurrent.each(['legacy', 'modern'])(
 test.concurrent('share publication of schema using redis', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Federation);
-  const readWriteToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Federation);
+  const readWriteToken = await createTargetAccessToken({});
 
   // Publish schema with write rights
   const publishResult = await readWriteToken
@@ -297,7 +275,7 @@ test.concurrent('share publication of schema using redis', async ({ expect }) =>
   // Schema publish should be successful
   expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-  await expect(readWriteToken.fetchVersions(2)).resolves.toHaveLength(1);
+  await expect(fetchVersions(2)).resolves.toHaveLength(1);
 
   const [publishResult1, publishResult2] = await Promise.all([
     readWriteToken
@@ -322,18 +300,14 @@ test.concurrent('share publication of schema using redis', async ({ expect }) =>
   expect(publishResult1.schemaPublish.__typename).toBe('SchemaPublishSuccess');
   expect(publishResult2.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-  await expect(readWriteToken.fetchVersions(3)).resolves.toHaveLength(2);
+  await expect(fetchVersions(3)).resolves.toHaveLength(2);
 });
 
 test.concurrent('CDN data can not be fetched with an invalid access token', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Single);
-  const readWriteToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, createCdnAccess } = await createProject(ProjectType.Single);
+  const readWriteToken = await createTargetAccessToken({});
 
   // Initial schema
   const result = await readWriteToken
@@ -347,7 +321,7 @@ test.concurrent('CDN data can not be fetched with an invalid access token', asyn
 
   expect(result.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-  const cdn = await readWriteToken.createCdnAccess();
+  const cdn = await createCdnAccess();
   const res = await fetch(cdn.cdnUrl + '/sdl', {
     method: 'GET',
     headers: {
@@ -361,12 +335,8 @@ test.concurrent('CDN data can not be fetched with an invalid access token', asyn
 test.concurrent('CDN data can be fetched with an valid access token', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Single);
-  const readWriteToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, createCdnAccess } = await createProject(ProjectType.Single);
+  const readWriteToken = await createTargetAccessToken({});
 
   // Initial schema
   const result = await readWriteToken
@@ -380,7 +350,7 @@ test.concurrent('CDN data can be fetched with an valid access token', async ({ e
 
   expect(result.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
-  const cdn = await readWriteToken.createCdnAccess();
+  const cdn = await createCdnAccess();
   const artifactUrl = cdn.cdnUrl + '/sdl';
 
   const cdnResult = await fetch(artifactUrl, {
@@ -417,12 +387,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single);
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken, fetchVersions } = await createProject(ProjectType.Single);
+    const readWriteToken = await createTargetAccessToken({});
 
     const commits = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
     const publishes = await Promise.all(
@@ -440,7 +406,7 @@ test.concurrent(
       publishes.every(({ schemaPublish }) => schemaPublish.__typename === 'SchemaPublishSuccess'),
     ).toBeTruthy();
 
-    const versionsResult = await readWriteToken.fetchVersions(commits.length);
+    const versionsResult = await fetchVersions(commits.length);
     expect(versionsResult.length).toBe(1); // all publishes have same schema
   },
 );
@@ -469,14 +435,10 @@ describe.each`
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { project, target, createToken } = await createProject(projectType, {
+      const { project, target, createTargetAccessToken } = await createProject(projectType, {
         useLegacyRegistryModels: model === 'legacy',
       });
-      const readWriteToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [],
-        organizationScopes: [],
-      });
+      const readWriteToken = await createTargetAccessToken({});
 
       const result = await readWriteToken
         .publishSchema({
@@ -506,14 +468,10 @@ describe.each`
     async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { createToken, project, target } = await createProject(projectType, {
+      const { createTargetAccessToken, project, target } = await createProject(projectType, {
         useLegacyRegistryModels: model === 'legacy',
       });
-      const readWriteToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [],
-        organizationScopes: [],
-      });
+      const readWriteToken = await createTargetAccessToken({});
 
       let result = await readWriteToken
         .publishSchema({
@@ -555,14 +513,10 @@ describe.each`
   test("Two targets with the same commit id shouldn't return an error", async () => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { organization, createProject } = await createOrg();
-    const { project, createToken } = await createProject(projectType, {
+    const { project, createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     const publishResult = await readWriteToken
       .publishSchema({
@@ -582,10 +536,7 @@ describe.each`
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     const target2 = createTargetResult.createTarget.ok!.createdTarget;
-    const writeTokenResult2 = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
+    const writeTokenResult2 = await createTargetAccessToken({
       target: target2,
     });
     const publishResult2 = await writeTokenResult2
@@ -654,15 +605,11 @@ describe('schema publishing changes are persisted', () => {
 
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { createToken, target, project } = await createProject(
+      const { createTargetAccessToken, target, project } = await createProject(
         args.type ?? ProjectType.Single,
         {},
       );
-      const readWriteToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [],
-        organizationScopes: [],
-      });
+      const readWriteToken = await createTargetAccessToken({});
 
       const publishResult = await readWriteToken
         .publishSchema({
@@ -2761,12 +2708,11 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, target, project } = await createProject(ProjectType.Federation, {});
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken, target, project } = await createProject(
+      ProjectType.Federation,
+      {},
+    );
+    const readWriteToken = await createTargetAccessToken({});
 
     const publishResult = await readWriteToken
       .publishSchema({
@@ -2880,19 +2826,11 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, target, project, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
       {},
     );
-    const readWriteToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-      projectScopes: [ProjectAccessScope.Settings],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     await enableExternalSchemaComposition(
       {
@@ -2902,7 +2840,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
         projectSlug: project.slug,
         organizationSlug: organization.slug,
       },
-      readWriteToken.secret,
+      ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     // set native federation to false to force external composition
     await setNativeFederation(false);
@@ -3009,19 +2947,11 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, target, project, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
       {},
     );
-    const readWriteToken = await createToken({
-      targetScopes: [
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-      projectScopes: [ProjectAccessScope.Settings],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     await enableExternalSchemaComposition(
       {
@@ -3031,7 +2961,7 @@ test('Composition Network Failure (Federation 2)', async () => {
         projectSlug: project.slug,
         organizationSlug: organization.slug,
       },
-      readWriteToken.secret,
+      ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
 
     // Disable Native Federation v2 composition to allow the external composition to take place
@@ -3071,7 +3001,7 @@ test('Composition Network Failure (Federation 2)', async () => {
         projectSlug: project.slug,
         organizationSlug: organization.slug,
       },
-      readWriteToken.secret,
+      ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     // Disable Native Federation v2 composition to allow the external composition to take place
     await setNativeFederation(false);
@@ -3155,14 +3085,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, compareToPreviousVersion } = await createProject(
+      ProjectType.Federation,
+    );
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-      organizationScopes: [],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const sdl = /* GraphQL */ `
       type Query {
@@ -3201,7 +3129,7 @@ test.concurrent(
       return;
     }
 
-    const compareResult = await writeToken.compareToPreviousVersion(versionId);
+    const compareResult = await compareToPreviousVersion(versionId);
     expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
       [
         {
@@ -3223,14 +3151,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, compareToPreviousVersion } = await createProject(
+      ProjectType.Federation,
+    );
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-      organizationScopes: [],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     let publishProductsResult = await writeToken
       .publishSchema({
@@ -3275,7 +3201,7 @@ test.concurrent(
       return;
     }
 
-    const compareResult = await writeToken.compareToPreviousVersion(versionId);
+    const compareResult = await compareToPreviousVersion(versionId);
 
     expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
       [
@@ -3375,14 +3301,11 @@ test.concurrent(
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { project, target, createToken } = await createProject(ProjectType.Federation);
+      const { project, target, createTargetAccessToken, compareToPreviousVersion } =
+        await createProject(ProjectType.Federation);
 
       // Create a token with write rights
-      const writeToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-        organizationScopes: [],
-      });
+      const writeToken = await createTargetAccessToken({});
 
       // We need to seed a legacy entry in the database
 
@@ -3415,7 +3338,7 @@ test.concurrent(
         return;
       }
 
-      const compareResult = await writeToken.compareToPreviousVersion(newVersionId);
+      const compareResult = await compareToPreviousVersion(newVersionId);
       expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
         [
           {
@@ -3440,15 +3363,14 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { /* project, target,*/ createToken } = await createProject(ProjectType.Stitching, {
-      useLegacyRegistryModels: true,
-    });
+    const { createTargetAccessToken, compareToPreviousVersion } = await createProject(
+      ProjectType.Stitching,
+      {
+        useLegacyRegistryModels: true,
+      },
+    );
 
-    const writeToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-      organizationScopes: [],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     let result = await writeToken
       .publishSchema({
@@ -3479,7 +3401,7 @@ test.concurrent(
       throw new Error('newVersionId is not a string');
     }
 
-    const compareResult = await writeToken.compareToPreviousVersion(newVersionId);
+    const compareResult = await compareToPreviousVersion(newVersionId);
     expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
       [
         {
@@ -3503,14 +3425,11 @@ test.concurrent(
     try {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { project, target, createToken } = await createProject(ProjectType.Federation);
+      const { project, target, createTargetAccessToken, compareToPreviousVersion } =
+        await createProject(ProjectType.Federation);
 
       // Create a token with write rights
-      const writeToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-        organizationScopes: [],
-      });
+      const writeToken = await createTargetAccessToken({});
 
       // We need to seed a legacy entry in the database
 
@@ -3540,7 +3459,7 @@ test.concurrent(
         return;
       }
 
-      const compareResult = await writeToken.compareToPreviousVersion(newVersionId);
+      const compareResult = await compareToPreviousVersion(newVersionId);
 
       expect(compareResult?.target?.schemaVersion?.safeSchemaChanges?.nodes).toMatchInlineSnapshot(`
         [
@@ -3566,12 +3485,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single);
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const readWriteToken = await createTargetAccessToken({});
 
     const result = await readWriteToken
       .publishSchema({
@@ -3593,15 +3508,13 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
-    const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, setNativeFederation } = await createProject(
+      ProjectType.Federation,
+    );
     await setNativeFederation(true);
     await setFeatureFlag('compareToPreviousComposableVersion', true);
 
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readWriteToken = await createTargetAccessToken({});
 
     const result = await readWriteToken
       .publishSchema({
@@ -3628,12 +3541,8 @@ test.concurrent(
 test.concurrent('CDN services are published in alphanumeric order', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject(ProjectType.Stitching);
-  const readWriteToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [],
-    organizationScopes: [],
-  });
+  const { createTargetAccessToken, createCdnAccess } = await createProject(ProjectType.Stitching);
+  const readWriteToken = await createTargetAccessToken({});
 
   await readWriteToken
     .publishSchema({
@@ -3671,7 +3580,7 @@ test.concurrent('CDN services are published in alphanumeric order', async ({ exp
     })
     .then(r => r.expectNoGraphQLErrors());
 
-  const cdn = await readWriteToken.createCdnAccess();
+  const cdn = await createCdnAccess();
   const res = await fetch(cdn.cdnUrl + '/services', {
     method: 'GET',
     headers: {
@@ -3689,12 +3598,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const readWriteToken = await createTargetAccessToken({});
 
     const result = await readWriteToken
       .publishSchema({
@@ -3720,12 +3625,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Federation);
-    const readWriteToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const readWriteToken = await createTargetAccessToken({});
 
     const result = await readWriteToken
       .publishSchema({
@@ -3752,18 +3653,13 @@ describe.concurrent(
     test.concurrent('native federation', async () => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, setFeatureFlag } = await createOrg();
-      const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
+      const { createTargetAccessToken, setNativeFederation } = await createProject(
+        ProjectType.Federation,
+      );
       await setFeatureFlag('compareToPreviousComposableVersion', true);
       await setNativeFederation(true);
 
-      const token = await createToken({
-        targetScopes: [
-          TargetAccessScope.Read,
-          TargetAccessScope.RegistryRead,
-          TargetAccessScope.RegistryWrite,
-          TargetAccessScope.Settings,
-        ],
-      });
+      const token = await createTargetAccessToken({});
 
       const validSdl = /* GraphQL */ `
         extend schema
@@ -3905,18 +3801,13 @@ describe.concurrent(
     test.concurrent('legacy fed composition', async () => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject, setFeatureFlag } = await createOrg();
-      const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
+      const { createTargetAccessToken, setNativeFederation } = await createProject(
+        ProjectType.Federation,
+      );
       await setFeatureFlag('compareToPreviousComposableVersion', false);
       await setNativeFederation(false);
 
-      const token = await createToken({
-        targetScopes: [
-          TargetAccessScope.Read,
-          TargetAccessScope.RegistryRead,
-          TargetAccessScope.RegistryWrite,
-          TargetAccessScope.Settings,
-        ],
-      });
+      const token = await createTargetAccessToken({});
 
       const validSdl = /* GraphQL */ `
         type Query {
@@ -4052,18 +3943,13 @@ describe.concurrent(
       async () => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject, setFeatureFlag } = await createOrg();
-        const { createToken, setNativeFederation } = await createProject(ProjectType.Federation);
+        const { createTargetAccessToken, setNativeFederation } = await createProject(
+          ProjectType.Federation,
+        );
         await setFeatureFlag('compareToPreviousComposableVersion', true);
         await setNativeFederation(false);
 
-        const token = await createToken({
-          targetScopes: [
-            TargetAccessScope.Read,
-            TargetAccessScope.RegistryRead,
-            TargetAccessScope.RegistryWrite,
-            TargetAccessScope.Settings,
-          ],
-        });
+        const token = await createTargetAccessToken({});
 
         const validSdl = /* GraphQL */ `
           type Query {
@@ -4202,15 +4088,8 @@ test.concurrent(
   async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken } = await createProject(ProjectType.Single);
-    const token = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
 
     const sdl = /* GraphQL */ `
       type Query {
@@ -4254,15 +4133,8 @@ test.concurrent(
   async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, project, target } = await createProject(ProjectType.Single);
-    const token = await createToken({
-      targetScopes: [
-        TargetAccessScope.Read,
-        TargetAccessScope.RegistryRead,
-        TargetAccessScope.RegistryWrite,
-        TargetAccessScope.Settings,
-      ],
-    });
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
 
     const brokenSdl = /* GraphQL */ `
       type Query {

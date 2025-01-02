@@ -2,6 +2,7 @@ import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.map
 import { print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
+import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
   containsSupergraphSpec,
@@ -38,14 +39,19 @@ export class SchemaVersionHelper {
     private logger: Logger,
   ) {}
 
+  @traceFn('SchemaVersionHelper.composeSchemaVersion', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.id,
+    }),
+  })
   @cache<SchemaVersion>(version => version.id)
   private async composeSchemaVersion(schemaVersion: SchemaVersion) {
     const [schemas, project, organization] = await Promise.all([
-      this.schemaManager.getMaybeSchemasOfVersion({
+      this.storage.getSchemasOfVersion({
         versionId: schemaVersion.id,
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-        targetId: schemaVersion.targetId,
       }),
       this.projectManager.getProject({
         organizationId: schemaVersion.organizationId,
@@ -148,6 +154,18 @@ export class SchemaVersionHelper {
     return supergraphAst;
   }
 
+  @traceFn('SchemaVersionHelper.getSchemaChanges', {
+    initAttributes: input => ({
+      'hive.target.id': input.targetId,
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.version.id': input.id,
+    }),
+    resultAttributes: changes => ({
+      'hive.breaking-changes.count': changes?.breaking?.length,
+      'hive.safe-changes.count': changes?.safe?.length,
+    }),
+  })
   @cache<SchemaVersion>(version => version.id)
   private async getSchemaChanges(schemaVersion: SchemaVersion) {
     if (!schemaVersion.isComposable) {
@@ -155,11 +173,8 @@ export class SchemaVersionHelper {
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
-      const changes = await this.schemaManager.getSchemaChangesForVersion({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-        targetId: schemaVersion.targetId,
-        version: schemaVersion.id,
+      const changes = await this.storage.getSchemaChangesForVersion({
+        versionId: schemaVersion.id,
       });
 
       const safeChanges: Array<SchemaChangeType> = [];
@@ -189,16 +204,10 @@ export class SchemaVersionHelper {
     const incomingSdl = await this.getCompositeSchemaSdl(schemaVersion);
 
     const [schemaBefore, schemasAfter] = await Promise.all([
-      this.schemaManager.getMaybeSchemasOfVersion({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-        targetId: schemaVersion.targetId,
+      this.storage.getSchemasOfVersion({
         versionId: schemaVersion.id,
       }),
-      this.schemaManager.getMaybeSchemasOfVersion({
-        organizationId: schemaVersion.organizationId,
-        projectId: schemaVersion.projectId,
-        targetId: schemaVersion.targetId,
+      this.storage.getSchemasOfVersion({
         versionId: previousVersion.id,
       }),
     ]);
@@ -298,6 +307,15 @@ export class SchemaVersionHelper {
     return !composableVersion;
   }
 
+  @traceFn('SchemaVersionHelper.getServiceSdlForPreviousVersionService', {
+    initAttributes: (schemaVersion, serviceName) => ({
+      'hive.organization.id': schemaVersion.organizationId,
+      'hive.project.id': schemaVersion.projectId,
+      'hive.target.id': schemaVersion.targetId,
+      'hive.version.id': schemaVersion.id,
+      'hive.service.name': serviceName,
+    }),
+  })
   async getServiceSdlForPreviousVersionService(schemaVersion: SchemaVersion, serviceName: string) {
     const previousVersion = await this.getPreviousDiffableSchemaVersion(schemaVersion);
     if (!previousVersion) {

@@ -1,5 +1,5 @@
 import { AppDeploymentsManager } from '../providers/app-deployments-manager';
-import type { AppDeploymentResolvers } from './../../../__generated__/types.next';
+import type { AppDeploymentResolvers } from './../../../__generated__/types';
 
 /*
  * Note: This object type is generated because "AppDeploymentMapper" is declared. This is to ensure runtime safety.

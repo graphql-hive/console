@@ -1,8 +1,10 @@
 import { local } from '@pulumi/command';
-import { ResourceOptions } from '@pulumi/pulumi';
+import { Secret } from '@pulumi/kubernetes/core/v1';
+import { Resource } from '@pulumi/pulumi';
+import { ClickhouseConnectionSecret } from '../services/clickhouse';
+import { ServiceDeployment } from './service-deployment';
 
-const dockerImage =
-  'ghcr.io/kamilkisiela/graphql-hive/cli:0.40.0-alpha-20240725065155-e240576ec49b275715015567ce1f9c4a77a51f89';
+const dockerImage = 'ghcr.io/graphql-hive/cli:0.44.4';
 
 /** Publish API GraphQL schema to Hive schema registry. */
 export function publishAppDeployment(args: {
@@ -12,8 +14,37 @@ export function publishAppDeployment(args: {
     commit: string;
   };
   persistedDocumentsPath: string;
-  dependsOn?: ResourceOptions['dependsOn'];
+  wakeupClickhouse: {
+    clickhouse: ClickhouseConnectionSecret;
+    dockerSecret: Secret;
+  } | null;
+  dependsOn?: Array<Resource>;
 }) {
+  // Step 0: Wake up ClickHouse on staging and dev
+  let wakeupCommandJob = args.wakeupClickhouse
+    ? new ServiceDeployment(
+        'wake-up-clickhouse',
+        {
+          image: 'alpine/curl',
+          imagePullSecret: args.wakeupClickhouse.dockerSecret,
+          command: [
+            'curl',
+            // wait a maximum amount of 40 seconds (according to docs it takes 30 seconds for waking up)
+            '--max-time',
+            '60',
+            '$(CLICKHOUSE_PROTOCOL)://$(CLICKHOUSE_USERNAME):$(CLICKHOUSE_PASSWORD)@$(CLICKHOUSE_HOST):$(CLICKHOUSE_PORT)?query=SELECT%201',
+          ],
+        },
+        args.dependsOn,
+      )
+        .withSecret('CLICKHOUSE_PROTOCOL', args.wakeupClickhouse.clickhouse, 'protocol')
+        .withSecret('CLICKHOUSE_HOST', args.wakeupClickhouse.clickhouse, 'host')
+        .withSecret('CLICKHOUSE_PORT', args.wakeupClickhouse.clickhouse, 'port')
+        .withSecret('CLICKHOUSE_USERNAME', args.wakeupClickhouse.clickhouse, 'username')
+        .withSecret('CLICKHOUSE_PASSWORD', args.wakeupClickhouse.clickhouse, 'password')
+        .deployAsJob().job
+    : null;
+
   // Step 1: Create app deployment
   const createCommand = new local.Command(
     `create-app-deployment-${args.appName}`,
@@ -27,7 +58,7 @@ export function publishAppDeployment(args: {
         ` --name ${args.appName} --version ${args.version.commit} ./persisted-documents.json`,
     },
     {
-      dependsOn: args.dependsOn,
+      dependsOn: [wakeupCommandJob, ...(args.dependsOn || [])].filter(v => v !== null),
     },
   );
 

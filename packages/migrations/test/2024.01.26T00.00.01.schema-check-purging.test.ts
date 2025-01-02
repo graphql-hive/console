@@ -433,6 +433,7 @@ describe('schema check purging', async () => {
       );
 
       await storage.approveFailedSchemaCheck({
+        targetId: failedSchemaCheck.targetId,
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         comment: null,
@@ -606,6 +607,7 @@ describe('schema check purging', async () => {
       );
 
       await storage.approveFailedSchemaCheck({
+        targetId: failedSchemaCheck.targetId,
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         comment: null,
@@ -863,6 +865,7 @@ describe('schema check purging', async () => {
       const contracts = new Contracts(createLogger(), db, {} as any);
 
       await storage.approveFailedSchemaCheck({
+        targetId: failedSchemaCheck.targetId,
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         contracts,
@@ -1064,6 +1067,7 @@ describe('schema check purging', async () => {
       const contracts = new Contracts(createLogger(), db, {} as any);
 
       await storage.approveFailedSchemaCheck({
+        targetId: failedSchemaCheck.targetId,
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         contracts,

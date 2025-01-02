@@ -23,7 +23,7 @@ export function createStripeBilling(config: {
     config.storage.additionalInterceptors,
   );
   const stripeApi = new Stripe(config.stripe.token, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2024-12-18.acacia',
     typescript: true,
     httpClient: Stripe.createFetchHttpClient(fetch),
   });

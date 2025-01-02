@@ -1,4 +1,4 @@
-import type { OrganizationInvitationPayloadResolvers } from './../../../__generated__/types.next';
+import type { OrganizationInvitationPayloadResolvers } from './../../../__generated__/types';
 
 export const OrganizationInvitationPayload: OrganizationInvitationPayloadResolvers = {
   __isTypeOf: organization => {

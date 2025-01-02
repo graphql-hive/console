@@ -2,7 +2,7 @@ import { OrganizationManager } from '../../../organization/providers/organizatio
 import { ProjectManager } from '../../../project/providers/project-manager';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const schemaCompose: NonNullable<MutationResolvers['schemaCompose']> = async (
   _,

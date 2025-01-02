@@ -1,6 +1,6 @@
 import { SchemaPolicyApiProvider } from '../providers/schema-policy-api.provider';
 import { serializeSeverity } from '../utils';
-import type { SchemaPolicyResolvers } from './../../../__generated__/types.next';
+import type { SchemaPolicyResolvers } from './../../../__generated__/types';
 
 export const SchemaPolicy: SchemaPolicyResolvers = {
   id: policy => policy.id,

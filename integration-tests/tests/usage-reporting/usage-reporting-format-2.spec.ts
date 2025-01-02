@@ -1,14 +1,11 @@
 import { initSeed } from 'testkit/seed';
-import { TargetAccessScope } from '../../testkit/gql/graphql';
 import { getServiceHost } from '../../testkit/utils';
 
 test('valid operation is accepted', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject();
-  const { secret: accessToken } = await createToken({
-    targetScopes: [TargetAccessScope.RegistryWrite, TargetAccessScope.RegistryRead],
-  });
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
 
   const usageAddress = await getServiceHost('usage', 8081);
 
@@ -60,10 +57,8 @@ test('valid operation is accepted', async () => {
 test('invalid operation is rejected', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createToken } = await createProject();
-  const { secret: accessToken } = await createToken({
-    targetScopes: [TargetAccessScope.RegistryWrite, TargetAccessScope.RegistryRead],
-  });
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
 
   const usageAddress = await getServiceHost('usage', 8081);
   // GraphQL operation is invalid at Query.me(id:)

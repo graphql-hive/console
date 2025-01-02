@@ -1,5 +1,5 @@
 import { ContractsManager } from '../../providers/contracts-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const disableContract: NonNullable<MutationResolvers['disableContract']> = async (
   _,

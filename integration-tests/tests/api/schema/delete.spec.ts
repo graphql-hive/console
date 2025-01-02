@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { parse, print } from 'graphql';
 import { enableExternalSchemaComposition } from 'testkit/flow';
-import { ProjectAccessScope, ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -67,13 +67,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createToken, target } = await createProject(ProjectType.Federation);
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
-    const readToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [],
-      organizationScopes: [],
-    });
+    const readToken = await createTargetAccessToken({});
 
     const publishService1Result = await readToken
       .publishSchema({
@@ -138,13 +134,11 @@ test.concurrent(
       storage = await createStorage(connectionString(), 1);
       const { createOrg } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { createToken, project, target } = await createProject(ProjectType.Federation);
+      const { createTargetAccessToken, project, target } = await createProject(
+        ProjectType.Federation,
+      );
 
-      const readToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [],
-        organizationScopes: [],
-      });
+      const readToken = await createTargetAccessToken({});
 
       const publishService1Result = await readToken
         .publishSchema({
@@ -233,16 +227,13 @@ test.concurrent(
 
     try {
       storage = await createStorage(connectionString(), 1);
-      const { createOrg } = await initSeed().createOwner();
+      const { createOrg, ownerToken } = await initSeed().createOwner();
       const { createProject, organization } = await createOrg();
-      const { createToken, project, target, setNativeFederation } = await createProject(
+      const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
         ProjectType.Federation,
       );
 
-      const readToken = await createToken({
-        targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-        projectScopes: [ProjectAccessScope.Settings],
-      });
+      const readToken = await createTargetAccessToken({});
 
       await enableExternalSchemaComposition(
         {
@@ -252,7 +243,7 @@ test.concurrent(
           projectSlug: project.slug,
           organizationSlug: organization.slug,
         },
-        readToken.secret,
+        ownerToken,
       ).then(r => r.expectNoGraphQLErrors());
       // Disable Native Federation v2 composition to allow the external composition to take place
       await setNativeFederation(false);

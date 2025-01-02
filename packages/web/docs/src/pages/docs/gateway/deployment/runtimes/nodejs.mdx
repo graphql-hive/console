@@ -6,7 +6,7 @@ Node.js is the most common runtime for JavaScript.
 
 If you have Node.js environment, we highly recommend to use Hive Gateway with the CLI as described
 in the [introduction](/docs/gateway). If you really want to use the runtime in a customized way. You
-can use the `createGatewayRuntime` function from `@graphql-hive/gateway` package.
+can use the `createGatewayRuntime` function from `@graphql-hive/gateway-runtime` package.
 
 ## Hive Gateway CLI
 
@@ -19,7 +19,7 @@ most cases.
 
 ```ts
 import { createServer } from 'http'
-import { createGatewayRuntime } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 
 const serveRuntime = createGatewayRuntime(/* Your configuration */)
 const server = createServer(serveRuntime)

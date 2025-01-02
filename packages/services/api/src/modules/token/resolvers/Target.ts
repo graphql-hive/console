@@ -1,5 +1,5 @@
 import { TokenManager } from '../providers/token-manager';
-import type { TargetResolvers } from './../../../__generated__/types.next';
+import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<TargetResolvers, 'tokens' | '__isTypeOf'> = {
   tokens(target, _, { injector }) {

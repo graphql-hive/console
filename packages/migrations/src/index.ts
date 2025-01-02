@@ -31,7 +31,12 @@ try {
   console.log('Running the UP migrations');
   await runPGMigrations({ slonik });
   if (env.clickhouse) {
-    await migrateClickHouse(env.isClickHouseMigrator, env.isHiveCloud, env.clickhouse);
+    await migrateClickHouse(
+      env.isClickHouseMigrator,
+      env.isHiveCloud,
+      env.hiveCloudEnvironment,
+      env.clickhouse,
+    );
   }
   process.exit(0);
 } catch (error) {

@@ -1,4 +1,4 @@
-import type { OrganizationInvitationResolvers } from './../../../__generated__/types.next';
+import type { OrganizationInvitationResolvers } from './../../../__generated__/types';
 
 export const OrganizationInvitation: OrganizationInvitationResolvers = {
   id: invitation => {

@@ -7,7 +7,7 @@ import { stripUsedSchemaCoordinatesFromDocumentNode } from '../lib/unused-graphq
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
-import type { SchemaVersionResolvers } from './../../../__generated__/types.next';
+import type { SchemaVersionResolvers } from './../../../__generated__/types';
 
 export const SchemaVersion: SchemaVersionResolvers = {
   isComposable: version => {
@@ -64,12 +64,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     };
   },
   schemas: (version, _, { injector }) => {
-    return injector.get(SchemaManager).getMaybeSchemasOfVersion({
-      versionId: version.id,
-      organizationId: version.organizationId,
-      projectId: version.projectId,
-      targetId: version.targetId,
-    });
+    return injector.get(SchemaManager).getMaybeSchemasOfVersion(version);
   },
   schemaCompositionErrors: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSchemaCompositionErrors(version);

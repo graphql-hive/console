@@ -16,7 +16,7 @@ export function TeamSection({ className }: { className?: string }) {
     >
       <div className="mx-auto flex max-w-full flex-col flex-wrap justify-center gap-x-2 lg:max-xl:w-max xl:h-[476px]">
         <Heading as="h3" size="md" className="text-green-1000 max-w-full text-balance xl:w-[468px]">
-          Built by The Guild. Industry veterans.
+          Built by The Guild. Industry Veterans.
         </Heading>
 
         <p className="mt-4 w-[468px] max-w-full text-green-800 lg:mt-6">

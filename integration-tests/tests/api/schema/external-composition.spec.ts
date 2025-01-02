@@ -1,20 +1,18 @@
-import { ProjectAccessScope, ProjectType, TargetAccessScope } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { history } from '../../../testkit/external-composition';
 import { enableExternalSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { generateUnique, getServiceHost } from '../../../testkit/utils';
 
 test.concurrent('call an external service to compose and validate services', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createToken, project, setNativeFederation } = await createProject(ProjectType.Federation);
+  const { createTargetAccessToken, project, setNativeFederation } = await createProject(
+    ProjectType.Federation,
+  );
 
   // Create a token with write rights
-  const writeToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-    organizationScopes: [],
-  });
+  const writeToken = await createTargetAccessToken({});
 
   const usersServiceName = generateUnique();
   const publishUsersResult = await writeToken
@@ -53,7 +51,7 @@ test.concurrent('call an external service to compose and validate services', asy
       projectSlug: project.slug,
       organizationSlug: organization.slug,
     },
-    writeToken.secret,
+    ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
     externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
@@ -92,18 +90,14 @@ test.concurrent('call an external service to compose and validate services', asy
 test.concurrent(
   'an expected error coming from the external composition service should be visible to the user',
   async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, project, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-      organizationScopes: [],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const usersServiceName = generateUnique();
     const publishUsersResult = await writeToken
@@ -141,7 +135,7 @@ test.concurrent(
         projectSlug: project.slug,
         organizationSlug: organization.slug,
       },
-      writeToken.secret,
+      ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
       externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
@@ -192,18 +186,14 @@ test.concurrent(
 test.concurrent(
   'a network error coming from the external composition service should be visible to the user',
   async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createToken, project, setNativeFederation } = await createProject(
+    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
     );
 
     // Create a token with write rights
-    const writeToken = await createToken({
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-      projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-      organizationScopes: [],
-    });
+    const writeToken = await createTargetAccessToken({});
 
     const usersServiceName = generateUnique();
     const publishUsersResult = await writeToken
@@ -241,7 +231,7 @@ test.concurrent(
         projectSlug: project.slug,
         organizationSlug: organization.slug,
       },
-      writeToken.secret,
+      ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
       externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
@@ -289,16 +279,14 @@ test.concurrent(
 );
 
 test.concurrent('a timeout error should be visible to the user', async ({ expect }) => {
-  const { createOrg } = await initSeed().createOwner();
+  const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createToken, project, setNativeFederation } = await createProject(ProjectType.Federation);
+  const { createTargetAccessToken, project, setNativeFederation } = await createProject(
+    ProjectType.Federation,
+  );
 
   // Create a token with write rights
-  const writeToken = await createToken({
-    targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    projectScopes: [ProjectAccessScope.Settings, ProjectAccessScope.Read],
-    organizationScopes: [],
-  });
+  const writeToken = await createTargetAccessToken({});
 
   const usersServiceName = generateUnique();
   const publishUsersResult = await writeToken
@@ -336,7 +324,7 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
       projectSlug: project.slug,
       organizationSlug: organization.slug,
     },
-    writeToken.secret,
+    ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
     externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition

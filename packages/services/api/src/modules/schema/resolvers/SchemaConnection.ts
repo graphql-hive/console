@@ -1,8 +1,5 @@
 import { createConnection } from '../../../shared/schema';
-import type {
-  ResolversTypes,
-  SchemaConnectionResolvers,
-} from './../../../__generated__/types.next';
+import type { ResolversTypes, SchemaConnectionResolvers } from './../../../__generated__/types';
 
 const connection = createConnection<ResolversTypes['Schema']>();
 

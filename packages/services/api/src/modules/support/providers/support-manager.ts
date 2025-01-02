@@ -3,8 +3,8 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
 import { atomic } from '../../../shared/helpers';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { OrganizationAccessScope } from '../../auth/providers/scopes';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
+import { Session } from '../../auth/lib/authz';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -134,9 +134,10 @@ export class SupportManager {
     @Inject(SUPPORT_MODULE_CONFIG) private config: SupportConfig,
     logger: Logger,
     private httpClient: HttpClient,
-    private authManager: AuthManager,
     private organizationManager: OrganizationManager,
     private storage: Storage,
+    private session: Session,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ service: 'SupportManager' });
   }
@@ -376,9 +377,12 @@ export class SupportManager {
 
   async getTickets(organizationId: string) {
     this.logger.info('Fetching support tickets (id: %s)', organizationId);
-    await this.authManager.ensureOrganizationAccess({
-      organizationId: organizationId,
-      scope: OrganizationAccessScope.READ,
+    await this.session.assertPerformAction({
+      organizationId,
+      action: 'support:manageTickets',
+      params: {
+        organizationId,
+      },
     });
     const internalOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
@@ -417,9 +421,12 @@ export class SupportManager {
       organizationId,
       ticketId,
     );
-    await this.authManager.ensureOrganizationAccess({
-      organizationId: organizationId,
-      scope: OrganizationAccessScope.READ,
+    await this.session.assertPerformAction({
+      organizationId,
+      action: 'support:manageTickets',
+      params: {
+        organizationId,
+      },
     });
     const zendeskOrganizationId = await this.ensureZendeskOrganizationId(organizationId);
 
@@ -515,12 +522,14 @@ export class SupportManager {
       };
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: input.organizationId,
-      scope: OrganizationAccessScope.READ,
+      action: 'support:manageTickets',
+      params: {
+        organizationId: input.organizationId,
+      },
     });
-    const currentUser = await this.authManager.getCurrentUser();
-
+    const currentUser = await this.session.getViewer();
     const internalOrganizationId = await this.ensureZendeskOrganizationId(input.organizationId);
     const internalUserId = await this.ensureZendeskUserId({
       userId: currentUser.id,
@@ -577,6 +586,17 @@ export class SupportManager {
         }),
       );
 
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_CREATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketDescription: input.description,
+        ticketPriority: input.priority,
+        ticketId: String(response.ticket.id),
+        ticketSubject: input.subject,
+      },
+    });
+
     return {
       ok: {
         supportTicketId: String(response.ticket.id),
@@ -603,11 +623,14 @@ export class SupportManager {
       };
     }
 
-    await this.authManager.ensureOrganizationAccess({
+    await this.session.assertPerformAction({
       organizationId: input.organizationId,
-      scope: OrganizationAccessScope.READ,
+      action: 'support:manageTickets',
+      params: {
+        organizationId: input.organizationId,
+      },
     });
-    const currentUser = await this.authManager.getCurrentUser();
+    const currentUser = await this.session.getViewer();
     const internalUserId = await this.ensureZendeskUserId({
       userId: currentUser.id,
       organizationId: input.organizationId,
@@ -664,6 +687,19 @@ export class SupportManager {
           return Promise.reject(err);
         }),
       );
+
+    await this.auditLog.record({
+      eventType: 'SUPPORT_TICKET_UPDATED',
+      organizationId: input.organizationId,
+      metadata: {
+        ticketId: input.ticketId,
+        updatedFields: JSON.stringify({
+          comment: request.data.body,
+          authorId: internalUserId,
+          public: true,
+        }),
+      },
+    });
 
     return {
       ok: {

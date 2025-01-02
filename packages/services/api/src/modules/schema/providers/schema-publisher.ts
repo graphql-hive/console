@@ -20,8 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { AuthManager } from '../../auth/providers/auth-manager';
-import { TargetAccessScope } from '../../auth/providers/target-access';
+import { Session } from '../../auth/lib/authz';
 import {
   GitHubIntegrationManager,
   type GitHubCheckRun,
@@ -142,7 +141,7 @@ export class SchemaPublisher {
 
   constructor(
     logger: Logger,
-    private authManager: AuthManager,
+    private session: Session,
     private storage: Storage,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
@@ -288,55 +287,47 @@ export class SchemaPublisher {
   async check(input: CheckInput) {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
 
-    await this.authManager.ensureTargetAccess({
-      targetId: input.targetId,
-      projectId: input.projectId,
+    await this.session.assertPerformAction({
+      action: 'schemaCheck:create',
       organizationId: input.organizationId,
-      scope: TargetAccessScope.REGISTRY_READ,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+        targetId: input.targetId,
+        serviceName: input.service ?? null,
+      },
     });
 
-    const [
-      target,
-      project,
-      organization,
-      latestVersion,
-      latestComposableVersion,
-      latestSchemaVersion,
-      latestComposableSchemaVersion,
-    ] = await Promise.all([
-      this.targetManager.getTarget({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
-      this.projectManager.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      }),
-      this.organizationManager.getOrganization({
-        organizationId: input.organizationId,
-      }),
-      this.schemaManager.getLatestSchemas({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
-      this.schemaManager.getLatestSchemas({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-        onlyComposable: true,
-      }),
-      this.schemaManager.getMaybeLatestVersion({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
-      this.schemaManager.getMaybeLatestValidVersion({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
+    const [target, project, organization, latestVersion, latestComposableVersion] =
+      await Promise.all([
+        this.storage.getTarget({
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          targetId: input.targetId,
+        }),
+        this.storage.getProject({
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+        }),
+        this.storage.getOrganization({
+          organizationId: input.organizationId,
+        }),
+        this.storage.getLatestSchemas({
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          targetId: input.targetId,
+        }),
+        this.storage.getLatestSchemas({
+          organizationId: input.organizationId,
+          projectId: input.projectId,
+          targetId: input.targetId,
+          onlyComposable: true,
+        }),
+      ]);
+
+    const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
+      this.schemaManager.getMaybeLatestVersion(target),
+      this.schemaManager.getMaybeLatestValidVersion(target),
     ]);
 
     const projectModelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
@@ -463,11 +454,7 @@ export class SchemaPublisher {
       step: 'checkingSchema',
     });
 
-    const baseSchema = await this.schemaManager.getBaseSchema({
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-      targetId: input.targetId,
-    });
+    const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
     const selector = {
       organizationId: input.organizationId,
@@ -1019,14 +1006,17 @@ export class SchemaPublisher {
       input.targetId,
     );
 
-    const token = this.authManager.ensureApiToken();
+    const selector = this.session.getLegacySelector();
+
+    const target = await this.storage.getTarget({
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+      targetId: input.targetId,
+    });
+
     const [contracts, latestVersion] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: input.targetId }),
-      this.schemaManager.getMaybeLatestVersion({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
+      this.schemaManager.getMaybeLatestVersion(target),
     ]);
 
     const checksum = createHash('md5')
@@ -1047,7 +1037,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(token)
+      .update(selector.token)
       .digest('base64');
 
     this.logger.debug(
@@ -1074,11 +1064,15 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          await this.authManager.ensureTargetAccess({
-            targetId: input.targetId,
-            projectId: input.projectId,
+          await this.session.assertPerformAction({
+            action: 'schemaVersion:publish',
             organizationId: input.organizationId,
-            scope: TargetAccessScope.REGISTRY_WRITE,
+            params: {
+              targetId: input.targetId,
+              projectId: input.projectId,
+              organizationId: input.organizationId,
+              serviceName: input.service ?? null,
+            },
           });
           return this.distributedCache.wrap({
             key: `schema:publish:${checksum}`,
@@ -1189,54 +1183,52 @@ export class SchemaPublisher {
         signal,
       },
       async () => {
-        await this.authManager.ensureTargetAccess({
+        await this.session.assertPerformAction({
+          action: 'schemaVersion:deleteService',
           organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.target.id,
-          scope: TargetAccessScope.REGISTRY_WRITE,
+          params: {
+            organizationId: input.organizationId,
+            projectId: input.projectId,
+            targetId: input.target.id,
+            serviceName: input.serviceName,
+          },
         });
-        const [
-          project,
-          organization,
-          latestVersion,
-          latestComposableVersion,
-          baseSchema,
-          latestSchemaVersion,
-          latestComposableSchemaVersion,
-        ] = await Promise.all([
-          this.projectManager.getProject({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-          }),
-          this.organizationManager.getOrganization({
-            organizationId: input.organizationId,
-          }),
-          this.schemaManager.getLatestSchemas({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-          }),
-          this.schemaManager.getLatestSchemas({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-            onlyComposable: true,
-          }),
-          this.schemaManager.getBaseSchema({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-          }),
-          this.schemaManager.getMaybeLatestVersion({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-          }),
-          this.schemaManager.getMaybeLatestValidVersion({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.target.id,
-          }),
+
+        const [organization, project, target, latestVersion, latestComposableVersion, baseSchema] =
+          await Promise.all([
+            this.storage.getOrganization({
+              organizationId: input.organizationId,
+            }),
+            this.storage.getProject({
+              organizationId: input.organizationId,
+              projectId: input.projectId,
+            }),
+            this.storage.getTarget({
+              organizationId: input.organizationId,
+              projectId: input.projectId,
+              targetId: input.target.id,
+            }),
+            this.storage.getLatestSchemas({
+              organizationId: input.organizationId,
+              projectId: input.projectId,
+              targetId: input.target.id,
+            }),
+            this.storage.getLatestSchemas({
+              organizationId: input.organizationId,
+              projectId: input.projectId,
+              targetId: input.target.id,
+              onlyComposable: true,
+            }),
+            this.storage.getBaseSchema({
+              organizationId: input.organizationId,
+              projectId: input.projectId,
+              targetId: input.target.id,
+            }),
+          ]);
+
+        const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
+          this.schemaManager.getMaybeLatestVersion(target),
+          this.schemaManager.getMaybeLatestValidVersion(target),
         ]);
 
         const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
@@ -1498,54 +1490,41 @@ export class SchemaPublisher {
       metadata: !!input.metadata,
     });
 
-    const [
-      organization,
-      project,
-      target,
-      latestVersion,
-      latestComposable,
-      baseSchema,
-      latestSchemaVersion,
-      latestComposableSchemaVersion,
-    ] = await Promise.all([
-      this.organizationManager.getOrganization({
-        organizationId: organizationId,
-      }),
-      this.projectManager.getProject({
-        organizationId: organizationId,
-        projectId: projectId,
-      }),
-      this.targetManager.getTarget({
-        organizationId: organizationId,
-        projectId: projectId,
-        targetId: targetId,
-      }),
-      this.schemaManager.getLatestSchemas({
-        organizationId: organizationId,
-        projectId: projectId,
-        targetId: targetId,
-      }),
-      this.schemaManager.getLatestSchemas({
-        organizationId: organizationId,
-        projectId: projectId,
-        targetId: targetId,
-        onlyComposable: true,
-      }),
-      this.schemaManager.getBaseSchema({
-        organizationId: organizationId,
-        projectId: projectId,
-        targetId: targetId,
-      }),
-      this.schemaManager.getMaybeLatestVersion({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
-      this.schemaManager.getMaybeLatestValidVersion({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      }),
+    const [organization, project, target, latestVersion, latestComposable, baseSchema] =
+      await Promise.all([
+        this.storage.getOrganization({
+          organizationId: organizationId,
+        }),
+        this.storage.getProject({
+          organizationId: organizationId,
+          projectId: projectId,
+        }),
+        this.storage.getTarget({
+          organizationId: organizationId,
+          projectId: projectId,
+          targetId: targetId,
+        }),
+        this.storage.getLatestSchemas({
+          organizationId: organizationId,
+          projectId: projectId,
+          targetId: targetId,
+        }),
+        this.storage.getLatestSchemas({
+          organizationId: organizationId,
+          projectId: projectId,
+          targetId: targetId,
+          onlyComposable: true,
+        }),
+        this.storage.getBaseSchema({
+          organizationId: organizationId,
+          projectId: projectId,
+          targetId: targetId,
+        }),
+      ]);
+
+    const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
+      this.schemaManager.getMaybeLatestVersion(target),
+      this.schemaManager.getMaybeLatestValidVersion(target),
     ]);
 
     const modelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';

@@ -19,6 +19,7 @@ const LOCAL_SERVICES = {
   usage: 4001,
   schema: 6500,
   external_composition: 3012,
+  mock_server: 3042,
 } as const;
 
 export type KnownServices = keyof typeof LOCAL_SERVICES;

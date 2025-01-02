@@ -100,6 +100,5 @@ export function deployProxy({
         service: usage.service,
         retriable: true,
       },
-    ])
-    .get();
+    ]);
 }

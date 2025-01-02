@@ -1,7 +1,7 @@
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { Logger } from '../../../shared/providers/logger';
 import { OrganizationManager } from '../../providers/organization-manager';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const answerOrganizationTransferRequest: NonNullable<
   MutationResolvers['answerOrganizationTransferRequest']

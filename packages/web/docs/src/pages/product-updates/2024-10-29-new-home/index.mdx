@@ -1,0 +1,77 @@
+---
+title: New Home for Repositories and Docker Images
+description:
+  We've moved repositories and Docker images to the `graphql-hive` organization on GitHub. See
+  what's changed and how to update your setup.
+date: 2024-10-29
+authors: [kamil, denis]
+---
+
+import { Callout } from '@theguild/components'
+
+In our latest update, we've made some structural changes by moving our repositories and Docker
+images to the newly created [`github.com/graphql-hive`](https://github.com/graphql-hive)
+organization on GitHub.
+
+## GitHub Repositories
+
+We've moved our main Hive repository from
+[`kamilkisiela/graphql-hive`](https://github.com/kamilkisiela/graphql-hive) to
+[`graphql-hive/platform`](https://github.com/graphql-hive/platform). Additionally, the Hive Gateway
+has been extracted from [`ardatan/graphql-mesh`](https://github.com/ardatan/graphql-mesh) and can
+now be found at [`graphql-hive/gateway`](https://github.com/graphql-hive/gateway).
+
+Previously, our repositories were spread across multiple organizations and users. Now you can find
+all Hive repositories in one place, making it easier to navigate and contribute.
+
+Give us a star on GitHub to show your support and stay up-to-date with the latest changes!
+
+## Docker Images
+
+For those using our Docker images, we've move them as well.
+
+All images are now available under the
+[`ghcr.io/graphql-hive`](https://github.com/orgs/graphql-hive/packages) namespace on GitHub
+Container Registry.
+
+**Hive (self-hosted)**
+
+If you self-host Hive, please update your Docker files to the new image paths:
+
+```diff
+- ghcr.io/kamilkisiela/graphql-hive/<image-name>
++ ghcr.io/graphql-hive/<image-name>
+
+- ghcr.io/kamilkisiela/graphql-hive/emails
++ ghcr.io/graphql-hive/emails
+```
+
+<Callout type="info">
+  We recently began versioning the components of self-hosted Hive to enhance stability and upgrade
+  management. [Read more about versioning
+  here](/product-updates/2024-10-29-versioning-for-self-hosters).
+</Callout>
+
+**Hive-flavored version of Apollo Router**
+
+Many of you use our customized Apollo Router with Hive-specific features built in.
+
+```diff
+- ghcr.io/kamilkisiela/graphql-hive/apollo-router
++ ghcr.io/graphql-hive/apollo-router
+```
+
+**Hive Gateway**
+
+For those using
+[our GraphQL Gateway](https://the-guild.dev/graphql/hive/product-updates/2024-09-09-hive-gateway),
+be sure to update the image path as well.
+
+```diff
+- ghcr.io/ardatan/hive-gateway
++ ghcr.io/graphql-hive/gateway
+```
+
+---
+
+The old Docker images remain available but will no longer receive updates.

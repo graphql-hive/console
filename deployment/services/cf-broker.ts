@@ -36,11 +36,13 @@ export function deployCFBroker({
     sentryDsn: sentry.enabled && sentry.secret ? sentry.secret.raw.dsn : '',
     release: environment.release,
     loki: observabilityConfig.getBoolean('enabled')
-      ? {
-          endpoint: observabilityConfig.require('lokiEndpoint'),
-          username: observabilityConfig.require('lokiUsername'),
-          password: observabilityConfig.requireSecret('lokiPassword'),
-        }
+      ? observabilityConfig.getBoolean('local')
+        ? null
+        : {
+            endpoint: observabilityConfig.require('lokiEndpoint'),
+            username: observabilityConfig.require('lokiUsername'),
+            password: observabilityConfig.requireSecret('lokiPassword'),
+          }
       : null,
   });
 

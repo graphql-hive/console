@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { ProjectManager } from '../../providers/project-manager';
 import { ProjectSlugModel } from '../../validation';
-import type { MutationResolvers } from './../../../../__generated__/types.next';
+import type { MutationResolvers } from './../../../../__generated__/types';
 
 const UpdateProjectSlugModel = z.object({
   slug: ProjectSlugModel,

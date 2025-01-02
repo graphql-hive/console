@@ -186,7 +186,7 @@ export class CompositeModel {
       project.type === ProjectType.FEDERATION
         ? this.federationOrchestrator
         : this.stitchingOrchestrator;
-    this.logger.debug('Orchestrator: %s', orchestrator);
+    this.logger.debug('Using orchestrator of type %s', orchestrator.type);
 
     const compositionCheck = await this.checks.composition({
       orchestrator,

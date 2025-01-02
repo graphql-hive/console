@@ -1607,3 +1607,128 @@ describe('incremental delivery usage reporting', () => {
     graphqlScope.done();
   });
 });
+
+describe('request batching usage reporting', () => {
+  test('reports usage for batch execution', async () => {
+    const graphqlScope = nock('http://localhost')
+      .post('/usage', body => {
+        expect(body.map).toMatchInlineSnapshot(`
+        {
+          43e84c7ba2c9fff1700237aa7822544e3a66f038: {
+            fields: [
+              Query.a,
+            ],
+            operation: query A{a},
+            operationName: A,
+          },
+          727c980e5b1ce7c94b587c835cd1388b79714fcc: {
+            fields: [
+              Query.b,
+            ],
+            operation: query B{b},
+            operationName: B,
+          },
+        }
+      `);
+
+        expect(body.operations).toMatchObject([
+          {
+            metadata: {
+              client: {
+                name: 'foo',
+                version: '4.2.0',
+              },
+            },
+          },
+          {
+            metadata: {
+              client: {
+                name: 'foo',
+                version: '4.2.0',
+              },
+            },
+          },
+        ]);
+
+        return true;
+      })
+      .reply(200);
+
+    const yoga = createYoga({
+      schema: createSchema({
+        typeDefs: /* GraphQL */ `
+          type Query {
+            a: String
+            b: String
+          }
+        `,
+        resolvers: {
+          Query: {
+            a: () => 'a',
+            b: () => 'b',
+          },
+        },
+      }),
+      batching: true,
+      plugins: [
+        useHive({
+          enabled: true,
+          debug: false,
+          token: 'brrrt',
+          selfHosting: {
+            applicationUrl: 'http://localhost/foo',
+            graphqlEndpoint: 'http://localhost/graphql',
+            usageEndpoint: 'http://localhost/usage',
+          },
+          usage: {
+            endpoint: 'http://localhost/usage',
+          },
+          agent: {
+            maxSize: 1,
+            sendInterval: 10,
+            logger: createLogger('silent'),
+          },
+        }),
+      ],
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        resolve();
+      }, 1000);
+      let requestCount = 0;
+
+      graphqlScope.on('request', () => {
+        requestCount = requestCount + 1;
+        if (requestCount === 2) {
+          clearTimeout(timeout);
+          resolve();
+        }
+      });
+
+      (async () => {
+        const res = await yoga.fetch('http://localhost/graphql', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-graphql-client-name': 'foo',
+            'x-graphql-client-version': '4.2.0',
+          },
+          body: JSON.stringify([
+            {
+              query: 'query A { a }',
+            },
+            {
+              query: 'query B { b }',
+            },
+          ]),
+        });
+
+        expect(res.status).toBe(200);
+        expect(await res.text()).toMatchInlineSnapshot('[{"data":{"a":"a"}},{"data":{"b":"b"}}]');
+      })().catch(reject);
+    });
+
+    graphqlScope.done();
+  });
+});

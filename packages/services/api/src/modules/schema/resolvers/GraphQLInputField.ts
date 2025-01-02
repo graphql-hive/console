@@ -1,5 +1,5 @@
 import { stringifyDefaultValue, usage } from '../utils';
-import type { GraphQlInputFieldResolvers } from './../../../__generated__/types.next';
+import type { GraphQlInputFieldResolvers } from './../../../__generated__/types';
 
 export const GraphQLInputField: GraphQlInputFieldResolvers = {
   name: f => f.entity.name,

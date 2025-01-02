@@ -17,9 +17,6 @@ const entryPoints = parseArgs({
 
 interface BuildOptions {
   external?: string[];
-  next?: {
-    header?: string;
-  };
 }
 
 runify(normalize(join(process.cwd(), 'package.json')));
@@ -30,24 +27,14 @@ async function runify(packagePath: string) {
   const buildOptions: BuildOptions = pkg.buildOptions || {};
   console.log(`Building...`);
 
-  if (isNext(pkg)) {
-    const additionalRequire = pkg?.buildOptions?.next?.header ?? null;
-    await buildWithNext(cwd, additionalRequire);
-    await rewritePackageJson(pkg, cwd, newPkg => ({
-      ...newPkg,
-      dependencies: pkg.dependencies,
-      type: 'commonjs',
-    }));
-  } else {
-    await compile(
-      cwd,
-      entryPoints?.length ? entryPoints : 'src/index.ts',
-      buildOptions,
-      Object.keys(pkg.dependencies ?? {}).concat(Object.keys(pkg.devDependencies ?? {})),
-      pkg.type === 'module',
-    );
-    await rewritePackageJson(pkg, cwd);
-  }
+  await compile(
+    cwd,
+    entryPoints?.length ? entryPoints : 'src/index.ts',
+    buildOptions,
+    Object.keys(pkg.dependencies ?? {}).concat(Object.keys(pkg.devDependencies ?? {})),
+    pkg.type === 'module',
+  );
+  await rewritePackageJson(pkg, cwd);
 
   console.log(`Built!`);
 }
@@ -85,43 +72,6 @@ async function rewritePackageJson(
   await fs.writeFile(join(cwd, 'dist', 'package.json'), JSON.stringify(newPkg, null, 2), {
     encoding: 'utf-8',
   });
-}
-
-function isNext(pkg: any): boolean {
-  return pkg?.dependencies?.next || pkg?.devDependencies?.next;
-}
-
-async function buildWithNext(cwd: string, additionalRequire: string | null) {
-  await fs.mkdirp(normalize(join(cwd, 'dist')));
-  if (additionalRequire) {
-    await tsup({
-      entryPoints: [normalize(join(cwd, additionalRequire))],
-      outDir: normalize(join(cwd, 'dist')),
-      target: 'node22',
-      format: ['cjs'],
-      splitting: false,
-      skipNodeModulesBundle: true,
-    });
-  }
-
-  const template = await fs.readFile(join(__dirname, 'templates/runify-next.ts'), 'utf-8');
-
-  await Promise.all([
-    fs.copy(join(cwd, '.next'), join(cwd, 'dist/.next'), {
-      filter(src) {
-        // copy without webpack cache (it's 900mb...)
-        return src.includes('cache/webpack') === false;
-      },
-    }),
-    fs.copy(join(cwd, 'public'), join(cwd, 'dist/public')),
-    fs.writeFile(
-      join(cwd, 'dist/index.js'),
-      template.replace(
-        '// <-- additionalRequire -->',
-        additionalRequire ? `require('${additionalRequire.replace('.ts', '')}')` : ``,
-      ),
-    ),
-  ]);
 }
 
 async function compile(

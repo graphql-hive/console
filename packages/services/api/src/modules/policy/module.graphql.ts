@@ -77,23 +77,18 @@ export default gql`
 
   extend type Organization {
     schemaPolicy: SchemaPolicy
+    """
+    Whether the viewer can view and modify the schema policy for this organization
+    """
+    viewerCanModifySchemaPolicy: Boolean!
   }
 
   extend type Project {
     schemaPolicy: SchemaPolicy
     parentSchemaPolicy: SchemaPolicy
-  }
-
-  extend type Target {
     """
-    A merged representation of the schema policy, as inherited from the organization and project.
+    Whether the viewer can view and modify the schema policy for this organization
     """
-    schemaPolicy: TargetSchemaPolicy
-  }
-
-  type TargetSchemaPolicy {
-    organizationPolicy: SchemaPolicy
-    projectPolicy: SchemaPolicy
-    mergedRules: [SchemaPolicyRuleInstance!]!
+    viewerCanModifySchemaPolicy: Boolean!
   }
 `;

@@ -236,7 +236,6 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     match arg_value {
                         Value::Enum(value) => {
                             let value_str = value.to_string();
-                            println!("Coordinate: {input_type_name}.{value_str}");
                             ctx.schema_coordinates
                                 .insert(format!("{input_type_name}.{value_str}").to_string());
                         }
@@ -451,7 +450,7 @@ impl<'s, T: Text<'s> + Clone> OperationTransformer<'s, T> for SortSelectionsTran
 
     fn transform_directives(
         &mut self,
-        directives: &Vec<Directive<'s, T>>,
+        directives: &[Directive<'s, T>],
     ) -> TransformedValue<Vec<Directive<'s, T>>> {
         let mut next_directives = self
             .transform_list(&directives, Self::transform_directive)

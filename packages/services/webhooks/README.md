@@ -10,6 +10,7 @@ This service takes care of delivering WebHooks.
 | `REDIS_HOST`                        | **Yes**  | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                        | **Yes**  | The port of your redis instance.                                                                         | `6379`                                               |
 | `REDIS_PASSWORD`                    | **Yes**  | The password of your redis instance.                                                                     | `"apollorocks"`                                      |
+| `REDIS_TLS_ENABLED`                 | **No**   | Enable TLS for redis connection (rediss://).                                                             | `"0"`                                                |
 | `ENVIRONMENT`                       | No       | The environment of your Hive app. (**Note:** This will be used for Sentry reporting.)                    | `staging`                                            |
 | `HEARTBEAT_ENDPOINT`                | No       | The endpoint for a heartbeat.                                                                            | `http://127.0.0.1:6969/heartbeat`                    |
 | `SENTRY`                            | No       | Whether Sentry error reporting should be enabled.                                                        | `1` (enabled) or `0` (disabled)                      |

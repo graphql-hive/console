@@ -23,7 +23,7 @@ import {
 } from 'graphql';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { withUsedByClients } from '../utils';
-import type { SchemaExplorerResolvers } from './../../../__generated__/types.next';
+import type { SchemaExplorerResolvers } from './../../../__generated__/types';
 
 export const SchemaExplorer: SchemaExplorerResolvers = {
   type: async (source, { name }, { injector }) => {

@@ -1,15 +1,15 @@
-import { AuthManager } from '../../../auth/providers/auth-manager';
+import { Session } from '../../../auth/lib/authz';
 import { OIDCIntegrationsProvider } from '../../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
-import type { QueryResolvers } from './../../../../__generated__/types.next';
+import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganization']> = async (
   _,
   { previouslyVisitedOrganizationId: previouslyVisitedOrganizationSlug },
   { injector },
 ) => {
-  const user = await injector.get(AuthManager).getCurrentUser();
+  const user = await injector.get(Session).getViewer();
   const organizationManager = injector.get(OrganizationManager);
 
   // For an OIDC Integration User we want to return the linked organization

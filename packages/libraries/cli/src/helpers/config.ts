@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import mkdirp from 'mkdirp';
+import { sync as mkdirp } from 'mkdirp';
 import * as zod from 'zod';
 
 const LegacyConfigModel = zod.object({
@@ -175,7 +175,7 @@ export class Config {
 
   clear(): void {
     try {
-      mkdirp.sync(path.dirname(this.filepath));
+      mkdirp(path.dirname(this.filepath));
     } catch {}
     fs.writeFileSync(this.filepath, JSON.stringify({}), 'utf8');
   }
@@ -240,7 +240,7 @@ export class Config {
   private write(map: ConfigModelType) {
     this.cache = map;
     try {
-      mkdirp.sync(path.dirname(this.filepath));
+      mkdirp(path.dirname(this.filepath));
     } catch (e) {}
     fs.writeFileSync(this.filepath, JSON.stringify(this.cache));
   }

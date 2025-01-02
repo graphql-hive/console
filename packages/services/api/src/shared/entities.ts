@@ -240,6 +240,15 @@ export interface DocumentCollection {
   updatedAt: string;
 }
 
+export interface PreflightScript {
+  id: string;
+  sourceCode: string;
+  targetId: string;
+  createdByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type PaginatedDocumentCollections = Readonly<{
   edges: ReadonlyArray<{
     node: DocumentCollection;
@@ -318,7 +327,7 @@ export interface Token {
   project: string;
   organization: string;
   date: string;
-  lastUsedAt: string;
+  lastUsedAt: string | null;
   scopes: readonly string[];
 }
 

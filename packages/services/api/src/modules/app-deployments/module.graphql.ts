@@ -60,6 +60,10 @@ export default gql`
     """
     appDeployments(first: Int, after: String): AppDeploymentConnection
     appDeployment(appName: String!, appVersion: String!): AppDeployment
+    """
+    Whether the viewer can access the app deployments within a target.
+    """
+    viewerCanViewAppDeployments: Boolean!
   }
 
   extend type Mutation {
