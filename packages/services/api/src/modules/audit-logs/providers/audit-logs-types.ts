@@ -275,7 +275,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('ORGANIZATION_UPDATED_INTEGRATION'),
     metadata: z.object({
-      integrationId: z.string().uuid().nullable(),
+      integrationId: z.string().nullable(),
       integrationType: z.enum(['SLACK', 'GITHUB']),
       integrationStatus: z.enum(['ENABLED', 'DISABLED']),
     }),

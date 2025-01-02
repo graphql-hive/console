@@ -10,34 +10,79 @@ import { Screenshot } from '../../../../components/screenshot'
 
 export const figcaptionClass = 'text-center text-sm mt-2'
 
-These scripts allow you to automatically run custom authentication processes before executing your
-GraphQL operations. They're especially useful for handling authentication flows like OAuth, where
-you may need to refresh an access token. Let's explore how it works.
+**Preflight Scripts** is a feature that enables you to automatically execute custom code before each
+GraphQL request is made. They're especially useful for handling authentication flows like OAuth,
+where you may need to claim or refresh an access token, validate credentials, or set up custom
+headers - all before the request is sent.
 
 ## Configuring Preflight Script
 
-To create a script click on the command line icon (right after Operation Collections plugin icon) in
-GraphiQL sidebar section.
+Navigate to the sidebar section and click the terminal icon to create a preflight script.
 
-<figure className="mt-6">
-  <Screenshot>![Command line icon](./command-line-icon.png)</Screenshot>
-  {/* prettier-ignore */}
-  <figcaption className={figcaptionClass}>The preflight script is accessible by clicking on the Command line icon in the GraphiQL sidebar</figcaption>
-</figure>
+The interface displays two editors:
 
-You will see Script editor (JavaScript language) which is read-only and present for a quick view of
-your saved script and Environment variables editor (JSON language) which is persistent in
-localStorage.
+- a **read-only Script editor** in JavaScript for viewing the saved script,
+- an **Environment Variables editor** in JSON that persists data in localStorage.
 
-<figure className="mt-6">
-  <Screenshot>![](./preflight-script-plugin.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Preflight script plugin view</figcaption>
-</figure>
+<Screenshot>![Active Preflight Script](./active-preflight-script.png)</Screenshot>
+
+## API Reference
+
+When writing a preflight script, you have access to some of browser APIs and majority of JavaScript
+features, including [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API),
+[console](https://developer.mozilla.org/en-US/docs/Web/API/console) or top level `await` syntax.
+Additionally, the Laboratory provides a few methods designed to simplify common workflows, such as
+handling authentication or interacting with the user.
+
+### Environment Variables
+
+You can use the `lab.environment` API to store and retrieve data between requests or to pass values
+directly to HTTP headers for executed GraphQL requests.
+
+`lab.environment.set(key: string, value: any): void`
+
+Sets the value of the environment variable with the given key.
+
+`lab.environment.get(key: string): any`
+
+Returns the value of the environment variable with the given key.
+
+```js
+lab.environment.set('myKey', 'myValue')
+lab.environment.get('myKey') // 'myValue'
+```
+
+Environment variables are persisted in the browser, they are not shared between different users or
+devices.
+
+### User Interactions
+
+{/* TODO: explain */}
+
+`lab.prompt(message: string, defaultValue?: string): Promise<string | null>`
+
+Prompts the user with a message and an optional default value. Returns a promise that resolves with
+the user's input or `null` if the user cancels the prompt.
+
+```js
+const username = await lab.prompt('Enter your username')
+const password = await lab.prompt('Enter your password')
+```
+
+### CryptoJS
+
+For certain workflows, you may need to encrypt or decrypt data. The Laboratory provides access to
+the [CryptoJS](https://cryptojs.gitbook.io/docs) library.
+
+```js
+CryptoJS.MD5('Message')
+CryptoJS.HmacSHA256('Message', 'Secret Passphrase')
+```
 
 ## Editing Preflight Script
 
-Clicking on the `Edit` button will open Modal where you can edit, test and save your script in
-database.
+Clicking the "Edit" button opens a window that allows you to edit, test, and save your script in
+Hive.
 
 <Callout type="warning">
   **Note**: Your script will stored as plain text in our database, don't put any secrets there, use
@@ -45,55 +90,25 @@ database.
   organization, but only users with access to target Settings can edit the script code.
 </Callout>
 
-You can use any JavaScript syntax (including top-level `await`) in the Script editor. Getting and
-Setting environment variables is done by accessing the `environment` property on the `lab` global
-variable.
+As you write your script, you can click the "Run" button to test it. The script will run in a
+sandboxed environment, and you can see the output in the console.
 
-```js
-// get myKey variable from the Environment variables editor
-lab.environment.get('myKey')
-// set myKey variable to the Environment variables editor (persistent in localStorage)
-lab.environment.set('myKey', myValue)
-```
+Once you're satisfied with your script, click the "Save" button to persist it for all users in your
+organization.
 
-<figure className="mt-6">
-  <Screenshot>![](./get-and-set-env-vars.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Demo how to get and set environment variables</figcaption>
-</figure>
+<Screenshot>![](./editing.png)</Screenshot>
 
-## CryptoJS
+## Using Environment Variables in HTTP Headers
 
-Additionally, you can access [the CryptoJS library](https://github.com/brix/crypto-js) by accessing
-the `CryptoJS` property on the `lab` global variable.
+To use environment variables in the HTTP headers of your GraphQL requests, wrap the keys in double
+curly braces, for example:
 
-<figure className="mt-6">
-  <Screenshot>![](./crypto-js.png)</Screenshot>
-  <figcaption className={figcaptionClass}>CryptoJS</figcaption>
-</figure>
-
-## Global Variables and Errors
-
-Access to global variables such as `this`, `window` or `globalThis` is restricted. Errors thrown by
-the script will be displayed in Console Output.
-
-<figure className="mt-6">
-  <Screenshot>![](./unable-to-access-global-variables.png)</Screenshot>
-  <figcaption className={figcaptionClass}>Demo restricted access to global variables</figcaption>
-</figure>
-
-## Using Environment Variables
-
-To use your environment variables in GraphiQL headers editor wraps environment keys with
-double-curly braces, e.g.:
-
-```json filename="Headers" /{{myEnvVar}}/
+```json filename="Headers" /{{access_token}}/
 {
-  "Authorization": "Bearer {{myEnvVar}}"
+  "Authorization": "Bearer {{access_token}}"
 }
 ```
 
-<figure className="mt-6">
-  <Screenshot>![Replace syntax in action](./replace-syntax.png)</Screenshot>
-  {/* prettier-ignore */}
-  <figcaption className={figcaptionClass}>Replace syntax is done via double open/closed curly braces, e.g. `{{ myEnvVar }}`</figcaption>
-</figure>
+This will replace `{{access_token}}` with the value of the `access_token` environment variable.
+
+<Screenshot>![](./headers.png)</Screenshot>

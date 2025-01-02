@@ -1,6 +1,7 @@
 import {
   ComponentPropsWithoutRef,
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -8,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { clsx } from 'clsx';
+import { PowerIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Subtitle, Title } from '@/components/ui/page';
-import { Switch } from '@/components/ui/switch';
+import { Subtitle } from '@/components/ui/page';
+import { usePromptManager } from '@/components/ui/prompt';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
@@ -36,7 +38,9 @@ import {
   TriangleRightIcon,
 } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
+import { cn } from '../utils';
 import type { LogMessage } from './preflight-script-worker';
+import { IFrameEvents } from './shared-types';
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -62,6 +66,14 @@ const classes = {
   monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
   icon: clsx('absolute -left-5 top-px'),
 };
+
+function EditorTitle(props: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('cursor-default text-base font-semibold tracking-tight', props.className)}>
+      {props.children}
+    </div>
+  );
+}
 
 const sharedMonacoProps = {
   theme: 'vs-dark',
@@ -97,13 +109,6 @@ const monacoProps = {
     },
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
-
-type PayloadLog = { type: 'log'; log: string };
-type PayloadError = { type: 'error'; error: Error };
-type PayloadResult = { type: 'result'; environmentVariables: Record<string, unknown> };
-type PayloadReady = { type: 'ready' };
-
-type WorkerMessagePayload = PayloadResult | PayloadLog | PayloadError | PayloadReady;
 
 const UpdatePreflightScriptMutation = graphql(`
   mutation UpdatePreflightScript($input: UpdatePreflightScriptInput!) {
@@ -153,6 +158,7 @@ export function usePreflightScript(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const prompt = usePromptManager();
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorage(
@@ -192,19 +198,65 @@ export function usePreflightScript(args: {
 
       contentWindow.postMessage(
         {
-          type: 'run',
+          type: IFrameEvents.Incoming.Event.run,
           id,
           script,
           environmentVariables: (environmentVariables && safeParseJSON(environmentVariables)) || {},
-        },
+        } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
 
+      let isFinished = false;
       const isFinishedD = Promise.withResolvers<void>();
+      const openedPromptIds = new Set<number>();
 
       // eslint-disable-next-line no-inner-declarations
-      function eventHandler(ev: MessageEvent<WorkerMessagePayload>) {
-        if (ev.data.type === 'result') {
+      function setFinished() {
+        isFinished = true;
+        isFinishedD.resolve();
+      }
+
+      // eslint-disable-next-line no-inner-declarations
+      function closedOpenedPrompts() {
+        if (openedPromptIds.size) {
+          for (const promptId of openedPromptIds) {
+            prompt.closePrompt(promptId, null);
+          }
+        }
+      }
+
+      // eslint-disable-next-line no-inner-declarations
+      async function eventHandler(ev: IFrameEvents.Outgoing.MessageEvent) {
+        if (ev.data.type === IFrameEvents.Outgoing.Event.prompt) {
+          const promptId = ev.data.promptId;
+          openedPromptIds.add(promptId);
+          await prompt
+            .openPrompt({
+              id: promptId,
+              title: ev.data.message,
+              defaultValue: ev.data.defaultValue,
+            })
+            .then(value => {
+              if (isFinished) {
+                // ignore prompt response if the script has already finished
+                return;
+              }
+
+              openedPromptIds.delete(promptId);
+              contentWindow?.postMessage(
+                {
+                  type: IFrameEvents.Incoming.Event.promptResponse,
+                  id,
+                  promptId,
+                  value,
+                } satisfies IFrameEvents.Incoming.EventData,
+                '*',
+              );
+            });
+          return;
+        }
+
+        if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
           const mergedEnvironmentVariables = JSON.stringify(
             {
               ...safeParseJSON(latestEnvironmentVariablesRef.current),
@@ -222,11 +274,11 @@ export function usePreflightScript(args: {
               type: 'separator' as const,
             },
           ]);
-          isFinishedD.resolve();
+          setFinished();
           return;
         }
 
-        if (ev.data.type === 'error') {
+        if (ev.data.type === IFrameEvents.Outgoing.Event.error) {
           const error = ev.data.error;
           setLogs(logs => [
             ...logs,
@@ -236,11 +288,13 @@ export function usePreflightScript(args: {
               type: 'separator' as const,
             },
           ]);
-          isFinishedD.resolve();
+          setFinished();
+          closedOpenedPrompts();
+
           return;
         }
 
-        if (ev.data.type === 'log') {
+        if (ev.data.type === IFrameEvents.Outgoing.Event.log) {
           const log = ev.data.log;
           setLogs(logs => [...logs, log]);
           return;
@@ -250,9 +304,12 @@ export function usePreflightScript(args: {
       window.addEventListener('message', eventHandler);
       currentRun.current = () => {
         contentWindow.postMessage({
-          type: 'abort',
+          type: IFrameEvents.Incoming.Event.abort,
           id,
-        });
+        } satisfies IFrameEvents.Incoming.EventData);
+
+        closedOpenedPrompts();
+
         currentRun.current = null;
       };
 
@@ -306,11 +363,12 @@ export function usePreflightScript(args: {
         src="/__preflight-embed"
         title="preflight-worker"
         className="hidden"
+        data-cy="preflight-embed-iframe"
         /**
          * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
          * In PROD the webworker is not
          */
-        sandbox={import.meta.env.DEV ? 'allow-scripts allow-same-origin' : 'allow-scripts'}
+        sandbox={'allow-scripts' + (import.meta.env.DEV ? ' allow-same-origin' : '')}
         ref={iframeRef}
       />
     ),
@@ -397,43 +455,69 @@ function PreflightScriptContent() {
         </Button>
       </div>
       <Subtitle>
-        This script is run before each operation submitted, e.g. for automated authentication.
+        Before each GraphQL request begins, this script is executed automatically - for example, to
+        handle authentication.
       </Subtitle>
 
-      <div className="flex items-center gap-2 text-sm">
-        <Switch
-          checked={preflightScript.isPreflightScriptEnabled}
-          onCheckedChange={v => preflightScript.setIsPreflightScriptEnabled(v)}
-          className="my-4"
+      <div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() =>
+            preflightScript.setIsPreflightScriptEnabled(!preflightScript.isPreflightScriptEnabled)
+          }
           data-cy="toggle-preflight-script"
-        />
-        <span className="w-6">{preflightScript.isPreflightScriptEnabled ? 'ON' : 'OFF'}</span>
+        >
+          <PowerIcon className="mr-2 size-4" />
+          {preflightScript.isPreflightScriptEnabled ? 'On' : 'Off'}
+        </Button>
       </div>
 
-      {preflightScript.isPreflightScriptEnabled && (
+      <EditorTitle className="mt-6 flex cursor-not-allowed items-center gap-2">
+        Script{' '}
+        <Badge className="text-xs" variant="outline">
+          JavaScript
+        </Badge>
+      </EditorTitle>
+      <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
+      <div className="relative">
+        {preflightScript.isPreflightScriptEnabled ? null : (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
+            <div className="rounded-md bg-[#0f1520] p-4 text-sm">
+              Preflight Script is disabled and will not be executed
+            </div>
+          </div>
+        )}
         <MonacoEditor
           height={128}
           value={preflightScript.script}
           {...monacoProps.script}
-          className={classes.monacoMini}
+          className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
             ['data-cy']: 'preflight-script-editor-mini',
           }}
           options={{
             ...monacoProps.script.options,
             lineNumbers: 'off',
+            domReadOnly: true,
             readOnly: true,
+            hover: {
+              enabled: false,
+            },
           }}
         />
-      )}
+      </div>
 
-      <Title className="mt-6 flex items-center gap-2">
+      <EditorTitle className="mt-6 flex items-center gap-2">
         Environment variables{' '}
         <Badge className="text-xs" variant="outline">
           JSON
         </Badge>
-      </Title>
-      <Subtitle>Define variables to use in your Headers</Subtitle>
+      </EditorTitle>
+      <Subtitle className="mb-3">
+        Declare variables that can be used by both the script and headers.
+      </Subtitle>
       <MonacoEditor
         height={128}
         value={preflightScript.environmentVariables}
@@ -526,12 +610,12 @@ function PreflightScriptModal({
         <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
           <div className="mr-4 flex flex-col">
             <div className="flex justify-between p-2">
-              <Title className="flex gap-2">
+              <EditorTitle className="flex gap-2">
                 Script Editor
                 <Badge className="text-xs" variant="outline">
                   JavaScript
                 </Badge>
-              </Title>
+              </EditorTitle>
               <Button
                 variant="orangeLink"
                 size="icon-sm"
@@ -575,7 +659,7 @@ function PreflightScriptModal({
           </div>
           <div className="flex h-[inherit] flex-col">
             <div className="flex justify-between p-2">
-              <Title>Console Output</Title>
+              <EditorTitle>Console Output</EditorTitle>
               <Button
                 variant="orangeLink"
                 size="icon-sm"
@@ -627,12 +711,12 @@ function PreflightScriptModal({
                 return <hr key={index} className="my-2 border-dashed border-current" />;
               })}
             </section>
-            <Title className="flex gap-2 p-2">
+            <EditorTitle className="flex gap-2 p-2">
               Environment Variables
               <Badge className="text-xs" variant="outline">
                 JSON
               </Badge>
-            </Title>
+            </EditorTitle>
             <MonacoEditor
               value={envValue}
               onChange={value => onEnvValueChange(value ?? '')}

@@ -1,3 +1,5 @@
+import { dedent } from '../support/testkit';
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
@@ -98,6 +100,62 @@ throw new TypeError('Test')`,
     );
   });
 
+  it('prompt and pass the awaited response', () => {
+    setEditorScript(script);
+
+    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+
+    setEditorScript(
+      dedent`
+        const username = await lab.prompt('Enter your username');
+        console.info(username);
+      `,
+    );
+
+    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('prompt').get('input').type('test-username');
+    cy.dataCy('prompt').get('form').submit();
+
+    // First log previous log message
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    // After the new logs
+    cy.dataCy('console-output').should(
+      'contain',
+      dedent`
+        Info: test-username (Line: 2, Column: 1)
+      `,
+    );
+  });
+
+  it('prompt and cancel', () => {
+    setEditorScript(script);
+
+    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+
+    setEditorScript(
+      dedent`
+        const username = await lab.prompt('Enter your username');
+        console.info(username);
+      `,
+    );
+
+    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('prompt').get('input').type('test-username');
+    cy.dataCy('prompt').get('[data-cy="prompt-cancel"]').click();
+
+    // First log previous log message
+    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    // After the new logs
+    cy.dataCy('console-output').should(
+      'contain',
+      dedent`
+        Info: null (Line: 2, Column: 1)
+      `,
+    );
+  });
+
   it('script execution updates environment variables', () => {
     setEditorScript(`lab.environment.set('my-test', "TROLOLOL")`);
 
@@ -149,10 +207,15 @@ describe('Execution', () => {
         parseSpecialCharSequences: false,
       });
     });
-    cy.intercept('/api/lab/foo/my-new-project/development', req => {
-      expect(req.headers.__test).to.equal('injected bar {{nonExist}}');
-    });
-    cy.get('body').type('{ctrl}{enter}');
+
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        __test: 'injected bar {{nonExist}}',
+      },
+    }).as('post');
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
   });
 
   it('executed script updates update env editor and substitute headers', () => {
@@ -166,12 +229,54 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-script-modal-button').click();
-    setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', 92)`);
+    setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', '92')`);
     cy.dataCy('preflight-script-modal-submit').click();
-    cy.intercept('/api/lab/foo/my-new-project/development', req => {
-      expect(req.headers.__test).to.equal('92');
-    });
+
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        __test: '92',
+      },
+    }).as('post');
     cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+  });
+
+  it('execute, prompt and use it in headers', () => {
+    cy.dataCy('toggle-preflight-script').click();
+
+    cy.get('[data-name="headers"]').click();
+    cy.get('[data-name="headers"]').click();
+    cy.get('.graphiql-editor-tool .graphiql-editor:last-child textarea').type(
+      '{ "__test": "{{username}}" }',
+      {
+        force: true,
+        parseSpecialCharSequences: false,
+      },
+    );
+
+    cy.dataCy('preflight-script-modal-button').click();
+    setMonacoEditorContents(
+      'preflight-script-editor',
+      dedent`
+      const username = await lab.prompt('Enter your username');
+      lab.environment.set('username', username);
+    `,
+    );
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        __test: 'foo',
+      },
+    }).as('post');
+    cy.get('.graphiql-execute-button').click();
+
+    cy.dataCy('prompt').get('input').type('foo');
+    cy.dataCy('prompt').get('form').submit();
+
+    cy.wait('@post');
   });
 
   it('disabled script is not executed', () => {
@@ -188,9 +293,14 @@ describe('Execution', () => {
     setMonacoEditorContents('env-editor', `{"foo":10}`);
 
     cy.dataCy('preflight-script-modal-submit').click();
-    cy.intercept('/api/lab/foo/my-new-project/development', req => {
-      expect(req.headers.__test).to.equal('10');
-    });
+
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        __test: '10',
+      },
+    }).as('post');
     cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
   });
 });

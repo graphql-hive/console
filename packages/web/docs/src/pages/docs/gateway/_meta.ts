@@ -4,7 +4,7 @@ export default {
   'usage-reporting': 'Usage Reporting',
   'persisted-documents': 'Persisted Documents',
   'authorization-authentication': 'Authorization / Authentication',
-  'monitoring-tracing': 'Monitoring/Tracing',
+  'monitoring-tracing': 'Monitoring / Tracing',
   'defer-stream': 'Incremental Delivery (Defer & Stream)',
   subscriptions: 'Subscriptions',
   'other-features': 'Other Features',

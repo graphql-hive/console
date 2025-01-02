@@ -73,7 +73,7 @@
     "@swc/core": "1.10.1",
     "@theguild/eslint-config": "0.12.1",
     "@theguild/prettier-config": "2.0.7",
-    "@types/node": "22.9.3",
+    "@types/node": "22.10.2",
     "bob-the-bundler": "7.0.1",
     "cypress": "13.17.0",
     "dotenv": "16.4.7",
@@ -101,13 +101,15 @@
   "pnpm": {
     "overrides.csstype": "To fix type check error https://github.com/JedWatson/react-select/issues/5952",
     "overrides.mjml": "Our patch removes html-minifier from mjml-core, we dont need this dependency and its causing false-alarm (CVE https://nvd.nist.gov/vuln/detail/cve-2022-37620)",
+    "overrides.ip": "There is no update with fix for ip package, we use fork https://github.com/indutny/node-ip/issues/150#issuecomment-2325961380",
     "overrides": {
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",
       "mjml-cli@4.14.0>html-minifier": "-",
       "ws@^8.0.0": "^8.18.0",
       "ws@*": ">=8.18.0 || >=7.5.10 || >=6.2.3 || >=5.2.4",
-      "cookie@<0.7.0": "0.7.2"
+      "cookie@<0.7.0": "0.7.2",
+      "ip": "npm:neoip@2.1.0"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

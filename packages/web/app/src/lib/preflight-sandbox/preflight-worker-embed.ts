@@ -9,45 +9,68 @@ const PREFLIGHT_TIMEOUT = 30_000;
 
 const abortSignals = new Map<string, AbortController>();
 
-window.addEventListener('message', (e: IFrameEvents.Incoming.MessageEvent) => {
-  console.log('received event', e.data);
+const workers = new Map<string, Worker>();
 
-  if (e.data.type === IFrameEvents.Incoming.Event.run) {
-    handleRunEvent(e.data);
-    return;
-  }
-  if (e.data.type === IFrameEvents.Incoming.Event.abort) {
-    abortSignals.get(e.data.id)?.abort();
-    return;
-  }
+window.addEventListener('message', (e: IFrameEvents.Incoming.MessageEvent) => {
+  handleEvent(e.data);
 });
 
 postMessage({
   type: IFrameEvents.Outgoing.Event.ready,
 });
 
-function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
+function handleEvent(data: IFrameEvents.Incoming.EventData) {
+  if (data.type === IFrameEvents.Incoming.Event.abort) {
+    abortSignals.get(data.id)?.abort();
+    return;
+  }
+
+  if (data.type === IFrameEvents.Incoming.Event.promptResponse) {
+    const worker = workers.get(data.id);
+
+    if (!worker) {
+      // Worker has already been terminated
+      return;
+    }
+
+    worker.postMessage({
+      type: WorkerEvents.Incoming.Event.promptResponse,
+      promptId: data.promptId,
+      value: data.value,
+    } satisfies WorkerEvents.Incoming.EventData);
+
+    return;
+  }
+
   let worker: Worker;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  const runId = data.id;
 
   function terminate() {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
     if (worker) {
       worker.terminate();
     }
-    abortSignals.delete(data.id);
+    abortSignals.delete(runId);
+    workers.delete(runId);
   }
 
   const controller = new AbortController();
 
   controller.signal.onabort = terminate;
-  abortSignals.set(data.id, controller);
+  abortSignals.set(runId, controller);
 
   try {
     worker = new PreflightWorker();
+    workers.set(runId, worker);
 
-    const timeout = setTimeout(() => {
+    timeout = setTimeout(() => {
       postMessage({
         type: IFrameEvents.Outgoing.Event.error,
-        runId: data.id,
+        runId,
         error: new Error(
           `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
         ),
@@ -58,22 +81,32 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
     worker.addEventListener(
       'message',
       function eventListener(ev: WorkerEvents.Outgoing.MessageEvent) {
-        console.log('received event from worker', ev.data);
         if (ev.data.type === WorkerEvents.Outgoing.Event.ready) {
           worker.postMessage({
+            type: WorkerEvents.Incoming.Event.run,
             script: data.script,
             environmentVariables: data.environmentVariables,
-          } satisfies WorkerEvents.Incoming.MessageData);
+          } satisfies WorkerEvents.Incoming.EventData);
+          return;
+        }
+
+        if (ev.data.type === WorkerEvents.Outgoing.Event.prompt) {
+          postMessage({
+            type: IFrameEvents.Outgoing.Event.prompt,
+            runId,
+            promptId: ev.data.promptId,
+            message: ev.data.message,
+            defaultValue: ev.data.defaultValue,
+          });
           return;
         }
 
         if (ev.data.type === WorkerEvents.Outgoing.Event.result) {
           postMessage({
             type: IFrameEvents.Outgoing.Event.result,
-            runId: data.id,
+            runId,
             environmentVariables: ev.data.environmentVariables,
           });
-          clearTimeout(timeout);
           terminate();
           return;
         }
@@ -81,7 +114,7 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
         if (ev.data.type === WorkerEvents.Outgoing.Event.log) {
           postMessage({
             type: IFrameEvents.Outgoing.Event.log,
-            runId: data.id,
+            runId,
             log: ev.data.message,
           });
           return;
@@ -90,10 +123,9 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
         if (ev.data.type === WorkerEvents.Outgoing.Event.error) {
           postMessage({
             type: IFrameEvents.Outgoing.Event.error,
-            runId: data.id,
+            runId,
             error: ev.data.error,
           });
-          clearTimeout(timeout);
           terminate();
           return;
         }
@@ -102,13 +134,13 @@ function handleRunEvent(data: IFrameEvents.Incoming.RunEventData) {
 
     postMessage({
       type: IFrameEvents.Outgoing.Event.start,
-      runId: data.id,
+      runId,
     });
   } catch (error) {
     console.error(error);
     postMessage({
       type: IFrameEvents.Outgoing.Event.error,
-      runId: data.id,
+      runId,
       error: error as Error,
     });
     terminate();

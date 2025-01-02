@@ -1,17 +1,28 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive, JSONPrimitive } from './json';
+import { isJSONPrimitive } from './json';
 import { WorkerEvents } from './shared-types';
 
 export type LogMessage = string | Error;
+
+/**
+ * Unique id for each prompt request.
+ * Incremented each time a prompt is requested.
+ */
+let promptId = 0;
+/**
+ * Map of promptId to the callback that should be called when the prompt is resolved.
+ * The callback is Promise.resolve of the prompt request of a given id.
+ */
+const promptCallbacks = new Map<number, (result: string | null) => void>();
 
 function sendMessage(data: WorkerEvents.Outgoing.EventData) {
   postMessage(data);
 }
 
-self.onmessage = async event => {
-  await execute(event.data);
+self.onmessage = async (ev: WorkerEvents.Incoming.MessageEvent) => {
+  await execute(ev.data);
 };
 
 self.addEventListener('unhandledrejection', event => {
@@ -19,18 +30,24 @@ self.addEventListener('unhandledrejection', event => {
   sendMessage({ type: WorkerEvents.Outgoing.Event.error, error });
 });
 
-async function execute(args: {
-  environmentVariables: Record<string, JSONPrimitive>;
-  script: string;
-}): Promise<void> {
-  const { environmentVariables, script } = args;
-  const inWorker = typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
-  // Confirm the build pipeline worked and this is running inside a worker and not the main thread
-  if (!inWorker) {
-    throw new Error(
-      'Preflight script must always be run in web workers, this is a problem with laboratory not user input',
-    );
+async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
+  if (args.type === WorkerEvents.Incoming.Event.promptResponse) {
+    // When a prompt response is received, resolve the promise, so `await lab.prompt` can return the value.
+    const callback = promptCallbacks.get(args.promptId);
+    if (!callback) {
+      postMessage({
+        type: WorkerEvents.Outgoing.Event.error,
+        error: new Error('Prompt callback not found'),
+      });
+      return;
+    }
+    promptCallbacks.delete(args.promptId);
+    // resolve
+    callback(args.value);
+    return;
   }
+
+  const { environmentVariables, script } = args;
 
   // When running in worker `environmentVariables` will not be a reference to the main thread value
   // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
@@ -109,6 +126,20 @@ async function execute(args: {
           workingEnvironmentVariables[key] = validValue;
         }
       },
+    },
+    /**
+     * Mimics the `prompt` function in the browser, by sending a message to the main thread
+     * and waiting for a response.
+     */
+    prompt(message: string, defaultValue: string) {
+      return new Promise<string | null>(resolve => {
+        // Increment the promptId so we can match the response to the request
+        promptId++;
+        // Store the resolve function so we can call it when the response is received
+        promptCallbacks.set(promptId, resolve);
+        // Send the prompt request to the main thread
+        postMessage({ type: 'prompt', promptId, message, defaultValue });
+      });
     },
   });
 

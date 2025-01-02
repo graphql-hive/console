@@ -52,6 +52,7 @@ import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
+import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
 
 const explorer = explorerPlugin();
@@ -515,21 +516,36 @@ function LaboratoryPageContent(props: {
           .graphiql-dialog a {
             --color-primary: 40, 89%, 60% !important;
           }
+          
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
+
+          .graphiql-doc-explorer-title,
+          .doc-explorer-title {
+            font-size: 1.125rem !important;
+            line-height: 1.75rem !important;
+            color: white;
+          }
+          
           .graphiql-container,
           .graphiql-dialog,
           .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
+          
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
             background: #030711;
           }
+          
           .graphiql-tab {
             white-space: nowrap;
+          }
+
+          .graphiql-sidebar > button.active {
+            background-color: hsla(var(--color-neutral),var(--alpha-background-light))
           }
         `}</style>
       </Helmet>
@@ -603,7 +619,10 @@ export function TargetLaboratoryPage(props: {
         page={Page.Laboratory}
         className="flex h-[--content-height] flex-col pb-0"
       >
-        <LaboratoryPageContent {...props} />
+        <PromptProvider>
+          <LaboratoryPageContent {...props} />
+          <PromptManager />
+        </PromptProvider>
       </TargetLayout>
     </>
   );

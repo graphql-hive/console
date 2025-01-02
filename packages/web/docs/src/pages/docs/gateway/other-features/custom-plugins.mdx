@@ -87,8 +87,6 @@ There are 2 categories of hooks:
 Gateway lifecycle allows to setup long running services, initialize in-memory cache or stores, react
 to general events.
 
-<div className="[&_a]:text-primary [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
-
 ```mermaid
 stateDiagram-v2
   onYogaInit: <a href="#onyogainit">onYogaInit</a>
@@ -104,8 +102,6 @@ stateDiagram-v2
   note left of listening: <a href="#onschemachange">onSchemaChange</a> called for each new schema loaded
   note left of listening: <a href="#onfetch">onFetch</a> called for each outgoing HTTP request
 ```
-
-</div>
 
 #### `onYogaInit`
 
@@ -154,6 +150,9 @@ Possible usage examples of this hooks are:
 This hook is called each time the `fetch` function is called. It can be either a request to an
 upstream subgraph using the http transport, or a request made a plugin to a third party technology.
 
+This hook has a before and after stage. You can hook into the after phase by returning a function
+(see [`onParseDone`](#onfetchdone)).
+
 Possible usage examples of the hooks are:
 
 - Manipulate HTTP [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object
@@ -175,21 +174,24 @@ Possible usage examples of the hooks are:
 | `requestId`        | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.                                                |
 | `logger`           | The logger instance for the specific request that includes the details of the request and the response.                                                                |
 
+##### `onFetchDone`
+
+Called once the `fetch` has ended and the response promise has been resolved.
+
+Possible usage examples of the hook are:
+
+- Manipulate HTTP [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) object.
+- Monitor the HTTP requests
+
+| Payload Field | Description                                                          |
+| ------------- | -------------------------------------------------------------------- |
+| `response`    | The response object returned by the fetch call.                      |
+| `setResponse` | Function to replace the current response with a new response object. |
+
 #### `onDispose`
 
 In order to clean up resources when Hive Gateway is shut down, you can use `onDispose`,
 `Symbol.asyncDispose` or `Symbol.syncDispose` to clean up resources.
-
-```ts
-export const useMyPlugin = () => {
-  return {
-    async onDispose() {
-      // Clean up resources
-      await stopConnection()
-    }
-  }
-}
-```
 
 [You can learn more about Explicit Resource Management in Yoga documentation](https://the-guild.dev/graphql/yoga-server/docs/features/explicit-resource-management).
 
@@ -200,50 +202,49 @@ The following diagram shows the lifecycle of request in Hive Gateway.
 Each hook is given a single parameter called payload. Please see detail section of each hook to know
 what contains each of this payloads.
 
-<div className="[&_a]:text-primary [&_a]:underline [&_a:hover]:no-underline [&_a]:decoration-from-font [&_a]:[text-underline-position:from-font]">
-
 ```mermaid
 stateDiagram-v2
   onRequest: <a href="#onrequest">onRequest</a>
   onResponse: <a href="#onresponse">onResponse</a>
-  GraphQLRequest: GraphQL Request
-
-  [*] --> onRequest
-
   state onRequest_if_state <<choice>>
-
   onRequest --> onRequest_if_state
-
   onRequest_if_state --> onResponse: Is not a GraphQL Request
   onRequest_if_state --> onRequestParse: Is GraphQL Request
-
   onRequestParse: <a href="#onrequestparse">onRequestParse</a>
   onParams: <a href="#onparams">onParams</a>
   onEnveloped: <a href="#onenveloped">onEnveloped</a>
   onParse: <a href="#onparse">onParse</a>
+  onParseDone: <a href="#onparsedone">onParseDone</a>
   onValidate: <a href="#onvalidate">onValidate</a>
-  onContextBuilding: <a href="oncontextbuilding">onContextBuilding</a>
+  onValidateDone: <a href="#onvalidatedone">onValidateDone</a>
+  onContextBuilding: <a href="#oncontextbuilding">onContextBuilding</a>
+  onContextBuildingDone: <a href="#oncontextbuildingdone">onContextBuildingDone</a>
   onExecute: <a href="#onexecute">onExecute</a>
   onSubscribe: <a href="#onsubscribe">onSubscribe</a>
-
   onExecuteDone: <a href="#onexecutedone">onExecuteDone</a>
   onFetch: <a href="#onfetch">onFetch (HTTP only)</a>
-  onSubscribeDone: <a href="#onsubscribedone">onSubscribeDone</a>
+  onFetchDone: <a href="#onfetchdone">onFetchDone</a>
   onExecutionResult: <a href="#onexecutionresult">onExecutionResult</a>
   onResultProcess: <a href="#onresultprocess">onResultProcess</a>
   onDelegationPlan: <a href="#ondelegationplan">onDelegationPlan</a>
+  onDelegationPlanDone: <a href="#ondelegationplandone">onDelegationPlanDone</a>
   onDelegationStageExecute: <a href="#ondelegationstageexecute">onDelegationStageExecute</a>
+  onDelegationStageExecuteDone: <a href="#ondelegationstageexecutedone">onDelegationStageExecuteDone</a>
   onSubgraphExecute: <a href="#onsubgraphexecute">onSubgraphExecute</a>
   onSubgraphExecuteDone: <a href="#onsubgraphexecutedone">onSubgraphExecuteDone</a>
-
 
   onRequestParse --> onParams
   onParams --> onEnveloped
   onEnveloped --> onParse
-  onParse --> onValidate
-  onValidate --> onContextBuilding
-  onContextBuilding --> onExecute: query or mutation
-  onContextBuilding --> onSubscribe: subscription
+  onParse --> onParseDone
+  onParseDone --> onValidate
+  onValidate --> onValidateDone
+  onValidateDone --> onContextBuilding
+  onContextBuilding --> onContextBuildingDone
+  onContextBuildingDone --> onExecute: Is query or mutation
+  onContextBuildingDone --> onSubscribe: Is subscription
+
+  [*] --> onRequest
 
   state is_plan_cached <<choice>>
   onExecute --> is_plan_cached
@@ -251,33 +252,43 @@ stateDiagram-v2
   is_plan_cached --> onDelegationPlan: Plan is not cached
   is_plan_cached --> onDelegationStageExecute: Plan is cached
 
-  note left of onDelegationPlan
-    Will be called for each nested selection set of the query
-  end note
-  onDelegationPlan --> onDelegationStageExecute
+  note left of onDelegationPlan: For each nested selection set of the query
+  onDelegationPlan --> onDelegationPlanDone
+  onDelegationPlanDone --> onDelegationStageExecute
   onDelegationStageExecute --> onSubgraphExecute
   onSubgraphExecute --> onFetch
-  onFetch --> onSubgraphExecuteDone
+  onFetch --> onFetchDone
+  onFetchDone --> onSubgraphExecuteDone
 
   state is_plan_finished <<choice>>
-  onSubgraphExecuteDone --> is_plan_finished
-  is_plan_finished --> onDelegationStageExecute: plan not finished
+  onSubgraphExecuteDone --> onDelegationStageExecuteDone
+  onDelegationStageExecuteDone --> is_plan_finished
+  is_plan_finished --> onDelegationStageExecute: Plan execution not finished
 
-  state end_of_execution <<fork>>
-  is_plan_finished --> end_of_execution: plan finished
-  end_of_execution --> onExecuteDone: query or mutation
-  end_of_execution --> onSubscribeDone: subscription
+  state end_of_execution <<choice>>
 
-    onExecuteDone --> onExecutionResult
-    onSubscribeDone --> onExecutionResult
+  is_plan_finished --> end_of_execution: Plan execution finished
 
-    onExecutionResult --> onResultProcess
+  onSubscriptionResult: <a href="#onsubscriptionresult">onSubscriptionResult</a>
+  onSubscriptionError: <a href="#onsubscriptionerror">onSubscriptionError</a>
+  end_of_execution --> onSubscriptionResult: Is subscription
+  onSubscriptionResult --> onExecutionResult
+  onSubscriptionResult --> onSubscriptionError: First exception thrown when resolving a subscription result
+
+  end_of_execution --> onExecuteDone: Is query or mutation
+  onExecuteDone --> onExecutionResult
+
+  onNext: <a href="#onnext">onNext</a>
+  onEnd: <a href="#onend">onEnd</a>
+  onExecutionResult --> onNext: Is AsyncIterable (subscription, defer, stream)
+  note left of onNext: For each incremental result
+  onNext --> onEnd
+
+  onExecutionResult --> onResultProcess
 
   onResultProcess --> onResponse
   onResponse --> [*]
 ```
-
-</div>
 
 #### `onRequest`
 
@@ -379,10 +390,21 @@ Possible usage examples of this hook are:
 | fetchAPI      | [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) provided in the Hive Gateway configuration. This should be used to make outgoing HTTP request, since it will trigger the `onFetch` hook. |
 | `context`     | The server context. It can contain runtime specific data, such as `req` and `res` object when running in Node for example.                                                                                       |
 
+#### `onEnveloped`
+
+This hook is called once per operation, at the start of the GraphQL execution pipeline. This is
+useful if you need to do some setup right before an incoming execution flow.
+
+| Payload Field   | Description                                                |
+| --------------- | ---------------------------------------------------------- |
+| `setSchema`     | Sets the schema to be used.                                |
+| `context`       | The GraphQL context object.                                |
+| `extendContext` | Extends the GraphQL context object with additional fields. |
+
 #### `onParse`
 
 Called for parsing the GraphQL document. This hook has a before and after stage. You can hook into
-before the document is parsed and/or into after the document is parsed.
+the after phase by returning a function (see [`onParseDone`](#onparsedone)).
 
 **Example actions in this hook:**
 
@@ -398,10 +420,27 @@ before the document is parsed and/or into after the document is parsed.
 | `setParseFn`        | Replace the current parse function.                                                                     |
 | `setParsedDocument` | Set/overwrite the parsed document. If a parsed document is set the call to the parseFn will be skipped. |
 
+##### `onParseDone`
+
+You can return a function from `onParse` to register a hook called after the parsing of the GraphQL
+document.
+
+**Example actions in this hook:**
+
+- Modify the parsed document
+- Gather metadata from the document, like directives.
+
+| Field Name           | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `context`            | The GraphQL context object.                       |
+| `extendContext`      | Extend the GraphQL context object with a partial. |
+| `result`             | The result of the parse phase.                    |
+| `replaceParseResult` | Replace the parse result with a new result.       |
+
 #### `onValidate`
 
 Called for validating the GraphQL document. This hook has a before and after stage. You can hook
-into before the document is parsed and/or into after the document is parsed.
+into the after phase by returning a function (see [`onValidateDone`](#onvalidatedone))
 
 **Example actions in this hook:**
 
@@ -418,10 +457,28 @@ into before the document is parsed and/or into after the document is parsed.
 | `setValidationFn`   | Overwrite the current validate function.                                  |
 | `setResult`         | Set a validation error result and skip the validate invocation.           |
 
+##### `onValidateDone`
+
+You can return a function from `onValidate` to register a hook called after the validation of the
+GraphQL operation.
+
+**Example actions in this hook:**
+
+- Replace the validation result
+- Collect metrics and validation errors
+
+| Field Name      | Description                                                      |
+| --------------- | ---------------------------------------------------------------- |
+| `context`       | The current context object.                                      |
+| `extendContext` | Extend the context object with a partial.                        |
+| `valid`         | Whether the validation raised any errors or not.                 |
+| `result`        | An array of errors that were raised during the validation phase. |
+| `setResult`     | Replace the current error result with a new one.                 |
+
 #### `onContextBuilding`
 
 Called for building the GraphQL context. This hook has a before and after stage. You can hook into
-before and after the context is built.
+the after phase by returning a function (see [`onValidateDone`](#oncontextbuildingdone))
 
 **Example actions in this hook:**
 
@@ -434,10 +491,27 @@ before and after the context is built.
 | `extendContext`        | Extend the context object with a partial.            |
 | `breakContextBuilding` | Prevent calls on any further context building hooks. |
 
+##### `onContextBuildingDone`
+
+You can return a function from `onValidate` to register a hook called after the construction of the
+GraphQL context.
+
+**Example actions in this hook:**
+
+- Modify the context
+
+| Field Name      | Description                                       |
+| --------------- | ------------------------------------------------- |
+| `context`       | The GraphQL context object.                       |
+| `extendContext` | Extend the GraphQL context object with a partial. |
+
 #### `onExecute`
 
-Called for executing a GraphQL mutation or query operation. This hook has a before and after stage.
-You can hook into before and after the GraphQL request is executed.
+Called for executing a GraphQL mutation or query operation.
+
+This hook has a before and after stage. You can hook into before and after the GraphQL request is
+executed by returning an object containing an `onExecuteDone` method (see
+[`onExecuteDone`](#onexecutedone)).
 
 **Example actions in this hook:**
 
@@ -451,6 +525,37 @@ You can hook into before and after the GraphQL request is executed.
 | `setExecuteFn`              | Replace the current execute function with a new one.           |
 | `setResultAndStopExecution` | Set an execution result and skip calling the execute function. |
 | `extendContext`             | Extend the context object with a partial.                      |
+
+##### `onExecuteDone`
+
+To register this hook, you need to return an object from `onExecute` hook.
+
+If the result is an `AsyncIterable`, you can hook into incremental result delivery by returning an
+object with `onNext` and `onEnd` methods (see
+[`AsyncIterable` results hooks](#asynciterable-results)).
+
+```ts filename="my-plugin.ts"
+const useMyPlugin() = () => ({
+  onExecute: () => ({
+    onExecuteDone: payload => {
+      // handle the end of the execution here
+    }
+  })
+})
+```
+
+This plugin is called once the execution is step is finished and a result has been computed.
+
+**Example actions in this hook:**
+
+- Error logging/reporting
+- Result modification
+
+| Payload Field | Description                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `args`        | The execution arguments.                                                                                                                        |
+| `result`      | The execution result returned from the execute function. Can return an AsyncIterable if a graphql.js that has defer/stream implemented is used. |
+| `setResult`   | Replace the execution result with a new execution result.                                                                                       |
 
 #### `onSubscribe`
 
@@ -470,31 +575,149 @@ You can hook into before and after the GraphQL subscription is executed.
 | `extendContext`             | Extend the context object with a partial.                                                                |
 | `setResultAndStopExecution` | Set a subscribe result and skip calling the subscribe function.                                          |
 
+##### `onSubscriptionResult`
+
+Called when the `AsyncIterable` result have been created and is ready to produce incremental
+results.
+
+It is possible to hook into the delivery of each incremental result and the end of the stream by
+returning an object with `onNext` and `onEnd` methods (see
+[`AsyncIterable` results](#asynciterable-results))
+
+| Payload Field | Description                                                       |
+| ------------- | ----------------------------------------------------------------- |
+| `args`        | The execution arguments.                                          |
+| `result`      | The current incremental execution result.                         |
+| `setResult`   | Replace the current execution result with a new execution result. |
+
+##### `onSubscriptionError`
+
+Called for the first exception thrown by the `AsyncIterable`.
+
+| Payload Field | Description                    |
+| ------------- | ------------------------------ |
+| `error`       | The error that was thrown.     |
+| `setError`    | Function to replace the error. |
+
+#### `AsyncIterable` results
+
+When a result is an `AsyncIterable` (which happens when using `defer`, `stream` or subscriptions),
+it is possible to hook into the delivery of each intermediate results and the end of the stream.
+
+To hook into those phases, return an object with `onNext` and/or `onEnd` methods from
+[`onExecuteDone`](#onexecutedone) or [`onSubscriptionResult`](#onsubscriptionresult) hooks.
+
+```ts filename="plugin.ts"
+export const useMyPlugin = () => ({
+  // For queries and mutations (defer and stream)
+  onExecute: () => ({
+    onExecuteDone: () => ({
+      onNext: () => ...,
+      onEnd: () => ...,
+    })
+  })
+
+  // For subscriptions
+  onSubscribe: () => ({
+    onSubscriptionResult: () => ({
+      onNext: () => ...,
+      onEnd: () => ...,
+    })
+  })
+})
+```
+
+##### `onNext`
+
+This hook is called each time a new intermediate result is produced by the `AsyncIterable`, before
+it is sent to the client.
+
+| Field Name  | Description                                               |
+| ----------- | --------------------------------------------------------- |
+| `args`      | The execution arguments.                                  |
+| `result`    | The execution result.                                     |
+| `setResult` | Replace the execution result with a new execution result. |
+
+##### `onEnd`
+
+This hook is called at when the `AsyncIterable` has ended, just before notifying the client.
+
+There is no payload provided for this hook. It is advised to use the payload of `onExecuteDone` or
+`onSubscriptionResult` to have access to the GraphQL context or other data related to the request.
+
 #### `onDelegationPlan`
 
-Called each time a delegation plan is calculated for a query. This hook is not called for each
-queries, because the plan is cached. This means it will be called only the first time a query
-document is encountered since the last schema change.
+Called each time a delegation plan is calculated for a query. It is called for each nested selection
+set level of the query.
+
+This hook is not called for each queries, because the plan is cached. This means it will be called
+only the first time a query document is encountered since the last schema change.
+
+This hook has a before and after stage. You can return a function to hook into the after stage (see
+[`onDelegationPlanDone`](#ondelegationplandone)).
 
 This hook is mostly used for monitoring and tracing purposes.
 
-| Field Name                 | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `supergraph`               | The GraphQL schema of the supergraph.                    |
-| `subgraph`                 | The name of the subgraph.                                |
-| `sourceSubschema`          | The source subschema.                                    |
-| `typeName`                 | The name of the type.                                    |
-| `variables`                | The variables used in the request.                       |
-| `fragments`                | The fragments used in the request.                       |
-| `fieldNodes`               | The field nodes of the request.                          |
-| `context`                  | The context object.                                      |
-| `requestId`                | An optional unique ID identifying the client request.    |
-| `logger`                   | An optional logger instance for the specific request.    |
-| `info`                     | An optional GraphQLResolveInfo object.                   |
-| `delegationPlanBuilder`    | The delegation plan builder.                             |
-| `setDelegationPlanBuilder` | Function to replace the current delegation plan builder. |
+| Field Name                 | Description                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `supergraph`               | The GraphQL schema of the supergraph.                                                                                   |
+| `subgraph`                 | The name of the subgraph.                                                                                               |
+| `sourceSubschema`          | The schema of the subgraph.                                                                                             |
+| `typeName`                 | The name of the type being planed.                                                                                      |
+| `variables`                | The variables provided in the client request.                                                                           |
+| `fragments`                | The fragments provided in the client request.                                                                           |
+| `fieldNodes`               | The field nodes of selection set being planned.                                                                         |
+| `context`                  | The GraphQL context object.                                                                                             |
+| `requestId`                | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services. |
+| `logger`                   | The logger instance for the specific request that includes the details of the request and the response.                 |
+| `info`                     | The `GraphQLResolveInfo` object of the client query.                                                                    |
+| `delegationPlanBuilder`    | The delegation plan builder.                                                                                            |
+| `setDelegationPlanBuilder` | Function to replace the current delegation plan builder.                                                                |
+
+##### `onDelegationPlanDone`
+
+Called when a delegation plan has been calculated.
+
+This hook is mostly used for monitoring and tracing purpose.
+
+| Payload Field       | Description                                                                 |
+| ------------------- | --------------------------------------------------------------------------- |
+| `delegationPlan`    | The delegation plan calculated.                                             |
+| `setDelegationPlan` | Function to replace the current delegation plan with a new delegation plan. |
 
 #### `onDelegationStageExecute`
+
+Called when a delegation plan stage is executed. This can be called multiple times for a query if it
+requires multiple stages to be fully resolved.
+
+This hooks has a before and after stage. You can return a function to hook into the after stage (see
+[`onDelegationStageExecuteDone`](#ondelegationstageexecutedone)).
+
+| Payload Field  | Description                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `object`       | The object being resolved.                                                                                              |
+| `context`      | The GraphQL context object.                                                                                             |
+| `info`         | The `GraphQLResolveInfo` object.                                                                                        |
+| `subgraph`     | The name of the subgraph.                                                                                               |
+| `subschema`    | The schema of the current subgraph.                                                                                     |
+| `selectionSet` | The selection set node that will be queried.                                                                            |
+| `key`          | The key for the entity being resolved.                                                                                  |
+| `type`         | The type of the entity being resolved.                                                                                  |
+| `typeName`     | The name of the type being resolved.                                                                                    |
+| `resolver`     | The resolver function for the merged type.                                                                              |
+| `setResolver`  | Function to set a new resolver for the merged type.                                                                     |
+| `requestId`    | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services. |
+| `logger`       | The logger instance for the specific request that includes the details of the request and the response.                 |
+
+##### `onDelegationStageExecuteDone`
+
+Called when the delegation plan has been executed and all subgraph queries have been done for the
+current stage.
+
+| Field Name  | Description                             |
+| ----------- | --------------------------------------- |
+| `result`    | The result of the delegation execution. |
+| `setResult` | Function to replace the result.         |
 
 #### `onSubgraphExecute`
 
@@ -520,6 +743,15 @@ use this hook.
 | `setExecutor`         | Function to replace the current executor.                                                               |
 | `requestId`           | A unique ID identifying the client request.                                                             |
 | `logger`              | The logger instance for the specific request that includes the details of the request and the response. |
+
+##### `onSubgraphExecuteDone`
+
+Called when the subgraph execution is done and a result has been received.
+
+| Payload Field | Description                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------------------- |
+| `result`      | The result of the subgraph execution, which can be an `ExecutionResult` or an `AsyncIterable<ExecutionResult>`. |
+| `setResult`   | Function to replace the result.                                                                                 |
 
 #### `onExecutionResult`
 

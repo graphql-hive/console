@@ -307,8 +307,8 @@ export function Content() {
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
       <AccordionHeader className="flex items-center justify-between">
         <AccordionTriggerPrimitive className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10">
-          <FolderIcon className="group-radix-state-open:hidden size-4" />
-          <FolderOpenIcon className="group-radix-state-closed:hidden size-4" />
+          <FolderIcon className="size-4 group-data-[state=open]:hidden" />
+          <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (

@@ -14,7 +14,7 @@ namespace Cypress {
       lastName: string;
     }): Chainable;
     login(data: { email: string; password: string }): Chainable;
-    dataCy(name: string): Chainable<JQuery<HTMLElement>>;
+    dataCy<Node = HTMLElement>(name: string): Chainable<JQuery<Node>>;
     createOIDCIntegration(organizationSlug: string): Chainable<{
       loginUrl: string;
       organizationSlug: string;
