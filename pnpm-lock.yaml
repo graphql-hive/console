@@ -11,6 +11,7 @@ overrides:
   ws@^8.0.0: ^8.18.0
   ws@*: '>=8.18.0 || >=7.5.10 || >=6.2.3 || >=5.2.4'
   cookie@<0.7.0: 0.7.2
+  ip: https://registry.npmjs.org/neoip/-/neoip-2.1.0.tgz
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -3960,6 +3961,7 @@ packages:
 
   '@fastify/vite@6.0.6':
     resolution: {integrity: sha512-FsWJC92murm5tjeTezTTvMLyZido/ZWy0wYWpVkh/bDe1gAUAabYLB7Vp8hokXGsRE/mOpqYVsRDAKENY2qPUQ==}
+    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -11285,9 +11287,6 @@ packages:
     resolution: {integrity: sha512-0SZXGNGZ+WzISQ67QDyZ2x0+wVxjjUndtD8oSeik/4ajifeiRufed8fCb8QW8VMyi4MXcS+UO1k/0NGhvq1PAg==}
     engines: {node: '>=12.22.0'}
 
-  ip@2.0.1:
-    resolution: {integrity: sha512-lJUL9imLTNi1ZfXT+DU6rBBdbiKGBuay9B6xGSPVjUeQwaH1RIGqef8RZkUtHioLmSNpPR5M4HVKJGm1j8FWVQ==}
-
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
     engines: {node: '>= 0.10'}
@@ -12836,6 +12835,9 @@ packages:
 
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
+
+  neoip@2.1.0:
+    resolution: {integrity: sha512-4zQ8eVAmbBNV3Fmpm3Li2tNPnrU6UobMXpO1OZsY/Eg2AGOB+H8dZfAabMVrh7Xl9xAVIDcEIlUVA057Fi7QdA==}
 
   next-sitemap@4.2.3:
     resolution: {integrity: sha512-vjdCxeDuWDzldhCnyFCQipw5bfpl4HmZA7uoo3GAaYGjGgfL4Cxb1CiztPuWGmS+auYs7/8OekRS8C2cjdAsjQ==}
@@ -28391,8 +28393,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ip@2.0.1: {}
-
   ipaddr.js@1.9.1: {}
 
   is-absolute-url@3.0.3: {}
@@ -30366,6 +30366,8 @@ snapshots:
   negotiator@1.0.0: {}
 
   neo-async@2.6.2: {}
+
+  neoip@2.1.0: {}
 
   next-sitemap@4.2.3(next@14.2.21(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
     dependencies:
@@ -32473,7 +32475,7 @@ snapshots:
 
   socks@2.7.1:
     dependencies:
-      ip: 2.0.1
+      ip: neoip@2.1.0
       smart-buffer: 4.2.0
 
   sonic-boom@4.0.1:
