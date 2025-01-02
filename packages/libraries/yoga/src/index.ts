@@ -175,20 +175,20 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
       hive = isHiveClient(clientOrOptions)
         ? clientOrOptions
         : createHive({
-          ...clientOrOptions,
-          agent: clientOrOptions.agent
-            ? {
-              logger: {
-                // Hive Plugin should respect the given Yoga logger
-                error: (...args) => yoga.logger.error(...args),
-                info: (...args) => yoga.logger.info(...args),
-              },
-              // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
-              fetch: (...args) => yoga.fetchAPI.fetch(...args),
-              ...clientOrOptions.agent,
-            }
-            : undefined,
-        });
+            ...clientOrOptions,
+            agent: clientOrOptions.agent
+              ? {
+                  logger: {
+                    // Hive Plugin should respect the given Yoga logger
+                    error: (...args) => yoga.logger.error(...args),
+                    info: (...args) => yoga.logger.info(...args),
+                  },
+                  // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
+                  fetch: (...args) => yoga.fetchAPI.fetch(...args),
+                  ...clientOrOptions.agent,
+                }
+              : undefined,
+          });
       void hive.info();
       const experimentalPersistedDocs = hive.experimental__persistedDocuments;
       if (experimentalPersistedDocs) {

@@ -626,30 +626,30 @@ test('should not send excluded operation name data to Hive', async () => {
       },
       {},
     ),
-      collect(
-        {
-          schema,
-          document: op,
-          operationName: 'deleteProjectShouldntBeIncluded',
-        },
-        {},
-      ),
-      collect(
-        {
-          schema,
-          document: op,
-          operationName: 'deleteProject',
-        },
-        {},
-      ),
-      collect(
-        {
-          schema,
-          document: op2,
-          operationName: 'getProject',
-        },
-        {},
-      )),
+    collect(
+      {
+        schema,
+        document: op,
+        operationName: 'deleteProjectShouldntBeIncluded',
+      },
+      {},
+    ),
+    collect(
+      {
+        schema,
+        document: op,
+        operationName: 'deleteProject',
+      },
+      {},
+    ),
+    collect(
+      {
+        schema,
+        document: op2,
+        operationName: 'getProject',
+      },
+      {},
+    )),
   ]);
   await hive.dispose();
   await waitFor(50);
