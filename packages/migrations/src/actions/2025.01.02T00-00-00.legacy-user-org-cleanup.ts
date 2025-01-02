@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2025.02.02T00-00-00.legacy-user-org-cleanup.ts',
+  name: '2025.01.02T00-00-00.legacy-user-org-cleanup.ts',
   async run({ sql, connection }) {
     // Delete all the organizations owned by a legacy user
     await connection.query(sql`
