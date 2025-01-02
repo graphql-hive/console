@@ -110,4 +110,33 @@ export default gql`
     TOKENS_READ
     TOKENS_WRITE
   }
+
+  enum PermissionLevel {
+    organization
+    project
+    target
+    service
+    appDeployment
+  }
+
+  type Permission {
+    id: ID!
+    title: String!
+    description: String!
+    level: PermissionLevel!
+    dependsOnId: ID
+  }
+
+  type PermissionGroup {
+    id: ID!
+    title: String!
+    permissions: [Permission!]!
+  }
+
+  extend type Organization {
+    """
+    List of available permission groups that can be assigned to users.
+    """
+    availableMemberPermissionGroups: [PermissionGroup!]!
+  }
 `;
