@@ -52,7 +52,7 @@ import {
 } from './models/shared';
 import { SingleModel } from './models/single';
 import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
-import { ensureCompositeSchemas, ensureSingleSchema, SchemaHelper } from './schema-helper';
+import { ensureCompositeSchemas, ensureSingleSchema } from './schema-helper';
 import { SchemaManager, shouldUseLatestComposableVersion } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 
