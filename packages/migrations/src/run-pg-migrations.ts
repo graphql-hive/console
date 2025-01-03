@@ -152,5 +152,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2024.12.27T00.00.00.create-preflight-scripts'),
       await import('./actions/2025.01.02T00-00-00.cascade-deletion-indices'),
       await import('./actions/2025.01.02T00-00-00.legacy-user-org-cleanup'),
+      await import('./actions/2025.01.03T00-00-00.legacy-registry-model-removal')
     ],
   });
