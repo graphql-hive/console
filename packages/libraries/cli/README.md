@@ -383,7 +383,7 @@ _See code:
 
 ## `hive schema:fetch ACTIONID`
 
-fetch schema or supergraph from the Hive API
+fetch a schema, supergraph, or list of subgraphs from the Hive API
 
 ```
 USAGE
@@ -399,11 +399,11 @@ FLAGS
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
   --token=<value>                 api token
-  --type=<value>                  Type to fetch (possible types: sdl, supergraph)
+  --type=<value>                  Type to fetch (possible types: sdl, supergraph, subgraphs)
   --write=<value>                 Write to a file (possible extensions: .graphql, .gql, .gqls, .graphqls)
 
 DESCRIPTION
-  fetch schema or supergraph from the Hive API
+  fetch a schema, supergraph, or list of subgraphs from the Hive API
 ```
 
 _See code:
