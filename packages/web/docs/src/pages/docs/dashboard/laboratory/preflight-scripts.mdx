@@ -112,3 +112,11 @@ curly braces, for example:
 This will replace `{{access_token}}` with the value of the `access_token` environment variable.
 
 <Screenshot>![](./headers.png)</Screenshot>
+
+## CORS
+
+<Callout type="warning">
+  **Note**: Preflight scripts are ran inside an iframe and due to how browsers have implemented this
+  feature, the "Origin" header will be `"null"`. If you encounter a CORS error, try whitelisting the
+  origin `"null"`. This is not recommended for production environments.
+</Callout>
