@@ -172,7 +172,7 @@ function ProjectPolicyContent(props: { organizationSlug: string; projectSlug: st
                           }
                         });
                       }
-                    : undefined
+                    : null
                 }
                 currentState={currentProject.schemaPolicy}
               />

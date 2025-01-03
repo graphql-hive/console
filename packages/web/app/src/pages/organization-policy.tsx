@@ -183,7 +183,7 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                           })
                           .catch();
                       }
-                    : undefined
+                    : null
                 }
                 currentState={currentOrganization.schemaPolicy}
               >
