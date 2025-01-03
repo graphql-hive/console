@@ -28,7 +28,6 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
-import { ProjectMigrationToast } from '../project/migration-toast';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -62,7 +61,6 @@ const TargetLayoutQuery = graphql(`
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
-        registryModel
         target: targetBySlug(targetSlug: $targetSlug) {
           id
           slug
@@ -139,13 +137,6 @@ export const TargetLayout = ({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          {currentProject?.registryModel === 'LEGACY' ? (
-            <ProjectMigrationToast
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-            />
-          ) : null}
-
           <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject && currentTarget ? (

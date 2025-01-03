@@ -26,8 +26,6 @@ import {
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
-import { OrganizationManager } from '../../organization/providers/organization-manager';
-import { ProjectManager } from '../../project/providers/project-manager';
 import { RateLimitProvider } from '../../rate-limit/providers/rate-limit.provider';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { Logger } from '../../shared/providers/logger';
@@ -40,7 +38,6 @@ import type { SchemaModuleConfig } from './config';
 import { SCHEMA_MODULE_CONFIG } from './config';
 import { Contracts } from './contracts';
 import { CompositeModel } from './models/composite';
-import { CompositeLegacyModel } from './models/composite-legacy';
 import {
   DeleteFailureReasonCode,
   formatPolicyError,
@@ -54,9 +51,8 @@ import {
   SchemaPublishResult,
 } from './models/shared';
 import { SingleModel } from './models/single';
-import { SingleLegacyModel } from './models/single-legacy';
 import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
-import { ensureCompositeSchemas, ensureSingleSchema, SchemaHelper } from './schema-helper';
+import { ensureCompositeSchemas, ensureSingleSchema } from './schema-helper';
 import { SchemaManager, shouldUseLatestComposableVersion } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 
@@ -125,18 +121,9 @@ type ConditionalBreakingChangeConfiguration = {
 export class SchemaPublisher {
   private logger: Logger;
   private models: {
-    [ProjectType.SINGLE]: {
-      modern: SingleModel;
-      legacy: SingleLegacyModel;
-    };
-    [ProjectType.FEDERATION]: {
-      modern: CompositeModel;
-      legacy: CompositeLegacyModel;
-    };
-    [ProjectType.STITCHING]: {
-      modern: CompositeModel;
-      legacy: CompositeLegacyModel;
-    };
+    [ProjectType.SINGLE]: SingleModel;
+    [ProjectType.FEDERATION]: CompositeModel;
+    [ProjectType.STITCHING]: CompositeModel;
   };
 
   constructor(
@@ -145,12 +132,9 @@ export class SchemaPublisher {
     private storage: Storage,
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
-    private projectManager: ProjectManager,
-    private organizationManager: OrganizationManager,
     private alertsManager: AlertsManager,
     private gitHubIntegrationManager: GitHubIntegrationManager,
     private distributedCache: DistributedCache,
-    private helper: SchemaHelper,
     private artifactStorageWriter: ArtifactStorageWriter,
     private mutex: Mutex,
     private rateLimit: RateLimitProvider,
@@ -160,23 +144,12 @@ export class SchemaPublisher {
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
-    compositeLegacyModel: CompositeLegacyModel,
-    singleLegacyModel: SingleLegacyModel,
   ) {
     this.logger = logger.child({ service: 'SchemaPublisher' });
     this.models = {
-      [ProjectType.SINGLE]: {
-        modern: singleModel,
-        legacy: singleLegacyModel,
-      },
-      [ProjectType.FEDERATION]: {
-        modern: compositeModel,
-        legacy: compositeLegacyModel,
-      },
-      [ProjectType.STITCHING]: {
-        modern: compositeModel,
-        legacy: compositeLegacyModel,
-      },
+      [ProjectType.SINGLE]: singleModel,
+      [ProjectType.FEDERATION]: compositeModel,
+      [ProjectType.STITCHING]: compositeModel,
     };
   }
 
@@ -330,11 +303,9 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestValidVersion(target),
     ]);
 
-    const projectModelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
-
     function increaseSchemaCheckCountMetric(conclusion: 'rejected' | 'accepted') {
       schemaCheckCount.inc({
-        model: projectModelVersion,
+        model: 'modern',
         projectType: project.type,
         conclusion,
       });
@@ -344,7 +315,7 @@ export class SchemaPublisher {
       (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
       input.service == null
     ) {
-      this.logger.debug('No service name provided (type=%s)', project.type, projectModelVersion);
+      this.logger.debug('No service name provided (type=%s)', project.type);
       increaseSchemaCheckCountMetric('rejected');
       return {
         __typename: 'SchemaCheckError',
@@ -514,8 +485,8 @@ export class SchemaPublisher {
 
     switch (project.type) {
       case ProjectType.SINGLE:
-        this.logger.debug('Using SINGLE registry model (version=%s)', projectModelVersion);
-        checkResult = await this.models[ProjectType.SINGLE][projectModelVersion].check({
+        this.logger.debug('Using SINGLE registry model');
+        checkResult = await this.models[ProjectType.SINGLE].check({
           input,
           selector,
           latest: latestVersion
@@ -542,17 +513,13 @@ export class SchemaPublisher {
         break;
       case ProjectType.FEDERATION:
       case ProjectType.STITCHING:
-        this.logger.debug(
-          'Using %s registry model (version=%s)',
-          project.type,
-          projectModelVersion,
-        );
+        this.logger.debug('Using %s registry model', project.type);
 
         if (!input.service) {
           throw new Error('Guard for TypeScript limitations on inferring types. :)');
         }
 
-        checkResult = await this.models[project.type][projectModelVersion].check({
+        checkResult = await this.models[project.type].check({
           input: {
             sdl,
             serviceName: input.service,
@@ -589,7 +556,7 @@ export class SchemaPublisher {
         break;
       default:
         this.logger.debug('Unsupported project type (type=%s)', project.type);
-        throw new HiveError(`${project.type} project (${projectModelVersion}) not supported`);
+        throw new HiveError(`${project.type} project not supported`);
     }
 
     let schemaCheck: null | SchemaCheck = null;
@@ -1097,73 +1064,6 @@ export class SchemaPublisher {
       });
   }
 
-  public async updateVersionStatus(input: TargetSelector & { versionId: string; valid: boolean }) {
-    const updateResult = await this.schemaManager.updateSchemaVersionStatus(input);
-
-    if (updateResult.isComposable === true) {
-      // Now, when fetching the latest valid version, we should be able to detect
-      // if it's the version we just updated or not.
-      // Why?
-      // Because we change its status to valid
-      // and `getLatestValidVersion` calls for fresh data from DB
-      const latestVersion = await this.schemaManager.getLatestValidVersion(input);
-
-      // if it is the latest version, we should update the CDN
-      if (latestVersion.id === updateResult.id) {
-        this.logger.info('Version is now promoted to latest valid (version=%s)', latestVersion.id);
-        const [organization, project, target, schemas] = await Promise.all([
-          this.organizationManager.getOrganization({
-            organizationId: input.organizationId,
-          }),
-          this.projectManager.getProject({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-          }),
-          this.targetManager.getTarget({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.targetId,
-          }),
-          this.schemaManager.getSchemasOfVersion({
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.targetId,
-            versionId: latestVersion.id,
-            includeMetadata: true,
-          }),
-        ]);
-
-        const orchestrator = this.schemaManager.matchOrchestrator(project.type);
-        const schemaObjects = schemas.map(s => this.helper.createSchemaObject(s));
-        const compositionResult = await orchestrator.composeAndValidate(schemaObjects, {
-          external: project.externalComposition,
-          native: this.schemaManager.checkProjectNativeFederationSupport({
-            project,
-            organization,
-            targetId: target.id,
-          }),
-          contracts: null,
-        });
-
-        this.logger.info(
-          'Deploying version to CDN (reason="status_change" version=%s)',
-          latestVersion.id,
-        );
-
-        await this.publishToCDN({
-          target,
-          project,
-          supergraph: compositionResult.supergraph,
-          schemas,
-          fullSchemaSdl: compositionResult.sdl!,
-          contracts: null,
-        });
-      }
-    }
-
-    return updateResult;
-  }
-
   @traceFn('SchemaPublisher.delete', {
     initAttributes: (input, _) => ({
       'hive.target.id': input.target.id,
@@ -1237,18 +1137,10 @@ export class SchemaPublisher {
           organization,
         );
 
-        const modelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
-
-        schemaDeleteCount.inc({ model: modelVersion, projectType: project.type });
+        schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
 
         if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
-          throw new HiveError(`${project.type} project (${modelVersion}) not supported`);
-        }
-
-        if (modelVersion === 'legacy') {
-          throw new HiveError(
-            'Please upgrade your project to the new registry model to use this feature. See https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry',
-          );
+          throw new HiveError(`${project.type} project not supported`);
         }
 
         if (!latestVersion || latestVersion.schemas.length === 0) {
@@ -1258,9 +1150,8 @@ export class SchemaPublisher {
         const schemas = ensureCompositeSchemas(latestVersion.schemas);
         this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
         this.logger.debug(
-          'Using %s registry model (version=%s, featureFlags=%o)',
+          'Using %s registry model (featureFlags=%o)',
           project.type,
-          modelVersion,
           organization.featureFlags,
         );
 
@@ -1294,7 +1185,7 @@ export class SchemaPublisher {
               })
             : null;
 
-        const deleteResult = await this.models[project.type][modelVersion].delete({
+        const deleteResult = await this.models[project.type].delete({
           input: {
             serviceName: input.serviceName,
           },
@@ -1527,11 +1418,9 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestValidVersion(target),
     ]);
 
-    const modelVersion = project.legacyRegistryModel ? 'legacy' : 'modern';
-
     function increaseSchemaPublishCountMetric(conclusion: 'rejected' | 'accepted' | 'ignored') {
       schemaPublishCount.inc({
-        model: modelVersion,
+        model: 'modern',
         projectType: project.type,
         conclusion,
       });
@@ -1643,11 +1532,10 @@ export class SchemaPublisher {
     switch (project.type) {
       case ProjectType.SINGLE:
         this.logger.debug(
-          'Using SINGLE registry model (version=%s, featureFlags=%o)',
-          modelVersion,
+          'Using SINGLE registry model (featureFlags=%o)',
           organization.featureFlags,
         );
-        publishResult = await this.models[ProjectType.SINGLE][modelVersion].publish({
+        publishResult = await this.models[ProjectType.SINGLE].publish({
           input,
           latest: latestVersion
             ? {
@@ -1674,12 +1562,11 @@ export class SchemaPublisher {
       case ProjectType.FEDERATION:
       case ProjectType.STITCHING:
         this.logger.debug(
-          'Using %s registry model (version=%s, featureFlags=%o)',
+          'Using %s registry model (featureFlags=%o)',
           project.type,
-          modelVersion,
           organization.featureFlags,
         );
-        publishResult = await this.models[project.type][modelVersion].publish({
+        publishResult = await this.models[project.type].publish({
           input,
           latest: latestVersion
             ? {
@@ -1708,7 +1595,7 @@ export class SchemaPublisher {
         break;
       default: {
         this.logger.debug('Unsupported project type (type=%s)', project.type);
-        throw new HiveError(`${project.type} project (${modelVersion}) not supported`);
+        throw new HiveError(`${project.type} project not supported`);
       }
     }
 
@@ -1990,7 +1877,7 @@ export class SchemaPublisher {
       __typename: 'SchemaPublishSuccess' as const,
       initial: publishResult.state.initial,
       valid: publishResult.state.composable,
-      changes: modelVersion === 'legacy' ? (publishResult.state.changes ?? []) : null,
+      changes: null,
       message: (publishResult.state.messages ?? []).join('\n'),
       linkToWebsite,
     };
