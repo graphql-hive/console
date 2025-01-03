@@ -15,9 +15,9 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
-import { CopyValue } from '@/components/v2/copy-value';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
@@ -228,7 +228,7 @@ export function CreatedTokenContent(props: {
       <DialogHeader className="flex flex-col gap-5">
         <DialogTitle>Token successfully created!</DialogTitle>
         <DialogDescription className="flex flex-col gap-5">
-          <CopyValue value={props.mutation.data.createToken.ok.secret} />
+          <InputCopy value={props.mutation.data.createToken.ok.secret} />
           <Tag color="green">
             This is your unique API key and it is non-recoverable. If you lose this key, you will
             need to create a new one.

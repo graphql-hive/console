@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { InputCopy } from '@/components/ui/input-copy';
 import { Link } from '@/components/ui/link';
-import { CopyValue, Tag } from '@/components/v2';
+import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 
@@ -70,7 +71,7 @@ export const ConnectLabModalContent = (props: {
           </div>
         ) : null}
         <span className="text-sm text-white">You can use the following endpoint:</span>
-        <CopyValue value={props.endpoint} />
+        <InputCopy value={props.endpoint} />
         <span className="text-sm text-white">
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:

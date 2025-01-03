@@ -3,7 +3,6 @@ export { Autocomplete } from '@/components/v2/autocomplete';
 export { Avatar } from '@/components/v2/avatar';
 export { Card } from '@/components/v2/card';
 export { Checkbox } from '@/components/v2/checkbox';
-export { CopyValue } from '@/components/v2/copy-value';
 export { DataWrapper } from '@/components/v2/data-wrapper';
 export { DiffEditor } from '@/components/v2/diff-editor';
 export { Input } from '@/components/v2/input';
