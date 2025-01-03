@@ -34,6 +34,7 @@ import {
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
@@ -50,6 +51,7 @@ import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
 
 const RegistryAccessTokens_MeFragment = graphql(`
@@ -511,12 +513,23 @@ const ConditionalBreakingChanges = (props: {
     enableReinitialize: true,
     initialValues: {
       percentage: settings?.percentage || 0,
+      count: settings?.count || 1,
       period: settings?.period || 0,
+      unit: settings?.unit ?? 'percentage',
       targetIds: settings?.targets.map(t => t.id) || [],
       excludedClients: settings?.excludedClients ?? [],
     },
     validationSchema: Yup.object().shape({
-      percentage: Yup.number().min(0).max(100).required(),
+      percentage: Yup.number().when('unit', {
+        is: 'percentage',
+        then: schema => schema.min(0).max(100).required(),
+        otherwise: schema => schema.nullable(),
+      }),
+      count: Yup.number().when('unit', {
+        is: 'count',
+        then: schema => schema.min(1).required(),
+        otherwise: schema => schema.nullable(),
+      }),
       period: Yup.number()
         .min(1)
         .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
@@ -530,6 +543,7 @@ const ConditionalBreakingChanges = (props: {
           return Number(num.toFixed(2)) === num;
         })
         .required(),
+      unit: Yup.string().oneOf(['percent', 'count']),
       targetIds: Yup.array().of(Yup.string()).min(1),
       excludedClients: Yup.array().of(Yup.string()),
     }),
@@ -602,21 +616,72 @@ const ConditionalBreakingChanges = (props: {
           )}
         </SubPageLayoutHeader>
         <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+          <div>A schema change is considered as breaking only if it affects more than</div>
+          <div className="mx-4 my-2">
+            <RadioGroup
+              name="unit"
+              value={values.unit}
+              onValueChange={async value => {
+                await setFieldValue('unit', value);
+              }}
+            >
+              <div>
+                <RadioGroupItem
+                  id="percentage"
+                  key="percentage"
+                  value="percentage"
+                  disabled={isSubmitting}
+                  data-cy={`target-cbc-unit-option-percentage`}
+                >
+                  <RadioGroupIndicator />
+                </RadioGroupItem>
+                <Input
+                  name="percentage"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  value={values.percentage}
+                  disabled={isSubmitting}
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="mx-2 !inline-flex w-16 text-center"
+                />
+                <label htmlFor="percentage">Percent of Traffic</label>
+              </div>
+              <div>
+                <RadioGroupItem
+                  id="count"
+                  key="count"
+                  value="count"
+                  disabled={isSubmitting}
+                  data-cy={`target-cbc-unit-option-count`}
+                >
+                  <RadioGroupIndicator />
+                </RadioGroupItem>
+                <Input
+                  name="count"
+                  onChange={handleChange}
+                  onBlur={async event => {
+                    handleBlur(event);
+                    const value = Math.round(Number(event.target.value));
+                    if (!Number.isNaN(value)) {
+                      await setFieldValue('count', value, true);
+                    }
+                  }}
+                  value={values.count}
+                  disabled={isSubmitting}
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="mx-2 !inline-flex w-16 text-center"
+                />
+                <label htmlFor="count">Total Operations</label>
+              </div>
+            </RadioGroup>
+          </div>
           <div>
-            A schema change is considered as breaking only if it affects more than
-            <Input
-              name="percentage"
-              onChange={handleChange}
-              onBlur={handleBlur}
-              value={values.percentage}
-              disabled={isSubmitting}
-              type="number"
-              min="0"
-              max="100"
-              step={0.01}
-              className="mx-2 !inline-flex w-16"
-            />
-            % of traffic in the past
+            in the past
             <Input
               name="period"
               onChange={handleChange}
@@ -639,6 +704,8 @@ const ConditionalBreakingChanges = (props: {
                 {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
               </div>
             )}
+            {touched.count && errors.count && <div className="text-red-500">{errors.count}</div>}
+            {/* @todo: inputErrors */}
             {touched.period && errors.period && <div className="text-red-500">{errors.period}</div>}
             {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
               <div className="text-red-500">
