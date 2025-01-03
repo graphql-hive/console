@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { z } from 'zod';
 import { type MigrationExecutor } from '../pg-migrator';
 
@@ -54,21 +55,8 @@ export default {
         WHERE
           "id" = ${userId}
       `);
-      console.log(`finished after ${msToTime(Date.now() - start)}`);
+      console.log(`finished after ${format(Date.now() - start, 'HH:mm:ss.SSS')}`);
       counter++;
     }
   },
 } satisfies MigrationExecutor;
-
-function msToTime(duration: number) {
-  let milliseconds: string | number = Math.floor((duration % 1000) / 100),
-    seconds: string | number = Math.floor((duration / 1000) % 60),
-    minutes: string | number = Math.floor((duration / (1000 * 60)) % 60),
-    hours: string | number = Math.floor((duration / (1000 * 60 * 60)) % 24);
-
-  hours = hours < 10 ? '0' + hours : hours;
-  minutes = minutes < 10 ? '0' + minutes : minutes;
-  seconds = seconds < 10 ? '0' + seconds : seconds;
-
-  return hours + ':' + minutes + ':' + seconds + '.' + milliseconds;
-}
