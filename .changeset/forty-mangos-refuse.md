@@ -1,5 +1,5 @@
 ---
-'hive': minor
+'hive': major
 ---
 
 No longer support the legacy registry models. Announcement
