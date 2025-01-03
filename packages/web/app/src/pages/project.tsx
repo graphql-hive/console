@@ -290,7 +290,7 @@ const ProjectsPageContent = (
   }, [targetConnection, props.search, sortKey, sortOrder]);
 
   const highestNumberOfRequests = useMemo(() => {
-    if (targetConnection?.nodes?.length) {
+    if (targetConnection?.nodes.length) {
       return targetConnection.nodes.reduce((max, target) => {
         return Math.max(
           max,
@@ -413,7 +413,7 @@ const ProjectsPageContent = (
         )}
       >
         {targetConnection ? (
-          targetConnection?.total === 0 ? (
+          targetConnection.total === 0 ? (
             <EmptyList
               title="Hive is waiting for your first target"
               description='You can create a target by clicking the "New Target" button'

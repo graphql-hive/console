@@ -39,7 +39,7 @@ export const createSentryInterceptor = (): Interceptor => {
       }
 
       const scope = getCurrentHub().getScope();
-      const parentSpan = scope?.getSpan();
+      const parentSpan = scope.getSpan();
       const span = parentSpan?.startChild({
         description: context.originalQuery.sql,
         op: 'db',

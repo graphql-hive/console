@@ -14,7 +14,7 @@ export function ProPlanBilling(props: {
   organization: FragmentType<typeof ProPlanBilling_OrganizationFragment>;
 }): ReactElement | null {
   const organization = useFragment(ProPlanBilling_OrganizationFragment, props.organization);
-  if (organization?.billingConfiguration?.hasPaymentIssues) {
+  if (organization.billingConfiguration.hasPaymentIssues) {
     return (
       <Callout type="warning" className="mb-2 w-full">
         <b>Your organization has a rejected payment!</b>

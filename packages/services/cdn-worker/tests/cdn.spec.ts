@@ -872,8 +872,8 @@ describe('CDN Worker', () => {
     });
 
     afterEach(async () => {
-      await r2MockPool?.close();
-      await s3MockPool?.close();
+      await r2MockPool.close();
+      await s3MockPool.close();
       mockAgent.assertNoPendingInterceptors();
     });
     afterAll(() => mockAgent.close());

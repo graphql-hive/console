@@ -143,7 +143,7 @@ function OrganizationMemberRoleSwitcher(props: {
     OrganizationMemberRoleSwitcher_AssignRoleMutation,
   );
   const [isPermissionsModalOpen, togglePermissionsModalOpen] = useToggle(false);
-  const memberRole = roles?.find(role => role.id === props.memberRoleId);
+  const memberRole = roles.find(role => role.id === props.memberRoleId);
 
   if (!memberRole || !member) {
     console.error('No role or member provided to OrganizationMemberRoleSwitcher');

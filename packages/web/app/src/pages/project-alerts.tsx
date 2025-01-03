@@ -226,7 +226,7 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
 
   const alerts = currentProject?.alerts || [];
   const channels = currentProject?.alertChannels || [];
-  const targets = currentProject?.targets?.nodes || [];
+  const targets = currentProject?.targets.nodes || [];
 
   return (
     <div>

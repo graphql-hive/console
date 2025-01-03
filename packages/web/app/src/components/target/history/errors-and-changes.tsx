@@ -463,7 +463,7 @@ export function CompositionErrorsSection(props: {
         </Heading>
       </TooltipProvider>
       <ul>
-        {compositionErrors?.nodes.map((change, index) => (
+        {compositionErrors.nodes.map((change, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
             <CompositionError message={change.message} />
           </li>

@@ -91,7 +91,7 @@ const ExternalCompositionStatus = ({
     requestPolicy: 'network-only',
   });
 
-  const error = query.error?.message ?? query.data?.testExternalSchemaComposition?.error?.message;
+  const error = query.error?.message ?? query.data?.testExternalSchemaComposition.error?.message;
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -111,7 +111,7 @@ const ExternalCompositionStatus = ({
           <TooltipContent side="right">{error}</TooltipContent>
         </Tooltip>
       ) : null}
-      {query.data?.testExternalSchemaComposition?.ok?.externalSchemaComposition?.endpoint ? (
+      {query.data?.testExternalSchemaComposition.ok?.externalSchemaComposition?.endpoint ? (
         <Tooltip>
           <TooltipTrigger>
             <CheckIcon className="size-5 text-green-500" />
@@ -175,10 +175,10 @@ const ExternalCompositionForm = ({
         secret: values.secret,
       },
     }).then(result => {
-      if (result.data?.enableExternalSchemaComposition?.ok) {
+      if (result.data?.enableExternalSchemaComposition.ok) {
         notify('External composition enabled', 'success');
         const endpoint =
-          result.data?.enableExternalSchemaComposition?.ok.externalSchemaComposition?.endpoint;
+          result.data.enableExternalSchemaComposition.ok.externalSchemaComposition?.endpoint;
 
         if (endpoint) {
           form.reset(

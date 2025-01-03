@@ -21,11 +21,11 @@ export function QueryError({
   const requestId =
     error &&
     'response' in error &&
-    error?.response?.headers?.get('x-request-id')?.split(',')[0].trim();
+    error.response?.headers?.get('x-request-id')?.split(',')[0].trim();
 
   cookies.remove(LAST_VISITED_ORG_KEY);
 
-  const containsUnexpectedError = error.message?.includes('Unexpected error');
+  const containsUnexpectedError = error.message.includes('Unexpected error');
   const isNetworkError = !!error.networkError;
   const isExpectedError = !isNetworkError && !containsUnexpectedError;
   const shouldShowError = typeof showError === 'boolean' ? showError : isExpectedError;
@@ -51,7 +51,7 @@ export function QueryError({
           <h1 className="text-xl font-semibold">Oops, something went wrong.</h1>
           <div className="mt-2">
             {shouldShowError ? (
-              <div className="text-sm">{error.graphQLErrors?.[0].message}</div>
+              <div className="text-sm">{error.graphQLErrors[0].message}</div>
             ) : (
               <div className="text-sm">
                 <p>Don't worry, our technical support got this error reported automatically.</p>

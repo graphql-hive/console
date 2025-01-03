@@ -101,7 +101,7 @@ function SchemaCoordinateView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.schemaCoordinateStats?.requestsOverTime;
+  const points = query.data?.schemaCoordinateStats.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -109,9 +109,9 @@ function SchemaCoordinateView(props: {
 
     return points.map(node => [node.date, node.value]);
   }, [points]);
-  const totalRequests = query.data?.schemaCoordinateStats?.totalRequests ?? 0;
-  const totalOperations = query.data?.schemaCoordinateStats?.operations.nodes.length ?? 0;
-  const totalClients = query.data?.schemaCoordinateStats?.clients.nodes.length ?? 0;
+  const totalRequests = query.data?.schemaCoordinateStats.totalRequests ?? 0;
+  const totalOperations = query.data?.schemaCoordinateStats.operations.nodes.length ?? 0;
+  const totalClients = query.data?.schemaCoordinateStats.clients.nodes.length ?? 0;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;

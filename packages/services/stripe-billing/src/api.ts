@@ -106,7 +106,7 @@ export const stripeBillingApiRouter = t.router({
         .list({
           customer: organizationBillingRecord.externalBillingReference,
         })
-        .then(v => v.data.filter(r => r.metadata?.hive_subscription));
+        .then(v => v.data.filter(r => r.metadata.hive_subscription));
 
       const actualSubscription = subscriptions[0] || null;
 
@@ -149,7 +149,7 @@ export const stripeBillingApiRouter = t.router({
           customer: organizationBillingRecord.externalBillingReference,
         });
 
-        const actualSubscription = allSubscriptions.data.find(r => r.metadata?.hive_subscription);
+        const actualSubscription = allSubscriptions.data.find(r => r.metadata.hive_subscription);
 
         if (actualSubscription) {
           for (const item of actualSubscription.items.data) {
@@ -226,7 +226,7 @@ export const stripeBillingApiRouter = t.router({
         .list({
           customer: organizationBillingRecord.externalBillingReference,
         })
-        .then(v => v.data.filter(r => r.metadata?.hive_subscription));
+        .then(v => v.data.filter(r => r.metadata.hive_subscription));
 
       if (subscriptions.length === 0) {
         throw new Error(

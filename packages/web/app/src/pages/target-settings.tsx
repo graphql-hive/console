@@ -234,7 +234,7 @@ const ExtendBaseSchema = (props: {
   const [baseSchema, setBaseSchema] = useState(props.baseSchema);
   const { toast } = useToast();
 
-  const isUnsaved = baseSchema?.trim() !== props.baseSchema?.trim();
+  const isUnsaved = baseSchema.trim() !== props.baseSchema.trim();
 
   return (
     <SubPageLayout>
@@ -269,7 +269,7 @@ const ExtendBaseSchema = (props: {
       )}
       {mutation.error && (
         <div className="text-red-500">
-          {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
+          {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
       <div className="flex items-center gap-x-3">
@@ -519,7 +519,7 @@ const ConditionalBreakingChanges = (props: {
       percentage: Yup.number().min(0).max(100).required(),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.organization.rateLimit.retentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;
@@ -625,7 +625,7 @@ const ConditionalBreakingChanges = (props: {
               disabled={isSubmitting}
               type="number"
               min="1"
-              max={targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30}
+              max={targetSettings.data?.organization?.organization.rateLimit.retentionInDays ?? 30}
               className="mx-2 !inline-flex w-16"
             />
             days.
@@ -784,7 +784,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
 
         const error = result.error || result.data?.updateTargetSlug.error;
 
-        if (result.data?.updateTargetSlug?.ok) {
+        if (result.data?.updateTargetSlug.ok) {
           toast({
             variant: 'default',
             title: 'Success',
@@ -1268,7 +1268,7 @@ function TargetSettingsContent(props: {
                   organizationSlug={currentOrganization.slug}
                   graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
                 />
-                {currentTarget?.viewerCanDelete && (
+                {currentTarget.viewerCanDelete && (
                   <TargetDelete
                     targetSlug={currentTarget.slug}
                     projectSlug={currentProject.slug}
@@ -1302,7 +1302,7 @@ function TargetSettingsContent(props: {
             ) : null}
             {resolvedPage.key === 'base-schema' ? (
               <ExtendBaseSchema
-                baseSchema={currentTarget?.baseSchema ?? ''}
+                baseSchema={currentTarget.baseSchema ?? ''}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}

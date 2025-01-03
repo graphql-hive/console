@@ -143,7 +143,7 @@ export function CreateOperationModal(props: {
         variant: 'destructive',
       });
     } else {
-      const operation = result?.data?.createOperationInDocumentCollection.ok?.operation;
+      const operation = result.data?.createOperationInDocumentCollection.ok?.operation;
       if (operation) {
         onSaveSuccess({ id: operation.id, name: operation.name });
       }

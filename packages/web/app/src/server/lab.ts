@@ -91,7 +91,7 @@ export function connectLab(server: FastifyInstance) {
       return;
     }
 
-    if (response?.errors?.length) {
+    if (response.errors?.length) {
       void res.status(200).send(response.data);
       return;
     }
@@ -99,7 +99,7 @@ export function connectLab(server: FastifyInstance) {
     try {
       const graphqlRequest = LabBody.parse(req.body);
 
-      const rawSchema = buildSchema(response.data.lab?.schema);
+      const rawSchema = buildSchema(response.data.lab.schema);
       const document = parse(graphqlRequest.query);
 
       const mockedSchema = addMocksToSchema({

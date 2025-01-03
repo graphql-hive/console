@@ -106,7 +106,7 @@ export function createConnection(map?: (node: unknown) => unknown): {
       return nodes ?? [];
     },
     total(nodes: readonly unknown[]) {
-      return nodes?.length ?? 0;
+      return nodes.length ?? 0;
     },
   };
 }

@@ -30,7 +30,7 @@ const composeFederation = compose(services => {
           errors: result.errors.map(error => ({
             message: error.message,
             source:
-              typeof error.extensions?.code === 'string' &&
+              typeof error.extensions.code === 'string' &&
               // `INVALID_GRAPHQL` is a special error code that is used to indicate that the error comes from GraphQL-JS
               error.extensions.code !== 'INVALID_GRAPHQL'
                 ? 'composition'

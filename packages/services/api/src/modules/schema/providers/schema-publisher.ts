@@ -205,7 +205,7 @@ export class SchemaPublisher {
       }
 
       const targetIds = settings.validation.targets;
-      const excludedClientNames = settings.validation.excludedClients?.length
+      const excludedClientNames = settings.validation.excludedClients.length
         ? settings.validation.excludedClients
         : null;
       const period = createPeriod(`${settings.validation.period}d`);
@@ -220,7 +220,7 @@ export class SchemaPublisher {
         conditionalBreakingChangeDiffConfig: {
           period,
           targetIds,
-          excludedClientNames: settings.validation.excludedClients?.length
+          excludedClientNames: settings.validation.excludedClients.length
             ? settings.validation.excludedClients
             : null,
           requestCountThreshold: Math.ceil(
@@ -657,9 +657,9 @@ export class SchemaPublisher {
         targetId: target.id,
         schemaVersionId: latestVersion?.versionId ?? null,
         isSuccess: true,
-        breakingSchemaChanges: checkResult.state?.schemaChanges?.breaking ?? null,
-        safeSchemaChanges: checkResult.state?.schemaChanges?.safe ?? null,
-        schemaPolicyWarnings: checkResult.state?.schemaPolicyWarnings ?? null,
+        breakingSchemaChanges: checkResult.state.schemaChanges?.breaking ?? null,
+        safeSchemaChanges: checkResult.state.schemaChanges?.safe ?? null,
+        schemaPolicyWarnings: checkResult.state.schemaPolicyWarnings ?? null,
         schemaPolicyErrors: null,
         schemaCompositionErrors: null,
         compositeSchemaSDL: checkResult.state.composition.compositeSchemaSDL,
@@ -680,7 +680,7 @@ export class SchemaPublisher {
           targetId: target.id,
         }),
         contracts:
-          checkResult.state?.contracts?.map(contract => ({
+          checkResult.state.contracts?.map(contract => ({
             contractId: contract.contractId,
             contractName: contract.contractName,
             comparedContractVersionId:
@@ -747,7 +747,7 @@ export class SchemaPublisher {
         }),
         contracts: latestSchemaVersionContracts
           ? await Promise.all(
-              latestSchemaVersionContracts?.edges.map(async edge => ({
+              latestSchemaVersionContracts.edges.map(async edge => ({
                 contractId: edge.node.contractId,
                 contractName: edge.node.contractName,
                 comparedContractVersionId:
@@ -782,9 +782,9 @@ export class SchemaPublisher {
           target,
           organization,
           conclusion: checkResult.conclusion,
-          changes: checkResult.state?.schemaChanges?.all ?? null,
-          breakingChanges: checkResult.state?.schemaChanges?.breaking ?? null,
-          warnings: checkResult.state?.schemaPolicyWarnings ?? null,
+          changes: checkResult.state.schemaChanges?.all ?? null,
+          breakingChanges: checkResult.state.schemaChanges?.breaking ?? null,
+          warnings: checkResult.state.schemaPolicyWarnings ?? null,
           compositionErrors: null,
           errors: null,
           schemaCheckId: schemaCheck?.id ?? null,
@@ -879,15 +879,15 @@ export class SchemaPublisher {
         __typename: 'SchemaCheckSuccess',
         valid: true,
         changes: [
-          ...(checkResult.state?.schemaChanges?.all ?? []),
-          ...(checkResult.state?.contracts?.flatMap(contract => [
+          ...(checkResult.state.schemaChanges?.all ?? []),
+          ...(checkResult.state.contracts?.flatMap(contract => [
             ...(contract.schemaChanges?.all?.map(change => ({
               ...change,
               message: `[${contract.contractName}] ${change.message}`,
             })) ?? []),
           ]) ?? []),
         ],
-        warnings: checkResult.state?.schemaPolicyWarnings ?? [],
+        warnings: checkResult.state.schemaPolicyWarnings ?? [],
         initial: latestVersion == null,
         schemaCheck: toGraphQLSchemaCheck(schemaCheckSelector, schemaCheck),
       } as const;
@@ -1256,7 +1256,7 @@ export class SchemaPublisher {
         }
 
         const schemas = ensureCompositeSchemas(latestVersion.schemas);
-        this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
+        this.logger.debug(`Found ${latestVersion.schemas.length ?? 0} most recent schemas`);
         this.logger.debug(
           'Using %s registry model (version=%s, featureFlags=%o)',
           project.type,
@@ -1918,7 +1918,7 @@ export class SchemaPublisher {
             compositeSchemaSDL: fullSchemaSdl,
             supergraphSDL: supergraph,
             schemaCompositionErrors: null,
-            tags: publishResult.state?.tags ?? null,
+            tags: publishResult.state.tags ?? null,
           }
         : {
             compositeSchemaSDL: null,

@@ -134,15 +134,15 @@ export function UserMenu(props: {
             <DropdownMenuContent sideOffset={5} align="end" className="min-w-[240px]">
               <DropdownMenuLabel className="flex items-center justify-between">
                 <div className="flex flex-col space-y-1">
-                  <div className="truncate text-sm font-medium leading-none">{me?.displayName}</div>
+                  <div className="truncate text-sm font-medium leading-none">{me.displayName}</div>
                   <div className="text-muted-foreground truncate text-xs font-normal leading-none">
-                    {me?.email}
+                    {me.email}
                   </div>
                 </div>
                 <div>
-                  {me?.provider === AuthProvider.Google ? (
+                  {me.provider === AuthProvider.Google ? (
                     <FaGoogle title="Signed in using Google" />
-                  ) : me?.provider === AuthProvider.Github ? (
+                  ) : me.provider === AuthProvider.Github ? (
                     <FaGithub title="Signed in using Github" />
                   ) : (
                     <FaKey title="Signed in using username and password" />
@@ -151,7 +151,7 @@ export function UserMenu(props: {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuSub>
-                {me?.canSwitchOrganization ? (
+                {me.canSwitchOrganization ? (
                   <DropdownMenuSubTrigger>
                     <GridIcon className="mr-2 size-4" />
                     Switch organization

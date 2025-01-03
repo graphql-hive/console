@@ -113,10 +113,10 @@ function ApproveFailedSchemaCheckModal(props: {
       <h4 className="font-medium leading-none">Finish your approval</h4>
       <div>
         <p className="text-muted-foreground text-sm">Acknowledge and accept breaking changes.</p>
-        {props?.contextId ? (
+        {props.contextId ? (
           <p className="text-muted-foreground text-sm">
             Approval applies to all future changes within the context of a pull request or branch
-            lifecycle: <span className="font-medium">{props?.contextId}</span>
+            lifecycle: <span className="font-medium">{props.contextId}</span>
           </p>
         ) : null}
       </div>
@@ -466,7 +466,7 @@ function DefaultSchemaView(props: {
       !schemaCheck.schemaPolicyWarnings &&
       !(
         schemaCheck.__typename === 'FailedSchemaCheck' &&
-        schemaCheck.schemaPolicyErrors?.edges?.length
+        schemaCheck.schemaPolicyErrors?.edges.length
       ),
   });
 
@@ -485,10 +485,10 @@ function DefaultSchemaView(props: {
       <div className="border-muted min-h-[850px] rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
-            {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
-              !schemaCheck.safeSchemaChanges?.nodes?.length &&
-              !schemaCheck.breakingSchemaChanges?.nodes?.length &&
-              !schemaCheck.schemaPolicyErrors?.edges?.length &&
+            {!schemaCheck.schemaPolicyWarnings?.edges.length &&
+              !schemaCheck.safeSchemaChanges?.nodes.length &&
+              !schemaCheck.breakingSchemaChanges?.nodes.length &&
+              !schemaCheck.schemaPolicyErrors?.edges.length &&
               !schemaCheck.hasSchemaCompositionErrors && <NoGraphChanges />}
             {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
@@ -557,8 +557,8 @@ function DefaultSchemaView(props: {
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={schemaCheck?.schemaVersion?.supergraph ?? null}
-            after={schemaCheck?.supergraphSDL ?? null}
+            before={schemaCheck.schemaVersion?.supergraph ?? null}
+            after={schemaCheck.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
         )}
@@ -726,15 +726,15 @@ function ContractCheckView(props: {
         )}
         {selectedView === 'schema' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.compositeSchemaSDL ?? null}
+            before={contractCheck.contractVersion?.compositeSchemaSDL ?? null}
             after={contractCheck.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={contractCheck?.contractVersion?.supergraphSDL ?? null}
-            after={contractCheck?.supergraphSDL ?? null}
+            before={contractCheck.contractVersion?.supergraphSDL ?? null}
+            after={contractCheck.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
         )}
@@ -849,7 +849,7 @@ function SchemaChecksView(props: {
   const [selectedItem, setSelectedItem] = useState<string>('default');
   const selectedContractCheckNode = useMemo(
     () =>
-      schemaCheck.contractChecks?.edges?.find(edge => edge.node.id === selectedItem)?.node ?? null,
+      schemaCheck.contractChecks?.edges.find(edge => edge.node.id === selectedItem)?.node ?? null,
     [selectedItem],
   );
 

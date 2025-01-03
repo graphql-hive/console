@@ -402,7 +402,7 @@ function PreflightScriptContent() {
         sourceCode: newValue,
       },
     });
-    const err = error || data?.updatePreflightScript?.error;
+    const err = error || data?.updatePreflightScript.error;
 
     if (err) {
       toast({

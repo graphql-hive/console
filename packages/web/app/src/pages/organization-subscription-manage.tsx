@@ -125,7 +125,7 @@ function Inner(props: {
   const [query] = useQuery({ query: BillingsPlanQuery });
 
   const [paymentDetailsValid, setPaymentDetailsValid] = useState(
-    !!organization.billingConfiguration?.paymentMethod,
+    !!organization.billingConfiguration.paymentMethod,
   );
   const [upgradeToProMutationState, upgradeToProMutation] = useMutation(
     BillingUpgradeToProMutation,
@@ -137,7 +137,7 @@ function Inner(props: {
   );
   const planSummaryRef = useRef<HTMLDivElement>(null);
 
-  const [plan, setPlan] = useState<BillingPlanType>(organization?.plan || 'HOBBY');
+  const [plan, setPlan] = useState<BillingPlanType>(organization.plan || 'HOBBY');
   const onPlan = useCallback(
     (plan: BillingPlanType) => {
       setPlan(plan);
@@ -176,7 +176,7 @@ function Inner(props: {
   );
 
   useEffect(() => {
-    if (query.data?.billingPlans?.length) {
+    if (query.data?.billingPlans.length) {
       if (organization.plan === plan) {
         setOperationsRateLimit(Math.floor((organization.rateLimit.operations || 0) / 1_000_000));
       } else {

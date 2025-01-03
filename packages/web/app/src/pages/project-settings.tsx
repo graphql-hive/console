@@ -233,7 +233,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
 
         const error = result.error || result.data?.updateProjectSlug.error;
 
-        if (result.data?.updateProjectSlug?.ok) {
+        if (result.data?.updateProjectSlug.ok) {
           toast({
             variant: 'default',
             title: 'Success',

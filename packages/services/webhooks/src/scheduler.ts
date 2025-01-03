@@ -224,7 +224,7 @@ export function createScheduler(config: Config) {
       }
 
       return (
-        webhookQueue !== null && redisConnection !== null && redisConnection?.status === 'ready'
+        webhookQueue !== null && redisConnection !== null && redisConnection.status === 'ready'
       );
     },
   };

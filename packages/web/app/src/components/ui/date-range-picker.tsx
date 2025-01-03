@@ -109,7 +109,7 @@ function findMatchingPreset(range: Preset['range']): Preset | undefined {
 export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const validUnits = props.validUnits ?? units;
   const disallowedUnits = units.filter(unit => !validUnits.includes(unit));
-  const hasInvalidUnitRegex = disallowedUnits?.length
+  const hasInvalidUnitRegex = disallowedUnits.length
     ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
     : null;
 

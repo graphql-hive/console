@@ -30,7 +30,7 @@ export function InvoicesList(props: {
     OrganizationInvoicesList_OrganizationFragment,
     props.organization,
   );
-  if (!organization.billingConfiguration?.invoices?.length) {
+  if (!organization.billingConfiguration.invoices?.length) {
     return null;
   }
 

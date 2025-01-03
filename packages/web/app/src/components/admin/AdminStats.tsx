@@ -401,7 +401,7 @@ export function AdminStats({
 
   const tableData = useMemo(
     () =>
-      (query.data?.admin?.stats.organizations ?? [])
+      (query.data?.admin.stats.organizations ?? [])
         .filter(node => filterStats(node, filters))
         .map(node => ({
           name: (

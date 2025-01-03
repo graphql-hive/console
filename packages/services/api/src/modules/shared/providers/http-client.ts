@@ -36,7 +36,7 @@ export class HttpClient {
   }
 
   private request<T>(url: string, opts: HttpClientOptions, parentSpan?: Span) {
-    const logger = opts?.context?.logger ?? console;
+    const logger = opts.context?.logger ?? console;
     const parsedUrl = new URL(url);
     const span =
       parentSpan ??

@@ -143,7 +143,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
             <Heading className="mb-2">Your current plan</Heading>
             <div>
               <BillingView organization={organization} query={queryForBilling}>
-                {organization.billingConfiguration?.upcomingInvoice && (
+                {organization.billingConfiguration.upcomingInvoice && (
                   <Stat>
                     <Stat.Label>Next Invoice</Stat.Label>
                     <Stat.Number>
@@ -243,7 +243,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
               </div>
             </Card>
           ) : null}
-          {organization.billingConfiguration?.invoices?.length ? (
+          {organization.billingConfiguration.invoices?.length ? (
             <Card className="mt-8">
               <Heading>Invoices</Heading>
               <div className="mt-4">

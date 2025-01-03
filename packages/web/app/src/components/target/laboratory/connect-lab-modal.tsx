@@ -61,7 +61,7 @@ export const ConnectLabModalContent = (props: {
             developing.
           </DialogDescription>
         </DialogHeader>
-        {props?.isCDNEnabled ? (
+        {props.isCDNEnabled ? (
           <div>
             <h3 className="text-sm text-white">High-availability CDN:</h3>
             <Callout className="mt-2" type="info">

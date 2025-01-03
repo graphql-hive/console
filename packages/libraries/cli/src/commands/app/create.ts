@@ -116,7 +116,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               ).replace(/\n/g, '\\n');
               this.infoWarning(
                 `Failed uploading document: ${result.addDocumentsToAppDeployment.error.details.message}` +
-                  `\nOperation hash: ${affectedOperation?.hash}` +
+                  `\nOperation hash: ${affectedOperation.hash}` +
                   `\nOperation body: ${truncatedBody}`,
               );
             }

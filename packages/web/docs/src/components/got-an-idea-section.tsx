@@ -117,7 +117,7 @@ export function GotAnIdeaSection() {
         onClick={event => {
           if (window.$crisp) {
             event.preventDefault();
-            window.$crisp?.push(['do', 'chat:open']);
+            window.$crisp.push(['do', 'chat:open']);
           }
         }}
       >

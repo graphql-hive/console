@@ -104,7 +104,7 @@ function SolutionsPartner({ className }: { className?: string }) {
             <li
               className={cn(
                 'flex h-32 w-56 cursor-pointer flex-col items-center justify-center rounded-3xl border border-black hover:bg-slate-300',
-                partner?.className,
+                partner.className,
               )}
             >
               <img src={partner.logo} alt={partner.name} className="h-10 w-auto" />

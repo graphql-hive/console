@@ -293,7 +293,7 @@ function CreateTargetModal(props: {
       });
     } else if (data?.createTarget.error?.inputErrors.slug) {
       form.setError('targetSlug', {
-        message: data?.createTarget.error?.inputErrors.slug,
+        message: data.createTarget.error.inputErrors.slug,
       });
     } else {
       toast({

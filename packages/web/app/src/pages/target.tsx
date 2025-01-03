@@ -245,7 +245,7 @@ function SchemaView(props: {
                   <CommandEmpty>No results.</CommandEmpty>
                   <CommandGroup>
                     <ScrollArea className="relative h-80 w-full">
-                      {compositeSchemas?.map(schema => (
+                      {compositeSchemas.map(schema => (
                         <CommandItem
                           key={schema.service}
                           value={schema.service as string}

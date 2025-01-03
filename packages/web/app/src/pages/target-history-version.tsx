@@ -69,7 +69,7 @@ function SchemaVersionView(props: {
   const [selectedItem, setSelectedItem] = useState<string>('default');
   const contractVersionNode = useMemo(
     () =>
-      schemaVersion.contractVersions?.edges?.find(edge => edge.node.id === selectedItem)?.node ??
+      schemaVersion.contractVersions?.edges.find(edge => edge.node.id === selectedItem)?.node ??
       null,
     [selectedItem],
   );
@@ -117,7 +117,7 @@ function SchemaVersionView(props: {
                 </Tooltip>
               </TooltipProvider>
             </TabsTrigger>
-            {schemaVersion.contractVersions?.edges.map(edge => (
+            {schemaVersion.contractVersions.edges.map(edge => (
               <TabsTrigger
                 value={edge.node.id}
                 key={edge.node.id}
@@ -252,7 +252,7 @@ function DefaultSchemaVersionView(props: {
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Schema',
       tooltip: 'Show diff of the schema',
-      disabledReason: schemaVersion?.schemaCompositionErrors ? 'Composition failed.' : null,
+      disabledReason: schemaVersion.schemaCompositionErrors ? 'Composition failed.' : null,
     },
   ];
 
@@ -262,9 +262,9 @@ function DefaultSchemaVersionView(props: {
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Supergraph',
       tooltip: 'Show diff of the supergraph',
-      disabledReason: schemaVersion?.schemaCompositionErrors
+      disabledReason: schemaVersion.schemaCompositionErrors
         ? 'Composition failed.'
-        : schemaVersion?.supergraph
+        : schemaVersion.supergraph
           ? null
           : 'No supergraph.',
     });
@@ -336,7 +336,7 @@ function DefaultSchemaVersionView(props: {
                 />
               </div>
             )}
-            {schemaVersion.safeSchemaChanges?.nodes?.length && (
+            {schemaVersion.safeSchemaChanges?.nodes.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -353,21 +353,21 @@ function DefaultSchemaVersionView(props: {
         )}
         {selectedView === 'full-schema' && (
           <DiffEditor
-            before={schemaVersion?.previousDiffableSchemaVersion?.sdl ?? null}
-            after={schemaVersion?.sdl ?? null}
+            before={schemaVersion.previousDiffableSchemaVersion?.sdl ?? null}
+            after={schemaVersion.sdl ?? null}
             downloadFileName="schema.graphql"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={schemaVersion?.previousDiffableSchemaVersion?.supergraph ?? null}
-            after={schemaVersion?.supergraph ?? null}
+            before={schemaVersion.previousDiffableSchemaVersion?.supergraph ?? null}
+            after={schemaVersion.supergraph ?? null}
             downloadFileName="supergraph.graphqls"
           />
         )}
         {selectedView === 'service-schema' && (
           <DiffEditor
-            before={schemaVersion?.log?.previousServiceSdl ?? null}
+            before={schemaVersion.log.previousServiceSdl ?? null}
             after={('serviceSdl' in schemaVersion.log && schemaVersion.log.serviceSdl) || null}
             downloadFileName="service.graphql"
           />
@@ -439,7 +439,7 @@ function ContractVersionView(props: {
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Schema',
       tooltip: 'Show diff of the schema',
-      disabledReason: contractVersion?.schemaCompositionErrors ? 'Composition failed.' : null,
+      disabledReason: contractVersion.schemaCompositionErrors ? 'Composition failed.' : null,
     },
   ];
 
@@ -449,9 +449,9 @@ function ContractVersionView(props: {
       icon: <DiffIcon className="h-5 w-auto flex-none" />,
       label: 'Supergraph',
       tooltip: 'Show diff of the supergraph',
-      disabledReason: contractVersion?.schemaCompositionErrors
+      disabledReason: contractVersion.schemaCompositionErrors
         ? 'Composition failed.'
-        : contractVersion?.supergraphSDL
+        : contractVersion.supergraphSDL
           ? null
           : 'No supergraph.',
     });
@@ -510,7 +510,7 @@ function ContractVersionView(props: {
                 />
               </div>
             )}
-            {contractVersion.safeSchemaChanges?.nodes?.length && (
+            {contractVersion.safeSchemaChanges?.nodes.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -527,15 +527,15 @@ function ContractVersionView(props: {
         )}
         {selectedView === 'full-schema' && (
           <DiffEditor
-            before={contractVersion?.previousDiffableContractVersion?.compositeSchemaSDL ?? null}
-            after={contractVersion?.compositeSchemaSDL ?? null}
+            before={contractVersion.previousDiffableContractVersion?.compositeSchemaSDL ?? null}
+            after={contractVersion.compositeSchemaSDL ?? null}
             downloadFileName="schema.graphqls"
           />
         )}
         {selectedView === 'supergraph' && (
           <DiffEditor
-            before={contractVersion?.previousDiffableContractVersion?.supergraphSDL ?? null}
-            after={contractVersion?.supergraphSDL ?? null}
+            before={contractVersion.previousDiffableContractVersion?.supergraphSDL ?? null}
+            after={contractVersion.supergraphSDL ?? null}
             downloadFileName="supergraph.graphqls"
           />
         )}
@@ -590,8 +590,8 @@ function ActiveSchemaVersion(props: {
   const { error } = query;
 
   const isLoading = query.fetching || query.stale;
-  const schemaVersion = query?.data?.target?.schemaVersion;
-  const projectType = query?.data?.project?.type;
+  const schemaVersion = query.data?.target?.schemaVersion;
+  const projectType = query.data?.project?.type;
 
   if (isLoading || !schemaVersion || !projectType) {
     return (
@@ -613,7 +613,7 @@ function ActiveSchemaVersion(props: {
           Previous or current schema is most likely incomplete and was force published
         </p>
         <pre className="mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs text-white">
-          {error.graphQLErrors?.[0]?.message ?? error.networkError?.message}
+          {error.graphQLErrors[0]?.message ?? error.networkError?.message}
         </pre>
       </div>
     );

@@ -90,8 +90,8 @@ export class TargetAccess {
 
             if (
               tokenInfo?.organization === selector.organizationId &&
-              tokenInfo?.project === selector.projectId &&
-              tokenInfo?.target === selector.targetId
+              tokenInfo.project === selector.projectId &&
+              tokenInfo.target === selector.targetId
             ) {
               return tokenInfo.scopes.includes(selector.scope);
             }

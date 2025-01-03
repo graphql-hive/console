@@ -213,7 +213,7 @@ function errorWithSource(source: CompositionErrorSource) {
 }
 
 function errorWithPossibleCode(error: unknown) {
-  if (error instanceof GraphQLError && error.extensions?.code) {
+  if (error instanceof GraphQLError && error.extensions.code) {
     return toValidationError(error, 'composition');
   }
 

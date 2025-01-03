@@ -353,8 +353,8 @@ export function buildSchemaCheckFailureState(args: {
 
   if (args.policyCheck) {
     schemaPolicy = {
-      errors: args.policyCheck?.reason?.errors ?? null,
-      warnings: args.policyCheck?.reason?.warnings || args.policyCheck?.result?.warnings || null,
+      errors: args.policyCheck.reason?.errors ?? null,
+      warnings: args.policyCheck.reason?.warnings || args.policyCheck.result?.warnings || null,
     };
   }
 

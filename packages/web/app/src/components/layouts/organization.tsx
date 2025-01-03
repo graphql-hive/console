@@ -344,7 +344,7 @@ function CreateProjectModal(props: {
       });
     } else if (data?.createProject.error?.inputErrors.slug) {
       form.setError('projectSlug', {
-        message: data?.createProject.error?.inputErrors.slug,
+        message: data.createProject.error.inputErrors.slug,
       });
     } else {
       toast({

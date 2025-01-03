@@ -87,7 +87,7 @@ function ListPage(props: {
   });
 
   const edges = versionsQuery.data?.target?.schemaVersions.edges;
-  const hasMore = versionsQuery.data?.target?.schemaVersions?.pageInfo?.hasNextPage ?? false;
+  const hasMore = versionsQuery.data?.target?.schemaVersions.pageInfo.hasNextPage ?? false;
 
   return (
     <>
@@ -150,7 +150,7 @@ function ListPage(props: {
         <Button
           variant="link"
           onClick={() => {
-            const endCursor = versionsQuery.data?.target?.schemaVersions?.pageInfo?.endCursor;
+            const endCursor = versionsQuery.data?.target?.schemaVersions.pageInfo.endCursor;
             if (endCursor) {
               onLoadMore(endCursor);
             }

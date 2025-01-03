@@ -13,7 +13,7 @@ import { createUsage } from './usage.js';
 import { createHiveLogger, logIf } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = createHiveLogger(options?.agent?.logger ?? console, '[hive]');
+  const logger = createHiveLogger(options.agent?.logger ?? console, '[hive]');
   let enabled = options.enabled ?? true;
 
   if (enabled === false) {
@@ -112,7 +112,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
                 'graphql-client-version': version,
               },
               timeout: 30_000,
-              fetchImplementation: options?.agent?.__testing?.fetch,
+              fetchImplementation: options.agent?.__testing?.fetch,
               logger: infoLogger,
             },
           );
@@ -139,7 +139,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
               ]);
 
               const appUrl =
-                options.selfHosting?.applicationUrl?.replace(/\/$/, '') ??
+                options.selfHosting?.applicationUrl.replace(/\/$/, '') ??
                 'https://app.graphql-hive.com';
               const organizationUrl = `${appUrl}/${organization.slug}`;
               const projectUrl = `${organizationUrl}/${project.slug}`;
@@ -175,7 +175,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
             infoLogger.error(`Error ${response.status}: ${response.statusText}`);
           }
         } catch (error) {
-          infoLogger.error(`Error ${(error as Error)?.message ?? error}`);
+          infoLogger.error(`Error ${(error as Error).message ?? error}`);
         }
       }
     : () => {};

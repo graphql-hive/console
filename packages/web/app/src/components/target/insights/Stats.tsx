@@ -274,7 +274,7 @@ function OverTimeStats({
   const styles = useChartStyles();
 
   const requests = useMemo(() => {
-    if (requestsOverTime?.length) {
+    if (requestsOverTime.length) {
       return requestsOverTime.map<[string, number]>(node => [node.date, node.value]);
     }
 
@@ -282,7 +282,7 @@ function OverTimeStats({
   }, [requestsOverTime]);
 
   const failures = useMemo(() => {
-    if (failuresOverTime?.length) {
+    if (failuresOverTime.length) {
       return failuresOverTime.map<[string, number]>(node => [node.date, node.value]);
     }
 
@@ -430,7 +430,7 @@ function ClientsStats(props: {
   const styles = useChartStyles();
   const operationStats = useFragment(ClientsStats_OperationsStatsFragment, props.operationStats);
   const sortedClients = useMemo(() => {
-    return operationStats?.clients.nodes?.length
+    return operationStats?.clients.nodes.length
       ? operationStats.clients.nodes.slice().sort((a, b) => b.count - a.count)
       : [];
   }, [operationStats?.clients.nodes]);
@@ -439,7 +439,7 @@ function ClientsStats(props: {
     let values: string[] = [];
     const labels: string[] = [];
 
-    if (sortedClients?.length) {
+    if (sortedClients.length) {
       const total = sortedClients.reduce((acc, node) => acc + node.count, 0);
       const counts: number[] = [];
 
@@ -470,7 +470,7 @@ function ClientsStats(props: {
   const byVersion = useMemo(() => {
     let values: string[] = [];
     const labels: string[] = [];
-    if (sortedClients?.length) {
+    if (sortedClients.length) {
       const total = sortedClients.reduce((acc, node) => acc + node.count, 0);
       const versions: Array<{
         name: string;
@@ -522,7 +522,7 @@ function ClientsStats(props: {
         path: string;
       }>;
     }> = [];
-    if (sortedClients?.length) {
+    if (sortedClients.length) {
       for (const client of sortedClients) {
         const versions: Array<{
           value: number;
@@ -786,28 +786,28 @@ function LatencyOverTimeStats({
   const { durationOverTime: duration = [] } =
     useFragment(LatencyOverTimeStats_OperationStatsFragment, operationStats) ?? {};
   const p75 = useMemo(() => {
-    if (duration?.length) {
+    if (duration.length) {
       return duration.map<[string, number]>(node => [node.date, node.duration.p75]);
     }
 
     return []; // it will use the previous data points when new data is not available yet (fetching)
   }, [duration]);
   const p90 = useMemo(() => {
-    if (duration?.length) {
+    if (duration.length) {
       return duration.map<[string, number]>(node => [node.date, node.duration.p90]);
     }
 
     return []; // it will use the previous data points when new data is not available yet (fetching)
   }, [duration]);
   const p95 = useMemo(() => {
-    if (duration?.length) {
+    if (duration.length) {
       return duration.map<[string, number]>(node => [node.date, node.duration.p95]);
     }
 
     return []; // it will use the previous data points when new data is not available yet (fetching)
   }, [duration]);
   const p99 = useMemo(() => {
-    if (duration?.length) {
+    if (duration.length) {
       return duration.map<[string, number]>(node => [node.date, node.duration.p99]);
     }
 
@@ -1104,17 +1104,17 @@ export function OperationsStats({
             dateRangeText={dateRangeText}
           />
           <PercentileStats
-            value={operationsStats?.duration?.p99}
+            value={operationsStats?.duration.p99}
             percentile={99}
             dateRangeText={dateRangeText}
           />
           <PercentileStats
-            value={operationsStats?.duration?.p95}
+            value={operationsStats?.duration.p95}
             percentile={95}
             dateRangeText={dateRangeText}
           />
           <PercentileStats
-            value={operationsStats?.duration?.p90}
+            value={operationsStats?.duration.p90}
             percentile={90}
             dateRangeText={dateRangeText}
           />

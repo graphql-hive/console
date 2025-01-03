@@ -520,7 +520,7 @@ function createFederationDirectiveStrategy(directiveName: string): TagExtraction
     if (
       directiveNode.name.value === directiveName &&
       directiveNode.arguments?.[0].name.value === 'name' &&
-      directiveNode.arguments?.[0]?.value.kind === Kind.STRING
+      directiveNode.arguments[0]?.value.kind === Kind.STRING
     ) {
       return directiveNode.arguments[0].value.value ?? null;
     }

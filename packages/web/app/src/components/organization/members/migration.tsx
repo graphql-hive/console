@@ -164,7 +164,7 @@ function SimilarRoleScopes<T>(props: {
 
   return (
     <>
-      {groupedScopes.current?.map(scope => {
+      {groupedScopes.current.map(scope => {
         return (
           <div key={scope.name} className="flex flex-row items-center justify-between gap-x-4 pt-2">
             <div>

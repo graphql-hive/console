@@ -289,7 +289,7 @@ function getJoinTypeEnumServiceName(args: {
   directives: ReadonlyArray<ConstDirectiveNode>;
   valueName: 'enumValue' | 'type';
 }) {
-  if (!args.directives?.length) {
+  if (!args.directives.length) {
     return new Set<string>();
   }
   const enumServiceValues = new Set<string>();

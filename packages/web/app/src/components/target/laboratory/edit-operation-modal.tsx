@@ -115,7 +115,7 @@ export const EditOperationModal = (props: {
         name: values.name,
       },
     });
-    const error = response.error || response.data?.updateOperationInDocumentCollection?.error;
+    const error = response.error || response.data?.updateOperationInDocumentCollection.error;
 
     if (!error) {
       // Update tab title

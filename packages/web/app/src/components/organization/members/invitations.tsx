@@ -135,7 +135,7 @@ function MemberInvitationForm(props: {
         return;
       }
 
-      if (result.data?.inviteToOrganizationByEmail?.ok?.email) {
+      if (result.data?.inviteToOrganizationByEmail.ok?.email) {
         toast({
           title: 'Invitation sent',
           description: `${result.data.inviteToOrganizationByEmail.ok.email} should receive an invitation email shortly.`,
@@ -143,11 +143,11 @@ function MemberInvitationForm(props: {
         form.reset({ email: '', role: '' });
         props.close();
         props.refetchInvitations();
-      } else if (result.data?.inviteToOrganizationByEmail?.error?.message) {
+      } else if (result.data?.inviteToOrganizationByEmail.error?.message) {
         toast({
           variant: 'destructive',
           title: 'Failed to send an invitation',
-          description: result.data?.inviteToOrganizationByEmail.error.message,
+          description: result.data.inviteToOrganizationByEmail.error.message,
         });
       }
     } catch (error) {
@@ -350,7 +350,7 @@ function Invitation(props: {
                       toast({
                         variant: 'destructive',
                         title: 'Failed to delete invitation',
-                        description: result.data?.deleteOrganizationInvitation.error.message,
+                        description: result.data.deleteOrganizationInvitation.error.message,
                       });
                     } else if (result.data?.deleteOrganizationInvitation.ok) {
                       toast({

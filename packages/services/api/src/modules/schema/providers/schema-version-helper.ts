@@ -93,7 +93,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    return composition.errors?.length ? composition.errors : null;
+    return composition.errors.length ? composition.errors : null;
   }
 
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion) {

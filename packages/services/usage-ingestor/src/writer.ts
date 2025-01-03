@@ -229,6 +229,6 @@ function hasResponse(error: unknown): error is {
 
 function getStatusCodeFromError(error: unknown) {
   if (hasResponse(error)) {
-    return error.response?.statusCode;
+    return error.response.statusCode;
   }
 }

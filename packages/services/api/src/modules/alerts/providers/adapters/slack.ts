@@ -93,7 +93,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       input.channel.slackChannel,
     );
 
-    const token = input.integrations?.slack.token;
+    const token = input.integrations.slack.token;
 
     if (!token) {
       this.logger.debug(`Slack Integration is not available`);

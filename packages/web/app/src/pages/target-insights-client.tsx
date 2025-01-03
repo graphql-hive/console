@@ -79,7 +79,7 @@ function ClientView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.clientStats?.requestsOverTime;
+  const points = query.data?.clientStats.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -88,9 +88,9 @@ function ClientView(props: {
     return points.map(node => [node.date, node.value]);
   }, [points]);
 
-  const totalRequests = query.data?.clientStats?.totalRequests ?? 0;
-  const totalVersions = query.data?.clientStats?.totalVersions ?? 0;
-  const totalOperations = query.data?.clientStats?.operations.nodes.length ?? 0;
+  const totalRequests = query.data?.clientStats.totalRequests ?? 0;
+  const totalVersions = query.data?.clientStats.totalVersions ?? 0;
+  const totalOperations = query.data?.clientStats.operations.nodes.length ?? 0;
 
   if (query.error) {
     return (

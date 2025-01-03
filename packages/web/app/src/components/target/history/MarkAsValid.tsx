@@ -54,7 +54,7 @@ export function MarkAsValid(props: {
     });
   }, [mutate, version]);
 
-  if (version?.valid) {
+  if (version.valid) {
     return null;
   }
 

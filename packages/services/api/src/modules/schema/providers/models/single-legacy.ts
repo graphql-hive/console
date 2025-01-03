@@ -309,7 +309,7 @@ export class SingleLegacyModel {
         code: PublishFailureReasonCode.BreakingChanges,
         changes: diffCheck.reason.all ?? [],
         breakingChanges: diffCheck.reason.breaking ?? [],
-        coordinatesDiff: diffCheck.reason?.coordinatesDiff ?? null,
+        coordinatesDiff: diffCheck.reason.coordinatesDiff ?? null,
       });
     }
 

@@ -87,7 +87,7 @@ export class ProjectAccess {
 
             if (
               tokenInfo?.organization === selector.organizationId &&
-              tokenInfo?.project === selector.projectId
+              tokenInfo.project === selector.projectId
             ) {
               return tokenInfo.scopes.includes(selector.scope);
             }

@@ -175,8 +175,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         // noop
       });
 
-      const commit = flags.commit || git?.commit;
-      const author = flags.author || git?.author;
+      const commit = flags.commit || git.commit;
+      const author = flags.author || git.author;
 
       if (typeof sdl !== 'string' || sdl.length === 0) {
         throw new Errors.CLIError('Schema seems empty');

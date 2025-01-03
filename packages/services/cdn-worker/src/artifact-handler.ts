@@ -90,7 +90,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
     if (parseResult.success === false) {
       analytics.track(
         { type: 'error', value: ['invalid-params'] },
-        request.params?.targetId ?? 'unknown',
+        request.params.targetId ?? 'unknown',
       );
       return createResponse(
         analytics,
@@ -98,7 +98,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         {
           status: 404,
         },
-        request.params?.targetId ?? 'unknown',
+        request.params.targetId ?? 'unknown',
         request,
       );
     }
@@ -228,7 +228,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
       if (parseResult.success === false) {
         analytics.track(
           { type: 'error', value: ['invalid-params'] },
-          request.params?.targetId ?? 'unknown',
+          request.params.targetId ?? 'unknown',
         );
 
         return createResponse(
@@ -237,7 +237,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
           {
             status: 404,
           },
-          request.params?.targetId ?? 'unknown',
+          request.params.targetId ?? 'unknown',
           request,
         );
       }
@@ -261,7 +261,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
       ) {
         analytics.track(
           { type: 'error', value: ['app-deployment-not-active'] },
-          request.params?.targetId ?? 'unknown',
+          request.params.targetId ?? 'unknown',
         );
 
         return createResponse(

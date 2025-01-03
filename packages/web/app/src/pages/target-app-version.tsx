@@ -132,7 +132,7 @@ function TargetAppVersionContent(props: {
     return null;
   }
 
-  if (!data.fetching && !data.stale && !data?.data?.target?.appDeployment) {
+  if (!data.fetching && !data.stale && !data.data?.target?.appDeployment) {
     return (
       <>
         <Meta title="App Version Not found" />
@@ -225,7 +225,7 @@ function TargetAppVersionContent(props: {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.data?.target?.appDeployment.documents?.edges.map(edge => (
+                  {data.data.target.appDeployment.documents.edges.map(edge => (
                     <TableRow>
                       <TableCell>
                         <span className="rounded bg-gray-800 p-1 font-mono text-sm">
@@ -308,13 +308,12 @@ function TargetAppVersionContent(props: {
                 variant="outline"
                 className="ml-auto mr-0 flex"
                 disabled={
-                  !data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage ||
-                  isLoadingMore
+                  !data.data.target.appDeployment.documents.pageInfo.hasNextPage || isLoadingMore
                 }
                 onClick={() => {
                   if (
-                    data?.data?.target?.appDeployment?.documents?.pageInfo?.endCursor &&
-                    data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage
+                    data.data?.target?.appDeployment?.documents?.pageInfo.endCursor &&
+                    data.data.target.appDeployment.documents.pageInfo.hasNextPage
                   ) {
                     setIsLoadingMore(true);
                     void client
@@ -325,7 +324,7 @@ function TargetAppVersionContent(props: {
                         appName: props.appName,
                         appVersion: props.appVersion,
                         first: 20,
-                        after: data?.data?.target?.appDeployment?.documents.pageInfo?.endCursor,
+                        after: data.data.target.appDeployment.documents.pageInfo.endCursor,
                       })
                       .toPromise()
                       .finally(() => {

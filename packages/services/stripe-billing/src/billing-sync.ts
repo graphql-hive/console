@@ -38,7 +38,7 @@ export function createStripeBilling(config: {
         active: true,
         type: 'service',
       })
-      .then(r => r.data.filter(v => v.metadata?.hive_plan && v.active === true));
+      .then(r => r.data.filter(v => v.metadata.hive_plan && v.active === true));
 
     if (relevantProducts.length !== 1) {
       throw new Error(
@@ -52,13 +52,13 @@ export function createStripeBilling(config: {
       expand: ['data.tiers'],
     })) as Stripe.Response<Stripe.ApiList<Stripe.Price & { tiers: Stripe.Price.Tier[] }>>;
 
-    const operationsPrice = prices.data.find(v => v.metadata?.hive_usage === 'operations');
+    const operationsPrice = prices.data.find(v => v.metadata.hive_usage === 'operations');
 
     if (!operationsPrice) {
       throw new Error(`Failed to find Stripe price ID with Hive metadata for operations`);
     }
 
-    const basePrice = prices.data.find(v => v.metadata?.hive_usage === 'base');
+    const basePrice = prices.data.find(v => v.metadata.hive_usage === 'base');
 
     if (!basePrice) {
       throw new Error(`Failed to find Stripe price ID with Hive metadata for base price`);

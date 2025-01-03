@@ -41,7 +41,7 @@ export function createSupergraphManager(
           try {
             const result = await fetchSupergraph();
             if (result.supergraphSdl) {
-              hooks.update?.(result.supergraphSdl);
+              hooks.update(result.supergraphSdl);
             }
           } catch (error) {
             console.error(
@@ -109,7 +109,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
         operationName: context.operationName,
         contextValue: addRequestWithHeaders(
           isLegacyV3 ? context.context : context.contextValue,
-          context.request?.http,
+          context.request.http,
         ),
         variableValues: context.request.variables,
       };
@@ -201,7 +201,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             (await hive.experimental__persistedDocuments.allowArbitraryDocuments({
               headers: {
                 get(name: string) {
-                  return context.request.http?.headers?.get(name) ?? null;
+                  return context.request.http?.headers.get(name) ?? null;
                 },
               },
             }))

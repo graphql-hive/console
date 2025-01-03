@@ -85,17 +85,17 @@ export const urqlClient = createClient({
           return false;
         },
         didAuthError(error) {
-          if (error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
+          if (error.graphQLErrors.some(e => e.extensions.code === 'UNAUTHENTICATED')) {
             action = 'UNAUTHENTICATED';
             return true;
           }
 
-          if (error.graphQLErrors.some(e => e.extensions?.code === 'VERIFY_EMAIL')) {
+          if (error.graphQLErrors.some(e => e.extensions.code === 'VERIFY_EMAIL')) {
             action = 'VERIFY_EMAIL';
             return true;
           }
 
-          if (error.graphQLErrors.some(e => e.extensions?.code === 'NEEDS_REFRESH')) {
+          if (error.graphQLErrors.some(e => e.extensions.code === 'NEEDS_REFRESH')) {
             action = 'NEEDS_REFRESH';
             return true;
           }

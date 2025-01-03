@@ -39,7 +39,7 @@ beforeEach(() => {
 
 afterEach(clearWorkerEnv);
 afterEach(async () => {
-  await mockPool?.close();
+  await mockPool.close();
   mockAgent.assertNoPendingInterceptors();
 });
 afterAll(() => mockAgent.close());

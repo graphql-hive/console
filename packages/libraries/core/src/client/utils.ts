@@ -195,7 +195,7 @@ export function createHiveLogger(baseLogger: Logger, prefix: string): HiveLogger
     path: '',
     logger: baseLogger,
     // @ts-expect-error internal stuff
-    ...baseLogger?.[hiveSymbol],
+    ...baseLogger[hiveSymbol],
   };
   context.path = context.path + prefix;
 

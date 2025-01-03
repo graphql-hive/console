@@ -147,7 +147,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                     </Button>
                   </div>
                 </>
-              ) : !query?.data?.organizationTransferRequest ? (
+              ) : !query.data?.organizationTransferRequest ? (
                 <>
                   <h1 className={classes.title}>Organization Transfer Error</h1>
                   <p className={classes.description}>Not found</p>

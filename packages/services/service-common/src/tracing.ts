@@ -361,9 +361,9 @@ export const traceInlineSync = <TArgs extends any[], TResult>(
     const spanName = spanNameOrFn instanceof Function ? spanNameOrFn(...args) : spanNameOrFn;
     const span = tracer.startSpan(spanName, {
       attributes:
-        options?.initAttributes instanceof Function
+        options.initAttributes instanceof Function
           ? options.initAttributes(...args)
-          : options?.initAttributes,
+          : options.initAttributes,
       kind: SpanKind.INTERNAL,
     });
 
@@ -372,7 +372,7 @@ export const traceInlineSync = <TArgs extends any[], TResult>(
         const result = fn(...args);
         span.setStatus({ code: SpanStatusCode.OK });
 
-        if (options?.resultAttributes) {
+        if (options.resultAttributes) {
           span.setAttributes(
             options.resultAttributes instanceof Function
               ? options.resultAttributes(result)
@@ -391,7 +391,7 @@ export const traceInlineSync = <TArgs extends any[], TResult>(
             'error.type': error.name,
           });
 
-          if (options?.errorAttributes) {
+          if (options.errorAttributes) {
             span.setAttributes(
               options.errorAttributes instanceof Function
                 ? options.errorAttributes(error)
@@ -416,9 +416,9 @@ export const traceInline = <TArgs extends any[], TResult>(
   return async (...args: TArgs): Promise<TResult> => {
     const span = tracer.startSpan(spanName, {
       attributes:
-        options?.initAttributes instanceof Function
+        options.initAttributes instanceof Function
           ? options.initAttributes(...args)
-          : options?.initAttributes,
+          : options.initAttributes,
       kind: SpanKind.INTERNAL,
     });
 
@@ -427,7 +427,7 @@ export const traceInline = <TArgs extends any[], TResult>(
         const result = await fn(...args);
         span.setStatus({ code: SpanStatusCode.OK });
 
-        if (options?.resultAttributes) {
+        if (options.resultAttributes) {
           span.setAttributes(
             options.resultAttributes instanceof Function
               ? options.resultAttributes(result)
@@ -446,7 +446,7 @@ export const traceInline = <TArgs extends any[], TResult>(
             'error.type': error.name,
           });
 
-          if (options?.errorAttributes) {
+          if (options.errorAttributes) {
             span.setAttributes(
               options.errorAttributes instanceof Function
                 ? options.errorAttributes(error)

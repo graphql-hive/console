@@ -231,8 +231,8 @@ function ChecksPageContent(props: {
     filter_changed?: string;
     filter_failed?: string;
   };
-  const showOnlyChanged = search?.filter_changed === 'true';
-  const showOnlyFailed = search?.filter_failed === 'true';
+  const showOnlyChanged = search.filter_changed === 'true';
+  const showOnlyFailed = search.filter_failed === 'true';
 
   const [filters, setFilters] = useState<SchemaCheckFilters>({
     showOnlyChanged: showOnlyChanged ?? false,
@@ -262,8 +262,8 @@ function ChecksPageContent(props: {
     );
   }
 
-  const hasSchemaChecks = !!query.data?.target?.schemaChecks?.edges?.length;
-  const hasFilteredSchemaChecks = !!query.data?.target?.filteredSchemaChecks?.edges?.length;
+  const hasSchemaChecks = !!query.data?.target?.schemaChecks.edges.length;
+  const hasFilteredSchemaChecks = !!query.data?.target?.filteredSchemaChecks.edges.length;
   const hasActiveSchemaCheck = !!schemaCheckId;
 
   const handleShowOnlyFilterChange = () => {

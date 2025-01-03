@@ -12,7 +12,7 @@ export const updateOrganizationSlug: NonNullable<
     return {
       error: {
         message:
-          parsedInput.error.formErrors.fieldErrors?.[0]?.[0] ??
+          parsedInput.error.formErrors.fieldErrors[0]?.[0] ??
           'Changing the organization slug failed.',
       },
     };

@@ -259,16 +259,16 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
     if (error instanceof Error) {
       if (isClientError(error)) {
-        const errors = error.response?.errors;
+        const errors = error.response.errors;
 
         if (Array.isArray(errors) && errors.length > 0) {
           return this.error(errors[0].message, {
-            ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
+            ref: this.cleanRequestId(error.response.headers.get('x-request-id')),
           });
         }
 
         return this.error(error.message, {
-          ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
+          ref: this.cleanRequestId(error.response.headers.get('x-request-id')),
         });
       }
 

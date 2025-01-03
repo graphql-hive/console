@@ -6,7 +6,7 @@ export function useClipboard() {
 
   return useCallback(
     async (text: string): Promise<void> => {
-      if (!navigator?.clipboard) {
+      if (!navigator.clipboard) {
         toast({
           title: 'Clipboard not supported',
           description: 'Your browser does not support clipboard operations.',

@@ -238,7 +238,7 @@ function OperationsFilterContainer({
 
   return (
     <OperationsFilter
-      operationStatsConnection={query.data.operationsStats?.operations}
+      operationStatsConnection={query.data.operationsStats.operations}
       selected={selected}
       isOpen={isOpen}
       onClose={onClose}
@@ -585,7 +585,7 @@ function ClientsFilterContainer({
     return <Spinner />;
   }
 
-  const allClients = query.data.operationsStats?.clients.nodes ?? [];
+  const allClients = query.data.operationsStats.clients.nodes ?? [];
 
   return (
     <ClientsFilter

@@ -55,7 +55,7 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
-      ?.contracts;
+      .contracts;
 
     if (!args.contracts?.length || !contractResults?.length) {
       return null;
@@ -79,7 +79,7 @@ export class CompositeModel {
             filterOutFederationChanges: false,
             approvedChanges: contract.approvedChanges ?? null,
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
-            incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
+            incomingSdl: contractCompositionResult.result?.fullSchemaSdl ?? null,
           }),
         };
       }),
@@ -146,7 +146,7 @@ export class CompositeModel {
       sdl: input.sdl,
       service_name: input.serviceName,
       service_url:
-        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ?? 'temp',
+        latest?.schemas.find(s => s.service_name === input.serviceName)?.service_url ?? 'temp',
       action: 'PUSH',
       metadata: null,
     };
@@ -406,7 +406,7 @@ export class CompositeModel {
 
     const metadataCheck = await this.checks.metadata(incoming, previousService ?? null);
 
-    if (metadataCheck?.status === 'failed') {
+    if (metadataCheck.status === 'failed') {
       return {
         conclusion: SchemaPublishConclusion.Reject,
         reasons: [
@@ -489,7 +489,7 @@ export class CompositeModel {
       messages.push(serviceUrlCheck.result.message);
     }
 
-    if (metadataCheck?.status === 'completed' && metadataCheck.result.status === 'modified') {
+    if (metadataCheck.status === 'completed' && metadataCheck.result.status === 'modified') {
       messages.push('Metadata has been updated');
     }
 
@@ -518,10 +518,10 @@ export class CompositeModel {
             contractName: contractCheck.contractName,
             isComposable: contractCheck.compositionCheck.status === 'completed',
             compositionErrors: contractCheck.compositionCheck.reason?.errors ?? null,
-            supergraph: contractCheck.compositionCheck?.result?.supergraph ?? null,
+            supergraph: contractCheck.compositionCheck.result?.supergraph ?? null,
             fullSchemaSdl:
-              contractCheck.compositionCheck?.result?.fullSchemaSdl ??
-              contractCheck.compositionCheck?.reason?.fullSchemaSdl ??
+              contractCheck.compositionCheck.result?.fullSchemaSdl ??
+              contractCheck.compositionCheck.reason?.fullSchemaSdl ??
               null,
             changes:
               (contractCheck.diffCheck.result ?? contractCheck.diffCheck.reason)?.all ?? null,
@@ -724,10 +724,10 @@ export class CompositeModel {
             contractName: contractCheck.contractName,
             isComposable: contractCheck.compositionCheck.status === 'completed',
             compositionErrors: contractCheck.compositionCheck.reason?.errors ?? null,
-            supergraph: contractCheck.compositionCheck?.result?.supergraph ?? null,
+            supergraph: contractCheck.compositionCheck.result?.supergraph ?? null,
             fullSchemaSdl:
-              contractCheck.compositionCheck?.result?.fullSchemaSdl ??
-              contractCheck.compositionCheck?.reason?.fullSchemaSdl ??
+              contractCheck.compositionCheck.result?.fullSchemaSdl ??
+              contractCheck.compositionCheck.reason?.fullSchemaSdl ??
               null,
             changes:
               (contractCheck.diffCheck.result ?? contractCheck.diffCheck.reason)?.all ?? null,

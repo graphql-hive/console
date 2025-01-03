@@ -286,7 +286,7 @@ function TargetAppsView(props: {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.data?.target?.appDeployments?.edges.map(edge => (
+                {data.data.target.appDeployments.edges.map(edge => (
                   <AppTableRow
                     organizationSlug={props.organizationSlug}
                     projectSlug={props.projectSlug}
@@ -302,11 +302,11 @@ function TargetAppsView(props: {
               size="sm"
               variant="outline"
               className="ml-auto mr-0 flex"
-              disabled={!data?.data?.target?.appDeployments?.pageInfo?.hasNextPage || isLoadingMore}
+              disabled={!data.data.target.appDeployments.pageInfo.hasNextPage || isLoadingMore}
               onClick={() => {
                 if (
-                  data?.data?.target?.appDeployments?.pageInfo?.endCursor &&
-                  data?.data?.target?.appDeployments?.pageInfo?.hasNextPage
+                  data.data?.target?.appDeployments?.pageInfo.endCursor &&
+                  data.data.target.appDeployments.pageInfo.hasNextPage
                 ) {
                   setIsLoadingMore(true);
                   void client
@@ -314,7 +314,7 @@ function TargetAppsView(props: {
                       organizationSlug: props.organizationSlug,
                       projectSlug: props.projectSlug,
                       targetSlug: props.targetSlug,
-                      after: data?.data?.target?.appDeployments?.pageInfo?.endCursor,
+                      after: data.data.target.appDeployments.pageInfo.endCursor,
                     })
                     .toPromise()
                     .finally(() => {

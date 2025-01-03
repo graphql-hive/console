@@ -32,7 +32,7 @@ export function IndexPage() {
   const router = useRouter();
   const result = query.data?.myDefaultOrganization;
 
-  useLastVisitedOrganizationWriter(result?.organization?.slug);
+  useLastVisitedOrganizationWriter(result?.organization.slug);
   useEffect(() => {
     if (result === null) {
       // No organization, redirect to create one

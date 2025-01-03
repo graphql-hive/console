@@ -106,7 +106,7 @@ export const CreateOrganizationForm = (): JSX.Element => {
     });
 
     const errorMessage =
-      mutation.data?.createOrganization.error?.inputErrors?.slug ||
+      mutation.data?.createOrganization.error?.inputErrors.slug ||
       mutation.data?.createOrganization.error?.message;
 
     if (mutation.data?.createOrganization.ok) {

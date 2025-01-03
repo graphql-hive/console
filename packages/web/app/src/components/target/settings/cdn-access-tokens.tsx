@@ -159,7 +159,7 @@ function CreateCDNAccessTokenModal(props: {
 
         <Tag color="yellow" className="px-4 py-2.5">
           <AlertTriangleIcon className="size-5" />
-          {createCdnAccessToken.data?.createCdnAccessToken.error.message}
+          {createCdnAccessToken.data.createCdnAccessToken.error.message}
         </Tag>
 
         <Button className="ml-auto" onClick={props.onClose}>
@@ -278,7 +278,7 @@ function DeleteCDNAccessTokenModal(props: {
 
         <Tag color="yellow" className="px-4 py-2.5">
           <AlertTriangleIcon className="size-5" />
-          {deleteCdnAccessToken.data?.deleteCdnAccessToken.error.message}
+          {deleteCdnAccessToken.data.deleteCdnAccessToken.error.message}
         </Tag>
         <div className="mt-auto flex w-full gap-2 self-end">
           <Button className="ml-auto" onClick={onClose}>
@@ -412,7 +412,7 @@ export function CDNAccessTokens(props: {
       )}
       <Table>
         <TBody>
-          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => {
+          {target.data?.target?.cdnAccessTokens.edges.map(edge => {
             const node = useFragment(CDNAccessTokeRowFragment, edge.node);
 
             return (
@@ -475,7 +475,7 @@ export function CDNAccessTokens(props: {
                 if (!target.data?.target?.cdnAccessTokens.pageInfo.endCursor) {
                   return cursors;
                 }
-                return [...cursors, target.data?.target?.cdnAccessTokens.pageInfo.endCursor];
+                return [...cursors, target.data.target.cdnAccessTokens.pageInfo.endCursor];
               });
             }}
           >

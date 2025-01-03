@@ -237,7 +237,7 @@ const SettingsPageRenderer = (props: {
 
         const error = result.error || result.data?.updateOrganizationSlug.error;
 
-        if (result.data?.updateOrganizationSlug?.ok) {
+        if (result.data?.updateOrganizationSlug.ok) {
           toast({
             variant: 'default',
             title: 'Success',
