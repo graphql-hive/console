@@ -1,6 +1,5 @@
 import Image, { StaticImageData } from 'next/image';
-import { CallToAction, Heading } from '@theguild/components';
-import { cn } from '../../lib';
+import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
 import dimaPhoto from './dima.webp';
 // import noamPhoto from './noam.webp';
@@ -114,8 +113,8 @@ function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
     <ul
       {...props}
       className={cn(
-        'flex flex-row gap-2 max-lg:overflow-auto lg:flex-wrap lg:gap-6' +
-          ' shrink-0 grid-cols-5 items-stretch justify-items-stretch lg:max-xl:grid',
+        'flex flex-row gap-2 max-lg:overflow-auto lg:flex-wrap lg:gap-6',
+        'shrink-0 grid-cols-5 items-stretch justify-items-stretch lg:max-xl:grid',
         team.length === 13
           ? 'grid-cols-5 xl:[&>:nth-child(9n-8)]:ml-[calc(var(--size)/2)]'
           : 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
