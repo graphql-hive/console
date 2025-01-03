@@ -26,6 +26,17 @@ const ConnectParams = z.object({
   }),
 });
 
+const SlackOAuthv2AccessResponse = z.discriminatedUnion('ok', [
+  z.object({
+    ok: z.literal(true),
+    access_token: z.string(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    error: z.string(),
+  }),
+]);
+
 export function connectSlack(server: FastifyInstance) {
   server.get('/api/slack/callback', async (req, res) => {
     if (env.slack === null) {
@@ -55,7 +66,23 @@ export function connectSlack(server: FastifyInstance) {
       }),
     }).then(res => res.json());
 
-    const token = slackResponse.access_token;
+    const slackResponseResult = SlackOAuthv2AccessResponse.safeParse(slackResponse);
+
+    if (!slackResponseResult.success) {
+      req.log.error('Error parsing data from Slack API (orgId=%s)', organizationSlug);
+      req.log.error(slackResponseResult.error.toString());
+      void res.status(400).send(slackResponseResult.error.toString());
+      return;
+    }
+
+    if (!slackResponseResult.data.ok) {
+      req.log.error('Failed to retrieve access token from Slack API (orgId=%s)', organizationSlug);
+      req.log.error(slackResponseResult.data.error);
+      void res.status(400).send(slackResponseResult.data.error);
+      return;
+    }
+
+    const token = slackResponseResult.data.access_token;
 
     await graphqlRequest({
       url: env.graphqlPublicEndpoint,
