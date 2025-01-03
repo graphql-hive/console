@@ -4,6 +4,7 @@ import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
 
 const fetchLatestVersionQuery = graphql(/* GraphQL */ `
@@ -95,6 +96,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
       const graphqlTag = flags.graphqlTag;
       const globalGraphqlTag = flags.globalGraphqlTag;

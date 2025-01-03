@@ -5,6 +5,7 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
 import { invariant } from '../../helpers/validation';
@@ -193,6 +194,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
       const service = flags.service;
       const url = flags.url;
