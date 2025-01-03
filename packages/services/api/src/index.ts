@@ -37,3 +37,4 @@ export {
   ProjectAccessScope,
   TargetAccessScope,
 } from './__generated__/types';
+export { OrganizationMembers } from './modules/auth/providers/organization-members';
