@@ -12,7 +12,7 @@ export function createPersistedDocuments(
     logger: Logger;
   },
 ): null | {
-  resolve(documentId: string): Promise<string | null>;
+  resolve(documentId: string): PromiseOrValue<string | null>;
   allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
 } {
   const persistedDocumentsCache = LRU<string>(config.cache ?? 10_000);
@@ -32,7 +32,7 @@ export function createPersistedDocuments(
   const fetchCache = new Map<string, Promise<string | null>>();
 
   /** Batch load a persisted documents */
-  async function loadPersistedDocument(documentId: string) {
+  function loadPersistedDocument(documentId: string) {
     const document = persistedDocumentsCache.get(documentId);
     if (document) {
       return document;

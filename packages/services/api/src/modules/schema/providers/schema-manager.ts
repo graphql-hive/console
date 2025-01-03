@@ -1014,9 +1014,8 @@ export class SchemaManager {
       return null;
     }
 
-    return this.storage.getOrganizationUser({
-      organizationId: args.organizationId,
-      userId: args.userId,
+    return this.storage.getUserById({
+      id: args.userId,
     });
   }
 
