@@ -71,7 +71,7 @@ export function connectSlack(server: FastifyInstance) {
     if (!slackResponseResult.success) {
       req.log.error('Error parsing data from Slack API (orgId=%s)', organizationSlug);
       req.log.error(slackResponseResult.error.toString());
-      void res.status(400).send(slackResponseResult.error.toString());
+      void res.status(400).send('Failed to parse the response from Slack API');
       return;
     }
 
