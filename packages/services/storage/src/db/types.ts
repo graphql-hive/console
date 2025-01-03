@@ -191,7 +191,8 @@ export interface organization_member_roles {
   locked: boolean;
   name: string;
   organization_id: string;
-  scopes: Array<string>;
+  permissions: Array<string> | null;
+  scopes: Array<string> | null;
 }
 
 export interface organizations {
