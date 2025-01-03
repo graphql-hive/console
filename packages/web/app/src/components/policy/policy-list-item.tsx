@@ -36,6 +36,7 @@ function extractBaseSchema(configJsonSchema: JSONSchema | null | undefined): JSO
 }
 
 export function PolicyListItem(props: {
+  disabled?: boolean;
   ruleInfo: FragmentType<typeof PolicyListItem_RuleInfoFragment>;
   overridingParentRule: boolean;
 }): ReactElement {
@@ -55,6 +56,7 @@ export function PolicyListItem(props: {
               id={ruleInfo.id}
               value={ruleInfo.id}
               checked={enabled}
+              disabled={props.disabled}
               onCheckedChange={newState => toggleRuleState(newState as boolean)}
             />
           </div>

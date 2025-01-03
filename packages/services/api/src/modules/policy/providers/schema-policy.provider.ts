@@ -182,7 +182,7 @@ export class SchemaPolicyProvider {
 
   async getOrganizationPolicy(selector: OrganizationSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyOrganizationRules',
+      action: 'organization:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -194,7 +194,7 @@ export class SchemaPolicyProvider {
 
   async getOrganizationPolicyForProject(selector: ProjectSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyProjectRules',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -207,7 +207,7 @@ export class SchemaPolicyProvider {
 
   async getProjectPolicy(selector: ProjectSelector) {
     await this.session.assertPerformAction({
-      action: 'schemaLinting:modifyProjectRules',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
