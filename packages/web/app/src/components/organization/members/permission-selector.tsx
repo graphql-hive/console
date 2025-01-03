@@ -51,13 +51,14 @@ export type PermissionSelectorProps = {
 
 export function PermissionSelector(props: PermissionSelectorProps) {
   const organization = useFragment(PermissionSelector_OrganizationFragment, props.organization);
-  const [filteredGroups, permissionGroupMapping] = useMemo(() => {
+  const [groups, permissionToGroupTitleMapping, dependencyGraph] = useMemo(() => {
     const filteredGroups: Array<
       MembershipPermissionGroup & {
         selectedPermissionCount: number;
       }
     > = [];
-    const permissionGroupMapping = new Map<string, string>();
+    const permissionToGroupTitleMapping = new Map<string, string>();
+    const dependencyGraph = new Map<string, Array<string>>();
 
     for (const group of organization.availableMemberPermissionGroups) {
       let selectedPermissionCount = 0;
@@ -66,6 +67,16 @@ export function PermissionSelector(props: PermissionSelectorProps) {
         if (props.selectedPermissionIds.has(permission.id)) {
           selectedPermissionCount++;
         }
+
+        if (permission.dependsOnId) {
+          let arr = dependencyGraph.get(permission.dependsOnId);
+          if (!arr) {
+            arr = [];
+            dependencyGraph.set(permission.dependsOnId, arr);
+          }
+          arr.push(permission.id);
+        }
+        permissionToGroupTitleMapping.set(permission.id, group.title);
       }
 
       filteredGroups.push({
@@ -74,7 +85,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
       });
     }
 
-    return [filteredGroups, permissionGroupMapping] as const;
+    return [filteredGroups, permissionToGroupTitleMapping, dependencyGraph] as const;
   }, [organization.availableMemberPermissionGroups]);
 
   const permissionRefs = useRef(new Map<string, HTMLElement>());
@@ -88,20 +99,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
       value={openAccordions}
       onValueChange={values => setOpenAccordions(values)}
     >
-      {filteredGroups.map(group => {
-        const dependencyGraph = new Map<string, Array<string>>();
-        for (const permission of group.permissions) {
-          if (!permission.dependsOnId) {
-            continue;
-          }
-          let arr = dependencyGraph.get(permission.dependsOnId);
-          if (!arr) {
-            arr = [];
-            dependencyGraph.set(permission.dependsOnId, arr);
-          }
-          arr.push(permission.id);
-        }
-
+      {groups.map(group => {
         return (
           <AccordionItem value={group.title} key={group.title}>
             <AccordionTrigger className="w-full" key={group.title}>
@@ -139,7 +137,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                       <div className="text-xs text-gray-400">{permission.description}</div>
                     </div>
                     {!!permission.dependsOnId &&
-                      permissionGroupMapping.has(permission.dependsOnId) && (
+                      permissionToGroupTitleMapping.has(permission.dependsOnId) && (
                         <div className="flex grow justify-end">
                           <TooltipProvider>
                             <Tooltip>
@@ -164,7 +162,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                                       }
                                       setOpenAccordions(values => {
                                         const groupName =
-                                          permissionGroupMapping.get(dependencyPermission);
+                                          permissionToGroupTitleMapping.get(dependencyPermission);
 
                                         if (groupName && values.includes(groupName) === false) {
                                           return [...values, groupName];
