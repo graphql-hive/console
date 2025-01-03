@@ -11,11 +11,13 @@ import type { PermissionResolvers } from './../../../__generated__/types';
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
 export const Permission: PermissionResolvers = {
-  dependsOnId: async (parent, _arg, _ctx) => {
-    /* Permission.dependsOnId resolver is required because Permission.dependsOnId exists but PermissionMapper.dependsOnId does not */
-    return parent.dependsOn ?? null;
+  dependsOnId: async (permission, _arg, _ctx) => {
+    return permission.dependsOn ?? null;
   },
-  level: async (parent, _arg, _ctx) => {
-    return getPermissionGroup(parent.id);
+  isReadOnly: (permission, _arg, _ctx) => {
+    return permission.isReadyOnly ?? false;
+  },
+  level: async (permission, _arg, _ctx) => {
+    return getPermissionGroup(permission.id);
   },
 };

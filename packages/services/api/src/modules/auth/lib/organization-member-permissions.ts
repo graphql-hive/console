@@ -5,7 +5,7 @@ export type PermissionRecord = {
   title: string;
   description: string;
   dependsOn?: Permission;
-  readOnly?: true;
+  isReadyOnly?: true;
 };
 
 export type PermissionGroup = {
@@ -23,7 +23,7 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         id: 'organization:describe',
         title: 'View organization',
         description: 'Member can see the organization. Permission can not be modified.',
-        readOnly: true,
+        isReadyOnly: true,
       },
       {
         id: 'support:manageTickets',

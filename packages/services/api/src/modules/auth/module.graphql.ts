@@ -125,6 +125,7 @@ export default gql`
     description: String!
     level: PermissionLevel!
     dependsOnId: ID
+    isReadOnly: Boolean!
   }
 
   type PermissionGroup {
