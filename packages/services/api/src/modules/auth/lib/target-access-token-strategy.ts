@@ -166,7 +166,7 @@ function transformAccessTokenLegacyScopes(args: {
           },
           {
             effect: 'allow',
-            action: ['organization:describe', 'project:describe'],
+            action: ['organization:describe', 'project:describe', 'laboratory:describe'],
             resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
           },
         );
