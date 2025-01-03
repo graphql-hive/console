@@ -19,15 +19,6 @@ export const updateSchemaPolicyForProject: NonNullable<
       .get(SchemaPolicyProvider)
       .getOrganizationPolicy({ organizationId: organization });
     const allowOverrides = organizationPolicy === null || organizationPolicy.allowOverrides;
-    const projectObject = await injector
-      .get(ProjectManager)
-      .getProject({ organizationId: organization, projectId: project });
-
-    if (projectObject.legacyRegistryModel) {
-      throw new Error(
-        `Projects that use the legacy registry model cannot have a schema policy set.`,
-      );
-    }
 
     if (!allowOverrides) {
       throw new Error(

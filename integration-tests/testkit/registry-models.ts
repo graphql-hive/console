@@ -1,10 +1,7 @@
-import { ProjectType, RegistryModel } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from './seed';
 
-export async function prepareProject(
-  projectType: ProjectType,
-  model: RegistryModel = RegistryModel.Modern,
-) {
+export async function prepareProject(projectType: ProjectType) {
   const { createOrg } = await initSeed().createOwner();
   const { organization, createProject, setFeatureFlag, setOrganizationSchemaPolicy } =
     await createOrg();
@@ -17,9 +14,7 @@ export async function prepareProject(
     setProjectSchemaPolicy,
     setNativeFederation,
     fetchVersions,
-  } = await createProject(projectType, {
-    useLegacyRegistryModels: model === RegistryModel.Legacy,
-  });
+  } = await createProject(projectType);
 
   const { secret: readwriteToken } = await createTargetAccessToken({});
 

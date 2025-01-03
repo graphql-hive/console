@@ -11,7 +11,7 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import type { SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -304,12 +304,6 @@ export interface Storage {
 
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
 
-  updateProjectRegistryModel(
-    _: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ): Promise<Project>;
-
   getTargetId(_: {
     organizationSlug: string;
     projectSlug: string;
@@ -520,13 +514,6 @@ export interface Storage {
    * This can happen if the schema version was created before we introduced persisting changes.
    */
   getSchemaChangesForVersion(_: { versionId: string }): Promise<null | Array<SchemaChangeType>>;
-
-  updateVersionStatus(
-    _: {
-      valid: boolean;
-      versionId: string;
-    } & TargetSelector,
-  ): Promise<SchemaVersion | never>;
 
   getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
 
