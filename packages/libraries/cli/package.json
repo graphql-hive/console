@@ -40,6 +40,7 @@
     "schema:check:federation": "pnpm start schema:check examples/federation.graphql --service reviews",
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
     "schema:check:stitching": "pnpm start schema:check --service posts examples/stitching.posts.graphql",
+    "schema:fetch:subgraphs": "pnpm start schema:fetch --type=subgraphs",
     "schema:publish:federation": "pnpm start schema:publish --service reviews --url reviews.com/graphql examples/federation.reviews.graphql",
     "start": "./bin/dev",
     "version": "oclif readme && git add README.md"
