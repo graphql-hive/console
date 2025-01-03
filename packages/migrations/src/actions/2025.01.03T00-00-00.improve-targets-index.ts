@@ -7,7 +7,7 @@ export default {
   run: ({ sql }) => [
     {
       name: `create "targets"."idx_targets_project_id_id" lookup index`,
-      query: sql`CREATE INDEX CONCURRENTLY idx_targets_project_id_id ON targets(project_id, id);`,
+      query: sql`CREATE INDEX IF NOT EXISTS CONCURRENTLY idx_targets_project_id_id ON targets(project_id, id);`,
     },
   ],
 } satisfies MigrationExecutor;
