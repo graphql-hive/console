@@ -1,5 +1,30 @@
 # @graphql-hive/yoga
 
+## 0.39.2
+
+### Patch Changes
+
+- [#6118](https://github.com/graphql-hive/console/pull/6118)
+  [`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)
+  Thanks [@ardatan](https://github.com/ardatan)! - Remove internal `_testing_` option to replace the
+  underlying `fetch` implementation, and add `fetch` option to do the same as part of the public
+  API.
+
+- [#6118](https://github.com/graphql-hive/console/pull/6118)
+  [`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)
+  Thanks [@ardatan](https://github.com/ardatan)! - - Upgrade to `graphql-yoga` >= `5.10.4`
+  - Improve graceful process termination on Node.js by leveraging `graphql-yoga`'s
+    [dispose lifecycle hooks](https://the-guild.dev/graphql/yoga-server/docs/features/envelop-plugins#ondispose)
+  - Improve Cloudflare Worker runtime support by registering pending usage reporting requests using
+    the [`waitUntil` API](https://developers.cloudflare.com/workers/runtime-apis/context/#waituntil)
+  - Use the logger instance from the `graphql-yoga` instance, for a more unified logging experience
+  - Use the `fetch` API implementation on the `graphql-yoga` instance for HTTP calls
+  - Replace the internal \`tiny-lru\` dependency with `graphql-yoga`'s internal LRU cache
+    implementation
+- Updated dependencies
+  [[`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)]:
+  - @graphql-hive/core@0.8.3
+
 ## 0.39.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/apollo",
-  "version": "0.36.3",
+  "version": "0.36.4",
   "type": "module",
   "description": "GraphQL Hive + Apollo Server",
   "repository": {
