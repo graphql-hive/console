@@ -54,7 +54,7 @@ function PolicySettingsListForm({
   saving?: boolean;
   rulesInParent?: string[];
   error?: string;
-  onSave?: (values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>;
+  onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   availableRules: AvailableRulesList;
   currentState?: PolicySettings_SchemaPolicyFragmentFragment | null;
   children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
@@ -154,7 +154,7 @@ export function PolicySettings({
   saving?: boolean;
   rulesInParent?: string[];
   currentState?: null | FragmentType<typeof PolicySettings_SchemaPolicyFragment>;
-  onSave?: (values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>;
+  onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   error?: string;
   children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
 }): ReactElement {
