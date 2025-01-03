@@ -1,5 +1,17 @@
 # hive
 
+## 3.0.0
+
+### Major Changes
+
+- [#6066](https://github.com/graphql-hive/console/pull/6066)
+  [`e747e4c`](https://github.com/graphql-hive/console/commit/e747e4cd44e6516809754e1be2999a698153c598)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Drop user accounts and organization not linked to a
+  SuperTokens account.
+
+  This is mainly a cleanup for legacy accounts on Hive Cloud that were not migrated from Auth0 some
+  years ago. It should not affect self-hosters.
+
 ## 2.1.0
 
 ### Minor Changes
