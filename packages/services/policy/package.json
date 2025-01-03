@@ -19,7 +19,7 @@
     "dotenv": "16.4.7",
     "eslint": "8.57.1",
     "fastify": "4.29.0",
-    "graphql": "16.9.0",
+    "graphql": "16.10.0",
     "pino-pretty": "11.3.0",
     "zod": "3.24.1",
     "zod-validation-error": "3.4.0"
