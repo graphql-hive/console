@@ -46,15 +46,12 @@ import {
   setTargetValidation,
   updateBaseSchema,
   updateMemberRole,
-  updateRegistryModel,
-  updateSchemaVersionStatus,
   updateTargetValidationSettings,
 } from './flow';
 import {
   OrganizationAccessScope,
   ProjectAccessScope,
   ProjectType,
-  RegistryModel,
   SchemaPolicyInput,
   TargetAccessScope,
 } from './gql/graphql';
@@ -201,13 +198,7 @@ export function initSeed() {
 
               return projects;
             },
-            async createProject(
-              projectType: ProjectType = ProjectType.Single,
-              options?: {
-                useLegacyRegistryModels?: boolean;
-              },
-            ) {
-              const useLegacyRegistryModels = options?.useLegacyRegistryModels === true;
+            async createProject(projectType: ProjectType = ProjectType.Single) {
               const projectResult = await createProject(
                 {
                   organizationSlug: organization.slug,
@@ -220,17 +211,6 @@ export function initSeed() {
               const targets = projectResult.createProject.ok!.createdTargets;
               const target = targets[0];
               const project = projectResult.createProject.ok!.createdProject;
-
-              if (useLegacyRegistryModels) {
-                await updateRegistryModel(
-                  {
-                    organizationSlug: organization.slug,
-                    projectSlug: projectResult.createProject.ok!.createdProject.slug,
-                    model: RegistryModel.Legacy,
-                  },
-                  ownerToken,
-                ).then(r => r.expectNoGraphQLErrors());
-              }
 
               return {
                 project,
@@ -766,22 +746,6 @@ export function initSeed() {
                   }
 
                   return result.target?.schemaVersions.edges.map(edge => edge.node);
-                },
-                async updateSchemaVersionStatus(
-                  versionId: string,
-                  valid: boolean,
-                  ttarget: TargetOverwrite = target,
-                ) {
-                  return await updateSchemaVersionStatus(
-                    {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      valid,
-                      versionId,
-                    },
-                    ownerToken,
-                  ).then(r => r.expectNoGraphQLErrors());
                 },
                 async createTarget(args?: { slug?: string; accessToken?: string }) {
                   return createTarget(
