@@ -60,7 +60,7 @@ jobs:
           github_org="graphql-hive"
           router_version=$(cargo tree -i apollo-router --quiet | head -n 1 | awk -F" v" '{print $2}')
           plugin_version=$(jq -r '.version' packages/libraries/router/package.json)
-          has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'Cargo.lock' 'packages/libraries/router/package.json')
+          has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'Cargo.lock' 'configs/cargo/Cargo.lock' 'packages/libraries/router/package.json')
 
           if [ "$has_changes" ]; then
             image_tag_version="router${router_version}-plugin${plugin_version}"
@@ -78,6 +78,8 @@ jobs:
               echo "release_version=$image_tag_version" >> $GITHUB_OUTPUT
               echo "should_release=true" >> $GITHUB_OUTPUT
               echo "release_latest=true" >> $GITHUB_OUTPUT
+            else 
+              echo "No changes found in version $image_tag_version"
             fi
           fi
 

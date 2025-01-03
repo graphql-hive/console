@@ -27,6 +27,11 @@ export function Footer() {
             href: 'https://the-guild.dev/graphql/hive/terms-of-use.pdf',
             title: 'Terms of Use',
           },
+          {
+            children: 'Partners',
+            href: '/partners',
+            title: 'Partners',
+          },
         ],
       }}
     />

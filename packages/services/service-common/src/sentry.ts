@@ -10,7 +10,8 @@ const plugin: FastifyPluginAsync = async server => {
     Sentry.withScope(scope => {
       scope.setUser({ ip_address: req.ip });
       const requestId = cleanRequestId(req.headers['x-request-id']);
-      const tokenHeader = req.headers['x-api-token'] || req.headers.authorization;
+      const tokenHeader =
+        req.headers['x-api-token'] || req.headers.authorization?.replace('Bearer ', '');
       const maskedToken = typeof tokenHeader === 'string' ? maskToken(tokenHeader) : null;
       if (requestId) {
         scope.setTag('request_id', requestId);

@@ -173,6 +173,21 @@ const S3MirrorModel = zod.union([
   }),
 ]);
 
+const S3AuditLogModel = zod.union([
+  zod.object({
+    S3_AUDIT_LOG: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+  }),
+  zod.object({
+    S3_AUDIT_LOG: zod.literal('1'),
+    S3_AUDIT_LOG_ENDPOINT: zod.string().url(),
+    S3_AUDIT_LOG_ACCESS_KEY_ID: zod.string(),
+    S3_AUDIT_LOG_SECRET_ACCESS_KEY: zod.string(),
+    S3_AUDIT_LOG_SESSION_TOKEN: emptyString(zod.string().optional()),
+    S3_AUDIT_LOG_BUCKET_NAME: zod.string(),
+    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.string().url().optional()),
+  }),
+]);
+
 const AuthGitHubConfigSchema = zod.union([
   zod.object({
     AUTH_GITHUB: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
@@ -263,6 +278,7 @@ const configs = {
   hive: HiveModel.safeParse(processEnv),
   s3: S3Model.safeParse(processEnv),
   s3Mirror: S3MirrorModel.safeParse(processEnv),
+  s3AuditLog: S3AuditLogModel.safeParse(processEnv),
   log: LogModel.safeParse(processEnv),
   zendeskSupport: ZendeskSupportModel.safeParse(processEnv),
   tracing: OpenTelemetryConfigurationModel.safeParse(processEnv),
@@ -308,6 +324,7 @@ const cdnApi = extractConfig(configs.cdnApi);
 const hive = extractConfig(configs.hive);
 const s3 = extractConfig(configs.s3);
 const s3Mirror = extractConfig(configs.s3Mirror);
+const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
@@ -468,6 +485,19 @@ export const env = {
             accessKeyId: s3Mirror.S3_MIRROR_ACCESS_KEY_ID,
             secretAccessKey: s3Mirror.S3_MIRROR_SECRET_ACCESS_KEY,
             sessionToken: s3Mirror.S3_MIRROR_SESSION_TOKEN,
+          },
+        }
+      : null,
+  s3AuditLogs:
+    s3AuditLog.S3_AUDIT_LOG === '1'
+      ? {
+          bucketName: s3AuditLog.S3_AUDIT_LOG_BUCKET_NAME,
+          endpoint: s3AuditLog.S3_AUDIT_LOG_ENDPOINT,
+          publicUrl: s3AuditLog.S3_AUDIT_LOG_PUBLIC_URL ?? null,
+          credentials: {
+            accessKeyId: s3AuditLog.S3_AUDIT_LOG_ACCESS_KEY_ID,
+            secretAccessKey: s3AuditLog.S3_AUDIT_LOG_SECRET_ACCESS_KEY,
+            sessionToken: s3AuditLog.S3_AUDIT_LOG_SESSION_TOKEN,
           },
         }
       : null,

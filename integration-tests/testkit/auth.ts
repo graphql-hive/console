@@ -131,6 +131,7 @@ const createSession = async (
      */
     return {
       access_token: data.accessToken.token,
+      refresh_token: data.refreshToken.token,
     };
   } catch (e) {
     console.warn(`Failed to create session:`, e);
@@ -148,15 +149,17 @@ const tokenResponsePromise: {
   [key: string]: Promise<z.TypeOf<typeof SignUpSignInUserResponseModel>> | null;
 } = {};
 
-export function authenticate(email: string): Promise<{ access_token: string }>;
+export function authenticate(
+  email: string,
+): Promise<{ access_token: string; refresh_token: string }>;
 export function authenticate(
   email: string,
   oidcIntegrationId?: string,
-): Promise<{ access_token: string }>;
+): Promise<{ access_token: string; refresh_token: string }>;
 export function authenticate(
   email: string | string,
   oidcIntegrationId?: string,
-): Promise<{ access_token: string }> {
+): Promise<{ access_token: string; refresh_token: string }> {
   if (!tokenResponsePromise[email]) {
     tokenResponsePromise[email] = signUpUserViaEmail(email, password);
   }

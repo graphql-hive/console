@@ -11,6 +11,7 @@ import { DynamicMetaTags } from './dynamic-meta-tags';
 import '@theguild/components/style.css';
 // import '../components/navigation-menu/navbar-global-styles.css';
 import '../selection-styles.css';
+import '../mermaid.css';
 
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
@@ -32,12 +33,7 @@ const neueMontreal = localFont({
  * TODO: Move this to `@theguild/components`
  */
 const HiveLayout = async ({ children }: { children: ReactNode }) => {
-  const [meta, ...pageMap] = await getPageMap();
-
-  const productsPage = pageMap.find(p => 'name' in p && p.name === 'products')!;
-  // @ts-expect-error -- this should be fixed in Nextra, without route, the collapsible doesn't work
-  productsPage.route = '#';
-
+  const pageMap = await getPageMap();
   return (
     <html
       lang="en"
@@ -79,15 +75,7 @@ const HiveLayout = async ({ children }: { children: ReactNode }) => {
         <Layout
           editLink="Edit this page on GitHub"
           docsRepositoryBase="https://github.com/graphql-hive/platform/tree/main/packages/web/docs"
-          pageMap={[
-            {
-              data: {
-                // @ts-expect-error -- fixme (copied from Dima's v8 PR (sorry))
-                ...meta.data,
-              },
-            },
-            ...pageMap,
-          ]}
+          pageMap={pageMap}
           feedback={{
             labels: 'kind/docs',
           }}

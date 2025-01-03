@@ -3,7 +3,7 @@ FROM scratch AS pkg
 FROM scratch AS config
 
 # Stick to v1.76 due to this issue: https://github.com/apollographql/router/issues/5084
-FROM rust:1.76 as build
+FROM rust:1.76 AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -35,7 +35,7 @@ RUN touch ./src/lib.rs
 RUN cargo build --release
 
 # Runtime
-FROM debian:12-slim as runtime
+FROM debian:12-slim AS runtime
 
 RUN apt-get update
 RUN apt-get -y install ca-certificates

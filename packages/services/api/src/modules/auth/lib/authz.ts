@@ -350,6 +350,7 @@ const actionDefinitions = {
   'target:modifySettings': defaultTargetIdentity,
   'laboratory:describe': defaultTargetIdentity,
   'laboratory:modify': defaultTargetIdentity,
+  'laboratory:modifyPreflightScript': defaultTargetIdentity,
   'appDeployment:describe': defaultTargetIdentity,
   'appDeployment:create': defaultAppDeploymentIdentity,
   'appDeployment:publish': defaultAppDeploymentIdentity,
@@ -361,6 +362,7 @@ const actionDefinitions = {
   'schemaVersion:deleteService': schemaCheckOrPublishIdentity,
   'schema:loadFromRegistry': defaultTargetIdentity,
   'schema:compose': defaultTargetIdentity,
+  'auditLog:export': defaultOrgIdentity,
 } satisfies ActionDefinitionMap;
 
 type ActionDefinitionMap = {

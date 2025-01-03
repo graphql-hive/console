@@ -1,5 +1,4 @@
-import { DecorationIsolation, Heading } from '@theguild/components';
-import { GetInTouchButton } from './get-in-touch-button';
+import { ContactButton, DecorationIsolation, Heading } from '@theguild/components';
 
 export function GotAnIdeaSection() {
   return (
@@ -108,10 +107,10 @@ export function GotAnIdeaSection() {
       <Heading as="h2" size="md" className="text-white">
         Got an idea for a new library?
       </Heading>
-      <p className="mt-4 text-white/80">
+      <p className="mb-8 mt-4 text-white/80">
         Join our community to chat with us and let's build something together!
       </p>
-      <GetInTouchButton />
+      <ContactButton variant="primary-inverted">Get in touch</ContactButton>
     </div>
   );
 }

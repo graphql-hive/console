@@ -2,6 +2,20 @@ import { Interceptor, sql } from 'slonik';
 import { getPool, toDate, tokens } from './db';
 import type { Slonik } from './shared';
 
+function transformToken(row: tokens) {
+  return {
+    token: row.token,
+    tokenAlias: row.token_alias,
+    name: row.name,
+    date: row.created_at as unknown as string,
+    lastUsedAt: row.last_used_at as unknown as string | null,
+    organization: row.organization_id,
+    project: row.project_id,
+    target: row.target_id,
+    scopes: row.scopes || [],
+  };
+}
+
 export async function createTokenStorage(
   connection: string,
   maximumPoolSize: number,
@@ -33,10 +47,10 @@ export async function createTokenStorage(
         `,
       );
 
-      return result.rows;
+      return result.rows.map(transformToken);
     },
     async getToken({ token }: { token: string }) {
-      return pool.maybeOne<Slonik<tokens>>(
+      const row = await pool.maybeOne<Slonik<tokens>>(
         sql`
           SELECT *
           FROM tokens
@@ -44,8 +58,10 @@ export async function createTokenStorage(
           LIMIT 1
         `,
       );
+
+      return row ? transformToken(row) : null;
     },
-    createToken({
+    async createToken({
       token,
       tokenAlias,
       target,
@@ -62,7 +78,7 @@ export async function createTokenStorage(
       organization: string;
       scopes: readonly string[];
     }) {
-      return pool.one<Slonik<tokens>>(
+      const row = await pool.one<Slonik<tokens>>(
         sql`
           INSERT INTO tokens
             (name, token, token_alias, target_id, project_id, organization_id, scopes)
@@ -74,13 +90,19 @@ export async function createTokenStorage(
           RETURNING *
         `,
       );
+
+      return transformToken(row);
     },
-    async deleteToken({ token }: { token: string }) {
-      await pool.query(
-        sql`
-          UPDATE tokens SET deleted_at = NOW() WHERE token = ${token}
-        `,
-      );
+    async deleteToken(params: { token: string; postDeletionTransaction: () => Promise<void> }) {
+      await pool.transaction(async t => {
+        await t.query(sql`
+          UPDATE tokens
+          SET deleted_at = NOW()
+          WHERE token = ${params.token}
+        `);
+
+        await params.postDeletionTransaction();
+      });
     },
     async touchTokens({ tokens }: { tokens: Array<{ token: string; date: Date }> }) {
       await pool.query(sql`

@@ -19,7 +19,7 @@ import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
 import { deployRateLimit } from './services/rate-limit';
 import { deployRedis } from './services/redis';
-import { deployS3, deployS3Mirror } from './services/s3';
+import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
 import { deploySentryEventsMonitor } from './services/sentry-events';
@@ -84,6 +84,7 @@ const redis = deployRedis({ environment });
 const kafka = deployKafka();
 const s3 = deployS3();
 const s3Mirror = deployS3Mirror();
+const s3AuditLog = deployS3AuditLog();
 
 const cdn = deployCFCDN({
   s3,
@@ -246,6 +247,7 @@ const graphql = deployGraphQL({
   supertokens,
   s3,
   s3Mirror,
+  s3AuditLog,
   zendesk,
   githubApp,
   sentry,
@@ -349,4 +351,4 @@ export const schemaApiServiceId = schema.service.id;
 export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
-export const publicIp = proxy!.status.loadBalancer.ingress[0].ip;
+export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;

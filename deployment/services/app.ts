@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceDeployment } from '../utils/service-deployment';

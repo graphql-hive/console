@@ -39,7 +39,7 @@ export interface HiveClient {
   createInstrumentedSubscribe(executeImpl: any): any;
   dispose(): Promise<void>;
   experimental__persistedDocuments: null | {
-    resolve(documentId: string): Promise<string | null>;
+    resolve(documentId: string): PromiseOrValue<string | null>;
     allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   };
 }

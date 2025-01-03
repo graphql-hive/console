@@ -1,5 +1,5 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
-import { CopyIcon, LinkIcon } from 'lucide-react';
+import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { HiveLink } from '@/components/ui/hive-link';
+import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
 import {
   Select,
@@ -22,7 +23,7 @@ import { UserMenu } from '@/components/ui/user-menu';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
-import { useClipboard, useToggle } from '@/lib/hooks';
+import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
@@ -31,8 +32,6 @@ import { ProjectMigrationToast } from '../project/migration-toast';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useToast } from '../ui/use-toast';
 import { TargetSelector } from './target-selector';
 
 export enum Page {
@@ -458,9 +457,12 @@ export function ConnectSchemaModal(props: {
               ) : (
                 <div className="space-y-2 text-sm">
                   <p>To access your schema from Hive's CDN, use the following endpoint:</p>
-                  <CodeBlock>
-                    {composeEndpoint(selectedContract?.cdnUrl ?? target.cdnUrl, selectedArtifact)}
-                  </CodeBlock>
+                  <InputCopy
+                    value={composeEndpoint(
+                      selectedContract?.cdnUrl ?? target.cdnUrl,
+                      selectedArtifact,
+                    )}
+                  />
                   <p>
                     To authenticate,{' '}
                     <UiLink
@@ -483,7 +485,7 @@ export function ConnectSchemaModal(props: {
                     use the CDN access token in your HTTP headers:
                     <br />
                   </p>
-                  <CodeBlock>{'X-Hive-CDN-Key: <Your Access Token>'}</CodeBlock>
+                  <InputCopy value="X-Hive-CDN-Key: <Your Access Token>" />
                 </div>
               )}
             </>
@@ -541,12 +543,14 @@ function FederationModalContent(props: {
           following command.
         </p>
         {authenticateSection}
-        <CodeBlock className="mt-2">
-          {`docker run --name hive-gateway -rm -p 4000:4000 \\
+        <div className="mt-2">
+          <InputCopy
+            value={`docker run --name hive-gateway --rm -p 4000:4000 \\
   ghcr.io/graphql-hive/gateway supergraph \\
   '${props.cdnUrl}' \\
   --hive-cdn-key '<hive_cdn_access_key>'`}
-        </CodeBlock>
+          />
+        </div>
         <p>
           For more information please refer to our{' '}
           <UiLink variant="primary" target="_blank" rel="noreferrer" to={getDocsUrl('/gateway')}>
@@ -561,12 +565,12 @@ function FederationModalContent(props: {
           following command.
         </p>
         {authenticateSection}
-        <CodeBlock>
-          {`docker run --name hive-gateway -rm \\
+        <InputCopy
+          value={`docker run --name hive-gateway --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
-        </CodeBlock>
+        />
         <p>
           For more information please refer to our{' '}
           <UiLink
@@ -583,13 +587,15 @@ function FederationModalContent(props: {
       <TabsContent value="cdn" className="space-y-2 pt-2" variant="content">
         <p>For other tooling you can access the raw supergraph by sending a HTTP request.</p>
         <p>To access your schema from Hive's CDN, use the following endpoint:</p>
-        <CodeBlock>{`${props.cdnUrl}/supergraph`}</CodeBlock>
+        <InputCopy value={`${props.cdnUrl}/supergraph`} />
         <p>Here is an example calling the endpoint using curl.</p>
         {authenticateSection}
-        <CodeBlock className="mt-2">
-          {`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
+        <div className="mt-2">
+          <InputCopy
+            value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
   ${props.cdnUrl}/supergraph`}
-        </CodeBlock>
+          />
+        </div>
         <p>
           For more information please refer to our{' '}
           <UiLink
@@ -604,44 +610,5 @@ function FederationModalContent(props: {
         </p>
       </TabsContent>
     </Tabs>
-  );
-}
-
-function CodeBlock(props: { children: string; className?: string }) {
-  const copy = useClipboard();
-  const toast = useToast();
-
-  return (
-    <div className={props.className}>
-      <div className="relative">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="absolute right-1 top-1"
-                onClick={() => {
-                  void copy(props.children).then(() => {
-                    toast.toast({
-                      variant: 'default',
-                      title: 'Command copied to clipboard',
-                    });
-                  });
-                }}
-              >
-                <CopyIcon size="12" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Copy command to clipboard</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <pre className="overflow-scroll rounded-md bg-gray-500/10 px-2 py-3 text-xs ring-1 ring-inset ring-black">
-          <code>{props.children}</code>
-        </pre>
-      </div>
-    </div>
   );
 }

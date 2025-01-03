@@ -14,6 +14,67 @@ export class Proxy {
     private staticIp?: { address?: string; aksReservedIpResourceGroup?: string },
   ) {}
 
+  registerInternalProxy(
+    dnsRecord: string,
+    route: {
+      path: string;
+      service: k8s.core.v1.Service;
+      host: string;
+      customRewrite: string;
+    },
+  ) {
+    const cert = new k8s.apiextensions.CustomResource(`cert-${dnsRecord}`, {
+      apiVersion: 'cert-manager.io/v1',
+      kind: 'Certificate',
+      metadata: {
+        name: dnsRecord,
+      },
+      spec: {
+        commonName: dnsRecord,
+        dnsNames: [dnsRecord],
+        issuerRef: {
+          name: this.tlsSecretName,
+          kind: 'ClusterIssuer',
+        },
+        secretName: dnsRecord,
+      },
+    });
+
+    new k8s.apiextensions.CustomResource(
+      `internal-proxy-${dnsRecord}`,
+      {
+        apiVersion: 'projectcontour.io/v1',
+        kind: 'HTTPProxy',
+        metadata: {
+          name: `internal-proxy-metadata-${dnsRecord}`,
+        },
+        spec: {
+          virtualhost: {
+            fqdn: route.host,
+            tls: {
+              secretName: dnsRecord,
+            },
+          },
+          routes: [
+            {
+              conditions: [{ prefix: route.path }],
+              services: [
+                {
+                  name: route.service.metadata.name,
+                  port: route.service.spec.ports[0].port,
+                },
+              ],
+              pathRewritePolicy: {
+                replacePrefix: [{ prefix: route.path, replacement: route.customRewrite }],
+              },
+            },
+          ],
+        },
+      },
+      { dependsOn: [cert, this.lbService!] },
+    );
+  }
+
   registerService(
     dns: { record: string; apex?: boolean },
     routes: {
@@ -29,7 +90,7 @@ export class Proxy {
       withWwwDomain?: boolean;
       // https://projectcontour.io/docs/1.29/config/rate-limiting/#local-rate-limiting
       rateLimit?: {
-        // Max amount of request allowed with the "unit" paramter.
+        // Max amount of request allowed with the "unit" parameter.
         maxRequests: number;
         unit: 'second' | 'minute' | 'hour';
         // defining the number of requests above the baseline rate that are allowed in a short period of time.

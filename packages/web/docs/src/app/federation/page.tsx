@@ -1,12 +1,11 @@
 import { ReactElement, ReactNode } from 'react';
 import Image from 'next/image';
-import { Anchor, CallToAction, cn, Heading } from '@theguild/components';
+import { Anchor, CallToAction, cn, ContactButton, Heading } from '@theguild/components';
 import { ArrowIcon } from '../../components/arrow-icon';
 import { FrequentlyAskedFederationQuestions } from '../../components/frequently-asked-questions';
 import { Hero, HeroLinks } from '../../components/hero';
 import { InfoCard } from '../../components/info-card';
 import { LandingPageContainer } from '../../components/landing-page-container';
-import { ContactAnExpertButton } from './contact-an-expert-button';
 import federationDiagram from '../../../public/federation-diagram.png';
 import queryResultImage from '../../../public/federation/query-result.png';
 import queryImage from '../../../public/federation/query.png';
@@ -44,7 +43,12 @@ export default function FederationPage(): ReactElement {
           >
             Try Hive for Federation
           </CallToAction>
-          <ContactAnExpertButton />
+          <ContactButton
+            variant="secondary"
+            title="Contact our experts to learn more about GraphQL Federation"
+          >
+            Contact an Expert
+          </ContactButton>
         </HeroLinks>
       </Hero>
       <Intro />

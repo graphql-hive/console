@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["es5", "dom"],
+    "target": "es2021",
+    "lib": ["es2021", "dom"],
     "types": ["node", "cypress"]
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "../integration-tests/testkit/**/*.ts"]
 }

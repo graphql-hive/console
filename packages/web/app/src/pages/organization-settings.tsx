@@ -22,7 +22,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -177,6 +184,7 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
     viewerCanManageOIDCIntegration
     viewerCanModifySlackIntegration
     viewerCanModifyGitHubIntegration
+    viewerCanExportAuditLogs
     ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
     ...GitHubIntegrationSection_OrganizationFragment
@@ -204,6 +212,7 @@ const SettingsPageRenderer = (props: {
   const router = useRouter();
   const [isDeleteModalOpen, toggleDeleteModalOpen] = useToggle();
   const [isTransferModalOpen, toggleTransferModalOpen] = useToggle();
+  const [isAuditLogsModalOpen, toggleAuditLogsModalOpen] = useToggle();
   const { toast } = useToast();
 
   const [_slugMutation, slugMutate] = useMutation(UpdateOrganizationSlugMutation);
@@ -443,6 +452,31 @@ const SettingsPageRenderer = (props: {
             </CardContent>
           </Card>
         )}
+
+        {organization.viewerCanExportAuditLogs && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Audit Logs</CardTitle>
+              <CardDescription>
+                View a history of changes made to the organization settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
+                    Export Audit Logs
+                  </Button>
+                  <AuditLogsOrganizationModal
+                    organizationSlug={organization.slug}
+                    isOpen={isAuditLogsModalOpen}
+                    toggleModalOpen={toggleAuditLogsModalOpen}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -605,6 +639,139 @@ export function DeleteOrganizationModalContent(props: {
             Delete
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const AuditLogsOrganizationSettingsPageMutation = graphql(`
+  mutation AuditLogsOrganizationSettingsPageMutation($input: ExportOrganizationAuditLogInput!) {
+    exportOrganizationAuditLog(input: $input) {
+      ok {
+        url
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+const AuditLogsSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  userId: z.string().optional(),
+});
+
+function AuditLogsOrganizationModal(props: {
+  isOpen: boolean;
+  toggleModalOpen: () => void;
+  organizationSlug: string;
+}) {
+  const { organizationSlug: organization } = props;
+  const { toast } = useToast();
+  const [, exportAuditLogs] = useMutation(AuditLogsOrganizationSettingsPageMutation);
+
+  const today = new Date().toISOString().split('T')[0];
+  const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+    .toISOString()
+    .split('T')[0];
+
+  const form = useForm<z.infer<typeof AuditLogsSchema>>({
+    mode: 'onSubmit',
+    resolver: zodResolver(AuditLogsSchema),
+    defaultValues: {
+      startDate: lastYear,
+      endDate: today,
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof AuditLogsSchema>) {
+    const formattedStartDate = new Date(data.startDate).toISOString();
+    const formattedEndDate = new Date(data.endDate).toISOString();
+
+    const result = await exportAuditLogs({
+      input: {
+        selector: {
+          organizationSlug: organization,
+        },
+        filter: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+        },
+      },
+    });
+
+    if (result.data?.exportOrganizationAuditLog.error) {
+      toast({
+        title: 'Failed to start audit logs report',
+        description: result.data.exportOrganizationAuditLog.error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    props.toggleModalOpen();
+    form.reset();
+    toast({
+      variant: 'warning',
+      title: 'Audit logs report started',
+      description: 'Your audit logs report is being generated. You will receive an email shortly.',
+    });
+  }
+
+  return (
+    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
+      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+        <Form {...form}>
+          <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Audit Logs</DialogTitle>
+              <DialogDescription>
+                Select a date range to generate an audit logs report.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-8">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-8">
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                className="w-full"
+                type="submit"
+                disabled={!form.formState.isValid || form.formState.isSubmitting}
+              >
+                Generate Report
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

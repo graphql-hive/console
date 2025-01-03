@@ -68,7 +68,7 @@ function Header({
       <A.Trigger
         className={clsx(
           'group',
-          'radix-state-open:rounded-t-lg radix-state-closed:rounded-lg',
+          'data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg',
           'focus:outline-none',
           'inline-flex w-full items-center justify-between px-4 py-2 text-left',
           triggerClassName,
@@ -78,7 +78,7 @@ function Header({
         <ChevronDownIcon
           className={clsx(
             'ml-2 size-5 shrink-0 text-gray-700 ease-in-out dark:text-gray-400',
-            'group-radix-state-open:rotate-180 group-radix-state-open:duration-300',
+            'group-data-[state=open]:rotate-180 group-data-[state=open]:duration-300',
           )}
         />
       </A.Trigger>

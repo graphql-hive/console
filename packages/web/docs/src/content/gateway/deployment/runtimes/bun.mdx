@@ -13,7 +13,16 @@ platform besides Node.js. [Bun](https://bun.sh) is a modern JavaScript runtime l
 and it supports Fetch API as a first class citizen. So the configuration is really simple like any
 other JS runtime with Hive Gateway;
 
-The following code is a simple example of how to use Hive Gateway with Bun.
+## Hive Gateway CLI
+
+You can follow the introduction page directly to [use Hive Gateway CLI](/docs/gateway#installation).
+
+Since Bun has the compatibility layer for Node.js, all Node specific features are available in Bun.
+
+## Hive Gateway Runtime
+
+Use this method only if you know what you are doing. It is recommended to use Hive Gateway CLI for
+most cases.
 
 ```ts
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'

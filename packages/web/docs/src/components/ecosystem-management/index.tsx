@@ -101,7 +101,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
               Learn GraphQL Federation
               <ArrowIcon />
             </CallToAction>
-            <CallToAction href="/docs/use-cases/apollo-studio" variant="secondary">
+            <CallToAction href="/docs/use-cases/apollo-graphos" variant="secondary">
               <BookIcon />
               Migrate from Apollo GraphOS
             </CallToAction>

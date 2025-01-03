@@ -1,7 +1,11 @@
 import { FC, ReactNode, Suspense, useState } from 'react';
 import { env } from '@/env/frontend';
 import { Elements as ElementsProvider } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+// Why not @stripe/stripe-js?
+// `loadStrip` from the main entry loads Stripe.js before the function is called.
+// Yes, you are as confused as I am.
+// The `loadStrip` from `/pure` fixes this issue.
+import { loadStripe } from '@stripe/stripe-js/pure';
 import { getStripePublicKey } from './stripe-public-key';
 
 export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
@@ -10,14 +14,18 @@ export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => 
     if (env.nodeEnv !== 'production') {
       return;
     }
+
     const stripePublicKey = getStripePublicKey();
-    if (stripePublicKey) {
-      return loadStripe(stripePublicKey);
+
+    if (!stripePublicKey) {
+      return;
     }
+
+    return loadStripe(stripePublicKey);
   });
 
   if (!stripe) {
-    return children as any;
+    return children;
   }
 
   return (

@@ -69,7 +69,6 @@ export interface Storage {
   isReady(): Promise<boolean>;
   ensureUserExists(_: {
     superTokensUserId: string;
-    externalAuthUserId?: string | null;
     email: string;
     oidcIntegration: null | {
       id: string;
@@ -847,11 +846,6 @@ export interface Storage {
   }): Promise<Map<string, SchemaChangeType>>;
 
   getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
-
-  /**
-   * Get an user that belongs to a specific organization by id.
-   */
-  getOrganizationUser(_: { organizationId: string; userId: string }): Promise<User | null>;
 
   // Zendesk
   setZendeskUserId(_: { userId: string; zendeskId: string }): Promise<void>;

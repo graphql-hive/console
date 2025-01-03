@@ -120,6 +120,7 @@ export class TokenStorage {
         this.logger.error(error);
       }
 
+      this.logger.error('Failed to fetch token', error);
       throw new HiveError('Invalid token provided', {
         originalError: error,
       });

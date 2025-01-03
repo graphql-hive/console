@@ -75,9 +75,21 @@ export const gatewayConfig = defineConfig({
     type: 'hive',
     // The registry token provided by Hive Registry
     token: '<token>'
+    /**
+     * Other options
+     *
+     * selfHosting: { ... },
+     * clientInfo: { ... },
+     *
+     * See more in Hive Client reference
+     */
   }
 })
 ```
+
+If you want to control the usage reporting to the Hive Console like `selfHosting`, `clientInfo` etc,
+please look at the Hive Client documentation to learn more about other options.
+[See more in Hive Client reference](/docs/api-reference/client#configuration)
 
 </Tabs.Tab>
 

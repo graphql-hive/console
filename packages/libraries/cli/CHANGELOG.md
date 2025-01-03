@@ -1,5 +1,15 @@
 # @graphql-hive/cli
 
+## 0.44.5
+
+### Patch Changes
+
+- [#6224](https://github.com/graphql-hive/console/pull/6224)
+  [`592d3b3`](https://github.com/graphql-hive/console/commit/592d3b34551e27bf0d0993609ad0ad2d7ea7104c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Extends debug information. Prints a
+  list of files of the script directory and a path of included node binary. To enable debug mode,
+  pass DEBUG=1 environment variable when running the CLI.
+
 ## 0.44.4
 
 ### Patch Changes

@@ -192,6 +192,7 @@ export interface Organization {
     appDeployments: boolean;
   };
   zendeskId: string | null;
+  ownerId: string;
 }
 
 export interface OrganizationInvitation {
@@ -234,6 +235,15 @@ export interface DocumentCollection {
   id: string;
   title: string;
   description: string | null;
+  targetId: string;
+  createdByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PreflightScript {
+  id: string;
+  sourceCode: string;
   targetId: string;
   createdByUserId: string | null;
   createdAt: string;
@@ -318,7 +328,7 @@ export interface Token {
   project: string;
   organization: string;
   date: string;
-  lastUsedAt: string;
+  lastUsedAt: string | null;
   scopes: readonly string[];
 }
 
@@ -330,7 +340,6 @@ export interface User {
   provider: AuthProvider;
   superTokensUserId: string | null;
   isAdmin: boolean;
-  externalAuthUserId: string | null;
   oidcIntegrationId: string | null;
   zendeskId: string | null;
 }
