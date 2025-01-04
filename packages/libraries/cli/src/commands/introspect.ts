@@ -17,6 +17,10 @@ export default class Introspect extends Command<typeof Introspect> {
       description: 'HTTP header to add to the introspection request (in key:value format)',
       multiple: true,
     }),
+    ['ignore-federation']: Flags.boolean({
+      description: `Ignore Federation's subgraph schema addition (Query._service field)`,
+      default: false,
+    }),
   };
 
   static args = {
@@ -42,10 +46,14 @@ export default class Introspect extends Command<typeof Introspect> {
       {} as Record<string, string>,
     );
 
-    const schema = await loadSchema(args.location, {
-      headers,
-      method: 'POST',
-    }).catch(err => {
+    const schema = await loadSchema(
+      flags['ignore-federation'] === true ? 'introspection' : 'federation-subgraph-introspection',
+      args.location,
+      {
+        headers,
+        method: 'POST',
+      },
+    ).catch(err => {
       if (err instanceof GraphQLError) {
         this.fail(err.message);
         this.exit(1);

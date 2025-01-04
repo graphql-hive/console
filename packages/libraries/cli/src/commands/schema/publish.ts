@@ -254,7 +254,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       let sdl: string;
       try {
-        const rawSdl = await loadSchema(file);
+        const rawSdl = await loadSchema('introspection', file);
         invariant(typeof rawSdl === 'string' && rawSdl.length > 0, 'Schema seems empty');
         const transformedSDL = print(transformCommentsToDescriptions(rawSdl));
         sdl = minifySchema(transformedSDL);
