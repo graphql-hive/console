@@ -105,7 +105,7 @@ _See code:
 
 ## `hive artifact:fetch`
 
-fetch artifacts from the CDN
+fetch artifacts from the CDN. Note that the path shown in UI already contains `artifact`.
 
 ```
 USAGE
@@ -115,8 +115,8 @@ USAGE
 FLAGS
   --artifact=<option>        (required) artifact to fetch (Note: supergraph is only available for federation projects)
                              <options: sdl|supergraph|metadata|services|sdl.graphql|sdl.graphqls>
-  --cdn.accessToken=<value>  CDN access token
-  --cdn.endpoint=<value>     CDN endpoint
+  --cdn.accessToken=<value>  CDN access token (alternatively set via env var `HIVE_CDN_ENDPOINT`)
+  --cdn.endpoint=<value>     CDN endpoint (alternatively set via env var `HIVE_CDN_ACCESS_TOKEN`)
   --outputFile=<value>       whether to write to a file instead of stdout
 
 DESCRIPTION
@@ -124,7 +124,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/artifact/fetch.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/artifact/fetch.js)_
+[dist/commands/artifact/fetch.js](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/src/commands/artifact/fetch.ts)_
 
 ## `hive config:delete KEY`
 
