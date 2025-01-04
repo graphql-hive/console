@@ -298,8 +298,11 @@ export function Content() {
     setAccordionValue([initialSelectedCollection]);
     setTimeout(() => {
       const link = containerRef.current!.querySelector(`a[href$="${queryParamsOperationId}"]`);
-      link!.scrollIntoView();
-      setIsScrolled(true);
+
+      if (link) {
+        link.scrollIntoView();
+        setIsScrolled(true);
+      }
     }, 150);
   }, [initialSelectedCollection]);
 
