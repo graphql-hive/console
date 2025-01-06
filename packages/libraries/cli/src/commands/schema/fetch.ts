@@ -70,20 +70,20 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
   static output = [
     Output.failure('FailureSchemaFetchMissingSchema', {
       data: {},
-      text({ args }: InferInput<typeof SchemaFetch>, _, s) {
-        s.failure(`No schema found for action id ${args.actionId}`);
+      text({ args }: InferInput<typeof SchemaFetch>, _, t) {
+        t.failure(`No schema found for action id ${args.actionId}`);
       },
     }),
     Output.failure('FailureSchemaFetchInvalidSchema', {
       data: {},
-      text({ args }: InferInput<typeof SchemaFetch>, _, s) {
-        s.failure(`Schema is invalid for action id ${args.actionId}`);
+      text({ args }: InferInput<typeof SchemaFetch>, _, t) {
+        t.failure(`Schema is invalid for action id ${args.actionId}`);
       },
     }),
     Output.failure('FailureSchemaFetchMissingSDLType', {
       data: {},
-      text({ args, flags }: InferInput<typeof SchemaFetch>, _, s) {
-        s.failure(`No ${flags.type} found for action id ${args.actionId}`);
+      text({ args, flags }: InferInput<typeof SchemaFetch>, _, t) {
+        t.failure(`No ${flags.type} found for action id ${args.actionId}`);
       },
     }),
     Output.SuccessOutputFile,

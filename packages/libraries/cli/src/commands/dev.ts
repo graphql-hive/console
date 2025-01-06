@@ -426,7 +426,7 @@ export default class Dev extends Command<typeof Dev> {
         const newServices = await this.resolveServices(serviceInputs);
         if (
           newServices.some(
-            service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
+            service => services.find(_ => _.name === service.name)!.sdl !== service.sdl,
           )
         ) {
           this.logInfo('Detected changes, recomposing');

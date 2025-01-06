@@ -157,22 +157,22 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         changes: T.Array(Output.SchemaChange),
         url: T.Nullable(T.String({ format: 'uri' })),
       },
-      text(_, data, s) {
+      text(_, data, t) {
         if (data.diffType === 'initial') {
-          s.success('Published initial schema.');
+          t.success('Published initial schema.');
         } else if (data.message) {
-          s.success(data.message);
+          t.success(data.message);
         } else if (data.diffType === 'change' && data.changes.length === 0) {
-          s.success('No changes. Skipping.');
+          t.success('No changes. Skipping.');
         } else {
           if (data.changes.length) {
-            s.line(Output.schemaChangesText(data.changes));
-            s.line();
+            t.line(Output.schemaChangesText(data.changes));
+            t.line();
           }
-          s.success('Schema published');
+          t.success('Schema published');
         }
         if (data.url) {
-          s.info(`Available at ${data.url}`);
+          t.info(`Available at ${data.url}`);
         }
       },
     }),
@@ -182,20 +182,20 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         errors: Output.SchemaErrors,
         url: T.Nullable(T.String({ format: 'uri' })),
       },
-      text({ flags }: InferInput<typeof SchemaPublish>, data, s) {
-        s.line(Output.schemaErrorsText(data.errors));
-        s.line();
+      text({ flags }: InferInput<typeof SchemaPublish>, data, t) {
+        t.line(Output.schemaErrorsText(data.errors));
+        t.line();
         if (data.changes.length) {
-          s.line(Output.schemaChangesText(data.changes));
-          s.line();
+          t.line(Output.schemaChangesText(data.changes));
+          t.line();
         }
         if (!flags.force) {
-          s.failure('Failed to publish schema');
+          t.failure('Failed to publish schema');
         } else {
-          s.success('Schema published (forced)');
+          t.success('Schema published (forced)');
         }
         if (data.url) {
-          s.info(`Available at ${data.url}`);
+          t.info(`Available at ${data.url}`);
         }
       },
     }),
@@ -203,16 +203,16 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       data: {
         message: T.String(),
       },
-      text(_, data, s) {
-        s.success(data.message);
+      text(_, data, t) {
+        t.success(data.message);
       },
     }),
     Output.failure('FailureSchemaPublishGitHub', {
       data: {
         message: T.String(),
       },
-      text(_, data, s) {
-        s.failure(data.message);
+      text(_, data, t) {
+        t.failure(data.message);
       },
     }),
     Output.failure('FailureSchemaPublishInvalidGraphQLSchema', {
@@ -225,13 +225,13 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           }),
         ),
       },
-      text(_, data, s) {
+      text(_, data, t) {
         const location =
           data.locations.length > 0
             ? ` at line ${data.locations[0].line}, column ${data.locations[0].column}`
             : '';
-        s.failure(`The SDL is not valid${location}:`);
-        s.line(data.message);
+        t.failure(`The SDL is not valid${location}:`);
+        t.line(data.message);
       },
     }),
   ];

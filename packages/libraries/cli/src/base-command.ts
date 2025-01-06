@@ -7,7 +7,7 @@ import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './hel
 import { Errors } from './helpers/errors/__';
 import { Failure } from './helpers/errors/cli-error-with-data';
 import { OmitNever } from './helpers/general';
-import { Tex } from './helpers/tex/__';
+import { Texture } from './helpers/texture/__';
 import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
 
@@ -85,18 +85,18 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
     // Data types can optionally bundle a textual representation of their data.
     if (dataType.text) {
-      const texBuilder = Tex.createBuilder();
+      const textureBuilder = Texture.createBuilder();
       const dataTypeTextInit = dataType.text(
         { flags: this.flags, args: this.args },
         result.data,
-        texBuilder,
+        textureBuilder,
       );
       const dataTypeText =
         typeof dataTypeTextInit === 'string'
           ? dataTypeTextInit
           : dataTypeTextInit === undefined
             ? // This pattern designed for user relying on mutated state of the given Tex.Builder.
-              texBuilder.state.value
+              textureBuilder.state.value
             : // They returned a Tex.Builder instance.
               dataTypeTextInit.state.value;
 
@@ -218,28 +218,28 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * {@link Command.log} with success styling.
    */
   logSuccess(...args: any[]) {
-    this.log(Tex.success(...args).trim());
+    this.log(Texture.success(...args).trim());
   }
 
   /**
    * {@link Command.log} with failure styling.
    */
   logFailure(...args: any[]) {
-    this.log(Tex.failure(...args).trim());
+    this.log(Texture.failure(...args).trim());
   }
 
   /**
    * {@link Command.log} with info styling.
    */
   logInfo(...args: any[]) {
-    this.log(Tex.info(...args).trim());
+    this.log(Texture.info(...args).trim());
   }
 
   /**
    * {@link Command.log} with warning styling.
    */
   logWarning(...args: any[]) {
-    this.log(Tex.warning(...args).trim());
+    this.log(Texture.warning(...args).trim());
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({

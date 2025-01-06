@@ -5,7 +5,7 @@ import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { loadOperations } from '../../helpers/operations';
-import { Tex } from '../../helpers/tex/__';
+import { Texture } from '../../helpers/texture/__';
 import { T } from '../../helpers/typebox/__';
 import { Output } from '../../output/__';
 
@@ -105,9 +105,9 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           }),
         ),
       },
-      text(_, data, s) {
+      text(_, data, t) {
         if (data.invalidOperations.length === 0) {
-          s.success(`All operations are valid (${data.countTotal})`);
+          t.success(`All operations are valid (${data.countTotal})`);
         }
       },
     }),
@@ -181,7 +181,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
     if (!flags.apolloClient) {
       const detectedApolloDirectives = operations.some(
-        s => s.content.includes('@client') || s.content.includes('@connection'),
+        _ => _.content.includes('@client') || _.content.includes('@connection'),
       );
 
       if (detectedApolloDirectives) {
@@ -194,7 +194,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
     const invalidOperations = validate(
       schema,
-      operations.map(s => new Source(s.content, s.location)),
+      operations.map(_ => new Source(_.content, _.location)),
       {
         apollo: flags.apolloClient === true,
       },
@@ -258,7 +258,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
   private renderErrors(sourceName: string, errors: GraphQLError[]) {
     this.logFailure(sourceName);
     errors.forEach(e => {
-      this.log(` - ${Tex.bolderize(e.message)}`);
+      this.log(` - ${Texture.bolderize(e.message)}`);
     });
     this.log('');
   }

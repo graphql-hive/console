@@ -85,17 +85,17 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
   static output = [
     Output.success('SuccessSchemaDelete', {
       data: {},
-      text({ args }: InferInput<typeof SchemaDelete>, _, s) {
-        s.success(`${args.service} deleted`);
+      text({ args }: InferInput<typeof SchemaDelete>, _, t) {
+        t.success(`${args.service} deleted`);
       },
     }),
     Output.failure('FailureSchemaDelete', {
       data: {
         errors: Output.SchemaErrors,
       },
-      text({ args }: InferInput<typeof SchemaDelete>, data, s) {
-        s.failure(`Failed to delete ${args.service}`);
-        s.line(Output.schemaErrorsText(data.errors));
+      text({ args }: InferInput<typeof SchemaDelete>, data, t) {
+        t.failure(`Failed to delete ${args.service}`);
+        t.line(Output.schemaErrorsText(data.errors));
       },
     }),
   ];

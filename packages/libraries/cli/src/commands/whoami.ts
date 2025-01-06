@@ -4,7 +4,7 @@ import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { casesExhausted } from '../helpers/general';
-import { Tex } from '../helpers/tex/__';
+import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
 import { Output } from '../output/__';
 
@@ -90,14 +90,14 @@ export default class Whoami extends Command<typeof Whoami> {
       },
       text(_, data) {
         const print = createPrinter({
-          'Token name:': [Tex.colors.bold(data.token.name)],
+          'Token name:': [Texture.colors.bold(data.token.name)],
           ' ': [''],
           'Organization:': [
-            Tex.colors.bold(data.organization.slug),
-            Tex.colors.dim(data.organization.url),
+            Texture.colors.bold(data.organization.slug),
+            Texture.colors.dim(data.organization.url),
           ],
-          'Project:': [Tex.colors.bold(data.project.slug), Tex.colors.dim(data.project.url)],
-          'Target:': [Tex.colors.bold(data.target.slug), Tex.colors.dim(data.target.url)],
+          'Project:': [Texture.colors.bold(data.project.slug), Texture.colors.dim(data.project.url)],
+          'Target:': [Texture.colors.bold(data.target.slug), Texture.colors.dim(data.target.url)],
           '  ': [''],
           'Access to schema:publish': [data.authorization.schema.publish ? access.yes : access.not],
           'Access to schema:check': [data.authorization.schema.check ? access.yes : access.not],
@@ -191,12 +191,12 @@ function createPrinter(records: { [label: string]: [value: string, extra?: strin
   const maxValuesLen = Math.max(...values.map(v => v.length)) + 4;
 
   return () => {
-    const s = Tex.createBuilder();
+    const t = Texture.createBuilder();
     for (const label in records) {
       const [value, extra] = records[label];
-      s.line(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
+      t.line(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
     }
-    return s.state.value;
+    return t.state.value;
   };
 }
 

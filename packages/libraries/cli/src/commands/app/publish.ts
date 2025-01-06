@@ -29,8 +29,8 @@ export default class AppPublish extends Command<typeof AppPublish> {
         name: T.StringNonEmpty,
         version: T.StringNonEmpty,
       },
-      text(_, data, s) {
-        s.warning(
+      text(_, data, t) {
+        t.warning(
           `App deployment "${data.name}@${data.version}" is already published. Skipping...`,
         );
       },
@@ -40,8 +40,8 @@ export default class AppPublish extends Command<typeof AppPublish> {
         name: T.StringNonEmpty,
         version: T.StringNonEmpty,
       },
-      text(_, data, s) {
-        s.success(`App deployment "${data.name}@${data.version}" published successfully.`);
+      text(_, data, t) {
+        t.success(`App deployment "${data.name}@${data.version}" published successfully.`);
       },
     }),
     Output.failure('FailureAppPublish', {

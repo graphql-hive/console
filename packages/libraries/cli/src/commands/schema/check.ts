@@ -155,23 +155,23 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         warnings: T.Array(Output.SchemaWarning),
         url: T.Nullable(T.String({ format: 'uri' })),
       },
-      text(_, data, s) {
+      text(_, data, t) {
         if (data.diffType === 'initial') {
-          s.success('Schema registry is empty, nothing to compare your schema with.');
+          t.success('Schema registry is empty, nothing to compare your schema with.');
         } else if (data.diffType === 'change' && data.changes.length === 0) {
-          s.line('No changes');
+          t.line('No changes');
         } else {
-          s.line(Output.schemaChangesText(data.changes));
-          s.line();
-          s.line();
+          t.line(Output.schemaChangesText(data.changes));
+          t.line();
+          t.line();
         }
         if (data.warnings.length) {
-          s.line(Output.schemaWarningsText(data.warnings));
-          s.line();
+          t.line(Output.schemaWarningsText(data.warnings));
+          t.line();
         }
         if (data.url) {
-          s.line(`View full report:`);
-          s.line(data.url);
+          t.line(`View full report:`);
+          t.line(data.url);
         }
       },
     }),
@@ -179,8 +179,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       data: {
         message: T.String(),
       },
-      text(_, data, s) {
-        s.success(data.message);
+      text(_, data, t) {
+        t.success(data.message);
       },
     }),
     Output.success('FailureSchemaCheck', {
@@ -190,25 +190,25 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         errors: Output.SchemaErrors,
         url: T.Nullable(T.String({ format: 'uri' })),
       },
-      text({ flags }, data, s) {
-        s.line(Output.schemaErrorsText(data.errors));
-        s.line();
+      text({ flags }, data, t) {
+        t.line(Output.schemaErrorsText(data.errors));
+        t.line();
         if (data.warnings.length) {
-          s.line(Output.schemaWarningsText(data.warnings));
-          s.line();
-          s.line();
+          t.line(Output.schemaWarningsText(data.warnings));
+          t.line();
+          t.line();
         }
         if (data.changes.length) {
-          s.line(Output.schemaChangesText(data.changes));
-          s.line();
+          t.line(Output.schemaChangesText(data.changes));
+          t.line();
         }
         if (data.url) {
-          s.line(`View full report:`);
-          s.line(data.url);
-          s.line();
+          t.line(`View full report:`);
+          t.line(data.url);
+          t.line();
         }
         if (flags.forceSafe) {
-          s.success('Breaking changes were expected (forced)');
+          t.success('Breaking changes were expected (forced)');
         }
       },
     }),
@@ -217,8 +217,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       data: {
         message: T.String(),
       },
-      text(_, data, s) {
-        s.failure(data.message);
+      text(_, data, t) {
+        t.failure(data.message);
       },
     }),
   ];

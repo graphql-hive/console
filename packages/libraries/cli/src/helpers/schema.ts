@@ -20,7 +20,7 @@ export async function loadSchema(
     loaders: [new CodeFileLoader(), new GraphQLFileLoader(), new JsonFileLoader(), new UrlLoader()],
   });
 
-  return print(concatAST(sources.map(s => s.document!)));
+  return print(concatAST(sources.map(_ => _.document!)));
 }
 
 export function minifySchema(schema: string): string {

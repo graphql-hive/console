@@ -1,4 +1,4 @@
-import { Tex } from '../helpers/tex/__';
+import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
 import { FailureBase } from './failure';
 import { SuccessBase } from './success';
@@ -65,10 +65,10 @@ export type Factory<$BaseT extends T.TObject> = <
      * @returns
      *
      * 1. You may return a string
-     * 2. You may return a {@link Tex.Builder} (tip: use the one given, third parameter).
+     * 2. You may return a {@link Texture.Builder} (tip: use the one given, third parameter).
      * 3. You may return nothing. In this case the the string state of the given text builder is used.
      *
-     * Tip: If you want a declarative logging-like experience use the given {@link Tex.Builder} and
+     * Tip: If you want a declarative logging-like experience use the given {@link Texture.Builder} and
      * don't return anything.
      *
      * Note: If user invoked the CLI with --json, then the output from this function is ignored.
@@ -97,8 +97,8 @@ interface TextBuilder<$Data = any> {
      */
     data: $Data,
     /**
-     * A {@link Tex.Builder} instance provided to you for easily building your text.
+     * A {@link Texture.Builder} instance provided to you for easily building your text.
      */
-    texBuilder: Tex.Builder,
-  ): void | string | Tex.Builder;
+    texBuilder: Texture.Builder,
+  ): void | string | Texture.Builder;
 }

@@ -1,5 +1,5 @@
 import { SchemaHive } from '../helpers/schema';
-import { Tex } from '../helpers/tex/__';
+import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
 
 export const schemaChangeCriticalityLevel = {
@@ -34,7 +34,7 @@ export const schemaChangesText = (data: SchemaChanges): string => {
   const safeChanges = data.filter(
     change => change.criticality !== schemaChangeCriticalityLevel.Breaking,
   );
-  const s = Tex.createBuilder();
+  const t = Texture.createBuilder();
   const writeChanges = (schemaChanges: SchemaChange[]) => {
     return schemaChanges
       .map(change => {
@@ -42,44 +42,44 @@ export const schemaChangesText = (data: SchemaChanges): string => {
           criticalityMap[
             change.isSafeBasedOnUsage ? schemaChangeCriticalityLevel.Safe : change.criticality
           ],
-          Tex.bolderize(change.message),
+          Texture.bolderize(change.message),
         ];
         if (change.isSafeBasedOnUsage) {
-          parts.push(Tex.colors.green('(Safe based on usage ✓)'));
+          parts.push(Texture.colors.green('(Safe based on usage ✓)'));
         }
         if (change.approval) {
           parts.push(
-            Tex.colors.green(`(Approved by ${change.approval.by?.displayName ?? '<unknown>'} ✓)`),
+            Texture.colors.green(`(Approved by ${change.approval.by?.displayName ?? '<unknown>'} ✓)`),
           );
         }
 
-        return Tex.indent + parts.join(Tex.space);
+        return Texture.indent + parts.join(Texture.space);
       })
-      .join(Tex.newline);
+      .join(Texture.newline);
   };
 
-  s.info(`Detected ${data.length} change${Tex.plural(data)}`);
-  s.line();
+  t.info(`Detected ${data.length} change${Texture.plural(data)}`);
+  t.line();
 
   if (breakingChanges.length) {
-    s.indent(`Breaking changes:`);
-    s.line(writeChanges(breakingChanges));
-    s.line();
+    t.indent(`Breaking changes:`);
+    t.line(writeChanges(breakingChanges));
+    t.line();
   }
 
   if (safeChanges.length) {
-    s.indent(`Safe changes:`);
-    s.line(writeChanges(safeChanges));
-    s.line();
+    t.indent(`Safe changes:`);
+    t.line(writeChanges(safeChanges));
+    t.line();
   }
 
-  return s.state.value.trim();
+  return t.state.value.trim();
 };
 
 const criticalityMap = {
-  [schemaChangeCriticalityLevel.Breaking]: Tex.colors.red('-'),
-  [schemaChangeCriticalityLevel.Safe]: Tex.colors.green('-'),
-  [schemaChangeCriticalityLevel.Dangerous]: Tex.colors.green('-'),
+  [schemaChangeCriticalityLevel.Breaking]: Texture.colors.red('-'),
+  [schemaChangeCriticalityLevel.Safe]: Texture.colors.green('-'),
+  [schemaChangeCriticalityLevel.Dangerous]: Texture.colors.green('-'),
 } satisfies Record<SchemaChangeCriticalityLevel, string>;
 
 export const SchemaWarning = T.Object({
@@ -93,16 +93,16 @@ export type SchemaWarning = T.Static<typeof SchemaWarning>;
 export const SchemaWarnings = T.Array(SchemaWarning);
 export type SchemaWarnings = T.Static<typeof SchemaWarnings>;
 export const schemaWarningsText = (warnings: SchemaWarnings): string => {
-  const s = Tex.createBuilder();
-  s.warning(`Detected ${warnings.length} warning${Tex.plural(warnings)}`);
-  s.line();
+  const t = Texture.createBuilder();
+  t.warning(`Detected ${warnings.length} warning${Texture.plural(warnings)}`);
+  t.line();
   warnings.forEach(warning => {
-    const details = [warning.source ? `source: ${Tex.bolderize(warning.source)}` : undefined]
+    const details = [warning.source ? `source: ${Texture.bolderize(warning.source)}` : undefined]
       .filter(Boolean)
       .join(', ');
-    s.indent(`- ${Tex.bolderize(warning.message)}${details ? ` (${details})` : ''}`);
+    t.indent(`- ${Texture.bolderize(warning.message)}${details ? ` (${details})` : ''}`);
   });
-  return s.state.value.trim();
+  return t.state.value.trim();
 };
 
 export const SchemaError = T.Object({
@@ -113,13 +113,13 @@ export type SchemaError = T.Static<typeof SchemaError>;
 
 export const SchemaErrors = T.Array(SchemaError);
 export const schemaErrorsText = (data: T.Static<typeof SchemaErrors>): string => {
-  const s = Tex.createBuilder();
-  s.failure(`Detected ${data.length} error${Tex.plural(data)}`);
-  s.line();
+  const t = Texture.createBuilder();
+  t.failure(`Detected ${data.length} error${Texture.plural(data)}`);
+  t.line();
   data.forEach(error => {
-    s.indent(Tex.colors.red('-') + ' ' + Tex.bolderize(error.message));
+    t.indent(Texture.colors.red('-') + ' ' + Texture.bolderize(error.message));
   });
-  return s.state.value.trim();
+  return t.state.value.trim();
 };
 
 export const AppDeploymentStatus = T.Enum({
