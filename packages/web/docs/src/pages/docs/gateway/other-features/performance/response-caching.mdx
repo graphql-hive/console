@@ -64,15 +64,19 @@ The behaviour of this plugin can be configured by passing an object at the gatew
 The `@cacheControl` directive can be used to give to subgraphs the control over the cache behavior
 for the fields and types they are defining. You can add this directive during composition.
 
-- [See here for Federation to learn more about the `@cacheControl` directive](https://www.apollographql.com/docs/federation/performance/caching/#using-cache-hints-with-subgraphs)
-- [See here for GraphQL Mesh to learn more about the `@cacheControl` in subgraph definitions](/docs/gateway/other-features/performance/response-caching)
+You can learn more about the behavior of the `@cacheControl` directive in the following section. If
+you want to use the configuration API on the gateway, you can skip the `@cacheControl` directive
+section.
 
-### `@cacheControl` directive
+### `@cacheControl` directive's behavior
 
 This directive allows you to control response caching from the subgraph. But the behavior can be
 different depending on the subgraph configuration.
 
-#### Apollo Server with `Cache-Control` header
+The following 3 section shows the ways of using the `@cacheControl` directive in different ways. The
+usage examples in the other sections represent the third(last) use case in the following three.
+
+#### Apollo Server with `Cache-Control` header (This response cache plugin is not required)
 
 Apollo Server handles `@cacheControl` directives to set HTTP caching headers in the HTTP response to
 the gateway. Then the gateway can cache the response based on these headers.
@@ -119,7 +123,7 @@ query {
 In this case, the gateway will cache the response for 240 seconds. If the same query is made within
 240 seconds, the gateway will return the cached response.
 
-#### GraphQL Yoga with the response caching plugin
+#### GraphQL Yoga with the response caching plugin (This response cache plugin is not required)
 
 On the other hand, GraphQL Yoga handles `@cacheControl` directives to configure the response caching
 behavior rather than `Cache-Control` headers like Apollo Server. It leverages `ETag` headers to
@@ -185,7 +189,7 @@ request but do the less work to generate the response. The difference between ot
 won't reduce the HTTP connection traffic in between gateway and subgraph, but it will reduce the
 work that subgraph needs to do to generate the response.
 
-#### Subgraphs with any server implementation using directives directly
+#### Subgraphs with any server implementation using directives directly (This response cache plugin is required)
 
 Besides these two, you can let the gateway handle the caching on its own. In this case, you need to
 define the following in the subgraphs so the supergraph has `@cacheControl` directives. Then, the
