@@ -5,7 +5,7 @@ import { EcosystemPageNavH2 } from './ecosystem-page-nav-h2';
 export const components = {
   EcosystemHeader: (props: React.HTMLAttributes<HTMLDivElement>) => (
     <header
-      className="relative isolate mx-4 flex max-w-[90rem] flex-col items-center gap-6 overflow-visible rounded-3xl bg-blue-400 px-4 py-6 text-center sm:py-12 md:mx-6 md:gap-8 md:py-24 [&>h1]:max-w-[800px] [&>p]:max-w-[520px]"
+      className="relative isolate flex max-w-[90rem] flex-col items-center gap-6 overflow-visible rounded-3xl bg-blue-400 px-4 py-6 text-center sm:py-12 md:mx-2 md:gap-8 md:py-24 [&>h1]:max-w-[800px] [&>p]:max-w-[520px]"
       {...props}
     >
       <span className="font-medium">The Ecosystem</span>
@@ -26,7 +26,7 @@ export const components = {
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => {
     return (
       <ul
-        className="mt-5 grid gap-5 overflow-x-auto p-4 last-of-type:mb-24 sm:grid-cols-2 md:grid-cols-4"
+        className="mt-5 grid gap-5 p-4 last-of-type:mb-24 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         {...props}
       />
     );
@@ -41,7 +41,7 @@ export const components = {
       throw new Error(`Product ${productName} is missing`);
     }
 
-    return <ProductCard as="li" product={product} className="h-[222px]" {...props} />;
+    return <ProductCard as="li" product={product} className="h-[222px] max-md:w-auto" {...props} />;
   },
 };
 
