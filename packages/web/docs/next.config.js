@@ -138,6 +138,11 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/use-cases/apollo-studio',
+      destination: '/docs/use-cases/apollo-graphos',
+      permanent: true,
+    },
+    {
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
       destination: '/docs/self-hosting/external-composition',

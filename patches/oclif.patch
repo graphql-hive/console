@@ -226,10 +226,10 @@ index 2769337ddf0effe5f397300972b989db20616b4a..d725cd670207e4c8b125eef8d74d0a5d
  }
  exports.default = UploadWin;
 diff --git a/lib/tarballs/bin.js b/lib/tarballs/bin.js
-index 5740bb13522fdad4c65554534bfa286b6dd94f11..619b510d75605a28de2063df316fcbd0890935c6 100644
+index 5740bb13522fdad4c65554534bfa286b6dd94f11..79c43972b86773c0d28d1e159d1c0d284a66f7ef 100644
 --- a/lib/tarballs/bin.js
 +++ b/lib/tarballs/bin.js
-@@ -30,77 +30,38 @@ const path = __importStar(require("node:path"));
+@@ -30,77 +30,43 @@ const path = __importStar(require("node:path"));
  const node_util_1 = require("node:util");
  const exec = (0, node_util_1.promisify)(node_child_process_1.exec);
  async function writeBinScripts({ baseWorkspace, config, nodeOptions, nodeVersion, }) {
@@ -311,7 +311,12 @@ index 5740bb13522fdad4c65554534bfa286b6dd94f11..619b510d75605a28de2063df316fcbd0
 -  "\$NODE" ${`${nodeOptions.join(' ')} `}"\$DIR/run" "\$@"
 +NODE="\$DIR/node"
 +if [ "\$DEBUG" = "1" ]; then
++  echo "--DEBUG--"
 +  echo "script_dir: \$DIR"
++  echo "node: \$NODE"
++  echo "list of files:"
++  ls \$DIR
++  echo "--DEBUG--"
  fi
 +"\$NODE" ${`${nodeOptions.join(' ')} `}"\$DIR/run" "\$@"
  `, { mode: 0o755 });

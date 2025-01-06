@@ -88,7 +88,7 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       token: pluginOptions.token,
       enabled: pluginOptions.enabled,
       debug: pluginOptions.debug,
-      __testing: pluginOptions.agent?.__testing,
+      fetch: pluginOptions.agent?.fetch,
     },
     {
       data: {

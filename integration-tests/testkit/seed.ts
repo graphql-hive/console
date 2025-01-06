@@ -1,13 +1,5 @@
 import { humanId } from 'human-id';
 import { createPool, sql } from 'slonik';
-import {
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  ProjectType,
-  RegistryModel,
-  SchemaPolicyInput,
-  TargetAccessScope,
-} from 'testkit/gql/graphql';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
@@ -17,6 +9,7 @@ import {
   DeleteOperationMutation,
   UpdateCollectionMutation,
   UpdateOperationMutation,
+  UpdatePreflightScriptMutation,
 } from './collections';
 import { ensureEnv } from './env';
 import {
@@ -57,6 +50,14 @@ import {
   updateSchemaVersionStatus,
   updateTargetValidationSettings,
 } from './flow';
+import {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  ProjectType,
+  RegistryModel,
+  SchemaPolicyInput,
+  TargetAccessScope,
+} from './gql/graphql';
 import { execute } from './graphql';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
@@ -69,15 +70,15 @@ export type ProjectSeed = Awaited<ReturnType<OrgSeed['createProject']>>;
 export type TargetAccessTokenSeed = Awaited<ReturnType<ProjectSeed['createTargetAccessToken']>>;
 
 export function initSeed() {
-  const pg = {
-    user: ensureEnv('POSTGRES_USER'),
-    password: ensureEnv('POSTGRES_PASSWORD'),
-    host: ensureEnv('POSTGRES_HOST'),
-    port: ensureEnv('POSTGRES_PORT'),
-    db: ensureEnv('POSTGRES_DB'),
-  };
-
   function createConnectionPool() {
+    const pg = {
+      user: ensureEnv('POSTGRES_USER'),
+      password: ensureEnv('POSTGRES_PASSWORD'),
+      host: ensureEnv('POSTGRES_HOST'),
+      port: ensureEnv('POSTGRES_PORT'),
+      db: ensureEnv('POSTGRES_DB'),
+    };
+
     return createPool(
       `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
     );
@@ -93,15 +94,18 @@ export function initSeed() {
         },
       };
     },
-    authenticate: authenticate,
+    authenticate,
     generateEmail: () => userEmail(generateUnique()),
     async createOwner() {
       const ownerEmail = userEmail(generateUnique());
-      const ownerToken = await authenticate(ownerEmail).then(r => r.access_token);
+      const auth = await authenticate(ownerEmail);
+      const ownerRefreshToken = auth.refresh_token;
+      const ownerToken = auth.access_token;
 
       return {
         ownerEmail,
         ownerToken,
+        ownerRefreshToken,
         async createOrg() {
           const orgSlug = generateUnique();
           const orgResult = await createOrganization({ slug: orgSlug }, ownerToken).then(r =>
@@ -301,6 +305,30 @@ export function initSeed() {
                   }).then(r => r.expectNoGraphQLErrors());
 
                   return result.createDocumentCollection;
+                },
+                async updatePreflightScript({
+                  sourceCode,
+                  token = ownerToken,
+                }: {
+                  sourceCode: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: UpdatePreflightScriptMutation,
+                    variables: {
+                      input: {
+                        selector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: target.slug,
+                        },
+                        sourceCode,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.updatePreflightScript;
                 },
                 async updateDocumentCollection({
                   collectionId,

@@ -104,6 +104,7 @@ export const TargetLaboratoryPageQuery = graphql(`
       }
       viewerCanViewLaboratory
       viewerCanModifyLaboratory
+      ...PreflightScript_TargetFragment
     }
     ...Laboratory_IsCDNEnabledFragment
   }
@@ -123,11 +124,9 @@ export const operationCollectionsPlugin: GraphiQLPlugin = {
 };
 
 export function Content() {
-  const { organizationSlug, projectSlug, targetSlug } = useParams({ strict: false }) as {
-    organizationSlug: string;
-    projectSlug: string;
-    targetSlug: string;
-  };
+  const { organizationSlug, projectSlug, targetSlug } = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
+  });
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -299,8 +298,11 @@ export function Content() {
     setAccordionValue([initialSelectedCollection]);
     setTimeout(() => {
       const link = containerRef.current!.querySelector(`a[href$="${queryParamsOperationId}"]`);
-      link!.scrollIntoView();
-      setIsScrolled(true);
+
+      if (link) {
+        link.scrollIntoView();
+        setIsScrolled(true);
+      }
     }, 150);
   }, [initialSelectedCollection]);
 
@@ -308,8 +310,8 @@ export function Content() {
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
       <AccordionHeader className="flex items-center justify-between">
         <AccordionTriggerPrimitive className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10">
-          <FolderIcon className="group-radix-state-open:hidden size-4" />
-          <FolderOpenIcon className="group-radix-state-closed:hidden size-4" />
+          <FolderIcon className="size-4 group-data-[state=open]:hidden" />
+          <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (

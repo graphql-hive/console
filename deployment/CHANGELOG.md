@@ -1,5 +1,85 @@
 # hive
 
+## 2.1.0
+
+### Minor Changes
+
+- [#5564](https://github.com/graphql-hive/console/pull/5564)
+  [`e0eb3bd`](https://github.com/graphql-hive/console/commit/e0eb3bdb289c6349f51d71ba0570328d2f4e98d7)
+  Thanks [@dimaMachina](https://github.com/dimaMachina)! - Add preflight scripts for laboratory.
+
+  It is now possible to add a preflight script within the laboratory that executes before sending a
+  GraphQL request.
+  [Learn more.](https://the-guild.dev/graphql/hive/product-updates/2024-12-27-preflight-script)
+
+- [#5530](https://github.com/graphql-hive/console/pull/5530)
+  [`38c14e2`](https://github.com/graphql-hive/console/commit/38c14e21d8fd76f04a750ede3aac07aa10685687)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Add organization audit log.
+
+  Each organization now has an audit log of all user actions that can be exported by admins.
+  Exported audit logs are stored on the pre-configured S3 storage.
+
+  In case you want to store exported audit logs on a separate S3 bucket, you can use the
+  `S3_AUDIT_LOG` prefixed environment variables for the configuration.
+
+  [Learn more.](https://graphql-hive.com/product-updates/2024-12-27-audit-logs)
+
+- [#6234](https://github.com/graphql-hive/console/pull/6234)
+  [`eecd099`](https://github.com/graphql-hive/console/commit/eecd099309e2308f216c709a1fe23f15f6d6318b)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds
+  `lab.prompt(message, defaultValue)` to Preflight Script API
+
+### Patch Changes
+
+- [#6232](https://github.com/graphql-hive/console/pull/6232)
+  [`ff44b62`](https://github.com/graphql-hive/console/commit/ff44b62aebc4b5d4e3ff321ad3ed59694d94330a)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improvements to UI of Preflight Script
+  (Laboratory)
+
+- [#6233](https://github.com/graphql-hive/console/pull/6233)
+  [`7b0c920`](https://github.com/graphql-hive/console/commit/7b0c920c578a9220c0bad69d2f6b69023f8beece)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Tiny UI fixes
+
+## 2.0.1
+
+### Patch Changes
+
+- [#6158](https://github.com/graphql-hive/console/pull/6158)
+  [`3093c9f`](https://github.com/graphql-hive/console/commit/3093c9fc23ab0a53926a187a91fe93ef6fee5be1)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added missing index for postgres db field
+  "schema_version_changes.schema_version_id"
+
+## 2.0.0
+
+### Major Changes
+
+- [#6142](https://github.com/graphql-hive/console/pull/6142)
+  [`25f1460`](https://github.com/graphql-hive/console/commit/25f14604f482ac42826c63ec08bc108a67d37fd0)
+  Thanks [@TuvalSimha](https://github.com/TuvalSimha)! - Upgrade the PostgreSQL version for Docker
+  Compose from version 14.13 to use 16.4.
+
+  **This change is published as major, as it requires attention based on your setup.**
+
+  For self-hosters with a managed database, we recommend upgrading PostgreSQL based on your Cloud
+  provider's or IT's recommendation.
+
+  For self-hosters running in Docker, you can read about
+  [upgrading PostgreSQL in a Docker container here](https://helgeklein.com/blog/upgrading-postgresql-in-docker-container/).
+
+  > The Hive data that was previously created with PostgreSQL v14 is compatible with v16.
+
+### Patch Changes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Improvement for OTEL tracing and added
+  missing attributes
+
+- [#6156](https://github.com/graphql-hive/console/pull/6156)
+  [`b6eb5d0`](https://github.com/graphql-hive/console/commit/b6eb5d0e71e5b1d7575756d440bdbfb3116950b7)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Performance improvements for Postgres DB
+  calls (specifically `getSchemasOfVersion`, see https://github.com/graphql-hive/console/pull/6154)
+
 ## 1.2.4
 
 ### Patch Changes

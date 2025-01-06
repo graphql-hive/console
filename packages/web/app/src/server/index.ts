@@ -22,6 +22,11 @@ const server = Fastify({
   },
 });
 
+const preflightWorkerEmbed = {
+  path: '/__preflight-embed',
+  htmlFile: 'preflight-worker-embed.html',
+};
+
 async function main() {
   /**
    * Why is this necessary?
@@ -35,6 +40,17 @@ async function main() {
     server.log.info('Running in development mode');
     // If in development mode, use Vite to serve the frontend and enable hot module reloading.
     const { default: FastifyVite } = await import('@fastify/vite');
+
+    // This and a patch of @fastify/vite is necessary to serve the preflight worker embed html file.
+    // We need to know if the request is for the preflight worker embed or not to determine which html file to serve.
+    server.decorateRequest('viteHtmlFile', {
+      getter() {
+        return this.url.startsWith(preflightWorkerEmbed.path)
+          ? preflightWorkerEmbed.htmlFile
+          : 'index.html';
+      },
+    });
+
     await server.register(FastifyVite, {
       // The root directory of @hive/app (where the package.json is located)
       // /
@@ -84,6 +100,18 @@ async function main() {
   connectSlack(server);
   connectGithub(server);
   connectLab(server);
+
+  server.get(preflightWorkerEmbed.path, (_req, reply) => {
+    if (isDev) {
+      // If in development mode, return the Vite preflight-worker-embed.html.
+      return reply.html();
+    }
+
+    // If in production mode, return the static html file.
+    return reply.sendFile(preflightWorkerEmbed.htmlFile, {
+      cacheControl: false,
+    });
+  });
 
   server.get('*', (_req, reply) => {
     if (isDev) {

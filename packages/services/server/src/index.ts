@@ -364,6 +364,15 @@ export async function main() {
             endpoint: env.s3Mirror.endpoint,
           }
         : null,
+      s3AuditLogs: env.s3AuditLogs
+        ? {
+            accessKeyId: env.s3AuditLogs.credentials.accessKeyId,
+            secretAccessKeyId: env.s3AuditLogs.credentials.secretAccessKey,
+            sessionToken: env.s3AuditLogs.credentials.sessionToken,
+            bucketName: env.s3AuditLogs.bucketName,
+            endpoint: env.s3AuditLogs.endpoint,
+          }
+        : null,
       encryptionSecret: env.encryptionSecret,
       schemaConfig: env.hiveServices.webApp
         ? {

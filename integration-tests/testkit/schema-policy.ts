@@ -1,5 +1,5 @@
-import { RuleInstanceSeverityLevel, SchemaPolicyInput } from 'testkit/gql/graphql';
 import { graphql } from './gql';
+import { RuleInstanceSeverityLevel, SchemaPolicyInput } from './gql/graphql';
 
 export const OrganizationAndProjectsWithSchemaPolicy = graphql(`
   query OrganizationAndProjectsWithSchemaPolicy($organization: String!) {

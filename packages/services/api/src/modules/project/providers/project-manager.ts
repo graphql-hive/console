@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Organization, Project, ProjectType } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { ActivityManager } from '../../shared/providers/activity-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -26,6 +27,7 @@ export class ProjectManager {
     private session: Session,
     private tokenStorage: TokenStorage,
     private activityManager: ActivityManager,
+    private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -54,7 +56,6 @@ export class ProjectManager {
       };
     }
 
-    // create project
     const result = await this.storage.createProject({
       slug,
       type,
@@ -75,6 +76,15 @@ export class ProjectManager {
           },
           meta: {
             projectType: type,
+          },
+        }),
+        this.auditLog.record({
+          eventType: 'PROJECT_CREATED',
+          organizationId: organization,
+          metadata: {
+            projectId: result.project.id,
+            projectType: type,
+            projectSlug: slug,
           },
         }),
       ]);
@@ -101,7 +111,14 @@ export class ProjectManager {
       projectId: project,
       organizationId: organization,
     });
-
+    await this.auditLog.record({
+      eventType: 'PROJECT_DELETED',
+      organizationId: organization,
+      metadata: {
+        projectId: deletedProject.id,
+        projectSlug: deletedProject.slug,
+      },
+    });
     await this.tokenStorage.invalidateTokens(deletedProject.tokens);
 
     await this.activityManager.create({
@@ -241,6 +258,14 @@ export class ProjectManager {
         },
         meta: {
           value: slug,
+        },
+      });
+      await this.auditLog.record({
+        eventType: 'PROJECT_SLUG_UPDATED',
+        organizationId: organization,
+        metadata: {
+          previousSlug: slug,
+          newSlug: result.project.slug,
         },
       });
     }

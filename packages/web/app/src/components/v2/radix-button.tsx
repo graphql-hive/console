@@ -13,8 +13,8 @@ const Button = forwardRef<HTMLButtonElement, ComponentProps<'button'>>(
           'focus-within:ring',
           // Register all radix states
           'group',
-          'dark:radix-state-open:bg-gray-900',
-          'dark:radix-state-on:bg-gray-900',
+          'dark:data-[state=open]:bg-gray-900',
+          'dark:data-[state=on]:bg-gray-900',
           className,
         )}
       >

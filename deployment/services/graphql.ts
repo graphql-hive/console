@@ -51,6 +51,7 @@ export function deployGraphQL({
   supertokens,
   s3,
   s3Mirror,
+  s3AuditLog,
   zendesk,
   docker,
   postgres,
@@ -72,6 +73,7 @@ export function deployGraphQL({
   cdn: CDN;
   s3: S3;
   s3Mirror: S3;
+  s3AuditLog: S3;
   usage: Usage;
   usageEstimator: UsageEstimator;
   dbMigrations: DbMigrations;
@@ -201,6 +203,11 @@ export function deployGraphQL({
       .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.secret, 'secretAccessKey')
       .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.secret, 'bucket')
       .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.secret, 'endpoint')
+      // S3 Audit Log
+      .withSecret('S3_AUDIT_LOG_ACCESS_KEY_ID', s3AuditLog.secret, 'accessKeyId')
+      .withSecret('S3_AUDIT_LOG_SECRET_ACCESS_KEY', s3AuditLog.secret, 'secretAccessKey')
+      .withSecret('S3_AUDIT_LOG_BUCKET_NAME', s3AuditLog.secret, 'bucket')
+      .withSecret('S3_AUDIT_LOG_ENDPOINT', s3AuditLog.secret, 'endpoint')
       // Auth
       .withSecret('SUPERTOKENS_API_KEY', supertokens.secret, 'apiKey')
       .withSecret('AUTH_GITHUB_CLIENT_ID', githubOAuthSecret, 'clientId')

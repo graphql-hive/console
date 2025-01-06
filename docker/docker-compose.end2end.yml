@@ -34,5 +34,9 @@ services:
     networks:
       - 'stack'
 
+  supertokens:
+    ports:
+      - '3567:3567'
+
 networks:
   stack: {}

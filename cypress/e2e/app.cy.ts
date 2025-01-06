@@ -1,9 +1,5 @@
 import { generateRandomSlug, getUserData } from '../support/testkit';
 
-Cypress.on('uncaught:exception', (_err, _runnable) => {
-  return false;
-});
-
 describe('basic user flow', () => {
   const user = getUserData();
 

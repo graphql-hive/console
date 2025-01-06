@@ -1,20 +1,22 @@
-import NextImage from 'next/image'
+---
+title: Overview
+---
+
 import { Callout } from '@theguild/components'
-import labFormImage from '../../../../public/docs/pages/features/lab-form.png'
-import labImage from '../../../../public/docs/pages/features/lab.png'
+import { Screenshot } from '../../../../components/screenshot'
 
 # Laboratory
 
 Under your target page, you'll find the **Laboratory** page. The Laboratory allows you to explore
 your GraphQL schema and run queries against a mocked version of your GraphQL service.
 
-## Explore your GraphQL schema
+## Explore your GraphQL Schema
 
 You can use the full power of [GraphiQL](https://github.com/graphql/graphiql) directly within Hive:
 compose your GraphQL operations, explore with different field and variations, and access your
 GraphQL schema full documentation.
 
-<NextImage alt="Lab" src={labImage} className="mt-6 max-w-3xl rounded-lg drop-shadow-md" />
+<Screenshot>![Laboratory](/docs/pages/features/lab.png)</Screenshot>
 
 ## Link a Laboratory Endpoint
 
@@ -49,7 +51,7 @@ To get started with using the Laboratory mock schema externally, create a
 Now, click on the **Use Schema Externally** button on the Laboratory page, and follow the
 instructions on the form:
 
-<NextImage alt="Lab Form" src={labFormImage} className="mt-6 max-w-xl rounded-lg drop-shadow-md" />
+<Screenshot>![Laboratory Form](/docs/pages/features/lab-form.png)</Screenshot>
 
 To test access to your setup, try running a `curl` command to run a simple GraphQL query against
 your mocked schema:
@@ -60,7 +62,7 @@ curl -X POST -H "X-Hive-Key: HIVE_TOKEN_HERE" -H "Content-Type: application/json
   --data-raw '{"query": "{ __typename }"}'
 ```
 
-### With GraphQL-Code-Generator
+### With GraphQL Code Generator
 
 <Callout>
   We recommend using the CDN for consuming the GraphQL schema in your project. [See GraphQL Code
