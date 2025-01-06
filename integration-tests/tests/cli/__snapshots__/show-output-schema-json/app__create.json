@@ -1,0 +1,205 @@
+{
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessSkipAppCreate",
+              "const": "SuccessSkipAppCreate",
+              "type": "string"
+            },
+            "status": {
+              "anyOf": [
+                {
+                  "const": "active",
+                  "type": "string"
+                },
+                {
+                  "const": "pending",
+                  "type": "string"
+                },
+                {
+                  "const": "retired",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "status"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessAppCreate",
+              "const": "SuccessAppCreate",
+              "type": "string"
+            },
+            "id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operationsCount": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "operationsCount"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureAppCreate",
+              "const": "FailureAppCreate",
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "message"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureInvalidManifestModel",
+              "const": "FailureInvalidManifestModel",
+              "type": "string"
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "$id": "MaterializedValueError",
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "value": {},
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "MaterializedValueError"
+                    }
+                  }
+                },
+                "required": [
+                  "message",
+                  "path",
+                  "value",
+                  "errors"
+                ]
+              }
+            }
+          },
+          "required": [
+            "type",
+            "errors"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "data"
+      ]
+    }
+  ]
+}

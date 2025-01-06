@@ -1,0 +1,126 @@
+{
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessSkipAppPublish",
+              "const": "SuccessSkipAppPublish",
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "version"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessAppPublish",
+              "const": "SuccessAppPublish",
+              "type": "string"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "version"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureAppPublish",
+              "const": "FailureAppPublish",
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "message"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "data"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+{
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessSchemaPublish",
+              "const": "SuccessSchemaPublish",
+              "type": "string"
+            },
+            "diffType": {
+              "anyOf": [
+                {
+                  "const": "initial",
+                  "type": "string"
+                },
+                {
+                  "const": "change",
+                  "type": "string"
+                },
+                {
+                  "const": "unknown",
+                  "type": "string"
+                }
+              ]
+            },
+            "message": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "criticality": {
+                    "anyOf": [
+                      {
+                        "const": "Breaking",
+                        "type": "string"
+                      },
+                      {
+                        "const": "Dangerous",
+                        "type": "string"
+                      },
+                      {
+                        "const": "Safe",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "isSafeBasedOnUsage": {
+                    "type": "boolean"
+                  },
+                  "approval": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "displayName": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "displayName"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "by"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "criticality",
+                  "isSafeBasedOnUsage",
+                  "approval"
+                ]
+              }
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "format": "uri",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "diffType",
+            "message",
+            "changes",
+            "url"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureSchemaPublish",
+              "const": "FailureSchemaPublish",
+              "type": "string"
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  },
+                  "criticality": {
+                    "anyOf": [
+                      {
+                        "const": "Breaking",
+                        "type": "string"
+                      },
+                      {
+                        "const": "Dangerous",
+                        "type": "string"
+                      },
+                      {
+                        "const": "Safe",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "isSafeBasedOnUsage": {
+                    "type": "boolean"
+                  },
+                  "approval": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "by": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "displayName": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "displayName"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "by"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "message",
+                  "criticality",
+                  "isSafeBasedOnUsage",
+                  "approval"
+                ]
+              }
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              }
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "format": "uri",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "changes",
+            "errors",
+            "url"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "default": "success",
+          "const": "success",
+          "type": "string"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "SuccessSchemaPublishGitHub",
+              "const": "SuccessSchemaPublishGitHub",
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "message"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureSchemaPublishGitHub",
+              "const": "FailureSchemaPublishGitHub",
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "message"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureSchemaPublishInvalidGraphQLSchema",
+              "const": "FailureSchemaPublishInvalidGraphQLSchema",
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "locations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "line": {
+                    "type": "number"
+                  },
+                  "column": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "line",
+                  "column"
+                ]
+              }
+            }
+          },
+          "required": [
+            "type",
+            "message",
+            "locations"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "data"
+      ]
+    }
+  ]
+}
