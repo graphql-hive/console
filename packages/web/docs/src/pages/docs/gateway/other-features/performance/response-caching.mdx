@@ -69,31 +69,127 @@ for the fields and types they are defining. You can add this directive during co
 
 ### `@cacheControl` directive
 
-This directive allows you to control response caching from the subgraph. But its behavior is
-different in different gateway and subgraph implementations.
+This directive allows you to control response caching from the subgraph. But the behavior can be
+different depending on the subgraph configuration.
 
-In GraphQL Yoga, `@cacheControl` directive is used to configure the behavior of the response caching
-plugin, and the response caching plugin uses `ETag` headers, not `Cache-Control` headers so it can
-be automatically invalidated by mutations.
-[Learn more here](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching).
+#### Apollo Server with `Cache-Control` header
 
-Unlike GraphQL Yoga, Apollo Server uses `Cache-Control` directives to set the caching behavior of
-the response headers without `ETag` headers and it doesn't validate the cached response by the
-client. [Learn more here](https://www.apollographql.com/docs/apollo-server/performance/caching).
+Apollo Server handles `@cacheControl` directives to set HTTP caching headers in the HTTP response to
+the gateway. Then the gateway can cache the response based on these headers.
+[Learn more about Apollo Server's cache control behavior](https://www.apollographql.com/docs/apollo-server/performance/caching).
+In this case, gateway is still response of caching the response. Hive Gateway can handle http
+caching headers using [HTTP Caching plugin](/docs/gateway/other-features/performance/http-caching).
 
-As Apollo Server handles `@cacheControl` directives to configure the behavior of the response
-headers including `cache-control` of the subgraph server. And in this case, you can just use
-[HTTP Caching plugin](/docs/gateway/other-features/performance/http-caching) to handle caching
-headers. If you want to use that approach with Apollo Server, check the relevant docs
-[here](https://www.apollographql.com/docs/apollo-server/performance/caching).
+```mermaid
+flowchart TD
+    A["GraphQL Client"] -->|"GraphQL Request"| B(Go shopping)
+    B("Hive Gateway") --> C{Let me think}
+    C -->|"Cache Hit"| D["Get the cached response from Cache Storage"]
+    C -->|"Not Cached"| E["Send HTTP Response Back"]
+    C{"Subgraph Executor"}
+	D ---|"Return the cached response"| C
+	E
+	E ---|"Get 'Cache-Control' header, and store the response for the following requests"| C{"Subgraph Executor gets the query"}
+```
 
-If you use GraphQL Yoga, you don't have an extra configuration like above unless you want to have
-another caching layer on the gateway.
+##### Example
 
-In order to let the gateway handle the caching behavior rather than the subgraph server, it is
-possible to handle those directives on the Hive Gateway level to configure response caching of the
-gateway from the subgraph. In this case, you need to expose `@cacheControl` directive to the
-supergraph by adding the following definitions;
+Let's say you have a subgraph that defines a `Post` type with a `@cacheControl` directive, your Hive
+Gateway has [HTTP Caching plugin](/docs/gateway/other-features/performance/http-caching) enabled.
+
+```graphql
+type Post @cacheControl(maxAge: 240) {
+  id: Int!
+  title: String
+}
+```
+
+When the gateway receives a query that selects the `Post` type, it will cache the response for 240
+seconds.
+
+```graphql
+query {
+  posts {
+    id
+    title
+  }
+}
+```
+
+In this case, the gateway will cache the response for 240 seconds. If the same query is made within
+240 seconds, the gateway will return the cached response.
+
+#### GraphQL Yoga with the response caching plugin
+
+On the other hand, GraphQL Yoga handles `@cacheControl` directives to configure the response caching
+behavior rather than `Cache-Control` headers like Apollo Server. It leverages `ETag` headers to
+cache the response and invalidate it by mutations.
+[Learn more about GraphQL Yoga's response caching behavior](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching).
+So even if nothing is configured on the gateway but Yoga on the subgraph uses the response caching
+plugin on its own. But this won't reduce the HTTP connection traffic in between gateway and
+subgraph.
+
+```mermaid
+flowchart TD
+    A["GraphQL Client"]
+    B(Go shopping)
+    B("Hive Gateway")
+    E["Send HTTP Response Back"]
+	E
+	E["Subgraph Yoga Server"]
+	E --- n1["Response Cache Plugin"]
+	n1 ---|"If Cached"| n2["Get the cached response from Cache Storage"]
+	n1 ---|"If Not Cached"| n3["Prepare the result by making database calls etc, and store it for the future calls"]
+	subgraph B["Hive Gateway"]
+		n5
+		n4["Query Planner"]
+	end
+	n4
+	n4 ---|"Generate Subgraph Query"| n5["Execution Engine"]
+	n5
+	E
+	B
+	n5
+	n5
+	n5 ---|"HTTP Request"| E
+	A --- B
+```
+
+##### Example
+
+Let's say you have a subgraph that defines a `Post` type with a `@cacheControl` directive, your Hive
+Gateway has [HTTP Caching plugin](/docs/gateway/other-features/performance/http-caching) enabled.
+
+```graphql
+type Post @cacheControl(maxAge: 240) {
+  id: Int!
+  title: String
+}
+```
+
+When the gateway receives a query that selects the `Post` type, it will forward the request to the
+subgraph directly.
+
+```graphql
+query {
+  posts {
+    id
+    title
+  }
+}
+```
+
+Then Yoga Server will generate the response and cache it for 240 seconds. If the same query is made
+within 240 seconds, Yoga Server will return the cached response. So it will always receive the HTTP
+request but do the less work to generate the response. The difference between others, this case
+won't reduce the HTTP connection traffic in between gateway and subgraph, but it will reduce the
+work that subgraph needs to do to generate the response.
+
+#### Subgraphs with any server implementation using directives directly
+
+Besides these two, you can let the gateway handle the caching on its own. In this case, you need to
+define the following in the subgraphs so the supergraph has `@cacheControl` directives. Then, the
+response caching plugin on the gateway will handle the caching based on these directives.
 
 ```graphql
 extend schema
