@@ -26,7 +26,7 @@ export const components = {
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => {
     return (
       <ul
-        className="mt-5 grid grid-cols-4 gap-5 overflow-x-auto p-4 last-of-type:mb-24"
+        className="mt-5 grid gap-5 overflow-x-auto p-4 last-of-type:mb-24 sm:grid-cols-2 md:grid-cols-4"
         {...props}
       />
     );
