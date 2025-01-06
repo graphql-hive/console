@@ -2,6 +2,7 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { InferInput } from '../../helpers/oclif';
 import { SchemaHive } from '../../helpers/schema';
 import { T } from '../../helpers/typebox/__';
@@ -78,6 +79,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       key: 'registry.accessToken',
       args: flags,
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const file: string = args.file;

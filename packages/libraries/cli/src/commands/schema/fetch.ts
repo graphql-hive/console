@@ -4,6 +4,7 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { InferInput } from '../../helpers/oclif';
 import { Output } from '../../output/__';
 
@@ -106,6 +107,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const sdlType = this.ensure({

@@ -3,6 +3,7 @@ import Command from '../../base-command';
 import { Fragments } from '../../fragments/__';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { casesExhausted } from '../../helpers/general';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema } from '../../helpers/schema';
@@ -244,6 +245,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
     const sdl = await loadSchema(file);
     const git = await gitInfo(() => {

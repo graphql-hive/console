@@ -3,6 +3,7 @@ import Command from '../../base-command';
 import { Fragments } from '../../fragments/__';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { casesExhausted } from '../../helpers/general';
 import { InferInput } from '../../helpers/oclif';
 import { Output } from '../../output/__';
@@ -126,6 +127,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const result = await this.registryApi(endpoint, accessToken)

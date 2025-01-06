@@ -3,6 +3,7 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
 import { casesExhausted } from '../helpers/general';
 import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
@@ -130,6 +131,7 @@ export default class Whoami extends Command<typeof Whoami> {
       legacyFlagName: 'token',
       args: flags,
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const result = await this.registryApi(registry, token)

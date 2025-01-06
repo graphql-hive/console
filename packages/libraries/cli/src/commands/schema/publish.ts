@@ -6,6 +6,7 @@ import Command from '../../base-command';
 import { Fragments } from '../../fragments/__';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { casesExhausted } from '../../helpers/general';
 import { gitInfo } from '../../helpers/git';
 import { InferInput } from '../../helpers/oclif';
@@ -286,6 +287,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
     const service = flags.service;
     const url = flags.url;

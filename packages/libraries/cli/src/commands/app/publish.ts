@@ -2,6 +2,7 @@ import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { T } from '../../helpers/typebox/__';
 import { Output } from '../../output/__';
 
@@ -64,6 +65,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
       key: 'registry.accessToken',
       args: flags,
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const result = await this.registryApi(endpoint, accessToken)
