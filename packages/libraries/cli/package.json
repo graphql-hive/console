@@ -89,6 +89,7 @@
       "@oclif/plugin-help",
       "@oclif/plugin-update"
     ],
+    "helpClass": "./dist/help",
     "update": {
       "node": {
         "options": [

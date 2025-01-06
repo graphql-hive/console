@@ -29,7 +29,8 @@ stderr--------------------------------------------:
 
 USAGE
   $ hive app:create FILE --name <value> --version <value> [--json]
-    [--debug] [--registry.endpoint <value>] [--registry.accessToken <value>]
+    [--show-output-schema-json] [--debug] [--registry.endpoint <value>]
+    [--registry.accessToken <value>]
 
 ARGUMENTS
   FILE  Path to the persisted operations mapping.
@@ -43,7 +44,11 @@ FLAGS
   --version=<value>               (required) app version
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
 
 stdout--------------------------------------------:
 __NONE__
@@ -113,10 +118,11 @@ stderr--------------------------------------------:
  ›   See more help with --help
 
 USAGE
-  $ hive schema:check FILE [--json] [--debug] [--service <value>]
-    [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
-    <value>] [--token <value>] [--forceSafe] [--github] [--require <value>]
-    [--author <value>] [--commit <value>] [--contextId <value>]
+  $ hive schema:check FILE [--json] [--show-output-schema-json] [--debug]
+    [--service <value>] [--registry.endpoint <value>] [--registry <value>]
+    [--registry.accessToken <value>] [--token <value>] [--forceSafe] [--github]
+    [--require <value>] [--author <value>] [--commit <value>] [--contextId
+    <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -140,7 +146,11 @@ FLAGS
   --token=<value>                 api token
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
 
 stdout--------------------------------------------:
 __NONE__
@@ -174,9 +184,9 @@ stderr--------------------------------------------:
  ›   See more help with --help
 
 USAGE
-  $ hive schema:delete SERVICE [--json] [--debug] [--registry.endpoint
-    <value>] [--registry <value>] [--registry.accessToken <value>] [--token
-    <value>] [--dryRun] [--confirm]
+  $ hive schema:delete SERVICE [--json] [--show-output-schema-json]
+    [--debug] [--registry.endpoint <value>] [--registry <value>]
+    [--registry.accessToken <value>] [--token <value>] [--dryRun] [--confirm]
 
 ARGUMENTS
   SERVICE  name of the service
@@ -193,7 +203,11 @@ FLAGS
   --token=<value>                 api token
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
 
 stdout--------------------------------------------:
 __NONE__
@@ -227,9 +241,10 @@ stderr--------------------------------------------:
  ›   See more help with --help
 
 USAGE
-  $ hive schema:fetch ACTIONID [--json] [--debug] [--registry <value>]
-    [--token <value>] [--registry.endpoint <value>] [--registry.accessToken
-    <value>] [--type <value>] [--write <value>] [--outputFile <value>]
+  $ hive schema:fetch ACTIONID [--json] [--show-output-schema-json]
+    [--debug] [--registry <value>] [--token <value>] [--registry.endpoint
+    <value>] [--registry.accessToken <value>] [--type <value>] [--write <value>]
+    [--outputFile <value>]
 
 ARGUMENTS
   ACTIONID  action id (e.g. commit sha)
@@ -248,7 +263,11 @@ FLAGS
                                   .graphql, .gql, .gqls, .graphqls)
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
 
 stdout--------------------------------------------:
 __NONE__
@@ -287,11 +306,11 @@ stderr--------------------------------------------:
  ›   See more help with --help
 
 USAGE
-  $ hive schema:publish FILE [--json] [--debug] [--service <value>] [--url
-    <value>] [--metadata <value>] [--registry.endpoint <value>] [--registry
-    <value>] [--registry.accessToken <value>] [--token <value>] [--author
-    <value>] [--commit <value>] [--github] [--force]
-    [--experimental_acceptBreakingChanges] [--require <value>]
+  $ hive schema:publish FILE [--json] [--show-output-schema-json] [--debug]
+    [--service <value>] [--url <value>] [--metadata <value>]
+    [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>] [--author <value>] [--commit <value>] [--github]
+    [--force] [--experimental_acceptBreakingChanges] [--require <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -323,7 +342,11 @@ FLAGS
                                         schemas)
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
 
 stdout--------------------------------------------:
 __NONE__
