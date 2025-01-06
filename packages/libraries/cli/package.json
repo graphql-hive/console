@@ -32,6 +32,7 @@
   "scripts": {
     "build": "tsc",
     "check:types": "tsc --noEmit",
+    "hive": "./bin/dev",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
@@ -42,7 +43,7 @@
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
     "schema:check:stitching": "pnpm start schema:check --service posts examples/stitching.posts.graphql",
     "schema:publish:federation": "pnpm start schema:publish --service reviews --url reviews.com/graphql examples/federation.reviews.graphql",
-    "start": "./bin/dev",
+    "start": "pnpm run hive",
     "typecheck:make-me-work-in-ci": "pnpm check:types",
     "version": "oclif readme && git add README.md"
   },

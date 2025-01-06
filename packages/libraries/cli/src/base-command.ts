@@ -11,6 +11,8 @@ import { Texture } from './helpers/texture/__';
 import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
 
+const showOutputSchemaJsonFlagName = 'show-output-schema-json';
+
 export default abstract class BaseCommand<$Command extends typeof Command> extends Command {
   public static enableJsonFlag = true;
 
@@ -24,6 +26,12 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   protected _userConfig: Config | undefined;
 
   static baseFlags = {
+    [showOutputSchemaJsonFlagName]: Flags.boolean({
+      summary:
+        'Show the schema for the JSON format output of this command. JSON format output occurs when you pass the --json flag. The schema is expressed in JSON Schema (json-schema.org).',
+      default: false,
+      helpGroup: 'GLOBAL',
+    }),
     debug: Flags.boolean({
       default: false,
       summary: 'Whether debug output for HTTP calls and similar should be enabled.',
@@ -34,18 +42,53 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
   protected args!: InferArgs<$Command>;
 
+  private isShowOutputSchemaJson: boolean = false;
+
+  async init(): Promise<void> {
+    await super.init();
+
+    this._userConfig = new Config({
+      // eslint-disable-next-line no-process-env
+      filepath: process.env.HIVE_CONFIG,
+      rootDir: process.cwd(),
+    });
+
+    this.isShowOutputSchemaJson = this.argv.includes(`--${showOutputSchemaJsonFlagName}`);
+    if (this.isShowOutputSchemaJson) {
+      return;
+    }
+
+    const { args, flags } = await this.parse({
+      flags: this.ctor.flags,
+      baseFlags: super.ctor.baseFlags,
+      enableJsonFlag: this.ctor.enableJsonFlag,
+      args: this.ctor.args,
+      strict: this.ctor.strict,
+    });
+
+    this.flags = flags as InferFlags<$Command>;
+    this.args = args as InferArgs<$Command>;
+  }
+
   /**
    * Prefer implementing {@link BaseCommand.runResult} instead of this method. Refer to it for its benefits.
    *
    * By default this command runs {@link BaseCommand.runResult}, having logic to handle its return value.
    */
   async run(): Promise<void | Output.InferSuccess<GetOutput<$Command>>> {
+    const thisClass = this.constructor as typeof BaseCommand;
+
+    if (this.isShowOutputSchemaJson) {
+      const outputSchemaJson = JSON.stringify(T.Union(thisClass.output.map(_ => _.schema)));
+      console.log(outputSchemaJson);
+      return;
+    }
+
     // todo: Make it easier for the Hive team to be alerted.
     // - Alert the Hive team automatically with some opt-in telemetry?
     // - A single-click-link with all relevant variables serialized into search parameters?
     const schemaViolationMessage = `Whoops. This Hive CLI command tried to output a value that violates its own schema. This should never happen. Please report this error to the Hive team at https://github.com/graphql-hive/console/issues/new.`;
 
-    const thisClass = this.constructor as typeof BaseCommand;
     const resultUnparsed = await this.runResult();
     // @ts-expect-error fixme
     const resultDataTypeName = resultUnparsed.data.type;
@@ -192,26 +235,6 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
       throw new Error('User config is not initialized');
     }
     return this._userConfig!;
-  }
-
-  async init(): Promise<void> {
-    await super.init();
-
-    this._userConfig = new Config({
-      // eslint-disable-next-line no-process-env
-      filepath: process.env.HIVE_CONFIG,
-      rootDir: process.cwd(),
-    });
-
-    const { args, flags } = await this.parse({
-      flags: this.ctor.flags,
-      baseFlags: (super.ctor as typeof BaseCommand).baseFlags,
-      enableJsonFlag: this.ctor.enableJsonFlag,
-      args: this.ctor.args,
-      strict: this.ctor.strict,
-    });
-    this.flags = flags as InferFlags<$Command>;
-    this.args = args as InferArgs<$Command>;
   }
 
   /**

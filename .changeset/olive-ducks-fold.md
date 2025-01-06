@@ -6,6 +6,13 @@ Add JSON output mode.
 
 All commands now have a `--json` flag that will enable JSON output as opposed to plain text.
 
+If you want to know what the schema is for a particular command's JSON output there are two things you can do:
+
+1. All commands also have a `--show-output-schema-json` flag that will show the JSON output schema.
+2. Help output now includes a `JSON Output Schema` section that shows the JSON schema for the command.
+
+The schema is expressed using JSON Schema.
+
 Caveats:
 
 - The `dev` command is not yet supported.
