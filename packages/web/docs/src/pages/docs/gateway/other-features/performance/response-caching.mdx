@@ -216,6 +216,47 @@ directive @cacheControl(
 ) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
 ```
 
+In this case, the gateway will cache the response based on the `@cacheControl` directives defined in
+the subgraphs.
+
+The difference between the two is that the gateway will control the caching behavior based on the
+`@cacheControl` directives defined in the subgraphs. For any cached responses, the gateway will skip
+query planning and federation execution phase, and return the response directly.
+
+```mermaid
+flowchart TD
+    A["GraphQL Client"]
+    B(Go shopping)
+    B("Hive Gateway")
+    E["Send HTTP Response Back"]
+	E
+	E["Subgraph Yoga Server"]
+	E --- n1["Response Cache Plugin"]
+	n1 ---|"If Cached"| n2["Get the cached response from Cache Storage"]
+	n1 ---|"If Not Cached"| n3["Prepare the result by making database calls etc, and store it for the future calls"]
+	subgraph B["Hive Gateway"]
+		n7["Get Stored Response"]
+		n6["Response Caching Plugin"]
+		n5
+		n4["Query Planner"]
+	end
+	n4
+	n4 ---|"Generate Subgraph Query"| n5["Execution Engine"]
+	n5
+	E
+	B
+	n5
+	n5
+	n5 ---|"HTTP Request"| E
+	A
+	B
+	n6 ---|"If Not Cached"| n4
+	n6 ---|"If Cache Hit"| n7
+	n7 ---|"Respond Cached Response back to Client"| A
+	n5 ---|"Store the response for future calls"| n6
+	A ---|"Send GraphQL Request via HTTP "| n6
+```
+
 ## Session based caching
 
 If your GraphQL API returns specific data depending on the viewer's session, you can use the session
