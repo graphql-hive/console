@@ -1,7 +1,7 @@
 /* eslint-disable no-process-env */
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
-import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
+import { createCLI, schemaCheck, schemaFetch, schemaPublish } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
 
 describe.each`
@@ -281,4 +281,38 @@ describe.each`
         }),
       );
     });
+
+  test.concurrent('can publish and fetch a schema with target:registry:read access', async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken } = await createProject(projectType, {
+      useLegacyRegistryModels: model === 'legacy',
+    });
+    const { secret } = await createTargetAccessToken({});
+
+    const cli = createCLI({
+      readonly: secret,
+      readwrite: secret,
+    });
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Kamil',
+      '--commit',
+      'abc123',
+      ...serviceNameArgs,
+      ...serviceUrlArgs,
+      'fixtures/init-schema.graphql',
+    ]);
+
+    await expect(
+      cli.fetch({
+        type: 'subgraphs',
+        actionId: 'abc123',
+      }),
+    ).resolves.toBe(``);
+  });
 });
