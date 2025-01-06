@@ -49,7 +49,9 @@ export const schemaChangesText = (data: SchemaChanges): string => {
         }
         if (change.approval) {
           parts.push(
-            Texture.colors.green(`(Approved by ${change.approval.by?.displayName ?? '<unknown>'} ✓)`),
+            Texture.colors.green(
+              `(Approved by ${change.approval.by?.displayName ?? '<unknown>'} ✓)`,
+            ),
           );
         }
 
