@@ -5,7 +5,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -30,7 +30,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -50,7 +50,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -64,7 +64,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -72,7 +72,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can publish
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can update the service url and show it in comparison query > schemaPublish 1`] = `
@@ -80,14 +80,14 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can update 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > can update the service url and show it in comparison query > schemaPublish 2`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
-✔ New service url: http://__PATH__ (previously: http://__PATH__ Available at http://__PATH__
+✔ New service url: http://__URL__ (previously: http://__URL__ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -107,7 +107,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > schema:chec
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -124,7 +124,7 @@ stdout--------------------------------------------:
    - Type Query must define one or more fields.
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'legacy' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -296,9 +296,9 @@ stdout--------------------------------------------:
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
-    "message": "New service url: http://__PATH__ (previously: http://__PATH__    "changes": [
+    "message": "New service url: http://__URL__ (previously: http://__URL__    "changes": [
       {
-        "message": "[test] New service url: 'http://__PATH__ (previously: 'http://__PATH__        "criticality": "Dangerous",
+        "message": "[test] New service url: 'http://__URL__ (previously: 'http://__URL__        "criticality": "Dangerous",
         "isSafeBasedOnUsage": false,
         "approval": null
       }
@@ -406,7 +406,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -431,7 +431,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -451,7 +451,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -465,7 +465,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -473,7 +473,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can publish
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can update the service url and show it in comparison query > schemaPublish 1`] = `
@@ -481,14 +481,14 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can update 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > can update the service url and show it in comparison query > schemaPublish 2`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
-✔ New service url: http://__PATH__ (previously: http://__PATH__ Available at http://__PATH__
+✔ New service url: http://__URL__ (previously: http://__URL__ Available at http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -508,7 +508,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > schema:chec
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -523,7 +523,7 @@ stdout--------------------------------------------:
    - [test] Unknown type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'FEDERATION' | model: 'modern' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -695,7 +695,7 @@ stdout--------------------------------------------:
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
-    "message": "New service url: http://__PATH__ (previously: http://__PATH__    "changes": [],
+    "message": "New service url: http://__URL__ (previously: http://__URL__    "changes": [],
     "url": "__URL__"
   }
 }
@@ -793,7 +793,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish a s
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -818,7 +818,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -838,7 +838,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -852,7 +852,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -860,7 +860,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > can publish and
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -880,7 +880,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > schema:check sh
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -895,7 +895,7 @@ stdout--------------------------------------------:
    - Unknown type User.
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'legacy' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -1134,7 +1134,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish a s
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -1159,7 +1159,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -1179,7 +1179,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -1193,7 +1193,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -1201,7 +1201,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: false > can publish and
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -1221,7 +1221,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: false > schema:check sh
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -1236,7 +1236,7 @@ stdout--------------------------------------------:
    - Unknown type User.
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'SINGLE' | model: 'modern' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -1475,7 +1475,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -1500,7 +1500,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -1520,7 +1520,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -1534,7 +1534,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -1542,7 +1542,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can publish 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can update the service url and show it in comparison query > schemaPublish 1`] = `
@@ -1550,14 +1550,14 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can update t
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > can update the service url and show it in comparison query > schemaPublish 2`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
-✔ New service url: http://__PATH__ (previously: http://__PATH__ Available at http://__PATH__
+✔ New service url: http://__URL__ (previously: http://__URL__ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -1577,7 +1577,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > schema:check
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -1594,7 +1594,7 @@ stdout--------------------------------------------:
    - Unknown type: User.
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'legacy' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -1766,9 +1766,9 @@ stdout--------------------------------------------:
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
-    "message": "New service url: http://__PATH__ (previously: http://__PATH__    "changes": [
+    "message": "New service url: http://__URL__ (previously: http://__URL__    "changes": [
       {
-        "message": "[test] New service url: 'http://__PATH__ (previously: 'http://__PATH__        "criticality": "Dangerous",
+        "message": "[test] New service url: 'http://__URL__ (previously: 'http://__URL__        "criticality": "Dangerous",
         "isSafeBasedOnUsage": false,
         "approval": null
       }
@@ -1876,7 +1876,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -1901,7 +1901,7 @@ stdout--------------------------------------------:
    - Field User.role changed type from UserRole to UserRole!
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
@@ -1921,7 +1921,7 @@ stdout--------------------------------------------:
    - Field email was removed from object type User
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
@@ -1935,7 +1935,7 @@ stdout--------------------------------------------:
 
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
@@ -1943,7 +1943,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can publish 
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can update the service url and show it in comparison query > schemaPublish 1`] = `
@@ -1951,14 +1951,14 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can update t
 
 stdout--------------------------------------------:
 ✔ Published initial schema.
-ℹ Available at http://__PATH__
+ℹ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > can update the service url and show it in comparison query > schemaPublish 2`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
-✔ New service url: http://__PATH__ (previously: http://__PATH__ Available at http://__PATH__
+✔ New service url: http://__URL__ (previously: http://__URL__ Available at http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
@@ -1978,7 +1978,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: false > schema:check
 stdout--------------------------------------------:
 ✔ Schema registry is empty, nothing to compare your schema with.
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > schema:check should throw on corrupted schema > schemaCheck 1`] = `
@@ -1995,7 +1995,7 @@ stdout--------------------------------------------:
    - Unknown type: User.
 
 View full report:
-http://__PATH__
+http://__URL__
 `;
 
 exports[`projectType: 'STITCHING' | model: 'modern' | json: false > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
@@ -2167,7 +2167,7 @@ stdout--------------------------------------------:
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
-    "message": "New service url: http://__PATH__ (previously: http://__PATH__    "changes": [],
+    "message": "New service url: http://__URL__ (previously: http://__URL__    "changes": [],
     "url": "__URL__"
   }
 }

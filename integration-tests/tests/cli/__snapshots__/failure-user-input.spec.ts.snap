@@ -365,7 +365,6 @@ stdout--------------------------------------------:
   "suggestions": [],
   "data": {
     "type": "FailureUserInput",
-    "problem": "namedArgumentMissing",
     "parameter": "registry.accessToken"
   }
 }
@@ -376,7 +375,9 @@ exports[`FailureUserInput - { command: 'whoami' } > OUTPUT FORMAT: TEXT 1`] = `
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: Missing "registry.accessToken"
+ ›   Error: --registry.accessToken is required. For help generating an access 
+ ›   token, see https://__URL__
+ ›   stry-access-tokens
 stdout--------------------------------------------:
 __NONE__
 `;
