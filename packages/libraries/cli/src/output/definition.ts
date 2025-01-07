@@ -1,7 +1,8 @@
+import { OptionalizePropertyUnsafe, Simplify } from '../helpers/general';
 import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
-import { FailureBase } from './failure';
-import { SuccessBase } from './success';
+import { FailureBase } from './result/failure';
+import { SuccessBase } from './result/success';
 
 export interface Definition<$Schema extends T.TObject = T.TObject> {
   schema: $Schema;
@@ -102,3 +103,24 @@ interface TextBuilder<$Data = any> {
     texBuilder: Texture.Builder,
   ): void | string | Texture.Builder;
 }
+
+export type InferSuccessResultInit<$DataType extends Definition> = Simplify<
+  OptionalizePropertyUnsafe<Omit<InferSuccessResult<$DataType>, 'type'>, 'data' | 'warnings'>
+>;
+
+export type InferSuccessResult<$DataType extends Definition> = Extract<
+  T.Static<$DataType['schema']>,
+  { type: 'success' }
+>;
+
+export type InferFailureResultInit<$DataType extends Definition> = Simplify<
+  OptionalizePropertyUnsafe<
+    Omit<InferFailureResult<$DataType>, 'type'>,
+    'suggestions' | 'reference' | 'warnings'
+  >
+>;
+
+export type InferFailureResult<$DataType extends Definition> = Extract<
+  T.Static<$DataType['schema']>,
+  { type: 'failure' }
+>;

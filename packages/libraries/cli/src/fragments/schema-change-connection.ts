@@ -1,5 +1,5 @@
 import { FragmentType, graphql, useFragment } from '../gql';
-import * as SchemaOutput from '../output/data';
+import { Output } from '../output/__';
 
 const fragment = graphql(`
   fragment RenderChanges_schemaChanges on SchemaChangeConnection {
@@ -20,7 +20,7 @@ const fragment = graphql(`
 type Mask = FragmentType<typeof fragment>;
 
 export namespace SchemaChangeConnection {
-  export const toSchemaOutput = (mask: undefined | null | Mask): SchemaOutput.SchemaChange[] => {
+  export const toSchemaOutput = (mask: undefined | null | Mask): Output.Types.SchemaChanges => {
     const changes = useFragment(fragment, mask);
     return (
       changes?.nodes.map(_ => ({

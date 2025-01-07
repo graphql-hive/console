@@ -37,7 +37,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
   static output = [
     Output.defineSuccess('SuccessSkipAppCreate', {
       data: {
-        status: Output.AppDeploymentStatus,
+        status: Output.Types.AppDeploymentStatus,
       },
       text(input: InferInput<typeof AppCreate>, output) {
         return `App deployment "${input.flags.name}@${input.flags.version}" is "${output.status}". Skip uploading documents...`;

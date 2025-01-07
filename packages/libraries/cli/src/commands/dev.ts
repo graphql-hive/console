@@ -327,7 +327,7 @@ export default class Dev extends Command<typeof Dev> {
             message: error.message,
           })),
         });
-        this.log(Output.schemaErrorsText(errors));
+        this.log(Output.Types.schemaErrorsText(errors));
       }
 
       input.onError('Composition failed');
@@ -386,7 +386,7 @@ export default class Dev extends Command<typeof Dev> {
     if (!valid) {
       if (compositionResult.errors) {
         const errors = Fragments.SchemaErrorConnection.toSchemaOutput(compositionResult.errors);
-        this.log(Output.schemaErrorsText(errors));
+        this.log(Output.Types.schemaErrorsText(errors));
       }
 
       input.onError('Composition failed');

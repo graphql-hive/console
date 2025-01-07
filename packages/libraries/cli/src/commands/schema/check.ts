@@ -152,8 +152,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           change: 'change',
           unknown: 'unknown', // todo: improve this, need better understanding of the api
         }),
-        changes: T.Array(Output.SchemaChange),
-        warnings: T.Array(Output.SchemaWarning),
+        changes: Output.Types.SchemaChanges,
+        warnings: Output.Types.SchemaWarnings,
         url: T.Nullable(T.String({ format: 'uri' })),
       },
       text(_, data, t) {
@@ -162,12 +162,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         } else if (data.diffType === 'change' && data.changes.length === 0) {
           t.line('No changes');
         } else {
-          t.line(Output.schemaChangesText(data.changes));
+          t.line(Output.Types.schemaChangesText(data.changes));
           t.line();
           t.line();
         }
         if (data.warnings.length) {
-          t.line(Output.schemaWarningsText(data.warnings));
+          t.line(Output.Types.schemaWarningsText(data.warnings));
           t.line();
         }
         if (data.url) {
@@ -186,21 +186,21 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     }),
     Output.defineSuccess('FailureSchemaCheck', {
       data: {
-        changes: Output.SchemaChanges,
-        warnings: Output.SchemaWarnings,
-        errors: Output.SchemaErrors,
+        changes: Output.Types.SchemaChanges,
+        warnings: Output.Types.SchemaWarnings,
+        errors: Output.Types.SchemaErrors,
         url: T.Nullable(T.String({ format: 'uri' })),
       },
       text({ flags }, data, t) {
-        t.line(Output.schemaErrorsText(data.errors));
+        t.line(Output.Types.schemaErrorsText(data.errors));
         t.line();
         if (data.warnings.length) {
-          t.line(Output.schemaWarningsText(data.warnings));
+          t.line(Output.Types.schemaWarningsText(data.warnings));
           t.line();
           t.line();
         }
         if (data.changes.length) {
-          t.line(Output.schemaChangesText(data.changes));
+          t.line(Output.Types.schemaChangesText(data.changes));
           t.line();
         }
         if (data.url) {

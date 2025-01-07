@@ -156,7 +156,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           unknown: 'unknown', // todo: improve this, need better understanding of the api
         }),
         message: T.Nullable(T.String()),
-        changes: T.Array(Output.SchemaChange),
+        changes: T.Array(Output.Types.SchemaChange),
         url: T.Nullable(T.String({ format: 'uri' })),
       },
       text(_, data, t) {
@@ -168,7 +168,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           t.success('No changes. Skipping.');
         } else {
           if (data.changes.length) {
-            t.line(Output.schemaChangesText(data.changes));
+            t.line(Output.Types.schemaChangesText(data.changes));
             t.line();
           }
           t.success('Schema published');
@@ -180,15 +180,15 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }),
     Output.defineSuccess('FailureSchemaPublish', {
       data: {
-        changes: Output.SchemaChanges,
-        errors: Output.SchemaErrors,
+        changes: Output.Types.SchemaChanges,
+        errors: Output.Types.SchemaErrors,
         url: T.Nullable(T.String({ format: 'uri' })),
       },
       text({ flags }: InferInput<typeof SchemaPublish>, data, t) {
-        t.line(Output.schemaErrorsText(data.errors));
+        t.line(Output.Types.schemaErrorsText(data.errors));
         t.line();
         if (data.changes.length) {
-          t.line(Output.schemaChangesText(data.changes));
+          t.line(Output.Types.schemaChangesText(data.changes));
           t.line();
         }
         if (!flags.force) {

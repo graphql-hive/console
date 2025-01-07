@@ -92,11 +92,11 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
     }),
     Output.defineFailure('FailureSchemaDelete', {
       data: {
-        errors: Output.SchemaErrors,
+        errors: Output.Types.SchemaErrors,
       },
       text({ args }: InferInput<typeof SchemaDelete>, data, t) {
         t.failure(`Failed to delete ${args.service}`);
-        t.line(Output.schemaErrorsText(data.errors));
+        t.line(Output.Types.schemaErrorsText(data.errors));
       },
     }),
   ];
