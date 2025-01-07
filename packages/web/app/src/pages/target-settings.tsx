@@ -455,6 +455,7 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
         inputErrors {
           percentage
           period
+          requestCount
         }
       }
     }
