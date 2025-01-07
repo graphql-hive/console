@@ -5,7 +5,7 @@ import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
-import { z } from 'zod';
+import { number, z } from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SchemaEditor } from '@/components/schema-editor';
 import { CDNAccessTokens } from '@/components/target/settings/cdn-access-tokens';
@@ -560,8 +560,20 @@ const ConditionalBreakingChanges = (props: {
           projectSlug: props.projectSlug,
           targetSlug: props.targetSlug,
           ...values,
-          requestCount: values.requestCount ?? 1,
-          percentage: values.percentage ?? 0,
+          /**
+           * In case the input gets messed up, fallback to default values in cases
+           * where it won't matter based on the selected formula.
+           */
+          requestCount:
+            values.breakingChangeFormula === BreakingChangeFormula.Percentage &&
+            (typeof values.requestCount !== 'number' || values.requestCount < 1)
+              ? 1
+              : values.requestCount,
+          percentage:
+            values.breakingChangeFormula === BreakingChangeFormula.RequestCount &&
+            (typeof values.percentage !== 'number' || values.percentage < 0)
+              ? 0
+              : values.percentage,
         },
       }).then(result => {
         if (result.error || result.data?.updateTargetValidationSettings.error) {
@@ -645,13 +657,16 @@ const ConditionalBreakingChanges = (props: {
                 </RadioGroupItem>
                 <Input
                   name="percentage"
-                  onChange={handleChange}
+                  onChange={async event => {
+                    const value = Number(event.target.value);
+                    if (!Number.isNaN(value)) {
+                      await setFieldValue('percentage', value < 0 ? 0 : value, true);
+                    }
+                  }}
                   onBlur={handleBlur}
                   value={values.percentage}
                   disabled={isSubmitting}
                   type="number"
-                  min="0"
-                  max="100"
                   step="0.01"
                   className="mx-2 !inline-flex w-16 text-center"
                 />
@@ -669,18 +684,16 @@ const ConditionalBreakingChanges = (props: {
                 </RadioGroupItem>
                 <Input
                   name="requestCount"
-                  onChange={handleChange}
-                  onBlur={async event => {
-                    handleBlur(event);
+                  onChange={async event => {
                     const value = Math.round(Number(event.target.value));
                     if (!Number.isNaN(value)) {
-                      await setFieldValue('requestCount', value, true);
+                      await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
                     }
                   }}
+                  onBlur={handleBlur}
                   value={values.requestCount}
                   disabled={isSubmitting}
                   type="number"
-                  min="1"
                   step="1"
                   className="mx-2 !inline-flex w-16 text-center"
                 />
