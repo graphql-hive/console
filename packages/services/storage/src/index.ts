@@ -361,6 +361,8 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_request_count'
+      | 'validation_breaking_change_formula'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -370,6 +372,8 @@ export async function createStorage(
         enabled: row.validation_enabled,
         percentage: row.validation_percentage,
         period: row.validation_period,
+        requestCount: row.validation_request_count ?? 1,
+        breakingChangeFormula: row.validation_breaking_change_formula ?? 'PERCENTAGE',
         targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
@@ -1813,6 +1817,8 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_request_count'
+          | 'validation_breaking_change_formula'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1822,6 +1828,8 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_request_count,
+          t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)

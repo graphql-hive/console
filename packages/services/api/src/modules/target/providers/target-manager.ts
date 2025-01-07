@@ -225,15 +225,7 @@ export class TargetManager {
       },
     });
 
-    const settings = await this.storage.getTargetSettings(selector);
-    return {
-      ...settings,
-      validation: {
-        ...settings.validation,
-        breakingChangeFormula: settings.validation.breakingChangeFormula ?? 'PERCENTAGE',
-        requestCount: settings.validation.requestCount ?? 1,
-      },
-    };
+    return this.storage.getTargetSettings(selector);
   }
 
   async setTargetValidation(
