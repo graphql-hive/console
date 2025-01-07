@@ -80,8 +80,14 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     }),
   };
   static output = [
-    Output.failure('FailureOperationsCheckNoSchemaFound', { data: {} }),
-    Output.success('SuccessOperationsCheckNoOperationsFound', { data: {} }),
+    Output.failure('FailureOperationsCheckNoSchemaFound', {
+      data: {},
+      text: (_, __, t) => t.failure('Could not find a published schema.'),
+    }),
+    Output.success('SuccessOperationsCheckNoOperationsFound', {
+      data: {},
+      text: (_, __, t) => t.info('No operations found'),
+    }),
     Output.success('SuccessOperationsCheck', {
       data: {
         countTotal: T.Integer({ minimum: 0 }),
@@ -109,6 +115,19 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       text(_, data, t) {
         if (data.invalidOperations.length === 0) {
           t.success(`All operations are valid (${data.countTotal})`);
+        } else {
+          t.header('Summary');
+          t.line(`Total: ${data.countTotal}`);
+          t.line(`Invalid: ${data.countInvalid} (${Math.floor((data.countInvalid / data.countTotal) * 100)}%)`); // prettier-ignore
+          t.line('');
+          t.header('Details');
+          data.invalidOperations.forEach(doc => {
+            t.failure(doc.source.name);
+            doc.errors.forEach(e => {
+              t.line(` - ${Texture.bolderize(e.message)}`);
+            });
+            t.line('');
+          });
         }
       },
     }),
@@ -119,6 +138,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
     await this.require(flags);
 
+    const file = args.file;
     const endpoint = this.ensure({
       key: 'registry.endpoint',
       args: flags,
@@ -136,8 +156,6 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     const graphqlTag = flags.graphqlTag;
     const globalGraphqlTag = flags.globalGraphqlTag;
 
-    const file: string = args.file;
-
     const operations = await loadOperations(file, {
       normalize: false,
       pluckModules: graphqlTag?.map(tag => {
@@ -151,23 +169,16 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     });
 
     if (operations.length === 0) {
-      const message = 'No operations found';
-      this.logInfo(message);
       return this.success({
         type: 'SuccessOperationsCheckNoOperationsFound',
       });
     }
 
-    const result = await this.registryApi(endpoint, accessToken)
-      .request({
-        operation: fetchLatestVersionQuery,
-      })
-      .then(_ => _.latestValidVersion);
-
-    const sdl = result?.sdl;
+    const sdl = await this.registryApi(endpoint, accessToken)
+      .request({ operation: fetchLatestVersionQuery })
+      .then(_ => _.latestValidVersion?.sdl);
 
     if (!sdl) {
-      this.logFailure('Could not find a published schema.');
       return this.failureEnvelope({
         suggestions: ['Publish a valid schema first.'],
         data: {
@@ -203,56 +214,33 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     );
 
     const operationsWithErrors = invalidOperations.filter(o => o.errors.length > 0);
-
-    if (operationsWithErrors.length) {
-      Texture.header('Summary');
-      this.log(
-        [
-          `Total: ${operations.length}`,
-          `Invalid: ${operationsWithErrors.length} (${Math.floor(
-            (operationsWithErrors.length / operations.length) * 100,
-          )}%)`,
-          '',
-        ].join('\n'),
-      );
-
-      Texture.header('Details');
-
-      operationsWithErrors.forEach(doc => {
-        this.logFailure(doc.source.name);
-        doc.errors.forEach(e => {
-          this.log(` - ${Texture.bolderize(e.message)}`);
-        });
-        this.log('');
-      });
-
-      process.exitCode = 1;
-    }
-
-    return this.success({
-      type: 'SuccessOperationsCheck',
-      countTotal: operations.length,
-      countInvalid: operationsWithErrors.length,
-      countValid: operations.length - operationsWithErrors.length,
-      invalidOperations: operationsWithErrors.map(o => {
-        return {
-          source: {
-            name: o.source.name,
-          },
-          errors: o.errors.map(e => {
-            return {
-              message: e.message,
-              locations:
-                e.locations?.map(l => {
-                  return {
-                    line: l.line,
-                    column: l.column,
-                  };
-                }) ?? [],
-            };
-          }),
-        };
-      }),
+    return this.successEnvelope({
+      exitCode: operationsWithErrors.length > 0 ? 1 : 0,
+      data: {
+        type: 'SuccessOperationsCheck',
+        countTotal: operations.length,
+        countInvalid: operationsWithErrors.length,
+        countValid: operations.length - operationsWithErrors.length,
+        invalidOperations: operationsWithErrors.map(o => {
+          return {
+            source: {
+              name: o.source.name,
+            },
+            errors: o.errors.map(e => {
+              return {
+                message: e.message,
+                locations:
+                  e.locations?.map(l => {
+                    return {
+                      line: l.line,
+                      column: l.column,
+                    };
+                  }) ?? [],
+              };
+            }),
+          };
+        }),
+      },
     });
   }
 }

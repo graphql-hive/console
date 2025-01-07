@@ -61,6 +61,10 @@ export interface Builder {
    */
   line: (value?: string | Builder) => Builder;
   /**
+   * Add a header line.
+   */
+  header: (value: string) => Builder;
+  /**
    * Add a "success" line.
    */
   success: (...values: unknown[]) => Builder;
@@ -104,6 +108,10 @@ export const createBuilder = (): Builder => {
       } else {
         state.value = state.value + value.state.value;
       }
+      return builder;
+    },
+    header: value => {
+      state.value = state.value + header(value);
       return builder;
     },
     indent: value => {
