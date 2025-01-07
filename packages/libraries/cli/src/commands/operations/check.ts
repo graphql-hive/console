@@ -1,6 +1,6 @@
-import { buildSchema, GraphQLError, Source } from 'graphql';
-import { InvalidDocument, validate } from '@graphql-inspector/core';
-import { Args, Flags, ux } from '@oclif/core';
+import { buildSchema, Source } from 'graphql';
+import { validate } from '@graphql-inspector/core';
+import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
@@ -204,10 +204,8 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
     const operationsWithErrors = invalidOperations.filter(o => o.errors.length > 0);
 
-    // todo migrate text output to data type text formatter.
-    // We just need a migration away from the anyways-deprecated ux.styledHeader function.
     if (operationsWithErrors.length) {
-      ux.styledHeader('Summary');
+      Texture.header('Summary');
       this.log(
         [
           `Total: ${operations.length}`,
@@ -218,9 +216,16 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         ].join('\n'),
       );
 
-      ux.styledHeader('Details');
+      Texture.header('Details');
 
-      this.printInvalidDocuments(operationsWithErrors);
+      operationsWithErrors.forEach(doc => {
+        this.logFailure(doc.source.name);
+        doc.errors.forEach(e => {
+          this.log(` - ${Texture.bolderize(e.message)}`);
+        });
+        this.log('');
+      });
+
       process.exitCode = 1;
     }
 
@@ -249,19 +254,5 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         };
       }),
     });
-  }
-
-  private printInvalidDocuments(invalidDocuments: InvalidDocument[]): void {
-    invalidDocuments.forEach(doc => {
-      this.renderErrors(doc.source.name, doc.errors);
-    });
-  }
-
-  private renderErrors(sourceName: string, errors: GraphQLError[]) {
-    this.logFailure(sourceName);
-    errors.forEach(e => {
-      this.log(` - ${Texture.bolderize(e.message)}`);
-    });
-    this.log('');
   }
 }

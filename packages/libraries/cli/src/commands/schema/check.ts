@@ -321,15 +321,15 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     }
 
     if (result.__typename === 'SchemaCheckError') {
-      if (!forceSafe) {
-        process.exitCode = 1;
-      }
-      return this.success({
-        type: 'FailureSchemaCheck',
-        errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
-        warnings: Fragments.SchemaWarningConnection.toSchemaOutput(result.warnings),
-        changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
-        url: result.schemaCheck?.webUrl ?? null,
+      return this.successEnvelope({
+        exitCode: forceSafe ? 0 : 1,
+        data: {
+          type: 'FailureSchemaCheck',
+          errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
+          warnings: Fragments.SchemaWarningConnection.toSchemaOutput(result.warnings),
+          changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
+          url: result.schemaCheck?.webUrl ?? null,
+        },
       });
     }
 

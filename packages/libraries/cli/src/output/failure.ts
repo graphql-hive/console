@@ -7,6 +7,7 @@ export const FailureBase = T.Object({
   type: T.Literal('failure'),
   reference: T.Nullable(T.String()),
   suggestions: T.Array(T.String()),
+  exitCode: T.Optional(T.Number()),
 });
 export type FailureBase = T.Static<typeof FailureBase>;
 

@@ -173,8 +173,8 @@ export default class Whoami extends Command<typeof Whoami> {
     }
 
     if (result.__typename === 'TokenNotFoundError') {
-      process.exitCode = 0;
       return this.failureEnvelope({
+        exitCode: 0,
         suggestions: [
           `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,
         ],

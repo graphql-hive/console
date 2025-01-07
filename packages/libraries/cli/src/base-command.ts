@@ -90,6 +90,14 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     const schemaViolationMessage = `Whoops. This Hive CLI command tried to output a value that violates its own schema. This should never happen. Please report this error to the Hive team at https://github.com/graphql-hive/console/issues/new.`;
 
     const resultUnparsed = await this.runResult();
+
+    /**
+     * 1. Find the Output Data Type defined for this
+     *    command that corresponds to the run result data.
+     * 2. Then validate the result against its schema.
+     */
+
+    // 1
     // @ts-expect-error fixme
     const resultDataTypeName = resultUnparsed.data.type;
     const dataType = thisClass.output.find(
@@ -105,7 +113,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         },
       });
     }
-
+    // 2
     const errorsIterator = T.Value.Value.Errors(dataType.schema, resultUnparsed);
     const materializedErrors = T.Value.MaterializeValueErrorIterator(errorsIterator);
     if (materializedErrors.length > 0) {
@@ -123,10 +131,14 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
       });
     }
 
-    // Should never throw because we checked for errors above.
+    /**
+     * Should never throw because we checked for errors above.
+     */
     const result = T.Value.Parse(dataType.schema, resultUnparsed);
 
-    // Data types can optionally bundle a textual representation of their data.
+    /**
+     * Data types can optionally bundle a textual representation of their data.
+     */
     if (dataType.text) {
       const textureBuilder = Texture.createBuilder();
       const dataTypeTextInit = dataType.text(
@@ -138,9 +150,9 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         typeof dataTypeTextInit === 'string'
           ? dataTypeTextInit
           : dataTypeTextInit === undefined
-            ? // This pattern designed for user relying on mutated state of the given Tex.Builder.
+            ? // Author returned nothing, implying they are relying on Texture.Builder instance mutation.
               textureBuilder.state.value
-            : // They returned a Tex.Builder instance.
+            : // Author explicitly returned a Texture.Builder instance.
               dataTypeTextInit.state.value;
 
       // `this.log` adds a newline, so remove one from text to avoid undesired extra trailing space.
@@ -148,7 +160,15 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     /**
-     * OClif outputs returned values as JSON.
+     * Results can specify the process exit code that should be used.
+     * @see https://github.com/oclif/core/discussions/1270#discussioncomment-11750833
+     */
+    if (typeof result.exitCode === 'number') {
+      process.exitCode = result.exitCode;
+    }
+
+    /**
+      OClif outputs returned values as JSON.
      */
     if (Output.isSuccess(result as any)) {
       return result as any;
@@ -156,10 +176,11 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
     /**
      * OClif supports converting thrown errors into JSON.
-     *
-     * OClif will run {@link BaseCommand.toErrorJson} which
+     * It will run {@link BaseCommand.toErrorJson} which
      * allows us to convert thrown values into JSON.
-     * We throw a CLIFailure which will be specially handled it.
+     *
+     * We throw a CLIFailure which will be specially handled by our
+     * {@link BaseCommand.toErrorJson}.
      */
     throw new Errors.Failure({
       // @ts-expect-error fixme

@@ -5,6 +5,7 @@ import { DataType } from './output-data-type';
 
 export const SuccessBase = T.Object({
   type: T.Literal('success', { default: 'success' }),
+  exitCode: T.Optional(T.Number()),
 });
 export type SuccessBase = T.Static<typeof SuccessBase>;
 

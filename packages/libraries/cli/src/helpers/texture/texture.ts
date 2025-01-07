@@ -9,6 +9,8 @@ export const indent = space.repeat(3);
 
 export const newline = '\n';
 
+export const header = (value: string) => colors.dim('=== ') + colors.bold(value) + newline;
+
 export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
 export const trimEnd = (value: string) => value.replace(/\s+$/g, '');

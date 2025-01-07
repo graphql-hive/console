@@ -8,6 +8,9 @@
           "const": "success",
           "type": "string"
         },
+        "exitCode": {
+          "type": "number"
+        },
         "data": {
           "type": "object",
           "properties": {
@@ -44,6 +47,9 @@
           "default": "success",
           "const": "success",
           "type": "string"
+        },
+        "exitCode": {
+          "type": "number"
         },
         "data": {
           "type": "object",
@@ -96,6 +102,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "exitCode": {
+          "type": "number"
         },
         "data": {
           "type": "object",

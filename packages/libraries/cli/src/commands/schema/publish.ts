@@ -431,14 +431,14 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }
 
     if (result.__typename === 'SchemaPublishError') {
-      if (!flags.force) {
-        process.exitCode = 1;
-      }
-      return this.success({
-        type: 'FailureSchemaPublish',
-        changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
-        errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
-        url: result.linkToWebsite ?? null,
+      return this.successEnvelope({
+        exitCode: flags.force ? 0 : 1,
+        data: {
+          type: 'FailureSchemaPublish',
+          changes: Fragments.SchemaChangeConnection.toSchemaOutput(result.changes),
+          errors: Fragments.SchemaErrorConnection.toSchemaOutput(result.errors),
+          url: result.linkToWebsite ?? null,
+        },
       });
     }
 
