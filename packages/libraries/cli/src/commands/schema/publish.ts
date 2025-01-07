@@ -6,6 +6,7 @@ import Command from '../../base-command';
 import { Fragments } from '../../fragments/__';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { orEnvar } from '../../helpers/env';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { casesExhausted } from '../../helpers/general';
 import { gitInfo } from '../../helpers/git';
@@ -296,16 +297,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     const metadata = this.resolveMetadata(flags.metadata);
     const usesGitHubApp = flags.github;
 
-    let commit: string | undefined | null = this.maybe({
-      key: 'commit',
-      args: flags,
-      env: 'HIVE_COMMIT',
-    });
-    let author: string | undefined | null = this.maybe({
-      key: 'author',
-      args: flags,
-      env: 'HIVE_AUTHOR',
-    });
+    let commit = orEnvar(flags.commit, 'HIVE_COMMIT');
+    let author = orEnvar(flags.author, 'HIVE_AUTHOR');
 
     let gitHub: null | {
       repository: string;

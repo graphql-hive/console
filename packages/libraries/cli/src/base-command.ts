@@ -265,28 +265,6 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     this.log(Texture.warning(...args).trim());
   }
 
-  maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
-    key,
-    env,
-    args,
-  }: {
-    key: TKey;
-    env: string;
-    args: TArgs;
-  }) {
-    if (args[key] != null) {
-      return args[key];
-    }
-
-    // eslint-disable-next-line no-process-env
-    if (env && process.env[env]) {
-      // eslint-disable-next-line no-process-env
-      return process.env[env];
-    }
-
-    return undefined;
-  }
-
   /**
    * Get a value from arguments or flags first, then from env variables,
    * then fallback to config.
@@ -531,12 +509,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     this.error(JSON.stringify(error));
   }
 
-  async require<
-    TFlags extends {
-      require: string[];
-      [key: string]: any;
-    },
-  >(flags: TFlags) {
+  async require<$Flags extends { require?: string[] }>(flags: $Flags) {
     if (flags.require && flags.require.length > 0) {
       await Promise.all(
         flags.require.map(mod => import(require.resolve(mod, { paths: [process.cwd()] }))),
