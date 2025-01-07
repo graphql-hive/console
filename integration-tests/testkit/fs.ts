@@ -3,7 +3,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export function tmpFile(extension: string) {
+export interface TmpFile {
+  filepath: string;
+  read(): Promise<string>;
+}
+
+export function tmpFile(extension: string): TmpFile {
   const dir = tmpdir();
   const fileName = randomUUID();
   const filepath = join(dir, `${fileName}.${extension}`);

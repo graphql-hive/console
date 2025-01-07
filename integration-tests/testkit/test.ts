@@ -5,10 +5,12 @@
 
 import { test as testBase } from 'vitest';
 import { CLI, createCLI } from './cli';
+import { TmpFile, tmpFile } from './fs';
 import { ProjectType } from './gql/graphql';
 import { initSeed, OrgSeed, OwnerSeed, ProjectSeed, Seed, TargetAccessTokenSeed } from './seed';
 
 interface Context {
+  sdlFile: TmpFile;
   seed: Seed;
   owner: OwnerSeed;
   org: OrgSeed;
@@ -33,6 +35,10 @@ interface Context {
 }
 
 export const test = testBase.extend<Context>({
+  sdlFile: async ({}, use) => {
+    const sdlFile = tmpFile('graphql');
+    await use(sdlFile);
+  },
   seed: async ({}, use) => {
     const seed = await initSeed();
     await use(seed);

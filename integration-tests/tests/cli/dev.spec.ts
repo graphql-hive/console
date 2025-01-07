@@ -1,9 +1,11 @@
 /* eslint-disable no-process-env */
-import { tmpFile } from '../../testkit/fs';
 import { test } from '../../testkit/test';
 
 describe('dev', () => {
-  test('composes only the locally provided service', async ({ cliForProjectFederation: cli }) => {
+  test('composes only the locally provided service', async ({
+    sdlFile,
+    cliForProjectFederation: cli,
+  }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -11,7 +13,6 @@ describe('dev', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: false,
       services: [
@@ -21,12 +22,12 @@ describe('dev', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: sdlFile.filepath,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
-    await expect(supergraph.read()).resolves.not.toMatch('http://localhost/foo');
+    await expect(cmd).resolves.toMatch(sdlFile.filepath);
+    await expect(sdlFile.read()).resolves.toMatch('http://localhost/bar');
+    await expect(sdlFile.read()).resolves.not.toMatch('http://localhost/foo');
   });
 });
 
@@ -61,7 +62,7 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError(/Only Federation projects are supported/);
   });
 
-  test('adds a service', async ({ cliForProjectFederation: cli }) => {
+  test('adds a service', async ({ sdlFile, cliForProjectFederation: cli }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -69,7 +70,6 @@ describe('dev --remote', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -79,14 +79,14 @@ describe('dev --remote', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: sdlFile.filepath,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+    await expect(cmd).resolves.toMatch(sdlFile.filepath);
+    await expect(sdlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('replaces a service', async ({ cliForProjectFederation: cli }) => {
+  test('replaces a service', async ({ sdlFile, cliForProjectFederation: cli }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -101,7 +101,6 @@ describe('dev --remote', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -111,14 +110,15 @@ describe('dev --remote', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: sdlFile.filepath,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+    await expect(cmd).resolves.toMatch(sdlFile.filepath);
+    await expect(sdlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
   test('uses latest composable version by default', async ({
+    sdlFile,
     org,
     projectFederation: project,
     cliForProjectFederation: cli,
@@ -164,7 +164,6 @@ describe('dev --remote', () => {
       expect: 'latest',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -185,16 +184,17 @@ describe('dev --remote', () => {
           `,
         },
       ],
-      write: supergraph.filepath,
+      write: sdlFile.filepath,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    const content = await supergraph.read();
+    await expect(cmd).resolves.toMatch(sdlFile.filepath);
+    const content = await sdlFile.read();
     expect(content).not.toMatch('http://localhost/bar');
     expect(content).toMatch('http://localhost/baz');
   });
 
   test('uses latest version when requested', async ({
+    sdlFile,
     org,
     projectFederation: project,
     cliForProjectFederation: cli,
@@ -240,7 +240,6 @@ describe('dev --remote', () => {
       expect: 'latest',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       useLatestVersion: true,
@@ -262,7 +261,7 @@ describe('dev --remote', () => {
           `,
         },
       ],
-      write: supergraph.filepath,
+      write: sdlFile.filepath,
     });
 
     // The command should fail because the latest version contains a non-shareable field and we don't override the corrupted subgraph
