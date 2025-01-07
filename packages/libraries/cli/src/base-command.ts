@@ -75,7 +75,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    *
    * By default this command runs {@link BaseCommand.runResult}, having logic to handle its return value.
    */
-  async run(): Promise<void | Output.Result.SuccessGeneric> {
+  async run(): Promise<void | Output.Result.Success> {
     const thisClass = this.constructor as typeof BaseCommand;
 
     if (this.isShowOutputSchemaJson) {
@@ -210,7 +210,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * Note: You must specify your command's output type in {@link BaseCommand.output} to take advantage of this method.
    */
   async runResult(): Promise<
-    Output.InferSuccessResult<GetOutput<$Command>> | Output.InferFailureResult<GetOutput<$Command>>
+    | Output.InferSuccessResult<GetOutputDefinition<$Command>>
+    | Output.InferFailureResult<GetOutputDefinition<$Command>>
   > {
     throw new Error('Not implemented');
   }
@@ -220,8 +221,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * See that method for more details.
    */
   success(
-    data: Output.InferSuccessResult<GetOutput<$Command>>['data'],
-  ): Output.InferSuccessResult<GetOutput<$Command>> {
+    data: Output.InferSuccessResult<GetOutputDefinition<$Command>>['data'],
+  ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
     return this.successEnvelope({ data } as any) as any;
   }
 
@@ -230,8 +231,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * adheres to the type specified by your command's {@link BaseCommand.output}.
    */
   successEnvelope(
-    init: Output.InferSuccessResultInit<GetOutput<$Command>>,
-  ): Output.InferSuccessResult<GetOutput<$Command>> {
+    init: Output.InferSuccessResultInit<GetOutputDefinition<$Command>>,
+  ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
     return init as any;
   }
 
@@ -240,8 +241,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * See that method for more details.
    */
   failure(
-    data: Output.InferFailureResult<GetOutput<$Command>>['data'],
-  ): Output.InferFailureResult<GetOutput<$Command>> {
+    data: Output.InferFailureResult<GetOutputDefinition<$Command>>['data'],
+  ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
     return this.failureEnvelope({ data } as any) as any;
   }
 
@@ -254,8 +255,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * When you return this,
    */
   failureEnvelope(
-    init: Output.InferFailureResultInit<GetOutput<$Command>>,
-  ): Output.InferFailureResult<GetOutput<$Command>> {
+    init: Output.InferFailureResultInit<GetOutputDefinition<$Command>>,
+  ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
     return init as any;
   }
 
@@ -483,7 +484,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     if (value instanceof Errors.FailedFlagValidationError) {
-      return T.Value.Default(Output.Result.FailureGeneric, {
+      return Output.Result.createFailure({
         suggestions: value.suggestions,
         data: {
           type: 'FailureUserInput',
@@ -494,7 +495,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     if (value instanceof Errors.RequiredArgsError) {
-      return T.Value.Default(Output.Result.FailureGeneric, {
+      return Output.Result.createFailure({
         suggestions: value.suggestions,
         data: {
           type: 'FailureUserInput',
@@ -505,7 +506,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     if (value instanceof Errors.CLIError) {
-      return T.Value.Default(Output.Result.FailureGeneric, {
+      return Output.Result.createFailure({
         suggestions: value.suggestions,
         data: {
           type: 'Failure',
@@ -515,8 +516,11 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     if (value instanceof Error) {
-      return T.Value.Default(Output.Result.FailureGeneric, {
-        message: value.message,
+      return Output.Result.createFailure({
+        data: {
+          type: 'Failure',
+          message: value.message,
+        },
       });
     }
 
@@ -584,7 +588,7 @@ type InferArgs<$CommandClass extends typeof Command> =
   Interfaces.InferredArgs<$CommandClass['args']>;
 
 // prettier-ignore
-type GetOutput<$CommandClass extends typeof Command> =
+type GetOutputDefinition<$CommandClass extends typeof Command> =
   'output' extends keyof $CommandClass
     ? $CommandClass['output'] extends Output.Definition[]
       ? $CommandClass['output'][number]

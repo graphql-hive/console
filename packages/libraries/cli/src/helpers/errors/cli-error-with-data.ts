@@ -1,20 +1,19 @@
 import { Errors } from '@oclif/core';
 import { Output } from '../../output/__';
-import { T } from '../typebox/__';
 
 export class Failure extends Errors.CLIError {
-  public envelope: Output.Result.FailureGeneric;
+  public envelope: Output.Result.Failure;
   constructor(args: {
     message: string;
     exitCode?: number;
     code?: string;
     ref?: string | undefined;
     suggestions?: string[];
-    data?: Partial<Output.Result.FailureGeneric>['data'];
+    data?: Partial<Output.Result.Failure>['data'];
   }) {
-    const envelope = T.Value.Default(Output.Result.FailureGeneric, {
+    const envelope = Output.Result.createFailure({
       data: args.data,
-    }) as Output.Result.FailureGeneric;
+    });
 
     super(args.message, {
       exit: args.exitCode,

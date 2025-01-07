@@ -1,19 +1,17 @@
-import { OptionalizePropertyUnsafe, Simplify } from '../helpers/general';
 import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
-import { FailureBase } from './result/failure';
-import { SuccessBase } from './result/success';
+import { Result } from './_';
 
 export interface Definition<$Schema extends T.TObject = T.TObject> {
   schema: $Schema;
   text?: TextBuilder;
 }
 
-export const defineSuccess: DefinerForBase<typeof SuccessBase> = (typeName, config) => {
+export const defineSuccess: DefinerForBase<typeof Result.SuccessBase> = (typeName, config) => {
   return {
     text: config.text,
     schema: T.Composite([
-      SuccessBase,
+      Result.SuccessBase,
       T.Object({
         data: T.Composite([
           T.Object({ type: T.Literal(typeName, { default: typeName }) }),
@@ -24,11 +22,11 @@ export const defineSuccess: DefinerForBase<typeof SuccessBase> = (typeName, conf
   } as any;
 };
 
-export const defineFailure: DefinerForBase<typeof FailureBase> = (typeName, config) => {
+export const defineFailure: DefinerForBase<typeof Result.FailureBase> = (typeName, config) => {
   return {
     text: config.text,
     schema: T.Composite([
-      FailureBase,
+      Result.FailureBase,
       T.Object({
         data: T.Composite([
           T.Object({ type: T.Literal(typeName, { default: typeName }) }),
@@ -104,23 +102,18 @@ interface TextBuilder<$Data = any> {
   ): void | string | Texture.Builder;
 }
 
-export type InferSuccessResultInit<$DataType extends Definition> = Simplify<
-  OptionalizePropertyUnsafe<Omit<InferSuccessResult<$DataType>, 'type'>, 'data' | 'warnings'>
+export type InferSuccessResultInit<$DataType extends Definition> = Result.InferSuccessInit<
+  $DataType['schema']
 >;
 
-export type InferSuccessResult<$DataType extends Definition> = Extract<
-  T.Static<$DataType['schema']>,
-  { type: 'success' }
+export type InferSuccessResult<$DataType extends Definition> = Result.InferSuccess<
+  $DataType['schema']
 >;
 
-export type InferFailureResultInit<$DataType extends Definition> = Simplify<
-  OptionalizePropertyUnsafe<
-    Omit<InferFailureResult<$DataType>, 'type'>,
-    'suggestions' | 'reference' | 'warnings'
-  >
+export type InferFailureResultInit<$DataType extends Definition> = Result.InferFailureInit<
+  $DataType['schema']
 >;
 
-export type InferFailureResult<$DataType extends Definition> = Extract<
-  T.Static<$DataType['schema']>,
-  { type: 'failure' }
+export type InferFailureResult<$DataType extends Definition> = Result.InferFailure<
+  $DataType['schema']
 >;

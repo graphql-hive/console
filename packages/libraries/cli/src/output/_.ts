@@ -1,8 +1,4 @@
-import { FailureGeneric } from './result/failure';
-import { SuccessGeneric } from './result/success';
-
-export type Result = FailureGeneric | SuccessGeneric;
-export * as Result from './result/_';
+export * from './result/__';
 export {
   defineFailure,
   defineSuccess,
