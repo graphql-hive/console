@@ -3,7 +3,7 @@ import { tmpFile } from '../../testkit/fs';
 import { test } from '../../testkit/test';
 
 describe('dev', () => {
-  test('composes only the locally provided service', async ({ cliFederation: cli }) => {
+  test('composes only the locally provided service', async ({ cliForProjectFederation: cli }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -31,7 +31,7 @@ describe('dev', () => {
 });
 
 describe('dev --remote', () => {
-  test('not available for SINGLE project', async ({ cliSingle: cli }) => {
+  test('not available for SINGLE project', async ({ cliForProjectSingle: cli }) => {
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -61,7 +61,7 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError(/Only Federation projects are supported/);
   });
 
-  test('adds a service', async ({ cliFederation: cli }) => {
+  test('adds a service', async ({ cliForProjectFederation: cli }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -86,7 +86,7 @@ describe('dev --remote', () => {
     await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('replaces a service', async ({ cliFederation: cli }) => {
+  test('replaces a service', async ({ cliForProjectFederation: cli }) => {
     await cli.publish({
       sdl: 'type Query { foo: String }',
       serviceName: 'foo',
@@ -121,7 +121,7 @@ describe('dev --remote', () => {
   test('uses latest composable version by default', async ({
     org,
     projectFederation: project,
-    cliFederation: cli,
+    cliForProjectFederation: cli,
   }) => {
     // Once we ship native federation v2 composition by default, we can remove these two lines
     await org.setFeatureFlag('compareToPreviousComposableVersion', true);
@@ -197,7 +197,7 @@ describe('dev --remote', () => {
   test('uses latest version when requested', async ({
     org,
     projectFederation: project,
-    cliFederation: cli,
+    cliForProjectFederation: cli,
   }) => {
     // Once we ship native federation v2 composition by default, we can remove these two lines
     await org.setFeatureFlag('compareToPreviousComposableVersion', true);

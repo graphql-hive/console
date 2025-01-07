@@ -16,20 +16,20 @@ interface Context {
   // "single" branch
   //
   projectSingle: ProjectSeed;
-  targetAccessTokenSingle: TargetAccessTokenSeed;
-  cliSingle: CLI;
+  tokenForProjectSingle: TargetAccessTokenSeed;
+  cliForProjectSingle: CLI;
   //
   // "federation" branch
   //
   projectFederation: ProjectSeed;
-  targetAccessTokenFederation: TargetAccessTokenSeed;
-  cliFederation: CLI;
+  tokenForProjectFederation: TargetAccessTokenSeed;
+  cliForProjectFederation: CLI;
   //
   // "stitching" branch
   //
   projectStitching: ProjectSeed;
-  targetAccessTokenStitching: TargetAccessTokenSeed;
-  cliStitching: CLI;
+  tokenForProjectStitching: TargetAccessTokenSeed;
+  cliForProjectStitching: CLI;
 }
 
 export const test = testBase.extend<Context>({
@@ -52,14 +52,14 @@ export const test = testBase.extend<Context>({
     const project = await org.createProject(ProjectType.Single);
     await use(project);
   },
-  targetAccessTokenSingle: async ({ projectSingle }, use) => {
-    const targetAccessToken = await projectSingle.createTargetAccessToken({});
-    await use(targetAccessToken);
+  tokenForProjectSingle: async ({ projectSingle }, use) => {
+    const token = await projectSingle.createTargetAccessToken({});
+    await use(token);
   },
-  cliSingle: async ({ targetAccessTokenSingle }, use) => {
+  cliForProjectSingle: async ({ tokenForProjectSingle }, use) => {
     const cli = createCLI({
-      readwrite: targetAccessTokenSingle.secret,
-      readonly: targetAccessTokenSingle.secret,
+      readwrite: tokenForProjectSingle.secret,
+      readonly: tokenForProjectSingle.secret,
     });
     await use(cli);
   },
@@ -70,14 +70,14 @@ export const test = testBase.extend<Context>({
     const project = await org.createProject(ProjectType.Federation);
     await use(project);
   },
-  targetAccessTokenFederation: async ({ projectFederation }, use) => {
-    const targetAccessToken = await projectFederation.createTargetAccessToken({});
-    await use(targetAccessToken);
+  tokenForProjectFederation: async ({ projectFederation }, use) => {
+    const token = await projectFederation.createTargetAccessToken({});
+    await use(token);
   },
-  cliFederation: async ({ targetAccessTokenFederation }, use) => {
+  cliForProjectFederation: async ({ tokenForProjectFederation }, use) => {
     const cli = createCLI({
-      readwrite: targetAccessTokenFederation.secret,
-      readonly: targetAccessTokenFederation.secret,
+      readwrite: tokenForProjectFederation.secret,
+      readonly: tokenForProjectFederation.secret,
     });
     await use(cli);
   },
@@ -88,14 +88,14 @@ export const test = testBase.extend<Context>({
     const project = await org.createProject(ProjectType.Stitching);
     await use(project);
   },
-  targetAccessTokenStitching: async ({ projectStitching }, use) => {
-    const targetAccessToken = await projectStitching.createTargetAccessToken({});
-    await use(targetAccessToken);
+  tokenForProjectStitching: async ({ projectStitching }, use) => {
+    const token = await projectStitching.createTargetAccessToken({});
+    await use(token);
   },
-  cliStitching: async ({ targetAccessTokenStitching }, use) => {
+  cliForProjectStitching: async ({ tokenForProjectStitching }, use) => {
     const cli = createCLI({
-      readwrite: targetAccessTokenStitching.secret,
-      readonly: targetAccessTokenStitching.secret,
+      readwrite: tokenForProjectStitching.secret,
+      readonly: tokenForProjectStitching.secret,
     });
     await use(cli);
   },
