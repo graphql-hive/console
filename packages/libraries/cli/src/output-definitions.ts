@@ -1,19 +1,14 @@
-import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
 
 export namespace OutputDefinitions {
   export const SuccessOutputStdout = Output.defineSuccess('SuccessOutputStdout', {
-    data: {
-      content: T.String(),
-    },
+    data: Output.Types.OutputToStdout.properties,
     text(_, data) {
       return data.content;
     },
   });
+
   export const SuccessOutputFile = Output.defineSuccess('SuccessOutputFile', {
-    data: {
-      path: T.String(),
-      bytes: T.Number(),
-    },
+    data: Output.Types.OutputToFile.properties,
   });
 }

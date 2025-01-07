@@ -5,6 +5,7 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
 import { loadSchema } from '../helpers/schema';
 import { OutputDefinitions } from '../output-definitions';
+import { Output } from '../output/__';
 
 export default class Introspect extends Command<typeof Introspect> {
   static description = 'introspects a GraphQL Schema';
@@ -27,7 +28,15 @@ export default class Introspect extends Command<typeof Introspect> {
       hidden: false,
     }),
   };
-  static output = [OutputDefinitions.SuccessOutputFile, OutputDefinitions.SuccessOutputStdout];
+  static output = [
+    OutputDefinitions.SuccessOutputStdout,
+    Output.defineSuccess('SuccessOutputFile', {
+      data: Output.Types.OutputToFile.properties,
+      text(_, data, t) {
+        t.success(`Saved to ${data.path}`);
+      },
+    }),
+  ];
 
   async runResult() {
     const { flags, args } = await this.parse(Introspect);
@@ -94,7 +103,6 @@ export default class Introspect extends Command<typeof Introspect> {
         this.exit(1);
     }
 
-    this.logSuccess(`Saved to ${filepath}`);
     return this.success({
       type: 'SuccessOutputFile',
       path: filepath,

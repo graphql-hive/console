@@ -2,6 +2,7 @@ import { http, URL } from '@graphql-hive/core';
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { OutputDefinitions } from '../../output-definitions';
+import { Output } from '../../output/__';
 
 export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
   static description = 'fetch artifacts from the CDN';
@@ -21,7 +22,15 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
       description: 'whether to write to a file instead of stdout',
     }),
   };
-  static output = [OutputDefinitions.SuccessOutputFile, OutputDefinitions.SuccessOutputStdout];
+  static output = [
+    OutputDefinitions.SuccessOutputStdout,
+    Output.defineSuccess('SuccessOutputFile', {
+      data: Output.Types.OutputToFile.properties,
+      text(_, data, t) {
+        t.line(`Wrote ${data.bytes} bytes to ${data.path}`);
+      },
+    }),
+  ];
 
   async runResult() {
     const { flags } = await this.parse(ArtifactsFetch);
@@ -71,7 +80,6 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
       const fs = await import('fs/promises');
       const contents = Buffer.from(await response.arrayBuffer());
       await fs.writeFile(flags.outputFile, contents);
-      this.log(`Wrote ${contents.length} bytes to ${flags.outputFile}`);
       return this.success({
         type: 'SuccessOutputFile',
         path: flags.outputFile,

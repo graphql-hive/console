@@ -6,6 +6,7 @@ import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { InferInput } from '../../helpers/oclif';
+import { T } from '../../helpers/typebox/__';
 import { OutputDefinitions } from '../../output-definitions';
 import { Output } from '../../output/__';
 
@@ -88,6 +89,14 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         t.failure(`No ${flags.type} found for action id ${args.actionId}`);
       },
     }),
+    Output.defineFailure('FailureInputWriteFileExtension', {
+      data: {
+        extension: T.String(),
+      },
+      text(_, data, t) {
+        t.failure(`Unsupported file extension ${data.extension}`);
+      },
+    }),
     OutputDefinitions.SuccessOutputFile,
     OutputDefinitions.SuccessOutputStdout,
   ];
@@ -153,18 +162,16 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }
 
     if (flags.write) {
+      const validExtensions = ['.graphql', '.gql', '.gqls', '.graphqls'];
       const filepath = resolve(process.cwd(), flags.write);
-      switch (extname(flags.write.toLowerCase())) {
-        case '.graphql':
-        case '.gql':
-        case '.gqls':
-        case '.graphqls':
-          await writeFile(filepath, schema, 'utf8');
-          break;
-        default:
-          this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
-          this.exit(1);
+      const extension = extname(flags.write.toLowerCase());
+      if (!validExtensions.includes(extension)) {
+        return this.failure({
+          type: 'FailureInputWriteFileExtension',
+          extension,
+        });
       }
+      await writeFile(filepath, schema, 'utf8');
       return this.success({
         type: 'SuccessOutputFile',
         path: filepath,

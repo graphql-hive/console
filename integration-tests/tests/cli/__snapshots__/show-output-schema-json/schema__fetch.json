@@ -178,6 +178,68 @@
       "type": "object",
       "properties": {
         "type": {
+          "default": "failure",
+          "const": "failure",
+          "type": "string"
+        },
+        "reference": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suggestions": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exitCode": {
+          "type": "number"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "default": "FailureInputWriteFileExtension",
+              "const": "FailureInputWriteFileExtension",
+              "type": "string"
+            },
+            "extension": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "extension"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "reference",
+        "suggestions",
+        "warnings",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
           "default": "success",
           "const": "success",
           "type": "string"

@@ -6,3 +6,5 @@ export * from './SchemaErrors';
 export * from './SchemaWarning';
 export * from './SchemaWarnings';
 export * from './AppDeploymentStatus';
+export * from './OutputToFile';
+export * from './OutputToStdout';
