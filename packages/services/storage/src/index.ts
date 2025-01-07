@@ -1860,6 +1860,8 @@ export async function createStorage(
               | 'validation_percentage'
               | 'validation_period'
               | 'validation_excluded_clients'
+              | 'validation_breaking_change_formula'
+              | 'validation_request_count'
             > & {
               targets: target_validation['destination_target_id'][];
             }
@@ -1878,7 +1880,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
           WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets
+          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
         `);
         }),
       ).validation;
@@ -1890,6 +1892,8 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      breakingChangeFormula,
+      requestCount,
     }) {
       return transformTargetSettings(
         await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
@@ -1918,7 +1922,7 @@ export async function createStorage(
             SET validation_percentage = ${percentage}, validation_period = ${period}, validation_excluded_clients = ${sql.array(
               excludedClients,
               'text',
-            )}
+            )} , validation_request_count = ${requestCount}, validation_breaking_change_formula = ${breakingChangeFormula}
             FROM (
               SELECT
                 it.id,
@@ -1930,7 +1934,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
           `);
         }),
       ).validation;

@@ -1,3 +1,4 @@
+import { BreakingChangeFormula } from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
 import { OrganizationManager } from '../../../organization/providers/organization-manager';
 import { IdTranslator } from '../../../shared/providers/id-translator';
@@ -24,6 +25,8 @@ export const updateTargetValidationSettings: NonNullable<
     period: z.number().min(1).max(org.monthlyRateLimit.retentionInDays).int(),
     targetIds: z.array(z.string()).min(1),
     excludedClients: z.optional(z.array(z.string())),
+    requestCount: z.number().min(1),
+    breakingChangeFormula: z.enum(Object.values(BreakingChangeFormula) as [string, ...string[]]),
   });
 
   const result = UpdateTargetValidationSettingsModel.safeParse(input);
@@ -35,6 +38,7 @@ export const updateTargetValidationSettings: NonNullable<
         inputErrors: {
           percentage: result.error.formErrors.fieldErrors.percentage?.[0],
           period: result.error.formErrors.fieldErrors.period?.[0],
+          requestCount: result.error.formErrors.fieldErrors.requestCount?.[0],
         },
       },
     };
@@ -44,6 +48,8 @@ export const updateTargetValidationSettings: NonNullable<
   await targetManager.updateTargetValidationSettings({
     period: input.period,
     percentage: input.percentage,
+    requestCount: input.requestCount ?? 1,
+    breakingChangeFormula: input.breakingChangeFormula ?? BreakingChangeFormula.Percentage,
     targetId: target,
     projectId: project,
     organizationId: organization,
