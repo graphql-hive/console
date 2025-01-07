@@ -1,6 +1,7 @@
 /** These mirror DB models from  */
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
+import { BreakingChangeFormula } from 'packages/libraries/core/src/client/__generated__/types';
 import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
@@ -1007,6 +1008,8 @@ export const ConditionalBreakingChangeMetadataModel = z.object({
   settings: z.object({
     retentionInDays: z.number(),
     percentage: z.number(),
+    requestCount: z.number().default(1),
+    breakingChangeFormula: z.enum(['PERCENTAGE', 'REQUEST_COUNT']).default('PERCENTAGE'),
     excludedClientNames: z.array(z.string()).nullable(),
     /** we keep both reference to id and name so in case target gets deleted we can still display the name */
     targets: z.array(

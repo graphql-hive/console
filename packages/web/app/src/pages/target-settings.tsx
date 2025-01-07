@@ -44,7 +44,7 @@ import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import { BreakingChangeFormula, ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { canAccessTarget, TargetAccessScope } from '@/lib/access/target';
 import { subDays } from '@/lib/date-time';
@@ -387,6 +387,8 @@ const TargetSettings_TargetValidationSettingsFragment = graphql(`
     enabled
     period
     percentage
+    requestCount
+    breakingChangeFormula
     targets {
       id
       slug
@@ -513,20 +515,20 @@ const ConditionalBreakingChanges = (props: {
     enableReinitialize: true,
     initialValues: {
       percentage: settings?.percentage || 0,
-      count: settings?.count || 1,
+      requestCount: settings?.requestCount || 1,
       period: settings?.period || 0,
-      unit: settings?.unit ?? 'percentage',
+      breakingChangeFormula: settings?.breakingChangeFormula ?? BreakingChangeFormula.Percentage,
       targetIds: settings?.targets.map(t => t.id) || [],
       excludedClients: settings?.excludedClients ?? [],
     },
     validationSchema: Yup.object().shape({
-      percentage: Yup.number().when('unit', {
-        is: 'percentage',
+      percentage: Yup.number().when('breakingChangeFormula', {
+        is: 'PERCENTAGE',
         then: schema => schema.min(0).max(100).required(),
         otherwise: schema => schema.nullable(),
       }),
-      count: Yup.number().when('unit', {
-        is: 'count',
+      requestCount: Yup.number().when('breakingChangeFormula', {
+        is: 'REQUEST_COUNT',
         then: schema => schema.min(1).required(),
         otherwise: schema => schema.nullable(),
       }),
@@ -543,7 +545,10 @@ const ConditionalBreakingChanges = (props: {
           return Number(num.toFixed(2)) === num;
         })
         .required(),
-      unit: Yup.string().oneOf(['percent', 'count']),
+      breakingChangeFormula: Yup.string().oneOf<BreakingChangeFormula>([
+        BreakingChangeFormula.Percentage,
+        BreakingChangeFormula.RequestCount,
+      ]),
       targetIds: Yup.array().of(Yup.string()).min(1),
       excludedClients: Yup.array().of(Yup.string()),
     }),
@@ -554,6 +559,8 @@ const ConditionalBreakingChanges = (props: {
           projectSlug: props.projectSlug,
           targetSlug: props.targetSlug,
           ...values,
+          requestCount: values.requestCount ?? 1,
+          percentage: values.percentage ?? 0,
         },
       }).then(result => {
         if (result.error || result.data?.updateTargetValidationSettings.error) {
@@ -619,19 +626,19 @@ const ConditionalBreakingChanges = (props: {
           <div>A schema change is considered as breaking only if it affects more than</div>
           <div className="mx-4 my-2">
             <RadioGroup
-              name="unit"
-              value={values.unit}
+              name="breakingChangeFormula"
+              value={values.breakingChangeFormula}
               onValueChange={async value => {
-                await setFieldValue('unit', value);
+                await setFieldValue('breakingChangeFormula', value);
               }}
             >
               <div>
                 <RadioGroupItem
                   id="percentage"
                   key="percentage"
-                  value="percentage"
+                  value="PERCENTAGE"
                   disabled={isSubmitting}
-                  data-cy={`target-cbc-unit-option-percentage`}
+                  data-cy="target-cbc-breakingChangeFormula-option-percentage"
                 >
                   <RadioGroupIndicator />
                 </RadioGroupItem>
@@ -651,32 +658,32 @@ const ConditionalBreakingChanges = (props: {
               </div>
               <div>
                 <RadioGroupItem
-                  id="count"
-                  key="count"
-                  value="count"
+                  id="requestCount"
+                  key="requestCount"
+                  value="REQUEST_COUNT"
                   disabled={isSubmitting}
-                  data-cy={`target-cbc-unit-option-count`}
+                  data-cy="target-cbc-breakingChangeFormula-option-requestCount"
                 >
                   <RadioGroupIndicator />
                 </RadioGroupItem>
                 <Input
-                  name="count"
+                  name="requestCount"
                   onChange={handleChange}
                   onBlur={async event => {
                     handleBlur(event);
                     const value = Math.round(Number(event.target.value));
                     if (!Number.isNaN(value)) {
-                      await setFieldValue('count', value, true);
+                      await setFieldValue('requestCount', value, true);
                     }
                   }}
-                  value={values.count}
+                  value={values.requestCount}
                   disabled={isSubmitting}
                   type="number"
                   min="1"
                   step="1"
                   className="mx-2 !inline-flex w-16 text-center"
                 />
-                <label htmlFor="count">Total Operations</label>
+                <label htmlFor="requestCount">Total Operations</label>
               </div>
             </RadioGroup>
           </div>
@@ -704,7 +711,14 @@ const ConditionalBreakingChanges = (props: {
                 {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
               </div>
             )}
-            {touched.count && errors.count && <div className="text-red-500">{errors.count}</div>}
+            {touched.requestCount && errors.requestCount && (
+              <div className="text-red-500">{errors.requestCount}</div>
+            )}
+            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.requestCount && (
+              <div className="text-red-500">
+                {mutation.data.updateTargetValidationSettings.error.inputErrors.requestCount}
+              </div>
+            )}
             {/* @todo: inputErrors */}
             {touched.period && errors.period && <div className="text-red-500">{errors.period}</div>}
             {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
