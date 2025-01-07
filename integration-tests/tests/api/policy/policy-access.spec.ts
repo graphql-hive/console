@@ -1,6 +1,7 @@
 import { ProjectType } from 'testkit/gql/graphql';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
+import { VALID_POLICY } from '../../../testkit/schema-policy';
 import { initSeed } from '../../../testkit/seed';
 
 describe('Policy Access', () => {
@@ -15,8 +16,40 @@ describe('Policy Access', () => {
       }
     `);
 
+    const mutation = graphql(`
+      mutation UpdateSchemaPolicyForProject(
+        $selector: ProjectSelectorInput!
+        $policy: SchemaPolicyInput!
+      ) {
+        updateSchemaPolicyForProject(selector: $selector, policy: $policy) {
+          error {
+            message
+          }
+          ok {
+            project {
+              id
+              schemaPolicy {
+                id
+              }
+            }
+            updatedPolicy {
+              id
+              updatedAt
+              rules {
+                rule {
+                  id
+                }
+                severity
+                configuration
+              }
+            }
+          }
+        }
+      }
+    `);
+
     test.concurrent(
-      'should successfully fetch Project.schemaPolicy if the user has access to SETTINGS',
+      'should successfully update Project.schemaPolicy if the user has access to SETTINGS',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, createProject, inviteAndJoinMember } = await createOrg();
@@ -34,6 +67,52 @@ describe('Policy Access', () => {
         });
 
         const result = await execute({
+          document: mutation,
+          variables: {
+            selector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+            },
+            policy: VALID_POLICY,
+          },
+          authToken: memberToken,
+        }).then(r => r.expectNoGraphQLErrors());
+
+        expect(result.updateSchemaPolicyForProject.ok?.updatedPolicy.id).toBeTruthy();
+      },
+    );
+
+    test.concurrent(
+      'should fail to update Project.schemaPolicy if the user lacks access to SETTINGS',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { organization, createProject, inviteAndJoinMember } = await createOrg();
+        const { project } = await createProject(ProjectType.Single);
+        const { memberToken } = await inviteAndJoinMember();
+
+        const result = await execute({
+          document: mutation,
+          variables: {
+            selector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+            },
+            policy: VALID_POLICY,
+          },
+          authToken: memberToken,
+        }).then(r => r.expectGraphQLErrors());
+      },
+    );
+
+    test.concurrent(
+      'should successfully fetch Project.schemaPolicy if the user has access to read:project',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { organization, createProject, inviteAndJoinMember } = await createOrg();
+        const { project } = await createProject(ProjectType.Single);
+        const { memberToken } = await inviteAndJoinMember();
+
+        const result = await execute({
           document: query,
           variables: {
             selector: {
@@ -45,27 +124,6 @@ describe('Policy Access', () => {
         }).then(r => r.expectNoGraphQLErrors());
 
         expect(result.project?.schemaPolicy?.id).not.toBeNull();
-      },
-    );
-
-    test.concurrent(
-      'should fail to fetch Project.schemaPolicy if the user lacks access to SETTINGS',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { organization, createProject, inviteAndJoinMember } = await createOrg();
-        const { project, target } = await createProject(ProjectType.Single);
-        const { memberToken } = await inviteAndJoinMember();
-
-        await execute({
-          document: query,
-          variables: {
-            selector: {
-              organizationSlug: organization.slug,
-              projectSlug: project.slug,
-            },
-          },
-          authToken: memberToken,
-        }).then(r => r.expectGraphQLErrors());
       },
     );
   });
@@ -82,8 +140,45 @@ describe('Policy Access', () => {
         }
       }
     `);
+    const mutation = graphql(`
+      mutation UpdateSchemaPolicyForOrganization(
+        $selector: OrganizationSelectorInput!
+        $policy: SchemaPolicyInput!
+        $allowOverrides: Boolean!
+      ) {
+        updateSchemaPolicyForOrganization(
+          selector: $selector
+          policy: $policy
+          allowOverrides: $allowOverrides
+        ) {
+          error {
+            message
+          }
+          ok {
+            organization {
+              id
+              schemaPolicy {
+                id
+              }
+            }
+            updatedPolicy {
+              id
+              allowOverrides
+              updatedAt
+              rules {
+                rule {
+                  id
+                }
+                severity
+                configuration
+              }
+            }
+          }
+        }
+      }
+    `);
     test.concurrent(
-      'should successfully fetch Organization.schemaPolicy if the user has access to SETTINGS',
+      'should successfully update Organization.schemaPolicy if the user has access to SETTINGS',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, inviteAndJoinMember } = await createOrg();
@@ -100,21 +195,47 @@ describe('Policy Access', () => {
         });
 
         const result = await execute({
-          document: query,
+          document: mutation,
           variables: {
             selector: {
               organizationSlug: organization.slug,
             },
+            policy: VALID_POLICY,
+            allowOverrides: true,
           },
           authToken: memberToken,
         }).then(r => r.expectNoGraphQLErrors());
 
-        expect(result.organization?.organization.schemaPolicy?.id).not.toBeNull();
+        expect(
+          result.updateSchemaPolicyForOrganization.ok?.organization?.schemaPolicy?.id,
+        ).not.toBeNull();
       },
     );
 
     test.concurrent(
-      'should fail to fetch Organization.schemaPolicy if the user lacks access to SETTINGS',
+      'should fail to update Organization.schemaPolicy if the user lacks access to SETTINGS',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { organization, inviteAndJoinMember } = await createOrg();
+
+        const { memberToken } = await inviteAndJoinMember();
+
+        const result = await execute({
+          document: mutation,
+          variables: {
+            selector: {
+              organizationSlug: organization.slug,
+            },
+            policy: VALID_POLICY,
+            allowOverrides: true,
+          },
+          authToken: memberToken,
+        }).then(r => r.expectGraphQLErrors());
+      },
+    );
+
+    test.concurrent(
+      'should successfully fetch Organization.schemaPolicy if the user has access to read:org',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, inviteAndJoinMember } = await createOrg();
