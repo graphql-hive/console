@@ -150,19 +150,17 @@ export const PermissionScopeItem = <
                   : false;
 
               return (
-                <>
-                  <SelectItem
-                    key={item.value}
-                    value={item.value}
-                    disabled={isDisabled}
-                    data-cy={`select-option-${item.value}`}
-                  >
-                    {item.label}
-                    {isDisabled ? (
-                      <span className="block text-xs italic">Can't downgrade</span>
-                    ) : null}
-                  </SelectItem>
-                </>
+                <SelectItem
+                  key={item.value}
+                  value={item.value}
+                  disabled={isDisabled}
+                  data-cy={`select-option-${item.value}`}
+                >
+                  {item.label}
+                  {isDisabled ? (
+                    <span className="block text-xs italic">Can't downgrade</span>
+                  ) : null}
+                </SelectItem>
               );
             })}
         </SelectContent>
