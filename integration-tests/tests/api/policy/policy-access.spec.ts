@@ -100,7 +100,10 @@ describe('Policy Access', () => {
             policy: VALID_POLICY,
           },
           authToken: memberToken,
-        }).then(r => r.expectGraphQLErrors());
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(result.updateSchemaPolicyForProject.error?.message).toBe(
+          'No access (reason: "Missing permission for performing \'schemaLinting:modifyProjectRules\' on resource")',
+        );
       },
     );
 
@@ -230,7 +233,10 @@ describe('Policy Access', () => {
             allowOverrides: true,
           },
           authToken: memberToken,
-        }).then(r => r.expectGraphQLErrors());
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(result.updateSchemaPolicyForOrganization.error?.message).toBe(
+          'No access (reason: "Missing permission for performing \'schemaLinting:modifyOrganizationRules\' on resource")',
+        );
       },
     );
 
@@ -238,10 +244,13 @@ describe('Policy Access', () => {
       'should successfully fetch Organization.schemaPolicy if the user has access to read:org',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
-        const { organization, inviteAndJoinMember } = await createOrg();
+        const { organization, inviteAndJoinMember, setOrganizationSchemaPolicy } =
+          await createOrg();
+        await setOrganizationSchemaPolicy(VALID_POLICY, true);
+
         const { memberToken } = await inviteAndJoinMember();
 
-        await execute({
+        const result = await execute({
           document: query,
           variables: {
             selector: {
@@ -249,7 +258,8 @@ describe('Policy Access', () => {
             },
           },
           authToken: memberToken,
-        }).then(r => r.expectGraphQLErrors());
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(result.organization?.organization.schemaPolicy?.id).not.toBeNull();
       },
     );
   });
