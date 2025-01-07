@@ -230,8 +230,8 @@ export class TargetManager {
       ...settings,
       validation: {
         ...settings.validation,
-        breakingChangeFormula: settings.validation.breakingChangeFormula || 'PERCENTAGE',
-        requestCount: settings.validation.requestCount || 1,
+        breakingChangeFormula: settings.validation.breakingChangeFormula ?? 'PERCENTAGE',
+        requestCount: settings.validation.requestCount ?? 1,
       },
     };
   }
