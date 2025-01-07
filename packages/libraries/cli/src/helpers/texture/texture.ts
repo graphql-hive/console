@@ -15,13 +15,15 @@ export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
 export const trimEnd = (value: string) => value.replace(/\s+$/g, '');
 
-export const bolderize = (value: string) => {
-  const findSingleQuotes = /'([^']+)'/gim;
-  const findDoubleQuotes = /"([^"]+)"/gim;
-
+/**
+ * Convert quoted text to bolded text. Quotes are stripped.
+ */
+export const boldQuotedWords = (value: string) => {
+  const singleQuotedTextRegex = /'([^']+)'/gim;
+  const doubleQuotedTextRegex = /"([^"]+)"/gim;
   return value
-    .replace(findSingleQuotes, (_: string, value: string) => colors.bold(value))
-    .replace(findDoubleQuotes, (_: string, value: string) => colors.bold(value));
+    .replace(singleQuotedTextRegex, (_, capturedValue: string) => colors.bold(capturedValue))
+    .replace(doubleQuotedTextRegex, (_, capturedValue: string) => colors.bold(capturedValue));
 };
 
 export const prefixedInspect =

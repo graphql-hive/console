@@ -124,7 +124,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
           data.invalidOperations.forEach(doc => {
             t.failure(doc.source.name);
             doc.errors.forEach(e => {
-              t.line(` - ${Texture.bolderize(e.message)}`);
+              t.line(` - ${Texture.boldQuotedWords(e.message)}`);
             });
             t.line('');
           });
@@ -167,6 +167,9 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       }),
       pluckGlobalGqlIdentifierName: globalGraphqlTag,
     });
+    const isHasApolloDirectives = operations.some(
+      _ => _.content.includes('@client') || _.content.includes('@connection'),
+    );
 
     if (operations.length === 0) {
       return this.success({
@@ -192,19 +195,6 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       assumeValid: true,
     });
 
-    if (!flags.apolloClient) {
-      const detectedApolloDirectives = operations.some(
-        _ => _.content.includes('@client') || _.content.includes('@connection'),
-      );
-
-      if (detectedApolloDirectives) {
-        // TODO: Gather warnings into a "warnings" array property in our envelope.
-        this.warn(
-          'Apollo Client specific directives detected (@client, @connection). Please use the --apolloClient flag to enable support.',
-        );
-      }
-    }
-
     const invalidOperations = validate(
       schema,
       operations.map(_ => new Source(_.content, _.location)),
@@ -216,6 +206,12 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     const operationsWithErrors = invalidOperations.filter(o => o.errors.length > 0);
     return this.successEnvelope({
       exitCode: operationsWithErrors.length > 0 ? 1 : 0,
+      warnings:
+        !flags.apolloClient && isHasApolloDirectives
+          ? [
+              'Apollo Client specific directives detected (@client, @connection). Please use the --apolloClient flag to enable support.',
+            ]
+          : [],
       data: {
         type: 'SuccessOperationsCheck',
         countTotal: operations.length,

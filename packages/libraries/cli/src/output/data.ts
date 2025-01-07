@@ -42,7 +42,7 @@ export const schemaChangesText = (data: SchemaChanges): string => {
           criticalityMap[
             change.isSafeBasedOnUsage ? schemaChangeCriticalityLevel.Safe : change.criticality
           ],
-          Texture.bolderize(change.message),
+          Texture.boldQuotedWords(change.message),
         ];
         if (change.isSafeBasedOnUsage) {
           parts.push(Texture.colors.green('(Safe based on usage ✓)'));
@@ -99,10 +99,12 @@ export const schemaWarningsText = (warnings: SchemaWarnings): string => {
   t.warning(`Detected ${warnings.length} warning${Texture.plural(warnings)}`);
   t.line();
   warnings.forEach(warning => {
-    const details = [warning.source ? `source: ${Texture.bolderize(warning.source)}` : undefined]
+    const details = [
+      warning.source ? `source: ${Texture.boldQuotedWords(warning.source)}` : undefined,
+    ]
       .filter(Boolean)
       .join(', ');
-    t.indent(`- ${Texture.bolderize(warning.message)}${details ? ` (${details})` : ''}`);
+    t.indent(`- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`);
   });
   return t.state.value.trim();
 };
@@ -119,7 +121,7 @@ export const schemaErrorsText = (data: T.Static<typeof SchemaErrors>): string =>
   t.failure(`Detected ${data.length} error${Texture.plural(data)}`);
   t.line();
   data.forEach(error => {
-    t.indent(Texture.colors.red('-') + ' ' + Texture.bolderize(error.message));
+    t.indent(Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message));
   });
   return t.state.value.trim();
 };

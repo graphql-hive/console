@@ -5,6 +5,7 @@ import { DataType } from './output-data-type';
 
 export const SuccessBase = T.Object({
   type: T.Literal('success', { default: 'success' }),
+  warnings: T.Array(T.String()),
   exitCode: T.Optional(T.Number()),
 });
 export type SuccessBase = T.Static<typeof SuccessBase>;
@@ -19,6 +20,7 @@ export type SuccessGeneric = T.Static<typeof SuccessGeneric>;
 
 export const successDefaults: T.Static<typeof SuccessGeneric> = {
   type: 'success',
+  warnings: [],
   data: {},
 };
 
@@ -32,7 +34,7 @@ export type InferSuccessData<$DataType extends DataType> = Simplify<
 >;
 
 export type InferSuccessEnvelopeInit<$DataType extends DataType> = Simplify<
-  OptionalizePropertyUnsafe<Omit<InferSuccess<$DataType>, 'type'>, 'data'>
+  OptionalizePropertyUnsafe<Omit<InferSuccess<$DataType>, 'type'>, 'data' | 'warnings'>
 >;
 
 export type InferSuccess<$DataType extends DataType> = Extract<

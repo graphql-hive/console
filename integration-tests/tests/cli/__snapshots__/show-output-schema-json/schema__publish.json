@@ -8,6 +8,12 @@
           "const": "success",
           "type": "string"
         },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "exitCode": {
           "type": "number"
         },
@@ -144,6 +150,7 @@
       },
       "required": [
         "type",
+        "warnings",
         "data"
       ]
     },
@@ -154,6 +161,12 @@
           "default": "success",
           "const": "success",
           "type": "string"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "exitCode": {
           "type": "number"
@@ -278,6 +291,7 @@
       },
       "required": [
         "type",
+        "warnings",
         "data"
       ]
     },
@@ -288,6 +302,12 @@
           "default": "success",
           "const": "success",
           "type": "string"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "exitCode": {
           "type": "number"
@@ -312,6 +332,7 @@
       },
       "required": [
         "type",
+        "warnings",
         "data"
       ]
     },
@@ -333,6 +354,12 @@
           ]
         },
         "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
           "type": "array",
           "items": {
             "type": "string"
@@ -363,6 +390,7 @@
         "type",
         "reference",
         "suggestions",
+        "warnings",
         "data"
       ]
     },
@@ -384,6 +412,12 @@
           ]
         },
         "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
           "type": "array",
           "items": {
             "type": "string"
@@ -475,6 +509,7 @@
         "type",
         "reference",
         "suggestions",
+        "warnings",
         "data"
       ]
     },
@@ -496,6 +531,12 @@
           ]
         },
         "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
           "type": "array",
           "items": {
             "type": "string"
@@ -545,6 +586,7 @@
         "type",
         "reference",
         "suggestions",
+        "warnings",
         "data"
       ]
     }

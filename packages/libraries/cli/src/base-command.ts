@@ -10,6 +10,8 @@ import { OmitNever } from './helpers/general';
 import { Texture } from './helpers/texture/__';
 import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
+import { FailureGeneric } from './output/failure';
+import { SuccessGeneric } from './output/success';
 
 const showOutputSchemaJsonFlagName = 'show-output-schema-json';
 
@@ -134,7 +136,9 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     /**
      * Should never throw because we checked for errors above.
      */
-    const result = T.Value.Parse(dataType.schema, resultUnparsed);
+    const result = T.Value.Parse(dataType.schema, resultUnparsed) as
+      | SuccessGeneric
+      | FailureGeneric;
 
     /**
      * Data types can optionally bundle a textual representation of their data.
@@ -157,6 +161,14 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
       // `this.log` adds a newline, so remove one from text to avoid undesired extra trailing space.
       this.log(dataTypeText.replace(/\n$/, ''));
+    }
+
+    /**
+     * Result warnings are rendered using `this.warn`.
+     * OClif does not show these when JSON output is enabled.
+     */
+    if (result.warnings.length > 0) {
+      result.warnings.forEach(warning => this.warn(warning));
     }
 
     /**
@@ -183,9 +195,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
      * {@link BaseCommand.toErrorJson}.
      */
     throw new Errors.Failure({
-      // @ts-expect-error fixme
       data: result.data,
-      // @ts-expect-error fixme
       message: result.data.message ?? 'Unknown error.',
     });
   }

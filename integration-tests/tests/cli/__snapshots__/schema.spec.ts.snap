@@ -148,6 +148,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -167,6 +168,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -216,6 +218,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -244,6 +247,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -267,6 +271,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -283,6 +288,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can update t
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -299,6 +305,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can update t
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
@@ -327,6 +334,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -346,6 +354,7 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > schema:check
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -365,6 +374,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -397,6 +407,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -556,6 +567,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -575,6 +587,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -624,6 +637,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -652,6 +666,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -675,6 +690,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -691,6 +707,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can update t
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -707,6 +724,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can update t
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
@@ -728,6 +746,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -747,6 +766,7 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > schema:check
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -766,6 +786,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -792,6 +813,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -935,6 +957,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish a sc
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -954,6 +977,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1003,6 +1027,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1031,6 +1056,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish and 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1054,6 +1080,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish and 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1075,6 +1102,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1094,6 +1122,7 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > schema:check sho
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -1113,6 +1142,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1139,6 +1169,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -1282,6 +1313,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish a sc
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1301,6 +1333,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1350,6 +1383,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1378,6 +1412,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish and 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1401,6 +1436,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish and 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1422,6 +1458,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1441,6 +1478,7 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > schema:check sho
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -1460,6 +1498,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1486,6 +1525,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -1647,6 +1687,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1666,6 +1707,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1715,6 +1757,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1743,6 +1786,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1766,6 +1810,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1782,6 +1827,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can update th
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -1798,6 +1844,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can update th
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
@@ -1826,6 +1873,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1845,6 +1893,7 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > schema:check 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -1864,6 +1913,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1896,6 +1946,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -2057,6 +2108,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -2076,6 +2128,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2125,6 +2178,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2153,6 +2207,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -2176,6 +2231,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -2192,6 +2248,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can update th
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
@@ -2208,6 +2265,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can update th
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
@@ -2229,6 +2287,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -2248,6 +2307,7 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > schema:check 
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
@@ -2267,6 +2327,7 @@ __NONE__
 stdout--------------------------------------------:
 {
   "type": "success",
+  "warnings": [],
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2299,6 +2360,7 @@ stdout--------------------------------------------:
   "type": "failure",
   "reference": null,
   "suggestions": [],
+  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",

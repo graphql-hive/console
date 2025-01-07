@@ -7,6 +7,7 @@ export const FailureBase = T.Object({
   type: T.Literal('failure'),
   reference: T.Nullable(T.String()),
   suggestions: T.Array(T.String()),
+  warnings: T.Array(T.String()),
   exitCode: T.Optional(T.Number()),
 });
 export type FailureBase = T.Static<typeof FailureBase>;
@@ -28,6 +29,7 @@ export const failureDefaults: T.Static<typeof FailureGeneric> = {
   type: 'failure',
   reference: null,
   suggestions: [],
+  warnings: [],
   data: {},
 };
 
@@ -36,7 +38,10 @@ export type InferFailureData<$DataType extends DataType> = Simplify<
 >;
 
 export type InferFailureEnvelopeInit<$DataType extends DataType> = Simplify<
-  OptionalizePropertyUnsafe<Omit<InferFailure<$DataType>, 'type'>, 'suggestions' | 'reference'>
+  OptionalizePropertyUnsafe<
+    Omit<InferFailure<$DataType>, 'type'>,
+    'suggestions' | 'reference' | 'warnings'
+  >
 >;
 
 export type InferFailure<$DataType extends DataType> = Extract<
