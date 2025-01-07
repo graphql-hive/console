@@ -217,6 +217,46 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         t.failure(data.message);
       },
     }),
+    Output.failure('FailureResolveMetadata', {
+      data: {
+        reason: T.Union([
+          T.Object({
+            type: T.Literal('notFound'),
+            path: T.String(),
+          }),
+          T.Object({
+            type: T.Literal('readFail'),
+            path: T.String(),
+            message: T.String(),
+          }),
+          T.Object({
+            type: T.Literal('invalidJson'),
+            path: T.String(),
+            value: T.String(),
+            message: T.String(),
+          }),
+        ]),
+      },
+      text(_, data, t) {
+        switch (data.reason.type) {
+          case 'notFound':
+            t.failure(
+              `Failed to load metadata from "${data.reason.path}": Please specify a path to an existing file, or a string with valid JSON.`,
+            );
+            break;
+          case 'readFail':
+            t.failure(`Failed to load metadata from "${data.reason.path}": ${data.reason.message}`);
+            break;
+          case 'invalidJson':
+            t.failure(
+              `Failed to load metadata from "${data.reason.path}": Please make sure the file is readable and contains a valid JSON`,
+            );
+            break;
+          default:
+            casesExhausted(data.reason);
+        }
+      },
+    }),
     Output.failure('FailureSchemaPublishInvalidGraphQLSchema', {
       data: {
         message: T.String(),
@@ -237,39 +277,6 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       },
     }),
   ];
-
-  resolveMetadata(metadata: string | undefined): string | undefined {
-    if (!metadata) {
-      return;
-    }
-
-    try {
-      JSON.parse(metadata);
-      // If we are able to parse it, it means it's a valid JSON, let's use it as-is
-
-      return metadata;
-    } catch (e) {
-      // If we can't parse it, we can try to load it from FS
-      const exists = existsSync(metadata);
-
-      if (!exists) {
-        throw new Errors.CLIError(
-          `Failed to load metadata from "${metadata}": Please specify a path to an existing file, or a string with valid JSON.`,
-        );
-      }
-
-      try {
-        const fileContent = readFileSync(metadata, 'utf-8');
-        JSON.parse(fileContent);
-
-        return fileContent;
-      } catch (e) {
-        throw new Errors.CLIError(
-          `Failed to load metadata from file "${metadata}": Please make sure the file is readable and contains a valid JSON`,
-        );
-      }
-    }
-  }
 
   async runResult() {
     const { flags, args } = await this.parse(SchemaPublish);
@@ -294,8 +301,11 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     const url = flags.url;
     const file = args.file;
     const experimental_acceptBreakingChanges = flags.experimental_acceptBreakingChanges;
-    const metadata = this.resolveMetadata(flags.metadata);
     const usesGitHubApp = flags.github;
+    const metadata = this.resolveMetadata(flags.metadata);
+    if (typeof metadata === 'object') {
+      return metadata;
+    }
 
     let commit = orEnvar(flags.commit, 'HIVE_COMMIT');
     let author = orEnvar(flags.author, 'HIVE_AUTHOR');
@@ -448,5 +458,62 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }
 
     throw casesExhausted(result);
+  }
+
+  resolveMetadata(metadata: string | undefined) {
+    if (!metadata) {
+      return;
+    }
+
+    try {
+      JSON.parse(metadata);
+      // If we are able to parse it, it means it's a valid JSON, let's use it as-is
+      return metadata;
+    } catch (e) {
+      // If we can't parse it, we can try to load it from FS
+      // todo helper function for json file read
+      const exists = existsSync(metadata);
+      if (!exists) {
+        return this.failure({
+          type: 'FailureResolveMetadata',
+          reason: {
+            type: 'notFound',
+            path: metadata,
+          },
+        });
+      }
+
+      let fileContent: string;
+      try {
+        fileContent = readFileSync(metadata, 'utf-8');
+      } catch (_) {
+        const error = _ as Error;
+        return this.failure({
+          type: 'FailureResolveMetadata',
+          reason: {
+            type: 'readFail',
+            path: metadata,
+            message: error.message,
+          },
+        });
+      }
+
+      try {
+        JSON.parse(fileContent);
+      } catch (_) {
+        const error = _ as Error;
+        return this.failure({
+          type: 'FailureResolveMetadata',
+          reason: {
+            type: 'invalidJson',
+            path: metadata,
+            value: fileContent,
+            message: error.message,
+          },
+        });
+      }
+
+      return fileContent;
+    }
   }
 }
