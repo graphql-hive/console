@@ -3,6 +3,10 @@
  * of our testkit easily consumable in test cases. @see https://vitest.dev/guide/test-context.html#test-extend
  */
 
+// import { test as testBase } from 'vitest';
+// import { TmpFile, tmpFile } from './fs';
+// import { initSeed, OrgSeed, OwnerSeed, Seed } from './seed';
+
 import { test as testBase } from 'vitest';
 import { CLI, createCLI } from './cli';
 import { TmpFile, tmpFile } from './fs';
@@ -11,27 +15,27 @@ import { initSeed, OrgSeed, OwnerSeed, ProjectSeed, Seed, TargetAccessTokenSeed 
 
 interface Context {
   sdlFile: TmpFile;
-  seed: Seed;
-  owner: OwnerSeed;
-  org: OrgSeed;
-  //
-  // "single" branch
-  //
-  projectSingle: ProjectSeed;
-  tokenForProjectSingle: TargetAccessTokenSeed;
-  cliForProjectSingle: CLI;
-  //
-  // "federation" branch
-  //
-  projectFederation: ProjectSeed;
-  tokenForProjectFederation: TargetAccessTokenSeed;
-  cliForProjectFederation: CLI;
-  //
-  // "stitching" branch
-  //
-  projectStitching: ProjectSeed;
-  tokenForProjectStitching: TargetAccessTokenSeed;
-  cliForProjectStitching: CLI;
+  // seed: Seed;
+  // owner: OwnerSeed;
+  // org: OrgSeed;
+  // //
+  // // "single" branch
+  // //
+  // projectSingle: ProjectSeed;
+  // tokenForProjectSingle: TargetAccessTokenSeed;
+  // cliForProjectSingle: CLI;
+  // //
+  // // "federation" branch
+  // //
+  // projectFederation: ProjectSeed;
+  // tokenForProjectFederation: TargetAccessTokenSeed;
+  // cliForProjectFederation: CLI;
+  // //
+  // // "stitching" branch
+  // //
+  // projectStitching: ProjectSeed;
+  // tokenForProjectStitching: TargetAccessTokenSeed;
+  // cliForProjectStitching: CLI;
 }
 
 export const test = testBase.extend<Context>({
