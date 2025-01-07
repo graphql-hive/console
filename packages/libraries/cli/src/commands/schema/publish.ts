@@ -148,7 +148,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }),
   };
   static output = [
-    Output.success('SuccessSchemaPublish', {
+    Output.defineSuccess('SuccessSchemaPublish', {
       data: {
         diffType: T.Enum({
           initial: 'initial',
@@ -178,7 +178,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         }
       },
     }),
-    Output.success('FailureSchemaPublish', {
+    Output.defineSuccess('FailureSchemaPublish', {
       data: {
         changes: Output.SchemaChanges,
         errors: Output.SchemaErrors,
@@ -201,7 +201,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         }
       },
     }),
-    Output.success('SuccessSchemaPublishGitHub', {
+    Output.defineSuccess('SuccessSchemaPublishGitHub', {
       data: {
         message: T.String(),
       },
@@ -209,7 +209,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         t.success(data.message);
       },
     }),
-    Output.failure('FailureSchemaPublishGitHub', {
+    Output.defineFailure('FailureSchemaPublishGitHub', {
       data: {
         message: T.String(),
       },
@@ -217,7 +217,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         t.failure(data.message);
       },
     }),
-    Output.failure('FailureResolveMetadata', {
+    Output.defineFailure('FailureResolveMetadata', {
       data: {
         reason: T.Union([
           T.Object({
@@ -257,7 +257,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         }
       },
     }),
-    Output.failure('FailureSchemaPublishInvalidGraphQLSchema', {
+    Output.defineFailure('FailureSchemaPublishInvalidGraphQLSchema', {
       data: {
         message: T.String(),
         locations: T.Array(

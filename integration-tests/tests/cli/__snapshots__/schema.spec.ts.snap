@@ -147,15 +147,15 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -167,8 +167,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -205,7 +204,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -217,8 +217,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -237,7 +236,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -246,8 +246,6 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -261,7 +259,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -270,15 +270,15 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -287,15 +287,15 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can update t
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -304,8 +304,6 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > can update t
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
@@ -319,7 +317,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -331,10 +331,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -344,7 +340,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -353,15 +353,15 @@ exports[`projectType: 'FEDERATION' | model: 'legacy' | json: true > schema:check
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -373,8 +373,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -392,7 +391,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -404,10 +404,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -417,7 +413,11 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -566,15 +566,15 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -586,8 +586,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -624,7 +623,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -636,8 +636,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -656,7 +655,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -665,8 +665,6 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -680,7 +678,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -689,15 +689,15 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can publish 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -706,15 +706,15 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can update t
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -723,15 +723,15 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > can update t
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
     "message": "New service url: http://__URL__ (previously: http://__URL__
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -743,10 +743,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -756,7 +752,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -765,15 +765,15 @@ exports[`projectType: 'FEDERATION' | model: 'modern' | json: true > schema:check
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -785,8 +785,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -798,7 +797,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -810,10 +810,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -823,7 +819,11 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -956,15 +956,15 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish a sc
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -976,8 +976,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1014,7 +1013,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1026,8 +1026,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1046,7 +1045,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1055,8 +1055,6 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish and 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1070,7 +1068,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1079,15 +1079,15 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > can publish and 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1099,10 +1099,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1112,7 +1108,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -1121,15 +1121,15 @@ exports[`projectType: 'SINGLE' | model: 'legacy' | json: true > schema:check sho
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1141,8 +1141,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1154,7 +1153,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1166,10 +1166,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -1179,7 +1175,11 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -1312,15 +1312,15 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish a sc
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1332,8 +1332,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1370,7 +1369,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1382,8 +1382,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1402,7 +1401,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1411,8 +1411,6 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish and 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1426,7 +1424,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1435,15 +1435,15 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > can publish and 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1455,10 +1455,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1468,7 +1464,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -1477,15 +1477,15 @@ exports[`projectType: 'SINGLE' | model: 'modern' | json: true > schema:check sho
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1497,8 +1497,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1510,7 +1509,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1522,10 +1522,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -1535,7 +1531,11 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -1686,15 +1686,15 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1706,8 +1706,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1744,7 +1743,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1756,8 +1756,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1776,7 +1775,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1785,8 +1785,6 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -1800,7 +1798,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1809,15 +1809,15 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1826,15 +1826,15 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can update th
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1843,8 +1843,6 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > can update th
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "change",
@@ -1858,7 +1856,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1870,10 +1870,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -1883,7 +1879,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -1892,15 +1892,15 @@ exports[`projectType: 'STITCHING' | model: 'legacy' | json: true > schema:check 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1912,8 +1912,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -1931,7 +1930,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -1943,10 +1943,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -1956,7 +1952,11 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -2107,15 +2107,15 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2127,8 +2127,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2165,7 +2164,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2177,8 +2177,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2197,7 +2196,8 @@ stdout--------------------------------------------:
     ],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2206,8 +2206,6 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "change",
@@ -2221,7 +2219,9 @@ stdout--------------------------------------------:
       }
     ],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2230,15 +2230,15 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can publish a
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2247,15 +2247,15 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can update th
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "initial",
     "message": null,
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2264,15 +2264,15 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > can update th
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaPublish",
     "diffType": "unknown",
     "message": "New service url: http://__URL__ (previously: http://__URL__
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2284,10 +2284,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureSchemaPublishInvalidGraphQLSchema",
     "message": "Syntax Error: Unexpected Name \\"iliketurtles\\".",
@@ -2297,7 +2293,11 @@ stdout--------------------------------------------:
         "column": 1
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 
@@ -2306,15 +2306,15 @@ exports[`projectType: 'STITCHING' | model: 'modern' | json: true > schema:check 
 
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
   "data": {
     "type": "SuccessSchemaCheck",
     "diffType": "initial",
     "warnings": [],
     "changes": [],
     "url": "__URL__"
-  }
+  },
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2326,8 +2326,7 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "success",
-  "warnings": [],
+  "exitCode": 1,
   "data": {
     "type": "FailureSchemaCheck",
     "errors": [
@@ -2345,7 +2344,8 @@ stdout--------------------------------------------:
     "changes": [],
     "url": "__URL__"
   },
-  "exitCode": 1
+  "type": "success",
+  "warnings": []
 }
 `;
 
@@ -2357,10 +2357,6 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureHiveApiRequest",
     "message": "Request to Hive API failed. Caused by error(s):\\nInvalid token provided",
@@ -2370,6 +2366,10 @@ stdout--------------------------------------------:
         "message": "Invalid token provided"
       }
     ]
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;

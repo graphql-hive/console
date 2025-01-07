@@ -8,6 +8,23 @@ import { getServiceHost } from './utils';
 const binPath = resolve(__dirname, '../../packages/libraries/cli/bin/run');
 const cliDir = resolve(__dirname, '../../packages/libraries/cli');
 
+export type ExecCommandPath =
+  | 'whoami'
+  | 'schema:publish'
+  | 'schema:check'
+  | 'schema:delete'
+  | 'schema:fetch'
+  | 'app:create'
+  | 'app:publish';
+
+export const argsToExecFormat = (args?: Record<string, string>): string => {
+  return args
+    ? Object.entries(args)
+        .map(([key, value]) => `--${key}=${value}`)
+        .join(' ')
+    : '';
+};
+
 export async function exec(cmd: string) {
   const result = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,

@@ -35,7 +35,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }),
   };
   static output = [
-    Output.success('SuccessSkipAppCreate', {
+    Output.defineSuccess('SuccessSkipAppCreate', {
       data: {
         status: Output.AppDeploymentStatus,
       },
@@ -43,7 +43,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         return `App deployment "${input.flags.name}@${input.flags.version}" is "${output.status}". Skip uploading documents...`;
       },
     }),
-    Output.success('SuccessAppCreate', {
+    Output.defineSuccess('SuccessAppCreate', {
       data: {
         id: T.StringNonEmpty,
         operationsCount: T.Number(),
@@ -54,12 +54,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
         );
       },
     }),
-    Output.failure('FailureAppCreate', {
+    Output.defineFailure('FailureAppCreate', {
       data: {
         message: T.String(),
       },
     }),
-    Output.failure('FailureInvalidManifestModel', {
+    Output.defineFailure('FailureInvalidManifestModel', {
       data: {
         errors: T.Array(T.Value.MaterializedValueErrorT),
       },

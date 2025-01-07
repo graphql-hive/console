@@ -145,7 +145,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     }),
   };
   static output = [
-    Output.success('SuccessSchemaCheck', {
+    Output.defineSuccess('SuccessSchemaCheck', {
       data: {
         diffType: T.Enum({
           initial: 'initial',
@@ -176,7 +176,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         }
       },
     }),
-    Output.success('SuccessSchemaCheckGitHub', {
+    Output.defineSuccess('SuccessSchemaCheckGitHub', {
       data: {
         message: T.String(),
       },
@@ -184,7 +184,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         t.success(data.message);
       },
     }),
-    Output.success('FailureSchemaCheck', {
+    Output.defineSuccess('FailureSchemaCheck', {
       data: {
         changes: Output.SchemaChanges,
         warnings: Output.SchemaWarnings,
@@ -214,7 +214,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       },
     }),
 
-    Output.failure('FailureSchemaCheckGitHub', {
+    Output.defineFailure('FailureSchemaCheckGitHub', {
       data: {
         message: T.String(),
       },

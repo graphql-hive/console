@@ -1,13 +1,13 @@
 import { OptionalizePropertyUnsafe, Simplify } from '../helpers/general';
 import { T } from '../helpers/typebox/__';
-import { DataType } from './output-data-type';
+import { Definition } from './definition';
 import type { SuccessBase } from './success';
 
 export const FailureBase = T.Object({
-  type: T.Literal('failure'),
-  reference: T.Nullable(T.String()),
-  suggestions: T.Array(T.String()),
-  warnings: T.Array(T.String()),
+  type: T.Literal('failure', { default: 'failure' }),
+  reference: T.Nullable(T.String(), { default: null }),
+  suggestions: T.Array(T.String(), { default: [] }),
+  warnings: T.Array(T.String(), { default: [] }),
   exitCode: T.Optional(T.Number()),
 });
 export type FailureBase = T.Static<typeof FailureBase>;
@@ -15,7 +15,7 @@ export type FailureBase = T.Static<typeof FailureBase>;
 export const FailureGeneric = T.Composite([
   FailureBase,
   T.Object({
-    data: T.Record(T.String(), T.Any()),
+    data: T.Record(T.String(), T.Any(), { default: {} }),
   }),
 ]);
 export type FailureGeneric = T.Static<typeof FailureGeneric>;
@@ -25,26 +25,14 @@ export const isFailure = <$Output extends SuccessBase | FailureBase>(
 ): schema is Extract<$Output, { type: 'failure' }> =>
   schema.type === FailureBase.properties.type.const;
 
-export const failureDefaults: T.Static<typeof FailureGeneric> = {
-  type: 'failure',
-  reference: null,
-  suggestions: [],
-  warnings: [],
-  data: {},
-};
-
-export type InferFailureData<$DataType extends DataType> = Simplify<
-  InferFailure<$DataType>['data']
->;
-
-export type InferFailureEnvelopeInit<$DataType extends DataType> = Simplify<
+export type InferFailureInit<$DataType extends Definition> = Simplify<
   OptionalizePropertyUnsafe<
     Omit<InferFailure<$DataType>, 'type'>,
     'suggestions' | 'reference' | 'warnings'
   >
 >;
 
-export type InferFailure<$DataType extends DataType> = Extract<
+export type InferFailure<$DataType extends Definition> = Extract<
   T.Static<$DataType['schema']>,
   { type: 'failure' }
 >;

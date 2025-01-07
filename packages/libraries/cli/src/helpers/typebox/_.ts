@@ -1,4 +1,4 @@
-import { FormatRegistry, TSchema, Type } from '@sinclair/typebox';
+import { FormatRegistry, SchemaOptions, TSchema, Type } from '@sinclair/typebox';
 
 const uriRegex = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/)?[^\s]*$/i;
 
@@ -14,6 +14,7 @@ export * from '@sinclair/typebox';
 
 export * from './value/__';
 
-export const Nullable = <T extends TSchema>(schema: T) => Type.Union([schema, Type.Null()]);
+export const Nullable = <T extends TSchema>(schema: T, schemaOptions?: SchemaOptions) =>
+  Type.Union([schema, Type.Null()], schemaOptions);
 
 export const StringNonEmpty = Type.String({ minLength: 1 });

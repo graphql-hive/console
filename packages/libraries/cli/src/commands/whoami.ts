@@ -64,7 +64,7 @@ export default class Whoami extends Command<typeof Whoami> {
     }),
   };
   static output = [
-    Output.success('SuccessWhoami', {
+    Output.defineSuccess('SuccessWhoami', {
       data: {
         token: T.Object({
           name: T.String(),
@@ -110,7 +110,7 @@ export default class Whoami extends Command<typeof Whoami> {
         return print();
       },
     }),
-    Output.failure('FailureWhoamiTokenNotFound', {
+    Output.defineFailure('FailureWhoamiTokenNotFound', {
       data: {
         message: T.String(),
       },

@@ -9,6 +9,7 @@
           "type": "string"
         },
         "warnings": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
@@ -132,10 +133,12 @@
       "type": "object",
       "properties": {
         "type": {
+          "default": "failure",
           "const": "failure",
           "type": "string"
         },
         "reference": {
+          "default": null,
           "anyOf": [
             {
               "type": "string"
@@ -146,12 +149,14 @@
           ]
         },
         "suggestions": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
           }
         },
         "warnings": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"

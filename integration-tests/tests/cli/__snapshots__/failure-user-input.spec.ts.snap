@@ -8,14 +8,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "Missing 1 required arg:\\nfile  Path to the persisted operations mapping.\\nSee more help with --help",
     "problem": "positionalArgumentMissing"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -63,14 +64,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "The following errors occurred:\\n  Missing required flag name\\n  Missing required flag version\\nSee more help with --help",
     "problem": "namedArgumentInvalid"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -95,14 +97,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "Missing 1 required arg:\\nfile  Path to the schema file(s)\\n\\nNote: --require allows multiple values. Because of this you need to provide all arguments before providing that flag.\\nAlternatively, you can use \\"--\\" to signify the end of the flags and the beginning of arguments.\\nSee more help with --help",
     "problem": "positionalArgumentMissing"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -167,14 +170,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "Missing 1 required arg:\\nservice  name of the service\\nSee more help with --help",
     "problem": "positionalArgumentMissing"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -225,14 +229,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "Missing 1 required arg:\\nactionId  action id (e.g. commit sha)\\nSee more help with --help",
     "problem": "positionalArgumentMissing"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -286,14 +291,15 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "warnings": [],
+  "suggestions": [],
   "data": {
     "type": "FailureUserInput",
     "message": "Missing 1 required arg:\\nfile  Path to the schema file(s)\\n\\nNote: --require allows multiple values. Because of this you need to provide all arguments before providing that flag.\\nAlternatively, you can use \\"--\\" to signify the end of the flags and the beginning of arguments.\\nSee more help with --help",
     "problem": "positionalArgumentMissing"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "warnings": []
 }
 `;
 
@@ -366,14 +372,14 @@ stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
 {
-  "type": "failure",
-  "reference": null,
-  "suggestions": [],
-  "warnings": [],
   "data": {
     "type": "FailureUserInput",
     "parameter": "registry.accessToken"
-  }
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
 }
 `;
 

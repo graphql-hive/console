@@ -3,12 +3,12 @@ import { T } from '../helpers/typebox/__';
 import { FailureBase } from './failure';
 import { SuccessBase } from './success';
 
-export interface DataType<$Schema extends T.TObject = T.TObject> {
+export interface Definition<$Schema extends T.TObject = T.TObject> {
   schema: $Schema;
   text?: TextBuilder;
 }
 
-export const success: Factory<typeof SuccessBase> = (typeName, config) => {
+export const defineSuccess: DefinerForBase<typeof SuccessBase> = (typeName, config) => {
   return {
     text: config.text,
     schema: T.Composite([
@@ -23,7 +23,7 @@ export const success: Factory<typeof SuccessBase> = (typeName, config) => {
   } as any;
 };
 
-export const failure: Factory<typeof FailureBase> = (typeName, config) => {
+export const defineFailure: DefinerForBase<typeof FailureBase> = (typeName, config) => {
   return {
     text: config.text,
     schema: T.Composite([
@@ -38,7 +38,7 @@ export const failure: Factory<typeof FailureBase> = (typeName, config) => {
   } as any;
 };
 
-export type Factory<$BaseT extends T.TObject> = <
+export type DefinerForBase<$BaseT extends T.TObject> = <
   $DataT extends T.TProperties,
   $TypeName extends string,
   $OutputT extends T.TObject = T.TComposite<
@@ -75,7 +75,7 @@ export type Factory<$BaseT extends T.TObject> = <
      */
     text?: TextBuilder<T.Static<$OutputT>['data']>;
   },
-) => DataType<$OutputT>;
+) => Definition<$OutputT>;
 
 interface TextBuilder<$Data = any> {
   (

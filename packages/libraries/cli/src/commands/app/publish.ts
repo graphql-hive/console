@@ -25,7 +25,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
     }),
   };
   static output = [
-    Output.success('SuccessSkipAppPublish', {
+    Output.defineSuccess('SuccessSkipAppPublish', {
       data: {
         name: T.StringNonEmpty,
         version: T.StringNonEmpty,
@@ -36,7 +36,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
         );
       },
     }),
-    Output.success('SuccessAppPublish', {
+    Output.defineSuccess('SuccessAppPublish', {
       data: {
         name: T.StringNonEmpty,
         version: T.StringNonEmpty,
@@ -45,7 +45,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
         t.success(`App deployment "${data.name}@${data.version}" published successfully.`);
       },
     }),
-    Output.failure('FailureAppPublish', {
+    Output.defineFailure('FailureAppPublish', {
       data: {
         message: T.String(),
       },

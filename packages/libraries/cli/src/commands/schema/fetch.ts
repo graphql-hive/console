@@ -6,6 +6,7 @@ import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { InferInput } from '../../helpers/oclif';
+import { OutputDefinitions } from '../../output-definitions';
 import { Output } from '../../output/__';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
@@ -69,26 +70,26 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }),
   };
   static output = [
-    Output.failure('FailureSchemaFetchMissingSchema', {
+    Output.defineFailure('FailureSchemaFetchMissingSchema', {
       data: {},
       text({ args }: InferInput<typeof SchemaFetch>, _, t) {
         t.failure(`No schema found for action id ${args.actionId}`);
       },
     }),
-    Output.failure('FailureSchemaFetchInvalidSchema', {
+    Output.defineFailure('FailureSchemaFetchInvalidSchema', {
       data: {},
       text({ args }: InferInput<typeof SchemaFetch>, _, t) {
         t.failure(`Schema is invalid for action id ${args.actionId}`);
       },
     }),
-    Output.failure('FailureSchemaFetchMissingSDLType', {
+    Output.defineFailure('FailureSchemaFetchMissingSDLType', {
       data: {},
       text({ args, flags }: InferInput<typeof SchemaFetch>, _, t) {
         t.failure(`No ${flags.type} found for action id ${args.actionId}`);
       },
     }),
-    Output.SuccessOutputFile,
-    Output.SuccessOutputStdout,
+    OutputDefinitions.SuccessOutputFile,
+    OutputDefinitions.SuccessOutputStdout,
   ];
 
   async runResult() {

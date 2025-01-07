@@ -10,8 +10,6 @@ import { OmitNever } from './helpers/general';
 import { Texture } from './helpers/texture/__';
 import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
-import { FailureGeneric } from './output/failure';
-import { SuccessGeneric } from './output/success';
 
 const showOutputSchemaJsonFlagName = 'show-output-schema-json';
 
@@ -23,7 +21,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    *
    * Used by methods: {@link BaseCommand.success}, {@link BaseCommand.failure}, {@link BaseCommand.runResult}.
    */
-  public static output: Output.DataType[] = [];
+  public static output: Output.Definition[] = [];
 
   protected _userConfig: Config | undefined;
 
@@ -115,8 +113,12 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         },
       });
     }
+    const resultUnparsedWithDefaults = T.Value.Default(
+      dataType.schema,
+      T.Value.Clone(resultUnparsed),
+    );
     // 2
-    const errorsIterator = T.Value.Value.Errors(dataType.schema, resultUnparsed);
+    const errorsIterator = T.Value.Value.Errors(dataType.schema, resultUnparsedWithDefaults);
     const materializedErrors = T.Value.MaterializeValueErrorIterator(errorsIterator);
     if (materializedErrors.length > 0) {
       // todo: Display data in non-json output.
@@ -127,7 +129,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
           type: 'ErrorOutputSchemaViolation',
           message: schemaViolationMessage,
           schema: dataType,
-          value: resultUnparsed,
+          value: resultUnparsedWithDefaults,
           errors: materializedErrors,
         },
       });
@@ -136,9 +138,9 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     /**
      * Should never throw because we checked for errors above.
      */
-    const result = T.Value.Parse(dataType.schema, resultUnparsed) as
-      | SuccessGeneric
-      | FailureGeneric;
+    const result = T.Value.Parse(dataType.schema, resultUnparsedWithDefaults) as
+      | Output.SuccessGeneric
+      | Output.FailureGeneric;
 
     /**
      * Data types can optionally bundle a textual representation of their data.
@@ -230,10 +232,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   successEnvelope(
     envelopeInit: InferOutputSuccessEnvelopeInit<$Command>,
   ): InferOutputSuccess<$Command> {
-    return {
-      ...Output.successDefaults,
-      ...(envelopeInit as object),
-    } as any;
+    return envelopeInit as any;
   }
 
   /**
@@ -255,10 +254,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   failureEnvelope(
     envelopeInit: InferOutputFailureEnvelopeInit<$Command>,
   ): InferOutputFailure<$Command> {
-    return {
-      ...Output.failureDefaults,
-      ...(envelopeInit as object),
-    } as any;
+    return envelopeInit as any;
   }
 
   protected get userConfig(): Config {
@@ -485,42 +481,43 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     }
 
     if (value instanceof Errors.FailedFlagValidationError) {
-      return this.failureEnvelope({
+      return T.Value.Default(Output.FailureGeneric, {
         suggestions: value.suggestions,
         data: {
           type: 'FailureUserInput',
           message: value.message,
           problem: 'namedArgumentInvalid',
         },
-      } as any);
+      });
     }
 
     if (value instanceof Errors.RequiredArgsError) {
-      return this.failureEnvelope({
+      return T.Value.Default(Output.FailureGeneric, {
         suggestions: value.suggestions,
         data: {
           type: 'FailureUserInput',
           message: value.message,
           problem: 'positionalArgumentMissing',
         },
-      } as any);
+      });
     }
 
     if (value instanceof Errors.CLIError) {
-      return this.failureEnvelope({
+      return T.Value.Default(Output.FailureGeneric, {
         suggestions: value.suggestions,
         data: {
           type: 'Failure',
           message: value.message,
         },
-      } as any);
+      });
     }
+
     if (value instanceof Error) {
-      return this.failure({
-        type: 'Failure',
+      return T.Value.Default(Output.FailureGeneric, {
         message: value.message,
-      } as any);
+      });
     }
+
     return super.toErrorJson(value);
   }
 
@@ -594,24 +591,24 @@ type InferOutputFailure<$CommandClass extends typeof Command> =
 
 // prettier-ignore
 type InferOutputFailureEnvelopeInit<$CommandClass extends typeof Command> =
-  Output.InferFailureEnvelopeInit<GetOutput<$CommandClass>>;
+  Output.InferFailureInit<GetOutput<$CommandClass>>;
 
 // prettier-ignore
 type InferOutputSuccessEnvelopeInit<$CommandClass extends typeof Command> =
-  Output.InferSuccessEnvelopeInit<GetOutput<$CommandClass>>;
+  Output.InferSuccessInit<GetOutput<$CommandClass>>;
 
 // prettier-ignore
 type InferOutputFailureData<$CommandClass extends typeof Command> =
-  Output.InferFailureData<GetOutput<$CommandClass>>;
+  Output.InferFailure<GetOutput<$CommandClass>>['data'];
 
 // prettier-ignore
 type InferOutputSuccessData<$CommandClass extends typeof Command> =
-  Output.InferSuccessData<GetOutput<$CommandClass>>;
+  Output.InferSuccess<GetOutput<$CommandClass>>['data'];
 
 // prettier-ignore
 type GetOutput<$CommandClass extends typeof Command> =
   'output' extends keyof $CommandClass
-    ? $CommandClass['output'] extends Output.DataType[]
+    ? $CommandClass['output'] extends Output.Definition[]
       ? $CommandClass['output'][number]
     : never
   : never;

@@ -1,5 +1,6 @@
 import { Errors } from '@oclif/core';
 import { Output } from '../../output/__';
+import { T } from '../typebox/__';
 
 export class Failure extends Errors.CLIError {
   public envelope: Output.FailureGeneric;
@@ -11,10 +12,10 @@ export class Failure extends Errors.CLIError {
     suggestions?: string[];
     data?: Partial<Output.FailureGeneric>['data'];
   }) {
-    const envelope = {
-      ...Output.failureDefaults,
-      data: args.data ?? {},
-    };
+    const envelope = T.Value.Default(Output.FailureGeneric, {
+      data: args.data,
+    }) as Output.FailureGeneric;
+
     super(args.message, {
       exit: args.exitCode,
       message: args.message,

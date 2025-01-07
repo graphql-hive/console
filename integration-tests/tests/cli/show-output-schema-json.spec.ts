@@ -1,18 +1,11 @@
-import { exec } from '../../testkit/cli';
+import { argsToExecFormat, exec, ExecCommandPath } from '../../testkit/cli';
 import { test } from '../../testkit/test';
 import { SnapshotSerializers } from './__snapshot_serializers__/__';
 
 expect.addSnapshotSerializer(SnapshotSerializers.cliOutput);
 
 interface TestCase {
-  command:
-    | 'whoami'
-    | 'schema:publish'
-    | 'schema:check'
-    | 'schema:delete'
-    | 'schema:fetch'
-    | 'app:create'
-    | 'app:publish';
+  command: ExecCommandPath;
   args?: Record<string, string>;
 }
 
@@ -28,13 +21,7 @@ const testCases: TestCase[] = [
 ];
 
 test.each(testCases)('--show-output-schema-json - %s', async ({ command, args }) => {
-  const preparedArgs = args
-    ? Object.entries(args)
-        .map(([key, value]) => `--${key}=${value}`)
-        .join(' ')
-    : '';
-  const preparedCommand = `${command} ${preparedArgs} --show-output-schema-json`;
-
+  const preparedCommand = `${command} ${argsToExecFormat(args)} --show-output-schema-json`;
   const [outputText, outputJson] = await Promise.all([
     exec(preparedCommand),
     exec(`${preparedCommand} --json`),

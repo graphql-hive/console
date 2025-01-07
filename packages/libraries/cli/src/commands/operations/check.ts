@@ -80,15 +80,15 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
     }),
   };
   static output = [
-    Output.failure('FailureOperationsCheckNoSchemaFound', {
+    Output.defineFailure('FailureOperationsCheckNoSchemaFound', {
       data: {},
       text: (_, __, t) => t.failure('Could not find a published schema.'),
     }),
-    Output.success('SuccessOperationsCheckNoOperationsFound', {
+    Output.defineSuccess('SuccessOperationsCheckNoOperationsFound', {
       data: {},
       text: (_, __, t) => t.info('No operations found'),
     }),
-    Output.success('SuccessOperationsCheck', {
+    Output.defineSuccess('SuccessOperationsCheck', {
       data: {
         countTotal: T.Integer({ minimum: 0 }),
         countInvalid: T.Integer({ minimum: 0 }),

@@ -1,7 +1,7 @@
 import { http, URL } from '@graphql-hive/core';
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { Output } from '../../output/__';
+import { OutputDefinitions } from '../../output-definitions';
 
 export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
   static description = 'fetch artifacts from the CDN';
@@ -21,7 +21,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
       description: 'whether to write to a file instead of stdout',
     }),
   };
-  static output = [Output.SuccessOutputFile, Output.SuccessOutputStdout];
+  static output = [OutputDefinitions.SuccessOutputFile, OutputDefinitions.SuccessOutputStdout];
 
   async runResult() {
     const { flags } = await this.parse(ArtifactsFetch);
