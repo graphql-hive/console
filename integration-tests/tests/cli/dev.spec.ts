@@ -46,7 +46,7 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError(/Only Federation projects are supported/);
   });
 
-  test('not available for STITCHING project', async ({ cliStitching: cli }) => {
+  test('not available for STITCHING project', async ({ cliForProjectStitching: cli }) => {
     const cmd = cli.dev({
       remote: true,
       services: [
