@@ -1,4 +1,3 @@
-import colors from 'colors';
 import { concatAST, print } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
@@ -13,9 +12,9 @@ import { Texture } from './texture/__';
 const indent = '  ';
 
 const criticalityMap: Record<CriticalityLevel, string> = {
-  [CriticalityLevel.Breaking]: colors.red('-'),
-  [CriticalityLevel.Safe]: colors.green('-'),
-  [CriticalityLevel.Dangerous]: colors.green('-'),
+  [CriticalityLevel.Breaking]: Texture.colors.red('-'),
+  [CriticalityLevel.Safe]: Texture.colors.green('-'),
+  [CriticalityLevel.Dangerous]: Texture.colors.green('-'),
 };
 
 export function renderErrors(this: BaseCommand<any>, errors: SchemaErrorConnection) {
@@ -23,7 +22,7 @@ export function renderErrors(this: BaseCommand<any>, errors: SchemaErrorConnecti
   this.log('');
 
   errors.nodes.forEach(error => {
-    this.log(String(indent), colors.red('-'), Texture.boldQuotedWords(error.message));
+    this.log(String(indent), Texture.colors.red('-'), Texture.boldQuotedWords(error.message));
   });
 }
 
@@ -59,11 +58,13 @@ export function renderChanges(
       ];
 
       if (change.isSafeBasedOnUsage) {
-        messageParts.push(colors.green('(Safe based on usage ✓)'));
+        messageParts.push(Texture.colors.green('(Safe based on usage ✓)'));
       }
       if (change.approval) {
         messageParts.push(
-          colors.green(`(Approved by ${change.approval.approvedBy?.displayName ?? '<unknown>'} ✓)`),
+          Texture.colors.green(
+            `(Approved by ${change.approval.approvedBy?.displayName ?? '<unknown>'} ✓)`,
+          ),
         );
       }
 
@@ -98,11 +99,16 @@ export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningCo
   this.log('');
 
   warnings.nodes.forEach(warning => {
-    const details = [warning.source ? `source: ${Texture.boldQuotedWords(warning.source)}` : undefined]
+    const details = [
+      warning.source ? `source: ${Texture.boldQuotedWords(warning.source)}` : undefined,
+    ]
       .filter(Boolean)
       .join(', ');
 
-    this.log(indent, `- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`);
+    this.log(
+      indent,
+      `- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`,
+    );
   });
 }
 

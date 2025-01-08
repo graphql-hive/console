@@ -1,9 +1,9 @@
-import colors from 'colors';
 import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
+import { Texture } from '../helpers/texture/__';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {
@@ -95,16 +95,19 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       const targetUrl = `${projectUrl}/${target.slug}`;
 
       const access = {
-        yes: colors.green('Yes'),
-        not: colors.red('No access'),
+        yes: Texture.colors.green('Yes'),
+        not: Texture.colors.red('No access'),
       };
 
       const print = createPrinter({
-        'Token name:': [colors.bold(tokenInfo.token.name)],
+        'Token name:': [Texture.colors.bold(tokenInfo.token.name)],
         ' ': [''],
-        'Organization:': [colors.bold(organization.slug), colors.dim(organizationUrl)],
-        'Project:': [colors.bold(project.slug), colors.dim(projectUrl)],
-        'Target:': [colors.bold(target.slug), colors.dim(targetUrl)],
+        'Organization:': [
+          Texture.colors.bold(organization.slug),
+          Texture.colors.dim(organizationUrl),
+        ],
+        'Project:': [Texture.colors.bold(project.slug), Texture.colors.dim(projectUrl)],
+        'Target:': [Texture.colors.bold(target.slug), Texture.colors.dim(targetUrl)],
         '  ': [''],
         'Access to schema:publish': [tokenInfo.canPublishSchema ? access.yes : access.not],
         'Access to schema:check': [tokenInfo.canCheckSchema ? access.yes : access.not],
