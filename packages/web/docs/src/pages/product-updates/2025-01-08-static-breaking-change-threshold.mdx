@@ -1,0 +1,25 @@
+---
+title: Added a Conditional Breaking Change Static Threshold
+description:
+  A minor improvement to our conditional breaking changes behavior that allows changes to be
+  considered breaking based on a minimum number of requests.
+date: 2025-01-08
+authors: [jdolle]
+---
+
+Expect a lot of improvements to the Hive Console (Schema Registry) in 2025.
+
+One of the first updates this year is a small but potentially very useful option for conditional
+breaking changes. Previously, Conditional Breaking Changes checked compatibility against all
+operations called in the past number of days. If the percent impacted exceeded the configured
+percentage threshold, then the change would be considered breaking. Unfortunately for schemas with
+disproportionate operation usage, an operation with very little percent usage could still have a
+major impact to their consumers.
+
+To better handle this case, a new option has been added to set a static threshold for the total
+number of operations that can be incompatible before the change is considered breaking.
+
+![Breaking Changes UI](/changelog/2025-01-08-static-breaking-change-threshold/ui.png)
+
+So if you were using a 0% threshold but found it a bit too restrictive, considered this new option
+to set a higher static threshold.
