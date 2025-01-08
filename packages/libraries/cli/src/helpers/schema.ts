@@ -19,9 +19,7 @@ export const renderErrors = (errors: SchemaErrorConnection) => {
   t.failure(`Detected ${errors.total} error${errors.total > 1 ? 's' : ''}`);
   t.line();
   errors.nodes.forEach(error => {
-    t.indent(
-      Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message),
-    );
+    t.indent(Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message));
   });
   return t.state.value.trim(); // gets passed to this.log which appends a newline
 };
@@ -94,9 +92,9 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
 
 export const renderWarnings = (warnings: SchemaWarningConnection) => {
   const t = Texture.createBuilder();
-  t.line()
+  t.line();
   t.warning(`Detected ${warnings.total} warning${warnings.total > 1 ? 's' : ''}`);
-  t.line()
+  t.line();
 
   warnings.nodes.forEach(warning => {
     const details = [
@@ -105,9 +103,7 @@ export const renderWarnings = (warnings: SchemaWarningConnection) => {
       .filter(Boolean)
       .join(', ');
 
-    t.indent(
-      `- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`,
-    );
+    t.indent(`- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`);
   });
 
   return t.state.value.trim(); // gets passed to this.log which appends a newline
