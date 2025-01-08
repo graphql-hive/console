@@ -11,7 +11,6 @@ import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { RegistryModel } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
 
 const OrganizationPolicyPageQuery = graphql(`
   query OrganizationPolicyPageQuery($selector: OrganizationSelectorInput!) {
@@ -83,23 +82,6 @@ function PolicyPageContent(props: { organizationSlug: string }) {
     p => p.registryModel === RegistryModel.Legacy,
   );
 
-  useRedirect({
-    canAccess: currentOrganization?.viewerCanModifySchemaPolicy === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-        },
-      });
-    },
-    entity: currentOrganization,
-  });
-
-  if (currentOrganization?.viewerCanModifySchemaPolicy === false) {
-    return null;
-  }
-
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
@@ -169,33 +151,40 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                   mutation.error?.message ||
                   mutation.data?.updateSchemaPolicyForOrganization.error?.message
                 }
-                onSave={async (newPolicy, allowOverrides) => {
-                  await mutate({
-                    selector: {
-                      organizationSlug: props.organizationSlug,
-                    },
-                    policy: newPolicy,
-                    allowOverrides,
-                  })
-                    .then(result => {
-                      if (result.data?.updateSchemaPolicyForOrganization.error || result.error) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Error',
-                          description:
-                            result.data?.updateSchemaPolicyForOrganization.error?.message ||
-                            result.error?.message,
-                        });
-                      } else {
-                        toast({
-                          variant: 'default',
-                          title: 'Success',
-                          description: 'Policy updated successfully',
-                        });
+                onSave={
+                  currentOrganization.viewerCanModifySchemaPolicy
+                    ? async (newPolicy, allowOverrides) => {
+                        await mutate({
+                          selector: {
+                            organizationSlug: props.organizationSlug,
+                          },
+                          policy: newPolicy,
+                          allowOverrides,
+                        })
+                          .then(result => {
+                            if (
+                              result.data?.updateSchemaPolicyForOrganization.error ||
+                              result.error
+                            ) {
+                              toast({
+                                variant: 'destructive',
+                                title: 'Error',
+                                description:
+                                  result.data?.updateSchemaPolicyForOrganization.error?.message ||
+                                  result.error?.message,
+                              });
+                            } else {
+                              toast({
+                                variant: 'default',
+                                title: 'Success',
+                                description: 'Policy updated successfully',
+                              });
+                            }
+                          })
+                          .catch();
                       }
-                    })
-                    .catch();
-                }}
+                    : null
+                }
                 currentState={currentOrganization.schemaPolicy}
               >
                 {form => (
@@ -205,6 +194,7 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                       checked={form.values.allowOverrides}
                       value="allowOverrides"
                       onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+                      disabled={!currentOrganization.viewerCanModifySchemaPolicy}
                     />
                     <label
                       htmlFor="allowOverrides"
