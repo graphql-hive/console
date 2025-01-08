@@ -151,21 +151,17 @@ export function ProjectLayout({
                         </Link>
                       </TabsTrigger>
                     )}
-                    {currentProject.viewerCanModifySchemaPolicy && (
-                      <>
-                        <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                          <Link
-                            to="/$organizationSlug/$projectSlug/view/policy"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                            }}
-                          >
-                            Policy
-                          </Link>
-                        </TabsTrigger>
-                      </>
-                    )}
+                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                      <Link
+                        to="/$organizationSlug/$projectSlug/view/policy"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                        }}
+                      >
+                        Policy
+                      </Link>
+                    </TabsTrigger>
                     {currentProject.viewerCanModifySettings && (
                       <TabsTrigger variant="menu" value={Page.Settings} asChild>
                         <Link
