@@ -9,7 +9,7 @@ export const indent = space.repeat(3);
 
 export const newline = '\n';
 
-export const header = (value: string) => colors.dim('=== ') + colors.bold(value) + newline;
+export const header = (value: string) => colors.dim('=== ') + colors.bold(value);
 
 export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
@@ -113,7 +113,7 @@ export const createBuilder = (): Builder => {
       return builder;
     },
     header: value => {
-      state.value = state.value + header(value);
+      state.value = state.value + header(value) + newline;
       return builder;
     },
     indent: value => {

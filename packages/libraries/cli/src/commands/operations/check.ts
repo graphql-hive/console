@@ -165,7 +165,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         return;
       }
 
-      ux.styledHeader('Summary');
+      this.log(Texture.header('Summary'));
       this.log(
         [
           `Total: ${operations.length}`,
@@ -176,7 +176,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         ].join('\n'),
       );
 
-      ux.styledHeader('Details');
+      this.log(Texture.header('Details'));
 
       this.printInvalidDocuments(operationsWithErrors);
       this.exit(1);
