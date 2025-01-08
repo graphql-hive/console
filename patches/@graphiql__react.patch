@@ -224,8 +224,8 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
 +            ...updatedValues.tabs,
 +            createTab({
 +              ..._tabState,
-+              headers: defaultHeaders,
-+              query: defaultQuery ?? DEFAULT_QUERY
++              headers: _tabState?.headers ?? defaultHeaders,
++              query: _tabState?.query ?? (defaultQuery ?? DEFAULT_QUERY)
 +            })
 +          ],
 +          activeTabIndex: updatedValues.tabs.length
