@@ -240,7 +240,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         } else if (!changes?.total) {
           this.success('No changes');
         } else {
-          renderChanges.call(this, changes);
+          this.log(renderChanges(changes));
           this.log('');
         }
 
@@ -266,7 +266,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
         if (changes && changes.total) {
           this.log('');
-          renderChanges.call(this, changes);
+          this.log(renderChanges(changes));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {

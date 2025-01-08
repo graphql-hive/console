@@ -46,9 +46,9 @@ const RenderChanges_SchemaChanges = graphql(`
 `);
 
 export function renderChanges(
-  this: BaseCommand<any>,
   maskedChanges: FragmentType<typeof RenderChanges_SchemaChanges>,
 ) {
+  const t = Texture.createBuilder();
   const changes = unmaskFragment(RenderChanges_SchemaChanges, maskedChanges);
   type ChangeType = (typeof changes)['nodes'][number];
 
@@ -71,12 +71,12 @@ export function renderChanges(
         );
       }
 
-      this.log(...messageParts);
+      t.line(messageParts.join(' '));
     });
   };
 
-  this.info(`Detected ${changes.total} change${changes.total > 1 ? 's' : ''}`);
-  this.log('');
+  t.info(`Detected ${changes.total} change${changes.total > 1 ? 's' : ''}`);
+  t.line();
 
   const breakingChanges = changes.nodes.filter(
     change => change.criticality === CriticalityLevel.Breaking,
@@ -86,14 +86,16 @@ export function renderChanges(
   );
 
   if (breakingChanges.length) {
-    this.log(String(indent), `Breaking changes:`);
+    t.indent(`Breaking changes:`);
     writeChanges(breakingChanges);
   }
 
   if (safeChanges.length) {
-    this.log(String(indent), `Safe changes:`);
+    t.indent(`Safe changes:`);
     writeChanges(safeChanges);
   }
+
+  return t.state.value.trim();
 }
 
 export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningConnection) {
