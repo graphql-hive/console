@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
+import { orEnvar } from 'src/helpers/env';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
@@ -204,16 +205,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       const metadata = this.resolveMetadata(flags.metadata);
       const usesGitHubApp = flags.github;
 
-      let commit: string | undefined | null = this.maybe({
-        key: 'commit',
-        args: flags,
-        env: 'HIVE_COMMIT',
-      });
-      let author: string | undefined | null = this.maybe({
-        key: 'author',
-        args: flags,
-        env: 'HIVE_AUTHOR',
-      });
+      let commit = orEnvar(flags.commit, 'HIVE_COMMIT');
+      let author = orEnvar(flags.author, 'HIVE_AUTHOR');
 
       let gitHub: null | {
         repository: string;
