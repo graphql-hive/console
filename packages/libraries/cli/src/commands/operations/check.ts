@@ -6,6 +6,7 @@ import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
+import { Texture } from '../../helpers/texture/__';
 
 const fetchLatestVersionQuery = graphql(/* GraphQL */ `
   query fetchLatestVersion {
@@ -198,7 +199,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
   private renderErrors(sourceName: string, errors: GraphQLError[]) {
     this.fail(sourceName);
     errors.forEach(e => {
-      this.log(` - ${this.bolderize(e.message)}`);
+      this.log(` - ${Texture.boldQuotedWords(e.message)}`);
     });
     this.log('');
   }

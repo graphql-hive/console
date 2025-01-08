@@ -69,15 +69,6 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.log(Texture.warning(...args));
   }
 
-  bolderize(msg: string) {
-    const findSingleQuotes = /'([^']+)'/gim;
-    const findDoubleQuotes = /"([^"]+)"/gim;
-
-    return msg
-      .replace(findSingleQuotes, (_: string, value: string) => colors.bold(value))
-      .replace(findDoubleQuotes, (_: string, value: string) => colors.bold(value));
-  }
-
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
     key,
     env,

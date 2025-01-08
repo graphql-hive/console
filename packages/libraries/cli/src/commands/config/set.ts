@@ -1,6 +1,7 @@
 import { Args } from '@oclif/core';
 import Command from '../../base-command';
 import { allowedKeys, ValidConfigurationKeys } from '../../helpers/config';
+import { Texture } from '../../helpers/texture/__';
 
 export default class SetConfig extends Command<typeof SetConfig> {
   static description = 'updates specific cli configuration';
@@ -21,6 +22,6 @@ export default class SetConfig extends Command<typeof SetConfig> {
   async run() {
     const { args } = await this.parse(SetConfig);
     this.userConfig.set(args.key as ValidConfigurationKeys, args.value);
-    this.success(this.bolderize(`Config flag "${args.key}" was set to "${args.value}"`));
+    this.success(Texture.boldQuotedWords(`Config flag "${args.key}" was set to "${args.value}"`));
   }
 }

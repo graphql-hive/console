@@ -1,5 +1,6 @@
 import { Args } from '@oclif/core';
 import Command from '../../base-command';
+import { Texture } from '../../helpers/texture/__';
 
 export default class DeleteConfig extends Command<typeof DeleteConfig> {
   static description = 'deletes specific cli configuration';
@@ -14,6 +15,6 @@ export default class DeleteConfig extends Command<typeof DeleteConfig> {
   async run() {
     const { args } = await this.parse(DeleteConfig);
     this._userConfig!.delete(args.key);
-    this.success(this.bolderize(`Config flag "${args.key}" was deleted`));
+    this.success(Texture.boldQuotedWords(`Config flag "${args.key}" was deleted`));
   }
 }

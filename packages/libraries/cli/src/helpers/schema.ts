@@ -8,6 +8,7 @@ import { UrlLoader } from '@graphql-tools/url-loader';
 import BaseCommand from '../base-command';
 import { FragmentType, graphql, useFragment as unmaskFragment } from '../gql';
 import { CriticalityLevel, SchemaErrorConnection, SchemaWarningConnection } from '../gql/graphql';
+import { Texture } from './texture/__';
 
 const indent = '  ';
 
@@ -22,7 +23,7 @@ export function renderErrors(this: BaseCommand<any>, errors: SchemaErrorConnecti
   this.log('');
 
   errors.nodes.forEach(error => {
-    this.log(String(indent), colors.red('-'), this.bolderize(error.message));
+    this.log(String(indent), colors.red('-'), Texture.boldQuotedWords(error.message));
   });
 }
 
@@ -54,7 +55,7 @@ export function renderChanges(
       const messageParts = [
         String(indent),
         criticalityMap[change.isSafeBasedOnUsage ? CriticalityLevel.Safe : change.criticality],
-        this.bolderize(change.message),
+        Texture.boldQuotedWords(change.message),
       ];
 
       if (change.isSafeBasedOnUsage) {
@@ -97,11 +98,11 @@ export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningCo
   this.log('');
 
   warnings.nodes.forEach(warning => {
-    const details = [warning.source ? `source: ${this.bolderize(warning.source)}` : undefined]
+    const details = [warning.source ? `source: ${Texture.boldQuotedWords(warning.source)}` : undefined]
       .filter(Boolean)
       .join(', ');
 
-    this.log(indent, `- ${this.bolderize(warning.message)}${details ? ` (${details})` : ''}`);
+    this.log(indent, `- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`);
   });
 }
 
