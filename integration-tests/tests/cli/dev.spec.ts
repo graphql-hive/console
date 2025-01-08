@@ -1,27 +1,11 @@
 /* eslint-disable no-process-env */
-import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { ProjectType } from 'testkit/gql/graphql';
 import { createCLI } from '../../testkit/cli';
 import { initSeed } from '../../testkit/seed';
-
-function tmpFile(extension: string) {
-  const dir = tmpdir();
-  const fileName = randomUUID();
-  const filepath = join(dir, `${fileName}.${extension}`);
-
-  return {
-    filepath,
-    read() {
-      return readFile(filepath, 'utf-8');
-    },
-  };
-}
+import { test } from '../../testkit/test';
 
 describe('dev', () => {
-  test('composes only the locally provided service', async () => {
+  test('composes only the locally provided service', async ({ graphqlFile }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -35,7 +19,6 @@ describe('dev', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: false,
       services: [
@@ -45,12 +28,12 @@ describe('dev', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: graphqlFile.path,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
-    await expect(supergraph.read()).resolves.not.toMatch('http://localhost/foo');
+    await expect(cmd).resolves.toMatch(graphqlFile.path);
+    await expect(graphqlFile.read()).resolves.toMatch('http://localhost/bar');
+    await expect(graphqlFile.read()).resolves.not.toMatch('http://localhost/foo');
   });
 });
 
@@ -97,7 +80,7 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError(/Only Federation projects are supported/);
   });
 
-  test('adds a service', async () => {
+  test('adds a service', async ({ graphqlFile }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -111,7 +94,6 @@ describe('dev --remote', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -121,14 +103,14 @@ describe('dev --remote', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: graphqlFile.path,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+    await expect(cmd).resolves.toMatch(graphqlFile.path);
+    await expect(graphqlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('replaces a service', async () => {
+  test('replaces a service', async ({ graphqlFile }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -149,7 +131,6 @@ describe('dev --remote', () => {
       expect: 'latest-composable',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -159,14 +140,14 @@ describe('dev --remote', () => {
           sdl: 'type Query { bar: String }',
         },
       ],
-      write: supergraph.filepath,
+      write: graphqlFile.path,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    await expect(supergraph.read()).resolves.toMatch('http://localhost/bar');
+    await expect(cmd).resolves.toMatch(graphqlFile.path);
+    await expect(graphqlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('uses latest composable version by default', async () => {
+  test('uses latest composable version by default', async ({ graphqlFile }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
     const { createTargetAccessToken, setNativeFederation } = await createProject(
@@ -216,7 +197,6 @@ describe('dev --remote', () => {
       expect: 'latest',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       services: [
@@ -237,16 +217,16 @@ describe('dev --remote', () => {
           `,
         },
       ],
-      write: supergraph.filepath,
+      write: graphqlFile.path,
     });
 
-    await expect(cmd).resolves.toMatch(supergraph.filepath);
-    const content = await supergraph.read();
+    await expect(cmd).resolves.toMatch(graphqlFile.path);
+    const content = await graphqlFile.read();
     expect(content).not.toMatch('http://localhost/bar');
     expect(content).toMatch('http://localhost/baz');
   });
 
-  test('uses latest version when requested', async () => {
+  test('uses latest version when requested', async ({ graphqlFile }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
     const { createTargetAccessToken, setNativeFederation } = await createProject(
@@ -296,7 +276,6 @@ describe('dev --remote', () => {
       expect: 'latest',
     });
 
-    const supergraph = tmpFile('graphql');
     const cmd = cli.dev({
       remote: true,
       useLatestVersion: true,
@@ -318,7 +297,7 @@ describe('dev --remote', () => {
           `,
         },
       ],
-      write: supergraph.filepath,
+      write: graphqlFile.path,
     });
 
     // The command should fail because the latest version contains a non-shareable field and we don't override the corrupted subgraph
