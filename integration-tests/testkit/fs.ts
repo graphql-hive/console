@@ -29,10 +29,28 @@ export const createTmpFileController = ({ extension }: {
   };
 };
 
-export const generateTmpFile = async (content: string, extension: string) => {
+/**
+ * Writes a temporary file with the given content and returns the path to the file.
+ */
+export const writeTmpFile = async (params: {
+  /**
+   * Content of the file to be created.
+   * If an object is provided, it will be converted to a JSON string with 2 spaces of indentation.
+   */
+  content: string | object;
+  /**
+   * Extension of the file to be created.
+   * Leading dot will be ignored.
+   *
+   * @defaultValue 'txt' unless the content is an object in which case it will be 'json'.
+   */
+  extension?: string;
+}) => {
+  const extension = params.extension ?? 'txt';
+  const content = typeof params.content === 'object' ? JSON.stringify(params.content,null,2) : params.content;
   const dirPath = tmpdir();
   const fileName = randomUUID();
-  const filePath = join(dirPath, `${fileName}.${extension}`);
+  const filePath = join(dirPath, `${fileName}.${extension.replace(/^\./, '')}`);
 
   await writeFile(filePath, content, 'utf-8');
 

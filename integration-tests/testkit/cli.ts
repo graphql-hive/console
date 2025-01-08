@@ -1,23 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { execaCommand } from '@esm2cjs/execa';
 import { fetchLatestSchema, fetchLatestValidSchema } from './flow';
 import { getServiceHost } from './utils';
+import { writeTmpFile } from './fs';
 
 const binPath = resolve(__dirname, '../../packages/libraries/cli/bin/run');
 const cliDir = resolve(__dirname, '../../packages/libraries/cli');
-
-async function generateTmpFile(content: string, extension: string) {
-  const dir = tmpdir();
-  const fileName = randomUUID();
-  const filepath = join(dir, `${fileName}.${extension}`);
-
-  await writeFile(filepath, content, 'utf-8');
-
-  return filepath;
-}
 
 async function exec(cmd: string) {
   const outout = await execaCommand(`${binPath} ${cmd}`, {
@@ -111,10 +100,10 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       commit,
       ...(serviceName ? ['--service', serviceName] : []),
       ...(serviceUrl ? ['--url', serviceUrl] : []),
-      ...(metadata ? ['--metadata', await generateTmpFile(JSON.stringify(metadata), 'json')] : []),
+      ...(metadata ? ['--metadata', await writeTmpFile({ content: metadata })] : []),
       ...(legacy_force ? ['--force'] : []),
       ...(legacy_acceptBreakingChanges ? ['--experimental_acceptBreakingChanges'] : []),
-      await generateTmpFile(sdl, 'graphql'),
+      await writeTmpFile({ content: sdl, extension: 'graphql' }),
     ]);
 
     const expectedCommit = expect.objectContaining({
@@ -194,7 +183,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       '--registry.accessToken',
       tokens.readonly,
       ...(serviceName ? ['--service', serviceName] : []),
-      await generateTmpFile(sdl, 'graphql'),
+      await writeTmpFile({ content: sdl, extension: 'graphql' }),
     ]);
 
     if (expectedStatus === 'rejected') {
@@ -289,7 +278,7 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
             '--url',
             url,
             '--schema',
-            await generateTmpFile(sdl, 'graphql'),
+            await writeTmpFile({ content: sdl, extension: 'graphql' }),
           ].join(' ');
         }),
       )),
