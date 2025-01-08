@@ -134,7 +134,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       const errors = result.schemaDelete.errors;
 
       if (errors) {
-        renderErrors.call(this, errors);
+        this.log(renderErrors(errors));
         this.exit(1);
       }
     } catch (error) {

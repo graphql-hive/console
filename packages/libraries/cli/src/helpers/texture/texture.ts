@@ -87,12 +87,15 @@ export interface Builder {
    */
   indent: (value: string) => Builder;
   /**
-   * The current string value of this builder.
+   * The current state of this builder.
    */
   state: BuilderState;
 }
 
 interface BuilderState {
+  /**
+   * The current string value of this builder.
+   */
   value: string;
 }
 

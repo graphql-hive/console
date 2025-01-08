@@ -17,14 +17,17 @@ const criticalityMap: Record<CriticalityLevel, string> = {
   [CriticalityLevel.Dangerous]: Texture.colors.green('-'),
 };
 
-export function renderErrors(this: BaseCommand<any>, errors: SchemaErrorConnection) {
-  this.fail(`Detected ${errors.total} error${errors.total > 1 ? 's' : ''}`);
-  this.log('');
-
+export const renderErrors = (errors: SchemaErrorConnection) => {
+  const t = Texture.createBuilder();
+  t.failure(`Detected ${errors.total} error${errors.total > 1 ? 's' : ''}`);
+  t.line();
   errors.nodes.forEach(error => {
-    this.log(String(indent), Texture.colors.red('-'), Texture.boldQuotedWords(error.message));
+    t.line(
+      Texture.indent + ' ' + Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message),
+    );
   });
-}
+  return t.state.value.trim();
+};
 
 const RenderChanges_SchemaChanges = graphql(`
   fragment RenderChanges_schemaChanges on SchemaChangeConnection {

@@ -257,7 +257,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         const errors = result.schemaCheck.errors;
         const warnings = result.schemaCheck.warnings;
-        renderErrors.call(this, errors);
+        this.log(renderErrors(errors));
 
         if (warnings?.total) {
           renderWarnings.call(this, warnings);

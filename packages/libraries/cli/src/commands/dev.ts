@@ -308,12 +308,14 @@ export default class Dev extends Command<typeof Dev> {
 
     if (compositionHasErrors(compositionResult)) {
       if (compositionResult.errors) {
-        renderErrors.call(this, {
-          total: compositionResult.errors.length,
-          nodes: compositionResult.errors.map(error => ({
-            message: error.message,
-          })),
-        });
+        this.log(
+          renderErrors({
+            total: compositionResult.errors.length,
+            nodes: compositionResult.errors.map(error => ({
+              message: error.message,
+            })),
+          }),
+        );
       }
 
       input.onError('Composition failed');
@@ -371,7 +373,7 @@ export default class Dev extends Command<typeof Dev> {
 
     if (!valid) {
       if (compositionResult.errors) {
-        renderErrors.call(this, compositionResult.errors);
+        this.log(renderErrors(compositionResult.errors));
       }
 
       input.onError('Composition failed');
