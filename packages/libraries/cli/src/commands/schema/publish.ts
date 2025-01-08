@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
-import { orEnvar } from '../../helpers/env';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { orEnvar } from '../../helpers/env';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
