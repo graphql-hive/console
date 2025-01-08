@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
-import { orEnvar } from 'src/helpers/env';
+import { orEnvar } from '../../helpers/env';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
