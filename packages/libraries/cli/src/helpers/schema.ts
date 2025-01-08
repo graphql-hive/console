@@ -87,7 +87,7 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
     writeChanges(safeChanges);
   }
 
-  return t.state.value
+  return t.state.value;
 };
 
 export const renderWarnings = (warnings: SchemaWarningConnection) => {
@@ -106,7 +106,7 @@ export const renderWarnings = (warnings: SchemaWarningConnection) => {
     t.indent(`- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`);
   });
 
-  return t.state.value//.trim(); // gets passed to this.log which appends a newline
+  return t.state.value;
 };
 
 export async function loadSchema(
