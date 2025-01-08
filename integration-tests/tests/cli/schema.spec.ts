@@ -282,14 +282,14 @@ describe.each`
       );
     });
 
-  test.concurrent('can publish and fetch a schema with target:registry:read access', async () => {
+  test.concurrent('schema:fetch can fetch a schema with target:registry:read access', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
     const { createTargetAccessToken } = await createProject(projectType, {
       useLegacyRegistryModels: model === 'legacy',
     });
-    const { secret } = await createTargetAccessToken({});
+    const { secret, latestSchema } = await createTargetAccessToken({});
 
     const cli = createCLI({
       readonly: secret,
@@ -308,11 +308,18 @@ describe.each`
       'fixtures/init-schema.graphql',
     ]);
 
-    await expect(
-      cli.fetch({
-        type: 'subgraphs',
-        actionId: 'abc123',
-      }),
-    ).resolves.toBe(``);
+    const schema = await latestSchema();
+    const numSchemas = schema.latestVersion?.schemas.nodes.length;
+    const fetchCmd = cli.fetch({
+      type: 'subgraphs',
+      actionId: 'abc123',
+    });
+    const rHeader = `service\\s+url\\s+date`;
+    const rUrl = `http:\\/\\/\\S+(:\\d+)?|n/a`;
+    const rSubgraph = `[-]+\\s+\\S+\\s+(${rUrl})\\s+\\S+Z\\s+`;
+    const rFooter = `subgraphs length: ${numSchemas}`;
+    await expect(fetchCmd).resolves.toMatch(
+      new RegExp(`${rHeader}\\s+(${rSubgraph}){${numSchemas}}${rFooter}`),
+    );
   });
 });
