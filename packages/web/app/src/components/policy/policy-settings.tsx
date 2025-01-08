@@ -54,7 +54,7 @@ function PolicySettingsListForm({
   saving?: boolean;
   rulesInParent?: string[];
   error?: string;
-  onSave: (values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>;
+  onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   availableRules: AvailableRulesList;
   currentState?: PolicySettings_SchemaPolicyFragmentFragment | null;
   children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
@@ -74,7 +74,7 @@ function PolicySettingsListForm({
           })),
       };
 
-      void onSave(asInput, values.allowOverrides).then(() => formikHelpers.resetForm());
+      void onSave?.(asInput, values.allowOverrides).then(() => formikHelpers.resetForm());
     },
   );
   const validationSchema = useMemo(() => buildValidationSchema(availableRules), [availableRules]);
@@ -112,7 +112,7 @@ function PolicySettingsListForm({
             {props.dirty ? <p className="pr-2 text-sm text-gray-500">Unsaved changes</p> : null}
 
             <Button
-              disabled={!props.dirty || saving || !props.isValid}
+              disabled={!props.dirty || saving || !props.isValid || !onSave}
               type="submit"
               variant="default"
               onClick={() => props.submitForm()}
@@ -130,6 +130,7 @@ function PolicySettingsListForm({
           <div className="grid grid-cols-1 divide-y divide-gray-800">
             {availableRules.map(availableRule => (
               <PolicyListItem
+                disabled={!onSave}
                 overridingParentRule={rulesInParent?.includes(availableRule.id) ?? false}
                 key={availableRule.id}
                 ruleInfo={availableRule}
@@ -153,7 +154,7 @@ export function PolicySettings({
   saving?: boolean;
   rulesInParent?: string[];
   currentState?: null | FragmentType<typeof PolicySettings_SchemaPolicyFragment>;
-  onSave: (values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>;
+  onSave: null | ((values: SchemaPolicyInput, allowOverrides: boolean) => Promise<void>);
   error?: string;
   children?: (form: FormikProps<PolicyFormValues>) => ReactElement;
 }): ReactElement {
@@ -164,19 +165,22 @@ export function PolicySettings({
   const activePolicy = useFragment(PolicySettings_SchemaPolicyFragment, currentState);
 
   return (
-    <DataWrapper query={availableRules} organizationSlug={null}>
-      {query => (
-        <PolicySettingsListForm
-          saving={saving}
-          rulesInParent={rulesInParent}
-          currentState={activePolicy}
-          onSave={onSave}
-          error={error}
-          availableRules={query.data.schemaPolicyRules}
-        >
-          {children}
-        </PolicySettingsListForm>
-      )}
-    </DataWrapper>
+    <>
+      {!onSave && 'You have read only access to this policy.'}
+      <DataWrapper query={availableRules} organizationSlug={null}>
+        {query => (
+          <PolicySettingsListForm
+            saving={saving}
+            rulesInParent={rulesInParent}
+            currentState={activePolicy}
+            onSave={onSave}
+            error={error}
+            availableRules={query.data.schemaPolicyRules}
+          >
+            {children}
+          </PolicySettingsListForm>
+        )}
+      </DataWrapper>
+    </>
   );
 }

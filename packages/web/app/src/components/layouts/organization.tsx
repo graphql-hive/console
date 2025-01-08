@@ -157,16 +157,14 @@ export function OrganizationLayout({
                     </Link>
                   </TabsTrigger>
                 )}
-                {currentOrganization.viewerCanModifySchemaPolicy && (
-                  <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                    <Link
-                      to="/$organizationSlug/view/policy"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Policy
-                    </Link>
-                  </TabsTrigger>
-                )}
+                <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                  <Link
+                    to="/$organizationSlug/view/policy"
+                    params={{ organizationSlug: currentOrganization.slug }}
+                  >
+                    Policy
+                  </Link>
+                </TabsTrigger>
                 {currentOrganization.viewerCanAccessSettings && (
                   <TabsTrigger variant="menu" value={Page.Settings} asChild>
                     <Link
