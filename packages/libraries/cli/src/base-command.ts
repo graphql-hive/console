@@ -5,6 +5,7 @@ import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Command, Errors, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
+import { Texture } from './helpers/texture/__';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -53,19 +54,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   success(...args: any[]) {
-    this.log(colors.green('✔'), ...args);
+    this.log(Texture.success(...args));
   }
 
   fail(...args: any[]) {
-    this.log(colors.red('✖'), ...args);
+    this.log(Texture.failure(...args));
   }
 
   info(...args: any[]) {
-    this.log(colors.yellow('ℹ'), ...args);
+    this.log(Texture.info(...args));
   }
 
   infoWarning(...args: any[]) {
-    this.log(colors.yellow('⚠'), ...args);
+    this.log(Texture.warning(...args));
   }
 
   bolderize(msg: string) {
