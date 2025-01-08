@@ -1,4 +1,3 @@
-import colors from 'colors';
 import { print, type GraphQLError } from 'graphql';
 import type { ExecutionResult } from 'graphql';
 import { http } from '@graphql-hive/core';
