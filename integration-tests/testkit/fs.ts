@@ -10,11 +10,14 @@ export interface TmpFileController {
   read(): Promise<string>;
 }
 
-export const createTmpFileController = ({ extension }: {
+export const createTmpFileController = ({
+  extension,
+}: {
   /**
    * Extension of the file to be created.
    */
-  extension: string; }): TmpFileController => {
+  extension: string;
+}): TmpFileController => {
   const dirPath = tmpdir();
   const fileName = randomUUID();
   const filePath = join(dirPath, `${fileName}.${extension}`);
@@ -47,7 +50,8 @@ export const writeTmpFile = async (params: {
   extension?: string;
 }) => {
   const extension = params.extension ?? 'txt';
-  const content = typeof params.content === 'object' ? JSON.stringify(params.content,null,2) : params.content;
+  const content =
+    typeof params.content === 'object' ? JSON.stringify(params.content, null, 2) : params.content;
   const dirPath = tmpdir();
   const fileName = randomUUID();
   const filePath = join(dirPath, `${fileName}.${extension.replace(/^\./, '')}`);

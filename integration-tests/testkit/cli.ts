@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { execaCommand } from '@esm2cjs/execa';
 import { fetchLatestSchema, fetchLatestValidSchema } from './flow';
-import { getServiceHost } from './utils';
 import { writeTmpFile } from './fs';
+import { getServiceHost } from './utils';
 
 const binPath = resolve(__dirname, '../../packages/libraries/cli/bin/run');
 const cliDir = resolve(__dirname, '../../packages/libraries/cli');

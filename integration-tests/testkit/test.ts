@@ -4,7 +4,7 @@
  */
 
 import { test as testBase } from 'vitest';
-import { TmpFileController, createTmpFileController } from './fs';
+import { createTmpFileController, TmpFileController } from './fs';
 
 interface Context {
   graphqlFile: TmpFileController;
