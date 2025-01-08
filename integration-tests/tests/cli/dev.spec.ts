@@ -1,11 +1,13 @@
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { createCLI } from '../../testkit/cli';
+import { tmpFile } from '../../testkit/fs';
 import { initSeed } from '../../testkit/seed';
 import { test } from '../../testkit/test';
 
 describe('dev', () => {
-  test('composes only the locally provided service', async ({ sdlFile }) => {
+  test('composes only the locally provided service', async () => {
+    const sdlFile = tmpFile('graphql');
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -80,7 +82,8 @@ describe('dev --remote', () => {
     await expect(cmd).rejects.toThrowError(/Only Federation projects are supported/);
   });
 
-  test('adds a service', async ({ sdlFile }) => {
+  test('adds a service', async () => {
+    const sdlFile = tmpFile('graphql');
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -110,7 +113,8 @@ describe('dev --remote', () => {
     await expect(sdlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('replaces a service', async ({ sdlFile }) => {
+  test('replaces a service', async () => {
+    const sdlFile = tmpFile('graphql');
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken } = await createProject(ProjectType.Federation);
@@ -147,7 +151,8 @@ describe('dev --remote', () => {
     await expect(sdlFile.read()).resolves.toMatch('http://localhost/bar');
   });
 
-  test('uses latest composable version by default', async ({ sdlFile }) => {
+  test('uses latest composable version by default', async () => {
+    const sdlFile = tmpFile('graphql');
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
     const { createTargetAccessToken, setNativeFederation } = await createProject(
@@ -226,7 +231,8 @@ describe('dev --remote', () => {
     expect(content).toMatch('http://localhost/baz');
   });
 
-  test('uses latest version when requested', async ({ sdlFile }) => {
+  test('uses latest version when requested', async () => {
+    const sdlFile = tmpFile('graphql');
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setFeatureFlag } = await createOrg();
     const { createTargetAccessToken, setNativeFederation } = await createProject(
