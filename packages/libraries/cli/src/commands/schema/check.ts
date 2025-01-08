@@ -246,7 +246,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
         const warnings = result.schemaCheck.warnings;
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
+          this.log(renderWarnings(warnings));
           this.log('');
         }
 
@@ -260,7 +260,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         this.log(renderErrors(errors));
 
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
+          this.log(renderWarnings(warnings));
           this.log('');
         }
 

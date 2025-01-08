@@ -4,12 +4,9 @@ import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
 import { loadTypedefs } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
-import BaseCommand from '../base-command';
 import { FragmentType, graphql, useFragment as unmaskFragment } from '../gql';
 import { CriticalityLevel, SchemaErrorConnection, SchemaWarningConnection } from '../gql/graphql';
 import { Texture } from './texture/__';
-
-const indent = '  ';
 
 const criticalityMap: Record<CriticalityLevel, string> = {
   [CriticalityLevel.Breaking]: Texture.colors.red('-'),
@@ -22,11 +19,11 @@ export const renderErrors = (errors: SchemaErrorConnection) => {
   t.failure(`Detected ${errors.total} error${errors.total > 1 ? 's' : ''}`);
   t.line();
   errors.nodes.forEach(error => {
-    t.line(
-      Texture.indent + ' ' + Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message),
+    t.indent(
+      Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message),
     );
   });
-  return t.state.value.trim();
+  return t.state.value.trim(); // gets passed to this.log which appends a newline
 };
 
 const RenderChanges_SchemaChanges = graphql(`
@@ -45,9 +42,7 @@ const RenderChanges_SchemaChanges = graphql(`
   }
 `);
 
-export function renderChanges(
-  maskedChanges: FragmentType<typeof RenderChanges_SchemaChanges>,
-) {
+export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_SchemaChanges>) => {
   const t = Texture.createBuilder();
   const changes = unmaskFragment(RenderChanges_SchemaChanges, maskedChanges);
   type ChangeType = (typeof changes)['nodes'][number];
@@ -55,7 +50,6 @@ export function renderChanges(
   const writeChanges = (changes: ChangeType[]) => {
     changes.forEach(change => {
       const messageParts = [
-        String(indent),
         criticalityMap[change.isSafeBasedOnUsage ? CriticalityLevel.Safe : change.criticality],
         Texture.boldQuotedWords(change.message),
       ];
@@ -71,7 +65,7 @@ export function renderChanges(
         );
       }
 
-      t.line(messageParts.join(' '));
+      t.indent(messageParts.join(' '));
     });
   };
 
@@ -95,13 +89,14 @@ export function renderChanges(
     writeChanges(safeChanges);
   }
 
-  return t.state.value.trim();
-}
+  return t.state.value.trim(); // gets passed to this.log which appends a newline
+};
 
-export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningConnection) {
-  this.log('');
-  this.infoWarning(`Detected ${warnings.total} warning${warnings.total > 1 ? 's' : ''}`);
-  this.log('');
+export const renderWarnings = (warnings: SchemaWarningConnection) => {
+  const t = Texture.createBuilder();
+  t.line()
+  t.warning(`Detected ${warnings.total} warning${warnings.total > 1 ? 's' : ''}`);
+  t.line()
 
   warnings.nodes.forEach(warning => {
     const details = [
@@ -110,12 +105,13 @@ export function renderWarnings(this: BaseCommand<any>, warnings: SchemaWarningCo
       .filter(Boolean)
       .join(', ');
 
-    this.log(
-      indent,
+    t.indent(
       `- ${Texture.boldQuotedWords(warning.message)}${details ? ` (${details})` : ''}`,
     );
   });
-}
+
+  return t.state.value.trim(); // gets passed to this.log which appends a newline
+};
 
 export async function loadSchema(
   file: string,
