@@ -268,7 +268,7 @@ FLAGS
   --registry.endpoint=<value>     registry endpoint
   --token=<value>                 api token
   --type=<value>                  Type to fetch (possible types: sdl,
-                                  supergraph)
+                                  supergraph, subgraphs)
   --write=<value>                 Write to a file (possible extensions:
                                   .graphql, .gql, .gqls, .graphqls)
 
