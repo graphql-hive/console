@@ -30,7 +30,7 @@ runs:
       id: pnpm
       run: |
         PNPM_VERSION=$(cat package.json | jq -r '.packageManager' | awk -F@ '{print $2}')
-        PNPM_VERSION=${PNPM_VERSION:-8}
+        PNPM_VERSION=${PNPM_VERSION:-9}
         echo "Using PNPM version $PNPM_VERSION"
         echo "version=$PNPM_VERSION" >> $GITHUB_OUTPUT
 

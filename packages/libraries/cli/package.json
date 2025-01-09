@@ -30,11 +30,11 @@
     "graphql"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build --clean && tsc --build",
+    "build:watch": "tsc --build --watch",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
-    "prebuild": "rimraf dist",
     "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme",
     "prepublishOnly": "oclif manifest && oclif readme",
     "schema:check:federation": "pnpm start schema:check examples/federation.graphql --service reviews",
@@ -53,7 +53,7 @@
     "@graphql-tools/json-file-loader": "~8.0.0",
     "@graphql-tools/load": "~8.0.0",
     "@graphql-tools/url-loader": "~8.0.0",
-    "@graphql-tools/utils": "10.5.6",
+    "@graphql-tools/utils": "10.7.2",
     "@graphql-typed-document-node/core": "3.2.0",
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "6.0.22",
@@ -73,7 +73,7 @@
     "oclif": "4.13.6",
     "rimraf": "4.4.1",
     "tsx": "4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.7.3"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

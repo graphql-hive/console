@@ -164,6 +164,7 @@ function Save(props: {
       <GraphiQLTooltip label={label}>
         <DropdownMenuTrigger asChild>
           <GraphiQLButton
+            data-cy="save-operation"
             className={cn(
               'graphiql-toolbar-button',
               currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
@@ -226,6 +227,7 @@ function Save(props: {
           Save
         </DropdownMenuItem>
         <DropdownMenuItem
+          data-cy="save-operation-as"
           onClick={async () => {
             if (!collections.length) {
               notify('Please create a collection first.', 'error');
