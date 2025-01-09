@@ -7,7 +7,7 @@ import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './hel
 import { Errors } from './helpers/errors/__';
 import { Failure } from './helpers/errors/cli-error-with-data';
 import { OmitNever } from './helpers/general';
-import { Texture } from './helpers/texture/__';
+import { Texture } from './helpers/texture/texture';
 import { T } from './helpers/typebox/__';
 import { Output } from './output/__';
 

@@ -11,7 +11,7 @@ export const indent = space.repeat(3);
 
 export const newline = '\n';
 
-export const header = (value: string) => colors.dim('=== ') + colors.bold(value) + newline;
+export const header = (value: string) => colors.dim('=== ') + colors.bold(value);
 
 export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
@@ -42,17 +42,13 @@ export const inspect = (value: unknown) => {
   return nodeInspect(value);
 };
 
-export const success = (...values: unknown[]) =>
-  prefixedInspect(colors.green('✔'))(...values) + newline;
+export const success = (...values: unknown[]) => prefixedInspect(colors.green('✔'))(...values);
 
-export const failure = (...values: unknown[]) =>
-  prefixedInspect(colors.red('✖'))(...values) + newline;
+export const failure = (...values: unknown[]) => prefixedInspect(colors.red('✖'))(...values);
 
-export const info = (...values: unknown[]) =>
-  prefixedInspect(colors.yellow('ℹ'))(...values) + newline;
+export const info = (...values: unknown[]) => prefixedInspect(colors.yellow('ℹ'))(...values);
 
-export const warning = (...values: unknown[]) =>
-  prefixedInspect(colors.yellow('⚠'))(...values) + newline;
+export const warning = (...values: unknown[]) => prefixedInspect(colors.yellow('⚠'))(...values);
 
 /**
  * A text builder. Its methods mutate an internal string value.
@@ -89,12 +85,15 @@ export interface Builder {
    */
   indent: (value: string) => Builder;
   /**
-   * The current string value of this builder.
+   * The current state of this builder.
    */
   state: BuilderState;
 }
 
 interface BuilderState {
+  /**
+   * The current string value of this builder.
+   */
   value: string;
 }
 
@@ -115,7 +114,7 @@ export const createBuilder = (): Builder => {
       return builder;
     },
     header: value => {
-      state.value = state.value + header(value);
+      state.value = state.value + header(value) + newline;
       return builder;
     },
     indent: value => {
@@ -123,19 +122,19 @@ export const createBuilder = (): Builder => {
       return builder;
     },
     success: (...values) => {
-      state.value = state.value + success(...values);
+      state.value = state.value + success(...values) + newline;
       return builder;
     },
     failure: (...values) => {
-      state.value = state.value + failure(...values);
+      state.value = state.value + failure(...values) + newline;
       return builder;
     },
     info: (...values) => {
-      state.value = state.value + info(...values);
+      state.value = state.value + info(...values) + newline;
       return builder;
     },
     warning: (...values) => {
-      state.value = state.value + warning(...values);
+      state.value = state.value + warning(...values) + newline;
       return builder;
     },
     state,
@@ -143,3 +142,5 @@ export const createBuilder = (): Builder => {
 
   return builder;
 };
+
+export * as Texture from './texture';

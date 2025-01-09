@@ -1,11 +1,10 @@
-import colors from 'colors';
 import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
 import { casesExhausted } from '../helpers/general';
-import { Texture } from '../helpers/texture/__';
+import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/__';
 import { Output } from '../output/__';
 
@@ -206,6 +205,6 @@ function createPrinter(records: { [label: string]: [value: string, extra?: strin
 }
 
 const access = {
-  yes: colors.green('Yes'),
-  not: colors.red('No access'),
+  yes: Texture.colors.green('Yes'),
+  not: Texture.colors.red('No access'),
 };
