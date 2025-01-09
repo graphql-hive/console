@@ -39,6 +39,37 @@ const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   }
 `);
 
+const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
+  query LatestSchemaVersion(
+    $includeSDL: Boolean!
+    $includeSupergraph: Boolean!
+    $includeSubgraphs: Boolean!
+  ) {
+    latestValidVersion {
+      id
+      valid
+      sdl @include(if: $includeSDL)
+      supergraph @include(if: $includeSupergraph)
+      schemas @include(if: $includeSubgraphs) {
+        nodes {
+          __typename
+          ... on SingleSchema {
+            id
+            date
+          }
+          ... on CompositeSchema {
+            id
+            date
+            url
+            service
+          }
+        }
+        total
+      }
+    }
+  }
+`);
+
 export default class SchemaFetch extends Command<typeof SchemaFetch> {
   static description = 'fetch a schema, supergraph, or list of subgraphs from the Hive API';
   static flags = {
@@ -80,7 +111,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
   static args = {
     actionId: Args.string({
       name: 'actionId' as const,
-      required: true,
       description: 'action id (e.g. commit sha)',
       hidden: false,
     }),
@@ -105,7 +135,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       message: ACCESS_TOKEN_MISSING,
     });
 
-    const actionId: string = args.actionId;
+    const { actionId } = args;
 
     const sdlType = this.ensure({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -117,26 +147,40 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       defaultValue: 'sdl',
     });
 
-    const result = await this.registryApi(endpoint, accessToken).request({
-      operation: SchemaVersionForActionIdQuery,
-      variables: {
-        actionId,
-        includeSDL: sdlType === 'sdl',
-        includeSupergraph: sdlType === 'supergraph',
-        includeSubgraphs: sdlType === 'subgraphs',
-      },
-    });
+    let schemaVersion;
+    if (actionId) {
+      const result = await this.registryApi(endpoint, accessToken).request({
+        operation: SchemaVersionForActionIdQuery,
+        variables: {
+          actionId,
+          includeSDL: sdlType === 'sdl',
+          includeSupergraph: sdlType === 'supergraph',
+          includeSubgraphs: sdlType === 'subgraphs',
+        },
+      });
+      schemaVersion = result.schemaVersionForActionId;
+    } else {
+      const result = await this.registryApi(endpoint, accessToken).request({
+        operation: LatestSchemaVersionQuery,
+        variables: {
+          includeSDL: sdlType === 'sdl',
+          includeSupergraph: sdlType === 'supergraph',
+          includeSubgraphs: sdlType === 'subgraphs',
+        },
+      });
+      schemaVersion = result.latestValidVersion;
+    }
 
-    if (result.schemaVersionForActionId == null) {
+    if (schemaVersion == null) {
       return this.error(`No schema found for action id ${actionId}`);
     }
 
-    if (result.schemaVersionForActionId.valid === false) {
+    if (schemaVersion.valid === false) {
       return this.error(`Schema is invalid for action id ${actionId}`);
     }
 
-    if (result.schemaVersionForActionId?.schemas) {
-      const { total, nodes } = result.schemaVersionForActionId.schemas;
+    if (schemaVersion.schemas) {
+      const { total, nodes } = schemaVersion.schemas;
       const table = [
         ['service', 'url', 'date'],
         ...nodes.map(node => [
@@ -155,8 +199,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       }
       this.log(printed);
     } else {
-      const schema =
-        result.schemaVersionForActionId.sdl ?? result.schemaVersionForActionId.supergraph;
+      const schema = schemaVersion.sdl ?? schemaVersion.supergraph;
 
       if (schema == null) {
         return this.error(`No ${sdlType} found for action id ${actionId}`);
