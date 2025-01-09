@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { type MigrationExecutor } from '../pg-migrator';
 
 const QUERY_RESULT = z.array(z.object({
-  organization_id: z.string(),
-  sorted_scopes: z.array(z.string()),
-  user_ids: z.array(z.string()),
+  organizationId: z.string(),
+  sortedScopes: z.array(z.string()),
+  userIds: z.array(z.string()),
 }));
 
 /**
@@ -25,9 +25,9 @@ export default {
   async run({ sql, connection }) {
     const queryResult = await connection.query(sql`
       SELECT
-        organization_id,
-        sorted_scopes,
-        ARRAY_AGG(user_id) AS user_ids
+        organization_id as "organizationId"
+        sorted_scopes as "sortedScopes",
+        ARRAY_AGG(user_id) AS "userIds"
       FROM (
           SELECT
               organization_id,
@@ -60,14 +60,14 @@ export default {
     let previousOrganizationId: string | null = null;
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index];
-      if (previousOrganizationId !== row.organization_id) {
-        previousOrganizationId = row.organization_id;
+      if (previousOrganizationId !== row.organizationId) {
+        previousOrganizationId = row.organizationId;
         // reset counter as we are starting a new organization
         counter = 1;
       }
 
       console.log(
-        `processing organization_id="${row.organization_id}" (${counter}) with ${row.user_ids.length} users | ${index}/${queryResult.rowCount}`,
+        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index}/${queryResult.rowCount}`,
       );
 
       const startedAt = Date.now();
@@ -78,16 +78,16 @@ export default {
             organization_id, name, description, scopes
           )
           VALUES (
-            ${row.organization_id},
+            ${row.organizationId},
             'Auto Role ' || substring(uuid_generate_v4()::text FROM 1 FOR 8),
             'Auto generated role to assign to members without a role',
-            ${row.sorted_scopes}
+            ${row.sortedScopes}
           )
           RETURNING id
         )
         UPDATE organization_member
         SET role_id = (SELECT id FROM new_role)
-        WHERE organization_id = ${row.organization_id} AND user_id = ANY(${row.user_ids})
+        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${row.userIds})
       `);
 
       console.log(`finished after ${Date.now() - startedAt}ms`);
