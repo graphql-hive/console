@@ -50,7 +50,7 @@
     "@graphql-hive/core": "workspace:*"
   },
   "devDependencies": {
-    "@apollo/server": "4.11.2",
+    "@apollo/server": "4.11.3",
     "@graphql-tools/schema": "10.0.8",
     "body-parser": "1.20.3",
     "express": "4.21.2",
