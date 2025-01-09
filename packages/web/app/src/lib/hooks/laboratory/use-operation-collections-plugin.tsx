@@ -308,19 +308,27 @@ export function Content() {
 
   const renderedCollections = collections.map(collection => (
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
-      <AccordionHeader className="flex items-center justify-between">
-        <AccordionTriggerPrimitive className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10">
+      <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
+        <AccordionTriggerPrimitive
+          className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10"
+          data-cy="collection-item-trigger"
+        >
           <FolderIcon className="size-4 group-data-[state=open]:hidden" />
           <FolderOpenIcon className="size-4 group-data-[state=closed]:hidden" />
           {collection.name}
         </AccordionTriggerPrimitive>
         {shouldShowMenu && (
           <DropdownMenu>
-            <DropdownMenuTrigger aria-label="More" className="graphiql-toolbar-button">
+            <DropdownMenuTrigger
+              aria-label="More"
+              className="graphiql-toolbar-button"
+              data-cy="collection-menu-trigger"
+            >
               <DotsHorizontalIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                data-cy="add-operation-to-collection"
                 onClick={addOperation}
                 disabled={createOperationState.fetching}
                 data-collection-id={collection.id}
@@ -329,6 +337,7 @@ export function Content() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                data-cy="edit-collection"
                 onClick={() => {
                   setCollectionId(collection.id);
                   toggleCollectionModal();
@@ -337,6 +346,7 @@ export function Content() {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
+                data-cy="delete-collection"
                 onClick={() => {
                   setCollectionId(collection.id);
                   toggleDeleteCollectionModalOpen();
@@ -361,6 +371,7 @@ export function Content() {
                   targetSlug,
                 }}
                 search={{ operation: node.id }}
+                data-cy={`operation-${node.name}`}
                 className={cn(
                   'flex w-full items-center gap-x-3 rounded p-2 font-normal text-white/50 hover:bg-gray-100/10 hover:text-white hover:no-underline',
                   node.id === queryParamsOperationId && [
@@ -381,6 +392,7 @@ export function Content() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
+                    data-cy="copy-operation-link"
                     onClick={async () => {
                       const url = new URL(window.location.href);
                       await copyToClipboard(`${url.origin}${url.pathname}?operation=${node.id}`);
@@ -391,6 +403,7 @@ export function Content() {
                   <DropdownMenuSeparator />
                   {canEdit && (
                     <DropdownMenuItem
+                      data-cy="edit-operation"
                       onClick={() => {
                         setOperationToEditId(node.id);
                       }}
@@ -400,6 +413,7 @@ export function Content() {
                   )}
                   {canDelete && (
                     <DropdownMenuItem
+                      data-cy="delete-operation"
                       onClick={() => {
                         setOperationToDeleteId(node.id);
                         toggleDeleteOperationModalOpen();
@@ -440,6 +454,7 @@ export function Content() {
                 <Button
                   variant="orangeLink"
                   size="icon-sm"
+                  data-cy="new-collection"
                   className={clsx(
                     'flex w-auto items-center gap-1',
                     'min-w-0', // trick to make work truncate

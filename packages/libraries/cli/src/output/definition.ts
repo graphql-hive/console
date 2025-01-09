@@ -1,3 +1,4 @@
+import { OClif } from '../helpers/oclif';
 import { Texture } from '../helpers/texture/__';
 import { T } from '../helpers/typebox/__';
 import { Result } from './_';
@@ -85,11 +86,11 @@ interface TextBuilder<$Data = any> {
       /**
        * The flag arguments passed to the command.
        */
-      flags: any;
+      flags: any; // `any` type to allow inline casting without co-variant type errors
       /**
        * The positional arguments passed to the command.
        */
-      args: any;
+      args: any; // `any` type to allow inline casting without co-variant type errors
     },
     /**
      * The data output by the command.
@@ -101,6 +102,25 @@ interface TextBuilder<$Data = any> {
     texBuilder: Texture.Builder,
   ): void | string | Texture.Builder;
 }
+
+/**
+ * Run and return the definition's text format.
+ */
+export const runText = (definition: Definition, input: OClif.Input, data: object): string => {
+  if (definition.text === undefined) return '';
+  const textureBuilder = Texture.createBuilder();
+  const dataTypeTextInit = definition.text(input, data, textureBuilder);
+  const text =
+    typeof dataTypeTextInit === 'string'
+      ? dataTypeTextInit
+      : dataTypeTextInit === undefined
+        ? // Author returned nothing, implying they are relying on Texture.Builder instance mutation.
+          textureBuilder.state.value
+        : // Author explicitly returned a Texture.Builder instance.
+          dataTypeTextInit.state.value;
+
+  return text;
+};
 
 export type InferSuccessResultInit<$DataType extends Definition> = Result.InferSuccessInit<
   $DataType['schema']

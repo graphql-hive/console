@@ -1,6 +1,8 @@
 import { inspect as nodeInspect } from 'node:util';
 import colors from 'colors';
 
+export * from './print-table';
+
 export { colors };
 
 export const space = ' ';

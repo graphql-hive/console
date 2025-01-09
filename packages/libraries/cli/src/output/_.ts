@@ -7,5 +7,6 @@ export {
   InferSuccessResult,
   InferFailureResultInit,
   InferSuccessResultInit,
+  runText,
 } from './definition';
 export * as Types from './types/_';

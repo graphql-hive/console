@@ -17,7 +17,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   public static enableJsonFlag = true;
 
   /**
-   * The data type returned by this command when executed.
+   * The output types returned by this command when executed.
    *
    * Used by methods: {@link BaseCommand.success}, {@link BaseCommand.failure}, {@link BaseCommand.runResult}.
    */
@@ -92,18 +92,19 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     const resultUnparsed = await this.runResult();
 
     /**
-     * 1. Find the Output Data Type defined for this
+     * 1. Find the Output Definition defined for this
      *    command that corresponds to the run result data.
      * 2. Then validate the result against its schema.
      */
 
     // 1
     // @ts-expect-error fixme
-    const resultDataTypeName = resultUnparsed.data.type;
-    const dataType = thisClass.output.find(
-      dataType => dataType.schema.properties.data.properties.type.const === resultDataTypeName,
+    const resultDefinitionName = resultUnparsed.data.type;
+    const definition = thisClass.output.find(
+      definition =>
+        definition.schema.properties.data.properties.type.const === resultDefinitionName,
     );
-    if (!dataType) {
+    if (!definition) {
       throw new Failure({
         message: schemaViolationMessage,
         data: {
@@ -114,11 +115,11 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
       });
     }
     const resultUnparsedWithDefaults = T.Value.Default(
-      dataType.schema,
+      definition.schema,
       T.Value.Clone(resultUnparsed),
     );
     // 2
-    const errorsIterator = T.Value.Value.Errors(dataType.schema, resultUnparsedWithDefaults);
+    const errorsIterator = T.Value.Value.Errors(definition.schema, resultUnparsedWithDefaults);
     const materializedErrors = T.Value.MaterializeValueErrorIterator(errorsIterator);
     if (materializedErrors.length > 0) {
       // todo: Display data in non-json output.
@@ -128,7 +129,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         data: {
           type: 'ErrorOutputSchemaViolation',
           message: schemaViolationMessage,
-          schema: dataType,
+          schema: definition,
           value: resultUnparsedWithDefaults,
           errors: materializedErrors,
         },
@@ -138,29 +139,23 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     /**
      * Should never throw because we checked for errors above.
      */
-    const result = T.Value.Parse(dataType.schema, resultUnparsedWithDefaults) as Output.Result;
+    const result = T.Value.Parse(definition.schema, resultUnparsedWithDefaults) as Output.Result;
 
     /**
-     * Data types can optionally bundle a textual representation of their data.
+     * Definitions can have a text format.
      */
-    if (dataType.text) {
-      const textureBuilder = Texture.createBuilder();
-      const dataTypeTextInit = dataType.text(
-        { flags: this.flags, args: this.args },
-        result.data,
-        textureBuilder,
-      );
-      const dataTypeText =
-        typeof dataTypeTextInit === 'string'
-          ? dataTypeTextInit
-          : dataTypeTextInit === undefined
-            ? // Author returned nothing, implying they are relying on Texture.Builder instance mutation.
-              textureBuilder.state.value
-            : // Author explicitly returned a Texture.Builder instance.
-              dataTypeTextInit.state.value;
+    const text = Output.runText(
+      definition,
+      {
+        flags: this.flags,
+        args: this.args,
+      },
+      result.data,
+    );
 
+    if (text !== '') {
       // `this.log` adds a newline, so remove one from text to avoid undesired extra trailing space.
-      this.log(dataTypeText.replace(/\n$/, ''));
+      this.log(text.replace(/\n$/, ''));
     }
 
     /**

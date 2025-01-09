@@ -68,6 +68,14 @@ export async function schemaDelete(args: string[]) {
   );
 }
 
+export async function schemaFetch(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['schema:fetch', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 async function dev(args: string[]) {
   const registryAddress = await getServiceHost('server', 8082);
 
@@ -312,10 +320,17 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     ]);
   }
 
+  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId: string }) {
+    const cmd = schemaFetch(['--token', tokens.readwrite, '--type', input.type, input.actionId]);
+
+    return cmd;
+  }
+
   return {
     publish,
     check,
     delete: deleteCommand,
     dev: devCmd,
+    fetch: fetchCmd,
   };
 }

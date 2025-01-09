@@ -2,11 +2,14 @@
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
+import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
 import { test } from '../../testkit/test';
 import { SnapshotSerializers } from './__snapshot_serializers__/__';
 
 expect.addSnapshotSerializer(SnapshotSerializers.cliOutput);
+
+expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
 describe.each`
   projectType               | model       | json
@@ -53,7 +56,7 @@ describe.each`
           ...serviceUrlArgs,
           'fixtures/init-schema-detailed.graphql',
         ]),
-      ).resolves.toMatchSnapshot('SchemaPublish');
+      ).resolves.toMatchSnapshot('schemaPublish');
 
       await expect(
         schemaCheck([
@@ -224,15 +227,16 @@ describe.each`
     'schema:publish should see Invalid Token error when token is invalid',
     async ({ expect }) => {
       const invalidToken = createHash('md5').update('nope').digest('hex').substring(0, 31);
-      const output = schemaPublish([
-        ...(json ? ['--json'] : []),
-        ...serviceNameArgs,
-        ...serviceUrlArgs,
-        '--registry.accessToken',
-        invalidToken,
-        'fixtures/init-schema.graphql',
-      ]);
-      await expect(output).rejects.toMatchSnapshot('schemaPublish');
+      await expect(
+        schemaPublish([
+          ...(json ? ['--json'] : []),
+          ...serviceNameArgs,
+          ...serviceUrlArgs,
+          '--registry.accessToken',
+          invalidToken,
+          'fixtures/init-schema.graphql',
+        ]),
+      ).rejects.toMatchSnapshot('schemaPublish');
     },
   );
 
@@ -268,26 +272,24 @@ describe.each`
 
         await expect(
           cli.publish({
-            json,
             sdl,
             commit: 'push1',
             serviceName,
             serviceUrl,
             expect: 'latest-composable',
           }),
-        ).resolves.toMatchSnapshot('schemaPublish');
+        ).resolves.toMatchSnapshot('schemaPublish (initial)');
 
         const newServiceUrl = serviceUrl + '/new';
         await expect(
           cli.publish({
-            json,
             sdl,
             commit: 'push2',
             serviceName,
             serviceUrl: newServiceUrl,
             expect: 'latest-composable',
           }),
-        ).resolves.toMatchSnapshot('schemaPublish');
+        ).resolves.toMatchSnapshot('schemaPublish (new)');
 
         const versions = await fetchVersions(3);
         expect(versions).toHaveLength(2);
@@ -312,4 +314,51 @@ describe.each`
         );
       },
     );
+
+  test.concurrent(
+    'schema:fetch can fetch a schema with target:registry:read access',
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { inviteAndJoinMember, createProject } = await createOrg();
+      await inviteAndJoinMember();
+      const { createTargetAccessToken } = await createProject(projectType, {
+        useLegacyRegistryModels: model === 'legacy',
+      });
+      const { secret, latestSchema } = await createTargetAccessToken({});
+
+      const cli = createCLI({
+        readonly: secret,
+        readwrite: secret,
+      });
+
+      await expect(
+        schemaPublish([
+          ...(json ? ['--json'] : []),
+          '--registry.accessToken',
+          secret,
+          '--author',
+          'Kamil',
+          '--commit',
+          'abc123',
+          ...serviceNameArgs,
+          ...serviceUrlArgs,
+          'fixtures/init-schema.graphql',
+        ]),
+      ).resolves.toMatchSnapshot('schemaPublish');
+
+      const schema = await latestSchema();
+      const numSchemas = schema.latestVersion?.schemas.nodes.length;
+      const fetchCmd = cli.fetch({
+        type: 'subgraphs',
+        actionId: 'abc123',
+      });
+      const rHeader = `service\\s+url\\s+date`;
+      const rUrl = `http:\\/\\/\\S+(:\\d+)?|n/a`;
+      const rSubgraph = `[-]+\\s+\\S+\\s+(${rUrl})\\s+\\S+Z\\s+`;
+      const rFooter = `subgraphs length: ${numSchemas}`;
+      await expect(fetchCmd).resolves.toMatch(
+        new RegExp(`${rHeader}\\s+(${rSubgraph}){${numSchemas}}${rFooter}`),
+      );
+    },
+  );
 });

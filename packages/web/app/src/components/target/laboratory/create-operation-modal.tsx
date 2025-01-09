@@ -190,7 +190,10 @@ export function CreateOperationModalContent(props: {
         props.form.reset();
       }}
     >
-      <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+      <DialogContent
+        className="container w-4/5 max-w-[600px] md:w-3/5"
+        data-cy="create-operation-modal"
+      >
         {!props.fetching && (
           <Form {...props.form}>
             <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
@@ -224,13 +227,13 @@ export function CreateOperationModalContent(props: {
                       </FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
+                          <SelectTrigger data-cy="collection-select-trigger">
                             {props.collections.find(c => c.id === field.value)?.name ??
                               'Select a Collection'}
                           </SelectTrigger>
                           <SelectContent className="w-[--radix-select-trigger-width]">
                             {props.collections.map(c => (
-                              <SelectItem key={c.id} value={c.id}>
+                              <SelectItem key={c.id} value={c.id} data-cy="collection-select-item">
                                 {c.name}
                                 <div className="mt-1 line-clamp-1 text-xs opacity-50">
                                   {c.description}
@@ -263,12 +266,7 @@ export function CreateOperationModalContent(props: {
                   size="lg"
                   className="w-full justify-center"
                   variant="primary"
-                  disabled={
-                    props.form.formState.isSubmitting ||
-                    !props.form.formState.isValid ||
-                    !props.form.getValues('collectionId')
-                  }
-                  data-cy="confirm"
+                  disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
                 >
                   Add Operation
                 </Button>
