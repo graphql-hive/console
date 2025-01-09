@@ -1,5 +1,25 @@
 # @graphql-hive/cli
 
+## 0.45.0
+
+### Minor Changes
+
+- [#6255](https://github.com/graphql-hive/console/pull/6255)
+  [`29c45df`](https://github.com/graphql-hive/console/commit/29c45dfbfc8ab87e9e84fec9c8def41ba01c3fe8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added subgraph type to schema:fetch cmd to print
+  subgraph details
+
+### Patch Changes
+
+- [#6252](https://github.com/graphql-hive/console/pull/6252)
+  [`5a6e565`](https://github.com/graphql-hive/console/commit/5a6e565be464983a5651a1349470415d3d93ba46)
+  Thanks [@jdolle](https://github.com/jdolle)! - Print a detailed error when a command is executed
+  without a hive access token
+
+- Updated dependencies
+  [[`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)]:
+  - @graphql-hive/core@0.8.3
+
 ## 0.44.5
 
 ### Patch Changes

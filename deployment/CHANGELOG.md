@@ -1,5 +1,55 @@
 # hive
 
+## 3.0.0
+
+### Major Changes
+
+- [#6066](https://github.com/graphql-hive/console/pull/6066)
+  [`e747e4c`](https://github.com/graphql-hive/console/commit/e747e4cd44e6516809754e1be2999a698153c598)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Drop user accounts and organization not linked to a
+  SuperTokens account.
+
+  This is mainly a cleanup for legacy accounts on Hive Cloud that were not migrated from Auth0 some
+  years ago. It should not affect self-hosters.
+
+### Minor Changes
+
+- [#6261](https://github.com/graphql-hive/console/pull/6261)
+  [`09c01d6`](https://github.com/graphql-hive/console/commit/09c01d6491dae9c3963de04c6e841ee9813bcaa3)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds a response validation of the POST
+  https://slack.com/api/oauth.v2.access request.
+
+  This request is made when connecting Slack to Hive. This is to ensure that the response is a JSON
+  object and that it contains the expected keys and provide informative error messages if it does
+  not.
+
+### Patch Changes
+
+- [#6265](https://github.com/graphql-hive/console/pull/6265)
+  [`cecd95b`](https://github.com/graphql-hive/console/commit/cecd95bc6cdc29f6b81df8b221858201b49184ce)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Relax `uuid` check for external IDs in
+  audit log metadata. Fixes https://github.com/graphql-hive/console/issues/6264
+
+- [#6262](https://github.com/graphql-hive/console/pull/6262)
+  [`d98e146`](https://github.com/graphql-hive/console/commit/d98e1468a27fafde5b080c0b0ce02696ce4a589d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Resolve the issue where the laboratory
+  mocked endpoint consistently returns: "Please publish your first schema to Hive."
+
+- [#6267](https://github.com/graphql-hive/console/pull/6267)
+  [`817fed3`](https://github.com/graphql-hive/console/commit/817fed329bf10a1c31ab253c00bd4efa13e6699c)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - bugfix: `scrollIntoView` is not a function
+  in lab page (fixed https://github.com/graphql-hive/console/issues/6263)
+
+- [#6282](https://github.com/graphql-hive/console/pull/6282)
+  [`a7f9d50`](https://github.com/graphql-hive/console/commit/a7f9d50fb9026536311b4c973433d38e17ab0e73)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix editor state and operation handling
+  in Laboratory.
+
+  When opening a new tab or selecting a saved operation, the editor incorrectly populated the query,
+  defaulting to the active query. This made it impossible to view the selected operation.
+  Additionally, the submit button for saving an operation was always disabled, even when the form
+  was in a valid state.
+
 ## 2.1.0
 
 ### Minor Changes
