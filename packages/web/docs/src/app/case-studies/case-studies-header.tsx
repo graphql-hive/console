@@ -15,10 +15,10 @@ type Author = {
   avatar?: string;
 };
 
-export function CaseStudiesHeader() {
+export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   const metadata = useConfig().normalizePagesResult.activeMetadata as Meta;
   return (
-    <header className="mx-auto my-24 max-w-[640px]">
+    <header {...props}>
       <Heading as="h1" size="md">
         {metadata.title}
       </Heading>
