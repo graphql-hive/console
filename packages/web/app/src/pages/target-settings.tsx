@@ -1013,7 +1013,6 @@ const TargetSettingsPage_OrganizationFragment = graphql(`
     me {
       ...CanAccessTarget_MemberFragment
       ...RegistryAccessTokens_MeFragment
-      ...CDNAccessTokens_MeFragment
     }
   }
 `);
@@ -1072,9 +1071,6 @@ const TargetSettingsPageQuery = graphql(`
         id
         slug
         ...TargetSettingsPage_OrganizationFragment
-        me {
-          ...CDNAccessTokens_MeFragment
-        }
       }
     }
     project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
@@ -1279,7 +1275,6 @@ function TargetSettingsContent(props: {
             ) : null}
             {resolvedPage.key === 'cdn' ? (
               <CDNAccessTokens
-                me={organizationForSettings.me}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
