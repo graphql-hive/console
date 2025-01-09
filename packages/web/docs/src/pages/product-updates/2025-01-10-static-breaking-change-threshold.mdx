@@ -3,7 +3,7 @@ title: Added a Conditional Breaking Change Static Threshold
 description:
   A minor improvement to our conditional breaking changes behavior that allows changes to be
   considered breaking based on a minimum number of requests.
-date: 2025-01-08
+date: 2025-01-10
 authors: [jdolle]
 ---
 
@@ -20,7 +20,7 @@ consumers.
 To better handle this case, a new option has been added to set a static threshold for the total
 number of operations that can be incompatible before the change is considered breaking.
 
-![Breaking Changes UI](/changelog/2025-01-08-static-breaking-change-threshold/ui.png)
+![Breaking Changes UI](/changelog/2025-01-10-static-breaking-change-threshold/ui.png)
 
 So if you were using a 0% threshold but found it a bit too restrictive, considered this new option
 to set a higher static threshold.
