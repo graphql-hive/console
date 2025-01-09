@@ -7,14 +7,15 @@ date: 2025-01-08
 authors: [jdolle]
 ---
 
-Expect a lot of improvements to the Hive Console (Schema Registry) in 2025.
+Expect a lot of improvements to the Hive Schema Registry in 2025.
 
-One of the first updates this year is a small but potentially very useful option for conditional
-breaking changes. Previously, Conditional Breaking Changes checked compatibility against all
-operations called in the past number of days. If the percent impacted exceeded the configured
-percentage threshold, then the change would be considered breaking. Unfortunately for schemas with
-disproportionate operation usage, an operation with very little percent usage could still have a
-major impact to their consumers.
+One of the first updates this year is a small but potentially very useful option for
+[Conditional Breaking Changes](https://the-guild.dev/graphql/hive/docs/management/targets#conditional-breaking-changes).
+Previously, Conditional Breaking Changes checked compatibility against all operations called in the
+past number of days. If the percent impacted exceeded the configured percentage threshold, then the
+change would be considered breaking. Unfortunately for schemas with disproportionate operation
+usage, an operation with very little percent usage could still have a major impact to their
+consumers.
 
 To better handle this case, a new option has been added to set a static threshold for the total
 number of operations that can be incompatible before the change is considered breaking.
