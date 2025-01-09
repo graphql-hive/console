@@ -3,7 +3,7 @@ import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
-import { Texture } from '../helpers/texture/__';
+import { Texture } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {

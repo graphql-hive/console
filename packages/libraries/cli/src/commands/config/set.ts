@@ -1,7 +1,7 @@
 import { Args } from '@oclif/core';
 import Command from '../../base-command';
 import { allowedKeys, ValidConfigurationKeys } from '../../helpers/config';
-import { Texture } from '../../helpers/texture/__';
+import { Texture } from '../../helpers/texture/texture';
 
 export default class SetConfig extends Command<typeof SetConfig> {
   static description = 'updates specific cli configuration';

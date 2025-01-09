@@ -6,7 +6,7 @@ import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
-import { Texture } from '../../helpers/texture/__';
+import { Texture } from '../../helpers/texture/texture';
 
 const fetchLatestVersionQuery = graphql(/* GraphQL */ `
   query fetchLatestVersion {

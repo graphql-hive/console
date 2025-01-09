@@ -40,17 +40,13 @@ export const inspect = (value: unknown) => {
   return nodeInspect(value);
 };
 
-export const success = (...values: unknown[]) =>
-  prefixedInspect(colors.green('✔'))(...values) + newline;
+export const success = (...values: unknown[]) => prefixedInspect(colors.green('✔'))(...values);
 
-export const failure = (...values: unknown[]) =>
-  prefixedInspect(colors.red('✖'))(...values) + newline;
+export const failure = (...values: unknown[]) => prefixedInspect(colors.red('✖'))(...values);
 
-export const info = (...values: unknown[]) =>
-  prefixedInspect(colors.yellow('ℹ'))(...values) + newline;
+export const info = (...values: unknown[]) => prefixedInspect(colors.yellow('ℹ'))(...values);
 
-export const warning = (...values: unknown[]) =>
-  prefixedInspect(colors.yellow('⚠'))(...values) + newline;
+export const warning = (...values: unknown[]) => prefixedInspect(colors.yellow('⚠'))(...values);
 
 /**
  * A text builder. Its methods mutate an internal string value.
@@ -124,19 +120,19 @@ export const createBuilder = (): Builder => {
       return builder;
     },
     success: (...values) => {
-      state.value = state.value + success(...values);
+      state.value = state.value + success(...values) + newline;
       return builder;
     },
     failure: (...values) => {
-      state.value = state.value + failure(...values);
+      state.value = state.value + failure(...values) + newline;
       return builder;
     },
     info: (...values) => {
-      state.value = state.value + info(...values);
+      state.value = state.value + info(...values) + newline;
       return builder;
     },
     warning: (...values) => {
-      state.value = state.value + warning(...values);
+      state.value = state.value + warning(...values) + newline;
       return builder;
     },
     state,
@@ -144,3 +140,5 @@ export const createBuilder = (): Builder => {
 
   return builder;
 };
+
+export * as Texture from './texture';

@@ -1,6 +1,6 @@
 import { Args } from '@oclif/core';
 import Command from '../../base-command';
-import { Texture } from '../../helpers/texture/__';
+import { Texture } from '../../helpers/texture/texture';
 
 export default class DeleteConfig extends Command<typeof DeleteConfig> {
   static description = 'deletes specific cli configuration';
