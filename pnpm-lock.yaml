@@ -965,8 +965,8 @@ importers:
         specifier: 6.9.16
         version: 6.9.16
       p-timeout:
-        specifier: 6.1.3
-        version: 6.1.3
+        specifier: 6.1.4
+        version: 6.1.4
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1148,8 +1148,8 @@ importers:
         specifier: 8.9.0
         version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.4.2)
       p-timeout:
-        specifier: 6.1.3
-        version: 6.1.3
+        specifier: 6.1.4
+        version: 6.1.4
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1476,8 +1476,8 @@ importers:
         specifier: 2.1.3
         version: 2.1.3
       p-timeout:
-        specifier: 6.1.3
-        version: 6.1.3
+        specifier: 6.1.4
+        version: 6.1.4
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1653,8 +1653,8 @@ importers:
         specifier: 5.4.2
         version: 5.4.2
       p-timeout:
-        specifier: 6.1.3
-        version: 6.1.3
+        specifier: 6.1.4
+        version: 6.1.4
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -3889,7 +3889,6 @@ packages:
 
   '@fastify/vite@6.0.6':
     resolution: {integrity: sha512-FsWJC92murm5tjeTezTTvMLyZido/ZWy0wYWpVkh/bDe1gAUAabYLB7Vp8hokXGsRE/mOpqYVsRDAKENY2qPUQ==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -13019,6 +13018,10 @@ packages:
 
   p-timeout@6.1.3:
     resolution: {integrity: sha512-UJUyfKbwvr/uZSV6btANfb+0t/mOhKV/KXcCUTp8FcQI+v/0d+wXqH4htrW0E4rR6WiEO/EPvUFiV9D5OI4vlw==}
+    engines: {node: '>=14.16'}
+
+  p-timeout@6.1.4:
+    resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
     engines: {node: '>=14.16'}
 
   p-try@2.2.0:
@@ -30356,6 +30359,8 @@ snapshots:
       p-finally: 1.0.0
 
   p-timeout@6.1.3: {}
+
+  p-timeout@6.1.4: {}
 
   p-try@2.2.0: {}
 
