@@ -67,7 +67,7 @@
     "@graphql-eslint/eslint-plugin": "3.20.1",
     "@graphql-inspector/cli": "4.0.3",
     "@manypkg/get-packages": "2.2.2",
-    "@next/eslint-plugin-next": "14.2.21",
+    "@next/eslint-plugin-next": "14.2.23",
     "@parcel/watcher": "2.5.0",
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.10.6",
