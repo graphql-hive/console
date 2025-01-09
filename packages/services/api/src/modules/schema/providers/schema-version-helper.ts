@@ -11,6 +11,7 @@ import {
 import { ProjectType } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { parseGraphQLSource } from '../../../shared/schema';
+import { Session } from '../../auth/lib/authz';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -34,6 +35,7 @@ export class SchemaVersionHelper {
     private schemaHelper: SchemaHelper,
     private projectManager: ProjectManager,
     private organizationManager: OrganizationManager,
+    private session: Session,
     private registryChecks: RegistryChecks,
     private storage: Storage,
     private logger: Logger,
@@ -330,8 +332,35 @@ export class SchemaVersionHelper {
     return schemaLog?.sdl ?? null;
   }
 
-  async getIsValid(schemaVersion: SchemaVersion) {
+  getIsValid(schemaVersion: SchemaVersion) {
     return schemaVersion.isComposable && schemaVersion.hasContractCompositionErrors === false;
+  }
+
+  async getViewerCanMarkAsValid(schemaVersion: SchemaVersion) {
+    if (this.getIsValid(schemaVersion) === true) {
+      return false;
+    }
+
+    if (
+      !(await this.session.canPerformAction({
+        action: 'schemaVersion:approve',
+        organizationId: schemaVersion.organizationId,
+        params: {
+          organizationId: schemaVersion.organizationId,
+          projectId: schemaVersion.projectId,
+          targetId: schemaVersion.targetId,
+        },
+      }))
+    ) {
+      return false;
+    }
+
+    const project = await this.projectManager.getProject({
+      organizationId: schemaVersion.organizationId,
+      projectId: schemaVersion.projectId,
+    });
+
+    return project.legacyRegistryModel;
   }
 
   /**

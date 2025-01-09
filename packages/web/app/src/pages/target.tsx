@@ -20,8 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion } from '@/components/v2/accordion';
 import { GraphQLBlock, GraphQLHighlight } from '@/components/v2/graphql-block';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType, RegistryModel } from '@/gql/graphql';
-import { TargetAccessScope, useTargetAccess } from '@/lib/access/target';
+import { ProjectType } from '@/gql/graphql';
 import { Link, useRouter } from '@tanstack/react-router';
 
 type CompositeSchema = Extract<
@@ -184,15 +183,6 @@ function SchemaView(props: {
   const isDistributed =
     project.type === ProjectType.Federation || project.type === ProjectType.Stitching;
 
-  const canManage = useTargetAccess({
-    scope: TargetAccessScope.RegistryWrite,
-    member: organization.me,
-    redirect: false,
-    organizationSlug: organization.slug,
-    projectSlug: project.slug,
-    targetSlug: target.slug,
-  });
-
   const { latestSchemaVersion } = target;
   if (!latestSchemaVersion) {
     return noSchemaVersion;
@@ -201,8 +191,6 @@ function SchemaView(props: {
   if (!latestSchemaVersion.schemas.nodes.length) {
     return noSchema;
   }
-
-  const canMarkAsValid = project.registryModel === RegistryModel.Legacy && canManage;
 
   const schemas = useFragment(SchemaView_SchemaFragment, target.latestSchemaVersion?.schemas.nodes);
   const compositeSchemas = schemas?.filter(isCompositeSchema) as CompositeSchema[];
@@ -269,16 +257,12 @@ function SchemaView(props: {
               </PopoverContent>
             </Popover>
           )}
-          {canMarkAsValid ? (
-            <>
-              <MarkAsValid
-                organizationSlug={organization.slug}
-                projectSlug={project.slug}
-                targetSlug={target.slug}
-                version={latestSchemaVersion}
-              />{' '}
-            </>
-          ) : null}
+          <MarkAsValid
+            organizationSlug={organization.slug}
+            projectSlug={project.slug}
+            targetSlug={target.slug}
+            version={latestSchemaVersion}
+          />
         </div>
       </div>
       {isDistributed ? <Schemas schemas={schemasToDisplay} /> : <Schemas schema={singleSchema} />}

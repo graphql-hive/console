@@ -31,6 +31,7 @@ const MarkAsValid_SchemaVersionFragment = graphql(`
   fragment MarkAsValid_SchemaVersionFragment on SchemaVersion {
     id
     valid
+    viewerCanMarkAsValid
   }
 `);
 
@@ -54,7 +55,7 @@ export function MarkAsValid(props: {
     });
   }, [mutate, version]);
 
-  if (version?.valid) {
+  if (version?.viewerCanMarkAsValid) {
     return null;
   }
 

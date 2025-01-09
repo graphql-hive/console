@@ -177,4 +177,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
   contractVersions: (version, _, { injector }) => {
     return injector.get(ContractsManager).getContractVersionsForSchemaVersion(version);
   },
+  viewerCanMarkAsValid: async (version, _arg, { injector }) => {
+    return injector.get(SchemaVersionHelper).getViewerCanMarkAsValid(version);
+  },
 };

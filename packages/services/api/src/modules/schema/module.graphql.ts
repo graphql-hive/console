@@ -739,6 +739,11 @@ export default gql`
     Contract versions of this schema version.
     """
     contractVersions: ContractVersionConnection
+    """
+    Whether the viewer can mark this schema version as valid.
+    Only applies to schema versions within targets using the legacy model
+    """
+    viewerCanMarkAsValid: Boolean!
   }
 
   type SchemaVersionGithubMetadata {
