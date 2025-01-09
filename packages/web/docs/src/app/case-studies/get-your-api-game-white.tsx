@@ -7,6 +7,8 @@ import {
   Heading,
 } from '@theguild/components';
 
+const GRADIENT_ID = 'arch-gradient-g7x9p2';
+
 export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <section
@@ -27,14 +29,13 @@ export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>)
       <DecorationIsolation>
         <ArchDecoration className="top-6" />
         <ArchDecoration className="right-0 top-6 rotate-180" />
+        <GradientDefs />
       </DecorationIsolation>
     </section>
   );
 }
 
 function ArchDecoration({ className }: { className?: string }) {
-  const gradientId = useId();
-
   return (
     <svg
       width="348"
@@ -45,11 +46,18 @@ function ArchDecoration({ className }: { className?: string }) {
     >
       <path
         d="M14.1268 159.403C5.40655 168.123 0.500031 179.959 0.500032 192.284L0.500013 299.875L89.7312 299.875L89.7312 161.118C89.7312 121.896 121.521 90.1062 160.743 90.1062L347.5 90.1061L347.5 0.87501L191.909 0.874992C179.584 0.874992 167.748 5.78152 159.028 14.5018L90.5847 82.9449L82.5699 90.9597L14.1268 159.403Z"
-        stroke={`url(#${gradientId})`}
+        stroke={`url(#${GRADIENT_ID})`}
       />
+    </svg>
+  );
+}
+
+export function GradientDefs() {
+  return (
+    <svg width="348" height="301" viewBox="0 0 348 301" fill="none" className="size-0">
       <defs>
         <linearGradient
-          id={gradientId}
+          id={GRADIENT_ID}
           x1="186"
           y1="181.934"
           x2="9.37509"
