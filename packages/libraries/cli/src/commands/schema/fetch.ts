@@ -1,11 +1,11 @@
 import { writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
+import { Texture } from 'src/helpers/texture/texture';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
-import { printTable } from '../../helpers/print-table';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
@@ -137,7 +137,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
 
     if (result.schemaVersionForActionId?.schemas) {
       const { total, nodes } = result.schemaVersionForActionId.schemas;
-      const table = [
+      const tableData = [
         ['service', 'url', 'date'],
         ...nodes.map(node => [
           /** @ts-expect-error: If service is undefined then use id. */
@@ -147,7 +147,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         ]),
       ];
       const stats = `subgraphs length: ${total}`;
-      const printed = `${printTable(table)}\n\r${stats}`;
+      const printed = `${Texture.table(tableData)}\n\r${stats}`;
 
       if (flags.write) {
         const filepath = resolve(process.cwd(), flags.write);
