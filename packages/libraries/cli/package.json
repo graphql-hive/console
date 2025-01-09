@@ -73,7 +73,7 @@
     "oclif": "4.13.6",
     "rimraf": "4.4.1",
     "tsx": "4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.7.3"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
