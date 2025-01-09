@@ -236,7 +236,7 @@ export function GenerateTokenContent(props: {
                     dataCy="registry-access-scope"
                     key={props.selectedScope}
                     scope={RegistryAccessScope}
-                    canManageScope={true}
+                    canManageScope
                     checkAccess={() => true}
                     onChange={value => {
                       if (value === 'no-access') {
