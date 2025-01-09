@@ -163,6 +163,7 @@ jobs:
           push: true
           files: docker/docker.hcl
           targets: ${{ inputs.targets }}
+          source: .
           set: |
             *.cache-from=type=gha,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
             *.cache-to=type=gha,mode=max,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
