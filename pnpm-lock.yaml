@@ -219,10 +219,10 @@ importers:
         version: 4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
       '@pulumi/kubernetesx':
         specifier: 0.1.6
-        version: 0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))
+        version: 0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))
       '@pulumi/pulumi':
-        specifier: 3.144.1
-        version: 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+        specifier: 3.145.0
+        version: 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
       '@pulumi/random':
         specifier: 4.16.2
         version: 4.16.2(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
@@ -4544,10 +4544,6 @@ packages:
     resolution: {integrity: sha512-SWVkyFivzlDqGTBrGTWTNg+aFGP/cIiotirUFnvwuUGt2gla6UJoKhII6aPoHNg3/5vpUAL1KzyoaXMK2PO0JA==}
     engines: {node: '>=18.0.0'}
 
-  '@grpc/grpc-js@1.10.9':
-    resolution: {integrity: sha512-5tcgUctCG0qoNyfChZifz2tJqbRbXVO9J7X6duFcOjY3HUNCxg5D0ZCK7EP9vIcZ0zRpLU9bWkyCqVCLZ46IbQ==}
-    engines: {node: '>=12.10.0'}
-
   '@grpc/grpc-js@1.12.5':
     resolution: {integrity: sha512-d3iiHxdpg5+ZcJ6jnDSOT8Z0O0VMVGy34jAnYLUX8yd36b1qn8f1TwOA/Lc7TsOh03IkPJ38eGI5qD2EjNkoEA==}
     engines: {node: '>=12.10.0'}
@@ -5820,8 +5816,8 @@ packages:
       '@pulumi/kubernetes': ^3.0.0
       '@pulumi/pulumi': ^3.0.0
 
-  '@pulumi/pulumi@3.144.1':
-    resolution: {integrity: sha512-C3kdP/uYnZygxfK18pFzs0P6IYng/rgf/NW5LXUjHMKcCSwyHbsk6l2wpuuYQiWaJFWyqLdNwDFRVf07ZcIEsA==}
+  '@pulumi/pulumi@3.145.0':
+    resolution: {integrity: sha512-oIKrxQ4Idlg6BNC5IKSCCr/dG5zHvAjbxJXFHcL97aUMvrWRaRU4Dc2k0AMXTxr/olMtm3b+dBF+2SpekvqR9Q==}
     engines: {node: '>=18'}
     peerDependencies:
       ts-node: '>= 7.0.1 < 12'
@@ -16311,8 +16307,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16419,11 +16415,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16462,6 +16458,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.716.0(@aws-sdk/client-sts@3.716.0)':
@@ -16595,11 +16592,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16638,7 +16635,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.716.0':
@@ -16752,7 +16748,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16871,7 +16867,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -17046,7 +17042,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -19681,11 +19677,6 @@ snapshots:
       '@repeaterjs/repeater': 3.0.6
       tslib: 2.8.1
 
-  '@grpc/grpc-js@1.10.9':
-    dependencies:
-      '@grpc/proto-loader': 0.7.13
-      '@js-sdsl/ordered-map': 4.4.2
-
   '@grpc/grpc-js@1.12.5':
     dependencies:
       '@grpc/proto-loader': 0.7.13
@@ -19872,7 +19863,7 @@ snapshots:
 
   '@lbrlabs/pulumi-grafana@0.1.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -20624,7 +20615,7 @@ snapshots:
 
   '@opentelemetry/exporter-logs-otlp-grpc@0.57.0(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@grpc/grpc-js': 1.10.9
+      '@grpc/grpc-js': 1.12.5
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-grpc-exporter-base': 0.57.0(@opentelemetry/api@1.9.0)
@@ -20653,7 +20644,7 @@ snapshots:
 
   '@opentelemetry/exporter-metrics-otlp-grpc@0.57.0(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@grpc/grpc-js': 1.10.9
+      '@grpc/grpc-js': 1.12.5
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/exporter-metrics-otlp-http': 0.57.0(@opentelemetry/api@1.9.0)
@@ -20691,7 +20682,7 @@ snapshots:
 
   '@opentelemetry/exporter-trace-otlp-grpc@0.57.0(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@grpc/grpc-js': 1.10.9
+      '@grpc/grpc-js': 1.12.5
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-grpc-exporter-base': 0.57.0(@opentelemetry/api@1.9.0)
@@ -21111,7 +21102,7 @@ snapshots:
 
   '@opentelemetry/otlp-grpc-exporter-base@0.57.0(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@grpc/grpc-js': 1.10.9
+      '@grpc/grpc-js': 1.12.5
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-exporter-base': 0.57.0(@opentelemetry/api@1.9.0)
@@ -21371,7 +21362,7 @@ snapshots:
 
   '@pulumi/cloudflare@4.16.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -21380,7 +21371,7 @@ snapshots:
 
   '@pulumi/command@1.0.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -21389,7 +21380,7 @@ snapshots:
 
   '@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
       glob: 10.3.12
       shell-quote: 1.7.3
     transitivePeerDependencies:
@@ -21398,14 +21389,14 @@ snapshots:
       - ts-node
       - typescript
 
-  '@pulumi/kubernetesx@0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))':
+  '@pulumi/kubernetesx@0.1.6(@pulumi/kubernetes@4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))(@pulumi/pulumi@3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2))':
     dependencies:
       '@pulumi/kubernetes': 4.19.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
 
-  '@pulumi/pulumi@3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
+  '@pulumi/pulumi@3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@grpc/grpc-js': 1.10.9
+      '@grpc/grpc-js': 1.12.5
       '@logdna/tail-file': 2.2.0
       '@npmcli/arborist': 7.4.0
       '@opentelemetry/api': 1.9.0
@@ -21446,7 +21437,7 @@ snapshots:
 
   '@pulumi/random@4.16.2(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)':
     dependencies:
-      '@pulumi/pulumi': 3.144.1(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
+      '@pulumi/pulumi': 3.145.0(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.2)(typescript@5.7.2))(typescript@5.7.2)
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -25930,7 +25921,7 @@ snapshots:
       has-property-descriptors: 1.0.2
       has-proto: 1.0.1
       has-symbols: 1.0.3
-      hasown: 2.0.0
+      hasown: 2.0.2
       internal-slot: 1.0.6
       is-array-buffer: 3.0.2
       is-callable: 1.2.7
@@ -25996,7 +25987,7 @@ snapshots:
     dependencies:
       get-intrinsic: 1.2.4
       has-tostringtag: 1.0.0
-      hasown: 2.0.0
+      hasown: 2.0.2
 
   es-shim-unscopables@1.0.0:
     dependencies:
@@ -26148,7 +26139,7 @@ snapshots:
   eslint-import-resolver-node@0.3.9:
     dependencies:
       debug: 3.2.7(supports-color@8.1.1)
-      is-core-module: 2.13.1
+      is-core-module: 2.16.1
       resolve: 1.22.8
     transitivePeerDependencies:
       - supports-color
@@ -27891,7 +27882,7 @@ snapshots:
   internal-slot@1.0.6:
     dependencies:
       get-intrinsic: 1.2.4
-      hasown: 2.0.0
+      hasown: 2.0.2
       side-channel: 1.0.6
 
   internmap@1.0.1: {}
@@ -30099,7 +30090,7 @@ snapshots:
   normalize-package-data@6.0.0:
     dependencies:
       hosted-git-info: 7.0.1
-      is-core-module: 2.13.1
+      is-core-module: 2.16.1
       semver: 7.6.2
       validate-npm-package-license: 3.0.4
 
@@ -31568,7 +31559,7 @@ snapshots:
 
   resolve@2.0.0-next.4:
     dependencies:
-      is-core-module: 2.13.1
+      is-core-module: 2.16.1
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
