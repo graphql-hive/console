@@ -2,13 +2,13 @@ import { buildSchema, GraphQLError, Source } from 'graphql';
 import { InvalidDocument, validate } from '@graphql-inspector/core';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { Hive } from '../../helpers/hive/__';
 import { loadOperations } from '../../helpers/operations';
 import { Texture } from '../../helpers/texture/texture';
 
-const fetchLatestVersionQuery = graphql(/* GraphQL */ `
+const fetchLatestVersionQuery = Hive.graphql(/* GraphQL */ `
   query fetchLatestVersion {
     latestValidVersion {
       sdl

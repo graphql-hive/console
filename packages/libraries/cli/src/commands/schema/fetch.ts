@@ -2,12 +2,12 @@ import { writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { Hive } from '../../helpers/hive/__';
 import { printTable } from '../../helpers/print-table';
 
-const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
+const SchemaVersionForActionIdQuery = Hive.graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
     $actionId: ID!
     $includeSDL: Boolean!

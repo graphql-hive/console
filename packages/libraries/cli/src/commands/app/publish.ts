@@ -1,8 +1,8 @@
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { Hive } from '../../helpers/hive/__';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -65,7 +65,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
   }
 }
 
-const ActivateAppDeploymentMutation = graphql(/* GraphQL */ `
+const ActivateAppDeploymentMutation = Hive.graphql(/* GraphQL */ `
   mutation ActivateAppDeployment($input: ActivateAppDeploymentInput!) {
     activateAppDeployment(input: $input) {
       ok {

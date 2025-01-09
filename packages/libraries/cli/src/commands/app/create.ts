@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { Hive } from '../../helpers/hive/__';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -147,7 +147,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
 
 const ManifestModel = z.record(z.string());
 
-const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
+const CreateAppDeploymentMutation = Hive.graphql(/* GraphQL */ `
   mutation CreateAppDeployment($input: CreateAppDeploymentInput!) {
     createAppDeployment(input: $input) {
       ok {
@@ -165,7 +165,7 @@ const CreateAppDeploymentMutation = graphql(/* GraphQL */ `
   }
 `);
 
-const AddDocumentsToAppDeploymentMutation = graphql(/* GraphQL */ `
+const AddDocumentsToAppDeploymentMutation = Hive.graphql(/* GraphQL */ `
   mutation AddDocumentsToAppDeployment($input: AddDocumentsToAppDeploymentInput!) {
     addDocumentsToAppDeployment(input: $input) {
       ok {

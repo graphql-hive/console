@@ -85,7 +85,10 @@ const config: CodegenConfig = {
     },
     // CLI
     './packages/libraries/cli/src/gql/': {
-      documents: ['./packages/libraries/cli/src/(commands|helpers)/**/*.ts'],
+      documents: [
+        './packages/libraries/cli/src/commands/**/*.ts',
+        './packages/libraries/cli/src/helpers/hive/fragments/**/*.ts',
+      ],
       preset: 'client',
       plugins: [],
       config: {

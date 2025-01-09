@@ -3,14 +3,14 @@ import { GraphQLError, print } from 'graphql';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
-import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
+import { Hive } from '../../helpers/hive/__';
+import { loadSchema, minifySchema } from '../../helpers/schema';
 import { invariant } from '../../helpers/validation';
 
-const schemaPublishMutation = graphql(/* GraphQL */ `
+const schemaPublishMutation = Hive.graphql(/* GraphQL */ `
   mutation schemaPublish($input: SchemaPublishInput!, $usesGitHubApp: Boolean!) {
     schemaPublish(input: $input) {
       __typename
@@ -271,7 +271,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         throw err;
       }
 
-      let result: DocumentType<typeof schemaPublishMutation> | null = null;
+      let result: Hive.DocumentType<typeof schemaPublishMutation> | null = null;
 
       do {
         result = await this.registryApi(endpoint, accessToken).request({
@@ -306,7 +306,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
             this.success('No changes. Skipping.');
           } else {
             if (changes) {
-              this.log(renderChanges(changes));
+              this.log(Hive.Fragments.SchemaChangeConnection.print(changes));
             }
             this.success('Schema published');
           }
@@ -331,11 +331,11 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
           const changes = result.schemaPublish.changes;
           const errors = result.schemaPublish.errors;
-          this.log(renderErrors(errors));
+          this.log(Hive.Fragments.SchemaErrorConnection.print(errors));
 
           if (changes && changes.total) {
             this.log('');
-            this.log(renderChanges(changes));
+            this.log(Hive.Fragments.SchemaChangeConnection.print(changes));
           }
           this.log('');
 

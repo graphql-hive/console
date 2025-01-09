@@ -12,7 +12,8 @@ import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
-import { loadSchema, renderErrors } from '../helpers/schema';
+import { Hive } from '../helpers/hive/__';
+import { loadSchema } from '../helpers/schema';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -309,7 +310,7 @@ export default class Dev extends Command<typeof Dev> {
     if (compositionHasErrors(compositionResult)) {
       if (compositionResult.errors) {
         this.log(
-          renderErrors({
+          Hive.Fragments.SchemaErrorConnection.print({
             total: compositionResult.errors.length,
             nodes: compositionResult.errors.map(error => ({
               message: error.message,
@@ -373,7 +374,7 @@ export default class Dev extends Command<typeof Dev> {
 
     if (!valid) {
       if (compositionResult.errors) {
-        this.log(renderErrors(compositionResult.errors));
+        this.log(Hive.Fragments.SchemaErrorConnection.print(compositionResult.errors));
       }
 
       input.onError('Composition failed');

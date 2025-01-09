@@ -1,11 +1,10 @@
 import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
-import { renderErrors } from '../../helpers/schema';
+import { Hive } from '../../helpers/hive/__';
 
-const schemaDeleteMutation = graphql(/* GraphQL */ `
+const schemaDeleteMutation = Hive.graphql(/* GraphQL */ `
   mutation schemaDelete($input: SchemaDeleteInput!) {
     schemaDelete(input: $input) {
       __typename
@@ -134,7 +133,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       const errors = result.schemaDelete.errors;
 
       if (errors) {
-        this.log(renderErrors(errors));
+        this.log(Hive.Fragments.SchemaErrorConnection.print(errors));
         this.exit(1);
       }
     } catch (error) {

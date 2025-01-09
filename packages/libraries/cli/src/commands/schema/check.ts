@@ -1,18 +1,12 @@
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
-import {
-  loadSchema,
-  minifySchema,
-  renderChanges,
-  renderErrors,
-  renderWarnings,
-} from '../../helpers/schema';
+import { Hive } from '../../helpers/hive/__';
+import { loadSchema, minifySchema } from '../../helpers/schema';
 
-const schemaCheckMutation = graphql(/* GraphQL */ `
+const schemaCheckMutation = Hive.graphql(/* GraphQL */ `
   mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
     schemaCheck(input: $input) {
       __typename
@@ -240,12 +234,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         } else if (!changes?.total) {
           this.success('No changes');
         } else {
-          this.log(renderChanges(changes));
+          this.log(Hive.Fragments.SchemaChangeConnection.print(changes));
         }
 
         const warnings = result.schemaCheck.warnings;
         if (warnings?.total) {
-          this.log(renderWarnings(warnings));
+          this.log(Hive.Fragments.SchemaWarningConnection.print(warnings));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
@@ -255,14 +249,14 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         const errors = result.schemaCheck.errors;
         const warnings = result.schemaCheck.warnings;
-        this.log(renderErrors(errors));
+        this.log(Hive.Fragments.SchemaErrorConnection.print(errors));
 
         if (warnings?.total) {
-          this.log(renderWarnings(warnings));
+          this.log(Hive.Fragments.SchemaWarningConnection.print(warnings));
         }
 
         if (changes && changes.total) {
-          this.log(renderChanges(changes));
+          this.log(Hive.Fragments.SchemaChangeConnection.print(changes));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
