@@ -15,6 +15,6 @@ export default class DeleteConfig extends Command<typeof DeleteConfig> {
   async run() {
     const { args } = await this.parse(DeleteConfig);
     this._userConfig!.delete(args.key);
-    this.success(Texture.boldQuotedWords(`Config flag "${args.key}" was deleted`));
+    this.logSuccess(Texture.boldQuotedWords(`Config flag "${args.key}" was deleted`));
   }
 }

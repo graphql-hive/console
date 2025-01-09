@@ -299,32 +299,32 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           const changes = result.schemaPublish.changes;
 
           if (result.schemaPublish.initial) {
-            this.success('Published initial schema.');
+            this.logSuccess('Published initial schema.');
           } else if (result.schemaPublish.successMessage) {
-            this.success(result.schemaPublish.successMessage);
+            this.logSuccess(result.schemaPublish.successMessage);
           } else if (changes && changes.total === 0) {
-            this.success('No changes. Skipping.');
+            this.logSuccess('No changes. Skipping.');
           } else {
             if (changes) {
               this.log(renderChanges(changes));
             }
-            this.success('Schema published');
+            this.logSuccess('Schema published');
           }
 
           if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
+            this.logInfo(`Available at ${result.schemaPublish.linkToWebsite}`);
           }
         } else if (result.schemaPublish.__typename === 'SchemaPublishRetry') {
           this.log(result.schemaPublish.reason);
           this.log('Waiting for other schema publishes to complete...');
           result = null;
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          this.fail(
+          this.logFailure(
             `${result.schemaPublish.missingServiceError} Please use the '--service <name>' parameter.`,
           );
           this.exit(1);
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          this.fail(
+          this.logFailure(
             `${result.schemaPublish.missingUrlError} Please use the '--url <url>' parameter.`,
           );
           this.exit(1);
@@ -340,17 +340,17 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('');
 
           if (!force) {
-            this.fail('Failed to publish schema');
+            this.logFailure('Failed to publish schema');
             this.exit(1);
           } else {
-            this.success('Schema published (forced)');
+            this.logSuccess('Schema published (forced)');
           }
 
           if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
+            this.logInfo(`Available at ${result.schemaPublish.linkToWebsite}`);
           }
         } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
-          this.success(result.schemaPublish.message);
+          this.logSuccess(result.schemaPublish.message);
         } else {
           this.error(
             'message' in result.schemaPublish ? result.schemaPublish.message : 'Unknown error',
@@ -361,7 +361,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
-        this.fail('Failed to publish schema');
+        this.logFailure('Failed to publish schema');
         this.handleFetchError(error);
       }
     }
