@@ -60,6 +60,15 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
       typesetting: 'article',
     },
   },
+  'case-studies': {
+    type: 'page',
+    title: 'Case Studies',
+    theme: {
+      sidebar: false,
+      toc: true,
+      breadcrumb: false,
+    },
+  },
   'oss-friends': {
     type: 'page',
     title: 'Our Open Source Friends',

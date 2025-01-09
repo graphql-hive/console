@@ -2,6 +2,9 @@
   "name": "@hive/docs",
   "type": "module",
   "private": true,
+  "imports": {
+    "#components/*": "./src/components/*"
+  },
   "scripts": {
     "build": "next build && next-sitemap",
     "dev": "next --turbopack",

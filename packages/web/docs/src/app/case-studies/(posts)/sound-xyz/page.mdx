@@ -6,18 +6,17 @@ authors:
     avatar: https://placedog.net/24/24
 ---
 
-import { LargeCallout } from '@/components/large-callout'
-import { Lede } from '@/components/lede'
-import { ContactButton } from '@theguild/components'
+import { DocsIcon, LargeCallout } from '#components/large-callout'
+import { Lede } from '#components/lede'
+import { SmallAvatar } from '#components/small-avatar'
+import { CallToAction, ContactButton } from '@theguild/components'
 
 <Lede>
-
-Sound.xyz is revolutionizing the music industry by addressing two critical challenges: the
-concentration of streaming revenue among top artists and the inadequate compensation per stream. As
-they scale their platform to empower artists and build stronger community connections, their
-technical infrastructure needs have evolved significantly, particularly in API management and
-service architecture.
-
+  Sound.xyz is revolutionizing the music industry by addressing two critical challenges: the
+  concentration of streaming revenue among top artists and the inadequate compensation per stream.
+  As they scale their platform to empower artists and build stronger community connections, their
+  technical infrastructure needs have evolved significantly, particularly in API management and
+  service architecture.
 </Lede>
 
 ## Background
@@ -31,7 +30,7 @@ aims to address two fundamental problems in the current music industry:
 The company's vision centers on creating a more equitable music ecosystem that properly values
 artistic content and enables artists to build sustainable careers.
 
-![](./sound-xyz.webp)
+![Sound.xyz: Discover new music and prove you were there first](./sound-xyz.webp)
 
 ## Challenges
 
@@ -71,8 +70,9 @@ architecture.
 > dignissim enim ullamcorper auctor amet.
 
 <cite>
-  <Avatar src="https://placedog.net/24/24" />
-  **Name Surname** Sound.xyz
+  <SmallAvatar src="https://placedog.net/24/24" />
+  <span>Name Surname</span>
+  <span>Sound.xyz</span>
 </cite>
 
 </div>
@@ -95,6 +95,7 @@ The implementation provided Sound.xyz with several key advantages:
    - Improved system reliability
 
 <LargeCallout
+  icon={<DocsIcon />}
   heading="Heading goes here"
   variant="secondary"
   cta={
@@ -116,6 +117,7 @@ for common challenges. Architecture Evolution: Starting with a monolith and grad
 to microservices allowed for controlled growth.
 
 <LargeCallout
+  icon={<DocsIcon />}
   heading="Heading goes here"
   variant="primary"
   cta={<ContactButton variant="secondary-inverted" />}
