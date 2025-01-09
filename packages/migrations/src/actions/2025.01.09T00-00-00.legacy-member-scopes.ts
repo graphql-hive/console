@@ -25,7 +25,7 @@ export default {
   async run({ sql, connection }) {
     const queryResult = await connection.query(sql`
       SELECT
-        organization_id as "organizationId"
+        organization_id as "organizationId",
         sorted_scopes as "sortedScopes",
         ARRAY_AGG(user_id) AS "userIds"
       FROM (
