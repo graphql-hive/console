@@ -79,7 +79,7 @@ export default {
           )
           VALUES (
             ${row.organization_id},
-            ${`Auto Role ${counter}`},
+            'Auto Role ' || substring(uuid_generate_v4()::text FROM 1 FOR 8),
             'Auto generated role to assign to members without a role',
             ${row.sorted_scopes}
           )
