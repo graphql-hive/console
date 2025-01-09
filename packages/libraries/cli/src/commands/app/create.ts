@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { Hive } from '../../helpers/hive/__';
@@ -80,7 +79,10 @@ export default class AppCreate extends Command<typeof AppCreate> {
       throw new Error('Unknown error');
     }
 
-    if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {
+    if (
+      result.createAppDeployment.ok.createdAppDeployment.status !==
+      Hive.Schema.AppDeploymentStatus.Pending
+    ) {
       this.log(
         `App deployment "${flags['name']}@${flags['version']}" is "${result.createAppDeployment.ok.createdAppDeployment.status}". Skip uploading documents...`,
       );
