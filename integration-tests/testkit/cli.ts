@@ -296,8 +296,14 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     ]);
   }
 
-  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId: string }) {
-    const cmd = schemaFetch(['--token', tokens.readwrite, '--type', input.type, input.actionId]);
+  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId?: string }) {
+    const cmd = schemaFetch([
+      '--token',
+      tokens.readwrite,
+      '--type',
+      input.type,
+      ...(input.actionId ? [input.actionId] : []),
+    ]);
 
     return cmd;
   }
