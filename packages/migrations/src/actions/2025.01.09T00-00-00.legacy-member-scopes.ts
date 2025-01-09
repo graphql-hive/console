@@ -1,22 +1,24 @@
 import { z } from 'zod';
 import { type MigrationExecutor } from '../pg-migrator';
 
-const QUERY_RESULT = z.array(z.object({
-  organizationId: z.string(),
-  sortedScopes: z.array(z.string()),
-  userIds: z.array(z.string()),
-}));
+const QUERY_RESULT = z.array(
+  z.object({
+    organizationId: z.string(),
+    sortedScopes: z.array(z.string()),
+    userIds: z.array(z.string()),
+  }),
+);
 
 /**
  * This migration is going to create a new role for each group of members
  * that have the same scopes but no role assigned.
- * 
+ *
  * The role will be named "Auto Role {counter}".
  * The counter will be reset for each organization.
- * 
+ *
  * Completes:
  * https://the-guild.dev/graphql/hive/product-updates/2023-12-05-member-roles
- * 
+ *
  * Users won't be affected by this change, as they will still have the same scopes.
  */
 export default {
@@ -45,7 +47,7 @@ export default {
       GROUP BY organization_id, sorted_scopes
       ORDER BY organization_id;
     `);
-  
+
     if (queryResult.rowCount === 0) {
       console.log('No members without role_id found.');
       return;

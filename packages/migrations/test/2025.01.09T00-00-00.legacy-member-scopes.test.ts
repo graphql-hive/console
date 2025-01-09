@@ -133,7 +133,7 @@ await describe('migration: legacy-member-socpes', async () => {
       );
 
       // run the next migrations
-      await runTo('2025.01.02T00-00-00.legacy-user-org-cleanup.ts')
+      await runTo('2025.01.02T00-00-00.legacy-user-org-cleanup.ts');
 
       // assert scopes are still in place and identical
       assert.deepStrictEqual(
@@ -162,7 +162,7 @@ await describe('migration: legacy-member-socpes', async () => {
       );
 
       // assert assigned roles have identical scopes
-      
+
       const adminRole = await db.one<{
         scopes: string[];
         id: string;
@@ -172,10 +172,7 @@ await describe('migration: legacy-member-socpes', async () => {
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${admin.id} AND omr.organization_id = ${organization.id}
       `);
-      assert.deepStrictEqual(
-        adminRole.scopes,
-        adminScopes,
-      );
+      assert.deepStrictEqual(adminRole.scopes, adminScopes);
 
       const contributorRole = await db.one<{
         scopes: string[];
@@ -186,11 +183,8 @@ await describe('migration: legacy-member-socpes', async () => {
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${contributor.id} AND omr.organization_id = ${organization.id}
         `);
-      assert.deepStrictEqual(
-        contributorRole,
-        contributorScopes,
-      );
-      
+      assert.deepStrictEqual(contributorRole, contributorScopes);
+
       // assert no role user has no role
       assert.strictEqual(
         await db.oneFirst(sql`
@@ -296,12 +290,9 @@ await describe('migration: legacy-member-socpes', async () => {
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
         WHERE om.user_id = ${noRoleUser.id} AND omr.organization_id = ${organization.id}
-      `)
-      
-      assert.deepStrictEqual(
-        previouslyNoRoleUser.scopes,
-        noRoleUserScopes,
-      );
+      `);
+
+      assert.deepStrictEqual(previouslyNoRoleUser.scopes, noRoleUserScopes);
 
       // assert that the role has the correct name
       assert.match(previouslyNoRoleUser.name, /^Auto Role /);
