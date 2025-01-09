@@ -2052,8 +2052,8 @@ importers:
         specifier: 0.5.15
         version: 0.5.15(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2)))
       '@theguild/components':
-        specifier: 7.4.0
-        version: 7.4.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.21(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))
+        specifier: 7.5.0
+        version: 7.5.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.21(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -4905,8 +4905,8 @@ packages:
     resolution: {integrity: sha512-lH8bYk2kqfbKsht/Gejd8K+y069ZXPHBfrlcj1ptS6xlJbHhncHxpFyy57W+PTuCcN+MPGVjs+3CiufG8EUrCQ==}
     engines: {node: '>= 10'}
 
-  '@next/bundle-analyzer@15.0.4':
-    resolution: {integrity: sha512-0If3/mxqUWYC0lAdV5cChGA1Xs1BENjaLyJkdqpI2df86HqprcDZagiB2IU1xc5ph7xZHRdi5mT2cY7VkyibTQ==}
+  '@next/bundle-analyzer@15.1.0':
+    resolution: {integrity: sha512-uEyuNZZgAbSWgiUbtihTA8y6QgEzc4b8Fpslmc4SXAjj67Ax5mlcv1HLlez+5dIGwO+vJ9PgCoI8ngWtBh/g1Q==}
 
   '@next/env@13.5.6':
     resolution: {integrity: sha512-Yac/bV5sBGkkEXmAX5FWPS9Mmo2rthrOPRQQNfycJPkjUAUclomCPH7QFVCDQ4Mp2k2K1SSM6m0zrxYrOwtFQw==}
@@ -7474,10 +7474,10 @@ packages:
     resolution: {integrity: sha512-kUiFyUQDiVdpeeL/qwOZAdDZrYFTwqppwNZDxOXcPSKeqGCZe8ajbbN64OAS7VlGMnXWxEEHcjhyFzB9gtHn5w==}
     hasBin: true
 
-  '@theguild/components@7.4.0':
-    resolution: {integrity: sha512-tOh+Otfod9+oyrzUUCwAFVC6Gr1qZyTnGdzfb1us2tTPqCU8BH1w0ak9BCWk9nNnN9VkavZmRKsU1uJhvb7JLA==}
+  '@theguild/components@7.5.0':
+    resolution: {integrity: sha512-2lgg+kWQBGyAgl0948p65l9Qb7jy1RXPSdY9fUL9hQR53g0ea84+d1MffwlC5pWh7y0o6dcznSAXJZcFhJfJ0g==}
     peerDependencies:
-      '@theguild/tailwind-config': 0.6.1
+      '@theguild/tailwind-config': 0.6.2
       next: ^13 || ^14 || ^15.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -20079,7 +20079,7 @@ snapshots:
       '@napi-rs/simple-git-win32-arm64-msvc': 0.1.17
       '@napi-rs/simple-git-win32-x64-msvc': 0.1.17
 
-  '@next/bundle-analyzer@15.0.4':
+  '@next/bundle-analyzer@15.1.0':
     dependencies:
       webpack-bundle-analyzer: 4.10.1
     transitivePeerDependencies:
@@ -23349,10 +23349,10 @@ snapshots:
       typescript: 4.9.5
       yargs: 16.2.0
 
-  '@theguild/components@7.4.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.21(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))':
+  '@theguild/components@7.5.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.21(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.2)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))':
     dependencies:
       '@giscus/react': 3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@next/bundle-analyzer': 15.0.4
+      '@next/bundle-analyzer': 15.1.0
       '@radix-ui/react-navigation-menu': 1.2.0(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@theguild/tailwind-config': 0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.3)(typescript@5.7.2)))
       clsx: 2.1.1
@@ -31164,7 +31164,7 @@ snapshots:
 
   react-player@2.16.0(react@18.3.1):
     dependencies:
-      deepmerge: 4.2.2
+      deepmerge: 4.3.1
       load-script: 1.0.0
       memoize-one: 5.2.1
       prop-types: 15.8.1
