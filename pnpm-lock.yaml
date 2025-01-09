@@ -838,8 +838,8 @@ importers:
   packages/services/broker-worker:
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 4.20241224.0
-        version: 4.20241224.0
+        specifier: 4.20241230.0
+        version: 4.20241230.0
       '@types/service-worker-mock':
         specifier: 2.0.4
         version: 2.0.4
@@ -871,8 +871,8 @@ importers:
   packages/services/cdn-worker:
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 4.20241224.0
-        version: 4.20241224.0
+        specifier: 4.20241230.0
+        version: 4.20241230.0
       '@types/service-worker-mock':
         specifier: 2.0.4
         version: 2.0.4
@@ -924,7 +924,7 @@ importers:
     devDependencies:
       wrangler:
         specifier: 3.99.0
-        version: 3.99.0(@cloudflare/workers-types@4.20241224.0)
+        version: 3.99.0(@cloudflare/workers-types@4.20241230.0)
 
   packages/services/emails:
     devDependencies:
@@ -3034,8 +3034,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20241224.0':
-    resolution: {integrity: sha512-1ZmFc8qqM7S/HUGmLplc4P8n8DoMqiJmc47r9Lr7VbuaotoqCXVljz09w1V1mc4K3pbFPgvqSy4XYStZ08HrlQ==}
+  '@cloudflare/workers-types@4.20241230.0':
+    resolution: {integrity: sha512-dtLD4jY35Lb750cCVyO1i/eIfdZJg2Z0i+B1RYX6BVeRPlgaHx/H18ImKAkYmy0g09Ow8R2jZy3hIxMgXun0WQ==}
 
   '@codemirror/language@6.10.2':
     resolution: {integrity: sha512-kgbTYTo0Au6dCSc/TFy7fK3fpJmgHDv1sG1KNQKJXVi+xBTEeBPY/M30YXiU6mMXeH+YIDLsbrT4ZwNRdtF+SA==}
@@ -3889,7 +3889,6 @@ packages:
 
   '@fastify/vite@6.0.6':
     resolution: {integrity: sha512-FsWJC92murm5tjeTezTTvMLyZido/ZWy0wYWpVkh/bDe1gAUAabYLB7Vp8hokXGsRE/mOpqYVsRDAKENY2qPUQ==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -17670,7 +17669,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20241218.0':
     optional: true
 
-  '@cloudflare/workers-types@4.20241224.0': {}
+  '@cloudflare/workers-types@4.20241230.0': {}
 
   '@codemirror/language@6.10.2':
     dependencies:
@@ -33554,7 +33553,7 @@ snapshots:
 
   workers-loki-logger@0.1.15: {}
 
-  wrangler@3.99.0(@cloudflare/workers-types@4.20241224.0):
+  wrangler@3.99.0(@cloudflare/workers-types@4.20241230.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.3.4
       '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
@@ -33574,7 +33573,7 @@ snapshots:
       workerd: 1.20241218.0
       xxhash-wasm: 1.0.2
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20241224.0
+      '@cloudflare/workers-types': 4.20241230.0
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
