@@ -100,7 +100,7 @@ function OrganizationMemberRoleSwitcher(props: {
   organization: FragmentType<typeof OrganizationMemberRoleSwitcher_OrganizationFragment>;
   memberId: string;
   memberName: string;
-  memberRoleId?: string;
+  memberRoleId: string;
   member?: FragmentType<typeof OrganizationMemberRoleSwitcher_MemberFragment>;
 }) {
   const organization = useFragment(
@@ -124,10 +124,6 @@ function OrganizationMemberRoleSwitcher(props: {
     console.error('No role or member provided to OrganizationMemberRoleSwitcher');
     return null;
   }
-
-  const memberOrganizationAccessScopes = (memberRole ?? member)!.organizationAccessScopes;
-  const memberProjectAccessScopes = (memberRole ?? member)!.projectAccessScopes;
-  const memberTargetAccessScopes = (memberRole ?? member)!.targetAccessScopes;
 
   return (
     <>
@@ -183,16 +179,18 @@ function OrganizationMemberRoleSwitcher(props: {
           // If the new role has more or equal access scopes than the current role, we can assign it
           const newRoleHasMoreOrEqualAccess =
             // organization
-            role.organizationAccessScopes.length >= memberOrganizationAccessScopes.length &&
+            role.organizationAccessScopes.length >= memberRole.organizationAccessScopes.length &&
             role.organizationAccessScopes.every(scope =>
-              memberOrganizationAccessScopes.includes(scope),
+              memberRole.organizationAccessScopes.includes(scope),
             ) &&
             // project
-            role.projectAccessScopes.length >= memberProjectAccessScopes.length &&
-            role.projectAccessScopes.every(scope => memberProjectAccessScopes.includes(scope)) &&
+            role.projectAccessScopes.length >= memberRole.projectAccessScopes.length &&
+            role.projectAccessScopes.every(scope =>
+              memberRole.projectAccessScopes.includes(scope),
+            ) &&
             // target
-            role.targetAccessScopes.length >= memberTargetAccessScopes.length &&
-            role.targetAccessScopes.every(scope => memberTargetAccessScopes.includes(scope));
+            role.targetAccessScopes.length >= memberRole.targetAccessScopes.length &&
+            role.targetAccessScopes.every(scope => memberRole.targetAccessScopes.includes(scope));
           const canAssign =
             (hasAccessToScopesOfRole && newRoleHasMoreOrEqualAccess) || canDowngrade;
           //
@@ -405,7 +403,7 @@ function OrganizationMemberRow(props: {
               organization={organization}
               memberId={member.id}
               memberName={member.user.displayName}
-              memberRoleId={member.role?.id}
+              memberRoleId={member.role.id}
               member={member}
             />
           )}
