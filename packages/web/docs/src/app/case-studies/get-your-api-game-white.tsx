@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import {
   CallToAction,
   cn,
@@ -16,7 +15,7 @@ export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>)
       className={cn('relative mx-auto my-24 h-[348px] max-w-[90rem]', props.className)}
     >
       <div className="flex h-full flex-col items-center justify-center gap-10">
-        <Heading size="lg" as="h2" className="text-green-1000">
+        <Heading size="lg" as="h2" className="text-green-1000 dark:text-white">
           Get your API game right.
         </Heading>
         <div className="flex gap-4">

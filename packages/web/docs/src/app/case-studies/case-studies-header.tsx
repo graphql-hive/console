@@ -38,7 +38,7 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
 
   return (
     <header {...props}>
-      <LogoWithDecorations className="h-[224px] w-full sm:w-[400px]">
+      <LogoWithDecorations className="h-[224px] w-full max-sm:mb-6 sm:w-[360px] sm:max-2xl:hidden 2xl:absolute 2xl:translate-x-[688px]">
         <Image src={logo} alt="Logo" width={193} height={64} />
       </LogoWithDecorations>
       <Heading as="h1" size="md" className="max-sm:text-[32px]">
@@ -74,8 +74,8 @@ function LogoWithDecorations({
     <div className={cn('relative flex items-center justify-center', className)}>
       {children}
       <DecorationIsolation>
-        <WideArchDecoration className="absolute left-0 top-0" />
-        <WideArchDecoration className="absolute bottom-0 right-0 rotate-180" />
+        <WideArchDecoration className="absolute right-0 top-0" />
+        <WideArchDecoration className="absolute bottom-0 left-0 rotate-180" />
         <WideArchDecorationDefs />
       </DecorationIsolation>
     </div>
