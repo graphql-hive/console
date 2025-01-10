@@ -65,8 +65,8 @@ const testimonials: Testimonial[] = [
   {
     company: 'Prodigy',
     logo: props => (
-      <div className="flex h-8 items-center justify-center">
-        <ProdigyLogo {...props} height={37} />
+      <div className={cn('flex h-8 items-center', props.className)}>
+        <ProdigyLogo {...props} className="" height={37} />
       </div>
     ),
     text: (
@@ -158,7 +158,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
           <div
             /* mobile scrollview */
             ref={scrollviewRef}
-            className="-m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
+            className="no-scrollbar -m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
             onScroll={updateDotsOnScroll.current}
           >
             {testimonials.map(
