@@ -16,6 +16,7 @@ export function Page(props: { children: ReactNode; className?: string }) {
           }
           body {
             background: #fff;
+            color-scheme: light;
             --nextra-primary-hue: 191deg;
             --nextra-primary-saturation: 40%;
             --nextra-bg: 255, 255, 255;
