@@ -30,16 +30,16 @@ export type ExecCommandPath =
 
 export type ExecArgs = Record<string, string>;
 
-export const argsToExecFormat = (args?: ExecArgs): string => {
+export const execFormat = (commandPath: string, args?: ExecArgs) => {
+  return `${commandPath} ${execFormatArgs(args)}`;
+};
+
+export const execFormatArgs = (args?: ExecArgs): string => {
   return args
     ? Object.entries(args)
         .map(([key, value]) => `--${key.replace(/^--/, '')}${value ? `=${value}` : ''}`)
         .join(' ')
     : '';
-};
-
-export const execFormat = (commandPath: string, args?: ExecArgs) => {
-  return `${commandPath} ${argsToExecFormat(args)}`;
 };
 
 export async function exec(cmd: string) {
