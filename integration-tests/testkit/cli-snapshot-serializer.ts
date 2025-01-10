@@ -69,6 +69,19 @@ export const cliOutputSnapshotSerializer: SnapshotSerializer = {
   serialize,
 };
 
+/**
+ * Strip ANSI codes and mask variables.
+ */
+const clean = (value: string) => {
+  // We strip ANSI codes because their output can vary by platform (e.g. between macOS and GH CI linux-based runner)
+  // and we don't care enough about CLI output styling to fork our snapshots for it.
+  value = stripAnsi(value);
+  for (const replacement of variableReplacements) {
+    value = value.replaceAll(replacement.pattern, replacement.mask);
+  }
+  return value;
+};
+
 const variableReplacements = [
   {
     pattern: /("reference": "|"requestId": "|"https?:\/\/)[^"]+/gi,
@@ -87,19 +100,6 @@ const variableReplacements = [
     mask: '$1__URL__',
   },
 ];
-
-/**
- * Strip ANSI codes and mask variables.
- */
-const clean = (value: string) => {
-  // We strip ANSI codes because their output can vary by platform (e.g. between macOS and GH CI linux-based runner)
-  // and we don't care enough about CLI output styling to fork our snapshots for it.
-  value = stripAnsi(value);
-  for (const replacement of variableReplacements) {
-    value = value.replaceAll(replacement.pattern, replacement.mask);
-  }
-  return value;
-};
 
 /**
  * The esm2cjs execa package we are using is not exporting the error class, so use this.

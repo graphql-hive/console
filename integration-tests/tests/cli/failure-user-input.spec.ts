@@ -1,11 +1,10 @@
-import { exec, ExecArgs, ExecCommandPath, execFormat, execHive } from '../../testkit/cli';
+import { ExecCommandPath, execHive } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
 interface TestCase {
   command: ExecCommandPath;
-  args?: ExecArgs;
 }
 
 // prettier-ignore
@@ -20,10 +19,10 @@ const testCases: TestCase[] = [
   // { command: 'app:publish' },
 ];
 
-test.each(testCases)('FailureUserInput - %s', async ({ command, args }) => {
+test.each(testCases)('FailureUserInput - %s', async ({ command }) => {
   const [text, json] = await Promise.allSettled([
-    execHive(command, args),
-    execHive(command, { ...args, json: true }),
+    execHive(command, {}),
+    execHive(command, { json: true }),
   ]);
   expect(text).toMatchSnapshot('OUTPUT FORMAT: TEXT');
   expect(json).toMatchSnapshot('OUTPUT FORMAT: JSON');

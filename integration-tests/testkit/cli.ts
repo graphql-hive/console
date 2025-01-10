@@ -26,7 +26,11 @@ export type ExecCommandPath =
   | 'schema:delete'
   | 'schema:fetch'
   | 'app:create'
-  | 'app:publish';
+  | 'app:publish'
+  | 'artifact:fetch'
+  | 'operations:check'
+  | 'dev'
+  | 'introspect';
 
 export type ExecArgs = Record<string, string | true>;
 
@@ -47,7 +51,7 @@ export function execFormatArgs(args?: ExecArgs): string {
   return args
     ? Object.entries(args)
         .map(([key, value]) => {
-          const flag = `--${key.replace(/^--/, '')}`;
+          const flag = `--${key.trim().replace(/^--/, '')}`;
 
           if (typeof value === 'boolean') {
             return value ? flag : null;

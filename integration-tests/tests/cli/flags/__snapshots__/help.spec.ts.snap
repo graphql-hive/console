@@ -1,0 +1,430 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`--help - { command: 'app:create' } 1`] = `
+create an app deployment
+
+USAGE
+  $ hive app:create FILE --name <value> --version <value> [--json]
+    [--show-output-schema-json] [--debug] [--registry.endpoint <value>]
+    [--registry.accessToken <value>]
+
+ARGUMENTS
+  FILE  Path to the persisted operations mapping.
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --name=<value>                  (required) app name
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --version=<value>               (required) app version
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  create an app deployment
+
+`;
+
+exports[`--help - { command: 'app:publish' } 1`] = `
+publish an app deployment
+
+USAGE
+  $ hive app:publish --name <value> --version <value> [--json]
+    [--show-output-schema-json] [--debug] [--registry.endpoint <value>]
+    [--registry.accessToken <value>]
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --name=<value>                  (required) app name
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --version=<value>               (required) app version
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  publish an app deployment
+
+`;
+
+exports[`--help - { command: 'artifact:fetch' } 1`] = `
+fetch artifacts from the CDN
+
+USAGE
+  $ hive artifact:fetch --artifact
+    sdl|supergraph|metadata|services|sdl.graphql|sdl.graphqls [--json]
+    [--show-output-schema-json] [--debug] [--cdn.endpoint <value>]
+    [--cdn.accessToken <value>] [--outputFile <value>]
+
+FLAGS
+  --artifact=<option>        (required) artifact to fetch (Note: supergraph is
+                             only available for federation projects)
+                             <options: sdl|supergraph|metadata|services|sdl.grap
+                             hql|sdl.graphqls>
+  --cdn.accessToken=<value>  CDN access token
+  --cdn.endpoint=<value>     CDN endpoint
+  --debug                    Whether debug output for HTTP calls and similar
+                             should be enabled.
+  --outputFile=<value>       whether to write to a file instead of stdout
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  fetch artifacts from the CDN
+
+`;
+
+exports[`--help - { command: 'dev' } 1`] = `
+Develop and compose Supergraph with your local services.
+
+USAGE
+  $ hive dev (--url <value> --service <value>) [--json]
+    [--show-output-schema-json] [--debug] [--registry.endpoint <value> --remote]
+    [--registry <value> ] [--registry.accessToken <value> ] [--token <value> ]
+    [--schema <value> ] [--watch] [--watchInterval <value>] [--write <value>]
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --registry=<value>              registry address (deprecated in favor of
+                                  --registry.endpoint)
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --remote                        Compose provided services remotely
+  --schema=<filepath>...          Service sdl. If not provided, will be
+                                  introspected from the service
+  --service=<string>...           (required) Service name
+  --token=<value>                 api token (deprecated in favor of
+                                  --registry.accessToken)
+  --url=<address>...              (required) Service url
+  --watch                         Watch mode
+  --watchInterval=<value>         [default: 1000] Watch interval in milliseconds
+  --write=<value>                 [default: supergraph.graphql] Where to save
+                                  the supergraph schema file
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  Develop and compose Supergraph with your local services.
+  Only available for Federation projects.
+
+  Two modes are available:
+  1. Local mode (default): Compose provided services locally. (Uses Hive's
+  native Federation v2 composition)
+  2. Remote mode: Perform composition remotely (according to project settings)
+  using all services registered in the registry.
+
+  Work in Progress: Please note that this command is still under development and
+  may undergo changes in future releases
+
+`;
+
+exports[`--help - { command: 'introspect' } 1`] = `
+introspects a GraphQL Schema
+
+USAGE
+  $ hive introspect LOCATION [--json] [--show-output-schema-json]
+    [--debug] [--write <value>] [--header <value>]
+
+ARGUMENTS
+  LOCATION  GraphQL Schema location (URL or file path/glob)
+
+FLAGS
+  --debug              Whether debug output for HTTP calls and similar should be
+                       enabled.
+  --header=<value>...  HTTP header to add to the introspection request (in
+                       key:value format)
+  --write=<value>      Write to a file (possible extensions: .graphql, .gql,
+                       .gqls, .graphqls, .json)
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  introspects a GraphQL Schema
+
+`;
+
+exports[`--help - { command: 'operations:check' } 1`] = `
+checks operations against a published schema
+
+USAGE
+  $ hive operations:check FILE [--json] [--show-output-schema-json] [--debug]
+    [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>] [--require <value>] [--graphqlTag <value>]
+    [--globalGraphqlTag <value>] [--apolloClient]
+
+ARGUMENTS
+  FILE  Glob pattern to find the operations
+
+FLAGS
+  --apolloClient
+      Supports Apollo Client specific directives
+
+  --debug
+      Whether debug output for HTTP calls and similar should be enabled.
+
+  --globalGraphqlTag=<value>...
+      Allows to use a global identifier instead of a module import. Similar to
+      --graphqlTag.
+      Examples:
+      --globalGraphqlTag gql (Supports: export const meQuery = gql\`{ me { id } }\`)
+      --globalGraphqlTag graphql (Supports: export const meQuery = graphql\`{ me {
+      id } }\`)
+
+  --graphqlTag=<value>...
+      Identify template literals containing GraphQL queries in
+      JavaScript/TypeScript code. Supports multiple values.
+      Examples:
+      --graphqlTag graphql-tag (Equivalent to: import gqlTagFunction from
+      "graphql-tag")
+      --graphqlTag graphql:react-relay (Equivalent to: import { graphql } from
+      "react-relay")
+
+  --registry=<value>
+      registry address
+
+  --registry.accessToken=<value>
+      registry access token
+
+  --registry.endpoint=<value>
+      registry endpoint
+
+  --require=<value>...
+      [default: ] Loads specific require.extensions before running the command
+
+  --token=<value>
+      api token
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  checks operations against a published schema
+
+`;
+
+exports[`--help - { command: 'schema:check' } 1`] = `
+checks schema
+
+USAGE
+  $ hive schema:check FILE [--json] [--show-output-schema-json] [--debug]
+    [--service <value>] [--registry.endpoint <value>] [--registry <value>]
+    [--registry.accessToken <value>] [--token <value>] [--forceSafe] [--github]
+    [--require <value>] [--author <value>] [--commit <value>] [--contextId
+    <value>]
+
+ARGUMENTS
+  FILE  Path to the schema file(s)
+
+FLAGS
+  --author=<value>                Author of the change
+  --commit=<value>                Associated commit sha
+  --contextId=<value>             Context ID for grouping the schema check.
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --forceSafe                     mark the check as safe, breaking changes are
+                                  expected
+  --github                        Connect with GitHub Application
+  --registry=<value>              registry address
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --require=<value>...            [default: ] Loads specific require.extensions
+                                  before running the codegen and reading the
+                                  configuration
+  --service=<value>               service name (only for distributed schemas)
+  --token=<value>                 api token
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  checks schema
+
+`;
+
+exports[`--help - { command: 'schema:delete' } 1`] = `
+deletes a schema
+
+USAGE
+  $ hive schema:delete SERVICE [--json] [--show-output-schema-json]
+    [--debug] [--registry.endpoint <value>] [--registry <value>]
+    [--registry.accessToken <value>] [--token <value>] [--dryRun] [--confirm]
+
+ARGUMENTS
+  SERVICE  name of the service
+
+FLAGS
+  --confirm                       Confirm deletion of the service
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --dryRun                        Does not delete the service, only reports what
+                                  it would have done.
+  --registry=<value>              registry address
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --token=<value>                 api token
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  deletes a schema
+
+`;
+
+exports[`--help - { command: 'schema:fetch' } 1`] = `
+fetch a schema, supergraph, or list of subgraphs from the Hive API
+
+USAGE
+  $ hive schema:fetch ACTIONID [--json] [--show-output-schema-json]
+    [--debug] [--registry <value>] [--token <value>] [--registry.endpoint
+    <value>] [--registry.accessToken <value>] [--type <value>] [--write <value>]
+    [--outputFile <value>]
+
+ARGUMENTS
+  ACTIONID  action id (e.g. commit sha)
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --outputFile=<value>            whether to write to a file instead of stdout
+  --registry=<value>              registry address
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --token=<value>                 api token
+  --type=<value>                  Type to fetch (possible types: sdl,
+                                  supergraph, subgraphs)
+  --write=<value>                 Write to a file (possible extensions:
+                                  .graphql, .gql, .gqls, .graphqls)
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  fetch a schema, supergraph, or list of subgraphs from the Hive API
+
+`;
+
+exports[`--help - { command: 'schema:publish' } 1`] = `
+publishes schema
+
+USAGE
+  $ hive schema:publish FILE [--json] [--show-output-schema-json] [--debug]
+    [--service <value>] [--url <value>] [--metadata <value>]
+    [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>] [--author <value>] [--commit <value>] [--github]
+    [--force] [--experimental_acceptBreakingChanges] [--require <value>]
+
+ARGUMENTS
+  FILE  Path to the schema file(s)
+
+FLAGS
+  --author=<value>                      author of the change
+  --commit=<value>                      associated commit sha
+  --debug                               Whether debug output for HTTP calls and
+                                        similar should be enabled.
+  --experimental_acceptBreakingChanges  (experimental) accept breaking changes
+                                        and mark schema as valid (only if
+                                        composable)
+  --force                               force publish even on breaking changes
+  --github                              Connect with GitHub Application
+  --metadata=<value>                    additional metadata to attach to the
+                                        GraphQL schema. This can be a string
+                                        with a valid JSON, or a path to a file
+                                        containing a valid JSON
+  --registry=<value>                    registry address
+  --registry.accessToken=<value>        registry access token
+  --registry.endpoint=<value>           registry endpoint
+  --require=<value>...                  [default: ] Loads specific
+                                        require.extensions before running the
+                                        codegen and reading the configuration
+  --service=<value>                     service name (only for distributed
+                                        schemas)
+  --token=<value>                       api token
+  --url=<value>                         service url (only for distributed
+                                        schemas)
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  publishes schema
+
+`;
+
+exports[`--help - { command: 'whoami' } 1`] = `
+shows information about the current token
+
+USAGE
+  $ hive whoami [--json] [--show-output-schema-json] [--debug]
+    [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>]
+
+FLAGS
+  --debug                         Whether debug output for HTTP calls and
+                                  similar should be enabled.
+  --registry=<value>              registry address
+  --registry.accessToken=<value>  registry access token
+  --registry.endpoint=<value>     registry endpoint
+  --token=<value>                 api token
+
+GLOBAL FLAGS
+  --json                     Format output as json.
+  --show-output-schema-json  Show the schema for the JSON format output of this
+                             command. JSON format output occurs when you pass
+                             the --json flag. The schema is expressed in JSON
+                             Schema (json-schema.org).
+
+DESCRIPTION
+  shows information about the current token
+
+[1mJSON OUTPUT SCHEMA[22m
+  {"anyOf":[{"type":"object","properties":{"type":{"default":"success","const":"success","type":"string"},"warnings":{"default":[],"type":"array","items":{"type":"string"}},"exitCode":{"type":"number"},"data":{"type":"object","properties":{"type":{"default":"SuccessWhoami","const":"SuccessWhoami","type":"string"},"token":{"type":"object","properties":{"name":{"type":"string"}},"required":["name"]},"organization":{"type":"object","properties":{"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["slug","url"]},"project":{"type":"object","properties":{"type":{"type":"string"},"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["type","slug","url"]},"target":{"type":"object","properties":{"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["slug","url"]},"authorization":{"type":"object","properties":{"schema":{"type":"object","properties":{"publish":{"type":"boolean"},"check":{"type":"boolean"}},"required":["publish","check"]}},"required":["schema"]}},"required":["type","token","organization","project","target","authorization"]}},"required":["type","warnings","data"]},{"type":"object","properties":{"type":{"default":"failure","const":"failure","type":"string"},"reference":{"default":null,"anyOf":[{"type":"string"},{"type":"null"}]},"suggestions":{"default":[],"type":"array","items":{"type":"string"}},"warnings":{"default":[],"type":"array","items":{"type":"string"}},"exitCode":{"type":"number"},"data":{"type":"object","properties":{"type":{"default":"FailureWhoamiTokenNotFound","const":"FailureWhoamiTokenNotFound","type":"string"},"message":{"type":"string"}},"required":["type","message"]}},"required":["type","reference","suggestions","warnings","data"]}]}
+`;

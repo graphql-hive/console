@@ -1,9 +1,10 @@
 import { OClif } from './helpers/oclif';
+import { Texture } from './helpers/texture/texture';
+import { T } from './helpers/typebox/__';
+import { Output } from './output/__';
 
 interface LoadableCommand extends OClif.Command.Loadable {
-  output?: {
-    schema: object;
-  }[];
+  output?: Output.Definition[];
 }
 
 /**
@@ -13,12 +14,10 @@ interface LoadableCommand extends OClif.Command.Loadable {
 export default class MyHelpClass extends OClif.Help {
   async showCommandHelp(command: LoadableCommand): Promise<void> {
     await super.showCommandHelp(command);
-    const outputSchemas = command.output?.map(_ => _.schema) ?? [];
+    const outputSchemas = command.output?.map(definition => definition.schema) ?? [];
     if (outputSchemas.length > 0) {
-      const jsonOutputSchema = {
-        anyOf: outputSchemas,
-      };
-      console.log('\x1b[1mJSON OUTPUT SCHEMA\x1b[0m');
+      const jsonOutputSchema = T.Union(outputSchemas);
+      console.log(Texture.colors.bold('JSON OUTPUT SCHEMA'));
       console.log(`  ${JSON.stringify(jsonOutputSchema)}`);
     }
   }
