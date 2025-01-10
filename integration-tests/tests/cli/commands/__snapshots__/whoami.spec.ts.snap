@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`shows viewer info > OUTPUT FORMAT: JSON 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
+{
+  "data": {
+    "type": "SuccessWhoami",
+    "token": {
+      "name": "bumpygiftspushquietly"
+    },
+    "organization": {
+      "slug": "upsetgarlicssellmysteriously",
+      "url": "__URL__"
+    },
+    "project": {
+      "type": "SINGLE",
+      "slug": "fullstatesclapoddly",
+      "url": "__URL__"
+    },
+    "target": {
+      "slug": "production",
+      "url": "__URL__"
+    },
+    "authorization": {
+      "schema": {
+        "publish": true,
+        "check": true
+      }
+    }
+  },
+  "type": "success",
+  "warnings": []
+}
+promise------------------------------------------:
+fulfilled
+::::::::::::::::::::::::::::::::::::::::::::::::::
+`;
+
+exports[`shows viewer info > OUTPUT FORMAT: TEXT 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
+Token name:                 bumpygiftspushquietly                                                                                       
+
+Organization:               upsetgarlicssellmysteriously https://__URL__             
+Project:                    fullstatesclapoddly https://__URL__  
+Target:                     production https://__URL__
+
+Access to schema:publish    Yes                                                                                                        
+Access to schema:check      Yes                                                                                                        
+promise------------------------------------------:
+fulfilled
+::::::::::::::::::::::::::::::::::::::::::::::::::
+`;

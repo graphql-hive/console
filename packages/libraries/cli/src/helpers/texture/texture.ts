@@ -18,6 +18,11 @@ export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
 export const trimEnd = (value: string) => value.replace(/\s+$/g, '');
 
+/**
+ * Join arguments with a space. There is *NO* newline is appended.
+ */
+export const inline = (...values: string[]) => values.join(space);
+
 export interface ColumnsParameters {
   /**
    * Text to put between each column.
@@ -31,7 +36,7 @@ export interface ColumnsParameters {
 export const columns = (parameters: ColumnsParameters) => {
   const divider = parameters.divider ?? space.repeat(4);
   const cols = invertMatrix(parameters.rows);
-  const colWidths = cols.map(col => Math.max(...col.map(v => v.length)));
+  const colWidths = cols.map(col => Math.max(...col.map(cell => cell?.length ?? 0)));
   const rowsText = parameters.rows.map(row => {
     return row.map((cell, colIndex) => cell.padEnd(colWidths[colIndex], space)).join(divider);
   });

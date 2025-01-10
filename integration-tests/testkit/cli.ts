@@ -28,19 +28,41 @@ export type ExecCommandPath =
   | 'app:create'
   | 'app:publish';
 
-export type ExecArgs = Record<string, string>;
+export type ExecArgs = Record<string, string | true>;
 
-export const execFormat = (commandPath: string, args?: ExecArgs) => {
+export function execFormat(commandPath: string, args?: ExecArgs) {
   return `${commandPath} ${execFormatArgs(args)}`;
-};
+}
 
-export const execFormatArgs = (args?: ExecArgs): string => {
+export function execFormatArgs(args?: ExecArgs): string {
   return args
     ? Object.entries(args)
-        .map(([key, value]) => `--${key.replace(/^--/, '')}${value ? `=${value}` : ''}`)
+        .map(([key, value]) => {
+          const flag = `--${key.replace(/^--/, '')}`;
+
+          if (typeof value === 'boolean') {
+            return value ? flag : null;
+          }
+
+          if (value === '') {
+            return flag;
+          }
+
+          return `${flag}=${value}`;
+        })
+        .filter(arg => arg !== null)
         .join(' ')
     : '';
-};
+}
+
+export async function execHive(commandPath: string, args?: ExecArgs) {
+  const registryAddress = await getServiceHost('server', 8082);
+  const cmd = execFormat(commandPath, {
+    ...args,
+    '--registry.endpoint': `http://${registryAddress}/graphql`,
+  });
+  return await exec(cmd);
+}
 
 export async function exec(cmd: string) {
   const output = await execaCommand(`${binPath} ${cmd}`, {

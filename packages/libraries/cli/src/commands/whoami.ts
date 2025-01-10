@@ -98,15 +98,25 @@ export default class Whoami extends Command<typeof Whoami> {
             [],
             [
               'Organization:',
-              Texture.colors.bold(data.organization.slug),
-              Texture.colors.dim(data.organization.url),
+              Texture.inline(
+                Texture.colors.bold(data.organization.slug),
+                Texture.colors.dim(data.organization.url),
+              ),
             ],
             [
               'Project:',
-              Texture.colors.bold(data.project.slug),
-              Texture.colors.dim(data.project.url),
+              Texture.inline(
+                Texture.colors.bold(data.project.slug),
+                Texture.colors.dim(data.project.url),
+              ),
             ],
-            ['Target:', Texture.colors.bold(data.target.slug), Texture.colors.dim(data.target.url)],
+            [
+              'Target:',
+              Texture.inline(
+                Texture.colors.bold(data.target.slug),
+                Texture.colors.dim(data.target.url),
+              ),
+            ],
             [],
             ['Access to schema:publish', yesNo(data.authorization.schema.publish)],
             ['Access to schema:check', yesNo(data.authorization.schema.check)],

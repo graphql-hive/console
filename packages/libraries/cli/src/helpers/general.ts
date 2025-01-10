@@ -27,8 +27,12 @@ export type Simplify<T> = {
  * Inverts a matrix.
  *
  * For example, semantically, given a set of rows you would get back a set of columns.
+ *
+ * When inverting the matrix, it is possible the inverse will contain cells with `undefined` values, if the input set was not uniform.
+ *
+ * For example [['a','b'],[],['z','y']] will invert to [['a', undefined, 'z'], ['b', undefined, 'y']]
  */
-export const invertMatrix = <$Matrix extends [...unknown[]][]>(matrix: $Matrix): $Matrix => {
+export const invertMatrix = <$Type>(matrix: $Type[][]): ($Type | undefined)[][] => {
   const rows = matrix.length;
   const cols = matrix[0].length;
   const inverted = Array.from({ length: cols }, () => Array(rows).fill(''));
@@ -37,5 +41,5 @@ export const invertMatrix = <$Matrix extends [...unknown[]][]>(matrix: $Matrix):
       inverted[colIndex][rowIndex] = matrix[rowIndex][colIndex];
     }
   }
-  return inverted as $Matrix;
+  return inverted;
 };
