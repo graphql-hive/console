@@ -70,7 +70,7 @@ export default {
       }
 
       console.log(
-        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index}/${queryResult.rowCount}`,
+        `processing organization_id="${row.organizationId}" (${counter}) with ${row.userIds.length} users | ${index + 1}/${queryResult.rowCount}`,
       );
 
       const startedAt = Date.now();
