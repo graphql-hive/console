@@ -831,7 +831,7 @@ export async function createStorage(
         sql`/* getOrganizationOwner */
         SELECT
           ${userFields(sql`"u".`, sql`"stu".`)},
-          om.scopes as scopes,
+          omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
           omr.id as role_id,
