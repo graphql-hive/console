@@ -114,8 +114,7 @@ function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
     <ul
       {...props}
       className={cn(
-        'flex flex-row gap-2 max-lg:overflow-auto lg:flex-wrap lg:gap-6' +
-          ' shrink-0 grid-cols-5 items-stretch justify-items-stretch lg:max-xl:grid',
+        'nextra-scrollbar flex shrink-0 grid-cols-5 flex-row items-stretch justify-items-stretch gap-2 [scrollbar-color:#00000029_transparent] [scrollbar-width:auto] max-lg:overflow-auto lg:flex-wrap lg:gap-6 lg:max-xl:grid',
         team.length === 13
           ? 'grid-cols-5 xl:[&>:nth-child(9n-8)]:ml-[calc(var(--size)/2)]'
           : 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
