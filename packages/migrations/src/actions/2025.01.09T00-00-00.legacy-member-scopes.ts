@@ -41,6 +41,7 @@ export default {
                   user_id,
                   UNNEST(scopes) AS scope
               FROM organization_member
+              WHERE role_id IS NULL
           ) unnested
           GROUP BY organization_id, user_id
       ) sorted_scopes_per_user
@@ -83,13 +84,13 @@ export default {
             ${row.organizationId},
             'Auto Role ' || substring(uuid_generate_v4()::text FROM 1 FOR 8),
             'Auto generated role to assign to members without a role',
-            ${row.sortedScopes}
+            ${sql.array(row.sortedScopes, 'text')}
           )
           RETURNING id
         )
         UPDATE organization_member
         SET role_id = (SELECT id FROM new_role)
-        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${row.userIds})
+        WHERE organization_id = ${row.organizationId} AND user_id = ANY(${sql.array(row.userIds, 'uuid')})
       `);
 
       console.log(`finished after ${Date.now() - startedAt}ms`);

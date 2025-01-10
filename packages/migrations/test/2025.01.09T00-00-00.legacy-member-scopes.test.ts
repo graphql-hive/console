@@ -39,9 +39,46 @@ await describe('migration: legacy-member-socpes', async () => {
         user: admin,
       });
 
-      const adminScopes = ['target:read', 'target:delete', 'target:settings', 'taret:write'];
-      const contributorScopes = ['target:read', 'taret:write'];
-      const noRoleUserScopes = ['target:read', 'target:settings'];
+      const adminScopes = [
+        'organization:read',
+        'organization:delete',
+        'organization:settings',
+        'organization:integrations',
+        'organization:members',
+        'project:read',
+        'project:delete',
+        'project:settings',
+        'project:alerts',
+        'project:operations-store:read',
+        'project:operations-store:write',
+        'target:read',
+        'target:delete',
+        'target:settings',
+        'target:registry:read',
+        'target:registry:write',
+        'target:tokens:read',
+        'target:tokens:write',
+      ];
+      const contributorScopes = [
+        'organization:read',
+        'project:read',
+        'project:settings',
+        'project:alerts',
+        'project:operations-store:read',
+        'project:operations-store:write',
+        'target:read',
+        'target:settings',
+        'target:registry:read',
+        'target:registry:write',
+        'target:tokens:read',
+        'target:tokens:write',
+      ];
+      const noRoleUserScopes = [
+        'organization:read',
+        'project:alerts',
+        'project:read',
+        'target:read',
+      ];
 
       // Create an invitation to simulate a pending invitation
       await db.query(sql`
@@ -108,7 +145,7 @@ await describe('migration: legacy-member-socpes', async () => {
         SELECT omr.scopes, omr.id
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
-        WHERE om.user_id = ${admin.id} AND omr.organization_id = ${organization.id}
+        WHERE om.user_id = ${admin.id} AND om.organization_id = ${organization.id}
       `);
       assert.deepStrictEqual(adminRole.scopes, adminScopes);
 
@@ -119,9 +156,9 @@ await describe('migration: legacy-member-socpes', async () => {
         SELECT omr.scopes, omr.id
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
-        WHERE om.user_id = ${contributor.id} AND omr.organization_id = ${organization.id}
+        WHERE om.user_id = ${contributor.id} AND om.organization_id = ${organization.id}
         `);
-      assert.deepStrictEqual(contributorRole, contributorScopes);
+      assert.deepStrictEqual(contributorRole.scopes, contributorScopes);
 
       // assert no role user has no role
       assert.strictEqual(
@@ -142,7 +179,7 @@ await describe('migration: legacy-member-socpes', async () => {
         SELECT omr.scopes, omr.name
         FROM organization_member as om
         LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
-        WHERE om.user_id = ${noRoleUser.id} AND omr.organization_id = ${organization.id}
+        WHERE om.user_id = ${noRoleUser.id} AND om.organization_id = ${organization.id}
       `);
 
       assert.deepStrictEqual(previouslyNoRoleUser.scopes, noRoleUserScopes);
@@ -157,7 +194,7 @@ await describe('migration: legacy-member-socpes', async () => {
           SELECT omr.id
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
-          WHERE om.user_id = ${admin.id} AND omr.organization_id = ${organization.id}
+          WHERE om.user_id = ${admin.id} AND om.organization_id = ${organization.id}
         `),
         adminRole.id,
       );
@@ -167,7 +204,7 @@ await describe('migration: legacy-member-socpes', async () => {
           SELECT omr.id
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON omr.id = om.role_id
-          WHERE om.user_id = ${contributor.id} AND omr.organization_id = ${organization.id}
+          WHERE om.user_id = ${contributor.id} AND om.organization_id = ${organization.id}
         `),
         contributorRole.id,
       );
