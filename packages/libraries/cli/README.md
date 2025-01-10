@@ -41,10 +41,6 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 - [`hive app:create FILE`](#hive-appcreate-file)
 - [`hive app:publish`](#hive-apppublish)
 - [`hive artifact:fetch`](#hive-artifactfetch)
-- [`hive config:delete KEY`](#hive-configdelete-key)
-- [`hive config:get KEY`](#hive-configget-key)
-- [`hive config:reset`](#hive-configreset)
-- [`hive config:set KEY VALUE`](#hive-configset-key-value)
 - [`hive dev`](#hive-dev)
 - [`hive help [COMMAND]`](#hive-help-command)
 - [`hive introspect LOCATION`](#hive-introspect-location)
@@ -62,13 +58,14 @@ create an app deployment
 
 ```
 USAGE
-  $ hive app:create FILE --name <value> --version <value> [--registry.endpoint <value>] [--registry.accessToken
-    <value>]
+  $ hive app:create FILE --name <value> --version <value> [--debug] [--registry.endpoint <value>]
+    [--registry.accessToken <value>]
 
 ARGUMENTS
   FILE  Path to the persisted operations mapping.
 
 FLAGS
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --name=<value>                  (required) app name
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
@@ -91,6 +88,7 @@ USAGE
     <value>]
 
 FLAGS
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --name=<value>                  (required) app name
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
@@ -117,6 +115,7 @@ FLAGS
                              <options: sdl|supergraph|metadata|services|sdl.graphql|sdl.graphqls>
   --cdn.accessToken=<value>  CDN access token
   --cdn.endpoint=<value>     CDN endpoint
+  --debug                    Whether debug output for HTTP calls and similar should be enabled.
   --outputFile=<value>       whether to write to a file instead of stdout
 
 DESCRIPTION
@@ -126,101 +125,39 @@ DESCRIPTION
 _See code:
 [dist/commands/artifact/fetch.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/artifact/fetch.js)_
 
-## `hive config:delete KEY`
-
-deletes specific cli configuration
-
-```
-USAGE
-  $ hive config:delete KEY
-
-ARGUMENTS
-  KEY  config key
-
-DESCRIPTION
-  deletes specific cli configuration
-```
-
-_See code:
-[dist/commands/config/delete.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/config/delete.js)_
-
-## `hive config:get KEY`
-
-prints specific cli configuration
-
-```
-USAGE
-  $ hive config:get KEY
-
-ARGUMENTS
-  KEY  (registry|cdn) config key
-
-DESCRIPTION
-  prints specific cli configuration
-```
-
-_See code:
-[dist/commands/config/get.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/config/get.js)_
-
-## `hive config:reset`
-
-resets local cli configuration
-
-```
-USAGE
-  $ hive config:reset
-
-DESCRIPTION
-  resets local cli configuration
-```
-
-_See code:
-[dist/commands/config/reset.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/config/reset.js)_
-
-## `hive config:set KEY VALUE`
-
-updates specific cli configuration
-
-```
-USAGE
-  $ hive config:set KEY VALUE
-
-ARGUMENTS
-  KEY    (registry|cdn) config key
-  VALUE  config value
-
-DESCRIPTION
-  updates specific cli configuration
-```
-
-_See code:
-[dist/commands/config/set.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/config/set.js)_
-
 ## `hive dev`
 
-Develop and compose Supergraph with service substitution
+Develop and compose Supergraph with your local services.
 
 ```
 USAGE
-  $ hive dev (--url <value> --service <value>) [--registry.endpoint <value>] [--registry <value>]
-    [--registry.accessToken <value>] [--token <value>] [--schema <value> ] [--watch] [--watchInterval <value>] [--write
-    <value>]
+  $ hive dev (--url <address>... --service <string>...) [--debug] [--registry.endpoint <value> --remote]
+    [--registry <value> ] [--registry.accessToken <value> ] [--token <value> ] [--schema <filepath>... ] [--watch]
+    [--watchInterval <value>] [--write <value>]
 
 FLAGS
-  --registry=<value>              registry address
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
+  --registry=<value>              registry address (deprecated in favor of --registry.endpoint)
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
+  --remote                        Compose provided services remotely
   --schema=<filepath>...          Service sdl. If not provided, will be introspected from the service
   --service=<string>...           (required) Service name
-  --token=<value>                 api token
+  --token=<value>                 api token (deprecated in favor of --registry.accessToken)
   --url=<address>...              (required) Service url
   --watch                         Watch mode
   --watchInterval=<value>         [default: 1000] Watch interval in milliseconds
   --write=<value>                 [default: supergraph.graphql] Where to save the supergraph schema file
 
 DESCRIPTION
-  Develop and compose Supergraph with service substitution
+  Develop and compose Supergraph with your local services.
   Only available for Federation projects.
+
+  Two modes are available:
+  1. Local mode (default): Compose provided services locally. (Uses Hive's native Federation v2 composition)
+  2. Remote mode: Perform composition remotely (according to project settings) using all services registered in the
+  registry.
+
   Work in Progress: Please note that this command is still under development and may undergo changes in future releases
 ```
 
@@ -254,12 +191,13 @@ introspects a GraphQL Schema
 
 ```
 USAGE
-  $ hive introspect LOCATION [--write <value>] [--header <value>]
+  $ hive introspect LOCATION [--debug] [--write <value>] [--header <value>...]
 
 ARGUMENTS
   LOCATION  GraphQL Schema location (URL or file path/glob)
 
 FLAGS
+  --debug              Whether debug output for HTTP calls and similar should be enabled.
   --header=<value>...  HTTP header to add to the introspection request (in key:value format)
   --write=<value>      Write to a file (possible extensions: .graphql, .gql, .gqls, .graphqls, .json)
 
@@ -276,8 +214,9 @@ checks operations against a published schema
 
 ```
 USAGE
-  $ hive operations:check FILE [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken <value>]
-    [--token <value>] [--require <value>] [--graphqlTag <value>] [--globalGraphqlTag <value>] [--apolloClient]
+  $ hive operations:check FILE [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>] [--require <value>...] [--graphqlTag <value>...] [--globalGraphqlTag <value>...]
+    [--apolloClient]
 
 ARGUMENTS
   FILE  Glob pattern to find the operations
@@ -285,6 +224,9 @@ ARGUMENTS
 FLAGS
   --apolloClient
       Supports Apollo Client specific directives
+
+  --debug
+      Whether debug output for HTTP calls and similar should be enabled.
 
   --globalGraphqlTag=<value>...
       Allows to use a global identifier instead of a module import. Similar to --graphqlTag.
@@ -326,9 +268,9 @@ checks schema
 
 ```
 USAGE
-  $ hive schema:check FILE [--service <value>] [--registry.endpoint <value>] [--registry <value>]
-    [--registry.accessToken <value>] [--token <value>] [--forceSafe] [--github] [--require <value>] [--author <value>]
-    [--commit <value>] [--contextId <value>]
+  $ hive schema:check FILE [--debug] [--service <value>] [--registry.endpoint <value>] [--registry <value>]
+    [--registry.accessToken <value>] [--token <value>] [--forceSafe] [--github] [--require <value>...] [--author
+    <value>] [--commit <value>] [--contextId <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -337,6 +279,7 @@ FLAGS
   --author=<value>                Author of the change
   --commit=<value>                Associated commit sha
   --contextId=<value>             Context ID for grouping the schema check.
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --forceSafe                     mark the check as safe, breaking changes are expected
   --github                        Connect with GitHub Application
   --registry=<value>              registry address
@@ -360,14 +303,15 @@ deletes a schema
 
 ```
 USAGE
-  $ hive schema:delete SERVICE [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken <value>]
-    [--token <value>] [--dryRun] [--confirm]
+  $ hive schema:delete SERVICE [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>] [--dryRun] [--confirm]
 
 ARGUMENTS
   SERVICE  name of the service
 
 FLAGS
   --confirm                       Confirm deletion of the service
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --dryRun                        Does not delete the service, only reports what it would have done.
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
@@ -387,13 +331,14 @@ fetch a schema, supergraph, or list of subgraphs from the Hive API
 
 ```
 USAGE
-  $ hive schema:fetch ACTIONID [--registry <value>] [--token <value>] [--registry.endpoint <value>]
+  $ hive schema:fetch ACTIONID [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
     [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>]
 
 ARGUMENTS
   ACTIONID  action id (e.g. commit sha)
 
 FLAGS
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --outputFile=<value>            whether to write to a file instead of stdout
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
@@ -415,9 +360,9 @@ publishes schema
 
 ```
 USAGE
-  $ hive schema:publish FILE [--service <value>] [--url <value>] [--metadata <value>] [--registry.endpoint <value>]
-    [--registry <value>] [--registry.accessToken <value>] [--token <value>] [--author <value>] [--commit <value>]
-    [--github] [--force] [--experimental_acceptBreakingChanges] [--require <value>]
+  $ hive schema:publish FILE [--debug] [--service <value>] [--url <value>] [--metadata <value>] [--registry.endpoint
+    <value>] [--registry <value>] [--registry.accessToken <value>] [--token <value>] [--author <value>] [--commit
+    <value>] [--github] [--force] [--experimental_acceptBreakingChanges] [--require <value>...]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -425,6 +370,7 @@ ARGUMENTS
 FLAGS
   --author=<value>                      author of the change
   --commit=<value>                      associated commit sha
+  --debug                               Whether debug output for HTTP calls and similar should be enabled.
   --experimental_acceptBreakingChanges  (experimental) accept breaking changes and mark schema as valid (only if
                                         composable)
   --force                               force publish even on breaking changes
@@ -491,10 +437,11 @@ shows information about the current token
 
 ```
 USAGE
-  $ hive whoami [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken <value>] [--token
-    <value>]
+  $ hive whoami [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
+    <value>] [--token <value>]
 
 FLAGS
+  --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
