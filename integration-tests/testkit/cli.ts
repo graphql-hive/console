@@ -121,7 +121,6 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     legacy_force?: boolean;
     legacy_acceptBreakingChanges?: boolean;
     expect: 'latest' | 'latest-composable' | 'ignored' | 'rejected';
-    json?: boolean;
   }): Promise<string> {
     const publishName = ` #${++publishCount}`;
     const commit = randomUUID();
