@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { sync as mkdirp } from 'mkdirp';
 import { z } from 'zod';
 
 const LegacyConfigModel = z.object({
@@ -22,29 +21,6 @@ const ConfigModel = z.object({
     })
     .optional(),
 });
-
-const getAllowedConfigKeys = <TConfig extends z.ZodObject<any>>(
-  config: TConfig,
-): Set<GetConfigurationKeys<TConfig>> => {
-  const keys = new Set<GetConfigurationKeys<TConfig>>();
-
-  const traverse = (obj: z.ZodObject<Record<string, any>>, path: Array<string> = []): string => {
-    if (obj instanceof z.ZodObject) {
-      const shape = obj.shape;
-      for (const [key, value] of Object.entries(shape)) {
-        traverse(value, [...path, key]);
-      }
-    } else {
-      keys.add(path.join('.') as GetConfigurationKeys<TConfig>);
-    }
-
-    return path.join('.');
-  };
-
-  traverse(config);
-
-  return keys;
-};
 
 export type ConfigModelType = z.TypeOf<typeof ConfigModel>;
 
@@ -95,8 +71,6 @@ export type ValidConfigurationKeys = GetConfigurationKeys<typeof ConfigModel>;
 
 export const graphqlEndpoint = 'https://app.graphql-hive.com/graphql';
 
-export const allowedKeys = Array.from(getAllowedConfigKeys(ConfigModel));
-
 export class Config {
   private cache?: ConfigModelType;
   private filepath: string;
@@ -125,59 +99,6 @@ export class Config {
     }
 
     return current as GetZodValueType<TKey, typeof ConfigModel>;
-  }
-
-  set(key: ValidConfigurationKeys, value: string) {
-    if (getAllowedConfigKeys(ConfigModel).has(key) === false) {
-      throw new Error(`Invalid configuration key: ${key}`);
-    }
-
-    const map = this.read();
-    const parts = key.split('.');
-
-    let current: any = map;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-
-      if (!current[part]) {
-        current[part] = {};
-      }
-      if (i === parts.length - 1) {
-        current[part] = value;
-      }
-
-      current = current[part];
-    }
-
-    this.write(map);
-  }
-
-  delete(key: string) {
-    const map = this.read();
-    const parts = key.split('.');
-
-    let current: any = map;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-
-      if (!current[part]) {
-        current[part] = {};
-      }
-      if (i === parts.length - 1) {
-        current[part] = undefined;
-      }
-
-      current = current[part];
-    }
-
-    this.write(map);
-  }
-
-  clear(): void {
-    try {
-      mkdirp(path.dirname(this.filepath));
-    } catch {}
-    fs.writeFileSync(this.filepath, JSON.stringify({}), 'utf8');
   }
 
   private readSpace(content: Record<string, any>) {
@@ -235,13 +156,5 @@ export class Config {
     }
 
     return this.cache;
-  }
-
-  private write(map: ConfigModelType) {
-    this.cache = map;
-    try {
-      mkdirp(path.dirname(this.filepath));
-    } catch (e) {}
-    fs.writeFileSync(this.filepath, JSON.stringify(this.cache));
   }
 }
