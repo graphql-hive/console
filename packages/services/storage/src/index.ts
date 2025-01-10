@@ -924,7 +924,7 @@ export async function createStorage(
         sql`/* getOrganizationMember */
           SELECT
             ${userFields(sql`"u".`, sql`"stu".`)},
-            omr.scopes, om.scopes as scopes,
+            omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
             CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
