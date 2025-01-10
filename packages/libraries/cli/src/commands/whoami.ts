@@ -3,7 +3,10 @@ import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
+import { casesExhausted } from '../helpers/general';
 import { Texture } from '../helpers/texture/texture';
+import { T } from '../helpers/typebox/__';
+import { Output } from '../output/__';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {
@@ -33,7 +36,7 @@ const myTokenInfoQuery = graphql(/* GraphQL */ `
   }
 `);
 
-export default class WhoAmI extends Command<typeof WhoAmI> {
+export default class Whoami extends Command<typeof Whoami> {
   static description = 'shows information about the current token';
   static flags = {
     'registry.endpoint': Flags.string({
@@ -59,10 +62,62 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       },
     }),
   };
+  static output = [
+    Output.defineSuccess('SuccessWhoami', {
+      data: {
+        token: T.Object({
+          name: T.String(),
+        }),
+        organization: T.Object({
+          slug: T.String(),
+          url: T.String({ format: 'uri' }),
+        }),
+        project: T.Object({
+          type: T.String(),
+          slug: T.String(),
+          url: T.String({ format: 'uri' }),
+        }),
+        target: T.Object({
+          slug: T.String(),
+          url: T.String({ format: 'uri' }),
+        }),
+        authorization: T.Object({
+          schema: T.Object({
+            publish: T.Boolean(),
+            check: T.Boolean(),
+          }),
+        }),
+      },
+      text(_, data) {
+        const print = createPrinter({
+          'Token name:': [Texture.colors.bold(data.token.name)],
+          ' ': [''],
+          'Organization:': [
+            Texture.colors.bold(data.organization.slug),
+            Texture.colors.dim(data.organization.url),
+          ],
+          'Project:': [
+            Texture.colors.bold(data.project.slug),
+            Texture.colors.dim(data.project.url),
+          ],
+          'Target:': [Texture.colors.bold(data.target.slug), Texture.colors.dim(data.target.url)],
+          '  ': [''],
+          'Access to schema:publish': [data.authorization.schema.publish ? access.yes : access.not],
+          'Access to schema:check': [data.authorization.schema.check ? access.yes : access.not],
+        });
 
-  async run() {
-    const { flags } = await this.parse(WhoAmI);
+        return print();
+      },
+    }),
+    Output.defineFailure('FailureWhoamiTokenNotFound', {
+      data: {
+        message: T.String(),
+      },
+    }),
+  ];
 
+  async runResult() {
+    const { flags } = await this.parse(Whoami);
     const registry = this.ensure({
       key: 'registry.endpoint',
       legacyFlagName: 'registry',
@@ -82,44 +137,54 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       .request({
         operation: myTokenInfoQuery,
       })
-      .catch(error => {
-        this.handleFetchError(error);
-      });
+      .then(_ => _.tokenInfo);
 
-    if (result.tokenInfo.__typename === 'TokenInfo') {
-      const { tokenInfo } = result;
-      const { organization, project, target } = tokenInfo;
+    if (result.__typename === 'TokenInfo') {
+      const organizationUrl = `https://app.graphql-hive.com/${result.organization.slug}`;
+      const projectUrl = `${organizationUrl}/${result.project.slug}`;
+      const targetUrl = `${projectUrl}/${result.target.slug}`;
 
-      const organizationUrl = `https://app.graphql-hive.com/${organization.slug}`;
-      const projectUrl = `${organizationUrl}/${project.slug}`;
-      const targetUrl = `${projectUrl}/${target.slug}`;
-
-      const access = {
-        yes: Texture.colors.green('Yes'),
-        not: Texture.colors.red('No access'),
-      };
-
-      const print = createPrinter({
-        'Token name:': [Texture.colors.bold(tokenInfo.token.name)],
-        ' ': [''],
-        'Organization:': [
-          Texture.colors.bold(organization.slug),
-          Texture.colors.dim(organizationUrl),
-        ],
-        'Project:': [Texture.colors.bold(project.slug), Texture.colors.dim(projectUrl)],
-        'Target:': [Texture.colors.bold(target.slug), Texture.colors.dim(targetUrl)],
-        '  ': [''],
-        'Access to schema:publish': [tokenInfo.canPublishSchema ? access.yes : access.not],
-        'Access to schema:check': [tokenInfo.canCheckSchema ? access.yes : access.not],
-      });
-
-      this.log(print());
-    } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
-      this.error(`Token not found. Reason: ${result.tokenInfo.message}`, {
-        exit: 0,
-        suggestions: [`How to create a token? https://docs.graphql-hive.com/features/tokens`],
+      return this.success({
+        type: 'SuccessWhoami',
+        token: {
+          name: result.token.name,
+        },
+        organization: {
+          slug: result.organization.slug,
+          url: organizationUrl,
+        },
+        project: {
+          type: result.project.type,
+          slug: result.project.slug,
+          url: projectUrl,
+        },
+        target: {
+          slug: result.target.slug,
+          url: targetUrl,
+        },
+        authorization: {
+          schema: {
+            publish: result.canPublishSchema,
+            check: result.canCheckSchema,
+          },
+        },
       });
     }
+
+    if (result.__typename === 'TokenNotFoundError') {
+      return this.failureEnvelope({
+        exitCode: 0,
+        suggestions: [
+          `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,
+        ],
+        data: {
+          type: 'FailureWhoamiTokenNotFound',
+          message: result.message,
+        },
+      });
+    }
+
+    throw casesExhausted(result);
   }
 }
 
@@ -130,14 +195,16 @@ function createPrinter(records: { [label: string]: [value: string, extra?: strin
   const maxValuesLen = Math.max(...values.map(v => v.length)) + 4;
 
   return () => {
-    const lines: string[] = [];
-
+    const t = Texture.createBuilder();
     for (const label in records) {
       const [value, extra] = records[label];
-
-      lines.push(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
+      t.line(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
     }
-
-    return lines.join('\n');
+    return t.state.value;
   };
 }
+
+const access = {
+  yes: Texture.colors.green('Yes'),
+  not: Texture.colors.red('No access'),
+};
