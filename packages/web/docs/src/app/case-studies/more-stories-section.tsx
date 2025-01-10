@@ -15,12 +15,14 @@ export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElem
     return 'name' in item && item.name !== 'index';
   });
 
+  console.log({ pageMap, _indexPage, _meta });
+
   return (
     <section {...props} className={cn('py-6 sm:p-24', props.className)}>
+      <pre>{JSON.stringify({ otherStories, current }, null, 2)}</pre>
       <Heading size="md" as="h2" className="text-center">
         More stories
       </Heading>
-      <pre>{JSON.stringify({ otherStories, current }, null, 2)}</pre>
       <ul className="mt-6 flex gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
         {Array.from({ length: 3 }).map((_, i) => {
           const caseStudy = {
@@ -35,7 +37,7 @@ export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElem
             <li key={i}>
               <Anchor
                 href={caseStudy.href}
-                className="bg-beige-100 hover:bg-beige-200/80 hover:ring-beige-400 flex flex-col gap-6 rounded-2xl border sm:gap-10 dark:bg-neutral-800 dark:ring-neutral-600 dark:hover:bg-neutral-700"
+                className="hive-focus bg-beige-100 hover:bg-beige-200/70 hover:ring-beige-400 flex flex-col gap-6 rounded-2xl p-6 sm:gap-10 dark:bg-neutral-800/70 dark:ring-neutral-600 dark:hover:bg-neutral-800 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600"
               >
                 <div className="text-beige-800 text-sm font-medium dark:text-neutral-400">
                   {caseStudy.category}

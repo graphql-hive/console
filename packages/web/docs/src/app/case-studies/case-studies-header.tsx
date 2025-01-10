@@ -4,13 +4,13 @@ import { cn, DecorationIsolation, Heading, useConfig } from '@theguild/component
 import { SoundYXZLogo } from '../../components/company-logos';
 import { SmallAvatar } from '../../components/small-avatar';
 
-type Meta = {
+export type CaseStudyFrontmatter = {
   title: string;
   description?: string;
   authors: Author[];
 };
 
-type Author = {
+export type Author = {
   name: string;
   position?: string;
   avatar?: string;
@@ -22,7 +22,7 @@ const logos = {
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   const normalizePagesResult = useConfig().normalizePagesResult;
-  const metadata = normalizePagesResult.activeMetadata as Meta;
+  const metadata = normalizePagesResult.activeMetadata as CaseStudyFrontmatter;
 
   const name = normalizePagesResult.activePath.at(-1)?.name;
 
