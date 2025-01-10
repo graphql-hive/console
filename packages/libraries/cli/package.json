@@ -32,6 +32,7 @@
   "scripts": {
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
+    "hive": "./bin/dev",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
@@ -43,7 +44,6 @@
     "schema:check:stitching": "pnpm start schema:check --service posts examples/stitching.posts.graphql",
     "schema:fetch:subgraphs": "pnpm start schema:fetch --type=subgraphs",
     "schema:publish:federation": "pnpm start schema:publish --service reviews --url reviews.com/graphql examples/federation.reviews.graphql",
-    "hive": "./bin/dev",
     "start": "pnpm run hive",
     "version": "oclif readme && git add README.md"
   },
