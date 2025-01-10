@@ -22,3 +22,20 @@ export type OptionalizePropertyUnsafe<$Object extends object, $Key extends Prope
 export type Simplify<T> = {
   [K in keyof T]: T[K];
 };
+
+/**
+ * Inverts a matrix.
+ *
+ * For example, semantically, given a set of rows you would get back a set of columns.
+ */
+export const invertMatrix = <$Matrix extends [...unknown[]][]>(matrix: $Matrix): $Matrix => {
+  const rows = matrix.length;
+  const cols = matrix[0].length;
+  const inverted = Array.from({ length: cols }, () => Array(rows).fill(''));
+  for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+    for (let colIndex = 0; colIndex < cols; colIndex++) {
+      inverted[colIndex][rowIndex] = matrix[rowIndex][colIndex];
+    }
+  }
+  return inverted as $Matrix;
+};

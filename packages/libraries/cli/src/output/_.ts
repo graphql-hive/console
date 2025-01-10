@@ -9,4 +9,3 @@ export {
   InferSuccessResultInit,
   runText,
 } from './definition';
-export * as Types from './types/_';

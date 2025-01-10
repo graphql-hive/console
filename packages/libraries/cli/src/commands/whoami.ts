@@ -88,25 +88,30 @@ export default class Whoami extends Command<typeof Whoami> {
           }),
         }),
       },
-      text(_, data) {
-        const print = createPrinter({
-          'Token name:': [Texture.colors.bold(data.token.name)],
-          ' ': [''],
-          'Organization:': [
-            Texture.colors.bold(data.organization.slug),
-            Texture.colors.dim(data.organization.url),
-          ],
-          'Project:': [
-            Texture.colors.bold(data.project.slug),
-            Texture.colors.dim(data.project.url),
-          ],
-          'Target:': [Texture.colors.bold(data.target.slug), Texture.colors.dim(data.target.url)],
-          '  ': [''],
-          'Access to schema:publish': [data.authorization.schema.publish ? access.yes : access.not],
-          'Access to schema:check': [data.authorization.schema.check ? access.yes : access.not],
-        });
+      text(t, data) {
+        const yesNo = (value: boolean) =>
+          value ? Texture.colors.green('Yes') : Texture.colors.red('No access');
 
-        return print();
+        t.columns({
+          rows: [
+            ['Token name:', Texture.colors.bold(data.token.name)],
+            [],
+            [
+              'Organization:',
+              Texture.colors.bold(data.organization.slug),
+              Texture.colors.dim(data.organization.url),
+            ],
+            [
+              'Project:',
+              Texture.colors.bold(data.project.slug),
+              Texture.colors.dim(data.project.url),
+            ],
+            ['Target:', Texture.colors.bold(data.target.slug), Texture.colors.dim(data.target.url)],
+            [],
+            ['Access to schema:publish', yesNo(data.authorization.schema.publish)],
+            ['Access to schema:check', yesNo(data.authorization.schema.check)],
+          ],
+        });
       },
     }),
     Output.defineFailure('FailureWhoamiTokenNotFound', {
@@ -187,24 +192,3 @@ export default class Whoami extends Command<typeof Whoami> {
     throw casesExhausted(result);
   }
 }
-
-function createPrinter(records: { [label: string]: [value: string, extra?: string] }) {
-  const labels = Object.keys(records);
-  const values = Object.values(records).map(v => v[0]);
-  const maxLabelsLen = Math.max(...labels.map(v => v.length)) + 4;
-  const maxValuesLen = Math.max(...values.map(v => v.length)) + 4;
-
-  return () => {
-    const t = Texture.createBuilder();
-    for (const label in records) {
-      const [value, extra] = records[label];
-      t.line(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
-    }
-    return t.state.value;
-  };
-}
-
-const access = {
-  yes: Texture.colors.green('Yes'),
-  not: Texture.colors.red('No access'),
-};

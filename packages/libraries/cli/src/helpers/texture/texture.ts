@@ -1,5 +1,6 @@
 import { inspect as nodeInspect } from 'node:util';
 import colors from 'colors';
+import { invertMatrix } from '../general';
 
 export * from './table';
 
@@ -16,6 +17,27 @@ export const header = (value: string) => colors.dim('=== ') + colors.bold(value)
 export const plural = (value: unknown[]) => (value.length > 1 ? 's' : '');
 
 export const trimEnd = (value: string) => value.replace(/\s+$/g, '');
+
+export interface ColumnsParameters {
+  /**
+   * Text to put between each column.
+   *
+   * @defaultValue Four spaces.
+   */
+  divider?: string;
+  rows: [...string[]][];
+}
+
+export const columns = (parameters: ColumnsParameters) => {
+  const divider = parameters.divider ?? space.repeat(4);
+  const cols = invertMatrix(parameters.rows);
+  const colWidths = cols.map(col => Math.max(...col.map(v => v.length)));
+  const rowsText = parameters.rows.map(row => {
+    return row.map((cell, colIndex) => cell.padEnd(colWidths[colIndex], space)).join(divider);
+  });
+  const text = rowsText.join(newline);
+  return text;
+};
 
 /**
  * Convert quoted text to bolded text. Quotes are stripped.
@@ -60,6 +82,10 @@ export interface Builder {
    * since builders already supply newlines to their content.
    */
   line: (value?: string | Builder) => Builder;
+  /**
+   * Format a set of rows such that each row's cell is as wide as the widest cell in the row.
+   */
+  columns: (parameters: ColumnsParameters) => Builder;
   /**
    * Add a header line.
    */
@@ -111,6 +137,10 @@ export const createBuilder = (): Builder => {
       } else {
         state.value = state.value + value.state.value;
       }
+      return builder;
+    },
+    columns: parameters => {
+      state.value = state.value + columns(parameters) + newline;
       return builder;
     },
     header: value => {

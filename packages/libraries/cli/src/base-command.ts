@@ -13,6 +13,7 @@ import { Output } from './output/__';
 const showOutputSchemaJsonFlagName = 'show-output-schema-json';
 
 export default abstract class BaseCommand<$Command extends typeof Command> extends Command {
+  // TODO move this to whoami, make global later.
   public static enableJsonFlag = true;
 
   /**
@@ -543,6 +544,28 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         flags.require.map(mod => import(require.resolve(mod, { paths: [process.cwd()] }))),
       );
     }
+  }
+
+  maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({
+    key,
+    env,
+    args,
+  }: {
+    key: TKey;
+    env: string;
+    args: TArgs;
+  }) {
+    if (args[key] != null) {
+      return args[key];
+    }
+
+    // eslint-disable-next-line no-process-env
+    if (env && process.env[env]) {
+      // eslint-disable-next-line no-process-env
+      return process.env[env];
+    }
+
+    return undefined;
   }
 }
 

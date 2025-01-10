@@ -1,7 +1,8 @@
-import { OClif } from '../helpers/oclif';
-import { Texture } from '../helpers/texture/__';
+import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/__';
 import { Result } from './_';
+
+type CommandInput = object;
 
 export interface Definition<$Schema extends T.TObject = T.TObject> {
   schema: $Schema;
@@ -80,44 +81,41 @@ export type DefinerForBase<$BaseT extends T.TObject> = <
 interface TextBuilder<$Data = any> {
   (
     /**
-     * The arguments passed to the command.
+     * A {@link Texture.Builder} instance provided to you for easily building your text.
      */
-    input: {
-      /**
-       * The flag arguments passed to the command.
-       */
-      flags: any; // `any` type to allow inline casting without co-variant type errors
-      /**
-       * The positional arguments passed to the command.
-       */
-      args: any; // `any` type to allow inline casting without co-variant type errors
-    },
+    texBuilder: Texture.Builder,
     /**
      * The data output by the command.
      */
     data: $Data,
     /**
-     * A {@link Texture.Builder} instance provided to you for easily building your text.
+     * The arguments passed to the command.
+     *
+     * The exact shape of this type must be cast by the user, if used.
      */
-    texBuilder: Texture.Builder,
+    input: CommandInput,
   ): void | string | Texture.Builder;
 }
 
 /**
  * Run and return the definition's text format.
  */
-export const runText = (definition: Definition, input: OClif.Input, data: object): string => {
+export const runText = (
+  definition: Definition,
+  commandInput: object,
+  commandOutputData: object,
+): string => {
   if (definition.text === undefined) return '';
   const textureBuilder = Texture.createBuilder();
-  const dataTypeTextInit = definition.text(input, data, textureBuilder);
+  const textInit = definition.text(textureBuilder, commandOutputData, commandInput);
   const text =
-    typeof dataTypeTextInit === 'string'
-      ? dataTypeTextInit
-      : dataTypeTextInit === undefined
-        ? // Author returned nothing, implying they are relying on Texture.Builder instance mutation.
+    typeof textInit === 'string'
+      ? textInit
+      : textInit === undefined
+        ? // User returned nothing, implying they are relying on Texture.Builder instance mutation.
           textureBuilder.state.value
-        : // Author explicitly returned a Texture.Builder instance.
-          dataTypeTextInit.state.value;
+        : // User explicitly returned a Texture.Builder instance.
+          textInit.state.value;
 
   return text;
 };
