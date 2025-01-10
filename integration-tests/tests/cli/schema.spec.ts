@@ -8,7 +8,7 @@ import { initSeed } from '../../testkit/seed';
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
 describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single])(
-  '$projectType',
+  '%s',
   projectType => {
     const serviceNameArgs = projectType === ProjectType.Single ? [] : ['--service', 'test'];
     const serviceUrlArgs =
