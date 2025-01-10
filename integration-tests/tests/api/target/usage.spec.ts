@@ -2347,7 +2347,7 @@ test.concurrent(
   },
 );
 
-test.only.concurrent(
+test.concurrent(
   'test threshold when using conditional breaking change "REQUEST_COUNT" detection',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
