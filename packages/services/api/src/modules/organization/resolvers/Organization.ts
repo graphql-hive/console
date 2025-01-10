@@ -1,11 +1,4 @@
-import { createHash } from 'node:crypto';
 import { Session } from '../../auth/lib/authz';
-import {
-  isOrganizationScope,
-  OrganizationAccessScope,
-} from '../../auth/providers/organization-access';
-import { isProjectScope, ProjectAccessScope } from '../../auth/providers/project-access';
-import { isTargetScope, TargetAccessScope } from '../../auth/providers/target-access';
 import { OrganizationManager } from '../providers/organization-manager';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
@@ -21,14 +14,12 @@ export const Organization: Pick<
   | 'name'
   | 'owner'
   | 'slug'
-  | 'unassignedMembersToMigrate'
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
   | 'viewerCanExportAuditLogs'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
-  | 'viewerCanMigrateLegacyMemberRoles'
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
   | 'viewerCanTransferOwnership'
@@ -69,54 +60,6 @@ export const Organization: Pick<
     return injector.get(OrganizationManager).getMemberRoles({
       organizationId: organization.id,
     });
-  },
-  unassignedMembersToMigrate: async (organization, _, { injector }) => {
-    const members = await injector.get(OrganizationManager).getMembersWithoutRole({
-      organizationId: organization.id,
-    });
-
-    if (members.length === 0) {
-      return [];
-    }
-
-    const groupedByAccessScope: {
-      [accessHash: string]: {
-        organizationScopes: OrganizationAccessScope[];
-        projectScopes: ProjectAccessScope[];
-        targetScopes: TargetAccessScope[];
-        members: Array<(typeof members)[number]>;
-      };
-    } = {};
-
-    for (const member of members) {
-      const hasher = createHash('md5');
-      hasher.update([...member.scopes].sort().join(','));
-      const accessHash = hasher.digest('hex');
-
-      if (!groupedByAccessScope[accessHash]) {
-        groupedByAccessScope[accessHash] = {
-          organizationScopes: member.scopes.filter(isOrganizationScope),
-          projectScopes: member.scopes.filter(isProjectScope),
-          targetScopes: member.scopes.filter(isTargetScope),
-          members: [],
-        };
-      }
-
-      groupedByAccessScope[accessHash].members.push(member);
-    }
-
-    return (
-      Object.entries(groupedByAccessScope)
-        .map(([accessHash, group]) => ({
-          id: accessHash,
-          organizationScopes: group.organizationScopes,
-          projectScopes: group.projectScopes,
-          targetScopes: group.targetScopes,
-          members: group.members,
-        }))
-        // Sort by the number of members in the group in descending order
-        .sort((a, b) => b.members.length - a.members.length)
-    );
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {
@@ -220,13 +163,6 @@ export const Organization: Pick<
         organizationId: organization.id,
       },
     });
-  },
-  viewerCanMigrateLegacyMemberRoles: async (organization, _arg, { injector, session }) => {
-    const owner = await injector
-      .get(OrganizationManager)
-      .getOrganizationOwner({ organizationId: organization.id });
-    const viewer = await session.getViewer();
-    return viewer.id === owner.id;
   },
   viewerCanExportAuditLogs: async (organization, _arg, { session }) => {
     return session.canPerformAction({

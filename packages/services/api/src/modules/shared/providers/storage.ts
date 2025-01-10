@@ -198,13 +198,6 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  updateOrganizationMemberAccess(
-    _: OrganizationSelector & {
-      userId: string;
-      scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-    },
-  ): Promise<void>;
-
   hasOrganizationMemberRoleName(_: {
     organizationId: string;
     roleName: string;
@@ -239,16 +232,7 @@ export interface Storage {
     roleId: string;
     userId: string;
   }): Promise<void>;
-  /**
-   * Remove it after all users have been migrated to the new role system.
-   */
-  assignOrganizationMemberRoleToMany(_: {
-    organizationId: string;
-    roleId: string;
-    userIds: readonly string[];
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
-  getMembersWithoutRole(_: { organizationId: string }): Promise<readonly Member[]>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;
 

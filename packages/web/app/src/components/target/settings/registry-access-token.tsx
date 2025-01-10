@@ -156,7 +156,6 @@ export function ModalContent(props: {
   const [selectedScope, setSelectedScope] = useState<'no-access' | TargetAccessScope>('no-access');
 
   const manager = usePermissionsManager({
-    onSuccess() {},
     organization,
     member: organization.me,
     passMemberScopes: false,
