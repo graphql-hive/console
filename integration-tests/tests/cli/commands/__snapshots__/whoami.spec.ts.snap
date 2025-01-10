@@ -7,19 +7,19 @@ stdout-------------------------------------------:
   "data": {
     "type": "SuccessWhoami",
     "token": {
-      "name": "bumpygiftspushquietly"
+      "name": "__VAR__"
     },
     "organization": {
-      "slug": "upsetgarlicssellmysteriously",
+      "slug": "__VAR__",
       "url": "__URL__"
     },
     "project": {
       "type": "SINGLE",
-      "slug": "fullstatesclapoddly",
+      "slug": "__VAR__",
       "url": "__URL__"
     },
     "target": {
-      "slug": "production",
+      "slug": "__VAR__",
       "url": "__URL__"
     },
     "authorization": {
@@ -40,14 +40,14 @@ fulfilled
 exports[`shows viewer info > OUTPUT FORMAT: TEXT 1`] = `
 ::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
 stdout-------------------------------------------:
-Token name:                 bumpygiftspushquietly                                                                                       
+Token name:                 __VAR__                                                                                 
 
-Organization:               upsetgarlicssellmysteriously https://__URL__             
-Project:                    fullstatesclapoddly https://__URL__  
-Target:                     production https://__URL__
+Organization:               __VAR__ https://__URL__                      
+Project:                    __VAR__ https://__URL__
+Target:                     __VAR__ https://__URL__
 
-Access to schema:publish    Yes                                                                                                        
-Access to schema:check      Yes                                                                                                        
+Access to schema:publish    Yes                                                                                                   
+Access to schema:check      Yes                                                                                                   
 promise------------------------------------------:
 fulfilled
 ::::::::::::::::::::::::::::::::::::::::::::::::::

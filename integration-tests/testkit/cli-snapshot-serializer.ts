@@ -2,9 +2,66 @@ import stripAnsi from 'strip-ansi';
 import type { SnapshotSerializer } from 'vitest';
 import { ExecaError } from '@esm2cjs/execa';
 
+// ------------------------------
+// Value
+// ------------------------------
+
+type Value = ValueCleanUnwrapped | Cleanable<ValueCleanUnwrapped>;
+
+type ValueCleanUnwrapped = ValueUnwrapped | PromiseSettledResult<ValueUnwrapped>;
+
+type ValueUnwrapped = string | ExecaError;
+
+// ------------------------------
+// Cleanable
+// ------------------------------
+
+interface Cleanable<$Value extends ValueCleanUnwrapped> {
+  value: $Value;
+  clean: Cleaner;
+}
+
+type Cleaner = RegExp | ((value: string) => string);
+
+const isCleanable = (value: unknown): value is Cleanable<ValueCleanUnwrapped> => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'value' in value &&
+    'clean' in value &&
+    (typeof value.clean === 'function' || value.clean instanceof RegExp)
+  );
+};
+
+const applyValueCleaner = (cleaner: Cleaner, value: string) => {
+  const regexpMatchReplacer = (_: string, ...args: any[]) => {
+    const captures = args.slice(0, -2);
+    if (captures.length === 0) return '__VAR__';
+    if (captures.length === 1) return `${captures[0]}__VAR__`;
+    if (captures.length === 2) return `${captures[0]}__VAR__${captures[1]}`;
+    console.log(
+      'Warning: More than 2 captures in Value Cleaner given to Vitest CLI Output Serializer.',
+    );
+    return '';
+  };
+
+  if (cleaner instanceof RegExp) {
+    return value.replaceAll(cleaner, regexpMatchReplacer);
+  }
+
+  return cleaner(value);
+};
+
+// ------------------------------
+// Serializer
+// ------------------------------
+
 const test = (value: unknown): boolean => {
   if (typeof value === 'string') {
     return variableReplacements.some(replacement => replacement.pattern.test(value));
+  }
+  if (isCleanable(value)) {
+    return test(value.value);
   }
   if (isPromiseSettledFulfilled(value)) {
     return test(value.value);
@@ -15,32 +72,57 @@ const test = (value: unknown): boolean => {
   return isExecaError(value);
 };
 
-type Value = string | ExecaError | PromiseSettledResult<string | ExecaError>;
-
 /**
  * @remarks The `value` parameter is only type-safe by an implementation of
- * the `test` function which only returns true for these types of values.
+ * the `test` function which only returns true for matching types of values.
  */
 const serialize = (value: Value): string => {
-  const text = serialize_(value);
+  const defaultValueClean = identity;
+  const text = serialize_({
+    value,
+    valueClean: defaultValueClean,
+  });
   return text + newLine + endDivider;
 };
 
-const serialize_ = (value: Value): string => {
+const serialize_ = (parameters: { value: Value; valueClean: Cleaner }): string => {
+  const { value, valueClean } = parameters;
+
+  if (isCleanable(value)) {
+    const text = serialize_({
+      value: value.value,
+      valueClean: value.clean,
+    });
+    return text;
+  }
+
   if (isPromiseSettledFulfilled(value)) {
-    return serialize_(value.value) + newLine + sectionDivider('promise') + newLine + 'fulfilled';
+    let text = serialize_({ value: value.value, valueClean }) + newLine;
+    text += sectionDivider('promise') + newLine;
+    text += 'fulfilled';
+    return text;
   }
 
   if (isPromiseSettledRejected(value)) {
-    return serialize_(value.reason) + newLine + sectionDivider('promise') + newLine + 'rejected';
+    let text = serialize_({ value: value.reason, valueClean }) + newLine;
+    text += sectionDivider('promise') + newLine;
+    text += 'rejected';
+    return text;
   }
+
+  //
+  // Scalar Cases (non-recursing)
+  //
+  // When running cleaners, run generic one first so that value cleaners
+  // do not have to worry about ANSI codes.
+  //
 
   if (typeof value === 'string') {
     let text = '';
     text += heading('CLI SUCCESS OUTPUT') + newLine;
 
     text += sectionDivider('stdout') + newLine;
-    text += clean(value);
+    text += applyValueCleaner(valueClean, generalClean(value));
 
     return text;
   }
@@ -53,10 +135,10 @@ const serialize_ = (value: Value): string => {
     text += value.exitCode + newLine;
 
     text += sectionDivider('stderr') + newLine;
-    text += clean(value.stderr || '__NONE__') + newLine;
+    text += applyValueCleaner(valueClean, generalClean(value.stderr || '__NONE__')) + newLine;
 
     text += sectionDivider('stdout') + newLine;
-    text += clean(value.stdout || '__NONE__');
+    text += applyValueCleaner(valueClean, generalClean(value.stdout || '__NONE__'));
 
     return text;
   }
@@ -70,9 +152,9 @@ export const cliOutputSnapshotSerializer: SnapshotSerializer = {
 };
 
 /**
- * Strip ANSI codes and mask variables.
+ * Strip ANSI codes and mask generally known variables.
  */
-const clean = (value: string) => {
+const generalClean = (value: string) => {
   // We strip ANSI codes because their output can vary by platform (e.g. between macOS and GH CI linux-based runner)
   // and we don't care enough about CLI output styling to fork our snapshots for it.
   value = stripAnsi(value);
@@ -101,6 +183,10 @@ const variableReplacements = [
   },
 ];
 
+// ------------------------------
+// Type Guards
+// ------------------------------
+
 /**
  * The esm2cjs execa package we are using is not exporting the error class, so use this.
  */
@@ -120,6 +206,10 @@ const isPromiseSettledFulfilled = (value: unknown): value is PromiseFulfilledRes
     typeof value === 'object' && value !== null && 'status' in value && value.status === 'fulfilled'
   );
 };
+
+// ------------------------------
+// Text Helpers
+// ------------------------------
 
 const width = 50;
 const newLine = '\n';
@@ -142,3 +232,9 @@ const sectionDivider = (title: string) => {
 };
 
 const endDivider = ':'.repeat(width);
+
+// ------------------------------
+// Generic Helpers
+// ------------------------------
+
+const identity = <T>(value: T): T => value;
