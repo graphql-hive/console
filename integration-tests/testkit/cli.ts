@@ -33,7 +33,7 @@ export type ExecArgs = Record<string, string>;
 export const argsToExecFormat = (args?: ExecArgs): string => {
   return args
     ? Object.entries(args)
-        .map(([key, value]) => `--${key.replace(/^--/, '')}=${value}`)
+        .map(([key, value]) => `--${key.replace(/^--/, '')}${value ? `=${value}` : ''}`)
         .join(' ')
     : '';
 };
