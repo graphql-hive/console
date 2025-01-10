@@ -216,7 +216,7 @@ export default class Dev extends Command<typeof Dev> {
             write: flags.write,
             unstable__forceLatest,
             onError: message => {
-              this.fail(message);
+              this.logFailure(message);
             },
           }),
         );
@@ -229,7 +229,7 @@ export default class Dev extends Command<typeof Dev> {
           services,
           write: flags.write,
           onError: message => {
-            this.fail(message);
+            this.logFailure(message);
           },
         }),
       );
@@ -329,7 +329,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
@@ -387,7 +387,7 @@ export default class Dev extends Command<typeof Dev> {
       return;
     }
 
-    this.success('Composition successful');
+    this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
   }
@@ -397,12 +397,12 @@ export default class Dev extends Command<typeof Dev> {
     serviceInputs: ServiceInput[],
     compose: (services: Service[]) => Promise<void>,
   ) {
-    this.info('Watch mode enabled');
+    this.logInfo('Watch mode enabled');
 
     let services = await this.resolveServices(serviceInputs);
     await compose(services);
 
-    this.info('Watching for changes');
+    this.logInfo('Watching for changes');
 
     let resolveWatchMode: () => void;
 
@@ -419,25 +419,25 @@ export default class Dev extends Command<typeof Dev> {
             service => services.find(s => s.name === service.name)!.sdl !== service.sdl,
           )
         ) {
-          this.info('Detected changes, recomposing');
+          this.logInfo('Detected changes, recomposing');
           await compose(newServices);
           services = newServices;
         }
       } catch (error) {
-        this.fail(String(error));
+        this.logFailure(String(error));
       }
 
       timeoutId = setTimeout(watch, watchInterval);
     };
 
     process.once('SIGINT', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });
 
     process.once('SIGTERM', () => {
-      this.info('Exiting watch mode');
+      this.logInfo('Exiting watch mode');
       clearTimeout(timeoutId);
       resolveWatchMode();
     });

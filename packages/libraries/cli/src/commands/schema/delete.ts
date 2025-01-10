@@ -94,7 +94,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         );
 
         if (!confirmed) {
-          this.info('Aborting');
+          this.logInfo('Aborting');
           this.exit(0);
         }
       }
@@ -125,12 +125,12 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       });
 
       if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
-        this.success(`${service} deleted`);
+        this.logSuccess(`${service} deleted`);
         this.exit(0);
         return;
       }
 
-      this.fail(`Failed to delete ${service}`);
+      this.logFailure(`Failed to delete ${service}`);
       const errors = result.schemaDelete.errors;
 
       if (errors) {
@@ -141,7 +141,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
-        this.fail(`Failed to complete`);
+        this.logFailure(`Failed to complete`);
         this.handleFetchError(error);
       }
     }

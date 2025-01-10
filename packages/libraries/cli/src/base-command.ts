@@ -52,19 +52,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.args = args as Args<T>;
   }
 
-  success(...args: any[]) {
+  logSuccess(...args: any[]) {
     this.log(Texture.success(...args));
   }
 
-  fail(...args: any[]) {
+  logFailure(...args: any[]) {
     this.log(Texture.failure(...args));
   }
 
-  info(...args: any[]) {
+  logInfo(...args: any[]) {
     this.log(Texture.info(...args));
   }
 
-  infoWarning(...args: any[]) {
+  logWarning(...args: any[]) {
     this.log(Texture.warning(...args));
   }
 

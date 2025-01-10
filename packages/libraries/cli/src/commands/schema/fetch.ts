@@ -172,7 +172,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
             await writeFile(filepath, schema, 'utf8');
             break;
           default:
-            this.fail(`Unsupported file extension ${extname(flags.write)}`);
+            this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
             this.exit(1);
         }
         return;
