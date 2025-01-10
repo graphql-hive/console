@@ -6,9 +6,6 @@ import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
-import { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import { ProjectAccessScope } from '../../auth/providers/project-access';
-import { TargetAccessScope } from '../../auth/providers/target-access';
 import { BillingProvider } from '../../billing/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { Emails, mjml } from '../../shared/providers/emails';
@@ -19,12 +16,8 @@ import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { createOrUpdateMemberRoleInputSchema } from '../validation';
-import {
-  organizationAdminScopes,
-  organizationViewerScopes,
-  reservedOrganizationSlugs,
-} from './organization-config';
-import { OrganizationMemberRole, OrganizationMemberRoles } from './organization-member-roles';
+import { reservedOrganizationSlugs } from './organization-config';
+import { OrganizationMemberRoles } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
 
 /**
@@ -307,8 +300,6 @@ export class OrganizationManager {
     const result = await this.storage.createOrganization({
       slug,
       userId: user.id,
-      adminScopes: organizationAdminScopes,
-      viewerScopes: organizationViewerScopes,
       reservedSlugs: reservedOrganizationSlugs,
     });
 
@@ -521,10 +512,7 @@ export class OrganizationManager {
       organizationId: input.organization,
     });
 
-    const [members, currentUserAccessScopes] = await Promise.all([
-      this.getOrganizationMembers({ organizationId: input.organization }),
-      this.authManager.getCurrentUserAccessScopes(organization.id),
-    ]);
+    const members = await this.getOrganizationMembers({ organizationId: input.organization });
     const existingMember = members.find(member => member.user.email === email);
 
     if (existingMember) {
@@ -542,21 +530,6 @@ export class OrganizationManager {
 
     if (!role) {
       throw new HiveError(`Role not found`);
-    }
-
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes =
-      role.legacyScopes?.filter(scope => !currentUserAccessScopes.includes(scope)) ?? [];
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAccessScopes.join(','));
-      this.logger.debug(`Missing scopes: %s`, currentUserMissingScopes.join(','));
-      return {
-        error: {
-          message: `Not enough access to invite a member with this role`,
-          inputErrors: {},
-        },
-      };
     }
 
     // Delete existing invitation
@@ -991,16 +964,6 @@ export class OrganizationManager {
       };
     }
 
-    const accessCheckResult = await this.canDeleteRole(role);
-
-    if (!accessCheckResult.ok) {
-      return {
-        error: {
-          message: accessCheckResult.message,
-        },
-      };
-    }
-
     // delete the role
     await this.storage.deleteOrganizationMemberRole({
       organizationId: input.organizationId,
@@ -1247,123 +1210,5 @@ export class OrganizationManager {
     });
 
     return this.organizationMemberRoles.findViewerRoleByOrganizationId(selector.organizationId);
-  }
-
-  async canDeleteRole(role: OrganizationMemberRole): Promise<
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      }
-  > {
-    // Ensure role is not locked (can't be deleted)
-    if (role.isLocked) {
-      return {
-        ok: false,
-        message: `Cannot delete a built-in role`,
-      };
-    }
-    // Ensure role has no members
-    let membersCount: number | null = role.membersCount;
-
-    if (typeof membersCount !== 'number') {
-      const freshRole = await this.organizationMemberRoles.findMemberRoleById(role.id);
-
-      if (!freshRole) {
-        throw new Error('Role not found');
-      }
-
-      // TODO: check this
-      membersCount = freshRole.membersCount ?? 0;
-    }
-
-    if (membersCount > 0) {
-      return {
-        ok: false,
-        message: `Cannot delete a role with members`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
-  }
-
-  canUpdateRole(
-    role: OrganizationMemberRole,
-    currentUserScopes: readonly (
-      | OrganizationAccessScope
-      | ProjectAccessScope
-      | TargetAccessScope
-    )[],
-  ):
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      } {
-    // Ensure role is not locked (can't be updated)
-    if (role.isLocked) {
-      return {
-        ok: false,
-        message: `Cannot update a built-in role`,
-      };
-    }
-
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes =
-      role.legacyScopes?.filter(scope => !currentUserScopes.includes(scope)) ?? [];
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserScopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopes.join(', '));
-
-      return {
-        ok: false,
-        message: `Missing access to some of the scopes of the role`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
-  }
-
-  canInviteRole(
-    role: OrganizationMemberRole,
-    currentUserScopes: readonly (
-      | OrganizationAccessScope
-      | ProjectAccessScope
-      | TargetAccessScope
-    )[],
-  ):
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      } {
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes =
-      role.legacyScopes?.filter(scope => !currentUserScopes.includes(scope)) ?? [];
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserScopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopes.join(', '));
-
-      return {
-        ok: false,
-        message: `Missing access to some of the scopes of the role`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
   }
 }

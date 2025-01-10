@@ -94,8 +94,6 @@ export interface Storage {
   createOrganization(
     _: Pick<Organization, 'slug'> & {
       userId: string;
-      adminScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-      viewerScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
       reservedSlugs: string[];
     },
   ): Promise<

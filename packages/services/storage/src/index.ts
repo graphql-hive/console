@@ -701,20 +701,17 @@ export async function createStorage(
             organization_id,
             name,
             description,
-            scopes,
             locked
           )
           VALUES (
             ${org.id},
             'Admin',
             'Full access to all organization resources',
-            ${sql.array(input.adminScopes, 'text')},
             true
           ), (
             ${org.id},
             'Viewer',
             'Read-only access to all organization resources',
-            ${sql.array(input.viewerScopes, 'text')},
             true
           )
           RETURNING id, name

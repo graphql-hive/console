@@ -5,6 +5,7 @@ import { batch } from '../../../shared/helpers';
 import {
   Permission,
   PermissionsModel,
+  PermissionsPerResourceLevelAssignment,
   PermissionsPerResourceLevelAssignmentModel,
   permissionsToPermissionsPerResourceLevelAssignment,
 } from '../../auth/lib/authz';
@@ -17,10 +18,10 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
 
-// function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
-//   const { [key]: _, ...rest } = obj;
-//   return rest;
-// }
+function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const { [key]: _, ...rest } = obj;
+  return rest;
+}
 
 const MemberRoleModel = z
   .intersection(
@@ -48,16 +49,28 @@ const MemberRoleModel = z
       }),
     ]),
   )
-  .transform(record => ({
-    // TODO: omit "legacyScopes" property
-    ...record,
-    permissions: record.permissions
-      ? permissionsToPermissionsPerResourceLevelAssignment([
-          ...OrganizationMemberPermissions.permissions.default,
-          ...record.permissions,
-        ])
-      : transformOrganizationMemberLegacyScopesIntoPermissionGroup(record.legacyScopes),
-  }));
+  .transform(record => {
+    let permissions: PermissionsPerResourceLevelAssignment;
+
+    // Both "Viewer" and "Admin" have pre-defined permissions
+    if (record.name === 'Viewer') {
+      permissions = predefinedRolesPermissions.viewer;
+    } else if (record.name === 'Admin') {
+      permissions = predefinedRolesPermissions.admin;
+    } else if (record.permissions) {
+      permissions = permissionsToPermissionsPerResourceLevelAssignment([
+        ...OrganizationMemberPermissions.permissions.default,
+        ...record.permissions,
+      ]);
+    } else {
+      permissions = transformOrganizationMemberLegacyScopesIntoPermissionGroup(record.legacyScopes);
+    }
+
+    return {
+      ...omit(record, 'legacyScopes'),
+      permissions,
+    };
+  });
 
 export type OrganizationMemberRole = z.TypeOf<typeof MemberRoleModel>;
 
@@ -212,92 +225,91 @@ export class OrganizationMemberRoles {
 export function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
   scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>,
 ): z.TypeOf<typeof PermissionsPerResourceLevelAssignmentModel> {
-  const permissions = permissionsToPermissionsPerResourceLevelAssignment([
-    ...OrganizationMemberPermissions.permissions.default,
-  ]);
+  const permissions = new Set<Permission>();
   for (const scope of scopes) {
     switch (scope) {
       case OrganizationAccessScope.READ: {
-        permissions.organization.add('organization:describe');
-        permissions.organization.add('support:manageTickets');
-        permissions.organization.add('project:create');
-        permissions.project.add('project:describe');
+        permissions.add('support:manageTickets');
+        permissions.add('project:create');
+        permissions.add('project:describe');
         break;
       }
       case OrganizationAccessScope.SETTINGS: {
-        permissions.organization.add('organization:modifySlug');
-        permissions.organization.add('schemaLinting:modifyOrganizationRules');
-        permissions.organization.add('billing:describe');
-        permissions.organization.add('billing:update');
-        permissions.organization.add('auditLog:export');
+        permissions.add('organization:modifySlug');
+        permissions.add('schemaLinting:modifyOrganizationRules');
+        permissions.add('billing:describe');
+        permissions.add('billing:update');
+        permissions.add('auditLog:export');
         break;
       }
       case OrganizationAccessScope.DELETE: {
-        permissions.organization.add('organization:delete');
+        permissions.add('organization:delete');
         break;
       }
       case OrganizationAccessScope.INTEGRATIONS: {
-        permissions.organization.add('oidc:modify');
-        permissions.organization.add('gitHubIntegration:modify');
-        permissions.organization.add('slackIntegration:modify');
-
+        permissions.add('oidc:modify');
+        permissions.add('gitHubIntegration:modify');
+        permissions.add('slackIntegration:modify');
         break;
       }
       case OrganizationAccessScope.MEMBERS: {
-        permissions.organization.add('member:manageInvites');
-        permissions.organization.add('member:removeMember');
-        permissions.organization.add('member:assignRole');
-        permissions.organization.add('member:modifyRole');
-        permissions.organization.add('member:describe');
+        permissions.add('member:manageInvites');
+        permissions.add('member:removeMember');
+        permissions.add('member:assignRole');
+        permissions.add('member:modifyRole');
+        permissions.add('member:describe');
         break;
       }
       case ProjectAccessScope.ALERTS: {
-        permissions.project.add('alert:modify');
+        permissions.add('alert:modify');
         break;
       }
       case ProjectAccessScope.READ: {
-        permissions.project.add('project:describe');
+        permissions.add('project:describe');
         break;
       }
       case ProjectAccessScope.DELETE: {
-        permissions.project.add('project:delete');
+        permissions.add('project:delete');
         break;
       }
       case ProjectAccessScope.SETTINGS: {
-        permissions.project.add('project:delete');
-        permissions.project.add('project:modifySettings');
-        permissions.project.add('schemaLinting:modifyProjectRules');
+        permissions.add('project:delete');
+        permissions.add('project:modifySettings');
+        permissions.add('schemaLinting:modifyProjectRules');
         break;
       }
       case TargetAccessScope.READ: {
-        permissions.project.add('target:create');
-        permissions.target.add('appDeployment:describe');
-        permissions.target.add('laboratory:describe');
+        permissions.add('target:create');
+        permissions.add('appDeployment:describe');
+        permissions.add('laboratory:describe');
         break;
       }
       case TargetAccessScope.REGISTRY_WRITE: {
-        permissions.target.add('laboratory:modify');
-        permissions.service.add('schemaCheck:approve');
+        permissions.add('laboratory:modify');
+        permissions.add('schemaCheck:approve');
         break;
       }
       case TargetAccessScope.TOKENS_WRITE: {
-        permissions.target.add('targetAccessToken:modify');
-        permissions.target.add('cdnAccessToken:modify');
+        permissions.add('targetAccessToken:modify');
+        permissions.add('cdnAccessToken:modify');
         break;
       }
       case TargetAccessScope.SETTINGS: {
-        permissions.target.add('target:modifySettings');
-        permissions.target.add('laboratory:modifyPreflightScript');
+        permissions.add('target:modifySettings');
+        permissions.add('laboratory:modifyPreflightScript');
         break;
       }
       case TargetAccessScope.DELETE: {
-        permissions.target.add('target:delete');
+        permissions.add('target:delete');
         break;
       }
     }
   }
 
-  return permissions;
+  return permissionsToPermissionsPerResourceLevelAssignment([
+    ...OrganizationMemberPermissions.permissions.default,
+    ...permissions,
+  ]);
 }
 
 const organizationMemberRoleFields = sql`
@@ -314,3 +326,22 @@ const organizationMemberRoleFields = sql`
     WHERE "om"."role_id" = "organization_member_roles"."id"
   ) AS "membersCount"
 `;
+
+const predefinedRolesPermissions = {
+  /**
+   * Permissions the default admin role is assigned with (aka full access)
+   **/
+  admin: permissionsToPermissionsPerResourceLevelAssignment([
+    ...OrganizationMemberPermissions.permissions.assignable,
+  ]),
+  /**
+   * Permissions the viewer role is assigned with (computed from legacy scopes)
+   **/
+  viewer: transformOrganizationMemberLegacyScopesIntoPermissionGroup([
+    OrganizationAccessScope.READ,
+    ProjectAccessScope.READ,
+    ProjectAccessScope.OPERATIONS_STORE_READ,
+    TargetAccessScope.READ,
+    TargetAccessScope.REGISTRY_READ,
+  ]),
+};
