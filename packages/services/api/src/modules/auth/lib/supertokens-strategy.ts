@@ -5,13 +5,13 @@ import { captureException } from '@sentry/node';
 import type { User } from '../../../shared/entities';
 import { AccessError, HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
-import { Logger } from '../../shared/providers/logger';
-import type { Storage } from '../../shared/providers/storage';
 import {
   OrganizationMembers,
   OrganizationMembershipRoleAssignment,
   ResourceAssignment,
-} from '../providers/organization-members';
+} from '../../organization/providers/organization-members';
+import { Logger } from '../../shared/providers/logger';
+import type { Storage } from '../../shared/providers/storage';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
 
 export class SuperTokensCookieBasedSession extends Session {
@@ -72,7 +72,7 @@ export class SuperTokensCookieBasedSession extends Session {
     }
 
     // owner of organization should have full right to do anything.
-    if (organizationMembership?.isAdmin) {
+    if (organizationMembership?.isOwner) {
       this.logger.debug(
         'User is organization owner, resolve admin access policy. (userId=%s, organizationId=%s)',
         user.id,
@@ -96,7 +96,7 @@ export class SuperTokensCookieBasedSession extends Session {
 
     const policyStatements = this.translateAssignedRolesToAuthorizationPolicyStatements(
       organizationId,
-      organizationMembership.assignedRoles,
+      organizationMembership.assignedRole,
     );
 
     return policyStatements;
@@ -156,65 +156,54 @@ export class SuperTokensCookieBasedSession extends Session {
 
   private translateAssignedRolesToAuthorizationPolicyStatements(
     organizationId: string,
-    organizationMembershipRoleAssignments: Array<OrganizationMembershipRoleAssignment>,
+    assignedRole: OrganizationMembershipRoleAssignment,
   ): Array<AuthorizationPolicyStatement> {
     const policyStatements: Array<AuthorizationPolicyStatement> = [];
 
-    for (const assignedRole of organizationMembershipRoleAssignments) {
-      if (assignedRole.role.permissions.organization.size) {
-        policyStatements.push({
-          action: Array.from(assignedRole.role.permissions.organization),
-          effect: 'allow',
-          resource: this.toResourceIdentifier(
-            organizationId,
-            assignedRole.resolvedResources.organization,
-          ),
-        });
-      }
+    if (assignedRole.role.permissions.organization.size) {
+      policyStatements.push({
+        action: Array.from(assignedRole.role.permissions.organization),
+        effect: 'allow',
+        resource: this.toResourceIdentifier(
+          organizationId,
+          assignedRole.resolvedResources.organization,
+        ),
+      });
+    }
 
-      if (assignedRole.role.permissions.project.size) {
-        policyStatements.push({
-          action: Array.from(assignedRole.role.permissions.project),
-          effect: 'allow',
-          resource: this.toResourceIdentifier(
-            organizationId,
-            assignedRole.resolvedResources.project,
-          ),
-        });
-      }
+    if (assignedRole.role.permissions.project.size) {
+      policyStatements.push({
+        action: Array.from(assignedRole.role.permissions.project),
+        effect: 'allow',
+        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.project),
+      });
+    }
 
-      if (assignedRole.role.permissions.target.size) {
-        policyStatements.push({
-          action: Array.from(assignedRole.role.permissions.target),
-          effect: 'allow',
-          resource: this.toResourceIdentifier(
-            organizationId,
-            assignedRole.resolvedResources.target,
-          ),
-        });
-      }
+    if (assignedRole.role.permissions.target.size) {
+      policyStatements.push({
+        action: Array.from(assignedRole.role.permissions.target),
+        effect: 'allow',
+        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.target),
+      });
+    }
 
-      if (assignedRole.role.permissions.service.size) {
-        policyStatements.push({
-          action: Array.from(assignedRole.role.permissions.service),
-          effect: 'allow',
-          resource: this.toResourceIdentifier(
-            organizationId,
-            assignedRole.resolvedResources.service,
-          ),
-        });
-      }
+    if (assignedRole.role.permissions.service.size) {
+      policyStatements.push({
+        action: Array.from(assignedRole.role.permissions.service),
+        effect: 'allow',
+        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.service),
+      });
+    }
 
-      if (assignedRole.role.permissions.appDeployment.size) {
-        policyStatements.push({
-          action: Array.from(assignedRole.role.permissions.appDeployment),
-          effect: 'allow',
-          resource: this.toResourceIdentifier(
-            organizationId,
-            assignedRole.resolvedResources.appDeployment,
-          ),
-        });
-      }
+    if (assignedRole.role.permissions.appDeployment.size) {
+      policyStatements.push({
+        action: Array.from(assignedRole.role.permissions.appDeployment),
+        effect: 'allow',
+        resource: this.toResourceIdentifier(
+          organizationId,
+          assignedRole.resolvedResources.appDeployment,
+        ),
+      });
     }
 
     return policyStatements;

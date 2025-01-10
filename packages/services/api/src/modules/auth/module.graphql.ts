@@ -57,20 +57,6 @@ export default gql`
     total: Int!
   }
 
-  type Member {
-    id: ID!
-    user: User!
-    isOwner: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
-  }
-
-  type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
-  }
-
   enum AuthProvider {
     GOOGLE
     GITHUB
@@ -132,12 +118,5 @@ export default gql`
     id: ID!
     title: String!
     permissions: [Permission!]!
-  }
-
-  extend type Organization {
-    """
-    List of available permission groups that can be assigned to users.
-    """
-    availableMemberPermissionGroups: [PermissionGroup!]!
   }
 `;

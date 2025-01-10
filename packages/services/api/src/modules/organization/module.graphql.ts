@@ -240,6 +240,10 @@ export default gql`
     The organization's audit logs. This field is only available to members with the Admin role.
     """
     viewerCanExportAuditLogs: Boolean!
+    """
+    List of available permission groups that can be assigned to users.
+    """
+    availableMemberPermissionGroups: [PermissionGroup!]!
   }
 
   type OrganizationConnection {
@@ -303,7 +307,6 @@ export default gql`
   extend type Member {
     canLeaveOrganization: Boolean!
     role: MemberRole!
-    isAdmin: Boolean!
     """
     Whether the viewer can remove this member from the organization.
     """
@@ -318,9 +321,6 @@ export default gql`
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
     locked: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -333,16 +333,21 @@ export default gql`
     Whether the role can be used to invite new members (based on current user's permissions)
     """
     canInvite: Boolean!
+    """
+    Amount of users within the organization that have this role assigned.
+    """
     membersCount: Int!
+    """
+    List of permissions attached to this member role.
+    """
+    permissions: [String!]!
   }
 
   input CreateMemberRoleInput {
     organizationSlug: String!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type CreateMemberRoleOk {
@@ -375,9 +380,7 @@ export default gql`
     roleId: ID!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type UpdateMemberRoleOk {
@@ -447,5 +450,16 @@ export default gql`
   type AssignMemberRoleResult {
     ok: AssignMemberRoleOk
     error: AssignMemberRoleError
+  }
+
+  type Member {
+    id: ID!
+    user: User!
+    isOwner: Boolean!
+  }
+
+  type MemberConnection {
+    nodes: [Member!]!
+    total: Int!
   }
 `;

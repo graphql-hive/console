@@ -196,19 +196,25 @@ export class SupportManager {
     organizationId: string;
   }): Promise<string> {
     const organizationZendeskId = await this.ensureZendeskOrganizationId(input.organizationId);
-    const userAsMember = await this.organizationManager.getOrganizationMember({
+    const membership = await this.organizationManager.getOrganizationMember({
       organizationId: input.organizationId,
       userId: input.userId,
     });
 
-    if (!userAsMember.user.zendeskId) {
+    const user = await this.storage.getUserById({ id: membership.userId });
+
+    if (!user) {
+      throw new Error('Missing user.');
+    }
+
+    if (!user.zendeskId) {
       this.logger.info(
         'Attempt to find user via Zendesk API. (organizationID: %s, userId: %s)',
         input.organizationId,
         input.userId,
       );
 
-      const email = userAsMember.user.email;
+      const email = user.email;
 
       // Before attempting to create the user we need to check whether an user with that email might already exist.
       let userZendeskId = await this.httpClient
@@ -275,9 +281,9 @@ export class SupportManager {
             },
             json: {
               user: {
-                name: userAsMember.user.fullName,
+                name: user.fullName,
                 email,
-                external_id: userAsMember.user.id,
+                external_id: user.id,
                 identities: [
                   {
                     type: 'foreign',
@@ -303,10 +309,10 @@ export class SupportManager {
         userId: input.userId,
         zendeskId: String(userZendeskId),
       });
-      userAsMember.user.zendeskId = String(userZendeskId);
+      user.zendeskId = String(userZendeskId);
     }
 
-    if (!userAsMember.connectedToZendesk) {
+    if (!membership.connectedToZendesk) {
       this.logger.info(
         'Connecting user to zendesk organization (organization: %s, user: %s)',
         input.organizationId,
@@ -328,7 +334,7 @@ export class SupportManager {
           },
           json: {
             organization_membership: {
-              user_id: parseInt(userAsMember.user.zendeskId, 10),
+              user_id: parseInt(user.zendeskId, 10),
               organization_id: parseInt(organizationZendeskId, 10),
             },
           },
@@ -340,7 +346,7 @@ export class SupportManager {
       });
     }
 
-    return userAsMember.user.zendeskId;
+    return user.zendeskId;
   }
 
   async getUsers(ids: number[]) {

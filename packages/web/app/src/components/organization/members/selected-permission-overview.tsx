@@ -10,8 +10,8 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevel } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
 
-export const SelectedPermissionOverview_MemberPermissionGroupsFragment = graphql(`
-  fragment SelectedPermissionOverview_MemberPermissionGroupsFragment on Organization {
+export const SelectedPermissionOverview_OrganizationFragment = graphql(`
+  fragment SelectedPermissionOverview_OrganizationFragment on Organization {
     availableMemberPermissionGroups {
       id
       title
@@ -21,20 +21,21 @@ export const SelectedPermissionOverview_MemberPermissionGroupsFragment = graphql
         description
         level
         title
+        isReadOnly
       }
     }
   }
 `);
 
 export type SelectedPermissionOverviewProps = {
-  organization: FragmentType<typeof SelectedPermissionOverview_MemberPermissionGroupsFragment>;
+  organization: FragmentType<typeof SelectedPermissionOverview_OrganizationFragment>;
   activePermissionIds: Array<string>;
   showOnlyAllowedPermissions: boolean;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
   const organization = useFragment(
-    SelectedPermissionOverview_MemberPermissionGroupsFragment,
+    SelectedPermissionOverview_OrganizationFragment,
     props.organization,
   );
   const activePermissionIds = useMemo<ReadonlySet<string>>(
@@ -77,7 +78,7 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
 }
 
 type AvailableMembershipPermissions = ResultOf<
-  typeof SelectedPermissionOverview_MemberPermissionGroupsFragment
+  typeof SelectedPermissionOverview_OrganizationFragment
 >['availableMemberPermissionGroups'];
 
 type MembershipPermissionGroup = AvailableMembershipPermissions[number];
@@ -92,6 +93,7 @@ function PermissionLevelGroup(props: {
 }) {
   const [filteredGroups, totalAllowedCount] = useMemo(() => {
     let totalAllowedCount = 0;
+
     const filteredGroups: Array<
       MembershipPermissionGroup & {
         totalAllowedCount: number;
@@ -105,7 +107,7 @@ function PermissionLevelGroup(props: {
           return false;
         }
 
-        if (props.activePermissionIds.has(permission.id)) {
+        if (props.activePermissionIds.has(permission.id) || permission.isReadOnly) {
           totalAllowedCount++;
           groupTotalAllowedCount++;
         }
@@ -153,11 +155,12 @@ function PermissionLevelGroup(props: {
                   </tr>
                   {group.permissions.map(permission =>
                     props.showOnlyAllowedPermissions &&
-                    props.activePermissionIds.has(permission.id) === false ? null : (
+                    props.activePermissionIds.has(permission.id) === false &&
+                    !permission.isReadOnly ? null : (
                       <tr key={permission.id}>
                         <td>{permission.title}</td>
                         <td className="ml-2 text-right">
-                          {props.activePermissionIds.has(permission.id) ? (
+                          {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
                             <span className="text-green-500">
                               <CheckIcon className="inline size-4" /> Allowed
                             </span>

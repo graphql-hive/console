@@ -24,7 +24,6 @@ import type {
   Organization,
   OrganizationBilling,
   OrganizationInvitation,
-  OrganizationMemberRole,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
   Project,
@@ -198,35 +197,6 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  hasOrganizationMemberRoleName(_: {
-    organizationId: string;
-    roleName: string;
-    excludeRoleId?: string;
-  }): Promise<boolean>;
-  getOrganizationMemberRoles(_: {
-    organizationId: string;
-  }): Promise<ReadonlyArray<OrganizationMemberRole>>;
-  getViewerOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getAdminOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<
-    | (OrganizationMemberRole & {
-        membersCount: number;
-      })
-    | null
-  >;
-  createOrganizationMemberRole(_: {
-    organizationId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
-  updateOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
   assignOrganizationMemberRole(_: {
     organizationId: string;
     roleId: string;

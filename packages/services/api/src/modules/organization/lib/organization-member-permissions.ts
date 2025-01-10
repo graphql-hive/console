@@ -1,4 +1,4 @@
-import { allPermissions, Permission } from './authz';
+import { allPermissions, Permission } from '../../auth/lib/authz';
 
 export type PermissionRecord = {
   id: Permission;
@@ -278,19 +278,22 @@ export const allPermissionGroups: Array<PermissionGroup> = [
 ] as const;
 
 function assertAllRulesAreAssigned(excluded: Array<Permission>) {
-  const p = new Set(allPermissions);
+  const permissionsToCheck = new Set(allPermissions);
+
   for (const item of excluded) {
-    p.delete(item);
+    permissionsToCheck.delete(item);
   }
 
   for (const group of allPermissionGroups) {
-    for (const per of group.permissions) {
-      p.delete(per.id);
+    for (const permission of group.permissions) {
+      permissionsToCheck.delete(permission.id);
     }
   }
 
-  if (p.size) {
-    throw new Error('The following permissions are not assigned: \n' + Array.from(p).join(`\n`));
+  if (permissionsToCheck.size) {
+    throw new Error(
+      'The following permissions are not assigned: \n' + Array.from(permissionsToCheck).join(`\n`),
+    );
   }
 }
 
@@ -309,3 +312,31 @@ assertAllRulesAreAssigned([
   'appDeployment:publish',
   'appDeployment:retire',
 ]);
+
+/**
+ * List of permissions that are assignable
+ */
+export const permissions = (() => {
+  const assignable = new Set<Permission>();
+  const readOnly = new Set<Permission>();
+  for (const group of allPermissionGroups) {
+    for (const permission of group.permissions) {
+      if (permission.isReadyOnly === true) {
+        readOnly.add(permission.id);
+        continue;
+      }
+      assignable.add(permission.id);
+    }
+  }
+
+  return {
+    /**
+     * List of permissions that are assignable by the user (these should be stored in the database)
+     */
+    assignable: assignable as ReadonlySet<Permission>,
+    /**
+     * List of permissions that are assigned by default (these do not need to be stored in the database)
+     */
+    default: readOnly as ReadonlySet<Permission>,
+  };
+})();

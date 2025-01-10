@@ -1,9 +1,13 @@
 import { Session } from '../../auth/lib/authz';
+import { allPermissionGroups } from '../lib/organization-member-permissions';
 import { OrganizationManager } from '../providers/organization-manager';
+import { OrganizationMemberRoles } from '../providers/organization-member-roles';
+import { OrganizationMembers } from '../providers/organization-members';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'availableMemberPermissionGroups'
   | 'cleanId'
   | 'getStarted'
   | 'id'
@@ -28,23 +32,30 @@ export const Organization: Pick<
   __isTypeOf: organization => {
     return !!organization.id;
   },
-  owner: (organization, _, { injector }) => {
-    return injector
-      .get(OrganizationManager)
-      .getOrganizationOwner({ organizationId: organization.id });
+  owner: async (organization, _, { injector }) => {
+    const owner = await injector.get(OrganizationMembers).findOrganizationOwner(organization);
+    if (!owner) {
+      throw new Error('Not found.');
+    }
+
+    return owner;
   },
   me: async (organization, _, { injector }) => {
     const me = await injector.get(Session).getViewer();
-    const members = await injector
-      .get(OrganizationManager)
-      .getOrganizationMembers({ organizationId: organization.id });
 
-    return members.find(m => m.id === me.id)!;
+    const member = await injector.get(OrganizationMembers).findOrganizationMembership({
+      organization,
+      userId: me.id,
+    });
+
+    if (!member) {
+      throw new Error('Could not find member.');
+    }
+
+    return member;
   },
   members: (organization, _, { injector }) => {
-    return injector
-      .get(OrganizationManager)
-      .getOrganizationMembers({ organizationId: organization.id });
+    return injector.get(OrganizationMembers).findOrganizationMembersForOrganization(organization);
   },
   invitations: async (organization, _, { injector }) => {
     const invitations = await injector.get(OrganizationManager).getInvitations({
@@ -57,9 +68,7 @@ export const Organization: Pick<
     };
   },
   memberRoles: (organization, _, { injector }) => {
-    return injector.get(OrganizationManager).getMemberRoles({
-      organizationId: organization.id,
-    });
+    return injector.get(OrganizationMemberRoles).getMemberRolesForOrganizationId(organization.id);
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {
@@ -172,5 +181,8 @@ export const Organization: Pick<
         organizationId: organization.id,
       },
     });
+  },
+  availableMemberPermissionGroups: () => {
+    return allPermissionGroups;
   },
 };

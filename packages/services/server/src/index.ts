@@ -20,6 +20,7 @@ import {
   CryptoProvider,
   LogFn,
   Logger,
+  OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
 import { HivePubSub } from '@hive/api/src/modules/shared/providers/pub-sub';
@@ -408,7 +409,11 @@ export async function main() {
         new SuperTokensUserAuthNStrategy({
           logger: server.log,
           storage,
-          organizationMembers: new OrganizationMembers(storage.pool, server.log),
+          organizationMembers: new OrganizationMembers(
+            storage.pool,
+            new OrganizationMemberRoles(storage.pool, server.log),
+            server.log,
+          ),
         }),
         new TargetAccessTokenStrategy({
           logger: server.log,

@@ -2,7 +2,7 @@ import { makeFragmentData } from '@/gql';
 import { Meta, StoryObj } from '@storybook/react';
 import {
   SelectedPermissionOverview,
-  SelectedPermissionOverview_MemberPermissionGroupsFragment,
+  SelectedPermissionOverview_OrganizationFragment,
   SelectedPermissionOverviewProps,
 } from '../components/organization/members/selected-permission-overview';
 import { availableMemberPermissionGroups } from './utils';
@@ -21,7 +21,7 @@ const defaultProps: SelectedPermissionOverviewProps = {
       __typename: 'Organization',
       availableMemberPermissionGroups: availableMemberPermissionGroups as any,
     },
-    SelectedPermissionOverview_MemberPermissionGroupsFragment,
+    SelectedPermissionOverview_OrganizationFragment,
   ),
   activePermissionIds: [],
   showOnlyAllowedPermissions: false,

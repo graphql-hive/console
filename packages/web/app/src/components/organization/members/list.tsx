@@ -62,13 +62,6 @@ const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
     id
     slug
     viewerCanAssignUserRoles
-    me {
-      id
-      isAdmin
-      organizationAccessScopes
-      projectAccessScopes
-      targetAccessScopes
-    }
     owner {
       id
     }
@@ -77,9 +70,6 @@ const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
       name
       description
       locked
-      organizationAccessScopes
-      projectAccessScopes
-      targetAccessScopes
     }
   }
 `);
@@ -87,9 +77,6 @@ const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
 const OrganizationMemberRoleSwitcher_MemberFragment = graphql(`
   fragment OrganizationMemberRoleSwitcher_MemberFragment on Member {
     id
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
     user {
       id
     }
@@ -108,11 +95,8 @@ function OrganizationMemberRoleSwitcher(props: {
     props.organization,
   );
   const member = useFragment(OrganizationMemberRoleSwitcher_MemberFragment, props.member);
-  const { me } = organization;
-  const isOwner = props.memberId === organization.owner.id;
-  const isMe = props.memberId === me.id;
   // A user can't change its own role
-  const canAssignRole = !isOwner && !isMe && organization.viewerCanAssignUserRoles;
+  const canAssignRole = organization.viewerCanAssignUserRoles;
   const roles = organization.memberRoles ?? [];
   const { toast } = useToast();
   const [assignRoleState, assignRole] = useMutation(
@@ -170,64 +154,11 @@ function OrganizationMemberRoleSwitcher(props: {
         disabled={!canAssignRole || assignRoleState.fetching}
         isRoleActive={role => {
           const isCurrentRole = role.id === props.memberRoleId;
-          const canDowngrade = me.isAdmin;
-          const hasAccessToScopesOfRole =
-            role.organizationAccessScopes.every(scope =>
-              me.organizationAccessScopes.includes(scope),
-            ) &&
-            role.projectAccessScopes.every(scope => me.projectAccessScopes.includes(scope)) &&
-            role.targetAccessScopes.every(scope => me.targetAccessScopes.includes(scope));
-          // If the new role has more or equal access scopes than the current role, we can assign it
-          const newRoleHasMoreOrEqualAccess =
-            // organization
-            role.organizationAccessScopes.length >= memberRole.organizationAccessScopes.length &&
-            role.organizationAccessScopes.every(scope =>
-              memberRole.organizationAccessScopes.includes(scope),
-            ) &&
-            // project
-            role.projectAccessScopes.length >= memberRole.projectAccessScopes.length &&
-            role.projectAccessScopes.every(scope =>
-              memberRole.projectAccessScopes.includes(scope),
-            ) &&
-            // target
-            role.targetAccessScopes.length >= memberRole.targetAccessScopes.length &&
-            role.targetAccessScopes.every(scope => memberRole.targetAccessScopes.includes(scope));
-          const canAssign =
-            (hasAccessToScopesOfRole && newRoleHasMoreOrEqualAccess) || canDowngrade;
-          //
-          // A new role can be assigned to the member if:
-          // - the member is not the owner
-          // - the member is not the current user
-          // - the current user has access to all the access scopes of the new role
-          // - the new role has more or equal access scopes than the current role (or the current user is an admin)
-          // - the new role is not the current role
-          //
 
           if (isCurrentRole) {
             return {
               active: false,
               reason: 'This is the current role',
-            };
-          }
-
-          if (canAssign) {
-            return {
-              active: true,
-            };
-          }
-
-          if (!hasAccessToScopesOfRole) {
-            return {
-              active: false,
-              reason: 'You do not have enough access to assign this role',
-            };
-          }
-
-          if (!newRoleHasMoreOrEqualAccess) {
-            return {
-              active: false,
-              reason:
-                'The member will experience a downgrade as this role lacks certain permissions they currently possess.',
             };
           }
 

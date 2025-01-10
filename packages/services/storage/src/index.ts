@@ -25,7 +25,6 @@ import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import {
   createSDLHash,
-  OrganizationMemberRoleModel,
   ProjectType,
   type CDNAccessToken,
   type OIDCIntegration,
@@ -227,7 +226,7 @@ export async function createStorage(
       code: invitation.code,
       created_at: invitation.created_at as any,
       expires_at: invitation.expires_at as any,
-      role: OrganizationMemberRoleModel.parse(invitation.role),
+      roleId: invitation.role.id,
     };
   }
 
@@ -525,15 +524,18 @@ export async function createStorage(
       },
       connection: Connection,
     ) {
-      const result = await connection.one(sql`/* getOrganizationMemberRoleByName */
+      const roleId = await connection.oneFirst<string>(sql`/* getOrganizationMemberRoleByName */
         SELECT
-          id, name, description, scopes, locked, organization_id
-        FROM organization_member_roles
-        WHERE organization_id = ${args.organizationId} AND name = ${args.roleName}
+          "id"
+        FROM
+          "organization_member_roles"
+        WHERE
+          "organization_id" = ${args.organizationId}
+          AND "name" = ${args.roleName}
         LIMIT 1
       `);
 
-      return OrganizationMemberRoleModel.parse(result);
+      return roleId;
     },
   };
 
@@ -965,72 +967,6 @@ export async function createStorage(
         return Promise.resolve(null);
       });
     }),
-    getAdminOrganizationMemberRole({ organizationId }) {
-      return shared.getOrganizationMemberRoleByName(
-        {
-          organizationId,
-          roleName: 'Admin',
-        },
-        pool,
-      );
-    },
-    getViewerOrganizationMemberRole({ organizationId }) {
-      return shared.getOrganizationMemberRoleByName(
-        {
-          organizationId,
-          roleName: 'Viewer',
-        },
-        pool,
-      );
-    },
-    async getOrganizationMemberRoles(selector) {
-      const results = await pool.many(sql`/* getOrganizationMemberRoles */
-        SELECT
-          id, name, description, scopes, locked, organization_id
-        FROM organization_member_roles
-        WHERE organization_id = ${selector.organizationId}
-        ORDER BY array_length(scopes, 1) DESC, name ASC
-      `);
-
-      return results.map(role => OrganizationMemberRoleModel.parse(role));
-    },
-    async getOrganizationMemberRole(selector) {
-      const result = await pool.maybeOne<{
-        members_count: number;
-      }>(sql`/* getOrganizationMemberRole */
-        SELECT
-          id, name, description, scopes, locked, organization_id,
-          (
-            SELECT count(*)
-            FROM organization_member
-            WHERE role_id = ${selector.roleId} AND organization_id = ${selector.organizationId}
-          ) AS members_count
-        FROM organization_member_roles
-        WHERE organization_id = ${selector.organizationId} AND id = ${selector.roleId}
-        LIMIT 1
-      `);
-
-      if (!result) {
-        return null;
-      }
-
-      return {
-        ...OrganizationMemberRoleModel.parse(result),
-        membersCount: result.members_count,
-      };
-    },
-    hasOrganizationMemberRoleName({ organizationId, roleName, excludeRoleId }) {
-      return pool.exists(sql`/* hasOrganizationMemberRoleName */
-        SELECT 1
-        FROM organization_member_roles
-        WHERE
-          organization_id = ${organizationId}
-          AND
-          name = ${roleName}
-          ${excludeRoleId ? sql`AND id != ${excludeRoleId}` : sql``}
-        LIMIT 1
-      `);
-    },
     getOrganizationInvitations: batch(async selectors => {
       const organizations = selectors.map(s => s.organizationId);
       const allInvitations = await pool.query<
@@ -1305,7 +1241,7 @@ export async function createStorage(
           return;
         }
 
-        const adminRole = await shared.getOrganizationMemberRoleByName(
+        const adminRoleId = await shared.getOrganizationMemberRoleByName(
           {
             organizationId: organization,
             roleName: 'Admin',
@@ -1316,7 +1252,7 @@ export async function createStorage(
         // set admin role
         await tsx.query(sql`/* setAdminRole */
           UPDATE organization_member
-          SET role_id = ${adminRole.id}
+          SET role_id = ${adminRoleId}
           WHERE organization_id = ${organization} AND user_id = ${user}
         `);
 
@@ -1340,34 +1276,6 @@ export async function createStorage(
           WHERE organization_id = ${organization} AND user_id = ${user}
         `,
       );
-    },
-    async createOrganizationMemberRole({ organizationId, name, scopes, description }) {
-      const role = await pool.one(
-        sql`/* createOrganizationMemberRole */
-          INSERT INTO organization_member_roles
-          (organization_id, name, description, scopes)
-          VALUES
-          (${organizationId}, ${name}, ${description}, ${sql.array(scopes, 'text')})
-          RETURNING *
-        `,
-      );
-
-      return OrganizationMemberRoleModel.parse(role);
-    },
-    async updateOrganizationMemberRole({ organizationId, roleId, name, scopes, description }) {
-      const role = await pool.one(
-        sql`/* updateOrganizationMemberRole */
-          UPDATE organization_member_roles
-          SET
-            name = ${name},
-            description = ${description},
-            scopes = ${sql.array(scopes, 'text')}
-          WHERE organization_id = ${organizationId} AND id = ${roleId}
-          RETURNING *
-        `,
-      );
-
-      return OrganizationMemberRoleModel.parse(role);
     },
     async assignOrganizationMemberRole({ userId, organizationId, roleId }) {
       await pool.query(

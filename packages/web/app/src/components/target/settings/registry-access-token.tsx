@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { AnyVariables, useMutation, UseMutationState } from 'urql';
 import { z } from 'zod';
-import { Tag } from '@/components//v2/tag';
 import { PermissionScopeItem } from '@/components/organization/Permissions';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { InputCopy } from '@/components/ui/input-copy';
 import { useToast } from '@/components/ui/use-toast';
 import { Accordion } from '@/components/v2/accordion';
+import { Tag } from '@/components/v2/tag';
 import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';

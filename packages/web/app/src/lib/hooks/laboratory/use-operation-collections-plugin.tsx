@@ -80,15 +80,6 @@ export const TargetLaboratoryPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        me {
-          id
-          ...CanAccessTarget_MemberFragment
-        }
-      }
-    }
     target(
       selector: {
         organizationSlug: $organizationSlug
