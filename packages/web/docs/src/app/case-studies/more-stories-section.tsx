@@ -1,7 +1,10 @@
-import Image from 'next/image';
-import { Anchor, ArrowIcon, cn, Heading, TextLink } from '@theguild/components';
+import { Anchor, ArrowIcon, cn, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
-import soundXyzLogo from './assets/sound-xyz.webp';
+import { SoundYXZLogo } from '../../components/company-logos';
+
+const logos = {
+  'sound-xyz': <SoundYXZLogo width={193} height={64} />,
+};
 
 export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElement>) {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
@@ -24,7 +27,7 @@ export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElem
             name: 'sound-xyz',
             href: '/case-studies/sound-xyz',
             category: 'E-commerce',
-            src: soundXyzLogo,
+            logo: logos['sound-xyz'],
             description: 'Risus blandit blandit vel et eget viverra adipiscing.',
           };
 
@@ -37,7 +40,7 @@ export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElem
                 <div className="text-beige-800 text-sm font-medium dark:text-neutral-400">
                   {caseStudy.category}
                 </div>
-                <Image src={caseStudy.src} alt={caseStudy.name} height={64} width={193} />
+                {caseStudy.logo}
                 <p className="text-xl">{caseStudy.description}</p>
                 <div className="flex items-center justify-between gap-2">
                   Read full story

@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { cn, DecorationIsolation, Heading, useConfig } from '@theguild/components';
+import { SoundYXZLogo } from '../../components/company-logos';
 import { SmallAvatar } from '../../components/small-avatar';
 
 type Meta = {
@@ -16,17 +16,13 @@ type Author = {
   avatar?: string;
 };
 
-// these have to be listed out to avoid "cannot resolve <dynamic>"
-// can be refactored out when Next supports import.meta.glob
 const logos = {
-  'sound-xyz': new URL('./assets/sound-xyz.webp', import.meta.url).href,
+  'sound-xyz': <SoundYXZLogo width={193} height={64} />,
 };
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   const normalizePagesResult = useConfig().normalizePagesResult;
   const metadata = normalizePagesResult.activeMetadata as Meta;
-  const variable = './assets/sound-xyz.webp';
-  console.log(new URL(variable, import.meta.url).href);
 
   const name = normalizePagesResult.activePath.at(-1)?.name;
 
@@ -39,7 +35,7 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <header {...props}>
       <LogoWithDecorations className="h-[224px] w-full max-sm:mb-6 sm:w-[360px] sm:max-2xl:hidden 2xl:absolute 2xl:translate-x-[688px]">
-        <Image src={logo} alt="Logo" width={193} height={64} />
+        {logo}
       </LogoWithDecorations>
       <Heading as="h1" size="md" className="max-sm:text-[32px]">
         {metadata.title}
@@ -74,8 +70,8 @@ function LogoWithDecorations({
     <div className={cn('relative flex items-center justify-center', className)}>
       {children}
       <DecorationIsolation>
-        <WideArchDecoration className="absolute right-0 top-0" />
-        <WideArchDecoration className="absolute bottom-0 left-0 rotate-180" />
+        <WideArchDecoration className="absolute right-0 top-0 dark:opacity-10" />
+        <WideArchDecoration className="absolute bottom-0 left-0 rotate-180 dark:opacity-10" />
         <WideArchDecorationDefs />
       </DecorationIsolation>
     </div>

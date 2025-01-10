@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import {
+  AppsIcon,
   GitHubIcon,
   GraphQLConfCard,
   HiveNavigation,
@@ -25,6 +26,11 @@ const developerMenu: HiveNavigationProps['developerMenu'] = [
     href: '/product-updates',
     icon: <RightCornerIcon />,
     children: 'Product Updates',
+  },
+  {
+    href: '/case-studies',
+    icon: <AppsIcon />,
+    children: 'Case Studies',
   },
   { href: 'https://the-guild.dev/blog', icon: <PencilIcon />, children: 'Blog' },
   {
