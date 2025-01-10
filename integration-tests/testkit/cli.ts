@@ -30,7 +30,16 @@ export type ExecCommandPath =
 
 export type ExecArgs = Record<string, string | true>;
 
-export function execFormat(commandPath: string, args?: ExecArgs) {
+export async function execHive(commandPath: ExecCommandPath, args?: ExecArgs) {
+  const registryAddress = await getServiceHost('server', 8082);
+  const cmd = execFormat(commandPath, {
+    ...args,
+    '--registry.endpoint': `http://${registryAddress}/graphql`,
+  });
+  return await exec(cmd);
+}
+
+export function execFormat(commandPath: ExecCommandPath, args?: ExecArgs) {
   return `${commandPath} ${execFormatArgs(args)}`;
 }
 
@@ -53,15 +62,6 @@ export function execFormatArgs(args?: ExecArgs): string {
         .filter(arg => arg !== null)
         .join(' ')
     : '';
-}
-
-export async function execHive(commandPath: string, args?: ExecArgs) {
-  const registryAddress = await getServiceHost('server', 8082);
-  const cmd = execFormat(commandPath, {
-    ...args,
-    '--registry.endpoint': `http://${registryAddress}/graphql`,
-  });
-  return await exec(cmd);
 }
 
 export async function exec(cmd: string) {

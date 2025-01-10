@@ -3,11 +3,20 @@
 exports[`FailureUserInput - { command: 'whoami' } > OUTPUT FORMAT: JSON 1`] = `
 ::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode-----------------------------------------:
-2
+1
 stderr-------------------------------------------:
- ›   Error: command hive not found
-stdout-------------------------------------------:
 __NONE__
+stdout-------------------------------------------:
+{
+  "data": {
+    "type": "FailureUserInput",
+    "parameter": "registry.accessToken"
+  },
+  "type": "failure",
+  "reference": null,
+  "suggestions": [],
+  "warnings": []
+}
 promise------------------------------------------:
 rejected
 ::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -18,7 +27,9 @@ exports[`FailureUserInput - { command: 'whoami' } > OUTPUT FORMAT: TEXT 1`] = `
 exitCode-----------------------------------------:
 2
 stderr-------------------------------------------:
- ›   Error: command hive not found
+ ›   Error: --registry.accessToken is required. For help generating an access 
+ ›   token, see https://__URL__
+ ›   stry-access-tokens
 stdout-------------------------------------------:
 __NONE__
 promise------------------------------------------:

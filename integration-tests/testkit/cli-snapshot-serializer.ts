@@ -109,10 +109,6 @@ const isExecaError = (value: unknown): value is ExecaError => {
   return typeof value.exitCode === 'number';
 };
 
-// const isPromiseSettledResult = (value: unknown): value is PromiseSettledResult<unknown> => {
-//   return isPromiseSettledRejected(value) || isPromiseSettledFulfilled(value);
-// };
-
 const isPromiseSettledRejected = (value: unknown): value is PromiseRejectedResult => {
   return (
     typeof value === 'object' && value !== null && 'status' in value && value.status === 'rejected'

@@ -36,6 +36,6 @@ test.each(testCases)('--show-output-schema-json - %s', async ({ command, args })
   //
   const schema = JSON.parse(outputText);
   await expect(JSON.stringify(schema, null, 2)).toMatchFileSnapshot(
-    `./__snapshots__/show-output-schema-json/${command.replace(':', '__')}.json`,
+    `./__snapshots__/show-output-schema-json/${command.replace(':', '__')}.schema.json`,
   );
 });
