@@ -43,7 +43,7 @@ export const execFormat = (commandPath: string, args?: ExecArgs) => {
 };
 
 export async function exec(cmd: string) {
-  const result = await execaCommand(`${binPath} ${cmd}`, {
+  const output = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,
     env: {
       OCLIF_CLI_CUSTOM_PATH: cliDir,
@@ -51,11 +51,11 @@ export async function exec(cmd: string) {
     },
   });
 
-  if (result.failed) {
-    throw new Error('CLI execution marked as "failed".', { cause: result.stderr });
+  if (output.failed) {
+    throw new Error(output.stderr);
   }
 
-  return result.stdout;
+  return output.stdout;
 }
 
 export async function schemaPublish(args: string[]) {
@@ -101,8 +101,6 @@ async function dev(args: string[]) {
   );
 }
 
-export type CLI = ReturnType<typeof createCLI>;
-
 export function createCLI(tokens: { readwrite: string; readonly: string }) {
   let publishCount = 0;
 
@@ -114,7 +112,6 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     expect: expectedStatus,
     legacy_force,
     legacy_acceptBreakingChanges,
-    json,
   }: {
     sdl: string;
     commit?: string;
@@ -141,7 +138,6 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       ...(metadata ? ['--metadata', await generateTmpFile(JSON.stringify(metadata), 'json')] : []),
       ...(legacy_force ? ['--force'] : []),
       ...(legacy_acceptBreakingChanges ? ['--experimental_acceptBreakingChanges'] : []),
-      ...(json ? ['--json'] : []),
       await generateTmpFile(sdl, 'graphql'),
     ]);
 
@@ -213,18 +209,15 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     sdl,
     serviceName,
     expect: expectedStatus,
-    json,
   }: {
     sdl: string;
     serviceName?: string;
     expect: 'approved' | 'rejected';
-    json?: boolean;
   }): Promise<string> {
     const cmd = schemaCheck([
       '--registry.accessToken',
       tokens.readonly,
       ...(serviceName ? ['--service', serviceName] : []),
-      ...(json ? ['--json'] : []),
       await generateTmpFile(sdl, 'graphql'),
     ]);
 
@@ -238,19 +231,11 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
   async function deleteCommand({
     serviceName,
     expect: expectedStatus,
-    json,
   }: {
     serviceName?: string;
-    json?: boolean;
     expect: 'latest' | 'latest-composable' | 'rejected';
   }): Promise<string> {
-    const cmd = schemaDelete([
-      '--token',
-      tokens.readwrite,
-      '--confirm',
-      serviceName ?? '',
-      ...(json ? ['--json'] : []),
-    ]);
+    const cmd = schemaDelete(['--token', tokens.readwrite, '--confirm', serviceName ?? '']);
 
     const before = {
       latest: await fetchLatestSchema(tokens.readonly).then(r => r.expectNoGraphQLErrors()),
@@ -306,13 +291,11 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
       url: string;
       sdl: string;
     }>;
-    json?: boolean;
     remote: boolean;
     write?: string;
     useLatestVersion?: boolean;
   }) {
     return dev([
-      ...(input.json ? ['--json'] : []),
       ...(input.remote
         ? [
             '--remote',
