@@ -1,5 +1,5 @@
 import { execHive } from 'testkit/cli';
-import { cliOutputSnapshotSerializer } from '../../../testkit/cli-snapshot-serializer';
+import { cliOutputSnapshotSerializer, withCleaner } from '../../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../../testkit/seed';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
@@ -25,6 +25,6 @@ test('shows viewer info', async ({ expect }) => {
     execHive(command, args),
     execHive(command, { ...args, json: true }),
   ]);
-  expect({ value: text, clean: textClean }).toMatchSnapshot('OUTPUT FORMAT: TEXT');
-  expect({ value: json, clean: jsonClean }).toMatchSnapshot('OUTPUT FORMAT: JSON');
+  expect(withCleaner(text, textClean)).toMatchSnapshot('OUTPUT FORMAT: TEXT');
+  expect(withCleaner(json, jsonClean)).toMatchSnapshot('OUTPUT FORMAT: JSON');
 });

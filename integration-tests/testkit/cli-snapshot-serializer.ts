@@ -6,9 +6,9 @@ import { ExecaError } from '@esm2cjs/execa';
 // Value
 // ------------------------------
 
-type Value = ValueCleanUnwrapped | Cleanable<ValueCleanUnwrapped>;
+type Value = ValueSansCleanable | Cleanable<ValueSansCleanable>;
 
-type ValueCleanUnwrapped = ValueUnwrapped | PromiseSettledResult<ValueUnwrapped>;
+type ValueSansCleanable = ValueUnwrapped | PromiseSettledResult<ValueUnwrapped>;
 
 type ValueUnwrapped = string | ExecaError;
 
@@ -16,14 +16,14 @@ type ValueUnwrapped = string | ExecaError;
 // Cleanable
 // ------------------------------
 
-interface Cleanable<$Value extends ValueCleanUnwrapped> {
+interface Cleanable<$Value extends ValueSansCleanable> {
   value: $Value;
   clean: Cleaner;
 }
 
 type Cleaner = RegExp | ((value: string) => string);
 
-const isCleanable = (value: unknown): value is Cleanable<ValueCleanUnwrapped> => {
+const isCleanable = (value: unknown): value is Cleanable<ValueSansCleanable> => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -50,6 +50,19 @@ const applyValueCleaner = (cleaner: Cleaner, value: string) => {
   }
 
   return cleaner(value);
+};
+
+/**
+ * Wrap the value with a cleaner that will be run before snapshotting the text value.
+ */
+export const withCleaner = (
+  value: ValueSansCleanable,
+  valueClean: Cleaner,
+): Cleanable<ValueSansCleanable> => {
+  return {
+    value,
+    clean: valueClean,
+  };
 };
 
 // ------------------------------
