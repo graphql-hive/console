@@ -16,6 +16,7 @@ beforeEach(() => {
         .first()
         .click();
       cy.get('[aria-label="Show Operation Collections"]').click();
+      laboratory.closeTabsUntilOneLeft();
     });
   });
 });

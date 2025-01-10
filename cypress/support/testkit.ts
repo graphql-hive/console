@@ -70,6 +70,18 @@ export const laboratory = {
       'exist',
     );
   },
+  closeActiveTab() {
+    cy.get('li.graphiql-tab-active > button.graphiql-tab-close').click();
+  },
+  closeTabsUntilOneLeft() {
+    cy.get('li.graphiql-tab').then($tabs => {
+      if ($tabs.length > 1) {
+        laboratory.closeActiveTab();
+        // Recurse until there's only one tab left
+        return laboratory.closeTabsUntilOneLeft();
+      }
+    });
+  },
 };
 
 export function dedent(strings: TemplateStringsArray, ...values: unknown[]): string {
