@@ -17,8 +17,8 @@ beforeEach(async () => {
   };
 });
 
-const textClean = /((?:name|target|project|organization): +)[A-Za-z]+/gi;
-const jsonClean = /((?:name|slug)": ")[A-Za-z]+(")/gi;
+const textClean = /((?:name|target|project|organization): +)[a-z]+/gi;
+const jsonClean = /((?:name|slug)": ")[a-z]+(")/gi;
 
 test('shows viewer info', async ({ expect }) => {
   const [text, json] = await Promise.allSettled([
