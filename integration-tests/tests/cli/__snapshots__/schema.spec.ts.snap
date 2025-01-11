@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`'FEDERATION' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
+exports[`FEDERATION > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -25,7 +25,7 @@ http://__URL__
 
 `;
 
-exports[`'FEDERATION' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
+exports[`FEDERATION > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -33,7 +33,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
+exports[`FEDERATION > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -54,7 +54,7 @@ http://__URL__
 
 `;
 
-exports[`'FEDERATION' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
+exports[`FEDERATION > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -67,7 +67,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`FEDERATION > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -75,7 +75,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
+exports[`FEDERATION > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -83,7 +83,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
+exports[`FEDERATION > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -91,7 +91,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
+exports[`FEDERATION > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
@@ -102,7 +102,7 @@ stdout--------------------------------------------:
 ✖ Failed to publish schema
 `;
 
-exports[`'FEDERATION' ('legacy') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
+exports[`FEDERATION > schema:check should notify user when registry is empty > schemaCheck 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -111,203 +111,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'FEDERATION' ('legacy') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 3 errors
-
-   - Unknown type: User.
-   - Unknown type User.
-   - Type Query must define one or more fields.
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'FEDERATION' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
-directive @core(as: String, feature: String!, for: core__Purpose) repeatable on SCHEMA
-
-directive @join__field(graph: join__Graph, provides: join__FieldSet, requires: join__FieldSet) on FIELD_DEFINITION
-
-directive @join__graph(name: String!, url: String!) on ENUM_VALUE
-
-directive @join__owner(graph: join__Graph!) on INTERFACE | OBJECT
-
-directive @join__type(graph: join__Graph!, key: join__FieldSet) repeatable on INTERFACE | OBJECT
-
-type Query {
-  users: [User!]
-}
-
-type User {
-  email: String!
-  id: ID!
-  name: String!
-}
-
-enum core__Purpose {
-  """
-  \`EXECUTION\` features provide metadata necessary to for operation execution.
-  """
-  EXECUTION
-
-  """
-  \`SECURITY\` features provide metadata necessary to securely resolve fields.
-  """
-  SECURITY
-}
-
-scalar join__FieldSet
-
-enum join__Graph {
-  TEST
-}
-`;
-
-exports[`'FEDERATION' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('legacy') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('legacy') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'FEDERATION' ('modern') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 4 changes
-
-   Breaking changes:
-   - Field email was removed from object type User
-   Safe changes:
-   - Enum value VIEWER was added to enum UserRole
-   - Field address was added to object type User
-   - Field User.role changed type from UserRole to UserRole!
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'FEDERATION' ('modern') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 1 change
-
-   Breaking changes:
-   - Field email was removed from object type User
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'FEDERATION' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-ℹ Detected 1 change
-
-   Safe changes:
-   - Field nickname was added to object type User
-
-View full report:
-http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ New service url: http://__URL__ (previously: http://__URL__
-ℹ Available at http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'FEDERATION' ('modern') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Schema registry is empty, nothing to compare your schema with.
-View full report:
-http://__URL__
-`;
-
-exports[`'FEDERATION' ('modern') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
+exports[`FEDERATION > schema:check should throw on corrupted schema > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -323,7 +127,7 @@ http://__URL__
 
 `;
 
-exports[`'FEDERATION' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+exports[`FEDERATION > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
 type Query {
   users: [User!]
 }
@@ -335,7 +139,7 @@ type User {
 }
 `;
 
-exports[`'FEDERATION' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
+exports[`FEDERATION > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -343,7 +147,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('modern') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`FEDERATION > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -351,7 +155,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'FEDERATION' ('modern') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
+exports[`FEDERATION > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
@@ -362,7 +166,7 @@ stdout--------------------------------------------:
 ✖ Failed to publish schema
 `;
 
-exports[`'SINGLE' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
+exports[`SINGLE > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -387,7 +191,7 @@ http://__URL__
 
 `;
 
-exports[`'SINGLE' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
+exports[`SINGLE > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -395,7 +199,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
+exports[`SINGLE > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -416,7 +220,7 @@ http://__URL__
 
 `;
 
-exports[`'SINGLE' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
+exports[`SINGLE > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -429,7 +233,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`SINGLE > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -437,7 +241,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
+exports[`SINGLE > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
@@ -448,7 +252,7 @@ stdout--------------------------------------------:
 ✖ Failed to publish schema
 `;
 
-exports[`'SINGLE' ('legacy') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
+exports[`SINGLE > schema:check should notify user when registry is empty > schemaCheck 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -457,7 +261,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
+exports[`SINGLE > schema:check should throw on corrupted schema > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -473,7 +277,7 @@ http://__URL__
 
 `;
 
-exports[`'SINGLE' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+exports[`SINGLE > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
 type Query {
   users: [User!]
 }
@@ -485,7 +289,7 @@ type User {
 }
 `;
 
-exports[`'SINGLE' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
+exports[`SINGLE > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -493,7 +297,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`SINGLE > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -501,7 +305,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('legacy') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
+exports[`SINGLE > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
@@ -512,7 +316,7 @@ stdout--------------------------------------------:
 ✖ Failed to publish schema
 `;
 
-exports[`'SINGLE' ('modern') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
+exports[`STITCHING > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -537,7 +341,7 @@ http://__URL__
 
 `;
 
-exports[`'SINGLE' ('modern') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
+exports[`STITCHING > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -545,7 +349,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
+exports[`STITCHING > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -566,7 +370,7 @@ http://__URL__
 
 `;
 
-exports[`'SINGLE' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
+exports[`STITCHING > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -579,7 +383,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'SINGLE' ('modern') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`STITCHING > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -587,55 +391,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('modern') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'SINGLE' ('modern') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Schema registry is empty, nothing to compare your schema with.
-View full report:
-http://__URL__
-`;
-
-exports[`'SINGLE' ('modern') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Unknown type User.
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'SINGLE' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
-type Query {
-  users: [User!]
-}
-
-type User {
-  id: ID!
-  name: String!
-  email: String!
-}
-`;
-
-exports[`'SINGLE' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
+exports[`STITCHING > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -643,109 +399,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'SINGLE' ('modern') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'SINGLE' ('modern') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'STITCHING' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 4 changes
-
-   Breaking changes:
-   - Field email was removed from object type User
-   Safe changes:
-   - Enum value VIEWER was added to enum UserRole
-   - Field address was added to object type User
-   - Field User.role changed type from UserRole to UserRole!
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'STITCHING' ('legacy') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 1 change
-
-   Breaking changes:
-   - Field email was removed from object type User
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'STITCHING' ('legacy') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-ℹ Detected 1 change
-
-   Safe changes:
-   - Field nickname was added to object type User
-
-View full report:
-http://__URL__
-`;
-
-exports[`'STITCHING' ('legacy') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('legacy') > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('legacy') > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
+exports[`STITCHING > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -753,7 +407,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'STITCHING' ('legacy') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
+exports[`STITCHING > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
@@ -764,7 +418,7 @@ stdout--------------------------------------------:
 ✖ Failed to publish schema
 `;
 
-exports[`'STITCHING' ('legacy') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
+exports[`STITCHING > schema:check should notify user when registry is empty > schemaCheck 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -773,7 +427,7 @@ View full report:
 http://__URL__
 `;
 
-exports[`'STITCHING' ('legacy') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
+exports[`STITCHING > schema:check should throw on corrupted schema > schemaCheck 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 1
@@ -791,7 +445,7 @@ http://__URL__
 
 `;
 
-exports[`'STITCHING' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+exports[`STITCHING > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
 type Query {
   users: [User!]
 }
@@ -803,7 +457,7 @@ type User {
 }
 `;
 
-exports[`'STITCHING' ('legacy') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
+exports[`STITCHING > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -811,7 +465,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'STITCHING' ('legacy') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
+exports[`STITCHING > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -819,175 +473,7 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`'STITCHING' ('legacy') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'STITCHING' ('modern') > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 4 changes
-
-   Breaking changes:
-   - Field email was removed from object type User
-   Safe changes:
-   - Enum value VIEWER was added to enum UserRole
-   - Field address was added to object type User
-   - Field User.role changed type from UserRole to UserRole!
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'STITCHING' ('modern') > can publish a schema with breaking, warning and safe changes > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (breaking) 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 1 error
-
-   - Field email was removed from object type User
-
-ℹ Detected 1 change
-
-   Breaking changes:
-   - Field email was removed from object type User
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'STITCHING' ('modern') > can publish and check a schema with target:registry:read access > schemaCheck (non-breaking) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-ℹ Detected 1 change
-
-   Safe changes:
-   - Field nickname was added to object type User
-
-View full report:
-http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > can update the service url and show it in comparison query > schemaPublish (new) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ New service url: http://__URL__ (previously: http://__URL__
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-2
-stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
-stdout--------------------------------------------:
-✖ Failed to publish schema
-`;
-
-exports[`'STITCHING' ('modern') > schema:check should notify user when registry is empty > schemaCheck 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Schema registry is empty, nothing to compare your schema with.
-View full report:
-http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > schema:check should throw on corrupted schema > schemaCheck 1`] = `
-:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
-exitCode------------------------------------------:
-1
-stderr--------------------------------------------:
-__NONE__
-stdout--------------------------------------------:
-✖ Detected 3 errors
-
-   - Unknown type User.
-   - Unknown type: User.
-   - Unknown type: User.
-
-View full report:
-http://__URL__
-
-`;
-
-exports[`'STITCHING' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
-type Query {
-  users: [User!]
-}
-
-type User {
-  id: ID!
-  name: String!
-  email: String!
-}
-`;
-
-exports[`'STITCHING' ('modern') > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`'STITCHING' ('modern') > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
+exports[`STITCHING > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2

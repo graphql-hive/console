@@ -5,7 +5,7 @@ import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
 import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
-import { printTable } from '../../helpers/print-table';
+import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
@@ -181,7 +181,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
 
     if (schemaVersion.schemas) {
       const { total, nodes } = schemaVersion.schemas;
-      const table = [
+      const tableData = [
         ['service', 'url', 'date'],
         ...nodes.map(node => [
           /** @ts-expect-error: If service is undefined then use id. */
@@ -191,7 +191,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
         ]),
       ];
       const stats = `subgraphs length: ${total}`;
-      const printed = `${printTable(table)}\n\r${stats}`;
+      const printed = `${Texture.table(tableData)}\n\r${stats}`;
 
       if (flags.write) {
         const filepath = resolve(process.cwd(), flags.write);
@@ -215,7 +215,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
             await writeFile(filepath, schema, 'utf8');
             break;
           default:
-            this.fail(`Unsupported file extension ${extname(flags.write)}`);
+            this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
             this.exit(1);
         }
         return;

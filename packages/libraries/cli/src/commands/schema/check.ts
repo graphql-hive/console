@@ -236,9 +236,9 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       if (result.schemaCheck.__typename === 'SchemaCheckSuccess') {
         const changes = result.schemaCheck.changes;
         if (result.schemaCheck.initial) {
-          this.success('Schema registry is empty, nothing to compare your schema with.');
+          this.logSuccess('Schema registry is empty, nothing to compare your schema with.');
         } else if (!changes?.total) {
-          this.success('No changes');
+          this.logSuccess('No changes');
         } else {
           this.log(renderChanges(changes));
         }
@@ -272,12 +272,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         this.log('');
 
         if (forceSafe) {
-          this.success('Breaking changes were expected (forced)');
+          this.logSuccess('Breaking changes were expected (forced)');
         } else {
           this.exit(1);
         }
       } else if (result.schemaCheck.__typename === 'GitHubSchemaCheckSuccess') {
-        this.success(result.schemaCheck.message);
+        this.logSuccess(result.schemaCheck.message);
       } else {
         this.error(result.schemaCheck.message);
       }
@@ -285,7 +285,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
-        this.fail('Failed to check schema');
+        this.logFailure('Failed to check schema');
         this.handleFetchError(error);
       }
     }

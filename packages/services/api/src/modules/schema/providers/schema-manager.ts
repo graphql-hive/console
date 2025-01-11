@@ -11,7 +11,7 @@ import type {
   SchemaCompositionError,
 } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
-import { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import { SchemaChecksFilter } from '../../../__generated__/types';
 import {
   DateRange,
   NativeFederationCompatibilityStatus,
@@ -322,46 +322,6 @@ export class SchemaManager {
         },
       })),
     };
-  }
-
-  @traceFn('SchemaManager.updateSchemaVersionStatus', {
-    initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
-      'hive.version.id': input.versionId,
-      'hive.input.valid': input.valid,
-    }),
-  })
-  async updateSchemaVersionStatus(
-    input: TargetSelector & { versionId: string; valid: boolean },
-  ): Promise<SchemaVersion> {
-    this.logger.debug('Updating schema version status (input=%o)', input);
-    await this.session.assertPerformAction({
-      action: 'schemaVersion:approve',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      },
-    });
-
-    const project = await this.storage.getProject({
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-    });
-
-    if (project.legacyRegistryModel) {
-      return {
-        ...(await this.storage.updateVersionStatus(input)),
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      };
-    }
-
-    throw new HiveError(`Updating the status is supported only by legacy projects`);
   }
 
   async getSchemaLog(selector: { commit: string } & TargetSelector) {
@@ -696,24 +656,6 @@ export class SchemaManager {
       organizationId: input.organizationId,
       enabled: input.enabled,
     });
-  }
-
-  async updateRegistryModel(
-    input: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ) {
-    this.logger.debug('Updating registry model (input=%o)', input);
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-
-    return this.storage.updateProjectRegistryModel(input);
   }
 
   async getPaginatedSchemaChecksForTarget<TransformedSchemaCheck extends SchemaCheck>(
@@ -1122,19 +1064,10 @@ export class SchemaManager {
 
   checkProjectNativeFederationSupport(input: {
     targetId: string | null;
-    project: Pick<Project, 'id' | 'legacyRegistryModel' | 'nativeFederation'>;
+    project: Pick<Project, 'id' | 'nativeFederation'>;
     organization: Pick<Organization, 'id' | 'featureFlags'>;
   }) {
     if (input.project.nativeFederation === false) {
-      return false;
-    }
-
-    if (input.project.legacyRegistryModel === true) {
-      this.logger.warn(
-        'Project is using legacy registry model, ignoring native Federation support (organization=%s, project=%s)',
-        input.organization.id,
-        input.project.id,
-      );
       return false;
     }
 

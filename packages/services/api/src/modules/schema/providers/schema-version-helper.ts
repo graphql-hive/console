@@ -330,7 +330,7 @@ export class SchemaVersionHelper {
     return schemaLog?.sdl ?? null;
   }
 
-  async getIsValid(schemaVersion: SchemaVersion) {
+  getIsValid(schemaVersion: SchemaVersion) {
     return schemaVersion.isComposable && schemaVersion.hasContractCompositionErrors === false;
   }
 

@@ -62,9 +62,6 @@ const MemberFields = graphql(`
       email
     }
     isOwner
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
   }
 `);
 
@@ -240,9 +237,6 @@ export const TransferOrganizationOwnershipModal = ({
                     >
                       {({ selected }: { selected?: boolean }) => (
                         <div className="flex flex-row items-center justify-between gap-2">
-                          {/* <div className="ml-2.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-800">
-                            <img src={member.image} className="block h-full w-full" />
-                          </div> */}
                           <div className="ml-2 flex flex-1 flex-col gap-x-2">
                             <div className="block truncate text-sm">{member.user.displayName}</div>
                             <div className="text-xs font-normal text-gray-400">
