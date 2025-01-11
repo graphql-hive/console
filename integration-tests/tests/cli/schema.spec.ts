@@ -320,5 +320,38 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         );
       },
     );
+
+    test.concurrent(
+      'schema:fetch can fetch a latest schema with target:registry:read access',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret, latestSchema } = await createTargetAccessToken({});
+
+        const cli = createCLI({
+          readonly: secret,
+          readwrite: secret,
+        });
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            ...serviceNameArgs,
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('schemaPublish');
+
+        const fetchCmd = cli.fetch({
+          type: 'sdl',
+        });
+        await expect(fetchCmd).resolves.toMatchSnapshot('latest sdl');
+      },
+    );
   },
 );
