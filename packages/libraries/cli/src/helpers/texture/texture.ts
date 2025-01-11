@@ -88,7 +88,7 @@ export interface Builder {
    */
   line: (value?: string | Builder) => Builder;
   /**
-   * Format a set of rows such that each row's cell is as wide as the widest cell in the row.
+   * Format a set of rows such that each row's cell is as wide as the widest cell in the _column_.
    */
   columns: (parameters: ColumnsParameters) => Builder;
   /**
