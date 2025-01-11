@@ -5,7 +5,7 @@ exports[`shows viewer info > OUTPUT FORMAT: JSON 1`] = `
 stdout-------------------------------------------:
 {
   "data": {
-    "type": "SuccessWhoami",
+    "type": "SuccessContext",
     "token": {
       "name": "__VAR__"
     },

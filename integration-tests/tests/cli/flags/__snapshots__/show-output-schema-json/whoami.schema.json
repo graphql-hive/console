@@ -22,8 +22,8 @@
           "type": "object",
           "properties": {
             "type": {
-              "default": "SuccessWhoami",
-              "const": "SuccessWhoami",
+              "default": "SuccessContext",
+              "const": "SuccessContext",
               "type": "string"
             },
             "token": {
@@ -169,8 +169,8 @@
           "type": "object",
           "properties": {
             "type": {
-              "default": "FailureWhoamiTokenNotFound",
-              "const": "FailureWhoamiTokenNotFound",
+              "default": "FailureTokenNotFound",
+              "const": "FailureTokenNotFound",
               "type": "string"
             },
             "message": {

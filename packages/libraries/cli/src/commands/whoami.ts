@@ -63,7 +63,7 @@ export default class Whoami extends Command<typeof Whoami> {
     }),
   };
   static output = [
-    Output.defineSuccess('SuccessWhoami', {
+    Output.defineSuccess('SuccessContext', {
       data: {
         token: T.Object({
           name: T.String(),
@@ -124,7 +124,7 @@ export default class Whoami extends Command<typeof Whoami> {
         });
       },
     }),
-    Output.defineFailure('FailureWhoamiTokenNotFound', {
+    Output.defineFailure('FailureTokenNotFound', {
       data: {
         message: T.String(),
       },
@@ -160,7 +160,7 @@ export default class Whoami extends Command<typeof Whoami> {
       const targetUrl = `${projectUrl}/${result.target.slug}`;
 
       return this.successData({
-        type: 'SuccessWhoami',
+        type: 'SuccessContext',
         token: {
           name: result.token.name,
         },
@@ -193,7 +193,7 @@ export default class Whoami extends Command<typeof Whoami> {
           `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,
         ],
         data: {
-          type: 'FailureWhoamiTokenNotFound',
+          type: 'FailureTokenNotFound',
           message: result.message,
         },
       });
