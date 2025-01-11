@@ -1,6 +1,6 @@
 import { Texture } from '../helpers/texture/texture';
-import { T } from '../helpers/typebox/__';
-import { Result } from './_';
+import { T } from '../helpers/typebox/_namespace';
+import { Result } from './result';
 
 type CommandInput = object;
 

@@ -2,11 +2,11 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
+import { Errors } from '../helpers/errors';
 import { casesExhausted } from '../helpers/general';
 import { Texture } from '../helpers/texture/texture';
-import { T } from '../helpers/typebox/__';
-import { Output } from '../output/__';
+import { T } from '../helpers/typebox/_namespace';
+import { Output } from '../output/_namespace';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo {
@@ -145,7 +145,7 @@ export default class Whoami extends Command<typeof Whoami> {
       legacyFlagName: 'token',
       args: flags,
       env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
+      message: Errors.Messages.accessTokenMissing,
     });
 
     const result = await this.registryApi(registry, token)

@@ -1,7 +1,7 @@
 import { OClif } from './helpers/oclif';
 import { Texture } from './helpers/texture/texture';
-import { T } from './helpers/typebox/__';
-import { Output } from './output/__';
+import { T } from './helpers/typebox/_namespace';
+import { Output } from './output/_namespace';
 
 interface LoadableCommand extends OClif.Command.Loadable {
   output?: Output.Definition[];

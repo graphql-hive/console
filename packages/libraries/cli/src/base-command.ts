@@ -4,11 +4,11 @@ import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
-import { Errors } from './helpers/errors/__';
+import { Errors } from './helpers/errors';
 import { OmitNever } from './helpers/general';
 import { Texture } from './helpers/texture/texture';
-import { T } from './helpers/typebox/__';
-import { Output } from './output/__';
+import { T } from './helpers/typebox/_namespace';
+import { Output } from './output/_namespace';
 
 const showOutputSchemaJsonFlagName = 'show-output-schema-json';
 

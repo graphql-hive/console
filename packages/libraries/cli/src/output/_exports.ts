@@ -1,4 +1,4 @@
-export * from './result/__';
+export * from './result';
 export {
   defineFailure,
   defineSuccess,
