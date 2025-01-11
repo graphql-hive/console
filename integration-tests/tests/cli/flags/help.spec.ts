@@ -27,10 +27,6 @@ test.each(testCases)('--help - %s', async ({ command }) => {
     execHive(command, { help: true }),
     execHive(command, { help: true, json: true }),
   ]);
-
-  // The --json flag should not change the output when viewing help.
-  //
-  expect(text).toMatch(json);
-
+  expect(text).toMatch(json); // The --json flag should not change the help output.
   expect(text).toMatchSnapshot();
 });
