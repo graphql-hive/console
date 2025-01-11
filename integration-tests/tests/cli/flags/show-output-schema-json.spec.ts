@@ -1,7 +1,7 @@
 import { ExecCommandPath, execHive } from '../../../testkit/cli';
 import { CliOutputSnapshot } from '../../../testkit/cli-output-snapshot';
 
-expect.addSnapshotSerializer(CliOutputSnapshot.serializer);
+CliOutputSnapshot.register();
 
 interface TestCase {
   command: ExecCommandPath;

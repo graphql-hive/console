@@ -1,5 +1,5 @@
-import { text } from 'stream/consumers';
 import stripAnsi from 'strip-ansi';
+import { expect } from 'vitest';
 import type { SnapshotSerializer } from 'vitest';
 import { ExecaError } from '@esm2cjs/execa';
 
@@ -251,6 +251,43 @@ const identity = <T>(value: T): T => value;
 // ------------------------------
 
 export namespace CliOutputSnapshot {
+  /**
+   * Sugar for registering the serializer with Vitest and registering the given value cleaners.
+   *
+   * @example
+   * ```ts
+   * import { CliOutputSnapshot } from '...';
+   *
+   * CliOutputSnapshot.register({
+   *   valueCleaners: [/foo/, /bar/]
+   * });
+   * ```
+   *
+   * Versus the more verbose setup:
+   *
+   * ```ts
+   * import { expect } from 'vitest';
+   * import { CliOutputSnapshot } from '...';
+   *
+   * expect.addSnapshotSerializer(CliOutputSnapshot.serializer);
+   * CliOutputSnapshot.valueCleaners.push(/foo/, /bar/);
+   * ```
+   */
+  export const register = (parameters?: {
+    /**
+     * For details about cleaners, see {@link valueCleaners}.
+     */
+    valueCleaners: Cleaner[];
+  }) => {
+    expect.addSnapshotSerializer(serializer);
+    if (parameters?.valueCleaners) {
+      CliOutputSnapshot.valueCleaners.push(...parameters.valueCleaners);
+    }
+  };
+
+  /**
+   * A Vitest serializer designed to snapshot CLI output.
+   */
   export const serializer: SnapshotSerializer = {
     test,
     serialize,

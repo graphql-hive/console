@@ -5,7 +5,7 @@ import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { CliOutputSnapshot } from '../../testkit/cli-output-snapshot';
 import { initSeed } from '../../testkit/seed';
 
-expect.addSnapshotSerializer(CliOutputSnapshot.serializer);
+CliOutputSnapshot.register();
 
 describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single])(
   '%s',

@@ -2,12 +2,12 @@ import { execHive } from 'testkit/cli';
 import { CliOutputSnapshot } from '../../../testkit/cli-output-snapshot';
 import { initSeed } from '../../../testkit/seed';
 
-CliOutputSnapshot.valueCleaners.push(
-  /((?:name|target|project|organization): +)[a-z]+/gi,
-  /((?:name|slug)": ")[a-z]+(")/gi,
-);
-
-expect.addSnapshotSerializer(CliOutputSnapshot.serializer);
+CliOutputSnapshot.register({
+  valueCleaners: [
+    /((?:name|target|project|organization): +)[a-z]+/gi,
+    /((?:name|slug)": ")[a-z]+(")/gi,
+  ],
+});
 
 const command = 'whoami';
 let args = {};
