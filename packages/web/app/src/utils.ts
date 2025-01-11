@@ -1,3 +1,5 @@
+import { ENTERPRISE_RETENTION_DAYS, HOBBY_RETENTION_DAYS, PRO_RETENTION_DAYS } from './constants';
+
 type Truthy<T> = T extends false | '' | 0 | null | undefined ? never : T; // from lodash
 
 export function truthy<T>(value: T): value is Truthy<T> {
@@ -24,4 +26,26 @@ export function useChartStyles() {
   //     },
   //   },
   // );
+}
+
+export function resolveRetentionInDaysBasedOrganizationPlan(
+  value: number | null | undefined,
+): number {
+  if (value == null) {
+    return HOBBY_RETENTION_DAYS;
+  }
+
+  if (value < HOBBY_RETENTION_DAYS) {
+    return HOBBY_RETENTION_DAYS;
+  }
+
+  if (value > HOBBY_RETENTION_DAYS && value <= PRO_RETENTION_DAYS) {
+    return PRO_RETENTION_DAYS;
+  }
+
+  if (value > PRO_RETENTION_DAYS) {
+    return ENTERPRISE_RETENTION_DAYS;
+  }
+
+  return HOBBY_RETENTION_DAYS;
 }
