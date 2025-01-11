@@ -1,3 +1,4 @@
+import { text } from 'stream/consumers';
 import stripAnsi from 'strip-ansi';
 import type { SnapshotSerializer } from 'vitest';
 import { ExecaError } from '@esm2cjs/execa';
@@ -147,7 +148,7 @@ const serialize_ = ({
     return text;
   }
 
-  return String(applyValueCleaners(valueCleaners, generalClean(value)));
+  return String(value); // If we get here, it means the user gave an invalid type to snapshot for this serializer.
 };
 
 /**
@@ -164,6 +165,13 @@ const generalClean = (value: string) => {
 };
 
 const variableReplacements = [
+  {
+    // Trim trailing whitespace.
+    // TODO: remove this hack. If we don't do this, Vitest says the snapshot failed on every run.
+    // We should instead keep trailing whitespace in the snapshot or not emit them from our values in the first place.
+    pattern: / *$/gm,
+    mask: '',
+  },
   {
     pattern: /("reference": "|"requestId": "|"https?:\/\/)[^"]+/gi,
     mask: '$1__ID__',

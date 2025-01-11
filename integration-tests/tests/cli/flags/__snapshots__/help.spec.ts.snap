@@ -1,6 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`--help - { command: 'app:create' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 create an app deployment
 
 USAGE
@@ -29,9 +31,12 @@ GLOBAL FLAGS
 DESCRIPTION
   create an app deployment
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'app:publish' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 publish an app deployment
 
 USAGE
@@ -57,9 +62,12 @@ GLOBAL FLAGS
 DESCRIPTION
   publish an app deployment
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'artifact:fetch' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 fetch artifacts from the CDN
 
 USAGE
@@ -89,9 +97,12 @@ GLOBAL FLAGS
 DESCRIPTION
   fetch artifacts from the CDN
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'dev' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 Develop and compose Supergraph with your local services.
 
 USAGE
@@ -139,9 +150,12 @@ DESCRIPTION
   Work in Progress: Please note that this command is still under development and
   may undergo changes in future releases
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'introspect' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 introspects a GraphQL Schema
 
 USAGE
@@ -169,9 +183,12 @@ GLOBAL FLAGS
 DESCRIPTION
   introspects a GraphQL Schema
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'operations:check' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 checks operations against a published schema
 
 USAGE
@@ -232,9 +249,12 @@ GLOBAL FLAGS
 DESCRIPTION
   checks operations against a published schema
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'schema:check' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 checks schema
 
 USAGE
@@ -275,9 +295,12 @@ GLOBAL FLAGS
 DESCRIPTION
   checks schema
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'schema:delete' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 deletes a schema
 
 USAGE
@@ -309,9 +332,12 @@ GLOBAL FLAGS
 DESCRIPTION
   deletes a schema
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'schema:fetch' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 fetch a schema, supergraph, or list of subgraphs from the Hive API
 
 USAGE
@@ -346,9 +372,12 @@ GLOBAL FLAGS
 DESCRIPTION
   fetch a schema, supergraph, or list of subgraphs from the Hive API
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'schema:publish' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 publishes schema
 
 USAGE
@@ -397,9 +426,12 @@ GLOBAL FLAGS
 DESCRIPTION
   publishes schema
 
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`--help - { command: 'whoami' } 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 shows information about the current token
 
 USAGE
@@ -425,6 +457,7 @@ GLOBAL FLAGS
 DESCRIPTION
   shows information about the current token
 
-[1mJSON OUTPUT SCHEMA[22m
+JSON OUTPUT SCHEMA
   {"anyOf":[{"type":"object","properties":{"type":{"default":"success","const":"success","type":"string"},"warnings":{"default":[],"type":"array","items":{"type":"string"}},"exitCode":{"type":"number"},"data":{"type":"object","properties":{"type":{"default":"SuccessWhoami","const":"SuccessWhoami","type":"string"},"token":{"type":"object","properties":{"name":{"type":"string"}},"required":["name"]},"organization":{"type":"object","properties":{"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["slug","url"]},"project":{"type":"object","properties":{"type":{"type":"string"},"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["type","slug","url"]},"target":{"type":"object","properties":{"slug":{"type":"string"},"url":{"format":"uri","type":"string"}},"required":["slug","url"]},"authorization":{"type":"object","properties":{"schema":{"type":"object","properties":{"publish":{"type":"boolean"},"check":{"type":"boolean"}},"required":["publish","check"]}},"required":["schema"]}},"required":["type","token","organization","project","target","authorization"]}},"required":["type","warnings","data"]},{"type":"object","properties":{"type":{"default":"failure","const":"failure","type":"string"},"reference":{"default":null,"anyOf":[{"type":"string"},{"type":"null"}]},"suggestions":{"default":[],"type":"array","items":{"type":"string"}},"warnings":{"default":[],"type":"array","items":{"type":"string"}},"exitCode":{"type":"number"},"data":{"type":"object","properties":{"type":{"default":"FailureWhoamiTokenNotFound","const":"FailureWhoamiTokenNotFound","type":"string"},"message":{"type":"string"}},"required":["type","message"]}},"required":["type","reference","suggestions","warnings","data"]}]}
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
