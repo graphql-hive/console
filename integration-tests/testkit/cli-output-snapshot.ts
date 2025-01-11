@@ -241,12 +241,6 @@ const sectionDivider = (title: string) => {
 const endDivider = ':'.repeat(width);
 
 // ------------------------------
-// Generic Helpers
-// ------------------------------
-
-const identity = <T>(value: T): T => value;
-
-// ------------------------------
 // Interface
 // ------------------------------
 
