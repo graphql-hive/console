@@ -47,7 +47,7 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 - [`hive operations:check FILE`](#hive-operationscheck-file)
 - [`hive schema:check FILE`](#hive-schemacheck-file)
 - [`hive schema:delete SERVICE`](#hive-schemadelete-service)
-- [`hive schema:fetch ACTIONID`](#hive-schemafetch-actionid)
+- [`hive schema:fetch [ACTIONID]`](#hive-schemafetch-actionid)
 - [`hive schema:publish FILE`](#hive-schemapublish-file)
 - [`hive update [CHANNEL]`](#hive-update-channel)
 - [`hive whoami`](#hive-whoami)
@@ -325,13 +325,14 @@ DESCRIPTION
 _See code:
 [dist/commands/schema/delete.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/schema/delete.js)_
 
-## `hive schema:fetch ACTIONID`
+## `hive schema:fetch [ACTIONID]`
 
-fetch a schema, supergraph, or list of subgraphs from the Hive API
+fetch a schema, supergraph, or list of subgraphs from the Hive API. Uses the latest if no ACTIONID
+is provided.
 
 ```
 USAGE
-  $ hive schema:fetch ACTIONID [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
+  $ hive schema:fetch [ACTIONID] [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
     [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>]
 
 ARGUMENTS
