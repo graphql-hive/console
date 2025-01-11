@@ -35,7 +35,7 @@ test.each(testCases)('--show-output-schema-json - %s', async ({ command }) => {
 
   // Snapshot a nicely formatted JSON file for easy review.
   //
-  const fileName = `${command.replace(':', '__')}.schema.json`;
+  const fileName = `${command.replace(/:| /, '__')}.schema.json`;
   const fileContent = JSON.stringify(JSON.parse(text), null, 2);
   await expect(fileContent).toMatchFileSnapshot(
     `./__snapshots__/show-output-schema-json/${fileName}`,
