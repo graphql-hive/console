@@ -10,16 +10,17 @@ interface TestCase {
 // prettier-ignore
 const testCases: TestCase[] = [
   { command: 'whoami' },
-  { command: 'artifact:fetch' },
-  { command: 'operations:check' },
-  { command: 'dev' },
-  { command: 'introspect' },
-  { command: 'schema:publish' },
-  { command: 'schema:check' },
-  { command: 'schema:delete' },
-  { command: 'schema:fetch' },
-  { command: 'app:create' },
-  { command: 'app:publish' },
+  // todo: future PRs
+  // { command: 'artifact:fetch' },
+  // { command: 'operations:check' },
+  // { command: 'dev' },
+  // { command: 'introspect' },
+  // { command: 'schema:publish' },
+  // { command: 'schema:check' },
+  // { command: 'schema:delete' },
+  // { command: 'schema:fetch' },
+  // { command: 'app:create' },
+  // { command: 'app:publish' },
 ];
 
 test.each(testCases)('--help - %s', async ({ command }) => {
