@@ -2,10 +2,10 @@
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
-import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
+import { CliOutputSnapshot } from '../../testkit/cli-output-snapshot';
 import { initSeed } from '../../testkit/seed';
 
-expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
+expect.addSnapshotSerializer(CliOutputSnapshot.serializer);
 
 describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single])(
   '%s',

@@ -33,7 +33,7 @@ const isCleanable = (value: unknown): value is Cleanable<ValueSansCleanable> => 
   );
 };
 
-const applyValueCleaner = (cleaner: Cleaner, value: string) => {
+const applyValueCleaners = (cleaners: Cleaner[], value: string) => {
   const regexpMatchReplacer = (_: string, ...args: any[]) => {
     const captures = args.slice(0, -2);
     if (captures.length === 0) return '__VAR__';
@@ -42,27 +42,15 @@ const applyValueCleaner = (cleaner: Cleaner, value: string) => {
     console.log(
       'Warning: More than 2 captures in Value Cleaner given to Vitest CLI Output Serializer.',
     );
-    return '';
+    return '__VAR__';
   };
 
-  if (cleaner instanceof RegExp) {
-    return value.replaceAll(cleaner, regexpMatchReplacer);
-  }
-
-  return cleaner(value);
-};
-
-/**
- * Wrap the value with a cleaner that will be run before snapshotting the text value.
- */
-export const withCleaner = (
-  value: ValueSansCleanable,
-  valueClean: Cleaner,
-): Cleanable<ValueSansCleanable> => {
-  return {
-    value,
-    clean: valueClean,
-  };
+  return cleaners.reduce((value, cleaner) => {
+    if (cleaner instanceof RegExp) {
+      return value.replaceAll(cleaner, regexpMatchReplacer);
+    }
+    return cleaner(value);
+  }, value);
 };
 
 // ------------------------------
@@ -90,34 +78,37 @@ const test = (value: unknown): boolean => {
  * the `test` function which only returns true for matching types of values.
  */
 const serialize = (value: Value): string => {
-  const defaultValueClean = identity;
   const text = serialize_({
     value,
-    valueClean: defaultValueClean,
+    valueCleaners: CliOutputSnapshot.valueCleaners,
   });
   return text + newLine + endDivider;
 };
 
-const serialize_ = (parameters: { value: Value; valueClean: Cleaner }): string => {
-  const { value, valueClean } = parameters;
-
+const serialize_ = ({
+  value,
+  valueCleaners,
+}: {
+  value: Value;
+  valueCleaners: Cleaner[];
+}): string => {
   if (isCleanable(value)) {
     const text = serialize_({
       value: value.value,
-      valueClean: value.clean,
+      valueCleaners: [...valueCleaners, value.clean],
     });
     return text;
   }
 
   if (isPromiseSettledFulfilled(value)) {
-    let text = serialize_({ value: value.value, valueClean }) + newLine;
+    let text = serialize_({ value: value.value, valueCleaners }) + newLine;
     text += sectionDivider('promise') + newLine;
     text += 'fulfilled';
     return text;
   }
 
   if (isPromiseSettledRejected(value)) {
-    let text = serialize_({ value: value.reason, valueClean }) + newLine;
+    let text = serialize_({ value: value.reason, valueCleaners }) + newLine;
     text += sectionDivider('promise') + newLine;
     text += 'rejected';
     return text;
@@ -135,7 +126,7 @@ const serialize_ = (parameters: { value: Value; valueClean: Cleaner }): string =
     text += heading('CLI SUCCESS OUTPUT') + newLine;
 
     text += sectionDivider('stdout') + newLine;
-    text += applyValueCleaner(valueClean, generalClean(value));
+    text += applyValueCleaners(valueCleaners, generalClean(value));
 
     return text;
   }
@@ -148,20 +139,15 @@ const serialize_ = (parameters: { value: Value; valueClean: Cleaner }): string =
     text += value.exitCode + newLine;
 
     text += sectionDivider('stderr') + newLine;
-    text += applyValueCleaner(valueClean, generalClean(value.stderr || '__NONE__')) + newLine;
+    text += applyValueCleaners(valueCleaners, generalClean(value.stderr || '__NONE__')) + newLine;
 
     text += sectionDivider('stdout') + newLine;
-    text += applyValueCleaner(valueClean, generalClean(value.stdout || '__NONE__'));
+    text += applyValueCleaners(valueCleaners, generalClean(value.stdout || '__NONE__'));
 
     return text;
   }
 
-  return String(value);
-};
-
-export const cliOutputSnapshotSerializer: SnapshotSerializer = {
-  test,
-  serialize,
+  return String(applyValueCleaners(valueCleaners, generalClean(value)));
 };
 
 /**
@@ -251,3 +237,53 @@ const endDivider = ':'.repeat(width);
 // ------------------------------
 
 const identity = <T>(value: T): T => value;
+
+// ------------------------------
+// Interface
+// ------------------------------
+
+export namespace CliOutputSnapshot {
+  export const serializer: SnapshotSerializer = {
+    test,
+    serialize,
+  };
+
+  /**
+   * A list of cleaners that will be applied to all values before they are snapshotted.
+   *
+   * Any cleaners you add here will apply to all snapshots in your test file.
+   *
+   * The value will be cleaned with the general cleaner first. So for example ANSI codes will have been stripped already.
+   *
+   * A cleaner can be a RegExp instance or an arbitrary function that receives and returns a string.
+   *
+   * #### RegExp Cleaners
+   * When using RegExps, note the following.
+   *
+   * With regards to captured groups:
+   *
+   * String method `.replaceAll` is used so your RegExp MUST be using `g` flag.
+   *
+   * With regards to flags:
+   * - 0 captures: Replace with `__VAR__`
+   * - 1 capture: Replace with `$1__VAR__`
+   * - 2 captures: Replace with `$1__VAR__$2`
+   * - 3+ captures: Replace with `__VAR__` and log a warning. (Don't do this.)
+   */
+  export const valueCleaners: Cleaner[] = [];
+
+  /**
+   * Wrap a value with a cleaner for just that value.
+   *
+   * For details about cleaners, see {@link valueCleaners}.
+   */
+  export const withCleaner = (
+    value: ValueSansCleanable,
+    valueClean: Cleaner,
+  ): Cleanable<ValueSansCleanable> => {
+    return {
+      value,
+      clean: valueClean,
+    };
+  };
+}

@@ -1,5 +1,5 @@
 import { ExecCommandPath, execHive } from '../../../testkit/cli';
-import { cliOutputSnapshotSerializer } from '../../../testkit/cli-snapshot-serializer';
+import { cliOutputSnapshotSerializer } from '../../../testkit/cli-output-snapshot';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
