@@ -19,7 +19,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   /**
    * The output types returned by this command when executed.
    *
-   * Used by methods: {@link BaseCommand.success}, {@link BaseCommand.failure}, {@link BaseCommand.runResult}.
+   * Used by methods: {@link BaseCommand.successData}, {@link BaseCommand.failureData}, {@link BaseCommand.runResult}.
    */
   public static output: Output.Definition[] = [];
 
@@ -212,20 +212,19 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   }
 
   /**
-   * Variant of {@link BaseCommand.successEnvelope} that only requires passing the data.
-   * See that method for more details.
+   * Variant of {@link BaseCommand.success} that only requires passing the data.
    */
-  success(
+  successData(
     data: Output.InferSuccessResult<GetOutputDefinition<$Command>>['data'],
   ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
-    return this.successEnvelope({ data } as any) as any;
+    return this.success({ data } as any) as any;
   }
 
   /**
    * Helper function for easy creation of success envelope (with defaults) that
    * adheres to the type specified by your command's {@link BaseCommand.output}.
    */
-  successEnvelope(
+  success(
     init: Output.InferSuccessResultInit<GetOutputDefinition<$Command>>,
   ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
     return init as any;
@@ -233,12 +232,11 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
   /**
    * Variant of {@link BaseCommand.failure} that only requires passing the data.
-   * See that method for more details.
    */
-  failure(
+  failureData(
     data: Output.InferFailureResult<GetOutputDefinition<$Command>>['data'],
   ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
-    return this.failureEnvelope({ data } as any) as any;
+    return this.failure({ data } as any) as any;
   }
 
   /**
@@ -249,7 +247,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    *
    * When you return this,
    */
-  failureEnvelope(
+  failure(
     init: Output.InferFailureResultInit<GetOutputDefinition<$Command>>,
   ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
     return init as any;

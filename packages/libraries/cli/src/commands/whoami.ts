@@ -159,7 +159,7 @@ export default class Whoami extends Command<typeof Whoami> {
       const projectUrl = `${organizationUrl}/${result.project.slug}`;
       const targetUrl = `${projectUrl}/${result.target.slug}`;
 
-      return this.success({
+      return this.successData({
         type: 'SuccessWhoami',
         token: {
           name: result.token.name,
@@ -187,7 +187,7 @@ export default class Whoami extends Command<typeof Whoami> {
     }
 
     if (result.__typename === 'TokenNotFoundError') {
-      return this.failureEnvelope({
+      return this.failure({
         exitCode: 0,
         suggestions: [
           `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,

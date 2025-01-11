@@ -7,6 +7,6 @@ export {
   ArgInvalidOptionError,
 } from '@oclif/core/lib/parser/errors';
 
-export * from './cli-error-with-data';
+export * from './Failure';
 
-export * from './client-error';
+export * from './ClientError';
