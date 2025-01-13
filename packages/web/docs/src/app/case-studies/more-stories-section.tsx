@@ -28,7 +28,7 @@ export async function MoreStoriesSection({
       <Heading size="md" as="h2" className="text-center">
         More stories {otherStories.length}
       </Heading>
-      <ul className="mt-6 flex gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
+      <ul className="mt-6 flex flex-wrap gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
         {otherStories.map(item => {
           if ('name' in item && 'frontMatter' in item && item.frontMatter) {
             const frontMatter = item.frontMatter as CaseStudyFrontmatter;
