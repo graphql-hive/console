@@ -77,7 +77,7 @@ export function CommunitySection({ className }: { className?: string }) {
       </div>
       <MaskingScrollview
         outerClassName="max-sm:-mx-4 max-sm:px-4 "
-        className="relative -m-4 flex flex-row gap-6 p-4 max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
+        className="nextra-scrollbar relative -m-4 flex flex-row gap-6 p-4 [scrollbar-width:auto] max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
         fade="y"
       >
         {Array.from({ length: 4 }).map((_, i) => (

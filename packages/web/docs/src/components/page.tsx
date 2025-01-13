@@ -13,6 +13,7 @@ export function Page(props: { children: ReactNode; className?: string }) {
         {`
           html {
             scroll-behavior: smooth;
+            color-scheme: light !important;
           }
           body {
             background: #fff;

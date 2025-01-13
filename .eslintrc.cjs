@@ -224,7 +224,13 @@ module.exports = {
         },
         tailwindcss: {
           callees: tailwindCallees,
-          whitelist: ['light', 'hive-focus', 'hive-focus-within'],
+          whitelist: [
+            'light',
+            'hive-focus',
+            'hive-focus-within',
+            'nextra-scrollbar',
+            'no-scrollbar', // from Nextra
+          ],
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
       },
