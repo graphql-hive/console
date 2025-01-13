@@ -95,7 +95,6 @@ function OrganizationMemberRoleSwitcher(props: {
     props.organization,
   );
   const member = useFragment(OrganizationMemberRoleSwitcher_MemberFragment, props.member);
-  // A user can't change its own role
   const canAssignRole = organization.viewerCanAssignUserRoles;
   const roles = organization.memberRoles ?? [];
   const { toast } = useToast();
@@ -163,7 +162,7 @@ function OrganizationMemberRoleSwitcher(props: {
           }
 
           return {
-            active: false,
+            active: true,
           };
         }}
       />
@@ -365,9 +364,6 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     id
     slug
     owner {
-      id
-    }
-    me {
       id
     }
     members {

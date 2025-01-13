@@ -29,6 +29,7 @@ const defaultProps: Omit<
     },
     PermissionSelector_OrganizationFragment,
   ),
+  isReadOnly: false,
 };
 
 function Template(args: PermissionSelectorProps) {

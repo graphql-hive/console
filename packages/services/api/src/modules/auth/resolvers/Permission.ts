@@ -20,4 +20,7 @@ export const Permission: PermissionResolvers = {
   level: async (permission, _arg, _ctx) => {
     return getPermissionGroup(permission.id);
   },
+  warning: async (permission, _arg, _ctx) => {
+    return permission.warning ?? null;
+  },
 };

@@ -104,7 +104,6 @@ const OrganizationMemberRoleEditor_OrganizationFragment = graphql(`
 `);
 
 function OrganizationMemberRoleEditor(props: {
-  mode?: 'edit' | 'read-only';
   close(): void;
   role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
   organization: FragmentType<typeof OrganizationMemberRoleEditor_OrganizationFragment>;
@@ -118,7 +117,7 @@ function OrganizationMemberRoleEditor(props: {
     OrganizationMemberRoleEditor_UpdateMemberRoleMutation,
   );
   const { toast } = useToast();
-  const isDisabled = props.mode === 'read-only' || updateMemberRoleState.fetching;
+  const isDisabled = updateMemberRoleState.fetching;
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
     mode: 'onChange',
@@ -195,7 +194,7 @@ function OrganizationMemberRoleEditor(props: {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <DialogContent className="max-w-[960px]">
           <DialogHeader>
-            <DialogTitle>Member Role{props.mode === 'read-only' ? '' : ' Editor'}</DialogTitle>
+            <DialogTitle>Member Role Editor</DialogTitle>
             <DialogDescription>Adjust the permissions of this role.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-row space-x-6">
@@ -240,25 +239,82 @@ function OrganizationMemberRoleEditor(props: {
               </div>
             </div>
           </div>
-          {props.mode === 'read-only' ? null : (
-            <DialogFooter>
-              <Button variant="ghost" onClick={props.close}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={
-                  !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
-                }
-              >
-                {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
-              </Button>
-            </DialogFooter>
-          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={props.close}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={
+                !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
+              }
+            >
+              {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </form>
     </Form>
+  );
+}
+
+const OrganizationMemberRoleView_OrganizationFragment = graphql(`
+  fragment OrganizationMemberRoleView_OrganizationFragment on Organization {
+    id
+    ...SelectedPermissionOverview_OrganizationFragment
+  }
+`);
+
+function OrganizationMemberRoleView(props: {
+  role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
+  organization: FragmentType<typeof OrganizationMemberRoleView_OrganizationFragment>;
+  close: VoidFunction;
+}) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  const organization = useFragment(
+    OrganizationMemberRoleView_OrganizationFragment,
+    props.organization,
+  );
+
+  const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
+
+  return (
+    <DialogContent className="max-w-[960px]">
+      <DialogHeader>
+        <DialogTitle>Member Role: {role.name}</DialogTitle>
+        <DialogDescription>{role.description}</DialogDescription>
+      </DialogHeader>
+      <div className="grow">
+        <div className="flex h-[400px] flex-col space-y-2">
+          <div className="overflow-scroll">
+            <SelectedPermissionOverview
+              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+              activePermissionIds={role.permissions}
+              organization={organization}
+            />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <div className="mr-2 flex items-center space-x-2">
+          <Checkbox
+            id="show-only-granted-permissions"
+            checked={showOnlyGrantedPermissions}
+            onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+          />
+          <label
+            htmlFor="show-only-granted-permissions"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Show only granted permissions
+          </label>
+        </div>
+        <Button variant="ghost" onClick={props.close}>
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -721,6 +777,7 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
     }
     ...OrganizationMemberRoleCreator_OrganizationFragment
     ...OrganizationMemberRoleEditor_OrganizationFragment
+    ...OrganizationMemberRoleView_OrganizationFragment
   }
 `);
 
@@ -767,8 +824,7 @@ export function OrganizationMemberRoles(props: {
         }}
       >
         {roleToShow ? (
-          <OrganizationMemberRoleEditor
-            mode="read-only"
+          <OrganizationMemberRoleView
             organization={organization}
             role={roleToShow}
             close={() => setRoleToShow(null)}

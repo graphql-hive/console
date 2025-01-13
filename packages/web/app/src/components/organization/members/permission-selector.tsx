@@ -44,6 +44,7 @@ type AvailableMembershipPermissions = ResultOf<
 type MembershipPermissionGroup = AvailableMembershipPermissions[number];
 
 export type PermissionSelectorProps = {
+  isReadOnly?: boolean;
   organization: FragmentType<typeof PermissionSelector_OrganizationFragment>;
   selectedPermissionIds: ReadonlySet<string>;
   onSelectedPermissionsChange: (selectedPermissionIds: ReadonlySet<string>) => void;
@@ -182,7 +183,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         </div>
                       )}
                     <Select
-                      disabled={permission.isReadOnly || needsDependency}
+                      disabled={props.isReadOnly || permission.isReadOnly || needsDependency}
                       value={
                         permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
                           ? 'allow'
