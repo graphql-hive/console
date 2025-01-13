@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, TriangleAlert } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -32,6 +32,7 @@ export const PermissionSelector_OrganizationFragment = graphql(`
         level
         title
         isReadOnly
+        warning
       }
     }
   }
@@ -137,7 +138,19 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                       <div className="font-semibold text-white">{permission.title}</div>
                       <div className="text-xs text-gray-400">{permission.description}</div>
                     </div>
-                    {!!permission.dependsOnId &&
+                    {permission.warning && props.selectedPermissionIds.has(permission.id) ? (
+                      <div className="flex grow justify-end">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <TriangleAlert className="text-yellow-700" />
+                            </TooltipTrigger>
+                            <TooltipContent>{permission.warning}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ) : (
+                      !!permission.dependsOnId &&
                       permissionToGroupTitleMapping.has(permission.dependsOnId) && (
                         <div className="flex grow justify-end">
                           <TooltipProvider>
@@ -181,7 +194,8 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                      )}
+                      )
+                    )}
                     <Select
                       disabled={props.isReadOnly || permission.isReadOnly || needsDependency}
                       value={

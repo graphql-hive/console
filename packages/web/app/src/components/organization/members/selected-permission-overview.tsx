@@ -6,8 +6,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevel } from '@/gql/graphql';
+import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
 
 export const SelectedPermissionOverview_OrganizationFragment = graphql(`
@@ -22,6 +24,7 @@ export const SelectedPermissionOverview_OrganizationFragment = graphql(`
         level
         title
         isReadOnly
+        warning
       }
     }
   }
@@ -158,12 +161,33 @@ function PermissionLevelGroup(props: {
                     props.activePermissionIds.has(permission.id) === false &&
                     !permission.isReadOnly ? null : (
                       <tr key={permission.id}>
-                        <td>{permission.title}</td>
+                        <td
+                          className={cn(
+                            permission.warning &&
+                              props.activePermissionIds.has(permission.id) &&
+                              'text-yellow-700',
+                          )}
+                        >
+                          {permission.title}
+                        </td>
                         <td className="ml-2 text-right">
                           {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
-                            <span className="text-green-500">
-                              <CheckIcon className="inline size-4" /> Allowed
-                            </span>
+                            permission.warning ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <span className="text-yellow-700">
+                                      <CheckIcon className="inline size-4" /> Allowed
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{permission.warning}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-green-500">
+                                <CheckIcon className="inline size-4" /> Allowed
+                              </span>
+                            )
                           ) : (
                             <span>
                               <XIcon className="inline size-4" /> Deny

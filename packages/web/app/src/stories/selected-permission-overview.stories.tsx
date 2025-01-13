@@ -49,6 +49,8 @@ export const OnlyAllowedPermissions: Story = {
       'billing:describe',
       'billing:update',
       'project:describe',
+      'member:describe',
+      'member:manageInvites',
     ],
     showOnlyAllowedPermissions: true,
   },
