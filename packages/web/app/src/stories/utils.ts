@@ -292,15 +292,6 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
       {
         __typename: 'Permission',
         isReadOnly: false,
-        id: 'schemaVersion:approve',
-        dependsOnId: null,
-        description: 'Can approve schema versions on projects using the legacy registry model.',
-        level: PermissionLevel.Target,
-        title: 'Approve schema version (legacy)',
-      },
-      {
-        __typename: 'Permission',
-        isReadOnly: false,
         id: 'targetAccessToken:modify',
         dependsOnId: 'project:describe',
         description: 'Allow managing access tokens for CLI and Usage Reporting.',

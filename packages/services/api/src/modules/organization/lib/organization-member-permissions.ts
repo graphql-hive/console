@@ -208,11 +208,6 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         dependsOn: 'project:describe',
       },
       {
-        id: 'schemaVersion:approve',
-        title: 'Approve schema version (legacy)',
-        description: 'Can approve schema versions on projects using the legacy registry model.',
-      },
-      {
         id: 'targetAccessToken:modify',
         title: 'Manage registry access tokens',
         description: 'Allow managing access tokens for CLI and Usage Reporting.',
