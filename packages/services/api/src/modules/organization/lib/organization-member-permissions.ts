@@ -66,7 +66,7 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         id: 'member:modifyRole',
         title: 'Modify member role',
         description: 'Member can modify, create and delete roles.',
-        dependsOn: 'member:describe',
+        dependsOn: 'member:assignRole',
       },
       {
         id: 'member:removeMember',
@@ -78,7 +78,7 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         id: 'member:manageInvites',
         title: 'Manage invites',
         description: 'Member can invite users via email and modify or delete pending invites.',
-        dependsOn: 'member:describe',
+        dependsOn: 'member:assignRole',
       },
     ],
   },

@@ -24,31 +24,22 @@ function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
 }
 
 const MemberRoleModel = z
-  .intersection(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string(),
-      isLocked: z.boolean(),
-      organizationId: z.string(),
-      membersCount: z.number(),
-    }),
-    z.union([
-      z.object({
-        legacyScopes: z
-          .array(z.string())
-          .transform(
-            value =>
-              value as Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>,
-          ),
-        permissions: z.null(),
-      }),
-      z.object({
-        legacyScopes: z.null(),
-        permissions: z.array(PermissionsModel),
-      }),
-    ]),
-  )
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    isLocked: z.boolean(),
+    organizationId: z.string(),
+    membersCount: z.number(),
+    legacyScopes: z
+      .array(z.string())
+      .nullable()
+      .transform(
+        value =>
+          value as Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope> | null,
+      ),
+    permissions: z.array(PermissionsModel).nullable(),
+  })
   .transform(record => {
     let permissions: PermissionsPerResourceLevelAssignment;
 
@@ -63,7 +54,9 @@ const MemberRoleModel = z
         ...record.permissions,
       ]);
     } else {
-      permissions = transformOrganizationMemberLegacyScopesIntoPermissionGroup(record.legacyScopes);
+      permissions = transformOrganizationMemberLegacyScopesIntoPermissionGroup(
+        record.legacyScopes ?? [],
+      );
     }
 
     return {
@@ -332,6 +325,7 @@ const predefinedRolesPermissions = {
    * Permissions the default admin role is assigned with (aka full access)
    **/
   admin: permissionsToPermissionsPerResourceLevelAssignment([
+    ...OrganizationMemberPermissions.permissions.default,
     ...OrganizationMemberPermissions.permissions.assignable,
   ]),
   /**

@@ -949,6 +949,14 @@ export class OrganizationManager {
       };
     }
 
+    if (role.membersCount > 0) {
+      return {
+        error: {
+          message: `Cannot delete a role with members`,
+        },
+      };
+    }
+
     // delete the role
     await this.storage.deleteOrganizationMemberRole({
       organizationId: input.organizationId,

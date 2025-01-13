@@ -99,8 +99,7 @@ export class OrganizationMembers {
     const query = sql`
       SELECT
         "om"."user_id" AS "userId"
-        , "om"."role_id" AS "legacyRoleId"
-        , "om"."scopes" AS "legacyScopes"
+        , "om"."role_id" AS "roleId"
         , "om"."connected_to_zendesk" AS "connectedToZendesk"
       FROM
         "organization_member" AS "om"
@@ -231,8 +230,7 @@ export class OrganizationMembers {
     const query = sql`
       SELECT
         "om"."user_id" AS "userId"
-        , "om"."role_id" AS "legacyRoleId"
-        , "om"."scopes" AS "legacyScopes"
+        , "om"."role_id" AS "roleId"
         , "om"."connected_to_zendesk" AS "connectedToZendesk"
       FROM
         "organization_member" AS "om"
