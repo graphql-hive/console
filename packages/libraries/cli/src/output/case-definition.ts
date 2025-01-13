@@ -1,4 +1,3 @@
-import { Errors } from '../helpers/errors';
 import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/_namespace';
 import { Result } from './result';
