@@ -4,10 +4,7 @@ import type { MemberResolvers } from './../../../__generated__/types';
 
 export const Member: MemberResolvers = {
   canLeaveOrganization: async (member, _, { injector }) => {
-    const { result } = await injector.get(OrganizationManager).canLeaveOrganization({
-      organizationId: member.organizationId,
-      userId: member.userId,
-    });
+    const { result } = await injector.get(OrganizationManager).canLeaveOrganization(member);
 
     return result;
   },

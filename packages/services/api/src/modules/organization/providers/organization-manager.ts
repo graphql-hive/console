@@ -236,11 +236,6 @@ export class OrganizationManager {
     return organization;
   }
 
-  @cache((selector: OrganizationSelector) => selector.organizationId)
-  async getOrganizationMembers(selector: OrganizationSelector) {
-    return this.storage.getOrganizationMembers(selector);
-  }
-
   countOrganizationMembers(selector: OrganizationSelector) {
     return this.storage.countOrganizationMembers(selector);
   }
@@ -512,8 +507,10 @@ export class OrganizationManager {
       organizationId: input.organization,
     });
 
-    const members = await this.getOrganizationMembers({ organizationId: input.organization });
-    const existingMember = members.find(member => member.user.email === email);
+    const existingMember = await this.organizationMembers.findOrganizationMembershipByEmail(
+      organization,
+      email,
+    );
 
     if (existingMember) {
       return {
@@ -830,17 +827,6 @@ export class OrganizationManager {
       throw new Error(`Logged user is not a member of the organization`);
     }
 
-    // Ensure current user has access to all scopes of the member.
-    // User with less access scopes cannot remove a member with more access scopes.
-    const currentUserMissingScopes = member.scopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %o`, currentUserAsMember.scopes);
-      throw new HiveError(`Not enough access to remove the member`);
-    }
-
     await this.storage.deleteOrganizationMember({
       userId: user,
       organizationId: organization,
@@ -883,7 +869,6 @@ export class OrganizationManager {
     const inputValidation = createOrUpdateMemberRoleInputSchema.safeParse({
       name: input.name,
       description: input.description,
-      // TODO: validate permissions
     });
 
     if (!inputValidation.success) {

@@ -97,17 +97,17 @@ export class OrganizationMembers {
     userIds: Array<string> | null = null,
   ) {
     const query = sql`
-    SELECT
-      "om"."user_id" AS "userId"
-      , "om"."role_id" AS "legacyRoleId"
-      , "om"."scopes" AS "legacyScopes"
-      , "om"."connected_to_zendesk" AS "connectedToZendesk"
-    FROM
-      "organization_member" AS "om"
-    WHERE
-      "om"."organization_id" = ${organizationId}
-      ${userIds ? sql`AND "om"."user_id" = ANY(${sql.array(userIds, 'uuid')})` : sql``}
-  `;
+      SELECT
+        "om"."user_id" AS "userId"
+        , "om"."role_id" AS "legacyRoleId"
+        , "om"."scopes" AS "legacyScopes"
+        , "om"."connected_to_zendesk" AS "connectedToZendesk"
+      FROM
+        "organization_member" AS "om"
+      WHERE
+        "om"."organization_id" = ${organizationId}
+        ${userIds ? sql`AND "om"."user_id" = ANY(${sql.array(userIds, 'uuid')})` : sql``}
+    `;
 
     const result = await this.pool.any<unknown>(query);
     return result.map(row => RawOrganizationMembershipModel.parse(row));
@@ -212,33 +212,46 @@ export class OrganizationMembers {
     },
   );
 
-  findOrganizationOwner(organization: Organization) {
+  findOrganizationOwner(organization: Organization): Promise<OrganizationMembership | null> {
     return this.findOrganizationMembership({
       organization,
       userId: organization.ownerId,
     });
   }
 
-  /**
-   * Find the organization members that have no role assigned and use the legacy scopes.
-   */
-  async findOrganizationMembersWithoutAssignedRole(organization: Organization) {
+  async findOrganizationMembershipByEmail(
+    organization: Organization,
+    email: string,
+  ): Promise<OrganizationMembership | null> {
+    this.logger.debug(
+      'Find organization membership by email. (organizationId=%s, email=%s)',
+      organization.id,
+      email,
+    );
     const query = sql`
       SELECT
         "om"."user_id" AS "userId"
         , "om"."role_id" AS "legacyRoleId"
+        , "om"."scopes" AS "legacyScopes"
         , "om"."connected_to_zendesk" AS "connectedToZendesk"
       FROM
         "organization_member" AS "om"
+        INNER JOIN "users" AS "u"
+          ON "u"."id" = "om"."user_id"
       WHERE
         "om"."organization_id" = ${organization.id}
-        AND "om"."role_id" IS NULL
+        AND lower("u"."email") = lower(${email})
+      LIMIT 1
     `;
 
-    const records = await this.pool.any<unknown>(query);
-    const organizationMembers = records.map(row => RawOrganizationMembershipModel.parse(row));
-    const mapping = await this.resolveMemberships(organization, organizationMembers);
-    return Array.from(mapping.values());
+    const result = await this.pool.maybeOne<unknown>(query);
+    if (result === null) {
+      return null;
+    }
+
+    const membership = RawOrganizationMembershipModel.parse(result);
+    const mapping = await this.resolveMemberships(organization, [membership]);
+    return mapping.get(membership.userId) ?? null;
   }
 }
 
