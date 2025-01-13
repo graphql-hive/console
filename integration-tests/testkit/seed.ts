@@ -847,11 +847,7 @@ export function initSeed() {
                   return memberRoleDeletionResult.deleteMemberRole.ok?.updatedOrganization;
                 },
                 async createMemberRole(
-                  scopes: {
-                    organization: OrganizationAccessScope[];
-                    project: ProjectAccessScope[];
-                    target: TargetAccessScope[];
-                  },
+                  permissions: Array<string>,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
@@ -867,9 +863,7 @@ export function initSeed() {
                       organizationSlug: organization.slug,
                       name,
                       description: 'some description',
-                      organizationAccessScopes: scopes.organization,
-                      projectAccessScopes: scopes.project,
-                      targetAccessScopes: scopes.target,
+                      selectedPermissions: permissions,
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -908,11 +902,7 @@ export function initSeed() {
                     name: string;
                     description: string;
                   },
-                  scopes: {
-                    organization: OrganizationAccessScope[];
-                    project: ProjectAccessScope[];
-                    target: TargetAccessScope[];
-                  },
+                  permissions: Array<string>,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
@@ -923,9 +913,7 @@ export function initSeed() {
                       roleId: role.id,
                       name: role.name,
                       description: role.description,
-                      organizationAccessScopes: scopes.organization,
-                      projectAccessScopes: scopes.project,
-                      targetAccessScopes: scopes.target,
+                      selectedPermissions: permissions,
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());

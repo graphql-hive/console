@@ -342,20 +342,18 @@ test.concurrent(
 
     // current owner
     const owner = orgMembers.find(m => m.user.email === ownerEmail)!;
-    expect(orgMembers.find(m => m.id === owner.id)).toEqual(
+    expect(orgMembers.find(m => m.id === owner.id)?.role).toEqual(
       expect.objectContaining({
-        organizationAccessScopes: owner.organizationAccessScopes,
-        projectAccessScopes: owner.projectAccessScopes,
-        targetAccessScopes: owner.targetAccessScopes,
+        id: owner.role.id,
+        permissions: owner.role.permissions,
       }),
     );
 
     // potential new owner
-    expect(orgMembers.find(m => m.id === member.id)).toEqual(
+    expect(orgMembers.find(m => m.id === member.id)?.role).toEqual(
       expect.objectContaining({
-        organizationAccessScopes: member.organizationAccessScopes,
-        projectAccessScopes: member.projectAccessScopes,
-        targetAccessScopes: member.targetAccessScopes,
+        id: member.role.id,
+        permissions: member.role.permissions,
       }),
     );
   },
@@ -407,11 +405,10 @@ test.concurrent(
     expect(previousOwner.role?.name).toBe('Admin');
 
     // other members should not be affected
-    expect(orgMembers.find(m => m.id === lonelyMember.id)).toEqual(
+    expect(orgMembers.find(m => m.id === lonelyMember.id)?.role).toEqual(
       expect.objectContaining({
-        organizationAccessScopes: lonelyMember.organizationAccessScopes,
-        projectAccessScopes: lonelyMember.projectAccessScopes,
-        targetAccessScopes: lonelyMember.targetAccessScopes,
+        id: lonelyMember.role.id,
+        permissions: lonelyMember.role.permissions,
       }),
     );
   },

@@ -102,18 +102,18 @@ const config: CodegenConfig = {
       plugins: ['typescript', 'typescript-operations'],
     },
     // Integration tests
-    // './integration-tests/testkit/gql/': {
-    //   documents: ['./integration-tests/(testkit|tests)/**/*.ts'],
-    //   preset: 'client',
-    //   plugins: [],
-    //   config: {
-    //     scalars: {
-    //       DateTime: 'string',
-    //       Date: 'string',
-    //       SafeInt: 'number',
-    //     },
-    //   },
-    // },
+    './integration-tests/testkit/gql/': {
+      documents: ['./integration-tests/(testkit|tests)/**/*.ts'],
+      preset: 'client',
+      plugins: [],
+      config: {
+        scalars: {
+          DateTime: 'string',
+          Date: 'string',
+          SafeInt: 'number',
+        },
+      },
+    },
   },
 };
 
