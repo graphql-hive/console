@@ -2,8 +2,8 @@ import { CallToAction, ContactButton, DecorationIsolation, Heading } from '@theg
 import { getPageMap } from '@theguild/components/server';
 import { GetYourAPIGameWhite } from '../../components/get-your-api-game-white';
 import { HeroLinks } from '../../components/hero';
-import { CaseStudyFrontmatter } from './case-studies-header';
 import { CaseStudyCard } from './case-study-card';
+import { CaseStudyFrontmatter } from './case-study-frontmatter';
 import { companyLogos } from './company-logos';
 
 export const metadata = {

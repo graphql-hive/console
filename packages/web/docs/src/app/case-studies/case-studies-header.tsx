@@ -1,8 +1,8 @@
 'use client';
 
-import { Author } from 'next/dist/lib/metadata/types/metadata-types';
 import { cn, DecorationIsolation, Heading } from '@theguild/components';
 import { SmallAvatar } from '../../components/small-avatar';
+import { CaseStudyAuthor } from './case-study-frontmatter';
 import { companyLogos } from './company-logos';
 import { useFrontmatter } from './use-frontmatter';
 
@@ -33,7 +33,7 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   );
 }
 
-function Authors({ authors, className }: { authors: Author[]; className?: string }) {
+function Authors({ authors, className }: { authors: CaseStudyAuthor[]; className?: string }) {
   return (
     <ul className={cn('flex flex-wrap gap-4 text-sm', className)}>
       {authors.map(author => (

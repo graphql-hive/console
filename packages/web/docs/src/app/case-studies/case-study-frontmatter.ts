@@ -2,10 +2,10 @@ export type CaseStudyFrontmatter = {
   title: string;
   excerpt: string;
   category: string;
-  authors: Author[];
+  authors: CaseStudyAuthor[];
 };
 
-export type Author = {
+export type CaseStudyAuthor = {
   name: string;
   position?: string;
   avatar?: string;
