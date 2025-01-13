@@ -1,10 +1,9 @@
 import { OClif } from './helpers/oclif';
 import { Texture } from './helpers/texture/texture';
-import { T } from './helpers/typebox/_namespace';
 import { Output } from './output/_namespace';
 
 interface LoadableCommand extends OClif.Command.Loadable {
-  output?: Output.Definition[];
+  output?: Output.Definition;
 }
 
 /**
@@ -14,11 +13,10 @@ interface LoadableCommand extends OClif.Command.Loadable {
 export default class MyHelpClass extends OClif.Help {
   async showCommandHelp(command: LoadableCommand): Promise<void> {
     await super.showCommandHelp(command);
-    const outputSchemas = command.output?.map(definition => definition.schema) ?? [];
-    if (outputSchemas.length > 0) {
-      const jsonOutputSchema = T.Union(outputSchemas);
+    if (command.output) {
+      const schema = Output.Definition.getSchemaEncoded(command.output);
       console.log(Texture.colors.bold('JSON OUTPUT SCHEMA'));
-      console.log(`  ${JSON.stringify(jsonOutputSchema)}`);
+      console.log(Texture.indent(schema));
     }
   }
 }

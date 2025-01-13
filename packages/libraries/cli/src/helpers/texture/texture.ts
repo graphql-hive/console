@@ -6,11 +6,13 @@ export * from './table';
 
 export { colors };
 
-export const space = ' ';
+export const chars = {
+  space: ' ',
+  indent: ' '.repeat(3),
+  newline: '\n',
+};
 
-export const indent = space.repeat(3);
-
-export const newline = '\n';
+export const indent = (value: string) => chars.indent + value;
 
 export const header = (value: string) => colors.dim('=== ') + colors.bold(value);
 
@@ -21,7 +23,7 @@ export const trimEnd = (value: string) => value.replace(/\s+$/g, '');
 /**
  * Join arguments with a space. There is *NO* newline is appended.
  */
-export const inline = (...values: string[]) => values.join(space);
+export const inline = (...values: string[]) => values.join(chars.space);
 
 export interface ColumnsParameters {
   /**
@@ -34,13 +36,13 @@ export interface ColumnsParameters {
 }
 
 export const columns = (parameters: ColumnsParameters) => {
-  const divider = parameters.divider ?? space.repeat(4);
+  const divider = parameters.divider ?? chars.space.repeat(4);
   const cols = invertMatrix(parameters.rows);
   const colWidths = cols.map(col => Math.max(...col.map(cell => cell?.length ?? 0)));
   const rowsText = parameters.rows.map(row => {
-    return row.map((cell, colIndex) => cell.padEnd(colWidths[colIndex], space)).join(divider);
+    return row.map((cell, colIndex) => cell.padEnd(colWidths[colIndex], chars.space)).join(divider);
   });
-  const text = rowsText.join(newline);
+  const text = rowsText.join(chars.newline);
   return text;
 };
 
@@ -136,40 +138,40 @@ export const createBuilder = (): Builder => {
   const builder: Builder = {
     line: value => {
       if (value === undefined) {
-        state.value = state.value + newline;
+        state.value = state.value + chars.newline;
       } else if (typeof value === 'string') {
-        state.value = state.value + value + newline;
+        state.value = state.value + value + chars.newline;
       } else {
         state.value = state.value + value.state.value;
       }
       return builder;
     },
     columns: parameters => {
-      state.value = state.value + columns(parameters) + newline;
+      state.value = state.value + columns(parameters) + chars.newline;
       return builder;
     },
     header: value => {
-      state.value = state.value + header(value) + newline;
+      state.value = state.value + header(value) + chars.newline;
       return builder;
     },
     indent: value => {
-      state.value = state.value + indent + value + newline;
+      state.value = state.value + indent(value) + chars.newline;
       return builder;
     },
     success: (...values) => {
-      state.value = state.value + success(...values) + newline;
+      state.value = state.value + success(...values) + chars.newline;
       return builder;
     },
     failure: (...values) => {
-      state.value = state.value + failure(...values) + newline;
+      state.value = state.value + failure(...values) + chars.newline;
       return builder;
     },
     info: (...values) => {
-      state.value = state.value + info(...values) + newline;
+      state.value = state.value + info(...values) + chars.newline;
       return builder;
     },
     warning: (...values) => {
-      state.value = state.value + warning(...values) + newline;
+      state.value = state.value + warning(...values) + chars.newline;
       return builder;
     },
     state,

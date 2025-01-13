@@ -1,11 +1,10 @@
+import { Definition as DefinitionT } from './definition';
+
+export type Definition = DefinitionT;
+
+export * as Case from './case-definition';
+export * as Definition from './definition';
 export * from './result';
-export {
-  defineFailure,
-  defineSuccess,
-  Definition,
-  InferFailureResult,
-  InferSuccessResult,
-  InferFailureResultInit,
-  InferSuccessResultInit,
-  runText,
-} from './definition';
+
+export { defineCaseFailure, defineCaseSuccess } from './case-definition';
+export { define } from './definition';

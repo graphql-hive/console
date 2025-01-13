@@ -5,33 +5,22 @@ import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import { Errors } from './helpers/errors';
-import { OmitNever } from './helpers/general';
+import { flagNameShowOutputSchemaJson } from './helpers/flag-show-output-schema-json';
+import { casesExhausted, OmitNever } from './helpers/general';
 import { Texture } from './helpers/texture/texture';
-import { T } from './helpers/typebox/_namespace';
 import { Output } from './output/_namespace';
 
-const showOutputSchemaJsonFlagName = 'show-output-schema-json';
-
 export default abstract class BaseCommand<$Command extends typeof Command> extends Command {
-  // TODO move this to whoami, make global later.
-  public static enableJsonFlag = true;
-
   /**
    * The output types returned by this command when executed.
    *
    * Used by methods: {@link BaseCommand.successData}, {@link BaseCommand.failureData}, {@link BaseCommand.runResult}.
    */
-  public static output: Output.Definition[] = [];
+  public static output: Output.Definition = Output.define();
 
   protected _userConfig: Config | undefined;
 
   static baseFlags = {
-    [showOutputSchemaJsonFlagName]: Flags.boolean({
-      summary:
-        'Show the schema for the JSON format output of this command. JSON format output occurs when you pass the --json flag. The schema is expressed in JSON Schema (json-schema.org).',
-      default: false,
-      helpGroup: 'GLOBAL',
-    }),
     debug: Flags.boolean({
       default: false,
       summary: 'Whether debug output for HTTP calls and similar should be enabled.',
@@ -53,17 +42,17 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
       rootDir: process.cwd(),
     });
 
-    this.isShowOutputSchemaJson = this.argv.includes(`--${showOutputSchemaJsonFlagName}`);
-    if (this.isShowOutputSchemaJson) {
-      return;
-    }
+    // Like with --help, when user wants to see the schema for JSON output
+    // we don't want to parse the given arguments.
+    this.isShowOutputSchemaJson = this.argv.includes(`--${flagNameShowOutputSchemaJson}`);
+    if (this.isShowOutputSchemaJson) return;
 
     const { args, flags } = await this.parse({
       flags: this.ctor.flags,
       baseFlags: super.ctor.baseFlags,
-      enableJsonFlag: this.ctor.enableJsonFlag,
       args: this.ctor.args,
       strict: this.ctor.strict,
+      enableJsonFlag: this.ctor.enableJsonFlag, // todo: check this picks up subclass static prop.
     });
 
     this.flags = flags as InferFlags<$Command>;
@@ -79,120 +68,76 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     const thisClass = this.constructor as typeof BaseCommand;
 
     if (this.isShowOutputSchemaJson) {
-      const outputSchemaJson = JSON.stringify(T.Union(thisClass.output.map(_ => _.schema)));
-      console.log(outputSchemaJson);
+      console.log(Output.Definition.getSchemaEncoded(thisClass.output));
       return;
     }
 
-    // todo: Make it easier for the Hive team to be alerted.
-    // - Alert the Hive team automatically with some opt-in telemetry?
-    // - A single-click-link with all relevant variables serialized into search parameters?
-    const schemaViolationMessage = `Whoops. This Hive CLI command tried to output a value that violates its own schema. This should never happen. Please report this error to the Hive team at https://github.com/graphql-hive/console/issues/new.`;
-
-    const resultUnparsed = await this.runResult();
+    const resultInit = await this.runResult();
+    const { result, caseDefinition } = Output.Definition.parseOrThrow(thisClass.output, resultInit);
 
     /**
-     * 1. Find the Output Definition defined for this
-     *    command that corresponds to the run result data.
-     * 2. Then validate the result against its schema.
-     */
-
-    // 1
-    // @ts-expect-error fixme
-    const resultDefinitionName = resultUnparsed.data.type;
-    const definition = thisClass.output.find(
-      definition =>
-        definition.schema.properties.data.properties.type.const === resultDefinitionName,
-    );
-    if (!definition) {
-      throw new Errors.Failure({
-        message: schemaViolationMessage,
-        data: {
-          type: 'ErrorDataTypeNotFound',
-          message: schemaViolationMessage,
-          value: resultUnparsed,
-        },
-      });
-    }
-    const resultUnparsedWithDefaults = T.Value.Default(
-      definition.schema,
-      T.Value.Clone(resultUnparsed),
-    );
-    // 2
-    const errorsIterator = T.Value.Value.Errors(definition.schema, resultUnparsedWithDefaults);
-    const materializedErrors = T.Value.MaterializeValueErrorIterator(errorsIterator);
-    if (materializedErrors.length > 0) {
-      // todo: Display data in non-json output.
-      // The default textual output of an OClif error will not display any of the data below. We will want that information in a bug report.
-      throw new Errors.Failure({
-        message: schemaViolationMessage,
-        data: {
-          type: 'ErrorOutputSchemaViolation',
-          message: schemaViolationMessage,
-          schema: definition,
-          value: resultUnparsedWithDefaults,
-          errors: materializedErrors,
-        },
-      });
-    }
-
-    /**
-     * Should never throw because we checked for errors above.
-     */
-    const result = T.Value.Parse(definition.schema, resultUnparsedWithDefaults) as Output.Result;
-
-    /**
-     * Definitions can have a text format.
-     */
-    const text = Output.runText(
-      definition,
-      {
-        flags: this.flags,
-        args: this.args,
-      },
-      result.data,
-    );
-
-    if (text !== '') {
-      // `this.log` adds a newline, so remove one from text to avoid undesired extra trailing space.
-      this.log(text.replace(/\n$/, ''));
-    }
-
-    /**
-     * Result warnings are rendered using `this.warn`.
-     * OClif does not show these when JSON output is enabled.
-     */
-    if (result.warnings.length > 0) {
-      result.warnings.forEach(warning => this.warn(warning));
-    }
-
-    /**
-     * Results can specify the process exit code that should be used.
+     * Output results can specify the process exit code that should be used.
      * @see https://github.com/oclif/core/discussions/1270#discussioncomment-11750833
      */
     if (typeof result.exitCode === 'number') {
       process.exitCode = result.exitCode;
     }
 
-    /**
-      OClif outputs returned values as JSON.
-     */
-    if (Output.Result.isSuccess(result)) {
-      return result;
+    const outputFormat = this.jsonEnabled() ? 'json' : 'text';
+
+    if (outputFormat === 'text') {
+      /**
+       * We output text for the result's following aspects:
+       * 1. Data
+       * 2. Warnings
+       */
+
+      // [1] Data text
+      const text = Output.Case.runText(
+        caseDefinition,
+        {
+          flags: this.flags,
+          args: this.args,
+        },
+        result.data,
+      );
+
+      if (text) {
+        // Note: `this.log` adds a newline, so remove one from text
+        // to avoid undesired extra trailing space.
+        this.log(text.replace(/\n$/, ''));
+      }
+      // [2] Warning text
+      result.warnings.forEach(warning => this.warn(warning));
+      return;
     }
 
-    /**
-     * OClif supports converting thrown errors into JSON.
-     * It will run {@link BaseCommand.toErrorJson} which
-     * allows us to convert thrown values into JSON.
-     *
-     * We throw a CLIFailure which will be specially handled by our
-     * {@link BaseCommand.toErrorJson}.
-     */
-    throw new Errors.Failure({
-      data: result.data,
-      message: result.data.message ?? 'Unknown error.',
-    });
+    if (outputFormat === 'json') {
+      /**
+       * OClif supports converting returned values into JSON output
+       * so we simply have to return it in the success case.
+       *
+       * In the failure case, OClif requires that we throw an error.
+       * Subsequent OClif code, including hooks that we have tapped into,
+       * will run and output thrown value as JSON.
+       *
+       * OClif will run {@link BaseCommand.toErrorJson} which
+       * allows us to convert thrown values into JSON.
+       *
+       * We throw a CLIFailure which will be specially handled by our
+       * {@link BaseCommand.toErrorJson}.
+       */
+      if (Output.Result.isSuccess(result)) {
+        return result;
+      }
+
+      throw new Errors.Failure({
+        data: result.data,
+        message: result.data.message ?? 'Unknown error.',
+      });
+    }
+
+    casesExhausted(outputFormat);
   }
 
   /**
@@ -205,18 +150,20 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * Note: You must specify your command's output type in {@link BaseCommand.output} to take advantage of this method.
    */
   async runResult(): Promise<
-    | Output.InferSuccessResult<GetOutputDefinition<$Command>>
-    | Output.InferFailureResult<GetOutputDefinition<$Command>>
+    | Output.Case.InferSuccessResult<GetOutputDefinition<$Command>>
+    | Output.Case.InferFailureResult<GetOutputDefinition<$Command>>
   > {
-    throw new Error('Not implemented');
+    throw new Error(
+      'Cannot run `runResult` method because it is not implemented. You should implement either it or `run`.',
+    );
   }
 
   /**
    * Variant of {@link BaseCommand.success} that only requires passing the data.
    */
   successData(
-    data: Output.InferSuccessResult<GetOutputDefinition<$Command>>['data'],
-  ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
+    data: Output.Case.InferSuccessResult<GetOutputDefinition<$Command>>['data'],
+  ): Output.Case.InferSuccessResult<GetOutputDefinition<$Command>> {
     return this.success({ data } as any) as any;
   }
 
@@ -225,8 +172,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * adheres to the type specified by your command's {@link BaseCommand.output}.
    */
   success(
-    init: Output.InferSuccessResultInit<GetOutputDefinition<$Command>>,
-  ): Output.InferSuccessResult<GetOutputDefinition<$Command>> {
+    init: Output.Case.InferSuccessResultInit<GetOutputDefinition<$Command>>,
+  ): Output.Case.InferSuccessResult<GetOutputDefinition<$Command>> {
     return init as any;
   }
 
@@ -234,8 +181,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * Variant of {@link BaseCommand.failure} that only requires passing the data.
    */
   failureData(
-    data: Output.InferFailureResult<GetOutputDefinition<$Command>>['data'],
-  ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
+    data: Output.Case.InferFailureResult<GetOutputDefinition<$Command>>['data'],
+  ): Output.Case.InferFailureResult<GetOutputDefinition<$Command>> {
     return this.failure({ data } as any) as any;
   }
 
@@ -248,8 +195,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * When you return this,
    */
   failure(
-    init: Output.InferFailureResultInit<GetOutputDefinition<$Command>>,
-  ): Output.InferFailureResult<GetOutputDefinition<$Command>> {
+    init: Output.Case.InferFailureResultInit<GetOutputDefinition<$Command>>,
+  ): Output.Case.InferFailureResult<GetOutputDefinition<$Command>> {
     return init as any;
   }
 
@@ -605,8 +552,8 @@ type InferArgs<$CommandClass extends typeof Command> =
 // prettier-ignore
 type GetOutputDefinition<$CommandClass extends typeof Command> =
   'output' extends keyof $CommandClass
-    ? $CommandClass['output'] extends Output.Definition[]
-      ? $CommandClass['output'][number]
+    ? $CommandClass['output'] extends Output.Definition
+      ? $CommandClass['output']['caseDefinitions'][number]
     : never
   : never;
 

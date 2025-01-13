@@ -3,6 +3,10 @@ import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
 import { Errors } from '../helpers/errors';
+import {
+  flagNameShowOutputSchemaJson,
+  flagShowOutputSchemaJson,
+} from '../helpers/flag-show-output-schema-json';
 import { casesExhausted } from '../helpers/general';
 import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/_namespace';
@@ -37,8 +41,10 @@ const myTokenInfoQuery = graphql(/* GraphQL */ `
 `);
 
 export default class Whoami extends Command<typeof Whoami> {
+  public static enableJsonFlag = true;
   static description = 'shows information about the current token';
   static flags = {
+    [flagNameShowOutputSchemaJson]: flagShowOutputSchemaJson,
     'registry.endpoint': Flags.string({
       description: 'registry endpoint',
     }),
@@ -62,8 +68,8 @@ export default class Whoami extends Command<typeof Whoami> {
       },
     }),
   };
-  static output = [
-    Output.defineSuccess('SuccessContext', {
+  static output = Output.define(
+    Output.defineCaseSuccess('SuccessContext', {
       data: {
         token: T.Object({
           name: T.String(),
@@ -124,12 +130,12 @@ export default class Whoami extends Command<typeof Whoami> {
         });
       },
     }),
-    Output.defineFailure('FailureTokenNotFound', {
+    Output.defineCaseFailure('FailureTokenNotFound', {
       data: {
         message: T.String(),
       },
     }),
-  ];
+  );
 
   async runResult() {
     const { flags } = await this.parse(Whoami);
