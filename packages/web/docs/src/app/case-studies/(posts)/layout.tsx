@@ -1,6 +1,6 @@
 import '../case-studies-styles.css';
+import { GetYourAPIGameWhite } from '#components/get-your-api-game-white';
 import { CaseStudiesHeader } from '../case-studies-header';
-import { GetYourAPIGameWhite } from '../get-your-api-game-white';
 import { MoreStoriesSection } from '../more-stories-section';
 
 export default function CaseStudiesLayout({ children }: { children: React.ReactNode }) {

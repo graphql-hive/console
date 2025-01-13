@@ -1,12 +1,13 @@
 'use client';
 
 import { cn, DecorationIsolation, Heading, useConfig } from '@theguild/components';
-import { SoundYXZLogo } from '../../components/company-logos';
 import { SmallAvatar } from '../../components/small-avatar';
+import { companyLogos } from './company-logos';
 
 export type CaseStudyFrontmatter = {
   title: string;
-  description?: string;
+  excerpt: string;
+  category: string;
   authors: Author[];
 };
 
@@ -14,10 +15,6 @@ export type Author = {
   name: string;
   position?: string;
   avatar?: string;
-};
-
-const logos = {
-  'sound-xyz': <SoundYXZLogo width={193} height={64} />,
 };
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
@@ -30,7 +27,7 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
     throw new Error('unexpected');
   }
 
-  const logo = logos[name as keyof typeof logos];
+  const logo = companyLogos[name as keyof typeof companyLogos];
 
   return (
     <header {...props}>

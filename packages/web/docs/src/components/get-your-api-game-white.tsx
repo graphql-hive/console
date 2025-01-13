@@ -8,6 +8,10 @@ import {
 
 const GRADIENT_ID = 'arch-gradient-g7x9p2';
 
+/**
+ * This could be a `colorScheme="white"` or `variant="tertiary"` version of GetYourAPIGameRight
+ * in an ideal world, but their decorations are different enough to warrant a separate one.
+ */
 export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <section

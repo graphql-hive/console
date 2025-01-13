@@ -1,10 +1,7 @@
-import { Anchor, ArrowIcon, cn, Heading } from '@theguild/components';
+import { cn, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
-import { SoundYXZLogo } from '../../components/company-logos';
-
-const logos = {
-  'sound-xyz': <SoundYXZLogo width={193} height={64} />,
-};
+import { CaseStudyCard } from './case-study-card';
+import { companyLogos } from './company-logos';
 
 export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElement>) {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
@@ -29,26 +26,13 @@ export async function MoreStoriesSection(props: React.HTMLAttributes<HTMLDivElem
             name: 'sound-xyz',
             href: '/case-studies/sound-xyz',
             category: 'E-commerce',
-            logo: logos['sound-xyz'],
+            logo: companyLogos['sound-xyz'],
             description: 'Risus blandit blandit vel et eget viverra adipiscing.',
           };
 
           return (
-            <li key={i}>
-              <Anchor
-                href={caseStudy.href}
-                className="hive-focus bg-beige-100 hover:bg-beige-200/70 hover:ring-beige-400 flex flex-col gap-6 rounded-2xl p-6 sm:gap-10 dark:bg-neutral-800/70 dark:ring-neutral-600 dark:hover:bg-neutral-800 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600"
-              >
-                <div className="text-beige-800 text-sm font-medium dark:text-neutral-400">
-                  {caseStudy.category}
-                </div>
-                {caseStudy.logo}
-                <p className="text-xl">{caseStudy.description}</p>
-                <div className="flex items-center justify-between gap-2">
-                  Read full story
-                  <ArrowIcon />
-                </div>
-              </Anchor>
+            <li key={i} className="basis-1/3">
+              <CaseStudyCard {...caseStudy} />
             </li>
           );
         })}

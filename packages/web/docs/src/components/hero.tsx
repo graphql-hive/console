@@ -51,16 +51,3 @@ export function HeroTitle(props: { children: ReactNode }) {
     </h1>
   );
 }
-
-export function TrustedBy({ className, children, ...rest }: React.HTMLAttributes<HTMLElement>) {
-  return (
-    <div className={cn('max-w-[80%] text-center', className)} {...rest}>
-      <p className="text-base text-blue-800">
-        Trusted by global enterprises and fast-moving startups
-      </p>
-      <div className="text-blue-1000 mt-6 flex flex-row flex-wrap items-center justify-center gap-x-16 gap-y-6">
-        {children}
-      </div>
-    </div>
-  );
-}

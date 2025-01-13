@@ -13,18 +13,11 @@ import {
 } from '@theguild/components';
 import { CheckIcon } from '../components/check-icon';
 import { CommunitySection } from '../components/community-section';
-import {
-  AligentLogo,
-  KarrotLogo,
-  LinktreeLogo,
-  MeetupLogo,
-  SoundYXZLogo,
-} from '../components/company-logos';
 import { CompanyTestimonialsSection } from '../components/company-testimonials';
 import { EcosystemManagementSection } from '../components/ecosystem-management';
 import { FeatureTabs } from '../components/feature-tabs';
 import { FrequentlyAskedQuestions } from '../components/frequently-asked-questions';
-import { Hero, HeroFeatures, HeroLinks, TrustedBy } from '../components/hero';
+import { Hero, HeroFeatures, HeroLinks } from '../components/hero';
 import { InfoCard } from '../components/info-card';
 import { LandingPageContainer } from '../components/landing-page-container';
 import { StatsItem, StatsList } from '../components/stats';
@@ -92,13 +85,7 @@ export default function IndexPage(): ReactElement {
         </HeroLinks>
       </Hero>
       <FeatureTabs className="relative mt-6 sm:mt-[-72px]" />
-      <TrustedBy className="mx-auto my-8 md:my-16 lg:my-24">
-        <MeetupLogo title="Meetup" height={32} className="translate-y-[5px]" />
-        <LinktreeLogo title="Linktree" height={22} />
-        <KarrotLogo title="Karrot" height={28} />
-        <AligentLogo title="Aligent" height={32} />
-        <SoundYXZLogo title="SoundXYZ" height={32} />
-      </TrustedBy>
+      <TrustedBySection className="mx-auto my-8 md:my-16 lg:my-24" />
       <EcosystemManagementSection className="mx-4 md:mx-6" />
       <StatsList className="mt-6 md:mt-0">
         <StatsItem label="GitHub commits" value={6.2} suffix="K" decimal />

@@ -1,21 +1,16 @@
-import {
-  Anchor,
-  CallToAction,
-  ContactButton,
-  DecorationIsolation,
-  Heading,
-} from '@theguild/components';
+import { CallToAction, ContactButton, DecorationIsolation, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
+import { GetYourAPIGameWhite } from '../../components/get-your-api-game-white';
 import { HeroLinks } from '../../components/hero';
 import { CaseStudyFrontmatter } from './case-studies-header';
+import { CaseStudyCard } from './case-study-card';
+import { companyLogos } from './company-logos';
 
 export const metadata = {
   title: 'Case Studies',
 };
 
 export default async function CaseStudiesPage() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
-
   return (
     <article className="mx-auto box-content max-w-[90rem] overflow-hidden px-6">
       <header className="bg-primary dark:bg-primary/[0.01] dark:border-primary/5 relative isolate flex flex-col gap-6 overflow-hidden rounded-3xl px-4 py-6 max-sm:mt-2 sm:py-12 md:gap-8 lg:py-24">
@@ -41,25 +36,47 @@ export default async function CaseStudiesPage() {
           <ArchDecoration className="absolute bottom-0 right-[-180px] max-md:h-[155px] sm:right-[-100px] xl:right-0" />
         </DecorationIsolation>
       </header>
-      <ul>
+      {/* <FeaturedCaseStudiesGrid /> // add when we have 6 case studies */}
+      {/* TODO: Uncomment this as a separator between FeaturedCaseStudiesGrid and the list of case studies */}
+      {/* <TrustedBySection className="mx-auto my-8 md:my-16" /> */}
+      <AllCaseStudiesList />
+      {/* TODO: DeveloperLovedSection, like CommunitySection, but just four tweets */}
+      <GetYourAPIGameWhite />
+    </article>
+  );
+}
+
+async function AllCaseStudiesList() {
+  const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
+
+  return (
+    <section className="py-6 sm:pt-24">
+      <Heading size="md" as="h2" className="text-center">
+        Explore customer stories
+      </Heading>
+      <ul className="mt-6 flex gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
         {pageMap.map(item => {
           if ('name' in item && 'frontMatter' in item && item.frontMatter) {
             const frontMatter = item.frontMatter as CaseStudyFrontmatter;
 
+            let logo: React.ReactNode = null;
+            if (item.name in companyLogos) {
+              logo = companyLogos[item.name as keyof typeof companyLogos];
+            } else {
+              console.dir({ companyLogos }, { depth: 9 });
+              throw new Error(
+                `No logo found for ${item.name}. We have the following: (${Object.keys(companyLogos).join(', ')})`,
+              );
+            }
+
             return (
-              <li key={item.name}>
-                <Anchor href={item.route}>
-                  {item.name}
-                  <div>
-                    {frontMatter.authors.map(author => {
-                      return (
-                        <span key={author.name}>
-                          {author.name} {author.position}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </Anchor>
+              <li key={item.name} className="basis-1/3">
+                <CaseStudyCard
+                  category={frontMatter.category}
+                  excerpt={frontMatter.excerpt}
+                  href={item.route}
+                  logo={logo}
+                />
               </li>
             );
           }
@@ -67,7 +84,7 @@ export default async function CaseStudiesPage() {
           return null;
         })}
       </ul>
-    </article>
+    </section>
   );
 }
 
@@ -94,8 +111,8 @@ function ArchDecoration(props: { className?: string }) {
           y2="282.363"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="white" stop-opacity="0.3" />
-          <stop offset="1" stop-color="white" />
+          <stop stopColor="white" stopOpacity="0.3" />
+          <stop offset="1" stopColor="white" />
         </linearGradient>
       </defs>
     </svg>
@@ -121,8 +138,8 @@ function GradientDefs() {
           y2="282.363"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="white" stop-opacity="0.3" />
-          <stop offset="1" stop-color="white" />
+          <stop stopColor="white" stopOpacity="0.3" />
+          <stop offset="1" stopColor="white" />
         </linearGradient>
       </defs>
     </svg>
