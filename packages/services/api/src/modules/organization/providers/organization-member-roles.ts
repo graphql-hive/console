@@ -215,7 +215,7 @@ export class OrganizationMemberRoles {
   }
 }
 
-export function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
+function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
   scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>,
 ): z.TypeOf<typeof PermissionsPerResourceLevelAssignmentModel> {
   const permissions = new Set<Permission>();
@@ -246,10 +246,11 @@ export function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
         break;
       }
       case OrganizationAccessScope.MEMBERS: {
-        permissions.add('member:manageInvites');
-        permissions.add('member:removeMember');
-        permissions.add('member:assignRole');
-        permissions.add('member:modifyRole');
+        // TODO: decide wether these should be translated
+        // permissions.add('member:manageInvites');
+        // permissions.add('member:removeMember');
+        // permissions.add('member:assignRole');
+        // permissions.add('member:modifyRole');
         permissions.add('member:describe');
         break;
       }
