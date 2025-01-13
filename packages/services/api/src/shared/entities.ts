@@ -219,6 +219,7 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
+  defaultMemberRoleId: string | null;
 }
 
 export interface CDNAccessToken {

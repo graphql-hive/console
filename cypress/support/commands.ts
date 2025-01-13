@@ -36,10 +36,6 @@ Cypress.Commands.add('createOIDCIntegration', (organizationSlug: string) => {
 
   cy.get('div[role="dialog"]').find('button[type="submit"]').last().click();
 
-  cy.url().then(url => {
-    return new URL(url).pathname.split('/')[0];
-  });
-
   return cy
     .get('div[role="dialog"]')
     .find('input[id="sign-in-uri"]')

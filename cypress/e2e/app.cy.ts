@@ -119,6 +119,36 @@ describe('oidc', () => {
     });
   });
 
+  it('default member role for first time oidc login', () => {
+    const organizationAdminUser = getUserData();
+    cy.visit('/');
+    cy.signup(organizationAdminUser);
+
+    const slug = generateRandomSlug();
+    cy.createOIDCIntegration(slug);
+
+    // Pick Admin role as the default role
+    cy.get('[data-cy="role-selector-trigger"]').click();
+    cy.contains('[data-cy="role-selector-item"]', 'Admin').click();
+    cy.visit('/logout');
+
+    // First time login
+    cy.clearAllCookies();
+    cy.clearAllLocalStorage();
+    cy.clearAllSessionStorage();
+    cy.get('a[href^="/auth/sso"]').click();
+    cy.get('input[name="slug"]').type(slug);
+    cy.get('button[type="submit"]').click();
+    // OIDC login
+    cy.get('input[id="Input_Username"]').type('test-user-2');
+    cy.get('input[id="Input_Password"]').type('password');
+    cy.get('button[value="login"]').click();
+
+    cy.get('[data-cy="organization-picker-current"]').contains(slug);
+    // Check if the user has the Admin role by checking if the Members tab is visible
+    cy.get(`a[href="/${slug}/view/members"]`).should('exist');
+  });
+
   it('oidc login for invalid url shows correct error message', () => {
     cy.clearAllCookies();
     cy.clearAllLocalStorage();
