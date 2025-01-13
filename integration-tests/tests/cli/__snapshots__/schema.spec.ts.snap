@@ -132,6 +132,8 @@ http://__URL__
 `;
 
 exports[`FEDERATION > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 type Query {
   users: [User!]
 }
@@ -141,14 +143,15 @@ type User {
   name: String!
   email: String!
 }
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`FEDERATION > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 ✔ Published initial schema.
 ℹ Available at http://__URL__
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`FEDERATION > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
@@ -287,6 +290,8 @@ http://__URL__
 `;
 
 exports[`SINGLE > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 type Query {
   users: [User!]
 }
@@ -296,14 +301,15 @@ type User {
   name: String!
   email: String!
 }
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`SINGLE > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 ✔ Published initial schema.
 ℹ Available at http://__URL__
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`SINGLE > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
@@ -460,6 +466,8 @@ http://__URL__
 `;
 
 exports[`STITCHING > schema:fetch can fetch a latest schema with target:registry:read access > latest sdl 1`] = `
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 type Query {
   users: [User!]
 }
@@ -469,14 +477,15 @@ type User {
   name: String!
   email: String!
 }
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`STITCHING > schema:fetch can fetch a latest schema with target:registry:read access > schemaPublish 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
+::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::
+stdout-------------------------------------------:
 ✔ Published initial schema.
 ℹ Available at http://__URL__
+::::::::::::::::::::::::::::::::::::::::::::::::::
 `;
 
 exports[`STITCHING > schema:fetch can fetch a schema with target:registry:read access > schemaPublish 1`] = `
