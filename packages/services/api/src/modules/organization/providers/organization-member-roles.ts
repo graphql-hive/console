@@ -246,11 +246,13 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
         break;
       }
       case OrganizationAccessScope.MEMBERS: {
-        // TODO: decide wether these should be translated
-        // permissions.add('member:manageInvites');
-        // permissions.add('member:removeMember');
-        // permissions.add('member:assignRole');
-        // permissions.add('member:modifyRole');
+        // Note: We do not assign the following permissions:
+        // - 'member:manageInvites'
+        // - 'member:removeMember'
+        // - 'member:assignRole'
+        // - 'member:modifyRole'
+        // The reason for this is that we changed the behavior of checking the permissions for
+        // the logic and it is not safe to translate them to the new permission layer.
         permissions.add('member:describe');
         break;
       }
