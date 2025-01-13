@@ -65,7 +65,7 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
     title: 'Case Studies',
     theme: {
       sidebar: false,
-      toc: true,
+      toc: false,
       breadcrumb: false,
     },
   },

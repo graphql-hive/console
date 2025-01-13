@@ -1,27 +1,12 @@
 'use client';
 
-import { cn, DecorationIsolation, Heading, useConfig } from '@theguild/components';
+import { cn, DecorationIsolation, Heading } from '@theguild/components';
 import { SmallAvatar } from '../../components/small-avatar';
 import { companyLogos } from './company-logos';
-
-export type CaseStudyFrontmatter = {
-  title: string;
-  excerpt: string;
-  category: string;
-  authors: Author[];
-};
-
-export type Author = {
-  name: string;
-  position?: string;
-  avatar?: string;
-};
+import { useFrontmatter } from './use-frontmatter';
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
-  const normalizePagesResult = useConfig().normalizePagesResult;
-  const metadata = normalizePagesResult.activeMetadata as CaseStudyFrontmatter;
-
-  const name = normalizePagesResult.activePath.at(-1)?.name;
+  const { name, frontmatter } = useFrontmatter();
 
   if (!name) {
     throw new Error('unexpected');
@@ -30,14 +15,19 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   const logo = companyLogos[name as keyof typeof companyLogos];
 
   return (
-    <header {...props}>
-      <LogoWithDecorations className="h-[224px] w-full max-sm:mb-6 sm:w-[360px] sm:max-2xl:hidden 2xl:absolute 2xl:translate-x-[688px]">
-        {logo}
-      </LogoWithDecorations>
-      <Heading as="h1" size="md" className="max-sm:text-[32px]">
-        {metadata.title}
-      </Heading>
-      <Authors authors={metadata.authors} className="mt-8" />
+    <header {...props} className={cn('flex gap-8 max-lg:flex-col max-lg:pr-6', props.className)}>
+      <div className="max-w-[640px]">
+        <Heading as="h1" size="md" className="max-sm:text-[32px]">
+          {frontmatter.title}
+        </Heading>
+        <Authors authors={frontmatter.authors} className="mt-8" />
+      </div>
+      {/* TODO: This overflow is just for now. */}
+      <div className="max-lg:-order-10 xl:relative">
+        <LogoWithDecorations className="h-[224px] w-full max-w-[640px] max-lg:-order-1 max-sm:mb-6 lg:w-[320px] lg:max-xl:h-[180px] xl:absolute xl:w-[360px] lg:max-xl:[&>svg]:w-[140px] lg:max-xl:[&_svg]:h-[120px]">
+          {logo}
+        </LogoWithDecorations>
+      </div>
     </header>
   );
 }

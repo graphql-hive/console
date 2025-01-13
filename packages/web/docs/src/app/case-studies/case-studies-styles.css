@@ -1,5 +1,15 @@
 .case-studies {
-  --nextra-content-width: 1248px;
+  --nextra-content-width: 992px;
+
+  /* hide leftmost column to left-align the case study */
+  & > div:first-of-type > :first-child {
+    @apply hidden;
+  }
+
+  & > div > article {
+    box-sizing: content-box;
+    max-width: 640px;
+  }
 
   @apply text-green-1000 dark:text-white;
 
