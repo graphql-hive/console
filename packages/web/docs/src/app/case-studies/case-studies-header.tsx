@@ -1,5 +1,6 @@
 'use client';
 
+import { Author } from 'next/dist/lib/metadata/types/metadata-types';
 import { cn, DecorationIsolation, Heading } from '@theguild/components';
 import { SmallAvatar } from '../../components/small-avatar';
 import { companyLogos } from './company-logos';

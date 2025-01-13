@@ -22,6 +22,7 @@ import { InfoCard } from '../components/info-card';
 import { LandingPageContainer } from '../components/landing-page-container';
 import { StatsItem, StatsList } from '../components/stats';
 import { TeamSection } from '../components/team-section';
+import { TrustedBySection } from '../components/trusted-by-section';
 import { metadata as rootMetadata } from './layout';
 
 export const metadata = {
