@@ -43,3 +43,17 @@ export const invertMatrix = <$Type>(matrix: $Type[][]): ($Type | undefined)[][] 
   }
   return inverted;
 };
+
+export const neverUndefined: () => never = () => {
+  never('Received undefined where a non-undefined value was expected.');
+};
+
+export const neverCatch: (error: unknown) => never = error => {
+  never(`Caught an unexpected type of error: ${String(error)}`);
+};
+
+export const never: (message?: string) => never = message => {
+  throw new Error(
+    `Something that should be impossible happened: ${message ?? '(no additional context provided)'}`,
+  );
+};
