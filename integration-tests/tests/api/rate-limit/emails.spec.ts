@@ -71,7 +71,7 @@ test('rate limit approaching and reached for organization', async () => {
 
   // Make sure we don't send the same email again
   const collectEvenMoreResult = await collectOperations([op, op]);
-  expect(collectEvenMoreResult.status).toEqual(429);
+  expect(collectEvenMoreResult.status).toEqual(200);
 
   await waitFor(5000);
 

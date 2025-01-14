@@ -16,7 +16,6 @@ import {
   httpRequestsWithNoAccess,
   httpRequestsWithNonExistingToken,
   httpRequestsWithoutToken,
-  parseReportDuration,
   tokensDuration,
   usedAPIVersion,
 } from './metrics';
@@ -72,17 +71,12 @@ async function main() {
       logger: server.log,
     });
 
-    const rateLimit = createUsageRateLimit(
-      env.hive.rateLimit
-        ? {
-            endpoint: env.hive.rateLimit.endpoint,
-            ttlMs: env.hive.rateLimit.ttl,
-            logger: server.log,
-          }
-        : {
-            logger: server.log,
-          },
-    );
+    const rateLimit = env.hive.rateLimit
+      ? createUsageRateLimit({
+          endpoint: env.hive.rateLimit.endpoint,
+          logger: server.log,
+        })
+      : null;
 
     server.route<{
       Body: unknown;
@@ -166,23 +160,25 @@ async function main() {
           status: 'success',
         });
 
-        const isRateLimited = await rateLimit
-          .isRateLimited({
-            targetId: tokenInfo.target,
-            token,
-          })
-          .catch(error => {
-            authenticatedRequestLogger.error('Failed to check rate limit');
-            authenticatedRequestLogger.error(error);
-            Sentry.captureException(error, {
-              level: 'error',
-            });
+        if (
+          await rateLimit
+            ?.isRateLimited({
+              id: tokenInfo.target,
+              type: 'operations-reporting',
+              token,
+              entityType: 'target',
+            })
+            .catch(error => {
+              authenticatedRequestLogger.error('Failed to check rate limit');
+              authenticatedRequestLogger.error(error);
+              Sentry.captureException(error, {
+                level: 'error',
+              });
 
-            // If we can't check rate limit, we should not drop the report
-            return false;
-          });
-
-        if (isRateLimited) {
+              // If we can't check rate limit, we should not drop the report
+              return false;
+            })
+        ) {
           droppedReports
             .labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization })
             .inc();
@@ -197,15 +193,14 @@ async function main() {
           return;
         }
 
-        const retentionInfo = await rateLimit
-          .getRetentionForTargetId(tokenInfo.target)
-          .catch(error => {
+        const retentionInfo =
+          (await rateLimit?.getRetentionForTargetId?.(tokenInfo.target).catch(error => {
             authenticatedRequestLogger.error(error);
             Sentry.captureException(error, {
               level: 'error',
             });
             return null;
-          });
+          })) || null;
 
         if (typeof retentionInfo !== 'number') {
           authenticatedRequestLogger.error('Failed to get retention info');
@@ -226,10 +221,7 @@ async function main() {
           }
 
           if (apiVersion === undefined || apiVersion === '1') {
-            const result = measureParsing(
-              () => usageProcessorV1(server.log, req.body as any, tokenInfo, retentionInfo),
-              'v1',
-            );
+            const result = usageProcessorV1(server.log, req.body as any, tokenInfo, retentionInfo);
             collect(result.report);
             stopTimer({
               status: 'success',
@@ -239,10 +231,7 @@ async function main() {
               operations: result.operations,
             });
           } else if (apiVersion === '2') {
-            const result = measureParsing(
-              () => usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo),
-              'v2',
-            );
+            const result = usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo);
 
             if (result.success === false) {
               stopTimer({
@@ -329,17 +318,3 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
-
-function measureParsing<T>(fn: () => T, version: 'v1' | 'v2'): T {
-  const stop = parseReportDuration.startTimer({ version });
-  try {
-    const result = fn();
-
-    return result;
-  } catch (error) {
-    Sentry.captureException(error);
-    throw error;
-  } finally {
-    stop();
-  }
-}

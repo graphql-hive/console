@@ -240,7 +240,6 @@ services:
   usage:
     environment:
       RATE_LIMIT_ENDPOINT: '${RATE_LIMIT_ENDPOINT}'
-      RATE_LIMIT_TTL: 1000
       LOG_LEVEL: debug
     depends_on:
       broker:
