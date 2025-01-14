@@ -528,6 +528,7 @@ const targetIndexRoute = createRoute({
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        includeMetadata
       />
     );
   },

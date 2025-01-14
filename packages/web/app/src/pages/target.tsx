@@ -46,15 +46,14 @@ function SchemaBlock({ schema }: { schema: CompositeSchema }) {
   return (
     <Accordion.Item value={schema.id} key={schema.id} className="border-2 border-gray-900/50">
       <Accordion.Header>
-        <div>
-          <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
-            {schema.service ?? 'SDL'}
-          </div>
-          {schema.url ? <div className="text-xs text-gray-500">{schema.url}</div> : null}
+        <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
+          {schema.service ?? 'SDL'}
         </div>
+        {schema.url ? <div className="text-xs text-gray-500">{schema.url}</div> : null}
       </Accordion.Header>
       <Accordion.Content>
         <div className="p-2">
+          {schema.metadata ? <SchemaMetadata metadata={JSON.stringify(JSON.parse(schema.metadata), undefined, 2)} /> : null}
           <GraphQLHighlight code={schema.source} />
         </div>
       </Accordion.Content>
@@ -129,9 +128,11 @@ const SchemaView_SchemaFragment = graphql(`
     ... on SingleSchema {
       id
       source
+      metadata @include(if: $includeMetadata)
     }
     ... on CompositeSchema {
       id
+      metadata @include(if: $includeMetadata)
       source
       service
       url
@@ -154,6 +155,28 @@ const SchemaView_TargetFragment = graphql(`
     }
   }
 `);
+
+function SchemaMetadata(props: { metadata: string }): ReactElement | null {
+  return (
+    <Popover>
+      <PopoverTrigger asChild onClick={event => event.stopPropagation()}>
+        <Button variant="secondary" role="button" size="sm">
+          metadata
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[400px] truncate p-0"
+        onClick={event => event.stopPropagation()}
+        side="right"
+        align="start"
+      >
+        <ScrollArea className="relative p-2">
+          <pre>{props.metadata}</pre>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function SchemaView(props: {
   organization: FragmentType<typeof SchemaView_OrganizationFragment>;
@@ -265,6 +288,7 @@ const TargetSchemaPageQuery = graphql(`
     $organizationSlug: String!
     $projectSlug: String!
     $targetSlug: String!
+    $includeMetadata: Boolean = false
   ) {
     organization(selector: { organizationSlug: $organizationSlug }) {
       organization {
@@ -290,6 +314,7 @@ function TargetSchemaPage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  includeMetadata?: boolean;
 }) {
   const [query] = useQuery({
     query: TargetSchemaPageQuery,
@@ -297,6 +322,7 @@ function TargetSchemaPage(props: {
       organizationSlug: props.organizationSlug,
       projectSlug: props.projectSlug,
       targetSlug: props.targetSlug,
+      includeMetadata: props.includeMetadata,
     },
   });
 
@@ -361,6 +387,7 @@ export function TargetPage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  includeMetadata?: boolean;
 }) {
   return (
     <>
@@ -369,6 +396,7 @@ export function TargetPage(props: {
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
+        includeMetadata={props.includeMetadata}
       />
     </>
   );

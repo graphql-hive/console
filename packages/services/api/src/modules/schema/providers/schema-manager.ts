@@ -233,7 +233,9 @@ export class SchemaManager {
   @atomic(stringifySelector)
   async getMaybeSchemasOfVersion(schemaVersion: SchemaVersion) {
     this.logger.debug('Fetching schemas (schemaVersionId=%s)', schemaVersion.id);
-    return this.storage.getSchemasOfVersion({ versionId: schemaVersion.id });
+    // !note: The decorators are doing something to prevent passing in an additional boolean for "includeMetadata"...
+    //  so for now always include metadata
+    return this.storage.getSchemasOfVersion({ versionId: schemaVersion.id, includeMetadata: true });
   }
 
   async getMatchingServiceSchemaOfVersions(versions: { before: string | null; after: string }) {

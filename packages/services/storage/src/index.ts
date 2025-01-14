@@ -2154,7 +2154,7 @@ export async function createStorage(
 
       return transformSchema(result);
     },
-    async getSchemasOfVersion({ versionId: version, includeMetadata = false }) {
+    async getSchemasOfVersion({ versionId: version, includeMetadata }) {
       const result = await pool.query<
         Pick<
           OverrideProp<schema_log, 'action', 'PUSH'>,
