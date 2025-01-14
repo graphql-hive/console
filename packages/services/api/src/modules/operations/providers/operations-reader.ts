@@ -181,25 +181,48 @@ export class OperationsReader {
     }).then(r => r[this.makeId({ type, field, argument })]);
   }
 
-  private async countFields({
-    fields,
-    target,
+  countCoordinate = batchBy<
+    {
+      schemaCoordinate: string;
+      targetIds: readonly string[];
+      period: DateRange;
+      operations?: readonly string[];
+      excludedClients?: readonly string[] | null;
+    },
+    Record<string, number>
+  >(
+    item =>
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+    async items => {
+      const schemaCoordinates = items.map(item => item.schemaCoordinate);
+      return await this.countCoordinates({
+        targetIds: items[0].targetIds,
+        excludedClients: items[0].excludedClients,
+        period: items[0].period,
+        operations: items[0].operations,
+        schemaCoordinates,
+      }).then(result =>
+        items.map(item =>
+          Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
+        ),
+      );
+    },
+  );
+
+  public async countCoordinates({
+    schemaCoordinates,
+    targetIds,
     period,
     operations,
     excludedClients,
   }: {
-    fields: ReadonlyArray<{
-      type: string;
-      field?: string | null;
-      argument?: string | null;
-    }>;
-    target: string | readonly string[];
+    schemaCoordinates: readonly string[];
+    targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
-  }): Promise<Record<string, number>> {
-    const coordinates = fields.map(selector => this.makeId(selector));
-    const conditions = [sql`(coordinate IN (${sql.array(coordinates, 'String')}))`];
+  }) {
+    const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
     if (Array.isArray(excludedClients) && excludedClients.length > 0) {
       // Eliminate coordinates fetched by excluded clients.
@@ -216,7 +239,7 @@ export class OperationsReader {
                 'String',
               )})) as non_excluded_clients_total
             FROM clients_daily ${this.createFilter({
-              target,
+              target: targetIds,
               period,
             })}
             GROUP BY hash
@@ -235,7 +258,7 @@ export class OperationsReader {
               sum(total) as total
             FROM coordinates_daily
             ${this.createFilter({
-              target,
+              target: targetIds,
               period,
               operations,
               extra: conditions,
@@ -251,15 +274,40 @@ export class OperationsReader {
       stats[row.coordinate] = ensureNumber(row.total);
     }
 
-    for (const selector of fields) {
-      const key = this.makeId(selector);
-
-      if (typeof stats[key] !== 'number') {
-        stats[key] = 0;
+    for (const coordinate of schemaCoordinates) {
+      if (typeof stats[coordinate] !== 'number') {
+        stats[coordinate] = 0;
       }
     }
 
     return stats;
+  }
+
+  private async countFields({
+    fields,
+    target,
+    period,
+    operations,
+    excludedClients,
+  }: {
+    fields: ReadonlyArray<{
+      type: string;
+      field?: string | null;
+      argument?: string | null;
+    }>;
+    target: string | readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    excludedClients?: readonly string[] | null;
+  }): Promise<Record<string, number>> {
+    const coordinates = fields.map(selector => this.makeId(selector));
+    return this.countCoordinates({
+      coordinates,
+      target,
+      period,
+      operations,
+      excludedClients,
+    });
   }
 
   async hasCollectedOperations({
@@ -919,7 +967,6 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     schemaCoordinates: string[];
-    requestCountThreshold: number;
   }) {
     const RecordArrayType = z.array(
       z.object({
@@ -980,7 +1027,6 @@ export class OperationsReader {
               AND "coordinates_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
               AND "coordinates_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
               AND "coordinates_daily"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
-            HAVING "total" >= ${String(args.requestCountThreshold)}
             ORDER BY
               "total" DESC,
               "coordinates_daily"."hash" DESC
@@ -998,7 +1044,7 @@ export class OperationsReader {
             SELECT
               "operation_collection_details"."name",
               "operation_collection_details"."hash"
-            FROM
+            FROM 
               "operation_collection_details"
             PREWHERE
               "operation_collection_details"."target" IN (${sql.array(args.targetIds, 'String')})
@@ -1049,7 +1095,6 @@ export class OperationsReader {
       excludedClients: null | readonly string[];
       period: DateRange;
       schemaCoordinate: string;
-      requestCountThreshold: number;
     },
     Array<{
       hash: string;
@@ -1058,14 +1103,13 @@ export class OperationsReader {
     }> | null
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${item.requestCountThreshold}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this._getTopOperationsForSchemaCoordinates({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
-        requestCountThreshold: items[0].requestCountThreshold,
         schemaCoordinates,
       }).then(result => result.map(result => Promise.resolve(result)));
     },
@@ -1578,7 +1622,7 @@ export class OperationsReader {
                 FROM ${aggregationTableName('operations')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
-                ORDER BY
+                ORDER BY 
                   target,
                   date
                     WITH FILL
