@@ -1,10 +1,10 @@
-import colors from 'colors';
 import { print, type GraphQLError } from 'graphql';
 import type { ExecutionResult } from 'graphql';
 import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Command, Errors, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
+import { Texture } from './helpers/texture/texture';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -52,29 +52,20 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     this.args = args as Args<T>;
   }
 
-  success(...args: any[]) {
-    this.log(colors.green('✔'), ...args);
+  logSuccess(...args: any[]) {
+    this.log(Texture.success(...args));
   }
 
-  fail(...args: any[]) {
-    this.log(colors.red('✖'), ...args);
+  logFailure(...args: any[]) {
+    this.log(Texture.failure(...args));
   }
 
-  info(...args: any[]) {
-    this.log(colors.yellow('ℹ'), ...args);
+  logInfo(...args: any[]) {
+    this.log(Texture.info(...args));
   }
 
-  infoWarning(...args: any[]) {
-    this.log(colors.yellow('⚠'), ...args);
-  }
-
-  bolderize(msg: string) {
-    const findSingleQuotes = /'([^']+)'/gim;
-    const findDoubleQuotes = /"([^"]+)"/gim;
-
-    return msg
-      .replace(findSingleQuotes, (_: string, value: string) => colors.bold(value))
-      .replace(findDoubleQuotes, (_: string, value: string) => colors.bold(value));
+  logWarning(...args: any[]) {
+    this.log(Texture.warning(...args));
   }
 
   maybe<TArgs extends Record<string, any>, TKey extends keyof TArgs>({

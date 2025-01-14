@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { MoreHorizontalIcon, MoveDownIcon, MoveUpIcon, SettingsIcon } from 'lucide-react';
+import { MoreHorizontalIcon, MoveDownIcon, MoveUpIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { useMutation } from 'urql';
-import { PermissionsSpace, usePermissionsManager } from '@/components/organization/Permissions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,31 +15,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import {
-  AuthProvider,
-  OrganizationAccessScope,
-  ProjectAccessScope,
-  TargetAccessScope,
-} from '@/gql/graphql';
-import { scopes } from '@/lib/access/common';
-import { useToggle } from '@/lib/hooks';
+import { AuthProvider } from '@/gql/graphql';
 import { RoleSelector } from './common';
 import { MemberInvitationButton } from './invitations';
 
@@ -97,13 +81,6 @@ const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
       projectAccessScopes
       targetAccessScopes
     }
-    # This is used for the migration flow, to keep it synced
-    # Remove this once we migrate all the users.
-    unassignedMembersToMigrate {
-      id
-      ...OrganizationMemberRolesMigrationGroup_MemberRoleMigrationGroup
-    }
-    ...ChangePermissionsModal_OrganizationFragment
   }
 `);
 
@@ -116,7 +93,6 @@ const OrganizationMemberRoleSwitcher_MemberFragment = graphql(`
     user {
       id
     }
-    ...ChangePermissionsModal_MemberFragment
   }
 `);
 
@@ -124,7 +100,7 @@ function OrganizationMemberRoleSwitcher(props: {
   organization: FragmentType<typeof OrganizationMemberRoleSwitcher_OrganizationFragment>;
   memberId: string;
   memberName: string;
-  memberRoleId?: string;
+  memberRoleId: string;
   member?: FragmentType<typeof OrganizationMemberRoleSwitcher_MemberFragment>;
 }) {
   const organization = useFragment(
@@ -142,17 +118,12 @@ function OrganizationMemberRoleSwitcher(props: {
   const [assignRoleState, assignRole] = useMutation(
     OrganizationMemberRoleSwitcher_AssignRoleMutation,
   );
-  const [isPermissionsModalOpen, togglePermissionsModalOpen] = useToggle(false);
   const memberRole = roles?.find(role => role.id === props.memberRoleId);
 
   if (!memberRole || !member) {
     console.error('No role or member provided to OrganizationMemberRoleSwitcher');
     return null;
   }
-
-  const memberOrganizationAccessScopes = (memberRole ?? member)!.organizationAccessScopes;
-  const memberProjectAccessScopes = (memberRole ?? member)!.projectAccessScopes;
-  const memberTargetAccessScopes = (memberRole ?? member)!.targetAccessScopes;
 
   return (
     <>
@@ -208,16 +179,18 @@ function OrganizationMemberRoleSwitcher(props: {
           // If the new role has more or equal access scopes than the current role, we can assign it
           const newRoleHasMoreOrEqualAccess =
             // organization
-            role.organizationAccessScopes.length >= memberOrganizationAccessScopes.length &&
+            role.organizationAccessScopes.length >= memberRole.organizationAccessScopes.length &&
             role.organizationAccessScopes.every(scope =>
-              memberOrganizationAccessScopes.includes(scope),
+              memberRole.organizationAccessScopes.includes(scope),
             ) &&
             // project
-            role.projectAccessScopes.length >= memberProjectAccessScopes.length &&
-            role.projectAccessScopes.every(scope => memberProjectAccessScopes.includes(scope)) &&
+            role.projectAccessScopes.length >= memberRole.projectAccessScopes.length &&
+            role.projectAccessScopes.every(scope =>
+              memberRole.projectAccessScopes.includes(scope),
+            ) &&
             // target
-            role.targetAccessScopes.length >= memberTargetAccessScopes.length &&
-            role.targetAccessScopes.every(scope => memberTargetAccessScopes.includes(scope));
+            role.targetAccessScopes.length >= memberRole.targetAccessScopes.length &&
+            role.targetAccessScopes.every(scope => memberRole.targetAccessScopes.includes(scope));
           const canAssign =
             (hasAccessToScopesOfRole && newRoleHasMoreOrEqualAccess) || canDowngrade;
           //
@@ -262,31 +235,6 @@ function OrganizationMemberRoleSwitcher(props: {
           };
         }}
       />
-      {!props.memberRoleId && member ? (
-        <>
-          <TooltipProvider>
-            <Tooltip delayDuration={100}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="relative top-[3px] ml-2"
-                  disabled={!canAssignRole}
-                  onClick={togglePermissionsModalOpen}
-                >
-                  <SettingsIcon className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Change permissions (legacy)</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <ChangePermissionsModal
-            isOpen={isPermissionsModalOpen}
-            toggleModalOpen={togglePermissionsModalOpen}
-            organizationFragment={organization}
-            memberFragment={member}
-          />
-        </>
-      ) : null}
     </>
   );
 }
@@ -347,7 +295,6 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     isOwner
     viewerCanRemove
-    ...ChangePermissionsModal_MemberFragment
     ...OrganizationMemberRoleSwitcher_MemberFragment
   }
 `);
@@ -456,7 +403,7 @@ function OrganizationMemberRow(props: {
               organization={organization}
               memberId={member.id}
               memberName={member.user.displayName}
-              memberRoleId={member.role?.id}
+              memberRoleId={member.role.id}
               member={member}
             />
           )}
@@ -506,7 +453,6 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       total
     }
     viewerCanManageInvitations
-    viewerCanMigrateLegacyMemberRoles
     ...OrganizationMemberRoleSwitcher_OrganizationFragment
     ...MemberInvitationForm_OrganizationFragment
   }
@@ -621,120 +567,5 @@ export function OrganizationMembers(props: {
         </tbody>
       </table>
     </SubPageLayout>
-  );
-}
-
-const ChangePermissionsModal_OrganizationFragment = graphql(`
-  fragment ChangePermissionsModal_OrganizationFragment on Organization {
-    ...UsePermissionManager_OrganizationFragment
-  }
-`);
-
-export const ChangePermissionsModal_MemberFragment = graphql(`
-  fragment ChangePermissionsModal_MemberFragment on Member {
-    id
-    ...UsePermissionManager_MemberFragment
-  }
-`);
-
-export function ChangePermissionsModal(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  organizationFragment: FragmentType<typeof ChangePermissionsModal_OrganizationFragment>;
-  memberFragment: FragmentType<typeof ChangePermissionsModal_MemberFragment>;
-}) {
-  const organization = useFragment(
-    ChangePermissionsModal_OrganizationFragment,
-    props.organizationFragment,
-  );
-  const member = useFragment(ChangePermissionsModal_MemberFragment, props.memberFragment);
-  const manager = usePermissionsManager({
-    onSuccess: props.toggleModalOpen,
-    organization,
-    member,
-    passMemberScopes: true,
-  });
-
-  const initialScopes = {
-    organization: [...manager.organizationScopes],
-    project: [...manager.projectScopes],
-    target: [...manager.targetScopes],
-  };
-
-  return (
-    <ChangePermissionsModalContent
-      isOpen={props.isOpen}
-      toggleModalOpen={props.toggleModalOpen}
-      manager={manager}
-      initialScopes={initialScopes}
-      onSubmit={() => manager.submit}
-    />
-  );
-}
-
-export function ChangePermissionsModalContent(props: {
-  isOpen: boolean;
-  toggleModalOpen: () => void;
-  manager: ReturnType<typeof usePermissionsManager>;
-  initialScopes: {
-    organization: OrganizationAccessScope[];
-    project: ProjectAccessScope[];
-    target: TargetAccessScope[];
-  };
-  onSubmit: () => void;
-}) {
-  return (
-    <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[750px] md:w-3/5">
-        <form className="flex w-full flex-col gap-5" onSubmit={props.onSubmit}>
-          <DialogHeader>
-            <DialogTitle>Permissions (legacy)</DialogTitle>
-          </DialogHeader>
-          <Tabs defaultValue="Organization" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="Organization">Organization</TabsTrigger>
-              <TabsTrigger value="Projects">Projects</TabsTrigger>
-              <TabsTrigger value="Targets">Targets</TabsTrigger>
-            </TabsList>
-            <PermissionsSpace
-              title="Organization"
-              scopes={scopes.organization}
-              initialScopes={props.initialScopes.organization}
-              selectedScopes={props.manager.organizationScopes}
-              onChange={props.manager.setOrganizationScopes}
-              checkAccess={props.manager.canAccessOrganization}
-            />
-            <PermissionsSpace
-              title="Projects"
-              scopes={scopes.project}
-              initialScopes={props.initialScopes.project}
-              selectedScopes={props.manager.projectScopes}
-              onChange={props.manager.setProjectScopes}
-              checkAccess={props.manager.canAccessProject}
-            />
-            <PermissionsSpace
-              title="Targets"
-              scopes={scopes.target}
-              initialScopes={props.initialScopes.target}
-              selectedScopes={props.manager.targetScopes}
-              onChange={props.manager.setTargetScopes}
-              checkAccess={props.manager.canAccessTarget}
-            />
-          </Tabs>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={ev => {
-                ev.preventDefault();
-                props.toggleModalOpen();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Save permissions</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

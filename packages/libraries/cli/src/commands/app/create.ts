@@ -4,6 +4,7 @@ import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -46,6 +47,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       key: 'registry.accessToken',
       args: flags,
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
     const file: string = args.file;
@@ -114,7 +116,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
                   ? affectedOperation.body.substring(0, maxCharacters) + '...'
                   : affectedOperation.body
               ).replace(/\n/g, '\\n');
-              this.infoWarning(
+              this.logWarning(
                 `Failed uploading document: ${result.addDocumentsToAppDeployment.error.details.message}` +
                   `\nOperation hash: ${affectedOperation?.hash}` +
                   `\nOperation body: ${truncatedBody}`,

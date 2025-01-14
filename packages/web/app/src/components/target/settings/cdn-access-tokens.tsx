@@ -11,9 +11,7 @@ import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Input, Modal, Table, Tag, TBody, Td, TimeAgo, Tr } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
-import { FragmentType, graphql, useFragment } from '@/gql';
-import { TargetAccessScope } from '@/gql/graphql';
-import { canAccessTarget } from '@/lib/access/target';
+import { graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
 
 const CDNAccessTokeRowFragment = graphql(`
@@ -317,12 +315,6 @@ const CDNAccessTokensQuery = graphql(`
   }
 `);
 
-const CDNAccessTokens_MeFragment = graphql(`
-  fragment CDNAccessTokens_MeFragment on Member {
-    ...CanAccessTarget_MemberFragment
-  }
-`);
-
 const CDNSearchParams = z.discriminatedUnion('cdn', [
   z.object({
     cdn: z.literal('create').optional(),
@@ -334,13 +326,10 @@ const CDNSearchParams = z.discriminatedUnion('cdn', [
 ]);
 
 export function CDNAccessTokens(props: {
-  me: FragmentType<typeof CDNAccessTokens_MeFragment>;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }): React.ReactElement {
-  const me = useFragment(CDNAccessTokens_MeFragment, props.me);
-
   const [endCursors, setEndCursors] = useState<Array<string>>([]);
   const router = useRouter();
   const searchParamsResult = CDNSearchParams.safeParse(router.latestLocation.search);
@@ -373,8 +362,6 @@ export function CDNAccessTokens(props: {
     requestPolicy: 'cache-and-network',
   });
 
-  const canManage = canAccessTarget(TargetAccessScope.Settings, me);
-
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
@@ -396,20 +383,18 @@ export function CDNAccessTokens(props: {
           </>
         }
       />
-      {canManage && (
-        <div className="my-3.5 flex justify-between">
-          <Button asChild>
-            <Link
-              search={{
-                page: 'cdn',
-                cdn: 'create',
-              }}
-            >
-              Create new CDN token
-            </Link>
-          </Button>
-        </div>
-      )}
+      <div className="my-3.5 flex justify-between">
+        <Button asChild>
+          <Link
+            search={{
+              page: 'cdn',
+              cdn: 'create',
+            }}
+          >
+            Create new CDN token
+          </Link>
+        </Button>
+      </div>
       <Table>
         <TBody>
           {target?.data?.target?.cdnAccessTokens.edges?.map(edge => {
@@ -425,23 +410,21 @@ export function CDNAccessTokens(props: {
                   created <TimeAgo date={node.createdAt} />
                 </Td>
                 <Td align="right">
-                  {canManage ? (
-                    <Button
-                      className="hover:text-red-500"
-                      variant="ghost"
-                      onClick={() => {
-                        void router.navigate({
-                          search: {
-                            page: 'cdn',
-                            cdn: 'delete',
-                            id: node.id,
-                          },
-                        });
-                      }}
-                    >
-                      <TrashIcon />
-                    </Button>
-                  ) : null}
+                  <Button
+                    className="hover:text-red-500"
+                    variant="ghost"
+                    onClick={() => {
+                      void router.navigate({
+                        search: {
+                          page: 'cdn',
+                          cdn: 'delete',
+                          id: node.id,
+                        },
+                      });
+                    }}
+                  >
+                    <TrashIcon />
+                  </Button>
                 </Td>
               </Tr>
             );

@@ -44,7 +44,6 @@ import { useNotifications } from '@/lib/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { GetStartedProgress } from '../get-started/trigger';
-import { MemberRoleMigrationStickyNote } from '../organization/members/migration';
 import { UserSettingsModal } from '../user/settings';
 import { Changelog } from './changelog/changelog';
 import { latestChangelog } from './changelog/generated-changelog';
@@ -61,7 +60,6 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
       getStarted {
         ...GetStartedWizard_GetStartedProgress
       }
-      ...MemberRoleMigrationStickyNote_OrganizationFragment
     }
   }
 `);
@@ -118,7 +116,6 @@ export function UserMenu(props: {
       ) : null}
       <div className="flex flex-row items-center gap-8">
         <Changelog changes={latestChangelog} />
-        <MemberRoleMigrationStickyNote organization={currentOrganization} />
         {currentOrganization ? <GetStartedProgress tasks={currentOrganization.getStarted} /> : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

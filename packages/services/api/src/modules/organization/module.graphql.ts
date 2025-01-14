@@ -25,7 +25,6 @@ export default gql`
       input: DeleteOrganizationInvitationInput!
     ): DeleteOrganizationInvitationResult!
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
-    updateOrganizationMemberAccess(input: OrganizationMemberAccessInput!): OrganizationPayload!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
     ): RequestOrganizationTransferResult!
@@ -36,10 +35,6 @@ export default gql`
     updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
     deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
     assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
-    """
-    Remove this mutation after migration is complete.
-    """
-    migrateUnassignedMembers(input: MigrateUnassignedMembersInput!): MigrateUnassignedMembersResult!
   }
 
   type UpdateOrganizationSlugResult {
@@ -149,14 +144,6 @@ export default gql`
     userId: ID!
   }
 
-  input OrganizationMemberAccessInput {
-    organizationSlug: String!
-    userId: ID!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-  }
-
   input RequestOrganizationTransferInput {
     organizationSlug: String!
     userId: ID!
@@ -218,11 +205,6 @@ export default gql`
     getStarted: OrganizationGetStarted!
     memberRoles: [MemberRole!]
     """
-    Only available to members with the Admin role.
-    Returns a list of members that are not assigned to any role.
-    """
-    unassignedMembersToMigrate: [MemberRoleMigrationGroup!]!
-    """
     Whether the viewer should be able to access the settings page within the app
     """
     viewerCanAccessSettings: Boolean!
@@ -254,10 +236,6 @@ export default gql`
     Whether the viewer can modify roles of members within the organization
     """
     viewerCanManageRoles: Boolean!
-    """
-    Whether the viewer can migrate the legacy member roles
-    """
-    viewerCanMigrateLegacyMemberRoles: Boolean!
     """
     The organization's audit logs. This field is only available to members with the Admin role.
     """
@@ -324,7 +302,7 @@ export default gql`
 
   extend type Member {
     canLeaveOrganization: Boolean!
-    role: MemberRole
+    role: MemberRole!
     isAdmin: Boolean!
     """
     Whether the viewer can remove this member from the organization.
@@ -469,50 +447,5 @@ export default gql`
   type AssignMemberRoleResult {
     ok: AssignMemberRoleOk
     error: AssignMemberRoleError
-  }
-
-  type MemberRoleMigrationGroup {
-    id: ID!
-    members: [Member!]!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-  }
-
-  """
-  @oneOf
-  """
-  input MigrateUnassignedMembersInput {
-    assignRole: AssignMemberRoleMigrationInput
-    createRole: CreateMemberRoleMigrationInput
-  }
-
-  input AssignMemberRoleMigrationInput {
-    organizationSlug: String!
-    roleId: ID!
-    userIds: [ID!]!
-  }
-
-  input CreateMemberRoleMigrationInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-    userIds: [ID!]!
-  }
-
-  type MigrateUnassignedMembersResult {
-    ok: MigrateUnassignedMembersOk
-    error: MigrateUnassignedMembersError
-  }
-
-  type MigrateUnassignedMembersOk {
-    updatedOrganization: Organization!
-  }
-
-  type MigrateUnassignedMembersError implements Error {
-    message: String!
   }
 `;

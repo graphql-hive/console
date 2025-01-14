@@ -1,67 +1,43 @@
 import fs from 'fs';
 import path from 'path';
-import { sync as mkdirp } from 'mkdirp';
-import * as zod from 'zod';
+import { z } from 'zod';
 
-const LegacyConfigModel = zod.object({
-  registry: zod.string().optional(),
-  token: zod.string().optional(),
+const LegacyConfigModel = z.object({
+  registry: z.string().optional(),
+  token: z.string().optional(),
 });
 
-const ConfigModel = zod.object({
-  registry: zod
+const ConfigModel = z.object({
+  registry: z
     .object({
-      endpoint: zod.string().url().optional(),
-      accessToken: zod.string().optional(),
+      endpoint: z.string().url().optional(),
+      accessToken: z.string().optional(),
     })
     .optional(),
-  cdn: zod
+  cdn: z
     .object({
-      endpoint: zod.string().url().optional(),
-      accessToken: zod.string().optional(),
+      endpoint: z.string().url().optional(),
+      accessToken: z.string().optional(),
     })
     .optional(),
 });
 
-const getAllowedConfigKeys = <TConfig extends zod.ZodObject<any>>(
-  config: TConfig,
-): Set<GetConfigurationKeys<TConfig>> => {
-  const keys = new Set<GetConfigurationKeys<TConfig>>();
+export type ConfigModelType = z.TypeOf<typeof ConfigModel>;
 
-  const traverse = (obj: zod.ZodObject<Record<string, any>>, path: Array<string> = []): string => {
-    if (obj instanceof zod.ZodObject) {
-      const shape = obj.shape;
-      for (const [key, value] of Object.entries(shape)) {
-        traverse(value, [...path, key]);
-      }
-    } else {
-      keys.add(path.join('.') as GetConfigurationKeys<TConfig>);
-    }
-
-    return path.join('.');
-  };
-
-  traverse(config);
-
-  return keys;
-};
-
-export type ConfigModelType = zod.TypeOf<typeof ConfigModel>;
-
-type BuildPropertyPath<TObject extends zod.ZodObject<any>> = `.${GetConfigurationKeys<TObject>}`;
+type BuildPropertyPath<TObject extends z.ZodObject<any>> = `.${GetConfigurationKeys<TObject>}`;
 
 type GetConfigurationKeys<
-  T extends zod.ZodObject<{
-    [key: string]: zod.ZodType<any, any>;
+  T extends z.ZodObject<{
+    [key: string]: z.ZodType<any, any>;
   }>,
 > =
-  T extends zod.ZodObject<infer TObjectShape>
+  T extends z.ZodObject<infer TObjectShape>
     ? TObjectShape extends Record<infer TKey, infer TObjectPropertyType>
       ? TKey extends string
-        ? `${TKey}${TObjectPropertyType extends zod.ZodObject<any>
+        ? `${TKey}${TObjectPropertyType extends z.ZodObject<any>
             ? BuildPropertyPath<TObjectPropertyType>
-            : TObjectPropertyType extends zod.ZodOptional<infer TOptionalInnerObjectPropertyType>
-              ? TOptionalInnerObjectPropertyType extends zod.ZodObject<any>
+            : TObjectPropertyType extends z.ZodOptional<infer TOptionalInnerObjectPropertyType>
+              ? TOptionalInnerObjectPropertyType extends z.ZodObject<any>
                 ? BuildPropertyPath<TOptionalInnerObjectPropertyType>
                 : ''
               : ''}`
@@ -71,19 +47,19 @@ type GetConfigurationKeys<
 
 type GetZodValueType<
   TString extends string,
-  ConfigurationModelType extends zod.ZodObject<any>,
+  ConfigurationModelType extends z.ZodObject<any>,
 > = TString extends `${infer TKey}.${infer TNextKey}`
-  ? ConfigurationModelType extends zod.ZodObject<infer InnerType>
-    ? InnerType[TKey] extends zod.ZodObject<any>
+  ? ConfigurationModelType extends z.ZodObject<infer InnerType>
+    ? InnerType[TKey] extends z.ZodObject<any>
       ? GetZodValueType<TNextKey, InnerType[TKey]>
-      : InnerType[TKey] extends zod.ZodOptional<infer OptionalInner>
-        ? OptionalInner extends zod.ZodObject<any>
+      : InnerType[TKey] extends z.ZodOptional<infer OptionalInner>
+        ? OptionalInner extends z.ZodObject<any>
           ? GetZodValueType<TNextKey, OptionalInner>
           : never
         : never
     : never
-  : ConfigurationModelType extends zod.ZodObject<infer InnerType>
-    ? zod.TypeOf<InnerType[TString]>
+  : ConfigurationModelType extends z.ZodObject<infer InnerType>
+    ? z.TypeOf<InnerType[TString]>
     : never;
 
 export type GetConfigurationValueType<TString extends string> = GetZodValueType<
@@ -94,8 +70,6 @@ export type GetConfigurationValueType<TString extends string> = GetZodValueType<
 export type ValidConfigurationKeys = GetConfigurationKeys<typeof ConfigModel>;
 
 export const graphqlEndpoint = 'https://app.graphql-hive.com/graphql';
-
-export const allowedKeys = Array.from(getAllowedConfigKeys(ConfigModel));
 
 export class Config {
   private cache?: ConfigModelType;
@@ -125,59 +99,6 @@ export class Config {
     }
 
     return current as GetZodValueType<TKey, typeof ConfigModel>;
-  }
-
-  set(key: ValidConfigurationKeys, value: string) {
-    if (getAllowedConfigKeys(ConfigModel).has(key) === false) {
-      throw new Error(`Invalid configuration key: ${key}`);
-    }
-
-    const map = this.read();
-    const parts = key.split('.');
-
-    let current: any = map;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-
-      if (!current[part]) {
-        current[part] = {};
-      }
-      if (i === parts.length - 1) {
-        current[part] = value;
-      }
-
-      current = current[part];
-    }
-
-    this.write(map);
-  }
-
-  delete(key: string) {
-    const map = this.read();
-    const parts = key.split('.');
-
-    let current: any = map;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-
-      if (!current[part]) {
-        current[part] = {};
-      }
-      if (i === parts.length - 1) {
-        current[part] = undefined;
-      }
-
-      current = current[part];
-    }
-
-    this.write(map);
-  }
-
-  clear(): void {
-    try {
-      mkdirp(path.dirname(this.filepath));
-    } catch {}
-    fs.writeFileSync(this.filepath, JSON.stringify({}), 'utf8');
   }
 
   private readSpace(content: Record<string, any>) {
@@ -235,13 +156,5 @@ export class Config {
     }
 
     return this.cache;
-  }
-
-  private write(map: ConfigModelType) {
-    this.cache = map;
-    try {
-      mkdirp(path.dirname(this.filepath));
-    } catch (e) {}
-    fs.writeFileSync(this.filepath, JSON.stringify(this.cache));
   }
 }

@@ -3,6 +3,7 @@
 dist/
 .next/
 __generated__/
+__snapshots__/
 
 /.turbo/
 /integration-tests/testkit/gql/

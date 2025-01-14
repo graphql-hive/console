@@ -1,8 +1,13 @@
-import { ContactButton, DecorationIsolation, Heading } from '@theguild/components';
+import { cn, ContactButton, DecorationIsolation, Heading } from '@theguild/components';
 
-export function GotAnIdeaSection() {
+export function GotAnIdeaSection({ className }: { className?: string }) {
   return (
-    <div className="relative flex flex-col items-center rounded-3xl bg-[#003834] px-4 py-6 lg:px-8 lg:py-16 xl:p-24">
+    <div
+      className={cn(
+        'relative flex flex-col items-center rounded-3xl bg-[#003834] px-4 py-6 lg:px-8 lg:py-16 xl:p-24',
+        className,
+      )}
+    >
       <DecorationIsolation>
         <svg
           className="absolute right-[481px] top-[-29px] overflow-visible"

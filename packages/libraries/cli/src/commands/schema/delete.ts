@@ -2,6 +2,7 @@ import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -93,7 +94,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         );
 
         if (!confirmed) {
-          this.info('Aborting');
+          this.logInfo('Aborting');
           this.exit(0);
         }
       }
@@ -110,6 +111,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
 
       const result = await this.registryApi(endpoint, accessToken).request({
@@ -123,23 +125,23 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       });
 
       if (result.schemaDelete.__typename === 'SchemaDeleteSuccess') {
-        this.success(`${service} deleted`);
+        this.logSuccess(`${service} deleted`);
         this.exit(0);
         return;
       }
 
-      this.fail(`Failed to delete ${service}`);
+      this.logFailure(`Failed to delete ${service}`);
       const errors = result.schemaDelete.errors;
 
       if (errors) {
-        renderErrors.call(this, errors);
+        this.log(renderErrors(errors));
         this.exit(1);
       }
     } catch (error) {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
-        this.fail(`Failed to complete`);
+        this.logFailure(`Failed to complete`);
         this.handleFetchError(error);
       }
     }
