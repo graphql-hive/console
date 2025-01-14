@@ -72,21 +72,6 @@ export class TokenManager {
       throw new HiveError('User is not a member of the organization');
     }
 
-    // const newScopes = [...input.organizationScopes, ...input.projectScopes, ...input.targetScopes];
-
-    // // See what scopes were removed or added
-    // const modifiedScopes = diffArrays(currentMember.scopes, newScopes);
-
-    // // Check if the current user has rights to set these scopes.
-    // const currentUserMissingScopes = modifiedScopes.filter(
-    //   scope => !currentMember.scopes.includes(scope),
-    // );
-
-    // if (currentUserMissingScopes.length > 0) {
-    //   this.logger.debug(`Logged user scopes: %o`, currentMember.scopes);
-    //   throw new HiveError(`No access to the scopes: ${currentUserMissingScopes.join(', ')}`);
-    // }
-
     pushIfMissing(scopes, TargetAccessScope.READ);
     pushIfMissing(scopes, ProjectAccessScope.READ);
     pushIfMissing(scopes, OrganizationAccessScope.READ);
