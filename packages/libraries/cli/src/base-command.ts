@@ -6,7 +6,8 @@ import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import { Errors } from './helpers/errors';
 import { flagNameShowOutputSchemaJson } from './helpers/flag-show-output-schema-json';
-import { casesExhausted, OmitNever } from './helpers/general';
+import { neverCase, OmitNever } from './helpers/general';
+import { OClif } from './helpers/oclif';
 import { Texture } from './helpers/texture/texture';
 import { Output } from './output/_namespace';
 
@@ -33,6 +34,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
   private isShowOutputSchemaJson: boolean = false;
 
+  private outputFormat: 'text' | 'json' = 'text';
+
   async init(): Promise<void> {
     await super.init();
 
@@ -57,6 +60,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
 
     this.flags = flags as InferFlags<$Command>;
     this.args = args as InferArgs<$Command>;
+    this.outputFormat = this.jsonEnabled() ? 'json' : 'text';
   }
 
   /**
@@ -64,7 +68,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    *
    * By default this command runs {@link BaseCommand.runResult}, having logic to handle its return value.
    */
-  async run(): Promise<void | Output.Result.Success> {
+  async run(): Promise<void | Output.Result> {
     const thisClass = this.constructor as typeof BaseCommand;
 
     if (this.isShowOutputSchemaJson) {
@@ -83,61 +87,101 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
       process.exitCode = result.exitCode;
     }
 
-    const outputFormat = this.jsonEnabled() ? 'json' : 'text';
+    switch (this.outputFormat) {
+      case 'text': {
+        const text =
+          Output.Case.runTextBuilder({
+            caseDefinition,
+            result,
+            input: {
+              flags: this.flags,
+              args: this.args,
+            },
+          }) || buildDefaultText(result);
 
-    if (outputFormat === 'text') {
-      /**
-       * We output text for the result's following aspects:
-       * 1. Data
-       * 2. Warnings
-       */
+        if (text) {
+          // Note: `this.log` adds a newline, so remove one from text
+          // to avoid undesired extra trailing space.
+          this.log(text.replace(/\n$/, ''));
+        }
 
-      // [1] Data text
-      const text = Output.Case.runText(
-        caseDefinition,
-        {
-          flags: this.flags,
-          args: this.args,
-        },
-        result.data,
-      );
+        result.warnings.forEach(warning => this.warn(warning));
 
-      if (text) {
-        // Note: `this.log` adds a newline, so remove one from text
-        // to avoid undesired extra trailing space.
-        this.log(text.replace(/\n$/, ''));
+        return;
       }
-      // [2] Warning text
-      result.warnings.forEach(warning => this.warn(warning));
-      return;
-    }
-
-    if (outputFormat === 'json') {
-      /**
-       * OClif supports converting returned values into JSON output
-       * so we simply have to return it in the success case.
-       *
-       * In the failure case, OClif requires that we throw an error.
-       * Subsequent OClif code, including hooks that we have tapped into,
-       * will run and output thrown value as JSON.
-       *
-       * OClif will run {@link BaseCommand.toErrorJson} which
-       * allows us to convert thrown values into JSON.
-       *
-       * We throw a CLIFailure which will be specially handled by our
-       * {@link BaseCommand.toErrorJson}.
-       */
-      if (Output.Result.isSuccess(result)) {
+      case 'json': {
+        // OClif already supports converting returned values into JSON output
+        // so we have nothing to do here.
         return result;
       }
+      default: {
+        neverCase(this.outputFormat);
+      }
+    }
+  }
 
-      throw new Errors.Failure({
-        data: result.data,
-        message: result.data.message ?? 'Unknown error.',
+  /**
+   * @see https://oclif.io/docs/error_handling/#error-handling-in-the-catch-method
+   * @see https://github.com/oclif/core/blob/main/src/command.ts#L191
+   */
+  // async catch(error: Errors.CommandError): Promise<void> {
+  //   if (error instanceof Errors.Failure) {
+  //     // todo pretty text for thrown failures.
+  //     await super.catch(error);
+  //   } else {
+  //     await super.catch(error);
+  //   }
+  // }
+
+  /**
+   * Custom logic for how thrown values are converted into JSON.
+   *
+   * @remarks
+   *
+   * 1. OClif input validation error classes have
+   * no structured information available about the error
+   * which limits our ability here to forward structure to
+   * the user. :(
+   */
+  toErrorJson(error: unknown) {
+    if (error instanceof Errors.Failure) {
+      return error.result;
+    }
+
+    if (error instanceof Errors.FailedFlagValidationError) {
+      return Output.Result.createFailure({
+        suggestions: error.suggestions,
+        data: {
+          type: 'FailureUserInput',
+          message: error.message,
+          problem: 'namedArgumentInvalid',
+        },
       });
     }
 
-    casesExhausted(outputFormat);
+    if (error instanceof Errors.RequiredArgsError) {
+      return Output.Result.createFailure({
+        suggestions: error.suggestions,
+        data: {
+          type: 'FailureUserInput',
+          message: error.message,
+          problem: 'positionalArgumentMissing',
+        },
+      });
+    }
+
+    if (error instanceof Error) {
+      const suggestions = error instanceof Errors.CLIError ? error.suggestions : undefined;
+      return Output.Result.createFailure({
+        suggestions,
+        data: {
+          type: 'Failure',
+          message: error.message,
+        },
+      });
+    }
+
+    return super.toErrorJson(error);
   }
 
   /**
@@ -381,15 +425,20 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         const jsonData = (await response.json()) as ExecutionResult<TResult>;
 
         if (jsonData.errors && jsonData.errors.length > 0) {
-          throw new Errors.ClientError(
-            `Failed to execute GraphQL operation: ${jsonData.errors
+          const requestId = cleanRequestId(response?.headers?.get('x-request-id'));
+          throw new Errors.Failure({
+            message: `Request to Hive API failed. Caused by error(s):\n${jsonData.errors
               .map(e => e.message)
               .join('\n')}`,
-            {
+            ref: requestId,
+            data: {
+              type: 'FailureInternalHiveApiRequest',
               errors: jsonData.errors,
-              headers: response.headers,
+              response: {
+                headers: response.headers,
+              },
             },
-          );
+          });
         }
 
         return jsonData.data!;
@@ -397,83 +446,9 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
     };
   }
 
-  /**
-   * @see https://oclif.io/docs/error_handling/#error-handling-in-the-catch-method
-   */
-  async catch(error: Errors.CommandError): Promise<void> {
-    if (error instanceof Errors.ClientError) {
-      await super.catch(clientErrorToCLIFailure(error));
-    } else {
-      await super.catch(error);
-    }
-  }
-
-  /**
-   * Custom logic for how thrown values are converted into JSON.
-   *
-   * @remarks
-   *
-   * 1. OClif input validation error classes have
-   * no structured information available about the error
-   * which limits our ability here to forward structure to
-   * the user. :(
-   */
-  toErrorJson(value: unknown) {
-    if (value instanceof Errors.Failure) {
-      return value.envelope;
-    }
-
-    if (value instanceof Errors.FailedFlagValidationError) {
-      return Output.Result.createFailure({
-        suggestions: value.suggestions,
-        data: {
-          type: 'FailureUserInput',
-          message: value.message,
-          problem: 'namedArgumentInvalid',
-        },
-      });
-    }
-
-    if (value instanceof Errors.RequiredArgsError) {
-      return Output.Result.createFailure({
-        suggestions: value.suggestions,
-        data: {
-          type: 'FailureUserInput',
-          message: value.message,
-          problem: 'positionalArgumentMissing',
-        },
-      });
-    }
-
-    if (value instanceof Errors.CLIError) {
-      return Output.Result.createFailure({
-        suggestions: value.suggestions,
-        data: {
-          type: 'Failure',
-          message: value.message,
-        },
-      });
-    }
-
-    if (value instanceof Error) {
-      return Output.Result.createFailure({
-        data: {
-          type: 'Failure',
-          message: value.message,
-        },
-      });
-    }
-
-    return super.toErrorJson(value);
-  }
-
   handleFetchError(error: unknown): never {
     if (typeof error === 'string') {
       this.error(error);
-    }
-
-    if (error instanceof Errors.ClientError) {
-      this.error(clientErrorToCLIFailure(error));
     }
 
     if (error instanceof Error) {
@@ -514,33 +489,6 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   }
 }
 
-const clientErrorToCLIFailure = (error: Errors.ClientError): Errors.Failure => {
-  const requestId = cleanRequestId(error.response?.headers?.get('x-request-id'));
-  const errors =
-    error.response?.errors?.map(e => {
-      return {
-        message: e.message,
-      };
-    }) ?? [];
-  // todo: Use error chains & aggregate errors.
-  const causedByMessage =
-    errors.length > 0
-      ? `Caused by error(s):\n${errors.map(e => e.message).join('\n')}`
-      : `Caused by:\n${error.message}`;
-  const message = `Request to Hive API failed. ${causedByMessage}`;
-
-  return new Errors.Failure({
-    message,
-    ref: requestId,
-    data: {
-      type: 'FailureHiveApiRequest',
-      message,
-      requestId,
-      errors,
-    },
-  });
-};
-
 // prettier-ignore
 type InferFlags<$CommandClass extends typeof Command> =
   Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & $CommandClass['flags']>;
@@ -559,4 +507,23 @@ type GetOutputDefinition<$CommandClass extends typeof Command> =
 
 const cleanRequestId = (requestId?: string | null) => {
   return requestId ? requestId.split(',')[0].trim() : undefined;
+};
+
+const buildDefaultText = (result: Output.Result): string => {
+  switch (result.type) {
+    case 'failure': {
+      return OClif.prettyPrintError(
+        new Errors.CLIError(result.data.message ?? 'Unknown error.', {
+          suggestions: result.suggestions,
+          ref: result.reference ?? undefined,
+        }),
+      );
+    }
+    case 'success': {
+      return '';
+    }
+    default: {
+      throw neverCase(result);
+    }
+  }
 };

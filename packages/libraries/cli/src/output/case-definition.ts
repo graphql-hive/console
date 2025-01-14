@@ -110,14 +110,19 @@ interface TextBuilder<$Data = any> {
 /**
  * Run and return the definition's text format.
  */
-export const runText = (
-  definition: CaseDefinition,
-  commandInput: object,
-  commandOutputData: object,
-): string => {
-  if (definition.text === undefined) return '';
+export const runTextBuilder = ({
+  caseDefinition,
+  input,
+  result,
+}: {
+  caseDefinition: CaseDefinition;
+  result: Result;
+  input: object;
+}): string => {
+  if (caseDefinition.text === undefined) return '';
+
   const textureBuilder = Texture.createBuilder();
-  const textInit = definition.text(textureBuilder, commandOutputData, commandInput);
+  const textInit = caseDefinition.text(textureBuilder, result.data, input);
   const text =
     typeof textInit === 'string'
       ? textInit

@@ -7,7 +7,7 @@ import {
   flagNameShowOutputSchemaJson,
   flagShowOutputSchemaJson,
 } from '../helpers/flag-show-output-schema-json';
-import { casesExhausted } from '../helpers/general';
+import { neverCase } from '../helpers/general';
 import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/_namespace';
 import { Output } from '../output/_namespace';
@@ -205,6 +205,6 @@ export default class Whoami extends Command<typeof Whoami> {
       });
     }
 
-    throw casesExhausted(result);
+    throw neverCase(result);
   }
 }

@@ -3,13 +3,6 @@
  * which are to simple or incomplete to justify factoring out to a dedicated module.
  */
 
-/**
- * This code should never be reached.
- */
-export const casesExhausted = (value: never): never => {
-  throw new Error(`Unhandled case: ${String(value)}`);
-};
-
 export type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
 
 export type OptionalizePropertyUnsafe<$Object extends object, $Key extends PropertyKey> = Omit<
@@ -44,14 +37,30 @@ export const invertMatrix = <$Type>(matrix: $Type[][]): ($Type | undefined)[][] 
   return inverted;
 };
 
+/**
+ * This code should never be reached.
+ */
+export const neverCase = (value: never): never => {
+  never(`Unhandled case: ${String(value)}`);
+};
+
+/**
+ * This code should never be reached.
+ */
 export const neverUndefined: () => never = () => {
   never('Received undefined where a non-undefined value was expected.');
 };
 
+/**
+ * This code should never be reached.
+ */
 export const neverCatch: (error: unknown) => never = error => {
   never(`Caught an unexpected type of error: ${String(error)}`);
 };
 
+/**
+ * This code should never be reached.
+ */
 export const never: (message?: string) => never = message => {
   throw new Error(
     `Something that should be impossible happened: ${message ?? '(no additional context provided)'}`,
