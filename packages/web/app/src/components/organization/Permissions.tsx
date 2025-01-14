@@ -1,6 +1,5 @@
-import { FormEventHandler, memo, ReactElement, useCallback, useEffect, useState } from 'react';
+import { memo, ReactElement, useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { useMutation } from 'urql';
 import {
   Select,
   SelectContent,
@@ -16,24 +15,7 @@ import { NoAccess, Scope } from '@/lib/access/common';
 import { canAccessOrganization } from '@/lib/access/organization';
 import { canAccessProject } from '@/lib/access/project';
 import { canAccessTarget } from '@/lib/access/target';
-import { useNotifications } from '@/lib/hooks';
 import { truthy } from '@/utils';
-
-const OrganizationPermissions_UpdateMemberAccessMutation = graphql(`
-  mutation OrganizationPermissions_UpdateMemberAccessMutation(
-    $input: OrganizationMemberAccessInput!
-  ) {
-    updateOrganizationMemberAccess(input: $input) {
-      selector {
-        organizationSlug
-      }
-      organization {
-        id
-        slug
-      }
-    }
-  }
-`);
 
 interface Props<T> {
   title: string;
@@ -150,19 +132,17 @@ export const PermissionScopeItem = <
                   : false;
 
               return (
-                <>
-                  <SelectItem
-                    key={item.value}
-                    value={item.value}
-                    disabled={isDisabled}
-                    data-cy={`select-option-${item.value}`}
-                  >
-                    {item.label}
-                    {isDisabled ? (
-                      <span className="block text-xs italic">Can't downgrade</span>
-                    ) : null}
-                  </SelectItem>
-                </>
+                <SelectItem
+                  key={item.value}
+                  value={item.value}
+                  disabled={isDisabled}
+                  data-cy={`select-option-${item.value}`}
+                >
+                  {item.label}
+                  {isDisabled ? (
+                    <span className="block text-xs italic">Can't downgrade</span>
+                  ) : null}
+                </SelectItem>
               );
             })}
         </SelectContent>
@@ -280,20 +260,15 @@ const UsePermissionManager_MemberFragment = graphql(`
 `);
 
 export function usePermissionsManager({
-  onSuccess,
   passMemberScopes,
   ...props
 }: {
   organization: FragmentType<typeof UsePermissionManager_OrganizationFragment>;
   member: FragmentType<typeof UsePermissionManager_MemberFragment>;
   passMemberScopes: boolean;
-  onSuccess(): void;
 }) {
   const member = useFragment(UsePermissionManager_MemberFragment, props.member);
   const organization = useFragment(UsePermissionManager_OrganizationFragment, props.organization);
-  const [state, setState] = useState<'LOADING' | 'IDLE'>('IDLE');
-  const notify = useNotifications();
-  const [, mutate] = useMutation(OrganizationPermissions_UpdateMemberAccessMutation);
 
   const [targetScopes, setTargetScopes] = useState<TargetAccessScope[]>(
     passMemberScopes ? member.targetAccessScopes : [],
@@ -313,51 +288,15 @@ export function usePermissionsManager({
     }
   }, [member, passMemberScopes, setTargetScopes, setProjectScopes, setOrganizationScopes]);
 
-  const submit = useCallback<FormEventHandler<HTMLElement>>(
-    async evt => {
-      evt.preventDefault();
-      setState('LOADING');
-      const result = await mutate({
-        input: {
-          organizationSlug: organization.slug,
-          userId: member.user.id,
-          targetScopes,
-          projectScopes,
-          organizationScopes,
-        },
-      });
-      setState('IDLE');
-      if (result.error) {
-        notify(`Failed to change access (reason: ${result.error.message}`, 'error');
-      } else {
-        onSuccess();
-        notify('Member access saved', 'success');
-      }
-    },
-    [
-      mutate,
-      notify,
-      setState,
-      targetScopes,
-      projectScopes,
-      organizationScopes,
-      organization,
-      member,
-      onSuccess,
-    ],
-  );
-
   return {
     // Set
     setOrganizationScopes,
     setProjectScopes,
     setTargetScopes,
-    submit,
     // Get
     organizationScopes,
     projectScopes,
     targetScopes,
-    state,
     noneSelected: !organizationScopes.length && !projectScopes.length && !targetScopes.length,
     // Methods
     canAccessOrganization: useCallback(

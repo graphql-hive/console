@@ -5,13 +5,13 @@ import { EcosystemPageNavH2 } from './ecosystem-page-nav-h2';
 export const components = {
   EcosystemHeader: (props: React.HTMLAttributes<HTMLDivElement>) => (
     <header
-      className="relative isolate flex max-w-[90rem] flex-col items-center gap-6 overflow-visible rounded-3xl bg-blue-400 px-4 py-6 text-center sm:py-12 md:gap-8 lg:py-24 [&>h1]:max-w-[800px] [&>p]:max-w-[520px]"
+      className="relative isolate flex max-w-[90rem] flex-col items-center gap-6 overflow-visible rounded-3xl bg-blue-400 px-4 py-6 text-center sm:py-12 md:mx-2 md:gap-8 md:py-24 [&>h1]:max-w-[800px] [&>p]:max-w-[520px]"
       {...props}
     >
       <span className="font-medium">The Ecosystem</span>
       {props.children}
       <CrossDecoration />
-      <nav className="absolute top-full grid -translate-y-1/2 grid-flow-col rounded-2xl bg-blue-400 [grid-auto-columns:1fr]">
+      <nav className="top-full grid grid-flow-col rounded-2xl bg-blue-400 [grid-auto-columns:1fr] max-sm:w-full max-sm:grid-flow-row max-sm:bg-blue-300 sm:absolute sm:-translate-y-1/2">
         <EcosystemPageContent components={ecosystemPageNav} />
       </nav>
     </header>
@@ -26,7 +26,7 @@ export const components = {
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => {
     return (
       <ul
-        className="mt-5 grid grid-cols-4 gap-5 overflow-x-auto p-4 last-of-type:mb-24"
+        className="mt-5 grid gap-5 p-4 last-of-type:mb-24 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         {...props}
       />
     );
@@ -41,7 +41,7 @@ export const components = {
       throw new Error(`Product ${productName} is missing`);
     }
 
-    return <ProductCard as="li" product={product} className="h-[222px]" {...props} />;
+    return <ProductCard as="li" product={product} className="h-[222px] max-md:w-auto" {...props} />;
   },
 };
 
@@ -55,11 +55,11 @@ const ecosystemPageNav = {
 
 function CrossDecoration() {
   return (
-    <DecorationIsolation className="-z-10 *:absolute">
-      <ArchDecoration className="-left-10" />
-      <ArchDecoration className="-right-10 scale-x-[-1]" />
-      <ArchDecoration className="-right-10 bottom-0 rotate-180" />
-      <ArchDecoration className="-left-10 bottom-0 scale-y-[-1]" />
+    <DecorationIsolation className="-z-10 [container-type:size] *:absolute">
+      <ArchDecoration className="-left-10 sm:max-md:-top-20 [@media(width<1128px)]:left-1/2 [@media(width<1128px)]:translate-x-[calc(-100%-40px)]" />
+      <ArchDecoration className="-right-10 scale-x-[-1] sm:max-md:-top-20 [@media(width<1128px)]:right-1/2 [@media(width<1128px)]:translate-x-[calc(100%+40px)]" />
+      <ArchDecoration className="-right-10 bottom-0 rotate-180 sm:max-md:-bottom-20 [@media(width<1128px)]:right-1/2 [@media(width<1128px)]:translate-x-[calc(100%+40px)]" />
+      <ArchDecoration className="-left-10 bottom-0 scale-y-[-1] sm:max-md:-bottom-20 [@media(width<1128px)]:left-1/2 [@media(width<1128px)]:translate-x-[calc(-100%-40px)]" />
     </DecorationIsolation>
   );
 }

@@ -60,7 +60,7 @@ jobs:
       - name: build docker images
         timeout-minutes: 360
         id: docker-bake
-        uses: docker/bake-action@v5
+        uses: docker/bake-action@v6.0.0
         env:
           DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
           COMMIT_SHA: ${{ inputs.cliVersion }}
@@ -74,5 +74,6 @@ jobs:
           push: true
           files: docker/docker.hcl
           targets: cli
+          source: .
           set: |
             ${{ steps.docker-bake-inputs.outputs.set }}

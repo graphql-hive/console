@@ -291,7 +291,7 @@ function transformOrganizationMemberLegacyScopes(args: {
       case TargetAccessScope.REGISTRY_WRITE: {
         policies.push({
           effect: 'allow',
-          action: ['schemaCheck:approve', 'schemaVersion:approve', 'laboratory:modify'],
+          action: ['schemaCheck:approve', 'laboratory:modify'],
           resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
         });
         break;

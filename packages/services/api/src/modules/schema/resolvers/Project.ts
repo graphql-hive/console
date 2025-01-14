@@ -7,7 +7,6 @@ export const Project: Pick<
   | 'externalSchemaComposition'
   | 'isNativeFederationEnabled'
   | 'nativeFederationCompatibility'
-  | 'registryModel'
   | 'schemaVersionsCount'
   | '__isTypeOf'
 > = {
@@ -19,9 +18,6 @@ export const Project: Pick<
     }
 
     return null;
-  },
-  registryModel: project => {
-    return project.legacyRegistryModel ? 'LEGACY' : 'MODERN';
   },
   schemaVersionsCount: (project, { period }, { injector }) => {
     return injector.get(SchemaManager).countSchemaVersionsOfProject({

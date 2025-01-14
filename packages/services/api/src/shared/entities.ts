@@ -301,7 +301,6 @@ export interface Project {
    * TODO: All code referencing this field should be removed at some point.
    */
   gitRepository?: `${string}/${string}` | null;
-  legacyRegistryModel: boolean;
   useProjectNameInGithubCheck: boolean;
   externalComposition: {
     enabled: boolean;
@@ -358,7 +357,7 @@ export interface Member {
     scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     organizationId: string;
     membersCount: number | undefined;
-  } | null;
+  };
   oidcIntegrationId: string | null;
   connectedToZendesk: boolean;
 }

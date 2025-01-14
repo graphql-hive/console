@@ -235,7 +235,10 @@ export function CreateCollectionModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+      <DialogContent
+        className="container w-4/5 max-w-[600px] md:w-3/5"
+        data-cy="create-collection-modal"
+      >
         {!props.fetching && (
           <Form {...props.form}>
             <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>

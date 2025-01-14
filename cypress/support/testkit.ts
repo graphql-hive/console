@@ -38,6 +38,52 @@ export function createProject(projectSlug: string) {
   cy.get('form[data-cy="create-project-form"] [data-cy="submit"]').click();
 }
 
+export const laboratory = {
+  /**
+   * Updates the value of the graphiql editor
+   */
+  updateEditorValue(value: string) {
+    cy.get('.graphiql-query-editor .cm-s-graphiql').then($editor => {
+      const editor = ($editor[0] as any).CodeMirror; // Access the CodeMirror instance
+      editor.setValue(value);
+    });
+  },
+  /**
+   * Returns the value of the graphiql editor as Chainable<string>
+   */
+  getEditorValue() {
+    return cy.get('.graphiql-query-editor .cm-s-graphiql').then<string>($editor => {
+      const editor = ($editor[0] as any).CodeMirror; // Access the CodeMirror instance
+      return editor.getValue();
+    });
+  },
+  openNewTab() {
+    cy.get('button[aria-label="New tab"]').click();
+    // tab's title should be "untitled" as it's a default name
+    cy.contains('button[aria-controls="graphiql-session"]', 'untitled').should('exist');
+  },
+  /**
+   * Asserts that the tab with the given name is active
+   */
+  assertActiveTab(name: string) {
+    cy.contains('li.graphiql-tab-active > button[aria-controls="graphiql-session"]', name).should(
+      'exist',
+    );
+  },
+  closeActiveTab() {
+    cy.get('li.graphiql-tab-active > button.graphiql-tab-close').click();
+  },
+  closeTabsUntilOneLeft() {
+    cy.get('li.graphiql-tab').then($tabs => {
+      if ($tabs.length > 1) {
+        laboratory.closeActiveTab();
+        // Recurse until there's only one tab left
+        return laboratory.closeTabsUntilOneLeft();
+      }
+    });
+  },
+};
+
 export function dedent(strings: TemplateStringsArray, ...values: unknown[]): string {
   // Took from https://github.com/dmnd/dedent
   // Couldn't use the package because I had some issues with moduleResolution.

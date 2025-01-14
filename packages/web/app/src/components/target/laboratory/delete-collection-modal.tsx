@@ -90,7 +90,7 @@ export function DeleteCollectionModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5" data-cy="delete-collection-modal">
         <DialogHeader>
           <DialogTitle>Delete Collection</DialogTitle>
           <DialogDescription>Are you sure you wish to delete this collection?</DialogDescription>
@@ -108,7 +108,7 @@ export function DeleteCollectionModalContent(props: {
           >
             Cancel
           </Button>
-          <Button variant="destructive" onClick={props.handleDelete}>
+          <Button variant="destructive" data-cy="confirm" onClick={props.handleDelete}>
             Delete
           </Button>
         </DialogFooter>

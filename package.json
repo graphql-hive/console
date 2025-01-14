@@ -12,10 +12,10 @@
   },
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@9.15.1",
+  "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=9.14.4"
+    "pnpm": ">=9.15.3"
   },
   "scripts": {
     "build": "pnpm turbo build --color",
@@ -67,13 +67,13 @@
     "@graphql-eslint/eslint-plugin": "3.20.1",
     "@graphql-inspector/cli": "4.0.3",
     "@manypkg/get-packages": "2.2.2",
-    "@next/eslint-plugin-next": "14.2.21",
+    "@next/eslint-plugin-next": "14.2.23",
     "@parcel/watcher": "2.5.0",
-    "@sentry/cli": "2.39.1",
-    "@swc/core": "1.10.1",
+    "@sentry/cli": "2.40.0",
+    "@swc/core": "1.10.6",
     "@theguild/eslint-config": "0.12.1",
     "@theguild/prettier-config": "2.0.7",
-    "@types/node": "22.10.2",
+    "@types/node": "22.10.5",
     "bob-the-bundler": "7.0.1",
     "cypress": "13.17.0",
     "dotenv": "16.4.7",
@@ -95,7 +95,7 @@
     "tsup": "8.3.0",
     "tsx": "4.19.2",
     "turbo": "2.3.3",
-    "typescript": "5.7.2",
+    "typescript": "5.7.3",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "2.0.5"
   },

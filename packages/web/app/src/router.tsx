@@ -428,7 +428,7 @@ const organizationSettingsRoute = createRoute({
 });
 
 const OrganizationMembersRouteSearch = z.object({
-  page: z.enum(['list', 'roles', 'invitations', 'migration']).catch('list').default('list'),
+  page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
 });
 
 const organizationMembersRoute = createRoute({

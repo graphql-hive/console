@@ -4,14 +4,12 @@ import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DocsLink, DocsNote } from '@/components/ui/docs-note';
+import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
-import { RegistryModel } from '@/gql/graphql';
-import { useRedirect } from '@/lib/access/common';
 
 const OrganizationPolicyPageQuery = graphql(`
   query OrganizationPolicyPageQuery($selector: OrganizationSelectorInput!) {
@@ -22,7 +20,6 @@ const OrganizationPolicyPageQuery = graphql(`
           nodes {
             id
             slug
-            registryModel
           }
         }
         schemaPolicy {
@@ -79,27 +76,6 @@ function PolicyPageContent(props: { organizationSlug: string }) {
 
   const currentOrganization = query.data?.organization?.organization;
 
-  const legacyProjects = currentOrganization?.projects.nodes.filter(
-    p => p.registryModel === RegistryModel.Legacy,
-  );
-
-  useRedirect({
-    canAccess: currentOrganization?.viewerCanModifySchemaPolicy === true,
-    redirectTo: router => {
-      void router.navigate({
-        to: '/$organizationSlug',
-        params: {
-          organizationSlug: props.organizationSlug,
-        },
-      });
-    },
-    entity: currentOrganization,
-  });
-
-  if (currentOrganization?.viewerCanModifySchemaPolicy === false) {
-    return null;
-  }
-
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
@@ -133,35 +109,6 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                 </DocsLink>
               </CardDescription>
             </CardHeader>
-            {legacyProjects && legacyProjects.length > 0 ? (
-              <div className="p-6">
-                <DocsNote warn>
-                  <p>Some of your projects are using the legacy model of the schema registry.</p>
-                  <p className="text-muted-foreground">
-                    {legacyProjects.map((p, i, all) => (
-                      <>
-                        <code className="italic" key={p.slug}>
-                          {p.slug}
-                        </code>
-                        {all.length === i - 1 ? ' ' : ', '}
-                      </>
-                    ))}
-                  </p>
-                  <p className="text-muted-foreground py-2 font-semibold underline">
-                    Policy feature is only available for projects that are using the new registry
-                    model.
-                  </p>
-                  <p>
-                    <DocsLink
-                      className="text-muted-foreground"
-                      href="https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry"
-                    >
-                      Learn more
-                    </DocsLink>
-                  </p>
-                </DocsNote>
-              </div>
-            ) : null}
             <CardContent>
               <PolicySettings
                 saving={mutation.fetching}
@@ -169,33 +116,40 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                   mutation.error?.message ||
                   mutation.data?.updateSchemaPolicyForOrganization.error?.message
                 }
-                onSave={async (newPolicy, allowOverrides) => {
-                  await mutate({
-                    selector: {
-                      organizationSlug: props.organizationSlug,
-                    },
-                    policy: newPolicy,
-                    allowOverrides,
-                  })
-                    .then(result => {
-                      if (result.data?.updateSchemaPolicyForOrganization.error || result.error) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Error',
-                          description:
-                            result.data?.updateSchemaPolicyForOrganization.error?.message ||
-                            result.error?.message,
-                        });
-                      } else {
-                        toast({
-                          variant: 'default',
-                          title: 'Success',
-                          description: 'Policy updated successfully',
-                        });
+                onSave={
+                  currentOrganization.viewerCanModifySchemaPolicy
+                    ? async (newPolicy, allowOverrides) => {
+                        await mutate({
+                          selector: {
+                            organizationSlug: props.organizationSlug,
+                          },
+                          policy: newPolicy,
+                          allowOverrides,
+                        })
+                          .then(result => {
+                            if (
+                              result.data?.updateSchemaPolicyForOrganization.error ||
+                              result.error
+                            ) {
+                              toast({
+                                variant: 'destructive',
+                                title: 'Error',
+                                description:
+                                  result.data?.updateSchemaPolicyForOrganization.error?.message ||
+                                  result.error?.message,
+                              });
+                            } else {
+                              toast({
+                                variant: 'default',
+                                title: 'Success',
+                                description: 'Policy updated successfully',
+                              });
+                            }
+                          })
+                          .catch();
                       }
-                    })
-                    .catch();
-                }}
+                    : null
+                }
                 currentState={currentOrganization.schemaPolicy}
               >
                 {form => (
@@ -205,6 +159,7 @@ function PolicyPageContent(props: { organizationSlug: string }) {
                       checked={form.values.allowOverrides}
                       value="allowOverrides"
                       onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+                      disabled={!currentOrganization.viewerCanModifySchemaPolicy}
                     />
                     <label
                       htmlFor="allowOverrides"

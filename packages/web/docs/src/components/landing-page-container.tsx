@@ -16,6 +16,7 @@ export function LandingPageContainer(props: { children: ReactNode; className?: s
           html {
             scroll-behavior: smooth;
             background: #fff;
+            color-scheme: light !important;
           }
 
           .nextra-search-results mark {
