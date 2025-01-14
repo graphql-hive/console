@@ -1,6 +1,7 @@
 import { Errors } from '../helpers/errors';
 import { neverCatch, neverUndefined } from '../helpers/general';
 import { T } from '../helpers/typebox/_namespace';
+import { Case } from './_exports';
 import { CaseDefinition } from './case-definition';
 import { Result } from './result';
 
@@ -96,3 +97,27 @@ export type InferSchema<$Definition extends Definition> = T.TUnion<
 type _InferSchema_GetCaseDefinitionSchemas<$CaseDefinition extends CaseDefinition[]> = {
   [i in keyof $CaseDefinition]: $CaseDefinition[i]['schema'];
 };
+
+// ---------------------------------
+// Infer Results
+// ---------------------------------
+
+export type InferResults<$Definition extends Definition> = Result.Infer<
+  $Definition['caseDefinitions'][number]['schema']
+>;
+
+export type InferResultFailures<$Definition extends Definition> = Result.ExtractFailure<
+  InferResults<$Definition>
+>;
+
+export type InferResultFailureInits<$Definition extends Definition> = Result.Initify<
+  InferResultFailures<$Definition>
+>;
+
+export type InferResultSuccesses<$Definition extends Definition> = Result.ExtractSuccess<
+  InferResults<$Definition>
+>;
+
+export type InferResultSuccessInits<$Definition extends Definition> = Result.Initify<
+  InferResultSuccesses<$Definition>
+>;

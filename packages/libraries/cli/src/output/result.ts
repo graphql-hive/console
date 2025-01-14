@@ -1,4 +1,3 @@
-import { OptionalizePropertyUnsafe, Simplify } from '../helpers/general';
 import { T } from '../helpers/typebox/_namespace';
 
 export type Result = Result.Failure | Result.Success;
@@ -27,7 +26,7 @@ export namespace Result {
   ]);
   export type Failure = T.Static<typeof Failure>;
 
-  export const createFailure = (init: InferFailureInit<typeof Failure>): Failure => {
+  export const createFailure = (init: Initify<typeof Failure>): Failure => {
     return T.Value.Default(Failure, init) as any;
   };
 
@@ -36,18 +35,7 @@ export namespace Result {
   ): schema is Extract<$Output, { type: 'failure' }> =>
     'type' in schema && schema.type === FailureBase.properties.type.const;
 
-  export type InferFailureInit<$Schema extends T.TAnySchema> = Simplify<
-    OptionalizePropertyUnsafe<
-      Omit<InferFailure<$Schema>, 'type'>,
-      'suggestions' | 'reference' | 'warnings' | 'data'
-    >
-  >;
-
-  // todo doesn't really belong here, extract is concern of base command
-  export type InferFailure<$Schema extends T.TAnySchema> = Extract<
-    T.Static<$Schema>,
-    { type: 'failure' }
-  >;
+  export type ExtractFailure<$Result> = $Result extends { type: 'failure' } ? $Result : never;
 
   // --------------------------------------
   //
@@ -70,7 +58,7 @@ export namespace Result {
   ]);
   export type Success = T.Static<typeof Success>;
 
-  export const createSuccess = (init: InferSuccessInit<typeof Success>): Success => {
+  export const createSuccess = (init: Initify<typeof Success>): Success => {
     return T.Value.Default(Success, init) as any;
   };
 
@@ -79,13 +67,15 @@ export namespace Result {
   ): schema is Extract<$Output, { type: 'success' }> =>
     'type' in schema && schema.type === SuccessBase.properties.type.const;
 
-  export type InferSuccessInit<$Schema extends T.TAnySchema> = Simplify<
-    OptionalizePropertyUnsafe<Omit<InferSuccess<$Schema>, 'type'>, 'data' | 'warnings'>
-  >;
+  export type ExtractSuccess<$Result> = $Result extends { type: 'success' } ? $Result : never;
 
-  // todo doesn't really belong here, extract is concern of base command
-  export type InferSuccess<$Schema extends T.TAnySchema> = Extract<
-    T.Static<$Schema>,
-    { type: 'success' }
-  >;
+  // --------------------------------------
+  //
+  // Helpers
+  //
+  // --------------------------------------
+
+  export type Infer<$Schema extends T.TAnySchema> = T.Static<$Schema>;
+
+  export type Initify<$Result> = Partial<Omit<$Result, 'type'>>;
 }

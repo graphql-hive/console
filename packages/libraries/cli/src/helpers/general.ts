@@ -5,17 +5,6 @@
 
 export type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
 
-export type OptionalizePropertyUnsafe<$Object extends object, $Key extends PropertyKey> = Omit<
-  $Object,
-  $Key
-> & {
-  [_ in keyof $Object as _ extends $Key ? _ : never]?: $Object[_];
-};
-
-export type Simplify<T> = {
-  [K in keyof T]: T[K];
-};
-
 /**
  * Inverts a matrix.
  *

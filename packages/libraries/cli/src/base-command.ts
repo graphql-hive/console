@@ -11,7 +11,14 @@ import { OClif } from './helpers/oclif';
 import { Texture } from './helpers/texture/texture';
 import { Output } from './output/_namespace';
 
-export default abstract class BaseCommand<$Command extends typeof Command> extends Command {
+export default abstract class BaseCommand<
+  $Command extends typeof Command,
+  $OutputDefinition extends Output.Definition = 'output' extends keyof $Command
+    ? $Command['output'] extends Output.Definition
+      ? $Command['output']
+      : never
+    : never,
+> extends Command {
   /**
    * The output types returned by this command when executed.
    *
@@ -110,7 +117,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
         return;
       }
       case 'json': {
-        // OClif already supports converting returned values into JSON output
+        // OClif converts returned values into JSON output
         // so we have nothing to do here.
         return result;
       }
@@ -121,27 +128,14 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   }
 
   /**
-   * @see https://oclif.io/docs/error_handling/#error-handling-in-the-catch-method
-   * @see https://github.com/oclif/core/blob/main/src/command.ts#L191
-   */
-  // async catch(error: Errors.CommandError): Promise<void> {
-  //   if (error instanceof Errors.Failure) {
-  //     // todo pretty text for thrown failures.
-  //     await super.catch(error);
-  //   } else {
-  //     await super.catch(error);
-  //   }
-  // }
-
-  /**
    * Custom logic for how thrown values are converted into JSON.
    *
    * @remarks
    *
-   * 1. OClif input validation error classes have
+   * OClif input validation error classes have
    * no structured information available about the error
    * which limits our ability here to forward structure to
-   * the user. :(
+   * the user.
    */
   toErrorJson(error: unknown) {
     if (error instanceof Errors.Failure) {
@@ -193,10 +187,7 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    *
    * Note: You must specify your command's output type in {@link BaseCommand.output} to take advantage of this method.
    */
-  async runResult(): Promise<
-    | Output.Case.InferSuccessResult<GetOutputDefinition<$Command>>
-    | Output.Case.InferFailureResult<GetOutputDefinition<$Command>>
-  > {
+  async runResult(): Promise<Output.Definition.InferResults<$OutputDefinition>> {
     throw new Error(
       'Cannot run `runResult` method because it is not implemented. You should implement either it or `run`.',
     );
@@ -205,9 +196,9 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
   /**
    * Variant of {@link BaseCommand.success} that only requires passing the data.
    */
-  successData(
-    data: Output.Case.InferSuccessResult<GetOutputDefinition<$Command>>['data'],
-  ): Output.Case.InferSuccessResult<GetOutputDefinition<$Command>> {
+  successData<$Result extends Output.Definition.InferResultSuccesses<$OutputDefinition>>(
+    data: $Result['data'],
+  ): $Result {
     return this.success({ data } as any) as any;
   }
 
@@ -216,8 +207,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * adheres to the type specified by your command's {@link BaseCommand.output}.
    */
   success(
-    init: Output.Case.InferSuccessResultInit<GetOutputDefinition<$Command>>,
-  ): Output.Case.InferSuccessResult<GetOutputDefinition<$Command>> {
+    init: Output.Definition.InferResultSuccessInits<$OutputDefinition>,
+  ): Output.Definition.InferResultSuccesses<$OutputDefinition> {
     return init as any;
   }
 
@@ -225,8 +216,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * Variant of {@link BaseCommand.failure} that only requires passing the data.
    */
   failureData(
-    data: Output.Case.InferFailureResult<GetOutputDefinition<$Command>>['data'],
-  ): Output.Case.InferFailureResult<GetOutputDefinition<$Command>> {
+    data: Output.Definition.InferResultFailures<$OutputDefinition>['data'],
+  ): Output.Definition.InferResultFailures<$OutputDefinition> {
     return this.failure({ data } as any) as any;
   }
 
@@ -239,8 +230,8 @@ export default abstract class BaseCommand<$Command extends typeof Command> exten
    * When you return this,
    */
   failure(
-    init: Output.Case.InferFailureResultInit<GetOutputDefinition<$Command>>,
-  ): Output.Case.InferFailureResult<GetOutputDefinition<$Command>> {
+    init: Output.Definition.InferResultFailureInits<$OutputDefinition>,
+  ): Output.Definition.InferResultFailures<$OutputDefinition> {
     return init as any;
   }
 
@@ -496,14 +487,6 @@ type InferFlags<$CommandClass extends typeof Command> =
 // prettier-ignore
 type InferArgs<$CommandClass extends typeof Command> =
   Interfaces.InferredArgs<$CommandClass['args']>;
-
-// prettier-ignore
-type GetOutputDefinition<$CommandClass extends typeof Command> =
-  'output' extends keyof $CommandClass
-    ? $CommandClass['output'] extends Output.Definition
-      ? $CommandClass['output']['caseDefinitions'][number]
-    : never
-  : never;
 
 const cleanRequestId = (requestId?: string | null) => {
   return requestId ? requestId.split(',')[0].trim() : undefined;

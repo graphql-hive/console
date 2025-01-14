@@ -134,19 +134,3 @@ export const runTextBuilder = ({
 
   return text;
 };
-
-export type InferSuccessResultInit<$DataType extends CaseDefinition> = Result.InferSuccessInit<
-  $DataType['schema']
->;
-
-export type InferSuccessResult<$DataType extends CaseDefinition> = Result.InferSuccess<
-  $DataType['schema']
->;
-
-export type InferFailureResultInit<$DataType extends CaseDefinition> = Result.InferFailureInit<
-  $DataType['schema']
->;
-
-export type InferFailureResult<$DataType extends CaseDefinition> = Result.InferFailure<
-  $DataType['schema']
->;
