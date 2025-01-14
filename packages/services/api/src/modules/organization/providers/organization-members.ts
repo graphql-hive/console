@@ -57,14 +57,14 @@ const RawOrganizationMembershipModel = z.object({
    * Resources that are assigned to the membership
    * If no resources are defined the permissions of the role are applied to all resources within the organization.
    */
-  // TODO: introduce this value
-  // assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
+  assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
 });
 
 export type OrganizationMembershipRoleAssignment = {
   role: OrganizationMemberRole;
   /**
    * Resource assignments as stored within the database.
+   * They are used for displaying the selection UI on the frontend.
    */
   resources: ResourceAssignmentGroup;
   /**
@@ -149,8 +149,7 @@ export class OrganizationMembers {
           throw new Error('Could not resolve role.');
         }
 
-        // TODO: use value read from database
-        const resources: ResourceAssignmentGroup = '*';
+        const resources: ResourceAssignmentGroup = record.assignedResources ?? '*';
 
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
@@ -249,12 +248,103 @@ export class OrganizationMembers {
     const mapping = await this.resolveMemberships(organization, [membership]);
     return mapping.get(membership.userId) ?? null;
   }
+
+  /**
+   * This method translates the database stored member resource assignment to the GraphQL layer
+   * exposed resource assignment.
+   *
+   * Note: This currently by-passes access checks, granting the viewer read access to all resources
+   * within the organization.
+   */
+  async resolveGraphQLMemberResourceAssignment(member: OrganizationMembership) {
+    if (member.assignedRole.resources === '*') {
+      return {
+        allProjects: true,
+      };
+    }
+
+    const projects = await this.storage.findProjectsByIds(
+      member.assignedRole.resources.map(project => project.id),
+    );
+
+    // if there is no project all the assignments do not longer exist.
+    const [firstProject] = projects.values();
+    if (!firstProject) {
+      return {
+        projects: [],
+      };
+    }
+
+    const filteredProjects = member.assignedRole.resources.filter(row => projects.get(row.id));
+
+    const targetAssignments = filteredProjects.flatMap(project =>
+      project.targets === '*' ? [] : project.targets,
+    );
+
+    const targets = await this.storage.findTargetsByIds(
+      firstProject.orgId,
+      targetAssignments.map(target => target.id),
+    );
+
+    return {
+      projects: filteredProjects
+        .map(projectAssignment => {
+          const project = projects.get(projectAssignment.id);
+          if (!project) {
+            return null;
+          }
+
+          return {
+            projectId: project.id,
+            project,
+            targets:
+              projectAssignment.targets === '*'
+                ? { allTargets: true }
+                : {
+                    targets: projectAssignment.targets
+                      .map(targetAssignment => {
+                        const target = targets.get(targetAssignment.id);
+                        if (!target) return null;
+
+                        return {
+                          targetId: target.id,
+                          target,
+                          appDeployments:
+                            targetAssignment.appDeployments === '*'
+                              ? { allAppDeployments: true }
+                              : {
+                                  appDeployments: targetAssignment.appDeployments.map(
+                                    deployment => deployment.appName,
+                                  ),
+                                },
+                          services:
+                            targetAssignment.services === '*'
+                              ? { allServices: true }
+                              : {
+                                  services: targetAssignment.services.map(
+                                    service => service.serviceName,
+                                  ),
+                                },
+                        };
+                      })
+                      .filter(isNone),
+                  },
+          };
+        })
+        .filter(isNone),
+    };
+  }
+}
+
+function isNone<T>(input: T | null): input is Exclude<T, null> {
+  return input == null;
 }
 
 const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
   ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
+  , ${prefix}."assigned_resources" AS "assignedResources"
 `;
 
 type OrganizationAssignment = {

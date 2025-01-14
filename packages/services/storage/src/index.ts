@@ -19,6 +19,7 @@ import type {
   Project,
   Schema,
   Storage,
+  Target,
   TargetSettings,
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
@@ -1406,6 +1407,18 @@ export async function createStorage(
 
       return result.rows.map(transformProject);
     },
+    async findProjectsByIds(ids) {
+      const result = await pool.query<Slonik<projects>>(
+        sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(ids, 'uuid')}) AND type != 'CUSTOM'`,
+      );
+
+      const map = new Map<string, Project>();
+      result.rows.forEach(row => {
+        const project = transformProject(row);
+        map.set(project.id, project);
+      });
+      return map;
+    },
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
         const projectSlugExists = await t.exists(
@@ -1696,6 +1709,29 @@ export async function createStorage(
         ...TargetModel.parse(r),
         orgId: organization,
       }));
+    },
+    async findTargetsByIds(organizationId, targetIds) {
+      const map = new Map<string, Target>();
+
+      if (targetIds.length === 0) {
+        return map;
+      }
+
+      const results = await pool.query<unknown>(sql`/* getTargets */
+        SELECT
+          ${targetSQLFields}
+        FROM
+          "targets"
+        WHERE
+          "id" = ANY(${sql.array(targetIds, 'uuid')})
+      `);
+
+      results.rows.forEach(r => ({
+        ...TargetModel.parse(r),
+        orgId: organizationId,
+      }));
+
+      return map;
     },
     async getTargetIdsOfOrganization({ organizationId: organization }) {
       const results = await pool.query<Slonik<Pick<targets, 'id'>>>(

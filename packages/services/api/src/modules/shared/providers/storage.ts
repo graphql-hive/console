@@ -210,6 +210,8 @@ export interface Storage {
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
 
+  findProjectsByIds(projectIds: Array<string>): Promise<Map<string, Project>>;
+
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
     | {
         ok: true;
@@ -306,6 +308,8 @@ export interface Storage {
   getTarget(_: TargetSelector): Promise<Target | never>;
 
   getTargets(_: ProjectSelector): Promise<readonly Target[]>;
+
+  findTargetsByIds(organizationId: string, targetIds: Array<string>): Promise<Map<string, Target>>;
 
   getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
