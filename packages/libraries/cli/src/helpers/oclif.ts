@@ -15,10 +15,13 @@ export type InferInput<$Command extends typeof Command> = Pick<
   'args' | 'flags'
 >;
 
-export namespace Types {
-  export type Input = { flags: Types.Flags; args: Types.Args };
-  export type Flags = object;
-  export type Args = object;
-}
+// export namespace Types {
+//   export type Input = {
+//     flags: Flags;
+//     args: Args;
+//   };
+//   export type Flags = object;
+//   export type Args = object;
+// }
 
 export * as OClif from './oclif';
