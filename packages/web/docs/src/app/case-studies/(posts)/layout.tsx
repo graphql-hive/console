@@ -11,7 +11,7 @@ const ONE_OFF_CLASS_CASE_STUDIES = 'case-studies';
 
 export default function CaseStudiesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={cn(ONE_OFF_CLASS_CASE_STUDIES, 'mx-auto box-content max-w-[90rem] px-6')}>
+    <div className={cn(ONE_OFF_CLASS_CASE_STUDIES, 'mx-auto box-content max-w-[90rem]')}>
       <CaseStudiesHeader className="mx-auto max-w-[992px] pl-6 sm:my-12 md:pl-12 lg:my-24" />
       {children}
       <MoreStoriesSection className="sm:my-24" />
