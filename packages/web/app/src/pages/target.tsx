@@ -42,6 +42,18 @@ function isCompositeSchema(
   return schema.__typename === 'CompositeSchema';
 }
 
+function safeJSONFormat(str: string): string {
+  try {
+    const parsed = JSON.parse(str);
+    if (typeof parsed === 'object') {
+      return JSON.stringify(parsed, undefined, 2);
+    }
+    return 'Invalid object.';
+  } catch (e) {
+    return 'Invalid JSON.';
+  }
+}
+
 function SchemaBlock({ schema }: { schema: CompositeSchema }) {
   return (
     <Accordion.Item value={schema.id} key={schema.id} className="border-2 border-gray-900/50">
@@ -53,7 +65,7 @@ function SchemaBlock({ schema }: { schema: CompositeSchema }) {
       </Accordion.Header>
       <Accordion.Content>
         <div className="p-2">
-          {schema.metadata ? <SchemaMetadata metadata={JSON.stringify(JSON.parse(schema.metadata), undefined, 2)} /> : null}
+          {schema.metadata ? <SchemaMetadata metadata={safeJSONFormat(schema.metadata)} /> : null}
           <GraphQLHighlight code={schema.source} />
         </div>
       </Accordion.Content>
