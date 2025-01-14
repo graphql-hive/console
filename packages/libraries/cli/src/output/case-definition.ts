@@ -2,10 +2,6 @@ import { Texture } from '../helpers/texture/texture';
 import { T } from '../helpers/typebox/_namespace';
 import { Result } from './result';
 
-// ---------------------------------
-// Case Definition
-// ---------------------------------
-
 export interface CaseDefinition<$Schema extends T.TObject = T.TObject> {
   schema: $Schema;
   text?: TextBuilder;
@@ -21,7 +17,9 @@ export const defineCaseSuccess: CaseDefinerWithBaseType<typeof Result.SuccessBas
       Result.SuccessBase,
       T.Object({
         data: T.Composite([
-          T.Object({ type: T.Literal(typeName, { default: typeName }) }),
+          T.Object({
+            type: T.Options(T.Literal(typeName), { default: typeName }),
+          }),
           T.Object(config.data),
         ]),
       }),
@@ -39,7 +37,9 @@ export const defineCaseFailure: CaseDefinerWithBaseType<typeof Result.FailureBas
       Result.FailureBase,
       T.Object({
         data: T.Composite([
-          T.Object({ type: T.Literal(typeName, { default: typeName }) }),
+          T.Object({
+            type: T.Options(T.Literal(typeName), { default: typeName }),
+          }),
           T.Object(config.data),
         ]),
       }),

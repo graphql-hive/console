@@ -166,42 +166,42 @@ export default class Whoami extends Command<typeof Whoami> {
       const targetUrl = `${projectUrl}/${result.target.slug}`;
 
       return this.successData({
-        type: 'SuccessContext',
-        token: {
-          name: result.token.name,
-        },
-        organization: {
-          slug: result.organization.slug,
-          url: organizationUrl,
-        },
-        project: {
-          type: result.project.type,
-          slug: result.project.slug,
-          url: projectUrl,
-        },
-        target: {
-          slug: result.target.slug,
-          url: targetUrl,
-        },
-        authorization: {
-          schema: {
-            publish: result.canPublishSchema,
-            check: result.canCheckSchema,
-          },
-        },
+        // type: 'SuccessContext',
+        // token: {
+        //   name: result.token.name,
+        // },
+        // organization: {
+        //   slug: result.organization.slug,
+        //   url: organizationUrl,
+        // },
+        // project: {
+        //   type: result.project.type,
+        //   slug: result.project.slug,
+        //   url: projectUrl,
+        // },
+        // target: {
+        //   slug: result.target.slug,
+        //   url: targetUrl,
+        // },
+        // authorization: {
+        //   schema: {
+        //     publish: result.canPublishSchema,
+        //     check: result.canCheckSchema,
+        //   },
+        // },
       });
     }
 
     if (result.__typename === 'TokenNotFoundError') {
       return this.failure({
-        exitCode: 0,
-        suggestions: [
-          `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,
-        ],
-        data: {
-          type: 'FailureTokenNotFound',
-          message: result.message,
-        },
+        // exitCode: 0,
+        // suggestions: [
+        //   `Not sure how to create a token? Learn more at https://docs.graphql-hive.com/features/tokens.`,
+        // ],
+        // data: {
+        //   type: 'FailureTokenNotFound',
+        //   message: result.message,
+        // },
       });
     }
 

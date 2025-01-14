@@ -45,7 +45,7 @@ export namespace Errors {
       code?: string;
       ref?: string | undefined;
       suggestions?: string[];
-      data?: Output.Result.Failure['data'];
+      data?: Output.Result.Data;
     }) {
       super(parameters.message, {
         // exit: args.exitCode,

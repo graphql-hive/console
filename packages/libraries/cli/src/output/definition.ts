@@ -5,7 +5,9 @@ import { CaseDefinition } from './case-definition';
 import { Result } from './result';
 
 // ---------------------------------
+//
 // Definition
+//
 // ---------------------------------
 
 export interface Definition<$CaseDefinitions extends CaseDefinition[] = CaseDefinition[]> {
@@ -21,7 +23,9 @@ export const define = <$CaseDefinitions extends CaseDefinition[]>(
 };
 
 // ---------------------------------
+//
 // Parse
+//
 // ---------------------------------
 
 /**
@@ -72,7 +76,9 @@ export const parseOrThrow = (definition: Definition, resultInit: object) => {
 };
 
 // ---------------------------------
+//
 // Get Schema
+//
 // ---------------------------------
 
 export const getSchemaEncoded = (definition: Definition): string => {
@@ -86,7 +92,9 @@ export const getSchema = <$Definition extends Definition>(
 };
 
 // ---------------------------------
+//
 // Infer Schema
+//
 // ---------------------------------
 
 export type InferSchema<$Definition extends Definition> = T.TUnion<
@@ -98,10 +106,12 @@ type _InferSchema_GetCaseDefinitionSchemas<$CaseDefinition extends CaseDefinitio
 };
 
 // ---------------------------------
+//
 // Infer Results
+//
 // ---------------------------------
 
-export type InferResults<$Definition extends Definition> = Result.Infer<
+export type InferResults<$Definition extends Definition> = T.Static<
   $Definition['caseDefinitions'][number]['schema']
 >;
 
@@ -109,14 +119,14 @@ export type InferResultFailures<$Definition extends Definition> = Result.Extract
   InferResults<$Definition>
 >;
 
-export type InferResultFailureInits<$Definition extends Definition> = Result.Initify<
-  InferResultFailures<$Definition>
->;
+// export type InferResultFailureInits<$Definition extends Definition> = T.StaticDefault<
+//   InferResultFailures<$Definition>
+// >;
 
 export type InferResultSuccesses<$Definition extends Definition> = Result.ExtractSuccess<
   InferResults<$Definition>
 >;
 
-export type InferResultSuccessInits<$Definition extends Definition> = Result.Initify<
-  InferResultSuccesses<$Definition>
->;
+// export type InferResultSuccessInits<$Definition extends Definition> = T.StaticDefault<
+//   InferResultSuccesses<$Definition>
+// >;
