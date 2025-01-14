@@ -72,10 +72,17 @@ async function main() {
       logger: server.log,
     });
 
-    const rateLimit = createUsageRateLimit({
-      endpoint: env.hive.rateLimit?.endpoint ?? null,
-      logger: server.log,
-    });
+    const rateLimit = createUsageRateLimit(
+      env.hive.rateLimit
+        ? {
+            endpoint: env.hive.rateLimit.endpoint,
+            ttlMs: env.hive.rateLimit.ttl,
+            logger: server.log,
+          }
+        : {
+            logger: server.log,
+          },
+    );
 
     server.route<{
       Body: unknown;
