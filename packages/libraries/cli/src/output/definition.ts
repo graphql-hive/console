@@ -1,7 +1,6 @@
 import { Errors } from '../helpers/errors';
 import { neverCatch, neverUndefined } from '../helpers/general';
 import { T } from '../helpers/typebox/_namespace';
-import { Case } from './_exports';
 import { CaseDefinition } from './case-definition';
 import { Result } from './result';
 
