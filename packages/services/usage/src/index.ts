@@ -12,6 +12,8 @@ import { env } from './environment';
 import {
   collectDuration,
   droppedReports,
+  httpRequestDuration,
+  httpRequestHandlerDuration,
   httpRequests,
   httpRequestsWithNoAccess,
   httpRequestsWithNonExistingToken,
@@ -25,6 +27,12 @@ import { createTokens } from './tokens';
 import { createUsage } from './usage';
 import { usageProcessorV1 } from './usage-processor-1';
 import { usageProcessorV2 } from './usage-processor-2';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    onRequestHRTime: [number, number];
+  }
+}
 
 async function main() {
   if (env.sentry) {
@@ -84,12 +92,26 @@ async function main() {
           },
     );
 
-    server.route<{
-      Body: unknown;
-    }>({
+    server.route<
+      {
+        Body: unknown;
+      },
+      {
+        onRequestTime: number;
+      }
+    >({
       method: 'POST',
       url: '/',
-      async handler(req, res) {
+      onRequest(req, _, done) {
+        req.onRequestHRTime = process.hrtime();
+        done();
+      },
+      onResponse(req, _, done) {
+        const delta = process.hrtime(req.onRequestHRTime);
+        httpRequestDuration.observe(delta[0] + delta[1] / 1e9);
+        done();
+      },
+      handler: measureHandler(async function usageHandler(req, res) {
         httpRequests.inc();
         let token: string | undefined;
         const legacyToken = req.headers['x-api-token'] as string;
@@ -102,8 +124,9 @@ async function main() {
             usedAPIVersion.labels({ version: '1' }).inc();
           } else if (apiVersion === '2') {
             usedAPIVersion.labels({ version: '2' }).inc();
+          } else {
+            usedAPIVersion.labels({ version: 'invalid' }).inc();
           }
-          usedAPIVersion.labels({ version: 'invalid' }).inc();
         } else {
           usedAPIVersion.labels({ version: 'none' }).inc();
         }
@@ -285,7 +308,7 @@ async function main() {
           });
           void res.status(500).send();
         }
-      },
+      }),
     });
 
     server.route({
@@ -342,4 +365,16 @@ function measureParsing<T>(fn: () => T, version: 'v1' | 'v2'): T {
   } finally {
     stop();
   }
+}
+
+function measureHandler<$Req, $Res>(fn: (_req: $Req, _res: $Res) => Promise<void>) {
+  return async function (req: $Req, res: $Res) {
+    const stop = httpRequestHandlerDuration.startTimer();
+
+    try {
+      await fn(req, res);
+    } finally {
+      stop();
+    }
+  };
 }

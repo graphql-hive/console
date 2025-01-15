@@ -27,6 +27,16 @@ export const httpRequests = new metrics.Counter({
   help: 'Number of http requests',
 });
 
+export const httpRequestDuration = new metrics.Histogram({
+  name: 'usage_http_request_duration_seconds',
+  help: 'Duration of an HTTP Request in seconds',
+});
+
+export const httpRequestHandlerDuration = new metrics.Histogram({
+  name: 'usage_http_request_handler_duration_seconds',
+  help: 'Duration of an HTTP Request handler in seconds',
+});
+
 export const httpRequestsWithoutToken = new metrics.Counter({
   name: 'usage_http_requests_no_token',
   help: 'Number of http requests without a token',
