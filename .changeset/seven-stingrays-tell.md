@@ -4,7 +4,7 @@
 
 Add experimental json file flag to command `schema:check`.
 
-On the `schema:check` command, you can now use the flag `--experimental-json-file ./path/to/file.json` to output a JSON file containing the command's result.
+On the `schema:check` command, you can now use the flag `--experimental-json-file ./path/to/schema-check-result.json` to output a JSON file containing the command's result.
 
 This experimental feature is designed to help you with scripting, typically in CI/CD pipelines.
 
