@@ -4,10 +4,11 @@ excerpt:
   'As the company scaled, the need for a robust, flexible, and efficient API architecture became
   paramount, leading to the adoption of GraphQL with Hive as their central API management solution.'
 category: Finance
+# We would need to go through approval to get author images. I guess we can leave this as is for now.
 authors:
-  - name: Author
-    position: Position
-    avatar: https://placedog.net/24/24
+  - name:
+    position:
+    avatar:
 ---
 
 import { DocsIcon, LargeCallout } from '#components/large-callout'
@@ -15,7 +16,7 @@ import { Lede } from '#components/lede'
 import { SmallAvatar } from '#components/small-avatar'
 import { CallToAction, ContactButton } from '@theguild/components'
 
-[Wealthsimple](https://www.wealthsimple.com/en-ca) is one of Canada’s fastest growing financial
+[Wealthsimple](https://www.wealthsimple.com/en-ca) is one of Canada's fastest growing financial
 institutions and offers a full suite of simple, sophisticated financial products. As the company
 scaled, the need for a robust, flexible, and efficient API architecture became paramount, leading to
 the adoption of GraphQL with Hive as their central API management solution.
@@ -40,7 +41,7 @@ The primary challenges that led Wealthsimple to seek a GraphQL solution included
 
 ## Architecture
 
-### **GraphQL Gateway**
+### GraphQL Gateway
 
 At the heart of the system lies a centralized GraphQL gateway that serves as the primary entry point
 for all client applications. Built with TypeScript and Node.js, this gateway acts as an intelligent
@@ -48,7 +49,7 @@ router, orchestrating requests across the service landscape. The gateway impleme
 [schema stitching](https://the-guild.dev/graphql/stitching) to unify microservice schemas into a
 cohesive API surface.
 
-### **Service Layer**
+### Service Layer
 
 The underlying service layer comprises domain-specific services, representing different areas of
 Wealthsimple's financial ecosystem. Most services are built in Ruby, with a small subset using other
@@ -56,6 +57,14 @@ technologies. These services use a mixed architecture approach, where some endpo
 interfaces while others maintain REST APIs. To seamlessly integrate REST services, the gateway
 utilizes Apollo data sources, ensuring consistent data access patterns. The team has also developed
 specialized components, including a custom Spring bean for reporting usage metrics to GraphQL Hive.
+
+<div>
+  > Hive enables Wealthsimple to build flexible and resilient GraphQL APIs. The GitHub integration
+  provides feedback in a format developers are familiar with and conditional breaking changes enable
+  us to focus our discussion on schema design rather than maintenance. Hive empowers us to
+  confidently evolve our schemas by ensuring seamless API updates, detecting potential breaking
+  changes, and guiding developers.
+</div>
 
 ## Implementation
 
@@ -92,6 +101,21 @@ The implementation has delivered several significant benefits:
 - Reduced risk of breaking changes.
 - More efficient schema management.
 
+<LargeCallout
+  icon={<DocsIcon />}
+  heading="Comprehensive Query Insights"
+  variant="secondary"
+  cta={
+    <CallToAction variant="tertiary" href="/docs/dashboard/insights">
+      Learn More
+    </CallToAction>
+  }
+>
+  Get a detailed view of all GraphQL operations executed by your consumers, including performance
+  metrics and total counts. Click on any specific query to explore the full list of fields and
+  arguments used in the operation.
+</LargeCallout>
+
 ## Lessons Learned
 
 1. **Schema Validation Impact**
@@ -115,7 +139,7 @@ The implementation has delivered several significant benefits:
 
    Wealthsimple plans to transition away from their existing git-ops system in favor of Hive's
    comprehensive schema registry feature. This strategic move will modernize their schema management
-   process by providing a centralized, automated system for schema validation and distribution.This
+   process by providing a centralized, automated system for schema validation and distribution. This
    migration represents a key step in Wealthsimple's broader initiative to enhance their API
    infrastructure and developer experience.
 
@@ -128,14 +152,25 @@ The implementation has delivered several significant benefits:
 
 3. **Gateway Evolution**
 
-   Wealthsimple is improving their API gateway infrastructure by focusing on migrating from their
-   current Apollo server with schema stitching to Hive Gateway. Having already tested
+   Wealthsimple is improving its API gateway infrastructure by focusing on migrating from
+   their current Apollo server with schema stitching to Hive Gateway. Having already tested
    [GraphQL Yoga](https://the-guild.dev/graphql/yoga-server) in staging with
    [promising performance gains](https://the-guild.dev/graphql/yoga-server/docs/comparison#better-runtime-performance),
    the team is now working on adopting Hive Gateway to enable a gradual transition to
    [federation](https://the-guild.dev/graphql/hive/federation). This approach will allow teams to
    maintain ownership of their schemas while enabling a methodical, type-by-type migration from the
    existing stitched schema setup to a federated architecture.
+
+<LargeCallout
+  icon={<DocsIcon />}
+  heading="Elevate Your GraphQL Journey"
+  variant="primary"
+  cta={<ContactButton variant="secondary-inverted" />}
+>
+  Transform your API infrastructure like Wealthsimple. Whether it's migrating to a centralized
+  schema registry, enhancing security, or evolving your gateway architecture, our tools and
+  expertise can help you achieve your goals efficiently.
+</LargeCallout>
 
 ## Conclusion
 
