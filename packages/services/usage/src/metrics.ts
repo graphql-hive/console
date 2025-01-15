@@ -1,10 +1,5 @@
 import { metrics } from '@hive/service-common';
 
-export const tokenCacheHits = new metrics.Counter({
-  name: 'usage_tokens_cache_hits',
-  help: 'Number of cache hits',
-});
-
 export const tokenRequests = new metrics.Counter({
   name: 'usage_tokens_requests',
   help: 'Number of requests to Tokens service',
@@ -25,6 +20,16 @@ export const rateLimitDuration = new metrics.Histogram({
 export const httpRequests = new metrics.Counter({
   name: 'usage_http_requests',
   help: 'Number of http requests',
+});
+
+export const httpRequestDuration = new metrics.Histogram({
+  name: 'usage_http_request_duration_seconds',
+  help: 'Duration of an HTTP Request in seconds',
+});
+
+export const httpRequestHandlerDuration = new metrics.Histogram({
+  name: 'usage_http_request_handler_duration_seconds',
+  help: 'Duration of an HTTP Request handler in seconds',
 });
 
 export const httpRequestsWithoutToken = new metrics.Counter({

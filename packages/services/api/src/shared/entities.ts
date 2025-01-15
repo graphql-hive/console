@@ -367,6 +367,8 @@ export interface TargetSettings {
     enabled: boolean;
     period: number;
     percentage: number;
+    requestCount: number;
+    breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
   };

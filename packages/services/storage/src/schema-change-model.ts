@@ -1007,6 +1007,8 @@ export const ConditionalBreakingChangeMetadataModel = z.object({
   settings: z.object({
     retentionInDays: z.number(),
     percentage: z.number(),
+    requestCount: z.number(),
+    breakingChangeFormula: z.enum(['PERCENTAGE', 'REQUEST_COUNT']),
     excludedClientNames: z.array(z.string()).nullable(),
     /** we keep both reference to id and name so in case target gets deleted we can still display the name */
     targets: z.array(
