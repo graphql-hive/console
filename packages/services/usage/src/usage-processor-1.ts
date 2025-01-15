@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv';
 import { parse } from 'graphql';
-import LRU from 'tiny-lru';
+import { LRUCache } from 'lru-cache';
 import type { ServiceLogger as Logger } from '@hive/service-common';
 import { RawReport } from '@hive/usage-common';
 import {
@@ -208,7 +208,9 @@ const ajv = new Ajv({
   },
 });
 
-const validOperationBodyCache = LRU<boolean>(5000, 300_000 /* 5 minutes */);
+const validOperationBodyCache = new LRUCache<string, boolean>({
+  max: 20_000,
+});
 
 const operationMapRecordSchema: JSONSchemaType<OperationMapRecord> = {
   type: 'object',
@@ -270,7 +272,8 @@ export function validateOperationMapRecord(record: OperationMapRecord) {
 }
 
 export function isValidOperationBody(operation: string) {
-  const cached = validOperationBodyCache.get(operation);
+  const operationHash = createHash('sha256').update(operation).digest('hex');
+  const cached = validOperationBodyCache.get(operationHash);
 
   if (typeof cached === 'boolean') {
     return cached;
@@ -280,10 +283,10 @@ export function isValidOperationBody(operation: string) {
     parse(operation, {
       noLocation: true,
     });
-    validOperationBodyCache.set(operation, true);
+    validOperationBodyCache.set(operationHash, true);
     return true;
   } catch (error) {
-    validOperationBodyCache.set(operation, false);
+    validOperationBodyCache.set(operationHash, false);
     return false;
   }
 }

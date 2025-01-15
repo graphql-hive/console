@@ -1,10 +1,5 @@
 import { metrics } from '@hive/service-common';
 
-export const tokenCacheHits = new metrics.Counter({
-  name: 'usage_tokens_cache_hits',
-  help: 'Number of cache hits',
-});
-
 export const tokenRequests = new metrics.Counter({
   name: 'usage_tokens_requests',
   help: 'Number of requests to Tokens service',

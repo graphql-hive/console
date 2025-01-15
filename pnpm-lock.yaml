@@ -1538,9 +1538,6 @@ importers:
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
-      tiny-lru:
-        specifier: 8.0.2
-        version: 8.0.2
       zod:
         specifier: 3.24.1
         version: 3.24.1
