@@ -6,6 +6,8 @@
     "build": "tsx ../../../scripts/runify.ts src/server/index.ts && vite build --outDir dist/client",
     "build-storybook": "storybook build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
+    "generate-changelog": "node ../../../scripts/generate-changelog.js",
+    "postinstall": "pnpm generate-changelog",
     "storybook": "storybook dev -p 6006",
     "typecheck": "tsc --noEmit"
   },
