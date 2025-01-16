@@ -497,17 +497,24 @@ export async function createStorage(
         return;
       }
 
-      const viewerRole = await shared.getOrganizationMemberRoleByName(
-        { organizationId: linkedOrganizationId, roleName: 'Viewer' },
-        connection,
-      );
-      // TODO: turn it into a default role and let the admin choose the default role
+      // Add user and assign default role (either Viewer or custom default role)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
             (organization_id, user_id, role_id)
           VALUES
-            (${linkedOrganizationId}, ${args.userId}, ${viewerRole.id})
+            (
+              ${linkedOrganizationId},
+              ${args.userId},
+              (
+                COALESCE(
+                  (SELECT default_role_id FROM oidc_integrations 
+                    WHERE id = ${args.oidcIntegrationId}),
+                  (SELECT id FROM organization_member_roles
+                    WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
+                )
+              )
+            )
           ON CONFLICT DO NOTHING
           RETURNING *
         `,
@@ -605,7 +612,6 @@ export async function createStorage(
             {
               oidcIntegrationId: oidcIntegration.id,
               userId: internalUser.id,
-              // TODO: pass a default role here
             },
             t,
           );
@@ -3051,6 +3057,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3077,6 +3084,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3139,6 +3147,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "oidc_user_access_only"
+            , "default_role_id"
         `);
 
         return {
@@ -3193,6 +3202,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3215,9 +3225,49 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultMemberRole(args) {
+      return tracedTransaction('updateOIDCDefaultMemberRole', pool, async trx => {
+        // Make sure the role exists and is associated with the organization
+        const roleId = await trx.oneFirst<string>(sql`/* checkRoleExists */
+          SELECT id FROM "organization_member_roles" 
+          WHERE
+            "id" = ${args.roleId} AND
+            "organization_id" = (
+              SELECT "linked_organization_id" FROM "oidc_integrations" WHERE "id" = ${args.oidcIntegrationId}
+            )
+        `);
+
+        if (!roleId) {
+          throw new Error('Role does not exist');
+        }
+
+        const result = await pool.one(sql`/* updateOIDCDefaultMemberRole */
+          UPDATE "oidc_integrations"
+          SET
+            "default_role_id" = ${roleId}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_access_only"
+          , "default_role_id"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async deleteOIDCIntegration(args) {
@@ -4575,6 +4625,7 @@ const OktaIntegrationBaseModel = zod.object({
   client_id: zod.string(),
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
+  default_role_id: zod.string().nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4609,6 +4660,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      defaultMemberRoleId: rawRecord.default_role_id,
     };
   }
 
@@ -4621,6 +4673,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    defaultMemberRoleId: rawRecord.default_role_id,
   };
 };
 
