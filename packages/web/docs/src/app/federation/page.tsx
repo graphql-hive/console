@@ -225,14 +225,18 @@ function HowFederationWorksSection(props: {
         'relative isolate max-w-full rounded-none px-4 py-6 lg:px-8 lg:py-24 xl:px-16 [@media(min-width:1358px)]:px-24',
         'flex flex-col gap-6 lg:flex-row lg:gap-12',
         variant.className,
-        variant.beforeClassName && [
-          "before:absolute before:-top-24 before:left-0 before:hidden before:size-24 before:rounded-bl-3xl before:shadow-[0_48px_0_0] before:content-[''] before:lg:block",
-          variant.beforeClassName,
-        ],
-        variant.afterClassName && [
-          "after:absolute after:right-0 after:top-0 after:hidden after:size-24 after:rounded-tr-3xl after:shadow-[0_-48px_0_0] after:content-[''] after:lg:block",
-          variant.afterClassName,
-        ],
+        variant.beforeClassName
+          ? [
+              "before:absolute before:-top-24 before:left-0 before:hidden before:size-24 before:rounded-bl-3xl before:shadow-[0_48px_0_0] before:content-[''] before:lg:block",
+              variant.beforeClassName,
+            ]
+          : null,
+        variant.afterClassName
+          ? [
+              "after:absolute after:right-0 after:top-0 after:hidden after:size-24 after:rounded-tr-3xl after:shadow-[0_-48px_0_0] after:content-[''] after:lg:block",
+              variant.afterClassName,
+            ]
+          : null,
         props.className,
       )}
     >
