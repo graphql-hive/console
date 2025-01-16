@@ -1,4 +1,11 @@
-import { CompressionTypes, Kafka, logLevel, Partitioners, RetryOptions } from 'kafkajs';
+import {
+  CompressionTypes,
+  Kafka,
+  KafkaJSProtocolError,
+  logLevel,
+  Partitioners,
+  RetryOptions,
+} from 'kafkajs';
 import type { ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
@@ -155,6 +162,9 @@ export function createUsage(config: {
     interval: config.kafka.buffer.interval,
     limitInBytes: 990_000, // 1MB is the limit of a single request to EventHub, let's keep it below that
     useEstimator: config.kafka.buffer.dynamic,
+    isTooLargePayloadError(error) {
+      return error instanceof KafkaJSProtocolError && error.type === 'MESSAGE_TOO_LARGE';
+    },
     calculateReportSize(report) {
       return Object.keys(report.map).length;
     },
