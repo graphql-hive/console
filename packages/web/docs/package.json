@@ -5,7 +5,8 @@
   "scripts": {
     "build": "next build && next-sitemap",
     "dev": "next --turbopack",
-    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
+    "validate-mdx-links": "pnpx validate-mdx-links@1.0.4 --files 'src/**/*.mdx'"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",
