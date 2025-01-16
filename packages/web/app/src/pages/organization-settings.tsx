@@ -23,14 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';

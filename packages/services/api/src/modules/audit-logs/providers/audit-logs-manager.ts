@@ -10,7 +10,7 @@ import { Emails, mjml } from '../../shared/providers/emails';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
-import { AuditLogClickhouseArrayModel, AuditLogType } from './audit-logs-types';
+import { AuditLogClickhouseArrayModel } from './audit-logs-types';
 
 export class AuditLogS3Config {
   constructor(
