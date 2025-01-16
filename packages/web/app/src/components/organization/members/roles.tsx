@@ -685,20 +685,24 @@ function OrganizationMemberRoleRow(props: {
                       <div className="font-medium">Default role for new members</div>
                       <div className="text-sm text-gray-400">
                         <p>New members will be assigned to this role by default.</p>
-                        <p>
-                          You can change it in the{' '}
-                          <Link
-                            to="/$organizationSlug/view/settings"
-                            hash="manage-oidc-integration"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                            }}
-                            className="underline"
-                          >
-                            OIDC settings
-                          </Link>
-                          .
-                        </p>
+                        {props.canChangeOIDCDefaultRole ? (
+                          <p>
+                            You can change it in the{' '}
+                            <Link
+                              to="/$organizationSlug/view/settings"
+                              hash="manage-oidc-integration"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                              }}
+                              className="underline"
+                            >
+                              OIDC settings
+                            </Link>
+                            .
+                          </p>
+                        ) : (
+                          <p>Only admins can change it in the OIDC settings.</p>
+                        )}
                       </div>
                     </div>
                   </TooltipContent>
