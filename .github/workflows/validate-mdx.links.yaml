@@ -1,11 +1,11 @@
 name: validate-mdx-links
 on:
   pull_request:
-    paths:
-      # we run to check if the links are wrong
-      - 'packages/web/docs/src/**/*.mdx'
-      # or if a page disappeared
-      - 'packages/web/docs/src/app/**'
+    # paths:
+    #   # we run to check if the links are wrong
+    #   - 'packages/web/docs/src/**/*.mdx'
+    #   # or if a page disappeared
+    #   - 'packages/web/docs/src/app/**'
 
 jobs:
   validate-mdx-links:
@@ -28,4 +28,8 @@ jobs:
           cacheTurbo: false
 
       - name: validate links in docs
-        run: pnpm tsx ./scripts/validate-mdx-links.ts --cwd packages/web/docs
+        run: |
+          pnpm dlx validate-mdx-links \
+            --verbose \
+            --cwd packages/web/docs \
+            --files "src/**/*.mdx"
