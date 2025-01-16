@@ -14,7 +14,7 @@ jobs:
       packageManager: pnpm
       cwd: 'packages/web/docs'
       files: 'src/**/*.mdx'
-      version: 1.0.4
+      version: '1.0.4'
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
