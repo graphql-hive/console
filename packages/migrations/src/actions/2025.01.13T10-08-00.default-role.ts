@@ -15,7 +15,7 @@ export default {
     {
       name: 'Create an index',
       query: sql`
-        CREATE INDEX IF NOT EXISTS "oidc_integrations_default_role_id_idx"
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS "oidc_integrations_default_role_id_idx"
         ON "oidc_integrations"("default_role_id")
         WHERE "default_role_id" is not null;
       `,
