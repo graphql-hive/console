@@ -2,6 +2,12 @@
 
 export const latestChangelog = [
   {
+    "date": "January 10, 2025",
+    "href": "https://the-guild.dev/graphql/hive/product-updates/2025-01-10-static-breaking-change-threshold",
+    "title": "Added a Conditional Breaking Change Static Threshold",
+    "description": "A minor improvement to our conditional breaking changes behavior that allows changes to be considered breaking based on a minimum number of requests."
+  },
+  {
     "date": "December 27, 2024",
     "href": "https://the-guild.dev/graphql/hive/product-updates/2024-12-27-audit-logs",
     "title": "Audit Logs",
@@ -18,11 +24,5 @@ export const latestChangelog = [
     "href": "https://the-guild.dev/graphql/hive/product-updates/2024-11-20-hive-plugin-apollo-router-crate",
     "title": "Hive Plugin for Apollo-Router now available on Crates.io",
     "description": "We've published the Hive Plugin for Apollo-Router on Crates.io. Learn how to use it in your custom Apollo-Router projects."
-  },
-  {
-    "date": "November 19, 2024",
-    "href": "https://the-guild.dev/graphql/hive/product-updates/2024-11-19-apollo-router-hive-versioning",
-    "title": "Hive Plugin for Apollo Router - Stable v1 Release",
-    "description": "The stable build of Apollo Router with Hive plugin is now available. Learn how to integrate it with your Federation projects."
   }
 ];

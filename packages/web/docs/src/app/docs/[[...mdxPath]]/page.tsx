@@ -21,7 +21,7 @@ export async function generateMetadata(
   };
 }
 
-const Wrapper = useMDXComponents().wrapper;
+const Wrapper = useMDXComponents().wrapper!;
 
 export default async function Page(props: NextPageProps<'...mdxPath'>) {
   const params = await props.params;
