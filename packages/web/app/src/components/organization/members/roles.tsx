@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -48,6 +49,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { scopes } from '@/lib/access/common';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Link } from '@tanstack/react-router';
 
 export const roleFormSchema = z.object({
   name: z
@@ -638,6 +640,9 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
 `);
 
 function OrganizationMemberRoleRow(props: {
+  organizationSlug: string;
+  canChangeOIDCDefaultRole: boolean;
+  isOIDCDefaultRole: boolean;
   role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
   onEdit(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
   onDelete(role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>): void;
@@ -661,6 +666,39 @@ function OrganizationMemberRoleRow(props: {
                       <div className="font-medium">This role is locked</div>
                       <div className="text-sm text-gray-400">
                         Locked roles are created by the system and cannot be modified or deleted.
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          ) : null}
+          {props.isOIDCDefaultRole ? (
+            <div className="ml-2">
+              <TooltipProvider>
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger>
+                    <Badge variant="outline">default</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <div className="flex flex-col items-start gap-y-2 p-2">
+                      <div className="font-medium">Default role for new members</div>
+                      <div className="text-sm text-gray-400">
+                        <p>New members will be assigned to this role by default.</p>
+                        <p>
+                          You can change it in the{' '}
+                          <Link
+                            to="/$organizationSlug/view/settings"
+                            hash="manage-oidc-integration"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                            }}
+                            className="underline"
+                          >
+                            OIDC settings
+                          </Link>
+                          .
+                        </p>
                       </div>
                     </div>
                   </TooltipContent>
@@ -770,8 +808,18 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
     }
     me {
       id
+      role {
+        id
+        name
+      }
       ...OrganizationMemberRoleCreator_MeFragment
       ...OrganizationMemberRoleEditor_MeFragment
+    }
+    oidcIntegration {
+      id
+      defaultMemberRole {
+        id
+      }
     }
   }
 `);
@@ -912,6 +960,9 @@ export function OrganizationMemberRoles(props: {
           <tbody className="divide-y-[1px] divide-gray-500/20">
             {organization.memberRoles?.map(role => (
               <OrganizationMemberRoleRow
+                organizationSlug={organization.slug}
+                isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}
+                canChangeOIDCDefaultRole={organization.me.role?.name === 'Admin'}
                 key={role.id}
                 role={role}
                 onEdit={() => setRoleToEdit(role)}
