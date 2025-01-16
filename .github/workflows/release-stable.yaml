@@ -1,5 +1,18 @@
 on:
   workflow_call:
+    outputs:
+      hivePublish:
+        description: 'A boolean indicating whether hive pkg was published'
+        value: ${{ jobs.publish.outputs.hivePublish }}
+      hiveVersion:
+        description: 'A semver version of the hive pkg, in case it was published'
+        value: ${{ jobs.publish.outputs.hiveVersion }}
+      cliPublish:
+        description: 'A boolean indicating whether cli pkg was published'
+        value: ${{ jobs.publish.outputs.cliPublish }}
+      cliVersion:
+        description: 'A semver version of the cli pkg, in case it was published'
+        value: ${{ jobs.publish.outputs.cliVersion }}
 
 jobs:
   publish:
@@ -13,8 +26,10 @@ jobs:
       AWS_S3_ENDPOINT: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
 
     outputs:
-      publish: ${{ steps.cli.outputs.publish }}
-      version: ${{ steps.cli.outputs.version }}
+      cliPublish: ${{ steps.cli.outputs.publish }}
+      cliVersion: ${{ steps.cli.outputs.version }}
+      hivePublish: ${{ steps.hive.outputs.publish }}
+      hiveVersion: ${{ steps.hive.outputs.version }}
 
     steps:
       - name: checkout
@@ -62,6 +77,17 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "publish=true" >> $GITHUB_OUTPUT
 
+      - name: extract published hive version
+        if:
+          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
+          '"hive"')
+        id: hive
+        run: |
+          echo '${{steps.changesets.outputs.publishedPackages}}' > hive-ver.json
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive")).version' hive-ver.json)`
+          echo "hiveVersion=$VERSION" >> $GITHUB_OUTPUT
+          echo "hivePublish=true" >> $GITHUB_OUTPUT
+
       # Needed for `oclif pack win`
       - name: Install NSIS
         run: |
@@ -101,12 +127,3 @@ jobs:
           cd packages/libraries/router
           cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
           cargo publish --allow-dirty --no-verify
-
-  publish_docker_cli:
-    needs: [publish]
-    uses: ./.github/workflows/dockerize-cli.yaml
-    if: ${{ needs.publish.outputs.publish == 'true' }}
-    with:
-      cliVersion: ${{ needs.publish.outputs.version }}
-      publishLatest: true
-    secrets: inherit
