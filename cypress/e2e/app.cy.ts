@@ -146,7 +146,7 @@ describe('oidc', () => {
 
     cy.get('[data-cy="organization-picker-current"]').contains(slug);
     // Check if the user has the Admin role by checking if the Members tab is visible
-    cy.get(`a[href="/${slug}/view/members"]`).should('exist');
+    cy.get(`a[href^="/${slug}/view/members"]`).should('exist');
   });
 
   it('oidc login for invalid url shows correct error message', () => {
