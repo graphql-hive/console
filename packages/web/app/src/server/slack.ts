@@ -46,6 +46,7 @@ export function connectSlack(server: FastifyInstance) {
     const queryResult = CallBackQuery.safeParse(req.query);
 
     if (!queryResult.success) {
+      req.log.error('Received invalid data from Slack API.');
       void res.status(400).send(queryResult.error.flatten().fieldErrors);
       return;
     }
@@ -101,12 +102,15 @@ export function connectSlack(server: FastifyInstance) {
         },
       },
     });
+
     if (result.errors) {
       req.log.error('Failed setting slack token (orgId=%s)', organizationSlug);
       for (const error of result.errors) {
         req.log.error(error);
       }
+      throw new Error('Failed setting slack token.');
     }
+
     void res.redirect(`/${organizationSlug}/view/settings`);
   });
 
