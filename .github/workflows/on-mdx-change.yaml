@@ -5,11 +5,12 @@ on:
       # we run to check if the links are wrong
       - 'packages/web/docs/src/**/*.mdx'
       # or if a page disappeared
+      - 'packages/web/docs/src/pages/**'
       - 'packages/web/docs/src/app/**'
 
 jobs:
   validate-mdx-links:
-    uses: the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@validate-mdx-links
+    uses: the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@main
     with:
       packageManager: pnpm
       cwd: packages/web/docs
