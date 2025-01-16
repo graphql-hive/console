@@ -9,7 +9,7 @@ on:
 
 jobs:
   validate-mdx-links:
-    uses: the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@validate-mdx-links
+    uses: the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@main
     with:
       packageManager: pnpm
       cwd: packages/web/docs
