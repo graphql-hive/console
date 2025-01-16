@@ -92,7 +92,7 @@ export function connectSlack(server: FastifyInstance) {
         'graphql-client-name': 'Hive App',
         'graphql-client-version': env.release,
       },
-      operationName: 'addSlackIntegration',
+      operationName: 'SlackIntegration_addSlackIntegration',
       document: SlackIntegration_addSlackIntegration,
       variables: {
         input: {
