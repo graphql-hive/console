@@ -1,4 +1,4 @@
-name: 'on-mdx-change'
+name: on-mdx-change
 on:
   pull_request:
     # paths:
@@ -9,12 +9,12 @@ on:
 
 jobs:
   validate-mdx-links:
-    uses: 'the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@validate-mdx-links'
+    uses: the-guild-org/shared-config/.github/workflows/validate-mdx-links.yaml@validate-mdx-links
     with:
       packageManager: pnpm
-      cwd: 'packages/web/docs'
-      files: 'src/**/*.mdx'
+      cwd: packages/web/docs
+      files: src/**/*.mdx
       version: '1.0.4'
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: mdx-${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
