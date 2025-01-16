@@ -1,8 +1,14 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
+import { Kit } from '../kit';
 import { ALLOWED_GLOBALS } from './allowed-globals';
 import { isJSONPrimitive } from './json';
 import { WorkerEvents } from './shared-types';
+
+interface WorkerData {
+  headers: Headers;
+  environmentVariables: Record<string, unknown>;
+}
 
 export type LogMessage = string | Error;
 
@@ -47,11 +53,14 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     return;
   }
 
-  const { environmentVariables, script } = args;
+  const { script } = args;
 
-  // When running in worker `environmentVariables` will not be a reference to the main thread value
-  // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
-  const workingEnvironmentVariables = { ...environmentVariables };
+  const workerData: WorkerData = {
+    headers: new Headers(),
+    // When running in worker `environmentVariables` will not be a reference to the main thread value
+    // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
+    environmentVariables: { ...args.environmentVariables },
+  };
 
   // generate list of all in scope variables, we do getOwnPropertyNames and `for in` because each contain slightly different sets of keys
   const allGlobalKeys = Object.getOwnPropertyNames(globalThis);
@@ -116,15 +125,42 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     },
     environment: {
       get(key: string) {
-        return Object.freeze(workingEnvironmentVariables[key]);
+        return Object.freeze(workerData.environmentVariables[key]);
       },
       set(key: string, value: unknown) {
         const validValue = getValidEnvVariable(value);
         if (validValue === undefined) {
-          delete workingEnvironmentVariables[key];
+          delete workerData.environmentVariables[key];
         } else {
-          workingEnvironmentVariables[key] = validValue;
+          workerData.environmentVariables[key] = validValue;
         }
+      },
+    },
+    /**
+     * Helpers for manipulating the request before it is sent.
+     */
+    request: {
+      /**
+       * Helpers for manipulating the request headers.
+       */
+      headers: {
+        /**
+         * Add one header to the request.
+         *
+         * @param header - The name of the header.
+         * @param value - The value of the header.
+         */
+        add: (header: string, value: string) => {
+          workerData.headers.append(header, value);
+        },
+        /**
+         * Add multiple headers to the request.
+         *
+         * @param headersInit - The {@link HeadersInit} to add.
+         */
+        addMany: (headersInit: HeadersInit) => {
+          Kit.Headers.appendInit(workerData.headers, headersInit);
+        },
       },
     },
     /**
@@ -167,9 +203,12 @@ ${script}})()`;
     sendMessage({ type: WorkerEvents.Outgoing.Event.error, error: error as Error });
     return;
   }
+
   sendMessage({
     type: WorkerEvents.Outgoing.Event.result,
-    environmentVariables: workingEnvironmentVariables,
+    // todo: We need to more precisely type environment value. Currently unknown. Why?
+    environmentVariables: workerData.environmentVariables as any,
+    headers: Array.from(workerData.headers.entries()),
   });
 }
 

@@ -38,9 +38,12 @@ import {
   TriangleRightIcon,
 } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
+import { Kit } from '../kit';
 import { cn } from '../utils';
 import type { LogMessage } from './preflight-script-worker';
 import { IFrameEvents } from './shared-types';
+
+type Result = Omit<IFrameEvents.Outgoing.ResultEventData, 'type' | 'runId'>;
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -141,9 +144,11 @@ const PreflightScript_TargetFragment = graphql(`
 
 type LogRecord = LogMessage | { type: 'separator' };
 
-function safeParseJSON(str: string): Record<string, unknown> | null {
+function safeParseJSON<$UnsafeCast extends Kit.JSON.Value = Kit.JSON.Value>(
+  str: string,
+): $UnsafeCast | null {
   try {
-    return JSON.parse(str);
+    return Kit.JSON.decode(str) as $UnsafeCast;
   } catch {
     return null;
   }
@@ -165,23 +170,47 @@ export function usePreflightScript(args: {
     'hive:laboratory:isPreflightScriptEnabled',
     false,
   );
-  const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
-    'hive:laboratory:environment',
-    '',
-  );
+
+  // ------------
+  // Result State
+  // ------------
+  //
+  // todo: Probably better to store the result as a single JSON object value.
+  // Use a proper versioned schema with codecs for coercing, defaults, validation, etc.
+  //
+  // todo: Improve `useLocalStorage` by allowing passing a codec? Then we can co-locate
+  // the codec with the data and have it applied transparently, use a decoded value
+  // for the default, etc. ?
+
+  const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', '{}'); // prettier-ignore
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
-  useEffect(() => {
-    latestEnvironmentVariablesRef.current = environmentVariables;
-  });
+  useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
+  const decodeEnvironmentVariables = (encoded: string) => safeParseJSON<Result['environmentVariables']>(encoded) ?? {}; // prettier-ignore
+
+  const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', '[]');
+  const latestHeadersRef = useRef(headers);
+  useEffect(() => { latestHeadersRef.current = headers; }); // prettier-ignore
+  const decodeHeaders = (encoded: string) => safeParseJSON<Result['headers']>(encoded) ?? [];
+
+  const decodeResult = (): Result => {
+    return {
+      environmentVariables: decodeEnvironmentVariables(latestEnvironmentVariablesRef.current), // prettier-ignore
+      headers: decodeHeaders(latestHeadersRef.current),
+    };
+  };
+  // -----------
 
   const [state, setState] = useState<PreflightWorkerState>(PreflightWorkerState.ready);
   const [logs, setLogs] = useState<LogRecord[]>([]);
 
   const currentRun = useRef<null | Function>(null);
 
-  async function execute(script = target?.preflightScript?.sourceCode ?? '', isPreview = false) {
+  async function execute(
+    script = target?.preflightScript?.sourceCode ?? '',
+    isPreview = false,
+  ): Promise<Result> {
     if (isPreview === false && !isPreflightScriptEnabled) {
-      return safeParseJSON(latestEnvironmentVariablesRef.current);
+      return decodeResult();
     }
 
     const id = crypto.randomUUID();
@@ -201,7 +230,7 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          environmentVariables: (environmentVariables && safeParseJSON(environmentVariables)) || {},
+          environmentVariables: decodeEnvironmentVariables(environmentVariables),
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
@@ -257,16 +286,20 @@ export function usePreflightScript(args: {
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
-          const mergedEnvironmentVariables = JSON.stringify(
-            {
-              ...safeParseJSON(latestEnvironmentVariablesRef.current),
-              ...ev.data.environmentVariables,
-            },
-            null,
-            2,
-          );
-          setEnvironmentVariables(mergedEnvironmentVariables);
-          latestEnvironmentVariablesRef.current = mergedEnvironmentVariables;
+          const mergedEnvironmentVariablesEncoded = Kit.JSON.encodePretty({
+            ...decodeEnvironmentVariables(latestEnvironmentVariablesRef.current),
+            ...ev.data.environmentVariables,
+          });
+          setEnvironmentVariables(mergedEnvironmentVariablesEncoded);
+          latestEnvironmentVariablesRef.current = mergedEnvironmentVariablesEncoded;
+
+          const mergedHeadersEncoded = Kit.JSON.encodePretty([
+            ...decodeHeaders(latestHeadersRef.current),
+            ...ev.data.headers,
+          ]);
+          setHeaders(mergedHeadersEncoded);
+          latestHeadersRef.current = mergedHeadersEncoded;
+
           setLogs(logs => [
             ...logs,
             `> End running script. Done in ${(Date.now() - now) / 1000}s`,
@@ -299,6 +332,16 @@ export function usePreflightScript(args: {
           setLogs(logs => [...logs, log]);
           return;
         }
+
+        if (ev.data.type === IFrameEvents.Outgoing.Event.ready) {
+          return;
+        }
+
+        if (ev.data.type === IFrameEvents.Outgoing.Event.start) {
+          return;
+        }
+
+        Kit.neverCase(ev.data);
       }
 
       window.addEventListener('message', eventHandler);
@@ -317,7 +360,7 @@ export function usePreflightScript(args: {
       window.removeEventListener('message', eventHandler);
 
       setState(PreflightWorkerState.ready);
-      return safeParseJSON(latestEnvironmentVariablesRef.current);
+      return decodeResult();
     } catch (err) {
       if (err instanceof Error) {
         setLogs(prev => [
@@ -329,7 +372,7 @@ export function usePreflightScript(args: {
           },
         ]);
         setState(PreflightWorkerState.ready);
-        return safeParseJSON(latestEnvironmentVariablesRef.current);
+        return decodeResult();
       }
       throw err;
     }

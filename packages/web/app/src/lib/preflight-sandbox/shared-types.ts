@@ -28,12 +28,10 @@ export namespace IFrameEvents {
       log: string | Error;
     };
 
-    type ResultEventData = {
+    export interface ResultEventData extends Omit<WorkerEvents.Outgoing.EventData.Result, 'type'> {
       type: Event.result;
       runId: string;
-      environmentVariables: Record<string, unknown>;
-    };
-
+    }
     type ErrorEventData = {
       type: Event.error;
       runId: string;
@@ -100,23 +98,43 @@ export namespace WorkerEvents {
       prompt = 'prompt',
     }
 
-    type LogEventData = { type: Event.log; message: string };
-    type ErrorEventData = { type: Event.error; error: Error };
-    type PromptEventData = {
-      type: Event.prompt;
-      promptId: number;
-      message: string;
-      defaultValue: string;
-    };
-    type ResultEventData = { type: Event.result; environmentVariables: Record<string, unknown> };
-    type ReadyEventData = { type: Event.ready };
+    export namespace EventData {
+      export interface Log {
+        type: Event.log;
+        message: string;
+      }
 
-    export type EventData =
-      | ResultEventData
-      | LogEventData
-      | ErrorEventData
-      | ReadyEventData
-      | PromptEventData;
+      export interface Error {
+        type: Event.error;
+        error: globalThis.Error;
+      }
+
+      export interface Prompt {
+        type: Event.prompt;
+        promptId: number;
+        message: string;
+        defaultValue: string;
+      }
+
+      export interface Result {
+        type: Event.result;
+        environmentVariables: Record<string, string>;
+        headers: [name: string, value: string][];
+      }
+
+      export interface Ready {
+        type: Event.ready;
+      }
+    }
+
+    export type EventData = {
+      log: EventData.Log;
+      error: EventData.Error;
+      prompt: EventData.Prompt;
+      result: EventData.Result;
+      ready: EventData.Ready;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 

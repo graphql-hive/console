@@ -251,7 +251,7 @@ function Save(props: {
   );
 }
 
-function substituteVariablesInHeader(
+function substituteVariablesInHeaders(
   headers: Record<string, string>,
   environmentVariables: Record<string, unknown>,
 ) {
@@ -313,7 +313,7 @@ function LaboratoryPageContent(props: {
 
   const fetcher = useMemo<Fetcher>(() => {
     return async (params, opts) => {
-      let headers = opts?.headers;
+      let headers = opts?.headers ?? {};
       const url =
         (actualSelectedApiEndpoint === 'linkedApi' ? target?.graphqlEndpointUrl : undefined) ??
         mockEndpoint;
@@ -328,8 +328,26 @@ function LaboratoryPageContent(props: {
         });
         try {
           const result = await preflightScript.execute();
-          if (result && headers) {
-            headers = substituteVariablesInHeader(headers, result);
+          // todo: Why check `result` truthiness here if it can never by falsy?
+          if (result) {
+            // We merge the result headers into the fetcher headers before performing header variable substitution
+            // so that users can have a predictable experience working with headers regardless of the place those
+            // headers come from.
+            //
+            // todo: GraphiQLFetcher appears to only support record-shaped headers which seems wrong because it
+            // precludes complete usage of Headers data structure, namely where there are multiple values for one
+            // header. We could try to hack a solution here by doing merges of such cases but that seems
+            // likely to introduce more bugs given the different formats that different kinds of headers use to
+            // delineate multiple values.
+            //
+            // What should really happen is that GraphiQLFetcher accepts a HeadersInit type.
+            //
+            const newHeadersLossyFixMe = Object.fromEntries(result.headers);
+            headers = {
+              ...headers,
+              ...newHeadersLossyFixMe,
+            };
+            headers = substituteVariablesInHeaders(headers, result.environmentVariables);
           }
         } catch (err: unknown) {
           if (err instanceof Error === false) {
