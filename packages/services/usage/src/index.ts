@@ -12,10 +12,13 @@ import { env } from './environment';
 import {
   collectDuration,
   droppedReports,
+  httpRequestDuration,
+  httpRequestHandlerDuration,
   httpRequests,
   httpRequestsWithNoAccess,
   httpRequestsWithNonExistingToken,
   httpRequestsWithoutToken,
+  parseReportDuration,
   tokensDuration,
   usedAPIVersion,
 } from './metrics';
@@ -24,6 +27,12 @@ import { createTokens } from './tokens';
 import { createUsage } from './usage';
 import { usageProcessorV1 } from './usage-processor-1';
 import { usageProcessorV2 } from './usage-processor-2';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    onRequestHRTime: [number, number];
+  }
+}
 
 async function main() {
   if (env.sentry) {
@@ -71,19 +80,38 @@ async function main() {
       logger: server.log,
     });
 
-    const rateLimit = env.hive.rateLimit
-      ? createUsageRateLimit({
-          endpoint: env.hive.rateLimit.endpoint,
-          logger: server.log,
-        })
-      : null;
+    const rateLimit = createUsageRateLimit(
+      env.hive.rateLimit
+        ? {
+            endpoint: env.hive.rateLimit.endpoint,
+            ttlMs: env.hive.rateLimit.ttl,
+            logger: server.log,
+          }
+        : {
+            logger: server.log,
+          },
+    );
 
-    server.route<{
-      Body: unknown;
-    }>({
+    server.route<
+      {
+        Body: unknown;
+      },
+      {
+        onRequestTime: number;
+      }
+    >({
       method: 'POST',
       url: '/',
-      async handler(req, res) {
+      onRequest(req, _, done) {
+        req.onRequestHRTime = process.hrtime();
+        done();
+      },
+      onResponse(req, _, done) {
+        const delta = process.hrtime(req.onRequestHRTime);
+        httpRequestDuration.observe(delta[0] + delta[1] / 1e9);
+        done();
+      },
+      handler: measureHandler(async function usageHandler(req, res) {
         httpRequests.inc();
         let token: string | undefined;
         const legacyToken = req.headers['x-api-token'] as string;
@@ -96,8 +124,9 @@ async function main() {
             usedAPIVersion.labels({ version: '1' }).inc();
           } else if (apiVersion === '2') {
             usedAPIVersion.labels({ version: '2' }).inc();
+          } else {
+            usedAPIVersion.labels({ version: 'invalid' }).inc();
           }
-          usedAPIVersion.labels({ version: 'invalid' }).inc();
         } else {
           usedAPIVersion.labels({ version: 'none' }).inc();
         }
@@ -160,25 +189,23 @@ async function main() {
           status: 'success',
         });
 
-        if (
-          await rateLimit
-            ?.isRateLimited({
-              id: tokenInfo.target,
-              type: 'operations-reporting',
-              token,
-              entityType: 'target',
-            })
-            .catch(error => {
-              authenticatedRequestLogger.error('Failed to check rate limit');
-              authenticatedRequestLogger.error(error);
-              Sentry.captureException(error, {
-                level: 'error',
-              });
+        const isRateLimited = await rateLimit
+          .isRateLimited({
+            targetId: tokenInfo.target,
+            token,
+          })
+          .catch(error => {
+            authenticatedRequestLogger.error('Failed to check rate limit');
+            authenticatedRequestLogger.error(error);
+            Sentry.captureException(error, {
+              level: 'error',
+            });
 
-              // If we can't check rate limit, we should not drop the report
-              return false;
-            })
-        ) {
+            // If we can't check rate limit, we should not drop the report
+            return false;
+          });
+
+        if (isRateLimited) {
           droppedReports
             .labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization })
             .inc();
@@ -193,14 +220,15 @@ async function main() {
           return;
         }
 
-        const retentionInfo =
-          (await rateLimit?.getRetentionForTargetId?.(tokenInfo.target).catch(error => {
+        const retentionInfo = await rateLimit
+          .getRetentionForTargetId(tokenInfo.target)
+          .catch(error => {
             authenticatedRequestLogger.error(error);
             Sentry.captureException(error, {
               level: 'error',
             });
             return null;
-          })) || null;
+          });
 
         if (typeof retentionInfo !== 'number') {
           authenticatedRequestLogger.error('Failed to get retention info');
@@ -221,7 +249,10 @@ async function main() {
           }
 
           if (apiVersion === undefined || apiVersion === '1') {
-            const result = usageProcessorV1(server.log, req.body as any, tokenInfo, retentionInfo);
+            const result = measureParsing(
+              () => usageProcessorV1(server.log, req.body as any, tokenInfo, retentionInfo),
+              'v1',
+            );
             collect(result.report);
             stopTimer({
               status: 'success',
@@ -231,7 +262,10 @@ async function main() {
               operations: result.operations,
             });
           } else if (apiVersion === '2') {
-            const result = usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo);
+            const result = measureParsing(
+              () => usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo),
+              'v2',
+            );
 
             if (result.success === false) {
               stopTimer({
@@ -274,7 +308,7 @@ async function main() {
           });
           void res.status(500).send();
         }
-      },
+      }),
     });
 
     server.route({
@@ -318,3 +352,29 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
+
+function measureParsing<T>(fn: () => T, version: 'v1' | 'v2'): T {
+  const stop = parseReportDuration.startTimer({ version });
+  try {
+    const result = fn();
+
+    return result;
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
+  } finally {
+    stop();
+  }
+}
+
+function measureHandler<$Req, $Res>(fn: (_req: $Req, _res: $Res) => Promise<void>) {
+  return async function (req: $Req, res: $Res) {
+    const stop = httpRequestHandlerDuration.startTimer();
+
+    try {
+      await fn(req, res);
+    } finally {
+      stop();
+    }
+  };
+}

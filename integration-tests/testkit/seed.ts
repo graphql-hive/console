@@ -49,6 +49,7 @@ import {
   updateTargetValidationSettings,
 } from './flow';
 import {
+  BreakingChangeFormula,
   OrganizationAccessScope,
   ProjectAccessScope,
   ProjectType,
@@ -632,9 +633,13 @@ export function initSeed() {
                   excludedClients,
                   percentage,
                   target: ttarget = target,
+                  requestCount,
+                  breakingChangeFormula,
                 }: {
                   excludedClients?: string[];
                   percentage: number;
+                  requestCount?: number;
+                  breakingChangeFormula?: BreakingChangeFormula;
                   target?: TargetOverwrite;
                 }) {
                   const result = await updateTargetValidationSettings(
@@ -644,6 +649,8 @@ export function initSeed() {
                       targetSlug: ttarget.slug,
                       excludedClients,
                       percentage,
+                      requestCount,
+                      breakingChangeFormula,
                       period: 2,
                       targetIds: [target.id],
                     },

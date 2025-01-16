@@ -5,7 +5,7 @@ import { subHours } from 'date-fns/subHours';
 import { buildASTSchema, buildSchema, parse, print, TypeInfo } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { graphql } from 'testkit/gql';
-import { ProjectType } from 'testkit/gql/graphql';
+import { BreakingChangeFormula, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
 import { UTCDate } from '@date-fns/utc';
@@ -2135,7 +2135,7 @@ const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
 `);
 
 test.concurrent(
-  'test threshold when using conditional breaking change detection',
+  'test threshold when using conditional breaking change "PERCENTAGE" detection',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -2337,6 +2337,168 @@ test.concurrent(
     }
 
     expect(relevant.schemaCheck.errors).toEqual({
+      nodes: [
+        {
+          message: "Field 'a' was removed from object type 'Query'",
+        },
+      ],
+      total: 1,
+    });
+  },
+);
+
+test.concurrent(
+  'test threshold when using conditional breaking change "REQUEST_COUNT" detection',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings } =
+      await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+    await toggleTargetValidation(true);
+    await updateTargetValidationSettings({
+      excludedClients: [],
+      requestCount: 2,
+      percentage: 0,
+      breakingChangeFormula: BreakingChangeFormula.RequestCount,
+    });
+
+    const sdl = /* GraphQL */ `
+      type Query {
+        a: String
+        b: String
+        c: String
+      }
+    `;
+
+    const queryA = parse(/* GraphQL */ `
+      query {
+        a
+      }
+    `);
+
+    function collectA() {
+      client.collectUsage()(
+        {
+          document: queryA,
+          schema,
+          contextValue: {
+            request,
+          },
+        },
+        {},
+      );
+    }
+
+    const schema = buildASTSchema(parse(sdl));
+
+    const schemaPublishResult = await token
+      .publishSchema({
+        sdl,
+        author: 'Kamil',
+        commit: 'initial',
+      })
+      .then(res => res.expectNoGraphQLErrors());
+
+    expect(schemaPublishResult.schemaPublish.__typename).toEqual('SchemaPublishSuccess');
+
+    const unused = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          b: String
+          c: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (unused.schemaCheck.__typename !== 'SchemaCheckSuccess') {
+      throw new Error(`Expected SchemaCheckSuccess, got ${unused.schemaCheck.__typename}`);
+    }
+
+    expect(unused.schemaCheck.changes).toEqual(
+      expect.objectContaining({
+        nodes: expect.arrayContaining([
+          expect.objectContaining({
+            message: "Field 'a' was removed from object type 'Query' (non-breaking based on usage)",
+          }),
+        ]),
+        total: 1,
+      }),
+    );
+
+    const usageAddress = await getServiceHost('usage', 8081);
+
+    const client = createHive({
+      enabled: true,
+      token: token.secret,
+      usage: true,
+      debug: false,
+      agent: {
+        logger: createLogger('debug'),
+        maxSize: 1,
+      },
+      selfHosting: {
+        usageEndpoint: 'http://' + usageAddress,
+        graphqlEndpoint: 'http://noop/',
+        applicationUrl: 'http://noop/',
+      },
+    });
+
+    const request = new Request('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-graphql-client-name': 'integration-tests',
+        'x-graphql-client-version': '6.6.6',
+      },
+    });
+
+    collectA();
+
+    await waitFor(8000);
+
+    const below = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          b: String
+          c: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (below.schemaCheck.__typename !== 'SchemaCheckSuccess') {
+      throw new Error(`Expected SchemaCheckSuccess, got ${below.schemaCheck.__typename}`);
+    }
+
+    expect(below.schemaCheck.changes).toEqual(
+      expect.objectContaining({
+        nodes: expect.arrayContaining([
+          expect.objectContaining({
+            message: "Field 'a' was removed from object type 'Query' (non-breaking based on usage)",
+          }),
+        ]),
+        total: 1,
+      }),
+    );
+
+    // Now let's make Query.a above threshold by making a 2nd query for Query.a
+    collectA();
+
+    await waitFor(8000);
+
+    const above = await token
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          b: String
+          c: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (above.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${above.schemaCheck.__typename}`);
+    }
+
+    expect(above.schemaCheck.errors).toEqual({
       nodes: [
         {
           message: "Field 'a' was removed from object type 'Query'",

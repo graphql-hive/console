@@ -7,11 +7,10 @@ import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Emails, mjml } from '../../shared/providers/emails';
-import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
-import { AuditLogClickhouseArrayModel, AuditLogType } from './audit-logs-types';
+import { AuditLogClickhouseArrayModel } from './audit-logs-types';
 
 export class AuditLogS3Config {
   constructor(
@@ -37,7 +36,6 @@ export class AuditLogManager {
     private emailProvider: Emails,
     private session: Session,
     private storage: Storage,
-    private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'AuditLogManager' });
   }
@@ -45,7 +43,7 @@ export class AuditLogManager {
   async getAuditLogsByDateRange(
     organizationId: string,
     filter: { startDate: Date; endDate: Date },
-  ): Promise<{ data: AuditLogType[] }> {
+  ) {
     await this.session.assertPerformAction({
       action: 'auditLog:export',
       organizationId,
@@ -82,11 +80,7 @@ export class AuditLogManager {
       timeout: 10000,
     });
 
-    const data = AuditLogClickhouseArrayModel.parse(result.data);
-
-    return {
-      data,
-    };
+    return AuditLogClickhouseArrayModel.parse(result.data);
   }
 
   @traceFn('AuditLogsManager.exportAndSendEmail', {
@@ -103,7 +97,7 @@ export class AuditLogManager {
     }),
   })
   async exportAndSendEmail(
-    organizationSlug: string,
+    organizationId: string,
     filter: { startDate: Date; endDate: Date },
   ): Promise<
     | {
@@ -119,9 +113,6 @@ export class AuditLogManager {
         };
       }
   > {
-    const organizationId = await this.idTranslator.translateOrganizationId({
-      organizationSlug,
-    });
     await this.session.assertPerformAction({
       action: 'auditLog:export',
       organizationId,
@@ -132,7 +123,7 @@ export class AuditLogManager {
 
     const getAllAuditLogs = await this.getAuditLogsByDateRange(organizationId, filter);
 
-    if (!getAllAuditLogs || !getAllAuditLogs.data || getAllAuditLogs.data.length === 0) {
+    if (!getAllAuditLogs || !getAllAuditLogs || getAllAuditLogs.length === 0) {
       return {
         error: {
           message: 'No audit logs found for the given date range',
@@ -144,7 +135,7 @@ export class AuditLogManager {
       const { email } = await this.session.getViewer();
       const csvData = await new Promise<string>((resolve, reject) => {
         stringify(
-          getAllAuditLogs.data,
+          getAllAuditLogs,
           {
             header: true,
             columns: {
