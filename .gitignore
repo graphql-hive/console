@@ -140,4 +140,3 @@ schema.graphql
 resolvers.generated.ts
 
 docker/docker-compose.override.yml
-packages/web/docs/public/_pagefind/
