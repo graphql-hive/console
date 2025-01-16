@@ -2,6 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2025.01.13T10-08-00.default-role.ts',
+  noTransaction: true,
   // Adds a default role to OIDC integration and set index on "oidc_integrations"."default_role_id"
   run: ({ sql }) => [
     {
