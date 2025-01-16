@@ -658,7 +658,6 @@ function OIDCDefaultRoleSelector(props: {
       disabled={props.disabled}
       onSelect={async role => {
         if (role.id === defaultRole.id) {
-          // No need to update
           return;
         }
 
