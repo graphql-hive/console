@@ -1,5 +1,50 @@
 # hive
 
+## 4.0.0
+
+### Major Changes
+
+- [#6259](https://github.com/graphql-hive/console/pull/6259)
+  [`1168564`](https://github.com/graphql-hive/console/commit/1168564ef06e10e90381ad7808f46c5f205be3ea)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - No longer support the legacy registry
+  models. Announcement https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry
+
+### Minor Changes
+
+- [#6340](https://github.com/graphql-hive/console/pull/6340)
+  [`3183f5a`](https://github.com/graphql-hive/console/commit/3183f5a9b40ab389b413199747aeff4b9ea1cbe8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove the legacy member role assignment wizard.
+
+- [#6341](https://github.com/graphql-hive/console/pull/6341)
+  [`2fa3352`](https://github.com/graphql-hive/console/commit/2fa33520b36e4a0662ab9c74abc06fb4705d2a53)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Allow to close the last tab in
+  Laboratory
+
+- [#6254](https://github.com/graphql-hive/console/pull/6254)
+  [`b58d2c5`](https://github.com/graphql-hive/console/commit/b58d2c5fdb856a3f0710d1551e1e9306eb7cbcc0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add option for checking breaking changes by a fixed
+  request count
+
+### Patch Changes
+
+- [#6332](https://github.com/graphql-hive/console/pull/6332)
+  [`6b9192c`](https://github.com/graphql-hive/console/commit/6b9192c71845d3312cb2a9b1e7c1d9a552fb6f8f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Assigns custom roles to members without
+  a role to complete https://the-guild.dev/graphql/hive/product-updates/2023-12-05-member-roles
+
+- [#6369](https://github.com/graphql-hive/console/pull/6369)
+  [`b40cabd`](https://github.com/graphql-hive/console/commit/b40cabda747641f13fcf183557ce023d12eec2b1)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix the audit log export
+
+- [#6368](https://github.com/graphql-hive/console/pull/6368)
+  [`0c2e953`](https://github.com/graphql-hive/console/commit/0c2e953fac76cff1c7cb397468c480c28366f665)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix connecting slack integration.
+
+- [#6365](https://github.com/graphql-hive/console/pull/6365)
+  [`bab2cf0`](https://github.com/graphql-hive/console/commit/bab2cf08a596892bc2c7ac0a1e5b00673808bff6)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Fix release and package flow for Docker
+  images of `hive`
+
 ## 3.0.0
 
 ### Major Changes
