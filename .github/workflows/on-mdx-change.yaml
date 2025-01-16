@@ -1,11 +1,11 @@
 name: on-mdx-change
 on:
   pull_request:
-    # paths:
-    #   # we run to check if the links are wrong
-    #   - 'packages/web/docs/src/**/*.mdx'
-    #   # or if a page disappeared
-    #   - 'packages/web/docs/src/app/**'
+    paths:
+      # we run to check if the links are wrong
+      - 'packages/web/docs/src/**/*.mdx'
+      # or if a page disappeared
+      - 'packages/web/docs/src/app/**'
 
 jobs:
   validate-mdx-links:
