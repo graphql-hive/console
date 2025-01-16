@@ -714,9 +714,8 @@ function AuditLogsOrganizationModal(props: {
     props.toggleModalOpen();
     form.reset();
     toast({
-      variant: 'warning',
-      title: 'Audit logs report started',
-      description: 'Your audit logs report is being generated. You will receive an email shortly.',
+      title: 'Audit logs report generated',
+      description: 'The audit logs report has been generated and will be sent to your email.',
     });
   }
 
