@@ -84,7 +84,7 @@ export function connectSlack(server: FastifyInstance) {
 
     const token = slackResponseResult.data.access_token;
 
-    await graphqlRequest({
+    const result = await graphqlRequest({
       url: env.graphqlPublicEndpoint,
       headers: {
         ...req.headers,
@@ -101,6 +101,12 @@ export function connectSlack(server: FastifyInstance) {
         },
       },
     });
+    if (result.errors) {
+      req.log.error('Failed setting slack token (orgId=%s)', organizationSlug);
+      for (const error of result.errors) {
+        req.log.error(error);
+      }
+    }
     void res.redirect(`/${organizationSlug}/view/settings`);
   });
 
