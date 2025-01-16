@@ -1,6 +1,6 @@
 'use client';
 
-import type { FC, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Anchor, useConfig } from '@theguild/components';
 import { authors } from '../../../authors';
@@ -14,14 +14,14 @@ type Meta = {
   description: string;
 };
 
-const Authors: FC<{ meta: Meta }> = ({ meta }) => {
+const Authors = ({ meta }: { meta: Meta }): ReactElement => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
   if (meta.authors.length === 1) {
     const author = authors[meta.authors[0]];
 
     return (
-      <div className="my-5 flex items-center justify-center">
+      <div className="my-5 flex flex-row items-center justify-center">
         <Anchor href={author.link} title={author.name}>
           <SocialAvatar author={author} />
         </Anchor>
@@ -66,7 +66,7 @@ const Authors: FC<{ meta: Meta }> = ({ meta }) => {
   );
 };
 
-const Layout: FC<{ children: ReactNode }> = ({ children }) => {
+const Layout = ({ children }: { children: ReactNode }): ReactElement => {
   const { normalizePagesResult } = useConfig();
   const metadata = normalizePagesResult.activeMetadata as Meta;
   return (
