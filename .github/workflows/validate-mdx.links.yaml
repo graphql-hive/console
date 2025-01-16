@@ -1,4 +1,4 @@
-name: validate-mdx-links
+name: on-mdx-change
 on:
   pull_request:
     # paths:
