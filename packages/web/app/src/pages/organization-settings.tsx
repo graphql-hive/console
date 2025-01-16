@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
@@ -730,13 +731,12 @@ function AuditLogsOrganizationModal(props: {
                 Select a date range to generate an audit logs report.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-8">
+            <div className="flex flex-row justify-evenly gap-x-8">
               <FormField
                 control={form.control}
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -744,14 +744,14 @@ function AuditLogsOrganizationModal(props: {
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="space-y-8">
+              <div className="mt-2">
+                <ArrowRightIcon className="text-muted-foreground size-6" />
+              </div>
               <FormField
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
