@@ -1,5 +1,12 @@
 # hive
 
+## 4.0.1
+
+### Patch Changes
+
+- [`c6a21ff`](https://github.com/graphql-hive/console/commit/c6a21ffa1bbb32afef86fd137ec3aec1e9b48545)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Bump version to test release flow
+
 ## 4.0.0
 
 ### Major Changes
