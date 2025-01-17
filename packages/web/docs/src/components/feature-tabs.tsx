@@ -312,7 +312,7 @@ function useSmallScreenTabsHandlers() {
     onValueChange: () => {
       if (!isSmallScreen()) return;
       setTimeout(() => {
-        const { activeElement } = document;
+        const activeElement = document.activeElement;
         // This isn't a perfect dropdown for keyboard users, but we only render it on mobiles.
         if (activeElement && activeElement instanceof HTMLElement && activeElement.role === 'tab') {
           activeElement.blur();
