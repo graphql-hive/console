@@ -223,8 +223,8 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
     switch (scope) {
       case OrganizationAccessScope.READ: {
         permissions.add('support:manageTickets');
-        permissions.add('project:create');
         permissions.add('project:describe');
+        permissions.add('project:create');
         break;
       }
       case OrganizationAccessScope.SETTINGS: {
@@ -334,11 +334,10 @@ const predefinedRolesPermissions = {
   /**
    * Permissions the viewer role is assigned with (computed from legacy scopes)
    **/
-  viewer: transformOrganizationMemberLegacyScopesIntoPermissionGroup([
-    OrganizationAccessScope.READ,
-    ProjectAccessScope.READ,
-    ProjectAccessScope.OPERATIONS_STORE_READ,
-    TargetAccessScope.READ,
-    TargetAccessScope.REGISTRY_READ,
+  viewer: permissionsToPermissionsPerResourceLevelAssignment([
+    'support:manageTickets',
+    'project:describe',
+    'appDeployment:describe',
+    'laboratory:describe',
   ]),
 };
