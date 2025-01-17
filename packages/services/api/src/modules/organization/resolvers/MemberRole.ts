@@ -1,4 +1,4 @@
-import { Session } from '../../auth/lib/authz';
+import { Permission, Session } from '../../auth/lib/authz';
 import type { MemberRoleResolvers } from './../../../__generated__/types';
 
 export const MemberRole: MemberRoleResolvers = {
@@ -39,12 +39,8 @@ export const MemberRole: MemberRoleResolvers = {
     return role.isLocked;
   },
   permissions: (role, _arg, _ctx) => {
-    return [
-      ...role.permissions.organization,
-      ...role.permissions.project,
-      ...role.permissions.target,
-      ...role.permissions.service,
-      ...role.permissions.appDeployment,
-    ];
+    return Array.from(Object.values(role.permissions)).flatMap((set: Set<Permission>) =>
+      Array.from(set),
+    );
   },
 };
