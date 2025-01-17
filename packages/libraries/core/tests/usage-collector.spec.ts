@@ -7,6 +7,7 @@ const schema = buildSchema(/* GraphQL */ `
     projectsByType(type: ProjectType!): [Project!]!
     projectsByTypes(types: [ProjectType!]!): [Project!]!
     projects(filter: FilterInput, and: [FilterInput!]): [Project!]!
+    projectsByMetadata(metadata: JSON): [Project!]!
   }
 
   type Mutation {
@@ -22,6 +23,7 @@ const schema = buildSchema(/* GraphQL */ `
     type: ProjectType
     pagination: PaginationInput
     order: [ProjectOrderByInput!]
+    metadata: JSON
   }
 
   input PaginationInput {
@@ -63,6 +65,8 @@ const schema = buildSchema(/* GraphQL */ `
     STITCHING
     SINGLE
   }
+
+  scalar JSON
 `);
 
 const op = parse(/* GraphQL */ `
@@ -446,6 +450,8 @@ test('collect entire input object type used as variable', async () => {
       ProjectOrderByInput.direction,
       OrderDirection.ASC,
       OrderDirection.DESC,
+      FilterInput.metadata,
+      JSON,
     ]
   `);
 });
@@ -486,6 +492,8 @@ test('collect entire input object type used as variable (list)', async () => {
       ProjectOrderByInput.direction,
       OrderDirection.ASC,
       OrderDirection.DESC,
+      FilterInput.metadata,
+      JSON,
     ]
   `);
 });
@@ -549,6 +557,174 @@ test('enum values as list', async () => {
     ]
   `);
 });
+
+test('custom scalar as argument (inlined)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects {
+        projectsByMetadata(metadata: { key: { value: "value" } }) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projectsByMetadata,
+      Query.projectsByMetadata.metadata,
+      Project.name,
+      JSON,
+    ]
+  `);
+});
+
+test('custom scalar as argument (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON) {
+        projectsByMetadata(metadata: $metadata) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projectsByMetadata,
+      Query.projectsByMetadata.metadata,
+      Project.name,
+      JSON,
+    ]
+  `);
+});
+
+// TODO: same but with processVariables: true
+test('custom scalar as an argument (variable with default value)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON = { key: { value: "value" } }) {
+        projectsByMetadata(metadata: $metadata) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projectsByMetadata,
+      Query.projectsByMetadata.metadata,
+      Project.name,
+      JSON,
+    ]
+  `);
+});
+
+test('custom scalar in input object field (inlined)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects {
+        projects(filter: { metadata: { key: "value" } }) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projects,
+      Query.projects.filter,
+      Project.name,
+      FilterInput.metadata,
+      JSON,
+    ]
+  `);
+});
+
+test('custom scalar in input object field (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON) {
+        projects(filter: { metadata: $metadata }) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projects,
+      Query.projects.filter,
+      Project.name,
+      JSON,
+      FilterInput.metadata,
+    ]
+  `);
+});
+
+test('custom scalar in input object field (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON = { key: { value: "value" } }) {
+        projects(filter: { metadata: $metadata }) {
+          name
+        }
+      }
+    `),
+    {},
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projects,
+      Query.projects.filter,
+      Project.name,
+      JSON,
+      FilterInput.metadata,
+    ]
+  `);
+});
+
+//
 
 test('should get a cache hit when document is the same but variables are different (by default)', async () => {
   const collect = createCollector({
@@ -740,6 +916,141 @@ test('(processVariables: true) collect used-only input type fields from an array
       OrderDirection.DESC,
       PaginationInput.limit,
       Int,
+    ]
+  `);
+});
+
+test('(processVariables: true) custom scalar as argument (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+    processVariables: true,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON) {
+        projectsByMetadata(metadata: $metadata) {
+          name
+        }
+      }
+    `),
+    {
+      metadata: {
+        key: {
+          value: 'value',
+        },
+      },
+    },
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projectsByMetadata,
+      Query.projectsByMetadata.metadata,
+      Project.name,
+      JSON,
+    ]
+  `);
+});
+
+test('(processVariables: true) custom scalar as an argument (variable with default value)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON = { key: { value: "value" } }) {
+        projectsByMetadata(metadata: $metadata) {
+          name
+        }
+      }
+    `),
+    {
+      metadata: {
+        key: {
+          value: 'value',
+        },
+      },
+    },
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projectsByMetadata,
+      Query.projectsByMetadata.metadata,
+      Project.name,
+      JSON,
+    ]
+  `);
+});
+
+test('(processVariables: true) custom scalar in input object field (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+    processVariables: true,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON) {
+        projects(filter: { metadata: $metadata }) {
+          name
+        }
+      }
+    `),
+    {
+      metadata: {
+        key: {
+          value: 'value',
+        },
+      },
+    },
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projects,
+      Query.projects.filter,
+      Project.name,
+      JSON,
+      FilterInput.metadata,
+    ]
+  `);
+});
+
+test('(processVariables: true) custom scalar in input object field (variable)', async () => {
+  const collect = createCollector({
+    schema,
+    max: 1,
+    processVariables: true,
+  });
+  const info$ = await collect(
+    parse(/* GraphQL */ `
+      query getProjects($metadata: JSON = { key: { value: "value" } }) {
+        projects(filter: { metadata: $metadata }) {
+          name
+        }
+      }
+    `),
+    {
+      metadata: {
+        value: 'key',
+      },
+    },
+  );
+  const info = await info$.value;
+
+  expect(info.fields).toMatchInlineSnapshot(`
+    [
+      Query.projects,
+      Query.projects.filter,
+      Project.name,
+      JSON,
+      FilterInput.metadata,
     ]
   `);
 });
