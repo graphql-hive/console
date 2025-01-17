@@ -2,7 +2,7 @@ import { ReactElement, SetStateAction, useCallback, useEffect, useMemo, useState
 import clsx from 'clsx';
 import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Scale, Section } from '@/components/common';
+import { Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sortable, Table, TBody, Td, Th, THead, Tooltip, Tr } from '@/components/v2';
@@ -36,6 +36,7 @@ interface Operation {
   failureRate: number;
   requests: number;
   percentage: number;
+  impact: number;
   hash: string;
 }
 
@@ -58,6 +59,7 @@ function OperationRow({
   const p90 = useFormattedDuration(operation.p90);
   const p95 = useFormattedDuration(operation.p95);
   const p99 = useFormattedDuration(operation.p99);
+  const impact = formatNumberIntl(operation.impact);
 
   return (
     <>
@@ -101,10 +103,8 @@ function OperationRow({
         <Td align="center">{p99}</Td>
         <Td align="center">{failureRate}%</Td>
         <Td align="center">{count}</Td>
+        <Td align="center">{impact}</Td>
         <Td align="right">{percentage}%</Td>
-        <Td>
-          <Scale value={operation.percentage} size={10} max={100} className="justify-end" />
-        </Td>
       </Tr>
     </>
   );
@@ -153,6 +153,12 @@ const columns = [
   }),
   columnHelper.accessor('requests', {
     header: 'Requests',
+    meta: {
+      align: 'center',
+    },
+  }),
+  columnHelper.accessor('impact', {
+    header: 'Impact',
     meta: {
       align: 'center',
     },
@@ -206,6 +212,7 @@ function OperationsTable({
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     debugTable: env.nodeEnv !== 'production',
+    enableMultiSort: true,
   });
 
   const firstPage = useCallback(() => {
@@ -386,6 +393,7 @@ function OperationsTableContainer({
           failureRate: (1 - op.countOk / op.count) * 100,
           requests: op.count,
           percentage: op.percentage,
+          impact: op.count * op.duration.p95,
           hash: op.operationHash!,
         });
       }
@@ -453,6 +461,16 @@ const OperationsList_OperationsStatsQuery = graphql(`
     }
   }
 `);
+
+function formatNumberIntl(num: number) {
+  const units = ['', 'K', 'M', 'B', 'T'];
+  const exponent = Math.floor(Math.log10(num) / 3);
+  const scaledNumber = num / Math.pow(10, exponent * 3);
+  const formatter = new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 1,
+  });
+  return `${formatter.format(scaledNumber)}${units[exponent]}`;
+}
 
 export function OperationsList({
   className,
