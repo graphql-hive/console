@@ -1419,6 +1419,20 @@ export class OrganizationManager {
     });
   }
 
+  async getViewerMemberRole(selector: { organizationId: string }) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+      },
+    });
+
+    return this.storage.getViewerOrganizationMemberRole({
+      organizationId: selector.organizationId,
+    });
+  }
+
   async canDeleteRole(
     role: OrganizationMemberRole,
     currentUserScopes: readonly (

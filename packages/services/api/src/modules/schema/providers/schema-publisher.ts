@@ -112,6 +112,8 @@ type ConditionalBreakingChangeConfiguration = {
   conditionalBreakingChangeDiffConfig: ConditionalBreakingChangeDiffConfig;
   retentionInDays: number;
   percentage: number;
+  requestCount: number;
+  breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
   totalRequestCount: number;
 };
 
@@ -196,12 +198,15 @@ export class SchemaPublisher {
           excludedClientNames: settings.validation.excludedClients?.length
             ? settings.validation.excludedClients
             : null,
-          requestCountThreshold: Math.ceil(
-            totalRequestCount * (settings.validation.percentage / 100),
-          ),
+          requestCountThreshold:
+            settings.validation.breakingChangeFormula === 'PERCENTAGE'
+              ? Math.ceil(totalRequestCount * (settings.validation.percentage / 100))
+              : settings.validation.requestCount,
         },
         retentionInDays: settings.validation.period,
         percentage: settings.validation.percentage,
+        requestCount: settings.validation.requestCount,
+        breakingChangeFormula: settings.validation.breakingChangeFormula,
         totalRequestCount,
       };
     } catch (error: unknown) {
@@ -228,6 +233,8 @@ export class SchemaPublisher {
         retentionInDays: args.conditionalBreakingChangeConfiguration.retentionInDays,
         excludedClientNames: conditionalBreakingChangeDiffConfig.excludedClientNames,
         percentage: args.conditionalBreakingChangeConfiguration.percentage,
+        requestCount: args.conditionalBreakingChangeConfiguration.requestCount,
+        breakingChangeFormula: args.conditionalBreakingChangeConfiguration.breakingChangeFormula,
         targets: await Promise.all(
           conditionalBreakingChangeDiffConfig.targetIds.map(async targetId => {
             return {

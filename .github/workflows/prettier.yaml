@@ -25,7 +25,6 @@ jobs:
         uses: ./.github/actions/setup
         with:
           actor: prettier
-          cacheTurbo: false
 
       - name: Cache ESLint and Prettier
         uses: actions/cache@v4

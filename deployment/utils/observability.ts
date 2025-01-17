@@ -111,8 +111,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: '256m',
-          memory: '512Mi',
+          cpu: '512m',
+          memory: '1000Mi',
         },
       },
       podAnnotations: {
@@ -196,12 +196,11 @@ export class Observability {
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
                 // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_usage-service-.*") == true',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
+                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage" and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
                 // Ignore metrics scraping
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                 // Ignore webapp HTTP calls
+                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
               ],
             },

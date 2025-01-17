@@ -29,7 +29,6 @@ jobs:
         with:
           codegen: true
           actor: test-e2e
-          cacheTurbo: false
 
       - name: Install Cypress binary
         run: pnpm cypress install

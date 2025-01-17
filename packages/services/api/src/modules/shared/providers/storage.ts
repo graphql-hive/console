@@ -638,6 +638,11 @@ export interface Storage {
     oidcUserAccessOnly: boolean;
   }): Promise<OIDCIntegration>;
 
+  updateOIDCDefaultMemberRole(_: {
+    oidcIntegrationId: string;
+    roleId: string;
+  }): Promise<OIDCIntegration>;
+
   createCDNAccessToken(_: {
     id: string;
     targetId: string;

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
@@ -114,6 +115,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         message: 'use --registry.accessToken instead',
         version: '0.21.0',
       },
+    }),
+    experimentalJsonFile: Flags.string({
+      name: 'experimental-json-file',
+      description:
+        "File path to output a JSON file containing the command's result. Useful for e.g. CI scripting with `jq`.",
     }),
     forceSafe: Flags.boolean({
       description: 'mark the check as safe, breaking changes are expected',
@@ -232,6 +238,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           usesGitHubApp,
         },
       });
+
+      if (flags.experimentalJsonFile) {
+        fs.writeFileSync(flags.experimentalJsonFile, JSON.stringify(result, null, 2));
+      }
 
       if (result.schemaCheck.__typename === 'SchemaCheckSuccess') {
         const changes = result.schemaCheck.changes;

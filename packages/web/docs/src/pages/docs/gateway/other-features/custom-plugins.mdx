@@ -335,13 +335,13 @@ Possible usage examples of this hook are:
 - Manipulate the request
 - Short circuit before Yoga handles the request
 
-| Payload field   | Description                                                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request). |
-| `serverContext` | The early context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](/docs/features/context).    |
-| `fetchAPI`      | WHATWG Fetch API implementation. [Learn more about the fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).                  |
-| `url`           | WHATWG URL object of the incoming request. [Learn more about the URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL).             |
-| `endResponse`   | A function that allows you to end the request early and send a response to the client.                                                          |
+| Payload field   | Description                                                                                                                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).                                                      |
+| `serverContext` | The early context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](https://the-guild.dev/graphql/yoga-server/docs/features/context#server-context). |
+| `fetchAPI`      | WHATWG Fetch API implementation. [Learn more about the fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).                                                                       |
+| `url`           | WHATWG URL object of the incoming request. [Learn more about the URL object](https://developer.mozilla.org/en-US/docs/Web/API/URL).                                                                  |
+| `endResponse`   | A function that allows you to end the request early and send a response to the client.                                                                                                               |
 
 #### `onRequestParse`
 
@@ -375,12 +375,12 @@ to serve a result from the cache instead.
 
 Possible usage examples of this hook are:
 
-- **[Response Cache](/docs/features/response-caching)**: Short-circuit GraphQL execution if response
-  can be served from the cache.
-- **[Persisted Operations](/docs/features/persisted-operations):** Load the `query` document string
-  from the persisted operations store before running the execution.
-- **[APQ](/docs/features/automatic-persisted-queries):** Load/persist the `query` document string on
-  the persisted operations store.
+- **[Response Cache](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching)**:
+  Short-circuit GraphQL execution if response can be served from the cache.
+- **[Persisted Operations](https://the-guild.dev/graphql/yoga-server/docs/features/persisted-operations):**
+  Load the `query` document string from the persisted operations store before running the execution.
+- **[APQ](https://the-guild.dev/graphql/yoga-server/docs/features/automatic-persisted-queries):**
+  Load/persist the `query` document string on the persisted operations store.
 
 | Payload field | Description                                                                                                                                                                                                      |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -444,7 +444,8 @@ into the after phase by returning a function (see [`onValidateDone`](#onvalidate
 
 **Example actions in this hook:**
 
-- Register additional validation rules (e.g. [Disable Introspection](/docs/features/introspection))
+- Register additional validation rules (e.g.
+  [Disable Introspection](https://the-guild.dev/graphql/yoga-server/docs/features/introspection))
 - Collect metrics about validation success/failures
 
 | Payload field       | Description                                                               |
@@ -819,11 +820,11 @@ Prefer `onRequestParse` when possible, or wrap the hook code in a `try` block.
 - Specify custom response format
 - Logging/Metrics
 
-| Field Name      | Description                                                                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).               |
-| `serverContext` | The final context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](/docs/features/context).                  |
-| `response`      | The outgoing HTTP response as WHATWG `Response` object. [Learn more about the response interface](https://developer.mozilla.org/en-US/docs/Web/API/Response). |
+| Field Name      | Description                                                                                                                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request`       | The incoming HTTP request as WHATWG `Request` object. [Learn more about the request](https://developer.mozilla.org/en-US/docs/Web/API/Request).                                                      |
+| `serverContext` | The final context object that is shared between all hooks and the GraphQL execution. [Learn more about the context](https://the-guild.dev/graphql/yoga-server/docs/features/context#server-context). |
+| `response`      | The outgoing HTTP response as WHATWG `Response` object. [Learn more about the response interface](https://developer.mozilla.org/en-US/docs/Web/API/Response).                                        |
 
 ### Plugin Context
 

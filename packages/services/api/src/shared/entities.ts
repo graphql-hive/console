@@ -219,6 +219,7 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
+  defaultMemberRoleId: string | null;
 }
 
 export interface CDNAccessToken {
@@ -367,6 +368,8 @@ export interface TargetSettings {
     enabled: boolean;
     period: number;
     percentage: number;
+    requestCount: number;
+    breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
   };
