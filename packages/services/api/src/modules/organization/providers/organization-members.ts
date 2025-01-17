@@ -30,6 +30,15 @@ const ProjectAssignmentModel = z.object({
   targets: z.union([WildcardAssignmentModel, z.array(TargetAssignmentModel)]),
 });
 
+/**
+ * Tree data structure that represents the resources assigned to an organization member.
+ *
+ * Together with the assigned member role, these are used to determine whether a user is allowed
+ * or not allowed to perform an action on a specific resource (project, target, service, or app deployment).
+ *
+ * If no resources are assigned to a member role, the permissions are granted on all the resources within the
+ * organization.
+ */
 const AssignedResourceModel = z.union([WildcardAssignmentModel, z.array(ProjectAssignmentModel)]);
 
 /**
@@ -246,7 +255,6 @@ const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
   ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
-  , ${prefix}."assigned_resources" AS "assignedResources"
 `;
 
 type OrganizationAssignment = {
