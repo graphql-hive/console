@@ -19,9 +19,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  OnChangeFn,
   PaginationState,
-  SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 import { OperationsFallback } from './Fallback';
@@ -175,8 +173,6 @@ type SetPaginationFn = (updater: SetStateAction<PaginationState>) => void;
 
 function OperationsTable({
   operations,
-  sorting,
-  setSorting,
   pagination,
   setPagination,
   className,
@@ -188,8 +184,6 @@ function OperationsTable({
   operations: Operation[];
   pagination: PaginationState;
   setPagination: SetPaginationFn;
-  sorting: SortingState;
-  setSorting: OnChangeFn<SortingState>;
   className?: string;
   organizationSlug: string;
   projectSlug: string;
@@ -203,16 +197,15 @@ function OperationsTable({
     columns,
     data: operations,
     state: {
-      sorting,
       pagination,
     },
-    onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     debugTable: env.nodeEnv !== 'production',
     enableMultiSort: true,
+    isMultiSortEvent: () => true,
   });
 
   const firstPage = useCallback(() => {
@@ -403,7 +396,6 @@ function OperationsTableContainer({
   }, [operationStats?.operations.nodes, operationsFilter]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
-  const [sorting, setSorting] = useState<SortingState>([]);
 
   const safeSetPagination = useCallback<SetPaginationFn>(
     state => {
@@ -430,8 +422,6 @@ function OperationsTableContainer({
       className={className}
       pagination={pagination}
       setPagination={safeSetPagination}
-      sorting={sorting}
-      setSorting={setSorting}
       organizationSlug={organizationSlug}
       projectSlug={projectSlug}
       targetSlug={targetSlug}
