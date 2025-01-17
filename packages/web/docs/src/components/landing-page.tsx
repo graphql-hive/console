@@ -91,7 +91,7 @@ export function IndexPage(): ReactElement {
       <EnterpriseFocusedCards className="mx-4 my-6 md:mx-6" />
       <TeamSection className="mx-4 md:mx-6" />
       <CommunitySection className="mx-4 mt-6 md:mx-6" />
-      <ToolsAndLibrariesCards className="mx-4 mt-6 md:mx-6" />
+      <ToolsAndLibrariesCards isHive className="mx-4 mt-6 md:mx-6" />
       <FrequentlyAskedQuestions className="mx-4 md:mx-6" />
       <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />
     </Page>
