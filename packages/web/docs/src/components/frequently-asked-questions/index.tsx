@@ -120,9 +120,6 @@ const federationLI = (props: ComponentPropsWithoutRef<'li'>) => {
   if (texts.length === 0) {
     return null;
   }
-  if (texts.length === 0) {
-    return null;
-  }
 
   if (texts.length < 2) {
     console.error(texts);
