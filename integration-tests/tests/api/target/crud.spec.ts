@@ -140,8 +140,12 @@ test.concurrent(
 test.concurrent('organization member user can create a target', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { ownerEmail: orgMemberEmail, ownerToken: orgMemberToken } = await initSeed().createOwner();
-  const { createProject, inviteMember, joinMemberUsingCode } = await createOrg();
-  const inviteMemberResult = await inviteMember(orgMemberEmail);
+  const { createProject, inviteMember, joinMemberUsingCode, organization } = await createOrg();
+  const inviteMemberResult = await inviteMember(
+    orgMemberEmail,
+    undefined,
+    organization.memberRoles?.find(role => role.name === 'Admin')?.id,
+  );
 
   if (inviteMemberResult.ok == null) {
     throw new Error('Invite did not succeed' + JSON.stringify(inviteMemberResult));
