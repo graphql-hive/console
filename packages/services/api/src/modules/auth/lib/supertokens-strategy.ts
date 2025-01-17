@@ -72,7 +72,7 @@ export class SuperTokensCookieBasedSession extends Session {
     }
 
     // owner of organization should have full right to do anything.
-    if (organizationMembership?.isOwner) {
+    if (organizationMembership.isOwner) {
       this.logger.debug(
         'User is organization owner, resolve admin access policy. (userId=%s, organizationId=%s)',
         user.id,
