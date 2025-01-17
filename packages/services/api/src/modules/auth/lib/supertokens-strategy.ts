@@ -151,7 +151,7 @@ export class SuperTokensCookieBasedSession extends Session {
       return `hrn:${organizationId}:target/${resource.targetId}/appDeployment/${resource.appDeploymentName}`;
     }
 
-    throw new Error('never');
+    casesExhausted(resource);
   }
 
   private translateAssignedRolesToAuthorizationPolicyStatements(
@@ -325,3 +325,7 @@ const SuperTokenAccessTokenModel = zod.object({
   superTokensUserId: zod.string(),
   email: zod.string(),
 });
+
+function casesExhausted(_value: never): never {
+  throw new Error('Not all cases were handled.');
+}
