@@ -1,0 +1,207 @@
+import NextImage from 'next/image'
+
+# Member, Roles, and Permissions
+
+A Hive organization can have a unlimited amount of members. Each member can be assigned a single
+role. A role is a collection of permissions that grant access to performing actions within the
+organization.
+
+Organization owners or users with the necessary permissions can assign pre-defined member roles or
+create and assign custom member roles with specific permissions tailored to your teams workflows.
+
+## Managing Members
+
+Managing members, roles and permissions is done within the organizations `Member` section on the
+Hive Console dashboard.
+
+Organization owners or organization members with sufficient permissions can access this section.
+
+import membersTabImage from '../../../../public/docs/pages/management/members-roles-permissions/members-tab.png'
+
+<NextImage
+  alt="Organization Member Section"
+  src={membersTabImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+## Member Roles
+
+Member roles specify the actions a organization member can perform within the organization. Each
+organization member has a member role assigned.
+
+### Predefined Member Roles
+
+Each organization comes with a set of predefined member roles ready to use and assign to
+organization members. These roles are read-only, permissions can not be added or removed.
+
+| Role Name | Description                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------- |
+| Admin     | Full access to everything within the organization.                                                                   |
+| Viewer    | Full read access to everything within the organization. The default role for users added/invited to an organization. |
+
+### Creating Member Roles
+
+Instead of using the predefined member roles you can create your own member roles. Managing member
+roles is done within the `Roles` tab within the member section.
+
+import createRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-01-start.png'
+
+<NextImage
+  alt="Members of an Organization"
+  src={createRole01StartImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+Click the `Create new role` button for opening the wizard.
+
+import createRole02WizardImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-02-wizard.png'
+
+<NextImage
+  alt="Member Role Creator"
+  src={createRole02WizardImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+Choose a name and a description for your new role. Then select the permissions for that role.
+
+Some permissions depend on each other. E.g. you can not allow deleting a project without granting
+the permissions for viewing a project.
+
+Once you are satisfied with your selection, click the `Confirm selection` button, for getting a full
+overview about the permissions that will be assigned to that role.
+
+import createRole03ConfirmImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-03-confirm.png'
+
+<NextImage
+  alt="Member Role Creator - Permission Overview"
+  src={createRole03ConfirmImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+Here you, can double check your selection and proceed with the creation of the role by pressing the
+`Create role` button.
+
+The role will now be visible next to the other roles within the overview and is ready to be assigned
+to a organization member.
+
+import createRole04SuccessImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-04-success.png'
+
+<NextImage
+  alt="Member Role Creator - Permission Overview"
+  src={createRole03ConfirmImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+### Update Member Roles
+
+Member roles that are not predefined (readonly), can be updated on the `Roles` tab within the member
+section.
+
+Via the triple dot menu on the member role, select the `Edit` action.
+
+import updateRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/update-role-01-start.png'
+
+<NextImage
+  alt="Update member role"
+  src={updateRole01StartImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+Within the member role editor, adjust the permissions of the role as desired, then confirm the
+selection.
+
+import updateRole02EditorImage from '../../../../public/docs/pages/management/members-roles-permissions/update-role-02-editor.png'
+
+<NextImage
+  alt="Update member role editor"
+  src={updateRole02EditorImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+After that the permissions for the role are updated.
+
+### Delete Member Roles
+
+Member roles that are not predefined (readonly), can be deleted on the `Roles` tab within the member
+section.
+
+In case you want to delete a member role that is still assigned to members, you first need to
+[assign a different role to the members using that role](./members-roles-permissions.mdx#assigning-roles).
+
+Via the triple dot menu on the member role, select the `Delete` action.
+
+import deleteRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/delete-role-01-start.png'
+
+<NextImage
+  alt="Delete member role"
+  src={deleteRole01StartImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+Confirm the deletion in the dialog using the `Confirm` button to successfully delete the member
+role.
+
+import deleteRole02ConfirmImage from '../../../../public/docs/pages/management/members-roles-permissions/delete-role-02-confirm.png'
+
+<NextImage
+  alt="Delete member role confirmation"
+  src={deleteRole02ConfirmImage}
+  className="mt-8 max-w-lg rounded-lg drop-shadow-md"
+/>
+
+## Members
+
+Organization members are users that have a member roles assigned. The member role specifies the
+actions the member can perform within an organization.
+
+A member can join an organization either via an
+[invite by email](./members-roles-permissions.mdx#inviting-new-members) or via
+[Single Sign On (SSO) through a OIDC provider](./sso-oidc-provider.mdx) connected to the
+organization.
+
+### Inviting new Members
+
+To invite others to your organization, go to **Members** tab under your organization. To invite a
+new member to your organization, write their email address and click on **Send an invite** button.
+
+import orgInviteMemberImage from '../../../../public/docs/pages/management/org-invite-member.png'
+
+<NextImage
+  alt="Invite Member to Organization"
+  src={orgInviteMemberImage}
+  className="mt-8 rounded-lg drop-shadow-md"
+/>
+
+The new member will receive an email inviting them to join Hive as a user, and this will add them as
+a member to your Hive organization.
+
+Once an invite has been created, you can also copy the personal invite link and share it directly
+using your preferred method.
+
+import orgInviteLinkImage from '../../../../public/docs/pages/management/org-invite-link.png'
+
+<NextImage
+  alt="Copy Invite Link"
+  src={orgInviteLinkImage}
+  className="mt-8 max-w-lg rounded-lg drop-shadow-md"
+/>
+
+### Assigning Roles to Members
+
+The actions a member can perform within the organization are specified by the assigned role. By
+default a organization member is assigned the `Viewer` role, however, you can assign any predefined
+or custom role you created.
+
+Within the `Members` section, select the role you wish to assign to a specific user by using the
+dropdown.
+
+A organization owners role can not be changed, as he always has full access to everything within the
+organization.
+
+import userAssignRole01Image from '../../../../public/docs/pages/management/members-roles-permissions/user-assign-role-01-assign-role.png'
+
+<NextImage
+  alt="Assign member role"
+  src={userAssignRole01Image}
+  className="mt-8 max-w-lg rounded-lg drop-shadow-md"
+/>
