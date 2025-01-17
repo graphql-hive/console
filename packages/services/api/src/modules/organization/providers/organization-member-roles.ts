@@ -99,7 +99,7 @@ export class OrganizationMemberRoles {
   }
 
   /** Find member roles by their ID */
-  async findMemberRolesByIds(roleIds: Array<string>) {
+  async findMemberRolesByIds(roleIds: Array<string>): Promise<Map<string, OrganizationMemberRole>> {
     this.logger.debug('Find organization membership roles. (roleIds=%o)', roleIds);
 
     const query = sql`
@@ -128,7 +128,10 @@ export class OrganizationMemberRoles {
     return roleIds.map(async roleId => roles.get(roleId) ?? null);
   });
 
-  async findRoleByOrganizationIdAndName(organizationId: string, name: string) {
+  async findRoleByOrganizationIdAndName(
+    organizationId: string,
+    name: string,
+  ): Promise<OrganizationMemberRole | null> {
     const result = await this.pool.maybeOne<unknown>(sql`/* findViewerRoleForOrganizationId */
       SELECT
         ${organizationMemberRoleFields}
@@ -147,7 +150,9 @@ export class OrganizationMemberRoles {
     return MemberRoleModel.parse(result);
   }
 
-  async findViewerRoleByOrganizationId(organizationId: string) {
+  async findViewerRoleByOrganizationId(
+    organizationId: string,
+  ): Promise<OrganizationMemberRole | null> {
     return this.findRoleByOrganizationIdAndName(organizationId, 'Viewer');
   }
 
@@ -190,7 +195,7 @@ export class OrganizationMemberRoles {
     name: string;
     permissions: ReadonlyArray<string>;
     description: string;
-  }) {
+  }): Promise<OrganizationMemberRole> {
     const permissions = args.permissions.filter(permission =>
       OrganizationMemberPermissions.permissions.assignable.has(permission as Permission),
     );

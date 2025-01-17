@@ -17,7 +17,7 @@ import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { createOrUpdateMemberRoleInputSchema } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
-import { OrganizationMemberRoles } from './organization-member-roles';
+import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
 
 /**
@@ -1175,7 +1175,10 @@ export class OrganizationManager {
     return this.organizationMemberRoles.getMemberRolesForOrganizationId(selector.organizationId);
   }
 
-  async getMemberRole(selector: { organizationId: string; roleId: string }) {
+  async getMemberRole(selector: {
+    organizationId: string;
+    roleId: string;
+  }): Promise<OrganizationMemberRole | null> {
     const role = await this.organizationMemberRoles.findMemberRoleById(selector.roleId);
 
     if (!role) {
@@ -1193,7 +1196,9 @@ export class OrganizationManager {
     return role;
   }
 
-  async getViewerMemberRole(selector: { organizationId: string }) {
+  async getViewerMemberRole(selector: {
+    organizationId: string;
+  }): Promise<OrganizationMemberRole | null> {
     await this.session.assertPerformAction({
       action: 'member:describe',
       organizationId: selector.organizationId,
