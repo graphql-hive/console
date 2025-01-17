@@ -340,6 +340,7 @@ const predefinedRolesPermissions = {
    * Permissions the viewer role is assigned with (computed from legacy scopes)
    **/
   viewer: permissionsToPermissionsPerResourceLevelAssignment([
+    ...OrganizationMemberPermissions.permissions.default,
     'support:manageTickets',
     'project:describe',
     'appDeployment:describe',

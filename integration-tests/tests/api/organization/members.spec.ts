@@ -52,9 +52,7 @@ test.concurrent('invited member should have basic scopes (Viewer role)', async (
     [
       organization:describe,
       support:manageTickets,
-      project:create,
       project:describe,
-      target:create,
       appDeployment:describe,
       laboratory:describe,
     ]
