@@ -8,7 +8,6 @@ import {
   reportReadiness,
   SpanStatusCode,
   startMetrics,
-  traceInline,
   TracingInstance,
 } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
