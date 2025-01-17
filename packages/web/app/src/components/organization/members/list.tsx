@@ -14,12 +14,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Link } from '@/components/ui/link';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
@@ -27,6 +29,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { AuthProvider } from '@/gql/graphql';
 import { RoleSelector } from './common';
 import { MemberInvitationButton } from './invitations';
+import { ResourcePicker, ResourceSelection } from './resource-picker';
 
 const OrganizationMemberRoleSwitcher_AssignRoleMutation = graphql(`
   mutation OrganizationMemberRoleSwitcher_AssignRoleMutation($input: AssignMemberRoleInput!) {
@@ -120,6 +123,9 @@ function OrganizationMemberRoleSwitcher(props: {
               organizationSlug: organization.slug,
               roleId: role.id,
               userId: member.user.id,
+              // resources: {
+              //   allProjects: true,
+              // },
             },
           });
 
@@ -226,6 +232,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     isOwner
     viewerCanRemove
     ...OrganizationMemberRoleSwitcher_MemberFragment
+    ...AssignedResources_MemberFragment
   }
 `);
 
@@ -338,6 +345,13 @@ function OrganizationMemberRow(props: {
             />
           )}
         </td>
+        <td className="relative py-3 text-center text-sm">
+          {member.isOwner ? (
+            'all resources'
+          ) : (
+            <AssignedResources member={member} organization={organization} />
+          )}
+        </td>
         <td className="py-3 text-right text-sm">
           {member.viewerCanRemove && (
             <DropdownMenu>
@@ -354,6 +368,106 @@ function OrganizationMemberRow(props: {
           )}
         </td>
       </tr>
+    </>
+  );
+}
+
+const AssignedResources_OrganizationFragment = graphql(`
+  fragment AssignedResources_OrganizationFragment on Organization {
+    id
+    ...ResourcePicker_OrganizationFragment
+  }
+`);
+
+const AssignedResources_MemberFragment = graphql(`
+  fragment AssignedResources_MemberFragment on Member {
+    id
+    resourceAssignment {
+      allProjects
+      projects {
+        project {
+          id
+          slug
+        }
+        targets {
+          allTargets
+          targets {
+            target {
+              id
+              slug
+            }
+            services {
+              allServices
+              services
+            }
+            appDeployments {
+              allAppDeployments
+              appDeployments
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+function AssignedResources(props: {
+  member: FragmentType<typeof AssignedResources_MemberFragment>;
+  organization: FragmentType<typeof AssignedResources_OrganizationFragment>;
+}) {
+  const member = useFragment(AssignedResources_MemberFragment, props.member);
+  const organization = useFragment(AssignedResources_OrganizationFragment, props.organization);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const initialSelection = useMemo<ResourceSelection>(() => {
+    return {
+      projects:
+        member.resourceAssignment.allProjects === true
+          ? '*'
+          : (member.resourceAssignment.projects ?? []).map(record => ({
+              id: record.project.id,
+              slug: record.project.slug,
+              targets:
+                record.targets.allTargets === true
+                  ? '*'
+                  : (record.targets.targets ?? []).map(record => ({
+                      id: record.target.id,
+                      slug: record.target.slug,
+                      appDeployments:
+                        record.appDeployments.allAppDeployments === true
+                          ? '*'
+                          : (record.appDeployments.appDeployments ?? []),
+                      services:
+                        record.services.allServices === true
+                          ? '*'
+                          : (record.services.services ?? []),
+                    })),
+            })),
+    };
+  }, [member]);
+
+  return (
+    <>
+      {member.resourceAssignment.allProjects ? (
+        'all resources'
+      ) : member.resourceAssignment.projects?.length ? (
+        <>
+          {member.resourceAssignment.projects.length} project
+          {member.resourceAssignment.projects.length === 1 ? '' : 's'}
+        </>
+      ) : (
+        'none'
+      )}{' '}
+      <Dialog open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
+        <DialogTrigger asChild>
+          <Link>manage</Link>
+        </DialogTrigger>
+        <DialogContent className="min-w-[800px]">
+          {isOpen && (
+            <ResourcePicker initialSelection={initialSelection} organization={organization} />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -382,6 +496,7 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     viewerCanManageInvitations
     ...OrganizationMemberRoleSwitcher_OrganizationFragment
     ...MemberInvitationForm_OrganizationFragment
+    ...AssignedResources_OrganizationFragment
   }
 `);
 
@@ -478,6 +593,12 @@ export function OrganizationMembers(props: {
                   ) : null
                 ) : null}
               </span>
+            </th>
+            <th
+              className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold"
+              onClick={() => updateSorting('role')}
+            >
+              Projects
             </th>
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>

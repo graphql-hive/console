@@ -327,17 +327,17 @@ export class OrganizationMembers {
                                 },
                         };
                       })
-                      .filter(isNone),
+                      .filter(isSome),
                   },
           };
         })
-        .filter(isNone),
+        .filter(isSome),
     };
   }
 }
 
-function isNone<T>(input: T | null): input is Exclude<T, null> {
-  return input == null;
+function isSome<T>(input: T | null): input is Exclude<T, null> {
+  return input != null;
 }
 
 const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
