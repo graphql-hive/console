@@ -304,15 +304,6 @@ export default gql`
     message: String!
   }
 
-  extend type Member {
-    canLeaveOrganization: Boolean!
-    role: MemberRole!
-    """
-    Whether the viewer can remove this member from the organization.
-    """
-    viewerCanRemove: Boolean!
-  }
-
   type MemberRole {
     id: ID!
     name: String!
@@ -456,6 +447,12 @@ export default gql`
     id: ID!
     user: User!
     isOwner: Boolean!
+    canLeaveOrganization: Boolean!
+    role: MemberRole!
+    """
+    Whether the viewer can remove this member from the organization.
+    """
+    viewerCanRemove: Boolean!
   }
 
   type MemberConnection {
