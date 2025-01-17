@@ -501,15 +501,6 @@ export interface Storage {
 
   getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
 
-  createActivity(
-    _: {
-      userId: string;
-      type: string;
-      meta: object;
-    } & OrganizationSelector &
-      Partial<Pick<TargetSelector, 'projectId' | 'targetId'>>,
-  ): Promise<void>;
-
   addSlackIntegration(_: OrganizationSelector & { token: string }): Promise<void>;
 
   deleteSlackIntegration(_: OrganizationSelector): Promise<void>;
