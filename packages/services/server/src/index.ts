@@ -412,6 +412,7 @@ export async function main() {
           organizationMembers: new OrganizationMembers(
             storage.pool,
             new OrganizationMemberRoles(storage.pool, server.log),
+            storage,
             server.log,
           ),
         }),

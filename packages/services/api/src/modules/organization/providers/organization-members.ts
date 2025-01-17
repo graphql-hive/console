@@ -3,10 +3,39 @@ import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import { Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
-import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
+import { Storage } from '../../shared/providers/storage';
 import { OrganizationMemberRole, OrganizationMemberRoles } from './organization-member-roles';
+
+const WildcardAssignmentModel = z.literal('*');
+
+const AppDeploymentAssignmentModel = z.object({
+  type: z.literal('appDeployment'),
+  appName: z.string(),
+});
+
+const ServiceAssignmentModel = z.object({ type: z.literal('service'), serviceName: z.string() });
+
+const TargetAssignmentModel = z.object({
+  type: z.literal('target'),
+  id: z.string().uuid(),
+  services: z.union([WildcardAssignmentModel, z.array(ServiceAssignmentModel)]),
+  appDeployments: z.union([WildcardAssignmentModel, z.array(AppDeploymentAssignmentModel)]),
+});
+
+const ProjectAssignmentModel = z.object({
+  type: z.literal('project'),
+  id: z.string().uuid(),
+  targets: z.union([WildcardAssignmentModel, z.array(TargetAssignmentModel)]),
+});
+
+const AssignedResourceModel = z.union([WildcardAssignmentModel, z.array(ProjectAssignmentModel)]);
+
+/**
+ * Resource assignments as stored within the database.
+ */
+type ResourceAssignmentGroup = z.TypeOf<typeof AssignedResourceModel>;
 
 const RawOrganizationMembershipModel = z.object({
   userId: z.string(),
@@ -15,45 +44,13 @@ const RawOrganizationMembershipModel = z.object({
     .boolean()
     .nullable()
     .transform(value => value ?? false),
+  /**
+   * Resources that are assigned to the membership
+   * If no resources are defined the permissions of the role are applied to all resources within the organization.
+   */
+  // TODO: introduce this value
+  // assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
 });
-
-const UUIDResourceAssignmentModel = z.union([z.literal('*'), z.array(z.string().uuid())]);
-
-/**
- * String in the form `targetId/serviceName`
- * Example: `f81ce726-2abf-4653-bf4c-d8436cde255a/users`
- */
-const ServiceResourceAssignmentStringModel = z
-  .string()
-  .refine(value => {
-    const [targetId, serviceName = ''] = value.split('/');
-    if (isUUID(targetId) === false || serviceName === '') {
-      return false;
-    }
-    return true;
-  }, 'Invalid service resource assignment')
-  .transform(value => value.split('/') as [targetId: string, serviceName: string]);
-
-const ServiceResourceAssignmentModel = z.union([
-  z.literal('*'),
-  z.array(ServiceResourceAssignmentStringModel),
-]);
-
-const ResourceAssignmentGroupModel = z.object({
-  /** Resources assigned to a 'projects' permission group */
-  project: UUIDResourceAssignmentModel,
-  /** Resources assigned to a 'targets' permission group */
-  target: UUIDResourceAssignmentModel,
-  /** Resources assigned to a 'service' permission group */
-  service: ServiceResourceAssignmentModel,
-  /** Resources assigned to a 'appDeployment' permission group */
-  appDeployment: ServiceResourceAssignmentModel,
-});
-
-/**
- * Resource assignments as stored within the database.
- */
-type ResourceAssignmentGroup = z.TypeOf<typeof ResourceAssignmentGroupModel>;
 
 export type OrganizationMembershipRoleAssignment = {
   role: OrganizationMemberRole;
@@ -85,6 +82,7 @@ export class OrganizationMembers {
   constructor(
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     private organizationMemberRoles: OrganizationMemberRoles,
+    private storage: Storage,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -98,9 +96,7 @@ export class OrganizationMembers {
   ) {
     const query = sql`
       SELECT
-        "om"."user_id" AS "userId"
-        , "om"."role_id" AS "roleId"
-        , "om"."connected_to_zendesk" AS "connectedToZendesk"
+        ${organizationMemberFields(sql`"om"`)}
       FROM
         "organization_member" AS "om"
       WHERE
@@ -144,13 +140,8 @@ export class OrganizationMembers {
           throw new Error('Could not resolve role.');
         }
 
-        // TODO: see if membership has resource assignments
-        const resources: ResourceAssignmentGroup = {
-          project: '*',
-          target: '*',
-          service: '*',
-          appDeployment: '*',
-        };
+        // TODO: use value read from database
+        const resources: ResourceAssignmentGroup = '*';
 
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
@@ -161,7 +152,7 @@ export class OrganizationMembers {
             resources,
             resolvedResources: resolveResourceAssignment({
               organizationId: organization.id,
-              groups: resources,
+              projects: resources,
             }),
             role: membershipRole,
           },
@@ -229,9 +220,7 @@ export class OrganizationMembers {
     );
     const query = sql`
       SELECT
-        "om"."user_id" AS "userId"
-        , "om"."role_id" AS "roleId"
-        , "om"."connected_to_zendesk" AS "connectedToZendesk"
+        ${organizationMemberFields(sql`"om"`)}
       FROM
         "organization_member" AS "om"
         INNER JOIN "users" AS "u"
@@ -252,6 +241,13 @@ export class OrganizationMembers {
     return mapping.get(membership.userId) ?? null;
   }
 }
+
+const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
+  ${prefix}."user_id" AS "userId"
+  , ${prefix}."role_id" AS "roleId"
+  , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
+  , ${prefix}."assigned_resources" AS "assignedResources"
+`;
 
 type OrganizationAssignment = {
   type: 'organization';
@@ -290,17 +286,11 @@ export type ResourceAssignment =
 type ResolvedResourceAssignments = {
   organization: OrganizationAssignment;
   project: OrganizationAssignment | Array<ProjectAssignment>;
-  target: OrganizationAssignment | Array<ProjectAssignment> | Array<TargetAssignment>;
-  service:
-    | OrganizationAssignment
-    | Array<ProjectAssignment>
-    | Array<TargetAssignment>
-    | Array<ServiceAssignment>;
+  target: OrganizationAssignment | Array<ProjectAssignment | TargetAssignment>;
+  service: OrganizationAssignment | Array<ProjectAssignment | TargetAssignment | ServiceAssignment>;
   appDeployment:
     | OrganizationAssignment
-    | Array<ProjectAssignment>
-    | Array<TargetAssignment>
-    | Array<AppDeploymentAssignment>;
+    | Array<ProjectAssignment | TargetAssignment | AppDeploymentAssignment>;
 };
 
 /**
@@ -319,56 +309,81 @@ type ResolvedResourceAssignments = {
  */
 function resolveResourceAssignment(args: {
   organizationId: string;
-  groups: ResourceAssignmentGroup;
+  projects: ResourceAssignmentGroup;
 }): ResolvedResourceAssignments {
-  const organization: OrganizationAssignment = {
+  const organizationAssignment: OrganizationAssignment = {
     type: 'organization',
     organizationId: args.organizationId,
   };
 
-  let project: ResolvedResourceAssignments['project'] = organization;
+  if (args.projects === '*') {
+    return {
+      organization: organizationAssignment,
+      project: organizationAssignment,
+      target: organizationAssignment,
+      appDeployment: organizationAssignment,
+      service: organizationAssignment,
+    };
+  }
 
-  if (args.groups.project !== '*') {
-    project = args.groups.project.map(projectId => ({
+  let projectAssignments: ResolvedResourceAssignments['project'] = [];
+  let targetAssignments: ResolvedResourceAssignments['target'] = [];
+  let serviceAssignments: ResolvedResourceAssignments['service'] = [];
+  let appDeploymentAssignments: ResolvedResourceAssignments['appDeployment'] = [];
+
+  for (const project of args.projects) {
+    const projectAssignment: ProjectAssignment = {
       type: 'project',
-      projectId,
-    }));
-  }
+      projectId: project.id,
+    };
+    projectAssignments.push(projectAssignment);
 
-  let target: ResolvedResourceAssignments['target'] = project;
+    if (project.targets === '*') {
+      targetAssignments.push(projectAssignment);
+      continue;
+    }
 
-  if (args.groups.target !== '*') {
-    target = args.groups.target.map(targetId => ({
-      type: 'target',
-      targetId,
-    }));
-  }
+    for (const target of project.targets) {
+      const targetAssignment: TargetAssignment = {
+        type: 'target',
+        targetId: target.id,
+      };
 
-  let service: ResolvedResourceAssignments['service'] = target;
+      targetAssignments.push(targetAssignment);
 
-  if (args.groups.service !== '*') {
-    service = args.groups.service.map(([targetId, serviceName]) => ({
-      type: 'service',
-      targetId,
-      serviceName,
-    }));
-  }
+      // services
+      if (target.services === '*') {
+        serviceAssignments.push(targetAssignment);
+      } else {
+        for (const service of target.services) {
+          serviceAssignments.push({
+            type: 'service',
+            targetId: target.id,
+            serviceName: service.serviceName,
+          });
+        }
+      }
 
-  let appDeployment: ResolvedResourceAssignments['appDeployment'] = target;
-
-  if (args.groups.service !== '*') {
-    appDeployment = args.groups.service.map(([targetId, appDeploymentName]) => ({
-      type: 'appDeployment',
-      targetId,
-      appDeploymentName,
-    }));
+      // app deployments
+      if (target.appDeployments === '*') {
+        appDeploymentAssignments.push(targetAssignment);
+      } else {
+        for (const appDeployment of target.appDeployments) {
+          appDeploymentAssignments.push({
+            type: 'appDeployment',
+            targetId: target.id,
+            appDeploymentName: appDeployment.appName,
+          });
+        }
+      }
+    }
   }
 
   return {
-    organization,
-    project,
-    target,
-    service,
-    appDeployment,
+    organization: organizationAssignment,
+    project: projectAssignments,
+    target: targetAssignments,
+    service: serviceAssignments,
+    appDeployment: appDeploymentAssignments,
   };
 }
