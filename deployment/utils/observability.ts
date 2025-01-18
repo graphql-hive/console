@@ -168,7 +168,7 @@ export class Observability {
       config: {
         exporters: {
           ...exporters,
-          logging: {
+          debug: {
             verbosity: 'basic',
           },
         },
@@ -357,11 +357,10 @@ export class Observability {
                 'batch',
               ],
               exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'otlp/grafana_cloud_traces'],
+                this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'prometheusremotewrite'],
+              exporters: this.config === 'local' ? ['debug'] : ['debug', 'prometheusremotewrite'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },
