@@ -1,10 +1,12 @@
-import { print, type GraphQLError } from 'graphql';
+import { print } from 'graphql';
 import type { ExecutionResult } from 'graphql';
 import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { Command, Errors, Flags, Interfaces } from '@oclif/core';
+import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import { Texture } from './helpers/texture/texture';
+import { env } from 'node:process'
+import { APIError, HTTPError, MissingArgumentsError, NetworkError, isAggregateError } from './helpers/errors';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -57,7 +59,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   logFailure(...args: any[]) {
-    this.log(Texture.failure(...args));
+    this.logToStderr(Texture.failure(...args));
   }
 
   logInfo(...args: any[]) {
@@ -98,7 +100,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
    * @param key
    * @param args all arguments or flags
    * @param defaultValue default value
-   * @param message custom error message in case of no value
+   * @param description description of the flag in case of no value
    * @param env an env var name
    */
   ensure<
@@ -111,8 +113,8 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     args,
     legacyFlagName,
     defaultValue,
-    message,
-    env,
+    env: envName,
+    description,
   }: {
     args: TArgs;
     key: TKey;
@@ -127,38 +129,32 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     }>;
 
     defaultValue?: TArgs[keyof TArgs] | null;
-    message?: string;
+    description: string;
     env?: string;
   }): NonNullable<GetConfigurationValueType<TKey>> | never {
+    let value: GetConfigurationValueType<TKey>;
+
     if (args[key] != null) {
-      return args[key] as NonNullable<GetConfigurationValueType<TKey>>;
+      value = args[key];
+    } else if (legacyFlagName && (args as any)[legacyFlagName] != null) {
+      value = args[legacyFlagName] as NonNullable<GetConfigurationValueType<TKey>>;
+    } else if (envName && env[envName] !== undefined) {
+      value = env[envName] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
+    } else {
+      const configValue = this._userConfig!.get(key) as NonNullable<GetConfigurationValueType<TKey>>;
+
+      if (configValue !== undefined) {
+        value = configValue;
+      } else if (defaultValue) {
+        value = defaultValue;
+      }
     }
 
-    if (legacyFlagName && (args as any)[legacyFlagName] != null) {
-      return args[legacyFlagName] as any as NonNullable<GetConfigurationValueType<TKey>>;
+    if (value?.length) {
+      return value;
     }
 
-    // eslint-disable-next-line no-process-env
-    if (env && process.env[env]) {
-      // eslint-disable-next-line no-process-env
-      return process.env[env] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
-    }
-
-    const userConfigValue = this._userConfig!.get(key);
-
-    if (userConfigValue != null) {
-      return userConfigValue;
-    }
-
-    if (defaultValue) {
-      return defaultValue;
-    }
-
-    if (message) {
-      throw new Errors.CLIError(message);
-    }
-
-    throw new Errors.CLIError(`Missing "${String(key)}"`);
+    throw new MissingArgumentsError([String(key), description]);
   }
 
   cleanRequestId(requestId?: string | null) {
@@ -186,7 +182,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     const isDebug = this.flags.debug;
 
     return {
-      async request<TResult, TVariables>(
+      request: async <TResult, TVariables>(
         args: {
           operation: TypedDocumentNode<TResult, TVariables>;
           /** timeout in milliseconds */
@@ -198,75 +194,69 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           : {
               variables: TVariables;
             }),
-      ): Promise<TResult> {
-        const response = await http.post(
-          endpoint,
-          JSON.stringify({
-            query: typeof args.operation === 'string' ? args.operation : print(args.operation),
-            variables: args.variables,
-          }),
-          {
-            logger: {
-              info: (...args) => {
-                if (isDebug) {
-                  console.info(...args);
-                }
-              },
-              error: (...args) => {
-                console.error(...args);
-              },
-            },
-            headers: requestHeaders,
-            timeout: args.timeout,
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Invalid status code for HTTP call: ${response.status}`);
-        }
-        const jsonData = (await response.json()) as ExecutionResult<TResult>;
-
-        if (jsonData.errors && jsonData.errors.length > 0) {
-          throw new ClientError(
-            `Failed to execute GraphQL operation: ${jsonData.errors
-              .map(e => e.message)
-              .join('\n')}`,
+      ): Promise<TResult> => {
+        let response: Response;
+        try {
+          response = await http.post(
+            endpoint,
+            JSON.stringify({
+              query: typeof args.operation === 'string' ? args.operation : print(args.operation),
+              variables: args.variables,
+            }),
             {
-              errors: jsonData.errors,
-              headers: response.headers,
+              logger: {
+                info: (...args) => {
+                  if (isDebug) {
+                    this.logInfo(...args);
+                  }
+                },
+                error: (...args) => {
+                  // Allow retrying requests without noise
+                  if (isDebug) {
+                    this.logWarning(...args);
+                  }
+                },
+              },
+              headers: requestHeaders,
+              timeout: args.timeout,
             },
           );
+        } catch (e: any) {
+          const sourceError = e?.cause ?? e;
+          if (isAggregateError(sourceError)) {
+            throw new NetworkError(sourceError.errors[0]?.message);
+          } else {
+            throw new NetworkError(sourceError);
+          }
+        }
+
+        if (!response.ok) {
+          throw new HTTPError(endpoint, response.status, response.statusText ?? 'Invalid status code for HTTP call')
+        }
+
+        let jsonData;
+        try {
+          jsonData = (await response.json()) as ExecutionResult<TResult>;
+        } catch (err) {
+          const contentType = response?.headers?.get('content-type');
+          throw new APIError(
+             `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
+            this.cleanRequestId(response?.headers?.get('x-request-id')),
+          );
+        }
+
+        if (jsonData.errors && jsonData.errors.length > 0) {
+          if (isDebug) {
+            this.logFailure(jsonData.errors)
+          }
+          throw new APIError(jsonData.errors
+            .map(e => e.message)
+            .join('\n'), this.cleanRequestId(response?.headers?.get('x-request-id')))
         }
 
         return jsonData.data!;
       },
     };
-  }
-
-  handleFetchError(error: unknown): never {
-    if (typeof error === 'string') {
-      return this.error(error);
-    }
-
-    if (error instanceof Error) {
-      if (isClientError(error)) {
-        const errors = error.response?.errors;
-
-        if (Array.isArray(errors) && errors.length > 0) {
-          return this.error(errors[0].message, {
-            ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-          });
-        }
-
-        return this.error(error.message, {
-          ref: this.cleanRequestId(error.response?.headers?.get('x-request-id')),
-        });
-      }
-
-      return this.error(error);
-    }
-
-    return this.error(JSON.stringify(error));
   }
 
   async require<
@@ -281,20 +271,4 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       );
     }
   }
-}
-
-class ClientError extends Error {
-  constructor(
-    message: string,
-    public response: {
-      errors?: readonly GraphQLError[];
-      headers: Headers;
-    },
-  ) {
-    super(message);
-  }
-}
-
-function isClientError(error: Error): error is ClientError {
-  return error instanceof ClientError;
 }

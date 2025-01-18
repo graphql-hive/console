@@ -4,7 +4,7 @@ import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { APIError, MissingEndpointError, MissingRegistryTokenError, PersistedOperationsMalformedError } from '../../helpers/errors';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -37,18 +37,29 @@ export default class AppCreate extends Command<typeof AppCreate> {
   async run() {
     const { flags, args } = await this.parse(AppCreate);
 
-    const endpoint = this.ensure({
-      key: 'registry.endpoint',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
-    });
-    const accessToken = this.ensure({
-      key: 'registry.accessToken',
-      args: flags,
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let endpoint: string, accessToken: string;
+    try {
+      endpoint = this.ensure({
+        key: 'registry.endpoint',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: AppCreate.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+
+    try {
+      accessToken = this.ensure({
+        key: 'registry.accessToken',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: AppCreate.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
 
     const file: string = args.file;
     const fs = await import('fs/promises');
@@ -57,8 +68,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     const validationResult = ManifestModel.safeParse(operations);
 
     if (validationResult.success === false) {
-      // TODO: better error message :)
-      throw new Error('Invalid manifest');
+      throw new PersistedOperationsMalformedError(file);
     }
 
     const result = await this.registryApi(endpoint, accessToken).request({
@@ -72,12 +82,11 @@ export default class AppCreate extends Command<typeof AppCreate> {
     });
 
     if (result.createAppDeployment.error) {
-      // TODO: better error message formatting :)
-      throw new Error(result.createAppDeployment.error.message);
+      throw new APIError(result.createAppDeployment.error.message);
     }
 
     if (!result.createAppDeployment.ok) {
-      throw new Error('Unknown error');
+      throw new APIError(`Create App failed without providing a reason.`)
     }
 
     if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {
@@ -123,7 +132,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
               );
             }
           }
-          this.error(result.addDocumentsToAppDeployment.error.message);
+          throw new APIError(result.addDocumentsToAppDeployment.error.message);
         }
         buffer = [];
       }

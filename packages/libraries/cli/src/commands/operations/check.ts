@@ -1,10 +1,10 @@
-import { buildSchema, GraphQLError, Source } from 'graphql';
-import { InvalidDocument, validate } from '@graphql-inspector/core';
+import { buildSchema, Source } from 'graphql';
+import { validate } from '@graphql-inspector/core';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { HiveCLIError, InvalidDocumentsError, MissingEndpointError, MissingRegistryTokenError, SchemaNotFoundError, UnexpectedError } from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
 import { Texture } from '../../helpers/texture/texture';
 
@@ -84,21 +84,33 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       const { flags, args } = await this.parse(OperationsCheck);
 
       await this.require(flags);
+      let accessToken: string, endpoint: string;
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
-      });
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: OperationsCheck.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+      
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: OperationsCheck.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
+      
       const graphqlTag = flags.graphqlTag;
       const globalGraphqlTag = flags.globalGraphqlTag;
 
@@ -129,7 +141,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       const sdl = result.latestValidVersion?.sdl;
 
       if (!sdl) {
-        this.error('Could not find a published schema. Please publish a valid schema first.');
+        throw new SchemaNotFoundError();
       }
 
       const schema = buildSchema(sdl, {
@@ -178,29 +190,14 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
       this.log(Texture.header('Details'));
 
-      this.printInvalidDocuments(operationsWithErrors);
-      this.exit(1);
+      throw new InvalidDocumentsError(operationsWithErrors);
     } catch (error) {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
         this.logFailure('Failed to validate operations');
-        this.handleFetchError(error);
+        throw new UnexpectedError(error);
       }
     }
-  }
-
-  private printInvalidDocuments(invalidDocuments: InvalidDocument[]): void {
-    invalidDocuments.forEach(doc => {
-      this.renderErrors(doc.source.name, doc.errors);
-    });
-  }
-
-  private renderErrors(sourceName: string, errors: GraphQLError[]) {
-    this.logFailure(sourceName);
-    errors.forEach(e => {
-      this.log(` - ${Texture.boldQuotedWords(e.message)}`);
-    });
-    this.log('');
   }
 }

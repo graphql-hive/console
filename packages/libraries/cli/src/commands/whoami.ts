@@ -2,7 +2,7 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../helpers/errors';
+import { InvalidRegistryTokenError, MissingEndpointError, MissingRegistryTokenError, UnexpectedError } from '../helpers/errors';
 import { Texture } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
@@ -62,29 +62,37 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
 
   async run() {
     const { flags } = await this.parse(WhoAmI);
-
-    const registry = this.ensure({
-      key: 'registry.endpoint',
-      legacyFlagName: 'registry',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
-    });
-    const token = this.ensure({
-      key: 'registry.accessToken',
-      legacyFlagName: 'token',
-      args: flags,
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let registry: string, token: string;
+    try {
+      registry = this.ensure({
+        key: 'registry.endpoint',
+        legacyFlagName: 'registry',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: WhoAmI.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+    
+    try {
+      token = this.ensure({
+        key: 'registry.accessToken',
+        legacyFlagName: 'token',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: WhoAmI.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
+    
 
     const result = await this.registryApi(registry, token)
       .request({
         operation: myTokenInfoQuery,
       })
-      .catch(error => {
-        this.handleFetchError(error);
-      });
 
     if (result.tokenInfo.__typename === 'TokenInfo') {
       const { tokenInfo } = result;
@@ -115,10 +123,10 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
 
       this.log(print());
     } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
-      this.error(`Token not found. Reason: ${result.tokenInfo.message}`, {
-        exit: 0,
-        suggestions: [`How to create a token? https://docs.graphql-hive.com/features/tokens`],
-      });
+      this.debug(result.tokenInfo.message);
+      throw new InvalidRegistryTokenError();
+    } else {
+      throw new UnexpectedError(`Token response got an unsupported type: ${(result.tokenInfo as any).__typename}`)
     }
   }
 }
