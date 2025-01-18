@@ -453,3 +453,15 @@ hive schema:check schema.graphql --github
 
 List of all available CLI commands and their options can be found
 [here](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#commands)
+
+## Errors
+
+### HC110 "Github Commit Required"
+
+Example: `hive schema:check FILE --github`
+
+> "Couldn't resolve commit sha required for GitHub Application."
+
+#### Suggested Fix
+
+To use the Github integration, there must be at a commit in the history to reference. The commit sha is set as the schema version in the registry and is used for change approvals and other features. See https://the-guild.dev/graphql/hive/docs/management/organizations#github for more details about this integration.
