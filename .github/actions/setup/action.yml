@@ -18,9 +18,6 @@ inputs:
     description: Name of the workflow that called this action
     required: true
     type: string
-  cacheTurbo:
-    description: Should cache Turbo?
-    default: 'true'
 
 runs:
   using: 'composite'
@@ -50,16 +47,6 @@ runs:
       with:
         node-version-file: .node-version
         cache: ${{ steps.pnpm.outputs.cache }}
-
-    - name: Cache Turbo
-      uses: actions/cache@v4
-      if: ${{ inputs.cacheTurbo == 'true' }}
-      with:
-        path: node_modules/.cache/turbo
-        key: turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ inputs.actor }}-${{ github.sha }}
-        restore-keys: |
-          turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ inputs.actor }}-
-          turbo-cache-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
     - name: pnpm install
       shell: bash

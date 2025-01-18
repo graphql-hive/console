@@ -29,6 +29,7 @@ export function RoleSelector<T>(props: {
         reason?: string;
       };
   disabled?: boolean;
+  searchPlaceholder?: string;
   onSelect(role: Role<T>): void | Promise<void>;
   /**
    * It's only needed for the migration flow, where we need to be able to select no role.
@@ -46,7 +47,8 @@ export function RoleSelector<T>(props: {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="ml-auto"
+          className="ml-auto flex items-center gap-x-4"
+          data-cy="role-selector-trigger"
           disabled={props.disabled === true || isBusy}
           onClick={() => {
             props.onBlur?.();
@@ -58,7 +60,7 @@ export function RoleSelector<T>(props: {
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="end">
         <Command>
-          <CommandInput placeholder="Select new role..." />
+          <CommandInput placeholder={props.searchPlaceholder ?? 'Search roles...'} />
           <CommandList>
             <CommandEmpty>No roles found.</CommandEmpty>
             <CommandGroup>
@@ -95,6 +97,7 @@ export function RoleSelector<T>(props: {
                             /[^a-z0-9\-\:\ ]+/gi,
                             '',
                           )}
+                          data-cy="role-selector-item"
                           onSelect={() => {
                             setPhase('busy');
                             setOpen(false);

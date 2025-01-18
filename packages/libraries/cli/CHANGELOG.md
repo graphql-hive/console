@@ -1,5 +1,36 @@
 # @graphql-hive/cli
 
+## 0.46.0
+
+### Minor Changes
+
+- [#6357](https://github.com/graphql-hive/console/pull/6357)
+  [`e10cc2d`](https://github.com/graphql-hive/console/commit/e10cc2db4297dafabbbf4996d501384dd0884c4a)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - Add experimental json file flag to command
+  `schema:check`.
+
+  On the `schema:check` command, you can now use the flag
+  `--experimental-json-file ./path/to/schema-check-result.json` to output a JSON file containing the
+  command's result.
+
+  This experimental feature is designed to help you with scripting, typically in CI/CD pipelines.
+
+  Please note that this is an experimental feature, and therefore is:
+
+  1. likely to change or be removed in a future version
+  2. not covered by semantic versioning.
+
+- [#6338](https://github.com/graphql-hive/console/pull/6338)
+  [`f6565fc`](https://github.com/graphql-hive/console/commit/f6565fc8996922bfd657e83a8b53b8b473858154)
+  Thanks [@jdolle](https://github.com/jdolle)! - cli schema:fetch targets latest if actionId
+  argument is missing
+
+- [#6333](https://github.com/graphql-hive/console/pull/6333)
+  [`0a84187`](https://github.com/graphql-hive/console/commit/0a84187051ae121f06bacc6b99da96d81e775dcd)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - BREAKING: Remove config commands
+
+  This prepares for the addition of JSON format output in other commands.
+
 ## 0.45.0
 
 ### Minor Changes
