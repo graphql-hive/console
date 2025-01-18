@@ -5,7 +5,7 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, GithubAuthorRequiredError, GithubCommitRequiredError, HiveCLIError, InvalidSDLError, MissingArgumentsError, MissingEndpointError, MissingEnvironmentError, MissingRegistryTokenError, SchemaPublishFailedError, SchemaPublishMissingServiceError, SchemaPublishMissingUrlError, UnexpectedError } from '../../helpers/errors';
+import { APIError, GithubAuthorRequiredError, GithubCommitRequiredError, InvalidSDLError, MissingEndpointError, MissingEnvironmentError, MissingRegistryTokenError, SchemaPublishFailedError, SchemaPublishMissingServiceError, SchemaPublishMissingUrlError, UnexpectedError } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
 import { invariant } from '../../helpers/validation';
