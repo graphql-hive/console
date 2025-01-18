@@ -2,7 +2,12 @@ import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
-import { InvalidRegistryTokenError, MissingEndpointError, MissingRegistryTokenError, UnexpectedError } from '../helpers/errors';
+import {
+  InvalidRegistryTokenError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  UnexpectedError,
+} from '../helpers/errors';
 import { Texture } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
@@ -75,7 +80,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
     } catch (e) {
       throw new MissingEndpointError();
     }
-    
+
     try {
       token = this.ensure({
         key: 'registry.accessToken',
@@ -87,12 +92,10 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
     } catch (e) {
       throw new MissingRegistryTokenError();
     }
-    
 
-    const result = await this.registryApi(registry, token)
-      .request({
-        operation: myTokenInfoQuery,
-      })
+    const result = await this.registryApi(registry, token).request({
+      operation: myTokenInfoQuery,
+    });
 
     if (result.tokenInfo.__typename === 'TokenInfo') {
       const { tokenInfo } = result;
@@ -126,7 +129,9 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       this.debug(result.tokenInfo.message);
       throw new InvalidRegistryTokenError();
     } else {
-      throw new UnexpectedError(`Token response got an unsupported type: ${(result.tokenInfo as any).__typename}`)
+      throw new UnexpectedError(
+        `Token response got an unsupported type: ${(result.tokenInfo as any).__typename}`,
+      );
     }
   }
 }

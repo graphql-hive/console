@@ -1,12 +1,18 @@
+import { env } from 'node:process';
 import { print } from 'graphql';
 import type { ExecutionResult } from 'graphql';
 import { http } from '@graphql-hive/core';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
+import {
+  APIError,
+  HTTPError,
+  isAggregateError,
+  MissingArgumentsError,
+  NetworkError,
+} from './helpers/errors';
 import { Texture } from './helpers/texture/texture';
-import { env } from 'node:process'
-import { APIError, HTTPError, MissingArgumentsError, NetworkError, isAggregateError } from './helpers/errors';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -141,7 +147,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     } else if (envName && env[envName] !== undefined) {
       value = env[envName] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
     } else {
-      const configValue = this._userConfig!.get(key) as NonNullable<GetConfigurationValueType<TKey>>;
+      const configValue = this._userConfig!.get(key) as NonNullable<
+        GetConfigurationValueType<TKey>
+      >;
 
       if (configValue !== undefined) {
         value = configValue;
@@ -231,7 +239,11 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         }
 
         if (!response.ok) {
-          throw new HTTPError(endpoint, response.status, response.statusText ?? 'Invalid status code for HTTP call')
+          throw new HTTPError(
+            endpoint,
+            response.status,
+            response.statusText ?? 'Invalid status code for HTTP call',
+          );
         }
 
         let jsonData;
@@ -240,18 +252,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         } catch (err) {
           const contentType = response?.headers?.get('content-type');
           throw new APIError(
-             `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
+            `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
             this.cleanRequestId(response?.headers?.get('x-request-id')),
           );
         }
 
         if (jsonData.errors && jsonData.errors.length > 0) {
           if (isDebug) {
-            this.logFailure(jsonData.errors)
+            this.logFailure(jsonData.errors);
           }
-          throw new APIError(jsonData.errors
-            .map(e => e.message)
-            .join('\n'), this.cleanRequestId(response?.headers?.get('x-request-id')))
+          throw new APIError(
+            jsonData.errors.map(e => e.message).join('\n'),
+            this.cleanRequestId(response?.headers?.get('x-request-id')),
+          );
         }
 
         return jsonData.data!;

@@ -11,7 +11,18 @@ import {
 import Command from '../base-command';
 import { graphql } from '../gql';
 import { graphqlEndpoint } from '../helpers/config';
-import { APIError, HiveCLIError, IntrospectionError, InvalidCompositionResultError, LocalCompositionError, MissingEndpointError, MissingRegistryTokenError, RemoteCompositionError, ServiceAndUrlLengthMismatch, UnexpectedError } from '../helpers/errors';
+import {
+  APIError,
+  HiveCLIError,
+  IntrospectionError,
+  InvalidCompositionResultError,
+  LocalCompositionError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  RemoteCompositionError,
+  ServiceAndUrlLengthMismatch,
+  UnexpectedError,
+} from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
 import { invariant } from '../helpers/validation';
 
@@ -343,25 +354,24 @@ export default class Dev extends Command<typeof Dev> {
     token: string;
     write: string;
     unstable__forceLatest: boolean;
-    onError: (error: HiveCLIError) => void | never
+    onError: (error: HiveCLIError) => void | never;
   }) {
-    const result = await this.registryApi(input.registry, input.token)
-      .request({
-        operation: CLI_SchemaComposeMutation,
-        variables: {
-          input: {
-            useLatestComposableVersion: !input.unstable__forceLatest,
-            services: input.services.map(service => ({
-              name: service.name,
-              url: service.url,
-              sdl: service.sdl,
-            })),
-          },
+    const result = await this.registryApi(input.registry, input.token).request({
+      operation: CLI_SchemaComposeMutation,
+      variables: {
+        input: {
+          useLatestComposableVersion: !input.unstable__forceLatest,
+          services: input.services.map(service => ({
+            name: service.name,
+            url: service.url,
+            sdl: service.sdl,
+          })),
         },
-      });
+      },
+    });
 
     if (result.schemaCompose.__typename === 'SchemaComposeError') {
-      input.onError(new APIError(result.schemaCompose.message), );
+      input.onError(new APIError(result.schemaCompose.message));
       return;
     }
 
@@ -386,11 +396,14 @@ export default class Dev extends Command<typeof Dev> {
     this.logSuccess('Composition successful');
     this.log(`Saving supergraph schema to ${input.write}`);
     try {
-      await writeFile(resolve(process.cwd(), input.write), compositionResult.supergraphSdl, 'utf-8');
+      await writeFile(
+        resolve(process.cwd(), input.write),
+        compositionResult.supergraphSdl,
+        'utf-8',
+      );
     } catch (e) {
       input.onError(new UnexpectedError(e));
     }
-    
   }
 
   private async watch(
@@ -407,7 +420,6 @@ export default class Dev extends Command<typeof Dev> {
     } catch (e) {
       throw new UnexpectedError(e);
     }
-    
 
     this.logInfo('Watching for changes');
 
@@ -490,8 +502,7 @@ export default class Dev extends Command<typeof Dev> {
   }
 
   private async resolveSdlFromUrl(url: string) {
-    const result = await this.graphql(url)
-      .request({ operation: ServiceIntrospectionQuery });
+    const result = await this.graphql(url).request({ operation: ServiceIntrospectionQuery });
 
     const sdl = result._service.sdl;
 

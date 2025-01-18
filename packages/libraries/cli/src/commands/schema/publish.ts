@@ -5,7 +5,19 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, GithubAuthorRequiredError, GithubCommitRequiredError, InvalidSDLError, MissingEndpointError, MissingEnvironmentError, MissingRegistryTokenError, SchemaPublishFailedError, SchemaPublishMissingServiceError, SchemaPublishMissingUrlError, UnexpectedError } from '../../helpers/errors';
+import {
+  APIError,
+  GithubAuthorRequiredError,
+  GithubCommitRequiredError,
+  InvalidSDLError,
+  MissingEndpointError,
+  MissingEnvironmentError,
+  MissingRegistryTokenError,
+  SchemaPublishFailedError,
+  SchemaPublishMissingServiceError,
+  SchemaPublishMissingUrlError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
 import { invariant } from '../../helpers/validation';
@@ -192,7 +204,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           env: 'HIVE_REGISTRY',
           description: SchemaPublish.flags['registry.endpoint'].description!,
         });
-      } catch(e) {
+      } catch (e) {
         throw new MissingEndpointError();
       }
       try {
@@ -204,7 +216,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           description: SchemaPublish.flags['registry.accessToken'].description!,
         });
       } catch (e) {
-        throw new MissingRegistryTokenError()
+        throw new MissingRegistryTokenError();
       }
       const service = flags.service;
       const url = flags.url;
@@ -256,7 +268,10 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         // eslint-disable-next-line no-process-env
         const repository = process.env['GITHUB_REPOSITORY'] ?? null;
         if (!repository) {
-          throw new MissingEnvironmentError(['GITHUB_REPOSITORY', 'Github repository full name, e.g. graphql-hive/console'])
+          throw new MissingEnvironmentError([
+            'GITHUB_REPOSITORY',
+            'Github repository full name, e.g. graphql-hive/console',
+          ]);
         }
         gitHub = {
           repository,
@@ -272,7 +287,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         sdl = minifySchema(transformedSDL);
       } catch (err) {
         if (err instanceof GraphQLError) {
-          throw new InvalidSDLError(err)
+          throw new InvalidSDLError(err);
         }
         throw err;
       }
@@ -340,7 +355,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('');
 
           if (!force) {
-            throw new SchemaPublishFailedError()
+            throw new SchemaPublishFailedError();
           } else {
             this.logSuccess('Schema published (forced)');
           }
@@ -351,7 +366,11 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
           this.logSuccess(result.schemaPublish.message);
         } else {
-          throw new APIError('message' in result.schemaPublish ? result.schemaPublish.message : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`);
+          throw new APIError(
+            'message' in result.schemaPublish
+              ? result.schemaPublish.message
+              : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
+          );
         }
       } while (result === null);
     } catch (error) {
@@ -359,7 +378,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         throw error;
       } else {
         this.logFailure('Failed to publish schema');
-        throw new UnexpectedError(error instanceof Error ? error.message : JSON.stringify(error))
+        throw new UnexpectedError(error instanceof Error ? error.message : JSON.stringify(error));
       }
     }
   }

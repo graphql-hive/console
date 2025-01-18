@@ -4,7 +4,13 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { InvalidSchemaError, MissingEndpointError, MissingRegistryTokenError, SchemaNotFoundError, UnsupportedFileExtensionError } from '../../helpers/errors';
+import {
+  InvalidSchemaError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaNotFoundError,
+  UnsupportedFileExtensionError,
+} from '../../helpers/errors';
 import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `

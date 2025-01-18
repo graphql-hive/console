@@ -4,7 +4,12 @@ import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, MissingEndpointError, MissingRegistryTokenError, PersistedOperationsMalformedError } from '../../helpers/errors';
+import {
+  APIError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  PersistedOperationsMalformedError,
+} from '../../helpers/errors';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -86,7 +91,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }
 
     if (!result.createAppDeployment.ok) {
-      throw new APIError(`Create App failed without providing a reason.`)
+      throw new APIError(`Create App failed without providing a reason.`);
     }
 
     if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {

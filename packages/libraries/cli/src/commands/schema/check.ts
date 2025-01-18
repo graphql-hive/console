@@ -3,7 +3,16 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, GithubCommitRequiredError, GithubRepositoryRequiredError, MissingEndpointError, MissingRegistryTokenError, SchemaFileEmptyError, SchemaFileNotFoundError, UnexpectedError } from '../../helpers/errors';
+import {
+  APIError,
+  GithubCommitRequiredError,
+  GithubRepositoryRequiredError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaFileEmptyError,
+  SchemaFileNotFoundError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchema,
@@ -173,8 +182,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           env: 'HIVE_REGISTRY',
           description: SchemaCheck.flags['registry.endpoint'].description!,
         });
-      } catch(e) {
-        throw new MissingEndpointError()
+      } catch (e) {
+        throw new MissingEndpointError();
       }
       const file = args.file;
       try {
@@ -185,7 +194,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           env: 'HIVE_TOKEN',
           description: SchemaCheck.flags['registry.accessToken'].description!,
         });
-      } catch(e) {
+      } catch (e) {
         throw new MissingRegistryTokenError();
       }
 

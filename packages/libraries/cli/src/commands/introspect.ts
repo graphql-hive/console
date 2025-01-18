@@ -3,8 +3,8 @@ import { extname, resolve } from 'node:path';
 import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
-import { loadSchema } from '../helpers/schema';
 import { APIError, UnexpectedError, UnsupportedFileExtensionError } from '../helpers/errors';
+import { loadSchema } from '../helpers/schema';
 
 export default class Introspect extends Command<typeof Introspect> {
   static description = 'introspects a GraphQL Schema';

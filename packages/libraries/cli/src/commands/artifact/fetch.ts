@@ -1,7 +1,14 @@
 import { http, URL } from '@graphql-hive/core';
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { HTTPError, isAggregateError, MissingCdnEndpointError, MissingCdnKeyError, NetworkError, UnexpectedError } from '../../helpers/errors';
+import {
+  HTTPError,
+  isAggregateError,
+  MissingCdnEndpointError,
+  MissingCdnKeyError,
+  NetworkError,
+  UnexpectedError,
+} from '../../helpers/errors';
 
 export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
   static description = 'fetch artifacts from the CDN';
@@ -33,8 +40,8 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         env: 'HIVE_CDN_ENDPOINT',
         description: ArtifactsFetch.flags['cdn.endpoint'].description!,
       });
-    } catch(e) {
-      throw new MissingCdnEndpointError()
+    } catch (e) {
+      throw new MissingCdnEndpointError();
     }
 
     try {
@@ -75,7 +82,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
           },
         },
       });
-    } catch(e: any) {
+    } catch (e: any) {
       const sourceError = e?.cause ?? e;
       if (isAggregateError(sourceError)) {
         throw new NetworkError(sourceError.errors[0]?.message);
@@ -86,7 +93,11 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
 
     if (!response.ok) {
       const responseBody = await response.text();
-      throw new HTTPError(url.toString(), response.status, responseBody ?? response.statusText ?? 'Invalid status code for HTTP call');
+      throw new HTTPError(
+        url.toString(),
+        response.status,
+        responseBody ?? response.statusText ?? 'Invalid status code for HTTP call',
+      );
     }
 
     try {
@@ -97,9 +108,9 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         this.log(`Wrote ${contents.length} bytes to ${flags.outputFile}`);
         return;
       }
-  
+
       this.log(await response.text());
-    } catch(e) {
+    } catch (e) {
       throw new UnexpectedError(e);
     }
   }

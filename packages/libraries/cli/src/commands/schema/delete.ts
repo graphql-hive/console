@@ -2,7 +2,12 @@ import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, MissingEndpointError, MissingRegistryTokenError, UnexpectedError } from '../../helpers/errors';
+import {
+  APIError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -107,7 +112,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           legacyFlagName: 'registry',
           defaultValue: graphqlEndpoint,
           env: 'HIVE_REGISTRY',
-          description: SchemaDelete.flags["registry.endpoint"].description!,
+          description: SchemaDelete.flags['registry.endpoint'].description!,
         });
       } catch (e) {
         throw new MissingEndpointError();
@@ -118,7 +123,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
           args: flags,
           legacyFlagName: 'token',
           env: 'HIVE_TOKEN',
-          description: SchemaDelete.flags["registry.accessToken"].description!,
+          description: SchemaDelete.flags['registry.accessToken'].description!,
         });
       } catch (e) {
         throw new MissingRegistryTokenError();

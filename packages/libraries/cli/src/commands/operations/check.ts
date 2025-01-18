@@ -4,7 +4,13 @@ import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { InvalidDocumentsError, MissingEndpointError, MissingRegistryTokenError, SchemaNotFoundError, UnexpectedError } from '../../helpers/errors';
+import {
+  InvalidDocumentsError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaNotFoundError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
 import { Texture } from '../../helpers/texture/texture';
 
@@ -98,7 +104,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       } catch (e) {
         throw new MissingEndpointError();
       }
-      
+
       try {
         accessToken = this.ensure({
           key: 'registry.accessToken',
@@ -110,7 +116,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       } catch (e) {
         throw new MissingRegistryTokenError();
       }
-      
+
       const graphqlTag = flags.graphqlTag;
       const globalGraphqlTag = flags.globalGraphqlTag;
 
