@@ -67,8 +67,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
     }
 
     const file: string = args.file;
-    const fs = await import('fs/promises');
-    const contents = await fs.readFile(file, 'utf-8');
+    const contents = this.readJSON(file);
     const operations: unknown = JSON.parse(contents);
     const validationResult = ManifestModel.safeParse(operations);
 

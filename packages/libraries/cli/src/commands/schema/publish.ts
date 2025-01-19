@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
@@ -155,7 +154,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }),
   };
 
-  resolveMetadata(metadata: string | undefined): string | undefined {
+  resolveMetadata = (metadata: string | undefined): string | undefined => {
     if (!metadata) {
       return;
     }
@@ -167,24 +166,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       return metadata;
     } catch (e) {
       // If we can't parse it, we can try to load it from FS
-      const exists = existsSync(metadata);
-
-      if (!exists) {
-        throw new Error(
-          `Failed to load metadata from "${metadata}": Please specify a path to an existing file, or a string with valid JSON.`,
-        );
-      }
-
-      try {
-        const fileContent = readFileSync(metadata, 'utf-8');
-        JSON.parse(fileContent);
-
-        return fileContent;
-      } catch (e) {
-        throw new Error(
-          `Failed to load metadata from file "${metadata}": Please make sure the file is readable and contains a valid JSON`,
-        );
-      }
+      return this.readJSON(metadata);
     }
   }
 

@@ -7,12 +7,16 @@ import { Command, Flags, Interfaces } from '@oclif/core';
 import { Config, GetConfigurationValueType, ValidConfigurationKeys } from './helpers/config';
 import {
   APIError,
+  FileMissingError,
   HTTPError,
+  InvalidFileContentsError,
+  InvalidRegistryTokenError,
   isAggregateError,
   MissingArgumentsError,
   NetworkError,
 } from './helpers/errors';
 import { Texture } from './helpers/texture/texture';
+import { existsSync, readFileSync } from 'node:fs';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -258,6 +262,10 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         }
 
         if (jsonData.errors && jsonData.errors.length > 0) {
+          if(jsonData.errors[0].message === "Invalid token provided") {
+            throw new InvalidRegistryTokenError()
+          }
+
           if (isDebug) {
             this.logFailure(jsonData.errors);
           }
@@ -282,6 +290,24 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       await Promise.all(
         flags.require.map(mod => import(require.resolve(mod, { paths: [process.cwd()] }))),
       );
+    }
+  }
+
+  readJSON(file: string): string {
+    // If we can't parse it, we can try to load it from FS
+    const exists = existsSync(file);
+
+    if (!exists) {
+      throw new FileMissingError(file, 'Please specify a path to an existing file, or a string with valid JSON');
+    }
+
+    try {
+      const fileContent = readFileSync(file, 'utf-8');
+      JSON.parse(fileContent);
+
+      return fileContent;
+    } catch (e) {
+      throw new InvalidFileContentsError(file, 'JSON')
     }
   }
 }
