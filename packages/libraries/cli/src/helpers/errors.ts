@@ -349,13 +349,21 @@ export class UnsupportedFileExtensionError extends HiveCLIError {
 
 export class FileMissingError extends HiveCLIError {
   constructor(fileName: string, additionalContext?: string) {
-    super(ExitCode.BAD_INIT, errorCode(ErrorCategory.GENERIC, 18), `Failed to load file "${fileName}"${additionalContext ? `: ${additionalContext}` : '.'}`);
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 18),
+      `Failed to load file "${fileName}"${additionalContext ? `: ${additionalContext}` : '.'}`,
+    );
   }
 }
 
 export class InvalidFileContentsError extends HiveCLIError {
   constructor(fileName: string, expectedFormat: string) {
-    super(ExitCode.BAD_INIT, errorCode(ErrorCategory.GENERIC, 19), `File "${fileName}" could not be parsed. Please make sure the file is readable and contains a valid ${expectedFormat}.`);
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 19),
+      `File "${fileName}" could not be parsed. Please make sure the file is readable and contains a valid ${expectedFormat}.`,
+    );
   }
 }
 

@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { env } from 'node:process';
 import { print } from 'graphql';
 import type { ExecutionResult } from 'graphql';
@@ -16,7 +17,6 @@ import {
   NetworkError,
 } from './helpers/errors';
 import { Texture } from './helpers/texture/texture';
-import { existsSync, readFileSync } from 'node:fs';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
   (typeof BaseCommand)['baseFlags'] & T['flags']
@@ -262,8 +262,8 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         }
 
         if (jsonData.errors && jsonData.errors.length > 0) {
-          if(jsonData.errors[0].message === "Invalid token provided") {
-            throw new InvalidRegistryTokenError()
+          if (jsonData.errors[0].message === 'Invalid token provided') {
+            throw new InvalidRegistryTokenError();
           }
 
           if (isDebug) {
@@ -298,7 +298,10 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     const exists = existsSync(file);
 
     if (!exists) {
-      throw new FileMissingError(file, 'Please specify a path to an existing file, or a string with valid JSON');
+      throw new FileMissingError(
+        file,
+        'Please specify a path to an existing file, or a string with valid JSON',
+      );
     }
 
     try {
@@ -307,7 +310,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
       return fileContent;
     } catch (e) {
-      throw new InvalidFileContentsError(file, 'JSON')
+      throw new InvalidFileContentsError(file, 'JSON');
     }
   }
 }

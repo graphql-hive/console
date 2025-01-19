@@ -168,7 +168,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       // If we can't parse it, we can try to load it from FS
       return this.readJSON(metadata);
     }
-  }
+  };
 
   async run() {
     try {
