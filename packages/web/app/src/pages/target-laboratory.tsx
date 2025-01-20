@@ -334,18 +334,25 @@ function LaboratoryPageContent(props: {
           // todo: add test case covering this case.
           //
           headers = substituteVariablesInHeaders(headers, result.environmentVariables);
-          // todo: GraphiQLFetcher appears to only support record-shaped headers which seems wrong because it
+          // todo: test case showing this is a limitation.
+          // todo: website documentation mentioning this limitation to our users.
+          // todo: jsdoc on `lab` mentioning this limitation to our users.
+          // todo: https://github.com/graphql/graphiql/pull/3854
+          // We have submitted a PR to GraphiQL to fix the issue described below.
+          // Once shipped, remove our lossy code below.
+          //
+          // GraphiQLFetcher only support record-shaped headers which
           // precludes complete usage of Headers data structure, namely where there are multiple values for one
-          // header. We could try to hack a solution here by doing merges of such cases but that seems
+          // header.
+          //
+          // We could try to hack a solution here by doing merges of such cases but that seems
           // likely to introduce more bugs given the different formats that different kinds of headers use to
           // delineate multiple values.
           //
-          // What should really happen is that GraphiQLFetcher accepts a HeadersInit type.
-          //
-          const newHeadersLossyFixMe = Object.fromEntries(result.request.headers);
+          const newHeadersLossy = Object.fromEntries(result.request.headers);
           headers = {
             ...headers,
-            ...newHeadersLossyFixMe,
+            ...newHeadersLossy,
           };
         } catch (err: unknown) {
           if (err instanceof Error === false) {
