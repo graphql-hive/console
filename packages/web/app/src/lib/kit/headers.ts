@@ -1,4 +1,5 @@
 export namespace Headers {
+  export type Encoded = [name: string, value: string][];
   /**
    * Take given HeadersInit and append it (mutating) into given Headers.
    *

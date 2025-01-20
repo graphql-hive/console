@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
+import { Kit } from '../kit';
+
 type _MessageEvent<T> = MessageEvent<T>;
 
 export namespace IFrameEvents {
@@ -29,10 +31,13 @@ export namespace IFrameEvents {
         log: string | Error;
       }
 
-      export interface ResultEventData
-        extends Omit<WorkerEvents.Outgoing.EventData.Result, 'type'> {
+      export interface ResultEventData {
         type: Event.result;
         runId: string;
+        environmentVariables: Record<string, string>;
+        request: {
+          headers: Kit.Headers.Encoded;
+        };
       }
 
       export interface ErrorEventData {
@@ -132,7 +137,7 @@ export namespace WorkerEvents {
         type: Event.result;
         environmentVariables: Record<string, string>;
         request: {
-          headers: [name: string, value: string][];
+          headers: Kit.Headers.Encoded;
         };
       }
 
