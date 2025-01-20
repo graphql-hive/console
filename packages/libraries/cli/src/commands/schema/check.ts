@@ -1,7 +1,9 @@
+import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchema,
@@ -114,6 +116,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         version: '0.21.0',
       },
     }),
+    experimentalJsonFile: Flags.string({
+      name: 'experimental-json-file',
+      description:
+        "File path to output a JSON file containing the command's result. Useful for e.g. CI scripting with `jq`.",
+    }),
     forceSafe: Flags.boolean({
       description: 'mark the check as safe, breaking changes are expected',
     }),
@@ -169,6 +176,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         args: flags,
         legacyFlagName: 'token',
         env: 'HIVE_TOKEN',
+        message: ACCESS_TOKEN_MISSING,
       });
       const sdl = await loadSchema(file);
       const git = await gitInfo(() => {
@@ -231,21 +239,23 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         },
       });
 
+      if (flags.experimentalJsonFile) {
+        fs.writeFileSync(flags.experimentalJsonFile, JSON.stringify(result, null, 2));
+      }
+
       if (result.schemaCheck.__typename === 'SchemaCheckSuccess') {
         const changes = result.schemaCheck.changes;
         if (result.schemaCheck.initial) {
-          this.success('Schema registry is empty, nothing to compare your schema with.');
+          this.logSuccess('Schema registry is empty, nothing to compare your schema with.');
         } else if (!changes?.total) {
-          this.success('No changes');
+          this.logSuccess('No changes');
         } else {
-          renderChanges.call(this, changes);
-          this.log('');
+          this.log(renderChanges(changes));
         }
 
         const warnings = result.schemaCheck.warnings;
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
-          this.log('');
+          this.log(renderWarnings(warnings));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
@@ -255,32 +265,29 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         const errors = result.schemaCheck.errors;
         const warnings = result.schemaCheck.warnings;
-        renderErrors.call(this, errors);
+        this.log(renderErrors(errors));
 
         if (warnings?.total) {
-          renderWarnings.call(this, warnings);
-          this.log('');
+          this.log(renderWarnings(warnings));
         }
 
         if (changes && changes.total) {
-          this.log('');
-          renderChanges.call(this, changes);
+          this.log(renderChanges(changes));
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
-          this.log('');
           this.log(`View full report:\n${result.schemaCheck.schemaCheck.webUrl}`);
         }
 
         this.log('');
 
         if (forceSafe) {
-          this.success('Breaking changes were expected (forced)');
+          this.logSuccess('Breaking changes were expected (forced)');
         } else {
           this.exit(1);
         }
       } else if (result.schemaCheck.__typename === 'GitHubSchemaCheckSuccess') {
-        this.success(result.schemaCheck.message);
+        this.logSuccess(result.schemaCheck.message);
       } else {
         this.error(result.schemaCheck.message);
       }
@@ -288,7 +295,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       if (error instanceof Errors.ExitError) {
         throw error;
       } else {
-        this.fail('Failed to check schema');
+        this.logFailure('Failed to check schema');
         this.handleFetchError(error);
       }
     }

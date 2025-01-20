@@ -383,19 +383,29 @@ local development. This can be done using the `schema:fetch` command.
 <Callout type="info">
   Don't confuse this with the [high-availability CDN](/docs/high-availability-cdn). This command is
   used to fetch a schema from the API where the CDN always represents the latest valid schema.
+  `artifact:fetch` is recommended in cases where either could be used.
 </Callout>
 
-You can fetch a schema by using the action id (commit sha) that was used for publishing the schema
-version. The `--write` option can be used for writing the schema to a file.
+You can fetch either the latest schema or a schema by the action id (commit sha) that was used for
+publishing the schema version. The `--write` option can be used for writing the schema to a file.
 
 ```bash
+hive schema:fetch --type sdl --write schema.graphql
 hive schema:fetch --type sdl --write schema.graphql feb8aa9ec8932eb
 ```
 
 For projects with a supergraph it is also possible to fetch the supergraph.
 
 ```bash
+hive schema:fetch --type supergraph --write supergraph.graphql
 hive schema:fetch --type supergraph --write supergraph.graphql feb8aa9ec8932eb
+```
+
+It is also possible to print a list of subgraph details in an ascii table.
+
+```bash
+hive schema:fetch --type subgraphs
+hive schema:fetch --type subgraphs feb8aa9ec8932eb
 ```
 
 For more information please refer to the

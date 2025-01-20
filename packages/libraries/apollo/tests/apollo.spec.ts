@@ -125,9 +125,7 @@ test('should capture client name and version headers', async () => {
           maxRetries: 0,
           sendInterval: 10,
           timeout: 50,
-          __testing: {
-            fetch: fetchSpy,
-          },
+          fetch: fetchSpy,
         },
         reporting: false,
         usage: {
@@ -186,9 +184,7 @@ test('send usage reports in intervals', async () => {
           maxRetries: 0,
           sendInterval: 10,
           timeout: 50,
-          __testing: {
-            fetch: fetchSpy,
-          },
+          fetch: fetchSpy,
         },
         reporting: false,
         usage: {

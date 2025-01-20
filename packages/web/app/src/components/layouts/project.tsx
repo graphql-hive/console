@@ -20,7 +20,6 @@ import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
-import { ProjectMigrationToast } from '../project/migration-toast';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
@@ -50,7 +49,6 @@ const ProjectLayoutQuery = graphql(`
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
-        registryModel
         viewerCanModifySchemaPolicy
         viewerCanCreateTarget
         viewerCanModifyAlerts
@@ -115,13 +113,6 @@ export function ProjectLayout({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          {page === Page.Settings || currentProject?.registryModel !== 'LEGACY' ? null : (
-            <ProjectMigrationToast
-              organizationSlug={props.organizationSlug}
-              projectSlug={currentProject.slug}
-            />
-          )}
-
           <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject ? (
@@ -151,21 +142,17 @@ export function ProjectLayout({
                         </Link>
                       </TabsTrigger>
                     )}
-                    {currentProject.viewerCanModifySchemaPolicy && (
-                      <>
-                        <TabsTrigger variant="menu" value={Page.Policy} asChild>
-                          <Link
-                            to="/$organizationSlug/$projectSlug/view/policy"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                            }}
-                          >
-                            Policy
-                          </Link>
-                        </TabsTrigger>
-                      </>
-                    )}
+                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                      <Link
+                        to="/$organizationSlug/$projectSlug/view/policy"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                        }}
+                      >
+                        Policy
+                      </Link>
+                    </TabsTrigger>
                     {currentProject.viewerCanModifySettings && (
                       <TabsTrigger variant="menu" value={Page.Settings} asChild>
                         <Link

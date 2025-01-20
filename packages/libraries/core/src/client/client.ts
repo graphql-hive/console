@@ -112,7 +112,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
                 'graphql-client-version': version,
               },
               timeout: 30_000,
-              fetchImplementation: options?.agent?.__testing?.fetch,
+              fetchImplementation: options?.agent?.fetch,
               logger: infoLogger,
             },
           );

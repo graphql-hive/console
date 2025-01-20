@@ -34,7 +34,7 @@ function setEditorScript(script: string) {
   setMonacoEditorContents('preflight-script-editor', script);
 }
 
-describe('Preflight Script', () => {
+describe('Laboratory > Preflight Script', () => {
   it('mini script editor is read only', () => {
     cy.dataCy('toggle-preflight-script').click();
     // Wait loading disappears

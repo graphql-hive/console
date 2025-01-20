@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { Organization, OrganizationMemberRole } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
-import { cache, diffArrays, share } from '../../../shared/helpers';
+import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -970,76 +970,6 @@ export class OrganizationManager {
     });
   }
 
-  async updateMemberAccess(
-    input: {
-      user: string;
-      organizationScopes: readonly OrganizationAccessScope[];
-      projectScopes: readonly ProjectAccessScope[];
-      targetScopes: readonly TargetAccessScope[];
-    } & OrganizationSelector,
-  ) {
-    this.logger.info('Updating a member access in an organization (input=%o)', input);
-    await this.session.assertPerformAction({
-      action: 'member:assignRole',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
-      },
-    });
-
-    const currentUser = await this.session.getViewer();
-
-    const [currentMember, member] = await Promise.all([
-      this.getOrganizationMember({
-        organizationId: input.organizationId,
-        userId: currentUser.id,
-      }),
-      this.getOrganizationMember({
-        organizationId: input.organizationId,
-        userId: input.user,
-      }),
-    ]);
-
-    if (member.role?.id) {
-      throw new HiveError(`Cannot update access for a member with a role.`);
-    }
-
-    const newScopes = ensureReadAccess([
-      ...input.organizationScopes,
-      ...input.projectScopes,
-      ...input.targetScopes,
-    ]);
-
-    // See what scopes were removed or added
-    const modifiedScopes = diffArrays(member.scopes, newScopes);
-
-    // Check if the current user has rights to update these member scopes
-    // User can't manage other user's scope if he's missing the scope as well
-    const currentUserMissingScopes = modifiedScopes.filter(
-      scope => !currentMember.scopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %o`, currentMember.scopes);
-      throw new HiveError(`No access to modify the scopes: ${currentUserMissingScopes.join(', ')}`);
-    }
-
-    // Update the scopes
-    await this.storage.updateOrganizationMemberAccess({
-      organizationId: input.organizationId,
-      userId: input.user,
-      scopes: newScopes,
-    });
-
-    // Because we checked the access before, it's stale by now
-    this.authManager.resetAccessCache();
-    this.session.reset();
-
-    return this.storage.getOrganization({
-      organizationId: input.organizationId,
-    });
-  }
-
   async createMemberRole(input: {
     organizationId: string;
     name: string;
@@ -1460,25 +1390,6 @@ export class OrganizationManager {
     };
   }
 
-  async getMembersWithoutRole(selector: { organizationId: string }) {
-    if (
-      await this.session.canPerformAction({
-        action: 'member:describe',
-        organizationId: selector.organizationId,
-        params: {
-          organizationId: selector.organizationId,
-        },
-      })
-    ) {
-      return this.storage.getMembersWithoutRole({
-        organizationId: selector.organizationId,
-      });
-    }
-
-    // if user doesn't have access to members, return empty list
-    return [];
-  }
-
   async getMemberRoles(selector: { organizationId: string }) {
     await this.session.assertPerformAction({
       action: 'member:describe',
@@ -1505,6 +1416,20 @@ export class OrganizationManager {
     return this.storage.getOrganizationMemberRole({
       organizationId: selector.organizationId,
       roleId: selector.roleId,
+    });
+  }
+
+  async getViewerMemberRole(selector: { organizationId: string }) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+      },
+    });
+
+    return this.storage.getViewerOrganizationMemberRole({
+      organizationId: selector.organizationId,
     });
   }
 
@@ -1649,106 +1574,6 @@ export class OrganizationManager {
 
     return {
       ok: true,
-    };
-  }
-
-  async migrateUnassignedMembers({
-    organizationId,
-    assignRole,
-    createRole,
-  }: {
-    organizationId: string;
-    assignRole?: {
-      roleId: string;
-      userIds: readonly string[];
-    } | null;
-    createRole?: {
-      name: string;
-      description: string;
-      organizationScopes: readonly OrganizationAccessScope[];
-      projectScopes: readonly ProjectAccessScope[];
-      targetScopes: readonly TargetAccessScope[];
-      userIds: readonly string[];
-    } | null;
-  }) {
-    const currentUser = await this.session.getViewer();
-    const currentUserAsMember = await this.getOrganizationMember({
-      organizationId: organizationId,
-      userId: currentUser.id,
-    });
-
-    if (!this.isAdminRole(currentUserAsMember.role)) {
-      return {
-        error: {
-          message: `Only admins can migrate members`,
-        },
-      };
-    }
-
-    if (assignRole) {
-      return this.assignRoleToMembersMigration({
-        organizationId,
-        roleId: assignRole.roleId,
-        userIds: assignRole.userIds,
-      });
-    }
-
-    if (createRole) {
-      return this.createRoleWithMembersMigration({
-        organizationId,
-        ...createRole,
-      });
-    }
-
-    throw new Error(`Both assignRole and createRole are missing.`);
-  }
-
-  private async createRoleWithMembersMigration(input: {
-    organizationId: string;
-    name: string;
-    description: string;
-    organizationScopes: readonly OrganizationAccessScope[];
-    projectScopes: readonly ProjectAccessScope[];
-    targetScopes: readonly TargetAccessScope[];
-    userIds: readonly string[];
-  }) {
-    const result = await this.createMemberRole({
-      organizationId: input.organizationId,
-      name: input.name,
-      description: input.description,
-      organizationAccessScopes: input.organizationScopes,
-      projectAccessScopes: input.projectScopes,
-      targetAccessScopes: input.targetScopes,
-    });
-
-    if (result.ok) {
-      return this.assignRoleToMembersMigration({
-        roleId: result.ok.createdRole.id,
-        organizationId: input.organizationId,
-        userIds: input.userIds,
-      });
-    }
-
-    return result;
-  }
-
-  private async assignRoleToMembersMigration(input: {
-    organizationId: string;
-    roleId: string;
-    userIds: readonly string[];
-  }) {
-    await this.storage.assignOrganizationMemberRoleToMany({
-      organizationId: input.organizationId,
-      roleId: input.roleId,
-      userIds: input.userIds,
-    });
-
-    return {
-      ok: {
-        updatedOrganization: await this.storage.getOrganization({
-          organizationId: input.organizationId,
-        }),
-      },
     };
   }
 

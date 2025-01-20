@@ -1,5 +1,5 @@
 diff --git a/dist/index.d.ts b/dist/index.d.ts
-index d0d893ea0caffb6c1c70c5f95aed8ca49bc74701..ba3c02801e958c66fde9b813821e5a608f49b1cf 100644
+index d0d893ea0caffb6c1c70c5f95aed8ca49bc74701..738c53fe71b5cde39d288b11481da83eef380f04 100644
 --- a/dist/index.d.ts
 +++ b/dist/index.d.ts
 @@ -14,7 +14,7 @@ declare type AddSuffix<Obj extends Record<string, any>, Suffix extends string> =
@@ -11,8 +11,21 @@ index d0d893ea0caffb6c1c70c5f95aed8ca49bc74701..ba3c02801e958c66fde9b813821e5a60
  
  export declare namespace GraphiQL {
      var Logo: typeof GraphiQLLogo;
+diff --git a/dist/index.js b/dist/index.js
+index 8658855e3697ce1f5e8bd83afc2beecade922288..d94624983c04ef8efccf5b7fe0dd436ad5762136 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -392,7 +392,7 @@ function GraphiQLInterface(props) {
+         },
+         tab.title
+       ),
+-      tabs.length > 1 && /* @__PURE__ */ React.createElement(react.Tab.Close, { onClick: handleTabClose })
++      /* @__PURE__ */ React.createElement(react.Tab.Close, { onClick: handleTabClose })
+     ))
+   ), /* @__PURE__ */ React.createElement(react.Tooltip, { label: "New tab" }, /* @__PURE__ */ React.createElement(
+     react.UnStyledButton,
 diff --git a/dist/index.mjs b/dist/index.mjs
-index cf1a9036b4b35b7918da09ead6977e1e77724b8a..896dadb9c22b36ceee99776b87684f9e3899023d 100644
+index cf1a9036b4b35b7918da09ead6977e1e77724b8a..970cc4cda25ff74c49e542db51af558d7e0d277a 100644
 --- a/dist/index.mjs
 +++ b/dist/index.mjs
 @@ -1,4 +1,4 @@
@@ -39,7 +52,15 @@ index cf1a9036b4b35b7918da09ead6977e1e77724b8a..896dadb9c22b36ceee99776b87684f9e
      },
      /* @__PURE__ */ React.createElement(
        GraphiQLInterface,
-@@ -398,7 +400,7 @@ function GraphiQLInterface(props) {
+@@ -391,14 +393,14 @@ function GraphiQLInterface(props) {
+         },
+         tab.title
+       ),
+-      tabs.length > 1 && /* @__PURE__ */ React.createElement(Tab.Close, { onClick: handleTabClose })
++      /* @__PURE__ */ React.createElement(Tab.Close, { onClick: handleTabClose })
+     ))
+   ), /* @__PURE__ */ React.createElement(Tooltip, { label: "New tab" }, /* @__PURE__ */ React.createElement(
+     UnStyledButton,
      {
        type: "button",
        className: "graphiql-tab-add",

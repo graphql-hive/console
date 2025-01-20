@@ -11,7 +11,7 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import type { SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -198,13 +198,6 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  updateOrganizationMemberAccess(
-    _: OrganizationSelector & {
-      userId: string;
-      scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-    },
-  ): Promise<void>;
-
   hasOrganizationMemberRoleName(_: {
     organizationId: string;
     roleName: string;
@@ -239,16 +232,7 @@ export interface Storage {
     roleId: string;
     userId: string;
   }): Promise<void>;
-  /**
-   * Remove it after all users have been migrated to the new role system.
-   */
-  assignOrganizationMemberRoleToMany(_: {
-    organizationId: string;
-    roleId: string;
-    userIds: readonly string[];
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
-  getMembersWithoutRole(_: { organizationId: string }): Promise<readonly Member[]>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;
 
@@ -303,12 +287,6 @@ export interface Storage {
   disableExternalSchemaComposition(_: ProjectSelector): Promise<Project>;
 
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
-
-  updateProjectRegistryModel(
-    _: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ): Promise<Project>;
 
   getTargetId(_: {
     organizationSlug: string;
@@ -521,13 +499,6 @@ export interface Storage {
    */
   getSchemaChangesForVersion(_: { versionId: string }): Promise<null | Array<SchemaChangeType>>;
 
-  updateVersionStatus(
-    _: {
-      valid: boolean;
-      versionId: string;
-    } & TargetSelector,
-  ): Promise<SchemaVersion | never>;
-
   getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
 
   createActivity(
@@ -665,6 +636,11 @@ export interface Storage {
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
     oidcUserAccessOnly: boolean;
+  }): Promise<OIDCIntegration>;
+
+  updateOIDCDefaultMemberRole(_: {
+    oidcIntegrationId: string;
+    roleId: string;
   }): Promise<OIDCIntegration>;
 
   createCDNAccessToken(_: {

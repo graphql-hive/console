@@ -733,9 +733,7 @@ test('retry on non-200', async () => {
       minTimeout: 10,
       sendInterval: 10,
       maxRetries: 1,
-      __testing: {
-        fetch: fetchSpy,
-      },
+      fetch: fetchSpy,
     },
     token,
     usage: {

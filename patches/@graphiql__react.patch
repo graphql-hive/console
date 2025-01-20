@@ -1,5 +1,5 @@
 diff --git a/dist/index.mjs b/dist/index.mjs
-index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca4682163c 100644
+index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..8639aaf06c35c5bea8e5384c7492641f9c6faf66 100644
 --- a/dist/index.mjs
 +++ b/dist/index.mjs
 @@ -1,6 +1,6 @@
@@ -224,8 +224,8 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
 +            ...updatedValues.tabs,
 +            createTab({
 +              ..._tabState,
-+              headers: defaultHeaders,
-+              query: defaultQuery ?? DEFAULT_QUERY
++              headers: _tabState?.headers ?? defaultHeaders,
++              query: _tabState?.query ?? (defaultQuery ?? DEFAULT_QUERY)
 +            })
 +          ],
 +          activeTabIndex: updatedValues.tabs.length
@@ -248,7 +248,29 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
    const changeTab = useCallback(
      (index) => {
        setTabState((current) => {
-@@ -3432,6 +3415,7 @@ function EditorContextProvider(props) {
+@@ -3371,10 +3354,20 @@ function EditorContextProvider(props) {
+   const closeTab = useCallback(
+     (index) => {
+       setTabState((current) => {
+-        const updated = {
++        const updated = current.tabs.length === 1 ?  {
++          // If there is only one tab, "reset" it to the default state
++          tabs: [
++            createTab({
++              headers: defaultHeaders,
++              query: defaultQuery ?? DEFAULT_QUERY,
++            }),
++          ],
++          activeTabIndex: 0,
++        } : {
+           tabs: current.tabs.filter((_tab, i) => index !== i),
+           activeTabIndex: Math.max(current.activeTabIndex - 1, 0)
+         };
++        
+         storeTabs(updated);
+         setEditorValues(updated.tabs[updated.activeTabIndex]);
+         onTabChange == null ? void 0 : onTabChange(updated);
+@@ -3432,6 +3425,7 @@ function EditorContextProvider(props) {
    const value = useMemo(
      () => ({
        ...tabState,
@@ -256,7 +278,7 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
        addTab,
        changeTab,
        moveTab,
-@@ -3743,9 +3727,10 @@ function GraphiQLProvider({
+@@ -3743,9 +3737,10 @@ function GraphiQLProvider({
    storage,
    validationRules,
    variables,
@@ -269,7 +291,7 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
      EditorContextProvider,
      {
        defaultQuery,
-@@ -3776,6 +3761,7 @@ function GraphiQLProvider({
+@@ -3776,6 +3771,7 @@ function GraphiQLProvider({
                getDefaultFieldNames,
                fetcher,
                operationName,
@@ -277,7 +299,7 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
                children: /* @__PURE__ */ jsx(ExplorerContextProvider, { children: /* @__PURE__ */ jsx(
                  PluginContextProvider,
                  {
-@@ -3790,7 +3776,7 @@ function GraphiQLProvider({
+@@ -3790,7 +3786,7 @@ function GraphiQLProvider({
          }
        )
      }
@@ -286,7 +308,7 @@ index 8ca339a2ba2031f0c1e22f1d099fa9a571492107..1cf3e8c620dc2c3ad4cfc42e2feeb4ca
  }
  function useTheme(defaultTheme = null) {
    const storageContext = useStorageContext();
-@@ -4200,6 +4186,7 @@ export {
+@@ -4200,6 +4196,7 @@ export {
    TypeLink,
    UnStyledButton,
    VariableEditor,

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
@@ -22,14 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -714,9 +708,8 @@ function AuditLogsOrganizationModal(props: {
     props.toggleModalOpen();
     form.reset();
     toast({
-      variant: 'warning',
-      title: 'Audit logs report started',
-      description: 'Your audit logs report is being generated. You will receive an email shortly.',
+      title: 'Audit logs report generated',
+      description: 'The audit logs report has been generated and will be sent to your email.',
     });
   }
 
@@ -731,13 +724,12 @@ function AuditLogsOrganizationModal(props: {
                 Select a date range to generate an audit logs report.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-8">
+            <div className="flex flex-row justify-evenly gap-x-8">
               <FormField
                 control={form.control}
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -745,14 +737,14 @@ function AuditLogsOrganizationModal(props: {
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="space-y-8">
+              <div className="mt-2">
+                <ArrowRightIcon className="text-muted-foreground size-6" />
+              </div>
               <FormField
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>

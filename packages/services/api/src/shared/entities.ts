@@ -219,6 +219,7 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
+  defaultMemberRoleId: string | null;
 }
 
 export interface CDNAccessToken {
@@ -301,7 +302,6 @@ export interface Project {
    * TODO: All code referencing this field should be removed at some point.
    */
   gitRepository?: `${string}/${string}` | null;
-  legacyRegistryModel: boolean;
   useProjectNameInGithubCheck: boolean;
   externalComposition: {
     enabled: boolean;
@@ -358,7 +358,7 @@ export interface Member {
     scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     organizationId: string;
     membersCount: number | undefined;
-  } | null;
+  };
   oidcIntegrationId: string | null;
   connectedToZendesk: boolean;
 }
@@ -368,6 +368,8 @@ export interface TargetSettings {
     enabled: boolean;
     period: number;
     percentage: number;
+    requestCount: number;
+    breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
   };

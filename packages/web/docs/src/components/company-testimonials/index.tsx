@@ -65,8 +65,8 @@ const testimonials: Testimonial[] = [
   {
     company: 'Prodigy',
     logo: props => (
-      <div className="flex h-8 items-center justify-center">
-        <ProdigyLogo {...props} height={37} />
+      <div className={cn('flex h-8 items-center', props.className)}>
+        <ProdigyLogo {...props} className="" height={37} />
       </div>
     ),
     text: (
@@ -158,7 +158,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
           <div
             /* mobile scrollview */
             ref={scrollviewRef}
-            className="-m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
+            className="no-scrollbar -m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
             onScroll={updateDotsOnScroll.current}
           >
             {testimonials.map(
@@ -193,7 +193,12 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     )}
                     <article className="max-lg:mt-6 lg:relative" id={getTestimonialId(company)}>
                       <Logo title={company} height={32} className="text-blue-1000 mb-6 lg:hidden" />
-                      <blockquote className="sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]">
+                      <blockquote
+                        className={cn(
+                          'sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]',
+                          data && 'lg:text-lg',
+                        )}
+                      >
                         {text}
                       </blockquote>
                       {person && <TestimonialPerson className="mt-6" person={person} />}

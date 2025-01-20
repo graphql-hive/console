@@ -1,7 +1,8 @@
 import { CompressionTypes, Kafka, logLevel, Partitioners, RetryOptions } from 'kafkajs';
-import type { ServiceLogger } from '@hive/service-common';
+import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
+import * as Sentry from '@sentry/node';
 import { calculateChunkSize, createKVBuffer, isBufferTooBigError } from './buffer';
 import type { KafkaEnvironment } from './environment';
 import {
@@ -197,6 +198,12 @@ export function createUsage(config: {
         if (meta[0].errorCode) {
           rawOperationFailures.inc(numOfOperations);
           logger.error(`Failed to flush (id=%s, errorCode=%s)`, batchId, meta[0].errorCode);
+          Sentry.setTags({
+            batchId,
+            errorCode: meta[0].errorCode,
+            numOfOperations,
+          });
+          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`));
         } else {
           rawOperationWrites.inc(numOfOperations);
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
@@ -211,6 +218,13 @@ export function createUsage(config: {
         } else {
           status = Status.Unhealthy;
           logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
+          Sentry.setTags({
+            batchId,
+            message: error.message,
+            numOfOperations,
+          });
+          Sentry.captureException(error);
+
           scheduleReconnect();
         }
 
@@ -291,13 +305,23 @@ export function createUsage(config: {
   }
 
   return {
-    collect(report: RawReport) {
-      if (status !== Status.Ready) {
-        throw new Error('Usage is not ready yet');
-      }
+    collect: traceInlineSync(
+      'collect',
+      {
+        initAttributes: report => ({
+          'hive.service.ready': status == Status.Ready,
+          'hive.input.report.id': report.id,
+          'hive.input.report.size': Object.keys(report.map).length,
+        }),
+      },
+      (report: RawReport) => {
+        if (status !== Status.Ready) {
+          throw new Error('Usage is not ready yet');
+        }
 
-      buffer.add(report);
-    },
+        buffer.add(report);
+      },
+    ),
     readiness() {
       return status === Status.Ready;
     },

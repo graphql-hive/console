@@ -19,9 +19,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  OnChangeFn,
   PaginationState,
-  SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 import { OperationsFallback } from './Fallback';
@@ -169,8 +167,6 @@ type SetPaginationFn = (updater: SetStateAction<PaginationState>) => void;
 
 function OperationsTable({
   operations,
-  sorting,
-  setSorting,
   pagination,
   setPagination,
   className,
@@ -182,8 +178,6 @@ function OperationsTable({
   operations: Operation[];
   pagination: PaginationState;
   setPagination: SetPaginationFn;
-  sorting: SortingState;
-  setSorting: OnChangeFn<SortingState>;
   className?: string;
   organizationSlug: string;
   projectSlug: string;
@@ -197,10 +191,8 @@ function OperationsTable({
     columns,
     data: operations,
     state: {
-      sorting,
       pagination,
     },
-    onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -221,6 +213,8 @@ function OperationsTable({
 
   const { headers } = tableInstance.getHeaderGroups()[0];
 
+  const sortedColumnsById = tableInstance.getState().sorting.map(s => s.id);
+
   return (
     <div className={clsx('rounded-md border border-gray-800 bg-gray-900/50 p-5', className)}>
       <Section.Title>Operations</Section.Title>
@@ -240,6 +234,7 @@ function OperationsTable({
                     <Sortable
                       sortOrder={header.column.getIsSorted()}
                       onClick={header.column.getToggleSortingHandler()}
+                      otherColumnSorted={sortedColumnsById.some(id => id !== header.id)}
                     >
                       {name}
                     </Sortable>
@@ -395,7 +390,6 @@ function OperationsTableContainer({
   }, [operationStats?.operations.nodes, operationsFilter]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
-  const [sorting, setSorting] = useState<SortingState>([]);
 
   const safeSetPagination = useCallback<SetPaginationFn>(
     state => {
@@ -422,8 +416,6 @@ function OperationsTableContainer({
       className={className}
       pagination={pagination}
       setPagination={safeSetPagination}
-      sorting={sorting}
-      setSorting={setSorting}
       organizationSlug={organizationSlug}
       projectSlug={projectSlug}
       targetSlug={targetSlug}

@@ -193,7 +193,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('SUPPORT_TICKET_CREATED'),
     metadata: z.object({
-      ticketId: z.string().uuid(),
+      ticketId: z.string(),
       ticketSubject: z.string(),
       ticketDescription: z.string(),
       ticketPriority: z.string(),
@@ -202,7 +202,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('SUPPORT_TICKET_UPDATED'),
     metadata: z.object({
-      ticketId: z.string().uuid(),
+      ticketId: z.string(),
       updatedFields: z.string(),
     }),
   }),
@@ -283,7 +283,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('SUBSCRIPTION_CREATED'),
     metadata: z.object({
-      paymentMethodId: z.string().uuid().nullish(),
+      paymentMethodId: z.string().nullish(),
       operations: z.number(),
       previousPlan: z.string(),
       newPlan: z.string(),
@@ -340,7 +340,7 @@ const AuditLogClickhouseObjectModel = z.object({
   eventAction: z.enum(auditLogEventTypes as [string, ...string[]]),
   userId: z.string(),
   userEmail: z.string(),
-  metadata: z.string().transform(x => JSON.parse(x)),
+  metadata: z.string(),
 });
 
 export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;

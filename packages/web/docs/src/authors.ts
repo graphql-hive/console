@@ -46,4 +46,9 @@ export const authors: Record<string, Author> = {
     link: 'https://github.com/dotansimha',
     github: 'dotansimha',
   },
+  jdolle: {
+    name: 'Jeff Dolle',
+    link: 'https://github.com/jdolle',
+    github: 'jdolle',
+  },
 };

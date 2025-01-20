@@ -4,24 +4,74 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
+import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   query SchemaVersionForActionId(
     $actionId: ID!
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
+    $includeSubgraphs: Boolean!
   ) {
     schemaVersionForActionId(actionId: $actionId) {
       id
       valid
       sdl @include(if: $includeSDL)
       supergraph @include(if: $includeSupergraph)
+      schemas @include(if: $includeSubgraphs) {
+        nodes {
+          __typename
+          ... on SingleSchema {
+            id
+            date
+          }
+          ... on CompositeSchema {
+            id
+            date
+            url
+            service
+          }
+        }
+        total
+      }
+    }
+  }
+`);
+
+const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
+  query LatestSchemaVersion(
+    $includeSDL: Boolean!
+    $includeSupergraph: Boolean!
+    $includeSubgraphs: Boolean!
+  ) {
+    latestValidVersion {
+      id
+      valid
+      sdl @include(if: $includeSDL)
+      supergraph @include(if: $includeSupergraph)
+      schemas @include(if: $includeSubgraphs) {
+        nodes {
+          __typename
+          ... on SingleSchema {
+            id
+            date
+          }
+          ... on CompositeSchema {
+            id
+            date
+            url
+            service
+          }
+        }
+        total
+      }
     }
   }
 `);
 
 export default class SchemaFetch extends Command<typeof SchemaFetch> {
-  static description = 'fetch schema or supergraph from the Hive API';
+  static description = 'fetch a schema, supergraph, or list of subgraphs from the Hive API';
   static flags = {
     /** @deprecated */
     registry: Flags.string({
@@ -47,7 +97,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }),
     type: Flags.string({
       aliases: ['T'],
-      description: 'Type to fetch (possible types: sdl, supergraph)',
+      description: 'Type to fetch (possible types: sdl, supergraph, subgraphs)',
     }),
     write: Flags.string({
       aliases: ['W'],
@@ -61,7 +111,6 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
   static args = {
     actionId: Args.string({
       name: 'actionId' as const,
-      required: true,
       description: 'action id (e.g. commit sha)',
       hidden: false,
     }),
@@ -83,9 +132,10 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       args: flags,
       legacyFlagName: 'token',
       env: 'HIVE_TOKEN',
+      message: ACCESS_TOKEN_MISSING,
     });
 
-    const actionId: string = args.actionId;
+    const { actionId } = args;
 
     const sdlType = this.ensure({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -97,45 +147,80 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       defaultValue: 'sdl',
     });
 
-    const result = await this.registryApi(endpoint, accessToken).request({
-      operation: SchemaVersionForActionIdQuery,
-      variables: {
-        actionId,
-        includeSDL: sdlType === 'sdl',
-        includeSupergraph: sdlType === 'supergraph',
-      },
-    });
+    let schemaVersion;
+    if (actionId) {
+      const result = await this.registryApi(endpoint, accessToken).request({
+        operation: SchemaVersionForActionIdQuery,
+        variables: {
+          actionId,
+          includeSDL: sdlType === 'sdl',
+          includeSupergraph: sdlType === 'supergraph',
+          includeSubgraphs: sdlType === 'subgraphs',
+        },
+      });
+      schemaVersion = result.schemaVersionForActionId;
+    } else {
+      const result = await this.registryApi(endpoint, accessToken).request({
+        operation: LatestSchemaVersionQuery,
+        variables: {
+          includeSDL: sdlType === 'sdl',
+          includeSupergraph: sdlType === 'supergraph',
+          includeSubgraphs: sdlType === 'subgraphs',
+        },
+      });
+      schemaVersion = result.latestValidVersion;
+    }
 
-    if (result.schemaVersionForActionId == null) {
+    if (schemaVersion == null) {
       return this.error(`No schema found for action id ${actionId}`);
     }
 
-    if (result.schemaVersionForActionId.valid === false) {
+    if (schemaVersion.valid === false) {
       return this.error(`Schema is invalid for action id ${actionId}`);
     }
 
-    const schema =
-      result.schemaVersionForActionId.sdl ?? result.schemaVersionForActionId.supergraph;
+    if (schemaVersion.schemas) {
+      const { total, nodes } = schemaVersion.schemas;
+      const tableData = [
+        ['service', 'url', 'date'],
+        ...nodes.map(node => [
+          /** @ts-expect-error: If service is undefined then use id. */
+          node.service ?? node.id,
+          node.__typename === 'CompositeSchema' ? node.url : 'n/a',
+          node.date as string,
+        ]),
+      ];
+      const stats = `subgraphs length: ${total}`;
+      const printed = `${Texture.table(tableData)}\n\r${stats}`;
 
-    if (schema == null) {
-      return this.error(`No ${sdlType} found for action id ${actionId}`);
-    }
-
-    if (flags.write) {
-      const filepath = resolve(process.cwd(), flags.write);
-      switch (extname(flags.write.toLowerCase())) {
-        case '.graphql':
-        case '.gql':
-        case '.gqls':
-        case '.graphqls':
-          await writeFile(filepath, schema, 'utf8');
-          break;
-        default:
-          this.fail(`Unsupported file extension ${extname(flags.write)}`);
-          this.exit(1);
+      if (flags.write) {
+        const filepath = resolve(process.cwd(), flags.write);
+        await writeFile(filepath, printed, 'utf8');
       }
-      return;
+      this.log(printed);
+    } else {
+      const schema = schemaVersion.sdl ?? schemaVersion.supergraph;
+
+      if (schema == null) {
+        return this.error(`No ${sdlType} found for action id ${actionId}`);
+      }
+
+      if (flags.write) {
+        const filepath = resolve(process.cwd(), flags.write);
+        switch (extname(flags.write.toLowerCase())) {
+          case '.graphql':
+          case '.gql':
+          case '.gqls':
+          case '.graphqls':
+            await writeFile(filepath, schema, 'utf8');
+            break;
+          default:
+            this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
+            this.exit(1);
+        }
+        return;
+      }
+      this.log(schema);
     }
-    this.log(schema);
   }
 }

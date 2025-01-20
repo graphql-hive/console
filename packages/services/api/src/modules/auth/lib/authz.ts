@@ -358,7 +358,6 @@ const actionDefinitions = {
   'schemaCheck:create': schemaCheckOrPublishIdentity,
   'schemaCheck:approve': schemaCheckOrPublishIdentity,
   'schemaVersion:publish': schemaCheckOrPublishIdentity,
-  'schemaVersion:approve': defaultTargetIdentity,
   'schemaVersion:deleteService': schemaCheckOrPublishIdentity,
   'schema:loadFromRegistry': defaultTargetIdentity,
   'schema:compose': defaultTargetIdentity,

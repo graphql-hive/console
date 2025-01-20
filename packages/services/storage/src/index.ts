@@ -137,21 +137,13 @@ async function tracedTransaction<T>(
   });
 }
 
-type MemberRoleColumns =
-  | {
-      role_id: organization_member_roles['id'];
-      role_name: organization_member_roles['name'];
-      role_description: organization_member_roles['description'];
-      role_locked: organization_member_roles['locked'];
-      role_scopes: organization_member_roles['scopes'];
-    }
-  | {
-      role_id: null;
-      role_name: null;
-      role_description: null;
-      role_locked: null;
-      role_scopes: null;
-    };
+type MemberRoleColumns = {
+  role_id: organization_member_roles['id'];
+  role_name: organization_member_roles['name'];
+  role_description: organization_member_roles['description'];
+  role_locked: organization_member_roles['locked'];
+  role_scopes: organization_member_roles['scopes'];
+};
 
 export async function createStorage(
   connection: string,
@@ -189,17 +181,15 @@ export async function createStorage(
       organization: user.organization_id,
       oidcIntegrationId: user.oidc_integration_id ?? null,
       connectedToZendesk: user.connected_to_zendesk ?? false,
-      role: user.role_id
-        ? {
-            id: user.role_id,
-            name: user.role_name,
-            locked: user.role_locked,
-            description: user.role_description,
-            scopes: user.role_scopes as Member['scopes'],
-            organizationId: user.organization_id,
-            membersCount: undefined, // if it's not defined, the resolver will fetch it
-          }
-        : null,
+      role: {
+        id: user.role_id,
+        name: user.role_name,
+        locked: user.role_locked,
+        description: user.role_description,
+        scopes: user.role_scopes as Member['scopes'],
+        organizationId: user.organization_id,
+        membersCount: undefined, // if it's not defined, the resolver will fetch it
+      },
     };
   }
 
@@ -253,7 +243,6 @@ export async function createStorage(
       buildUrl: project.build_url,
       validationUrl: project.validation_url,
       gitRepository: project.git_repository as `${string}/${string}` | null,
-      legacyRegistryModel: project.legacy_registry_model,
       useProjectNameInGithubCheck: project.github_check_with_project_name === true,
       externalComposition: {
         enabled: project.external_composition_enabled,
@@ -372,6 +361,8 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_request_count'
+      | 'validation_breaking_change_formula'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -381,6 +372,8 @@ export async function createStorage(
         enabled: row.validation_enabled,
         percentage: row.validation_percentage,
         period: row.validation_period,
+        requestCount: row.validation_request_count ?? 1,
+        breakingChangeFormula: row.validation_breaking_change_formula ?? 'PERCENTAGE',
         targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
@@ -504,17 +497,24 @@ export async function createStorage(
         return;
       }
 
-      const viewerRole = await shared.getOrganizationMemberRoleByName(
-        { organizationId: linkedOrganizationId, roleName: 'Viewer' },
-        connection,
-      );
-      // TODO: turn it into a default role and let the admin choose the default role
+      // Add user and assign default role (either Viewer or custom default role)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
             (organization_id, user_id, role_id)
           VALUES
-            (${linkedOrganizationId}, ${args.userId}, ${viewerRole.id})
+            (
+              ${linkedOrganizationId},
+              ${args.userId},
+              (
+                COALESCE(
+                  (SELECT default_role_id FROM oidc_integrations 
+                    WHERE id = ${args.oidcIntegrationId}),
+                  (SELECT id FROM organization_member_roles
+                    WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
+                )
+              )
+            )
           ON CONFLICT DO NOTHING
           RETURNING *
         `,
@@ -612,7 +612,6 @@ export async function createStorage(
             {
               oidcIntegrationId: oidcIntegration.id,
               userId: internalUser.id,
-              // TODO: pass a default role here
             },
             t,
           );
@@ -841,7 +840,7 @@ export async function createStorage(
         sql`/* getOrganizationOwner */
         SELECT
           ${userFields(sql`"u".`, sql`"stu".`)},
-          COALESCE(omr.scopes, om.scopes) as scopes,
+          omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
           omr.id as role_id,
@@ -892,7 +891,7 @@ export async function createStorage(
         sql`/* getOrganizationMembers */
         SELECT
           ${userFields(sql`"u".`, sql`"stu".`)},
-          COALESCE(omr.scopes, om.scopes) as scopes,
+          omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
           CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
@@ -934,7 +933,7 @@ export async function createStorage(
         sql`/* getOrganizationMember */
           SELECT
             ${userFields(sql`"u".`, sql`"stu".`)},
-            COALESCE(omr.scopes, om.scopes) as scopes,
+            omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
             CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
@@ -1089,43 +1088,12 @@ export async function createStorage(
         `);
       });
     },
-    async getMembersWithoutRole({ organizationId }) {
-      const result = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getMembersWithoutRole */
-        SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
-          COALESCE(omr.scopes, om.scopes) as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id = ${organizationId} AND om.role_id IS NULL`,
-      );
-
-      return result.rows.map(transformMember);
-    },
     async getOrganizationMemberAccessPairs(pairs) {
       const results = await pool.query<
         Slonik<Pick<organization_member, 'organization_id' | 'user_id' | 'scopes'>>
       >(
         sql`/* getOrganizationMemberAccessPairs */
-          SELECT om.organization_id, om.user_id, COALESCE(omr.scopes, om.scopes) as scopes
+          SELECT om.organization_id, om.user_id, omr.scopes as scopes
           FROM organization_member as om
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = om.organization_id AND omr.id = om.role_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
@@ -1375,15 +1343,6 @@ export async function createStorage(
         `,
       );
     },
-    async updateOrganizationMemberAccess({ userId: user, organizationId: organization, scopes }) {
-      await pool.query<Slonik<organization_member>>(
-        sql`/* updateOrganizationMemberAccess */
-          UPDATE organization_member
-          SET scopes = ${sql.array(scopes, 'text')}
-          WHERE organization_id = ${organization} AND user_id = ${user} AND role_id IS NULL
-        `,
-      );
-    },
     async createOrganizationMemberRole({ organizationId, name, scopes, description }) {
       const role = await pool.one(
         sql`/* createOrganizationMemberRole */
@@ -1418,15 +1377,6 @@ export async function createStorage(
           UPDATE organization_member
           SET role_id = ${roleId}
           WHERE organization_id = ${organizationId} AND user_id = ${userId}
-        `,
-      );
-    },
-    async assignOrganizationMemberRoleToMany({ userIds, organizationId, roleId }) {
-      await pool.query(
-        sql`/* assignOrganizationMemberRoleToMany */
-          UPDATE organization_member
-          SET role_id = ${roleId}
-          WHERE organization_id = ${organizationId} AND user_id = ANY(${sql.array(userIds, 'uuid')})
         `,
       );
     },
@@ -1621,18 +1571,6 @@ export async function createStorage(
         await pool.one<projects>(sql`/* enableProjectNameInGithubCheck */
           UPDATE projects
           SET github_check_with_project_name = true
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async updateProjectRegistryModel({ projectId: project, model }) {
-      const isLegacyModel = model === 'LEGACY';
-
-      return transformProject(
-        await pool.one<projects>(sql`/* updateProjectRegistryModel */
-          UPDATE projects
-          SET legacy_registry_model = ${isLegacyModel}
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1885,6 +1823,8 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_request_count'
+          | 'validation_breaking_change_formula'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1894,6 +1834,8 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_request_count,
+          t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
@@ -1924,6 +1866,8 @@ export async function createStorage(
               | 'validation_percentage'
               | 'validation_period'
               | 'validation_excluded_clients'
+              | 'validation_breaking_change_formula'
+              | 'validation_request_count'
             > & {
               targets: target_validation['destination_target_id'][];
             }
@@ -1942,7 +1886,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
           WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets
+          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
         `);
         }),
       ).validation;
@@ -1954,6 +1898,8 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      breakingChangeFormula,
+      requestCount,
     }) {
       return transformTargetSettings(
         await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
@@ -1982,7 +1928,7 @@ export async function createStorage(
             SET validation_percentage = ${percentage}, validation_period = ${period}, validation_excluded_clients = ${sql.array(
               excludedClients,
               'text',
-            )}
+            )} , validation_request_count = ${requestCount}, validation_breaking_change_formula = ${breakingChangeFormula}
             FROM (
               SELECT
                 it.id,
@@ -1994,7 +1940,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
           `);
         }),
       ).validation;
@@ -2670,21 +2616,6 @@ export async function createStorage(
       return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
     },
 
-    async updateVersionStatus({ versionId: version, valid }) {
-      return SchemaVersionModel.parse(
-        await pool.maybeOne<unknown>(sql`/* updateVersionStatus */
-          UPDATE
-            schema_versions
-          SET
-            is_composable = ${valid}
-          WHERE
-            id = ${version}
-          RETURNING
-          ${schemaVersionSQLFields()}
-        `),
-      );
-    },
-
     getSchemaLog: batch(async selectors => {
       const rows = await pool.many<schema_log & Pick<projects, 'type'>>(
         sql`/* getSchemaLog */
@@ -3126,6 +3057,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3152,6 +3084,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3214,6 +3147,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "oidc_user_access_only"
+            , "default_role_id"
         `);
 
         return {
@@ -3268,6 +3202,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3290,9 +3225,49 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultMemberRole(args) {
+      return tracedTransaction('updateOIDCDefaultMemberRole', pool, async trx => {
+        // Make sure the role exists and is associated with the organization
+        const roleId = await trx.oneFirst<string>(sql`/* checkRoleExists */
+          SELECT id FROM "organization_member_roles" 
+          WHERE
+            "id" = ${args.roleId} AND
+            "organization_id" = (
+              SELECT "linked_organization_id" FROM "oidc_integrations" WHERE "id" = ${args.oidcIntegrationId}
+            )
+        `);
+
+        if (!roleId) {
+          throw new Error('Role does not exist');
+        }
+
+        const result = await pool.one(sql`/* updateOIDCDefaultMemberRole */
+          UPDATE "oidc_integrations"
+          SET
+            "default_role_id" = ${roleId}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_access_only"
+          , "default_role_id"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async deleteOIDCIntegration(args) {
@@ -4650,6 +4625,7 @@ const OktaIntegrationBaseModel = zod.object({
   client_id: zod.string(),
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
+  default_role_id: zod.string().nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4684,6 +4660,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      defaultMemberRoleId: rawRecord.default_role_id,
     };
   }
 
@@ -4696,6 +4673,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    defaultMemberRoleId: rawRecord.default_role_id,
   };
 };
 
