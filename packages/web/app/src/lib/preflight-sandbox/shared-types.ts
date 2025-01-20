@@ -119,7 +119,9 @@ export namespace WorkerEvents {
       export interface Result {
         type: Event.result;
         environmentVariables: Record<string, string>;
-        headers: [name: string, value: string][];
+        request: {
+          headers: [name: string, value: string][];
+        };
       }
 
       export interface Ready {

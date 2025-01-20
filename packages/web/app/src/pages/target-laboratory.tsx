@@ -340,7 +340,7 @@ function LaboratoryPageContent(props: {
           //
           // What should really happen is that GraphiQLFetcher accepts a HeadersInit type.
           //
-          const newHeadersLossyFixMe = Object.fromEntries(result.headers);
+          const newHeadersLossyFixMe = Object.fromEntries(result.request.headers);
           headers = {
             ...headers,
             ...newHeadersLossyFixMe,

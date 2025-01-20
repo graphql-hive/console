@@ -6,7 +6,9 @@ import { isJSONPrimitive } from './json';
 import { WorkerEvents } from './shared-types';
 
 interface WorkerData {
-  headers: Headers;
+  request: {
+    headers: Headers;
+  };
   environmentVariables: Record<string, unknown>;
 }
 
@@ -56,7 +58,9 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
   const { script } = args;
 
   const workerData: WorkerData = {
-    headers: new Headers(),
+    request: {
+      headers: new Headers(),
+    },
     // When running in worker `environmentVariables` will not be a reference to the main thread value
     // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
     environmentVariables: { ...args.environmentVariables },
@@ -137,31 +141,13 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
       },
     },
     /**
-     * Helpers for manipulating the request before it is sent.
+     * Contains aspects of the request that you can manipulate before it is sent.
      */
     request: {
       /**
-       * Helpers for manipulating the request headers.
+       * The headers of the request.
        */
-      headers: {
-        /**
-         * Add one header to the request.
-         *
-         * @param header - The name of the header.
-         * @param value - The value of the header.
-         */
-        add: (header: string, value: string) => {
-          workerData.headers.append(header, value);
-        },
-        /**
-         * Add multiple headers to the request.
-         *
-         * @param headersInit - The {@link HeadersInit} to add.
-         */
-        addMany: (headersInit: HeadersInit) => {
-          Kit.Headers.appendInit(workerData.headers, headersInit);
-        },
-      },
+      headers: workerData.request.headers,
     },
     /**
      * Mimics the `prompt` function in the browser, by sending a message to the main thread
@@ -208,7 +194,9 @@ ${script}})()`;
     type: WorkerEvents.Outgoing.Event.result,
     // todo: We need to more precisely type environment value. Currently unknown. Why?
     environmentVariables: workerData.environmentVariables as any,
-    headers: Array.from(workerData.headers.entries()),
+    request: {
+      headers: Array.from(workerData.request.headers.entries()),
+    },
   });
 }
 
