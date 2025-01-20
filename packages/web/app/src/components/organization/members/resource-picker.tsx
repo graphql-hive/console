@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { produce } from 'immer';
-import { ChevronRightIcon } from 'lucide-react';
+import { ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
 import { DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -106,8 +107,9 @@ export function ResourcePicker(props: {
     null as
       | null
       | { projectId: string; targetId?: undefined }
-      | { projectId: string; targetId: string; mode: 'service' | 'appDeployment' },
+      | { projectId: string; targetId: string },
   );
+
   const [selection, setSelection] = useState<ResourceSelection>(
     props.initialSelection ?? { projects: '*' },
   );
@@ -138,7 +140,7 @@ export function ResourcePicker(props: {
       if (projectSelection) {
         selectedProjects.push({ project, projectSelection });
 
-        if (project.id === projectSelection.id) {
+        if (breadcrumb?.projectId === project.id) {
           activeProject = { project, projectSelection };
         }
 
@@ -152,7 +154,7 @@ export function ResourcePicker(props: {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
       activeProject,
-      addSelection(item: (typeof organization.projects.nodes)[number]) {
+      addProject(item: (typeof organization.projects.nodes)[number]) {
         setSelection(state =>
           produce(state, state => {
             if (state.projects === '*') {
@@ -162,13 +164,29 @@ export function ResourcePicker(props: {
             state.projects.push({
               id: item.id,
               slug: item.slug,
-              targets: '*',
+              targets: [],
             });
           }),
         );
       },
+      removeProject(item: (typeof organization.projects.nodes)[number]) {
+        setSelection(state =>
+          produce(state, state => {
+            if (state.projects === '*') {
+              return;
+            }
+            state.projects = state.projects.filter(project => project.id !== item.id);
+          }),
+        );
+        setBreadcrumb(breadcrumb => {
+          if (breadcrumb?.projectId === item.id) {
+            return null;
+          }
+          return breadcrumb;
+        });
+      },
     };
-  }, [organization.projects.nodes, selection]);
+  }, [organization.projects.nodes, selection, breadcrumb?.projectId]);
 
   const [organizationProjectTargets] = useQuery({
     query: ResourcePicker_OrganizationProjectTargetsQuery,
@@ -249,7 +267,8 @@ export function ResourcePicker(props: {
         notSelected,
       },
       activeTarget,
-      addSelection(
+      activeProject: projectState.activeProject,
+      addTarget(
         item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
       ) {
         setSelection(state =>
@@ -261,13 +280,13 @@ export function ResourcePicker(props: {
             project.targets.push({
               id: item.id,
               slug: item.slug,
-              appDeployments: '*',
-              services: '*',
+              appDeployments: [],
+              services: [],
             });
           }),
         );
       },
-      removeSelection(
+      removeTarget(
         item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
       ) {
         setSelection(state =>
@@ -276,9 +295,18 @@ export function ResourcePicker(props: {
             const project = state.projects.find(project => project.id === projectId);
             if (!project) return;
             if (project.targets === '*') return;
-            project.targets = project.targets.filter(target => target.id === item.id);
+            project.targets = project.targets.filter(target => target.id !== item.id);
           }),
         );
+        setBreadcrumb(breadcrumb => {
+          if (breadcrumb?.targetId === item.id) {
+            return {
+              ...breadcrumb,
+              targetId: undefined,
+            };
+          }
+          return breadcrumb;
+        });
       },
       setAll() {
         setSelection(state =>
@@ -313,12 +341,14 @@ export function ResourcePicker(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      breadcrumb.mode !== 'service' ||
-      !organizationProjectTarget.data?.organization?.project?.type ||
-      // we can not assign services for a monolithic schema
-      organizationProjectTarget.data.organization.project.type === ProjectType.Single
+      /* breadcrumb.mode !== 'service' || */
+      !organizationProjectTarget.data?.organization?.project
     ) {
       return null;
+    }
+
+    if (organizationProjectTarget.data.organization.project.type === ProjectType.Single) {
+      return 'none' as const;
     }
 
     const projectId = projectState.activeProject.projectSelection.id;
@@ -396,76 +426,17 @@ export function ResourcePicker(props: {
           }),
         );
       },
-    };
-  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject]);
-
-  const appDeploymentState = useMemo(() => {
-    if (
-      !projectState?.activeProject ||
-      !targetState?.activeTarget ||
-      !breadcrumb?.targetId ||
-      breadcrumb.mode !== 'appDeployment'
-    ) {
-      return null;
-    }
-
-    const projectId = projectState.activeProject.projectSelection.id;
-    const targetId = targetState.activeTarget.targetSelection.id;
-
-    if (targetState.activeTarget.targetSelection.appDeployments === '*') {
-      return {
-        selection: '*' as const,
-        setGranular() {
-          setSelection(state =>
-            produce(state, state => {
-              if (state.projects === '*') return;
-              const project = state.projects.find(project => project.id === projectId);
-              if (!project || project.targets === '*') return;
-              const target = project.targets.find(target => target.id === targetId);
-              if (!target) return;
-              target.appDeployments = [];
-            }),
-          );
-        },
-      };
-    }
-
-    const selected: Array<string> = [...targetState.activeTarget.targetSelection.appDeployments];
-    const notSelected: Array<string> = [];
-
-    return {
-      selection: {
-        selected,
-        notSelected,
-      },
-      setAll() {
+      removeService(serviceName: string) {
         setSelection(state =>
           produce(state, state => {
             if (state.projects === '*') return;
             const project = state.projects.find(project => project.id === projectId);
             if (!project || project.targets === '*') return;
             const target = project.targets.find(target => target.id === targetId);
-            if (!target) return;
-            target.appDeployments = '*';
-          }),
-        );
-      },
-      addAppDeployment(appDeploymentName: string) {
-        setSelection(state =>
-          produce(state, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
-            if (!project || project.targets === '*') return;
-            const target = project.targets.find(target => target.id === targetId);
-            if (
-              !target ||
-              target.appDeployments === '*' ||
-              target.appDeployments.find(appDeployment => appDeployment === appDeploymentName)
-            ) {
+            if (!target || target.services === '*') {
               return;
             }
-
-            target.appDeployments.push(appDeploymentName);
+            target.services = target.services.filter(name => name !== serviceName);
           }),
         );
       },
@@ -519,49 +490,8 @@ export function ResourcePicker(props: {
                 ) : (
                   <div className="flex-1" />
                 )}
-                {serviceState || appDeploymentState ? (
-                  <div className="flex-1 border-x border-transparent px-2 pb-1">
-                    <button
-                      className={cn(
-                        serviceState && 'text-yellow-500',
-                        projectState.activeProject?.project.type === ProjectType.Single &&
-                          'text-gray-600',
-                      )}
-                      disabled={projectState.activeProject?.project.type === ProjectType.Single}
-                      onClick={() => {
-                        setBreadcrumb(breadcrumb => {
-                          if (!breadcrumb?.targetId) {
-                            return breadcrumb;
-                          }
-
-                          return {
-                            ...breadcrumb,
-                            mode: 'service',
-                          };
-                        });
-                      }}
-                    >
-                      Services
-                    </button>{' '}
-                    /{' '}
-                    <button
-                      className={cn(appDeploymentState && 'text-yellow-500')}
-                      onClick={() => {
-                        setBreadcrumb(breadcrumb => {
-                          if (!breadcrumb?.targetId) {
-                            return breadcrumb;
-                          }
-
-                          return {
-                            ...breadcrumb,
-                            mode: 'appDeployment',
-                          };
-                        });
-                      }}
-                    >
-                      App Deployments
-                    </button>
-                  </div>
+                {serviceState ? (
+                  <div className="flex-1 border-transparent px-2 pb-1">Services</div>
                 ) : (
                   <div className="flex-1" />
                 )}
@@ -583,6 +513,7 @@ export function ResourcePicker(props: {
                         onClick={() => {
                           setBreadcrumb({ projectId: selection.project.id });
                         }}
+                        onDelete={() => projectState.removeProject(selection.project)}
                       />
                     ))
                   ) : (
@@ -595,21 +526,7 @@ export function ResourcePicker(props: {
                         key={project.id}
                         title={project.slug}
                         isActive={breadcrumb?.projectId === project.id}
-                        onClick={() =>
-                          setSelection(state =>
-                            produce(state, state => {
-                              if (state.projects === '*') {
-                                return;
-                              }
-
-                              state.projects.push({
-                                id: project.id,
-                                slug: project.slug,
-                                targets: '*',
-                              });
-                            }),
-                          )
-                        }
+                        onClick={() => projectState.addProject(project)}
                       />
                     ))
                   ) : (
@@ -630,24 +547,24 @@ export function ResourcePicker(props: {
                         {targetState.selection.selected.length ? (
                           targetState.selection.selected.map(selection => (
                             <Row
+                              key={selection.target.id}
                               title={
                                 selection.target.slug +
-                                (selection.targetSelection.services === '*'
-                                  ? ' (all services)'
-                                  : ` (${selection.targetSelection.services.length} target${selection.targetSelection.services.length === 1 ? '' : 's'})`)
+                                (targetState.activeProject.project.type === ProjectType.Single
+                                  ? ' (full access)'
+                                  : selection.targetSelection.services === '*'
+                                    ? ' (all services)'
+                                    : ` (${selection.targetSelection.services.length} service${selection.targetSelection.services.length === 1 ? '' : 's'})`)
                               }
                               isActive={targetState.activeTarget?.target.id === selection.target.id}
                               onClick={() => {
-                                const project = projectState.activeProject?.project;
-                                if (!project) return;
                                 setBreadcrumb({
-                                  projectId: project.id,
+                                  projectId: targetState.activeProject.project.id,
                                   targetId: selection.target.id,
-                                  mode:
-                                    project.type === ProjectType.Single
-                                      ? 'appDeployment'
-                                      : 'service',
                                 });
+                              }}
+                              onDelete={() => {
+                                targetState.removeTarget(selection.target);
                               }}
                             />
                           ))
@@ -660,11 +577,12 @@ export function ResourcePicker(props: {
                         {targetState.selection.notSelected.length ? (
                           targetState.selection.notSelected.map(target => (
                             <Row
+                              key={target.id}
                               title={target.slug}
                               isActive={
                                 false /* state.breadcrumb?.target?.targetId === target.id */
                               }
-                              onClick={() => targetState.addSelection(target)}
+                              onClick={() => targetState.addTarget(target)}
                             />
                           ))
                         ) : (
@@ -692,7 +610,13 @@ export function ResourcePicker(props: {
                 ) : (
                   <div className="flex flex-1 flex-col pt-3" />
                 )}
-                {serviceState ? (
+                {serviceState === null ? (
+                  <div className="flex flex-1 flex-col pt-3" />
+                ) : serviceState === 'none' ? (
+                  <div className="flex flex-1 flex-col border-y border-r px-2 pt-3 text-sm text-gray-500">
+                    Project is monolithic and has no services.
+                  </div>
+                ) : (
                   <div className="flex flex-1 flex-col border-y border-r pt-3">
                     {serviceState.selection === '*' ? (
                       <div className="px-2 text-sm text-gray-500">
@@ -705,7 +629,12 @@ export function ResourcePicker(props: {
                         </div>
                         {serviceState.selection.selected.length ? (
                           serviceState.selection.selected.map(serviceName => (
-                            <Row title={serviceName} isActive={false} />
+                            <Row
+                              key={serviceName}
+                              title={serviceName}
+                              isActive={false}
+                              onDelete={() => serviceState.removeService(serviceName)}
+                            />
                           ))
                         ) : (
                           <div className="px-2 text-xs">None</div>
@@ -715,15 +644,32 @@ export function ResourcePicker(props: {
                         </div>
                         {serviceState.selection.notSelected.map(serviceName => (
                           <Row
+                            key={serviceName}
                             title={serviceName}
                             isActive={false}
-                            // onClick={() => serviceState.selectService(service.id)}
+                            onClick={() => serviceState.addService(serviceName)}
                           />
                         ))}
-                        <input
-                          placeholder="Add service by name"
-                          className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                        />
+                        <form
+                          onSubmit={ev => {
+                            ev.preventDefault();
+                            const input: HTMLInputElement = ev.currentTarget.serviceName;
+                            const serviceName = input.value.trim().toLowerCase();
+
+                            if (!serviceName) {
+                              return;
+                            }
+
+                            serviceState.addService(serviceName);
+                            input.value = '';
+                          }}
+                        >
+                          <input
+                            placeholder="Add service by name"
+                            className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                            name="serviceName"
+                          />
+                        </form>
                       </>
                     )}
                     <div className="mb-0 mt-auto border-t p-1 text-right text-xs">
@@ -742,75 +688,6 @@ export function ResourcePicker(props: {
                       </button>
                     </div>
                   </div>
-                ) : appDeploymentState ? (
-                  <div className="flex flex-1 flex-col border-y border-r pt-3">
-                    {appDeploymentState.selection === '*' ? (
-                      <div className="px-2 text-sm text-gray-500">
-                        Access to all app deployments in target granted.
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-1 px-2 text-xs uppercase text-gray-500">
-                          access granted
-                        </div>
-                        {appDeploymentState.selection.selected.length ? (
-                          appDeploymentState.selection.selected.map(appDeploymentName => (
-                            <Row title={appDeploymentName} isActive={false} />
-                          ))
-                        ) : (
-                          <div className="px-2 text-xs">None</div>
-                        )}
-                        <div className="mb-1 mt-3 px-2 text-xs uppercase text-gray-500">
-                          Unselected
-                        </div>
-                        {appDeploymentState.selection.notSelected.map(appDeploymentName => (
-                          <Row title={appDeploymentName} isActive={false} />
-                        ))}
-                        <form
-                          onSubmit={ev => {
-                            ev.preventDefault();
-                            const input: HTMLInputElement = ev.currentTarget.appDeploymentName;
-                            const appDeploymentName = input.value.trim().toLowerCase();
-                            if (!appDeploymentName) {
-                              return;
-                            }
-
-                            input.value = '';
-                            appDeploymentState.addAppDeployment(appDeploymentName);
-                          }}
-                        >
-                          <input
-                            placeholder="Add service by name"
-                            className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                            name="appDeploymentName"
-                          />
-                        </form>
-                      </>
-                    )}
-                    <div className="mb-0 mt-auto border-t p-1 text-right text-xs">
-                      Mode{' '}
-                      <button
-                        className={cn(
-                          'mr-1',
-                          appDeploymentState.selection !== '*' && 'text-orange-500',
-                        )}
-                        onClick={appDeploymentState.setGranular}
-                      >
-                        Granular
-                      </button>
-                      <button
-                        className={cn(
-                          'mr-1',
-                          appDeploymentState.selection === '*' && 'text-orange-500',
-                        )}
-                        onClick={appDeploymentState.setAll}
-                      >
-                        All
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-1 flex-col pt-3" />
                 )}
               </div>
             </>
@@ -824,15 +701,37 @@ export function ResourcePicker(props: {
   );
 }
 
-function Row(props: { title: string; isActive?: boolean; onClick?: () => void }) {
+function Row(props: {
+  title: string;
+  isActive?: boolean;
+  onClick?: () => void;
+  onDelete?: () => void;
+}) {
   return (
-    <button
+    <div
       className="flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default data-[active=true]:bg-white data-[active=true]:text-black"
       data-active={props.isActive}
-      onClick={props.onClick}
     >
-      <span className="text-sm">{props.title}</span>
-      {props.isActive && <ChevronRightIcon size={12} />}
-    </button>
+      <span className="grow text-sm" onClick={props.onClick}>
+        {props.title} {props.isActive && <ChevronRightIcon size={12} className="inline" />}
+      </span>
+
+      {props.onDelete && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  props.onDelete?.();
+                }}
+              >
+                <XIcon size={12} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Remove</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
   );
 }
