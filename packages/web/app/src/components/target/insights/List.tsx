@@ -59,7 +59,9 @@ function OperationRow({
   const p90 = useFormattedDuration(operation.p90);
   const p95 = useFormattedDuration(operation.p95);
   const p99 = useFormattedDuration(operation.p99);
-  const impact = useFormattedNumber(operation.impact);
+  const impact = useFormattedNumber(
+    operation.impact < 1000 ? Math.round(operation.impact * 100) / 100 : operation.impact,
+  );
 
   return (
     <>
