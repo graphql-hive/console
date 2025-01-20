@@ -16,22 +16,22 @@ export namespace IFrameEvents {
     }
 
     export namespace EventData {
-      export interface ReadyEventData {
+      export interface Ready {
         type: Event.ready;
       }
 
-      export interface StartEventData {
+      export interface Start {
         type: Event.start;
         runId: string;
       }
 
-      export interface LogEventData {
+      export interface Log {
         type: Event.log;
         runId: string;
-        log: string | Error;
+        log: string | globalThis.Error;
       }
 
-      export interface ResultEventData {
+      export interface Result {
         type: Event.result;
         runId: string;
         environmentVariables: Record<string, string>;
@@ -40,13 +40,13 @@ export namespace IFrameEvents {
         };
       }
 
-      export interface ErrorEventData {
+      export interface Error {
         type: Event.error;
         runId: string;
-        error: Error;
+        error: globalThis.Error;
       }
 
-      export interface PromptEventData {
+      export interface Prompt {
         type: Event.prompt;
         runId: string;
         promptId: number;
@@ -56,12 +56,12 @@ export namespace IFrameEvents {
     }
 
     export type EventData = {
-      ready: EventData.ReadyEventData;
-      start: EventData.StartEventData;
-      log: EventData.LogEventData;
-      prompt: EventData.PromptEventData;
-      result: EventData.ResultEventData;
-      error: EventData.ErrorEventData;
+      ready: EventData.Ready;
+      start: EventData.Start;
+      log: EventData.Log;
+      prompt: EventData.Prompt;
+      result: EventData.Result;
+      error: EventData.Error;
     }[Event];
 
     export type MessageEvent = _MessageEvent<EventData>;
@@ -75,19 +75,19 @@ export namespace IFrameEvents {
     }
 
     export namespace EventData {
-      export interface RunEventData {
+      export interface Run {
         type: Event.run;
         id: string;
         script: string;
         environmentVariables: Record<string, unknown>;
       }
 
-      export interface AbortEventData {
+      export interface Abort {
         type: Event.abort;
         id: string;
       }
 
-      export interface PromptResponseEventData {
+      export interface PromptResponse {
         type: Event.promptResponse;
         id: string;
         promptId: number;
@@ -96,9 +96,9 @@ export namespace IFrameEvents {
     }
 
     export type EventData = {
-      run: EventData.RunEventData;
-      promptResponse: EventData.PromptResponseEventData;
-      abort: EventData.AbortEventData;
+      run: EventData.Run;
+      promptResponse: EventData.PromptResponse;
+      abort: EventData.Abort;
     }[Event];
 
     export type MessageEvent = _MessageEvent<EventData>;
@@ -164,13 +164,13 @@ export namespace WorkerEvents {
     }
 
     export namespace EventData {
-      export interface PromptResponseEventData {
+      export interface PromptResponse {
         type: Event.promptResponse;
         promptId: number;
         value: string | null;
       }
 
-      export interface RunEventData {
+      export interface Run {
         type: Event.run;
         script: string;
         environmentVariables: Record<string, unknown>;
@@ -178,8 +178,8 @@ export namespace WorkerEvents {
     }
 
     export type EventData = {
-      promptResponse: EventData.PromptResponseEventData;
-      run: EventData.RunEventData;
+      promptResponse: EventData.PromptResponse;
+      run: EventData.Run;
     }[Event];
 
     export type MessageEvent = _MessageEvent<EventData>;

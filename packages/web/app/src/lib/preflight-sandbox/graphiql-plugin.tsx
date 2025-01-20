@@ -43,7 +43,7 @@ import { cn } from '../utils';
 import type { LogMessage } from './preflight-script-worker';
 import { IFrameEvents } from './shared-types';
 
-type Result = Omit<IFrameEvents.Outgoing.ResultEventData, 'type' | 'runId'>;
+type Result = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -190,12 +190,15 @@ export function usePreflightScript(args: {
   const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', '[]');
   const latestHeadersRef = useRef(headers);
   useEffect(() => { latestHeadersRef.current = headers; }); // prettier-ignore
-  const decodeHeaders = (encoded: string) => safeParseJSON<Result['headers']>(encoded) ?? [];
+  const decodeHeaders = (encoded: string) =>
+    safeParseJSON<Result['request']['headers']>(encoded) ?? [];
 
   const decodeResult = (): Result => {
     return {
       environmentVariables: decodeEnvironmentVariables(latestEnvironmentVariablesRef.current), // prettier-ignore
-      headers: decodeHeaders(latestHeadersRef.current),
+      request: {
+        headers: decodeHeaders(latestHeadersRef.current),
+      },
     };
   };
   // -----------
@@ -295,7 +298,7 @@ export function usePreflightScript(args: {
 
           const mergedHeadersEncoded = Kit.JSON.encodePretty([
             ...decodeHeaders(latestHeadersRef.current),
-            ...ev.data.headers,
+            ...ev.data.request.headers,
           ]);
           setHeaders(mergedHeadersEncoded);
           latestHeadersRef.current = mergedHeadersEncoded;
