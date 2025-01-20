@@ -1116,7 +1116,7 @@ export class OrganizationManager {
       roleName,
     );
 
-    if (foundRole && foundRole.id === input.roleId) {
+    if (foundRole && foundRole.id !== input.roleId) {
       const msg = 'Role name already exists. Please choose a different name.';
 
       return {
