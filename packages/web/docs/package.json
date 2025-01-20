@@ -13,7 +13,7 @@
     "@radix-ui/react-icons": "1.3.2",
     "@radix-ui/react-tabs": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.6",
-    "@theguild/components": "9.1.0",
+    "@theguild/components": "9.2.0-alpha-20250120155516-f6c928d42d6c65e4326439560d386eab1e950d46",
     "date-fns": "4.1.0",
     "next": "15.1.0",
     "react": "19.0.0",
