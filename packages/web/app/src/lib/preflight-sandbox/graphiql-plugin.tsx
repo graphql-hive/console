@@ -144,16 +144,6 @@ const PreflightScript_TargetFragment = graphql(`
 
 type LogRecord = LogMessage | { type: 'separator' };
 
-function safeParseJSON<$UnsafeCast extends Kit.JSON.Value = Kit.JSON.Value>(
-  str: string,
-): $UnsafeCast | null {
-  try {
-    return Kit.JSON.decode(str) as $UnsafeCast;
-  } catch {
-    return null;
-  }
-}
-
 const enum PreflightWorkerState {
   running,
   ready,
@@ -192,19 +182,24 @@ export function usePreflightScript(args: {
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', '{}'); // prettier-ignore
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
   useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
-  const decodeEnvironmentVariables = (encoded: string) => safeParseJSON<Result['environmentVariables']>(encoded) ?? {}; // prettier-ignore
+  const decodeResultEnvironmentVariables = (encoded: string) => {
+    const result = Kit.JSON.decodeSafe<Result['environmentVariables']>(encoded);
+    return result instanceof SyntaxError ? {} : result;
+  };
 
   const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', '[]');
   const latestHeadersRef = useRef(headers);
   useEffect(() => { latestHeadersRef.current = headers; }); // prettier-ignore
-  const decodeHeaders = (encoded: string) =>
-    safeParseJSON<Result['request']['headers']>(encoded) ?? [];
+  const decodeResultHeaders = (encoded: string) => {
+    const result = Kit.JSON.decodeSafe<Result['request']['headers']>(encoded);
+    return result instanceof SyntaxError ? [] : result;
+  };
 
   const decodeResult = (): Result => {
     return {
-      environmentVariables: decodeEnvironmentVariables(latestEnvironmentVariablesRef.current), // prettier-ignore
+      environmentVariables: decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current), // prettier-ignore
       request: {
-        headers: decodeHeaders(latestHeadersRef.current),
+        headers: decodeResultHeaders(latestHeadersRef.current),
       },
     };
   };
@@ -240,7 +235,7 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          environmentVariables: decodeEnvironmentVariables(environmentVariables),
+          environmentVariables: decodeResultEnvironmentVariables(environmentVariables),
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
@@ -296,17 +291,22 @@ export function usePreflightScript(args: {
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
-          const mergedEnvironmentVariablesEncoded = Kit.JSON.encodePretty({
-            ...decodeEnvironmentVariables(latestEnvironmentVariablesRef.current),
-            ...ev.data.environmentVariables,
-          });
+          const mergedEnvironmentVariablesEncoded = JSON.stringify(
+            {
+              ...decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current),
+              ...ev.data.environmentVariables,
+            },
+            null,
+            2,
+          );
           setEnvironmentVariables(mergedEnvironmentVariablesEncoded);
           latestEnvironmentVariablesRef.current = mergedEnvironmentVariablesEncoded;
 
-          const mergedHeadersEncoded = Kit.JSON.encodePretty([
-            ...decodeHeaders(latestHeadersRef.current),
-            ...ev.data.request.headers,
-          ]);
+          const mergedHeadersEncoded = JSON.stringify(
+            [...decodeResultHeaders(latestHeadersRef.current), ...ev.data.request.headers],
+            null,
+            2,
+          );
           setHeaders(mergedHeadersEncoded);
           latestHeadersRef.current = mergedHeadersEncoded;
 
