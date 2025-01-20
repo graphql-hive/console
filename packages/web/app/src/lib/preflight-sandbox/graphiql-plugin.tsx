@@ -181,6 +181,13 @@ export function usePreflightScript(args: {
   // todo: Improve `useLocalStorage` by allowing passing a codec? Then we can co-locate
   // the codec with the data and have it applied transparently, use a decoded value
   // for the default, etc. ?
+  //
+  // todo: Stop swallowing decode errors (we return null on parse failure), monitor them.
+  // If JSON parsing fails, it should only be because a stored value was actually invalid.
+  // However given these values also include userland interaction (e.g. user could muck around
+  // in their browser local storage) we would need to apply an appropriate filter on incoming
+  // errors such as error rate analysis and only keep the most clearly egregious signals
+  // for off-work alerting.
 
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', '{}'); // prettier-ignore
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
