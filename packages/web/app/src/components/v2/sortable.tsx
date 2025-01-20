@@ -6,15 +6,19 @@ import { SortDirection } from '@tanstack/react-table';
 export function Sortable({
   children,
   sortOrder,
+  hasOtherSorting,
   onClick,
 }: {
   children: ReactNode;
   sortOrder: SortDirection | false;
+  hasOtherSorting?: boolean;
   onClick: ComponentProps<'button'>['onClick'];
 }): ReactElement {
   const tooltipText =
     sortOrder === false
-      ? 'Click to sort descending'
+      ? 'Click to sort descending' + hasOtherSorting
+        ? ' (hold shift to sort by multiple columns)'
+        : ''
       : {
           asc: 'Click to cancel sorting',
           desc: 'Click to sort ascending',

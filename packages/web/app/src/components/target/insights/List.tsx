@@ -2,7 +2,7 @@ import { ReactElement, SetStateAction, useCallback, useEffect, useMemo, useState
 import clsx from 'clsx';
 import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Section } from '@/components/common';
+import { Scale, Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sortable, Table, TBody, Td, Th, THead, Tooltip, Tr } from '@/components/v2';
@@ -34,7 +34,6 @@ interface Operation {
   failureRate: number;
   requests: number;
   percentage: number;
-  impact: number;
   hash: string;
 }
 
@@ -57,7 +56,6 @@ function OperationRow({
   const p90 = useFormattedDuration(operation.p90);
   const p95 = useFormattedDuration(operation.p95);
   const p99 = useFormattedDuration(operation.p99);
-  const impact = formatNumberIntl(operation.impact);
 
   return (
     <>
@@ -101,8 +99,10 @@ function OperationRow({
         <Td align="center">{p99}</Td>
         <Td align="center">{failureRate}%</Td>
         <Td align="center">{count}</Td>
-        <Td align="center">{impact}</Td>
         <Td align="right">{percentage}%</Td>
+        <Td>
+          <Scale value={operation.percentage} size={10} max={100} className="justify-end" />
+        </Td>
       </Tr>
     </>
   );
@@ -155,12 +155,6 @@ const columns = [
       align: 'center',
     },
   }),
-  columnHelper.accessor('impact', {
-    header: 'Impact',
-    meta: {
-      align: 'center',
-    },
-  }),
   columnHelper.accessor('percentage', {
     header: 'Traffic',
     meta: {
@@ -204,8 +198,6 @@ function OperationsTable({
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     debugTable: env.nodeEnv !== 'production',
-    enableMultiSort: true,
-    isMultiSortEvent: () => true,
   });
 
   const firstPage = useCallback(() => {
@@ -220,6 +212,8 @@ function OperationsTable({
   }, 500);
 
   const { headers } = tableInstance.getHeaderGroups()[0];
+
+  const sortedColumnsById = tableInstance.getState().sorting.map(s => s.id);
 
   return (
     <div className={clsx('rounded-md border border-gray-800 bg-gray-900/50 p-5', className)}>
@@ -240,6 +234,7 @@ function OperationsTable({
                     <Sortable
                       sortOrder={header.column.getIsSorted()}
                       onClick={header.column.getToggleSortingHandler()}
+                      hasOtherSorting={sortedColumnsById.some(id => id !== header.id)}
                     >
                       {name}
                     </Sortable>
@@ -386,7 +381,6 @@ function OperationsTableContainer({
           failureRate: (1 - op.countOk / op.count) * 100,
           requests: op.count,
           percentage: op.percentage,
-          impact: op.count * op.duration.p95,
           hash: op.operationHash!,
         });
       }
@@ -451,16 +445,6 @@ const OperationsList_OperationsStatsQuery = graphql(`
     }
   }
 `);
-
-function formatNumberIntl(num: number) {
-  const units = ['', 'K', 'M', 'B', 'T'];
-  const exponent = Math.floor(Math.log10(num) / 3);
-  const scaledNumber = num / Math.pow(10, exponent * 3);
-  const formatter = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 1,
-  });
-  return `${formatter.format(scaledNumber)}${units[exponent]}`;
-}
 
 export function OperationsList({
   className,
