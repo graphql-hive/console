@@ -328,10 +328,12 @@ function LaboratoryPageContent(props: {
         });
         try {
           const result = await preflightScript.execute();
-          // We merge the result headers into the fetcher headers before performing header variable substitution
-          // so that users can have a predictable experience working with headers regardless of the place those
-          // headers come from.
+          // We merge the result headers into the fetcher headers AFTER performing header variable substitution.
+          // This ensures users have a predictable standards-compliant experience working with headers in their
+          // preflight script.
+          // todo: add test case covering this case.
           //
+          headers = substituteVariablesInHeaders(headers, result.environmentVariables);
           // todo: GraphiQLFetcher appears to only support record-shaped headers which seems wrong because it
           // precludes complete usage of Headers data structure, namely where there are multiple values for one
           // header. We could try to hack a solution here by doing merges of such cases but that seems
@@ -345,7 +347,6 @@ function LaboratoryPageContent(props: {
             ...headers,
             ...newHeadersLossyFixMe,
           };
-          headers = substituteVariablesInHeaders(headers, result.environmentVariables);
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
