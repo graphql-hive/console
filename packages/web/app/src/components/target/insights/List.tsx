@@ -40,11 +40,6 @@ interface Operation {
   hash: string;
 }
 
-const humanNumberFormatter = new Intl.NumberFormat('en-US', {
-  style: 'decimal',
-  notation: 'compact',
-});
-
 function OperationRow({
   operation,
   organizationSlug,
@@ -64,7 +59,7 @@ function OperationRow({
   const p90 = useFormattedDuration(operation.p90);
   const p95 = useFormattedDuration(operation.p95);
   const p99 = useFormattedDuration(operation.p99);
-  const impact = humanNumberFormatter.format(operation.impact);
+  const impact = useFormattedNumber(operation.impact);
 
   return (
     <>
