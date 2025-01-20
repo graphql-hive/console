@@ -28,7 +28,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
-import { Editor as MonacoEditor, OnMount } from '@monaco-editor/react';
+import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
 import {
   Cross2Icon,
   CrossCircledIcon,
@@ -39,6 +39,7 @@ import {
 } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
 import { cn } from '../utils';
+import labApiDefinitionRaw from './lab-api-declaration?raw';
 import type { LogMessage } from './preflight-script-worker';
 import { IFrameEvents } from './shared-types';
 
@@ -568,6 +569,18 @@ function PreflightScriptModal({
   const handleEnvEditorDidMount: OnMount = useCallback(editor => {
     envEditorRef.current = editor;
   }, []);
+
+  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+    // Add custom typings for globalThis
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+      `
+        ${labApiDefinitionRaw}
+        declare const lab: LabAPI;
+      `,
+      'global.d.ts',
+    );
+  }, []);
+
   const handleSubmit = useCallback(() => {
     onScriptValueChange(scriptEditorRef.current?.getValue() ?? '');
     onEnvValueChange(envEditorRef.current?.getValue() ?? '');
@@ -646,6 +659,7 @@ function PreflightScriptModal({
             </div>
             <MonacoEditor
               value={scriptValue}
+              beforeMount={handleMonacoEditorBeforeMount}
               onMount={handleScriptEditorDidMount}
               {...monacoProps.script}
               options={{

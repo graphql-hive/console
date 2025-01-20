@@ -25,7 +25,7 @@ export type ObservabilityConfig =
     };
 
 // prettier-ignore
-export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.96.0');
+export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.111.2');
 // prettier-ignore
 export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', '0.35.0');
 
@@ -168,7 +168,7 @@ export class Observability {
       config: {
         exporters: {
           ...exporters,
-          logging: {
+          debug: {
             verbosity: 'basic',
           },
         },
@@ -357,11 +357,10 @@ export class Observability {
                 'batch',
               ],
               exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'otlp/grafana_cloud_traces'],
+                this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'prometheusremotewrite'],
+              exporters: this.config === 'local' ? ['debug'] : ['debug', 'prometheusremotewrite'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },
