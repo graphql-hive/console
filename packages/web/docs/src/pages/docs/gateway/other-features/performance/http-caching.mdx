@@ -11,6 +11,11 @@ can enable HTTP caching in your Hive Gateway by using the HTTP caching plugin. T
 cache the responses when possible, and reduce the server load. It uses
 [`http-cache-semantics`](https://www.npmjs.com/package/http-cache-semantics) under the hood.
 
+It is useful when you use it with
+[Yoga's Response Caching](https://the-guild.dev/graphql/yoga-server/docs/features/response-caching#http-caching-via-etag-and-if-none-match-headers)
+or
+[Apollo Server's Response Caching](https://www.apollographql.com/docs/apollo-server/performance/caching/).
+
 <Callout>
   You need to set your cache storage in your gateway configuration to enable response caching. See
   [Cache Storage](/docs/gateway/other-features/performance#providing-cache-storage) for more
