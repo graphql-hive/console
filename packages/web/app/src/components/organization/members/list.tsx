@@ -109,64 +109,63 @@ function OrganizationMemberRoleSwitcher(props: {
   }
 
   return (
-    <>
-      <RoleSelector
-        searchPlaceholder="Select new role..."
-        roles={roles}
-        onSelect={async role => {
-          try {
-            const result = await assignRole({
-              input: {
-                organizationSlug: organization.slug,
-                roleId: role.id,
-                userId: member.user.id,
-              },
-            });
+    <RoleSelector
+      className="mx-auto"
+      searchPlaceholder="Select new role..."
+      roles={roles}
+      onSelect={async role => {
+        try {
+          const result = await assignRole({
+            input: {
+              organizationSlug: organization.slug,
+              roleId: role.id,
+              userId: member.user.id,
+            },
+          });
 
-            if (result.error) {
-              toast({
-                variant: 'destructive',
-                title: `Failed to assign role to ${props.memberName}`,
-                description: result.error.message,
-              });
-            } else if (result.data?.assignMemberRole.error) {
-              toast({
-                variant: 'destructive',
-                title: `Failed to assign role to ${props.memberName}`,
-                description: result.data.assignMemberRole.error.message,
-              });
-            } else if (result.data?.assignMemberRole.ok) {
-              toast({
-                title: `Assigned ${role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
-              });
-            }
-          } catch (error: any) {
-            console.error(error);
+          if (result.error) {
             toast({
               variant: 'destructive',
               title: `Failed to assign role to ${props.memberName}`,
-              description: 'message' in error ? error.message : String(error),
+              description: result.error.message,
+            });
+          } else if (result.data?.assignMemberRole.error) {
+            toast({
+              variant: 'destructive',
+              title: `Failed to assign role to ${props.memberName}`,
+              description: result.data.assignMemberRole.error.message,
+            });
+          } else if (result.data?.assignMemberRole.ok) {
+            toast({
+              title: `Assigned ${role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
             });
           }
-        }}
-        defaultRole={memberRole}
-        disabled={!canAssignRole || assignRoleState.fetching}
-        isRoleActive={role => {
-          const isCurrentRole = role.id === props.memberRoleId;
+        } catch (error: any) {
+          console.error(error);
+          toast({
+            variant: 'destructive',
+            title: `Failed to assign role to ${props.memberName}`,
+            description: 'message' in error ? error.message : String(error),
+          });
+        }
+      }}
+      defaultRole={memberRole}
+      disabled={!canAssignRole || assignRoleState.fetching}
+      isRoleActive={role => {
+        const isCurrentRole = role.id === props.memberRoleId;
 
-          if (isCurrentRole) {
-            return {
-              active: false,
-              reason: 'This is the current role',
-            };
-          }
-
+        if (isCurrentRole) {
           return {
-            active: true,
+            active: false,
+            reason: 'This is the current role',
           };
-        }}
-      />
-    </>
+        }
+
+        return {
+          active: true,
+        };
+      }}
+    />
   );
 }
 

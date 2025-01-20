@@ -20,6 +20,7 @@ type Role<T> = {
 } & T;
 
 export function RoleSelector<T>(props: {
+  className?: string;
   roles: readonly Role<T>[];
   defaultRole?: Role<T>;
   isRoleActive(role: Role<T>):
@@ -47,7 +48,7 @@ export function RoleSelector<T>(props: {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="ml-auto flex items-center gap-x-4"
+          className={cn('flex items-center gap-x-4', props.className)}
           data-cy="role-selector-trigger"
           disabled={props.disabled === true || isBusy}
           onClick={() => {
