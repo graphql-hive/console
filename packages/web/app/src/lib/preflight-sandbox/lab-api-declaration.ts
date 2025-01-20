@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-unused-vars */
+
 // The content of this file is used as a string
 // and feed into the context of the Monaco Editor and the Preflight Script.
 // The lack of `declare const lab: LabAPI` is intentional, to avoid messing up the global scope
