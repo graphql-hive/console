@@ -13,46 +13,51 @@ export namespace IFrameEvents {
       prompt = 'prompt',
     }
 
-    type ReadyEventData = {
-      type: Event.ready;
-    };
+    export namespace EventData {
+      export interface ReadyEventData {
+        type: Event.ready;
+      }
 
-    type StartEventData = {
-      type: Event.start;
-      runId: string;
-    };
+      export interface StartEventData {
+        type: Event.start;
+        runId: string;
+      }
 
-    type LogEventData = {
-      type: Event.log;
-      runId: string;
-      log: string | Error;
-    };
+      export interface LogEventData {
+        type: Event.log;
+        runId: string;
+        log: string | Error;
+      }
 
-    export interface ResultEventData extends Omit<WorkerEvents.Outgoing.EventData.Result, 'type'> {
-      type: Event.result;
-      runId: string;
+      export interface ResultEventData
+        extends Omit<WorkerEvents.Outgoing.EventData.Result, 'type'> {
+        type: Event.result;
+        runId: string;
+      }
+
+      export interface ErrorEventData {
+        type: Event.error;
+        runId: string;
+        error: Error;
+      }
+
+      export interface PromptEventData {
+        type: Event.prompt;
+        runId: string;
+        promptId: number;
+        message: string;
+        defaultValue?: string;
+      }
     }
-    type ErrorEventData = {
-      type: Event.error;
-      runId: string;
-      error: Error;
-    };
 
-    type PromptEventData = {
-      type: Event.prompt;
-      runId: string;
-      promptId: number;
-      message: string;
-      defaultValue?: string;
-    };
-
-    export type EventData =
-      | ReadyEventData
-      | StartEventData
-      | LogEventData
-      | PromptEventData
-      | ResultEventData
-      | ErrorEventData;
+    export type EventData = {
+      ready: EventData.ReadyEventData;
+      start: EventData.StartEventData;
+      log: EventData.LogEventData;
+      prompt: EventData.PromptEventData;
+      result: EventData.ResultEventData;
+      error: EventData.ErrorEventData;
+    }[Event];
 
     export type MessageEvent = _MessageEvent<EventData>;
   }
@@ -64,26 +69,33 @@ export namespace IFrameEvents {
       abort = 'abort',
     }
 
-    type RunEventData = {
-      type: Event.run;
-      id: string;
-      script: string;
-      environmentVariables: Record<string, unknown>;
-    };
+    export namespace EventData {
+      export interface RunEventData {
+        type: Event.run;
+        id: string;
+        script: string;
+        environmentVariables: Record<string, unknown>;
+      }
 
-    type AbortEventData = {
-      type: Event.abort;
-      id: string;
-    };
+      export interface AbortEventData {
+        type: Event.abort;
+        id: string;
+      }
 
-    type PromptResponseEventData = {
-      type: Event.promptResponse;
-      id: string;
-      promptId: number;
-      value: string | null;
-    };
+      export interface PromptResponseEventData {
+        type: Event.promptResponse;
+        id: string;
+        promptId: number;
+        value: string | null;
+      }
+    }
 
-    export type EventData = RunEventData | AbortEventData | PromptResponseEventData;
+    export type EventData = {
+      run: EventData.RunEventData;
+      promptResponse: EventData.PromptResponseEventData;
+      abort: EventData.AbortEventData;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 }
@@ -146,19 +158,25 @@ export namespace WorkerEvents {
       promptResponse = 'promptResponse',
     }
 
-    type PromptResponseEventData = {
-      type: Event.promptResponse;
-      promptId: number;
-      value: string | null;
-    };
+    export namespace EventData {
+      export interface PromptResponseEventData {
+        type: Event.promptResponse;
+        promptId: number;
+        value: string | null;
+      }
 
-    type RunEventData = {
-      type: Event.run;
-      script: string;
-      environmentVariables: Record<string, unknown>;
-    };
+      export interface RunEventData {
+        type: Event.run;
+        script: string;
+        environmentVariables: Record<string, unknown>;
+      }
+    }
 
-    export type EventData = PromptResponseEventData | RunEventData;
+    export type EventData = {
+      promptResponse: EventData.PromptResponseEventData;
+      run: EventData.RunEventData;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 }
