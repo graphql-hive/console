@@ -344,10 +344,12 @@ export function usePreflightScript(args: {
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.ready) {
+          console.debug('preflight sandbox graphiql plugin: noop iframe event:', ev.data);
           return;
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.start) {
+          console.debug('preflight sandbox graphiql plugin: noop iframe event:', ev.data);
           return;
         }
 
