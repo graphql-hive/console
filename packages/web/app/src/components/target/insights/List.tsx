@@ -362,6 +362,7 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
           p90
           p95
           p99
+          avg
         }
         countOk
         count
@@ -417,7 +418,7 @@ function OperationsTableContainer({
           failureRate: (1 - op.countOk / op.count) * 100,
           requests: op.count,
           percentage: op.percentage,
-          impact: op.duration.p95 > 0 ? op.count * (op.duration.p95 / 1000) : 0,
+          impact: op.duration.avg > 0 ? op.count * (op.duration.avg / 1000) : 0,
           hash: op.operationHash!,
         });
       }

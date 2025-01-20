@@ -33,15 +33,17 @@ function toUnixTimestamp(utcDate: string): any {
 }
 
 export interface Percentiles {
+  avg: number;
   p75: number;
   p90: number;
   p95: number;
   p99: number;
 }
 
-function toPercentiles(item: Percentiles | number[]) {
+function toPercentiles(item: Percentiles | number[], avg: number) {
   if (Array.isArray(item)) {
     return {
+      avg,
       p75: item[0],
       p90: item[1],
       p95: item[2],
@@ -50,6 +52,7 @@ function toPercentiles(item: Percentiles | number[]) {
   }
 
   return {
+    avg,
     p75: item.p75,
     p90: item.p90,
     p95: item.p95,
@@ -575,7 +578,7 @@ export class OperationsReader {
         operation_kind: string;
       }>({
         query: sql`
-          SELECT 
+          SELECT
             name,
             hash,
             operation_kind
@@ -651,7 +654,7 @@ export class OperationsReader {
       type: 'query' | 'mutation' | 'subscription';
     }>({
       query: sql`
-        SELECT 
+        SELECT
           "operation_collection_details"."hash" AS "hash",
           "operation_collection_details"."operation_kind" AS "type",
           "operation_collection_details"."name" AS "name",
@@ -697,7 +700,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
             coordinate
           FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
@@ -747,7 +750,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_name,
                 client_version
@@ -844,7 +847,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_version
               FROM ${aggregationTableName('clients')}
@@ -892,7 +895,7 @@ export class OperationsReader {
           SELECT
             SUM("result"."total") AS "amountOfRequests"
           FROM (
-            SELECT 
+            SELECT
               SUM("operations_daily"."total") AS "total"
             FROM
               "operations_daily"
@@ -904,7 +907,7 @@ export class OperationsReader {
 
             UNION ALL
 
-            SELECT 
+            SELECT
               SUM("subscription_operations_daily"."total") AS "total"
             FROM
               "subscription_operations_daily"
@@ -1005,7 +1008,7 @@ export class OperationsReader {
             SELECT
               "operation_collection_details"."name",
               "operation_collection_details"."hash"
-            FROM 
+            FROM
               "operation_collection_details"
             PREWHERE
               "operation_collection_details"."target" IN (${sql.array(args.targetIds, 'String')})
@@ -1262,7 +1265,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 count(distinct client_version) as total
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
@@ -1470,7 +1473,7 @@ export class OperationsReader {
       client_name: string;
     }>({
       query: sql`
-        SELECT 
+        SELECT
           sum(total) as count,
           client_name
         FROM clients_daily
@@ -1573,7 +1576,7 @@ export class OperationsReader {
           }>(
             this.pickAggregationByPeriod({
               query: aggregationTableName => sql`
-                SELECT 
+                SELECT
                   toDateTime(
                       intDiv(
                         toUnixTimestamp(timestamp),
@@ -1585,7 +1588,7 @@ export class OperationsReader {
                 FROM ${aggregationTableName('operations')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
-                ORDER BY 
+                ORDER BY
                   target,
                   date
                     WITH FILL
@@ -1751,7 +1754,8 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
             ${this.createFilter({ target, period, operations, clients })}
@@ -1762,7 +1766,7 @@ export class OperationsReader {
       }),
     );
 
-    return toPercentiles(result.data[0].percentiles);
+    return toPercentiles(result.data[0].percentiles, result.data[0].average);
   }
 
   async durationPercentiles({
@@ -1780,12 +1784,14 @@ export class OperationsReader {
   }) {
     const result = await this.clickHouse.query<{
       hash: string;
+      average: number;
       percentiles: [number, number, number, number];
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 hash,
+                avgMerge(duration_avg) as average,
                 quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
@@ -1816,7 +1822,7 @@ export class OperationsReader {
     const collection = new Map<string, Percentiles>();
 
     result.data.forEach(row => {
-      collection.set(row.hash, toPercentiles(row.percentiles));
+      collection.set(row.hash, toPercentiles(row.percentiles, row.average));
     });
 
     return collection;
@@ -1881,6 +1887,7 @@ export class OperationsReader {
         return sql`
         SELECT
           date,
+          average,
           percentiles,
           total,
           totalOk
@@ -1892,6 +1899,7 @@ export class OperationsReader {
                 toUInt32(${String(interval.seconds)})
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
@@ -1929,6 +1937,7 @@ export class OperationsReader {
       date: string;
       total: number;
       totalOk: number;
+      average: number;
       percentiles: [number, number, number, number];
     }>(query);
 
@@ -1937,7 +1946,7 @@ export class OperationsReader {
         date: toUnixTimestamp(row.date),
         total: ensureNumber(row.total),
         totalOk: ensureNumber(row.totalOk),
-        duration: toPercentiles(row.percentiles),
+        duration: toPercentiles(row.percentiles, row.average),
       };
     });
   }
@@ -2148,7 +2157,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-        SELECT 
+        SELECT
           toDateTime(
             intDiv(
               toUnixTimestamp(timestamp),
