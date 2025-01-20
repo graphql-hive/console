@@ -64,10 +64,6 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
       level: PermissionLevel.Service,
       title: 'Service',
     },
-    {
-      level: PermissionLevel.AppDeployment,
-      title: 'App Deployment',
-    },
   ].map(group => (
     <PermissionLevelGroup
       key={group.level}

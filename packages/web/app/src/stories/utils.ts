@@ -354,22 +354,6 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
   },
   {
     __typename: 'PermissionGroup',
-    id: 'app-deployments',
-    title: 'App Deployments',
-    permissions: [
-      {
-        __typename: 'Permission',
-        isReadOnly: false,
-        id: 'appDeployment:describe',
-        dependsOnId: 'project:describe',
-        description: 'Member can view app deployments.',
-        level: PermissionLevel.Target,
-        title: 'View app deployments',
-      },
-    ],
-  },
-  {
-    __typename: 'PermissionGroup',
     id: 'schema-checks',
     title: 'Schema Checks',
     permissions: [

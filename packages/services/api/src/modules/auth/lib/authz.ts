@@ -370,7 +370,6 @@ const permissionsByLevel = {
     z.literal('laboratory:describe'),
     z.literal('laboratory:modify'),
     z.literal('laboratory:modifyPreflightScript'),
-    z.literal('appDeployment:describe'),
     z.literal('schema:loadFromRegistry'),
     z.literal('schema:compose'),
   ],

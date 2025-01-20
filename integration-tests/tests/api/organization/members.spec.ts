@@ -37,7 +37,6 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       laboratory:describe,
       laboratory:modify,
       laboratory:modifyPreflightScript,
-      appDeployment:describe,
       schemaCheck:approve,
     ]
   `);
@@ -53,7 +52,6 @@ test.concurrent('invited member should have basic scopes (Viewer role)', async (
       organization:describe,
       support:manageTickets,
       project:describe,
-      appDeployment:describe,
       laboratory:describe,
     ]
   `);

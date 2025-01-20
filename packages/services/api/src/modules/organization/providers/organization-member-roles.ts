@@ -281,7 +281,6 @@ function transformOrganizationMemberLegacyScopesIntoPermissionGroup(
       }
       case TargetAccessScope.READ: {
         permissions.add('target:create');
-        permissions.add('appDeployment:describe');
         permissions.add('laboratory:describe');
         break;
       }
@@ -343,7 +342,6 @@ const predefinedRolesPermissions = {
     ...OrganizationMemberPermissions.permissions.default,
     'support:manageTickets',
     'project:describe',
-    'appDeployment:describe',
     'laboratory:describe',
   ]),
 };

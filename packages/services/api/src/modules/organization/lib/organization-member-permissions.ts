@@ -256,18 +256,6 @@ export const allPermissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
-    id: 'app-deployments',
-    title: 'App Deployments',
-    permissions: [
-      {
-        id: 'appDeployment:describe',
-        title: 'View app deployments',
-        description: 'Member can view app deployments.',
-        dependsOn: 'project:describe',
-      },
-    ],
-  },
-  {
     id: 'schema-checks',
     title: 'Schema Checks',
     permissions: [
