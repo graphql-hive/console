@@ -234,7 +234,7 @@ function OperationsTable({
                     <Sortable
                       sortOrder={header.column.getIsSorted()}
                       onClick={header.column.getToggleSortingHandler()}
-                      hasOtherSorting={sortedColumnsById.some(id => id !== header.id)}
+                      otherColumnSorted={sortedColumnsById.some(id => id !== header.id)}
                     >
                       {name}
                     </Sortable>
