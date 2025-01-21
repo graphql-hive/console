@@ -43,7 +43,7 @@ function createBreadcrumb(normalizedResult: NormalizedResult) {
 }
 
 export function DynamicMetaTags({ pageMap }: { pageMap: any[] }) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   if (pathname === '/_not-found') {
     return;
   }
