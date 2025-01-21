@@ -25,7 +25,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql, useFragment } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import { AuthProvider, ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
@@ -72,6 +72,7 @@ const OrganizationLayoutQuery = graphql(`
   query OrganizationLayoutQuery {
     me {
       id
+      provider
       ...UserMenu_MeFragment
     }
     organizations {
@@ -120,6 +121,7 @@ export function OrganizationLayout({
           <div className="flex flex-row items-center gap-4">
             <HiveLink className="size-8" />
             <OrganizationSelector
+              isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
               currentOrganizationSlug={props.organizationSlug}
               organizations={query.data?.organizations ?? null}
             />
