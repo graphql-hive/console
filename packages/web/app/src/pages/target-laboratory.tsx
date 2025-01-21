@@ -55,6 +55,7 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
+import { Kit } from '@/lib/kit';
 
 const explorer = explorerPlugin();
 
@@ -254,15 +255,15 @@ function Save(props: {
 
 function substituteVariablesInHeaders(
   headers: Record<string, string>,
-  environmentVariables: Record<string, unknown>,
+  environmentVariables: Record<string, Kit.JSON.Value>,
 ) {
   return Object.fromEntries(
     Object.entries(headers).map(([key, value]) => {
       if (typeof value === 'string') {
         // Replace all occurrences of `{{keyName}}` strings only if key exists in `environmentVariables`
-        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey) => {
+        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey: string) => {
           return Object.hasOwn(environmentVariables, envKey)
-            ? (environmentVariables[envKey] as string)
+            ? String(environmentVariables[envKey])
             : originalString;
         });
       }
