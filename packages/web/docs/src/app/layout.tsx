@@ -15,7 +15,6 @@ import { getDefaultMetadata, getPageMap, HiveLayout } from '@theguild/components
 import { DynamicMetaTags } from './dynamic-meta-tags';
 import graphQLConfLocalImage from '../components/graphql-conf-image.webp';
 import '@theguild/components/style.css';
-// import '../components/navigation-menu/navbar-global-styles.css';
 import '../selection-styles.css';
 import '../mermaid.css';
 

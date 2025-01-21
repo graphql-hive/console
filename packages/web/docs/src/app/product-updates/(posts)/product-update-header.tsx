@@ -67,6 +67,7 @@ const Authors = ({ meta }: { meta: Meta }) => {
 export const ProductUpdateHeader = () => {
   const { normalizePagesResult } = useConfig();
   const metadata = normalizePagesResult.activeMetadata as Meta;
+
   return (
     <div className="x:max-w-[90rem] mx-auto">
       <h1 className="mt-12 text-center text-4xl">{metadata.title}</h1>
