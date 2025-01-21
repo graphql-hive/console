@@ -268,7 +268,7 @@ export function usePreflightScript(args: {
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
           const mergedEnvironmentVariables = {
-            ...decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current),
+            ...result.environmentVariables,
             ...ev.data.environmentVariables,
           };
           result.environmentVariables = mergedEnvironmentVariables;
