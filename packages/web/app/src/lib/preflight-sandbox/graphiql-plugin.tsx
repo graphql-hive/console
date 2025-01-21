@@ -146,9 +146,9 @@ const PreflightScript_TargetFragment = graphql(`
   }
 `);
 
-type LogRecord = LogMessage | { type: 'separator' };
+export type LogRecord = LogMessage | { type: 'separator' };
 
-const enum PreflightWorkerState {
+export const enum PreflightWorkerState {
   running,
   ready,
 }

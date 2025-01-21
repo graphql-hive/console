@@ -303,4 +303,94 @@ describe('Execution', () => {
     cy.get('.graphiql-execute-button').click();
     cy.wait('@post');
   });
+
+  it('logs are visible when opened', () => {
+    cy.dataCy('toggle-preflight-script').click();
+
+    cy.dataCy('preflight-script-modal-button').click();
+    setMonacoEditorContents(
+      'preflight-script-editor',
+      dedent`
+        console.info(1)
+        console.warn(true)
+        console.error('Fatal')
+        throw new TypeError('Test')
+        `,
+    );
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+    }).as('post');
+
+    // shows no logs before executing
+    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+      // it's because the button is not fully visible on the screen
+      force: true,
+    });
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      ['No logs available', 'Execute a query to see logs'].join(''),
+    );
+
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      [
+        '> start running script: > Start running script',
+        'info: 1 (Line: 1, Column: 1)',
+        'warn: true (Line: 2, Column: 1)',
+        'error: Fatal (Line: 3, Column: 1)',
+        'error: TypeError: Test (Line: 4, Column: 7)',
+        '> preflight script failed: > Preflight script failed',
+      ].join(''),
+    );
+  });
+
+  it('logs are cleared when requested', () => {
+    cy.dataCy('toggle-preflight-script').click();
+
+    cy.dataCy('preflight-script-modal-button').click();
+    setMonacoEditorContents(
+      'preflight-script-editor',
+      dedent`
+        console.info(1)
+        console.warn(true)
+        console.error('Fatal')
+        throw new TypeError('Test')
+        `,
+    );
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+    }).as('post');
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+
+    // open logs
+    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+      // it's because the button is not fully visible on the screen
+      force: true,
+    });
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      [
+        '> start running script: > Start running script',
+        'info: 1 (Line: 1, Column: 1)',
+        'warn: true (Line: 2, Column: 1)',
+        'error: Fatal (Line: 3, Column: 1)',
+        'error: TypeError: Test (Line: 4, Column: 7)',
+        '> preflight script failed: > Preflight script failed',
+      ].join(''),
+    );
+
+    cy.get('#preflight-script-logs button[data-cy="erase-logs"]').click();
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      ['No logs available', 'Execute a query to see logs'].join(''),
+    );
+  });
 });
