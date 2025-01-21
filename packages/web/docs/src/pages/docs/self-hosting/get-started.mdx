@@ -146,18 +146,20 @@ using the link below
 
 <Tabs items={['curl', 'wget']}>
 
-{' '}
 <Tabs.Tab>
-  ```sh curl -O
-  https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
-  ```
+
+```sh
+curl -O https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
+```
+
 </Tabs.Tab>
 
-{' '}
 <Tabs.Tab>
-  ```sh bash wget
-  https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
-  ```
+
+```sh
+bash wget https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
+```
+
 </Tabs.Tab>
 
 </Tabs>
@@ -169,13 +171,13 @@ to set some environment variables.
 <Callout>
   **Docker images** are built and published for each version of GraphQL Hive and tagged accordingly.
   You can find all the available versions on the [GitHub Releases page prefixed with `hive@`](https://github.com/graphql-hive/console/releases).
-  
-  We recommend sticking to a specific version to avoid breaking changes.
-  The `latest` version correspons to the latest stable release.
-  
-  ```sh
-  export DOCKER_TAG=":3.0.0"
-  ```
+
+We recommend sticking to a specific version to avoid breaking changes. The `latest` version
+correspons to the latest stable release.
+
+```sh
+export DOCKER_TAG=":3.0.0"
+```
 
 After picking a version set the `DOCKER_TAG` environment variable to that value.
 
