@@ -1,11 +1,22 @@
-import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  GithubAuthorRequiredError,
+  GithubCommitRequiredError,
+  InvalidSDLError,
+  MissingEndpointError,
+  MissingEnvironmentError,
+  MissingRegistryTokenError,
+  SchemaPublishFailedError,
+  SchemaPublishMissingServiceError,
+  SchemaPublishMissingUrlError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
 import { invariant } from '../../helpers/validation';
@@ -143,7 +154,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }),
   };
 
-  resolveMetadata(metadata: string | undefined): string | undefined {
+  resolveMetadata = (metadata: string | undefined): string | undefined => {
     if (!metadata) {
       return;
     }
@@ -155,26 +166,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       return metadata;
     } catch (e) {
       // If we can't parse it, we can try to load it from FS
-      const exists = existsSync(metadata);
-
-      if (!exists) {
-        throw new Error(
-          `Failed to load metadata from "${metadata}": Please specify a path to an existing file, or a string with valid JSON.`,
-        );
-      }
-
-      try {
-        const fileContent = readFileSync(metadata, 'utf-8');
-        JSON.parse(fileContent);
-
-        return fileContent;
-      } catch (e) {
-        throw new Error(
-          `Failed to load metadata from file "${metadata}": Please make sure the file is readable and contains a valid JSON`,
-        );
-      }
+      return this.readJSON(metadata);
     }
-  }
+  };
 
   async run() {
     try {
@@ -182,20 +176,30 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       await this.require(flags);
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
-      });
+      let endpoint: string, accessToken: string;
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: SchemaPublish.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: SchemaPublish.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
       const service = flags.service;
       const url = flags.url;
       const file = args.file;
@@ -235,18 +239,21 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       }
 
       if (!author) {
-        throw new Errors.CLIError(`Missing "author"`);
+        throw new GithubAuthorRequiredError();
       }
 
       if (!commit) {
-        throw new Errors.CLIError(`Missing "commit"`);
+        throw new GithubCommitRequiredError();
       }
 
       if (usesGitHubApp) {
         // eslint-disable-next-line no-process-env
         const repository = process.env['GITHUB_REPOSITORY'] ?? null;
         if (!repository) {
-          throw new Errors.CLIError(`Missing "GITHUB_REPOSITORY" environment variable.`);
+          throw new MissingEnvironmentError([
+            'GITHUB_REPOSITORY',
+            'Github repository full name, e.g. graphql-hive/console',
+          ]);
         }
         gitHub = {
           repository,
@@ -262,11 +269,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         sdl = minifySchema(transformedSDL);
       } catch (err) {
         if (err instanceof GraphQLError) {
-          const location = err.locations?.[0];
-          const locationString = location
-            ? ` at line ${location.line}, column ${location.column}`
-            : '';
-          throw new Error(`The SDL is not valid${locationString}:\n ${err.message}`);
+          throw new InvalidSDLError(err);
         }
         throw err;
       }
@@ -319,15 +322,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('Waiting for other schema publishes to complete...');
           result = null;
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          this.logFailure(
-            `${result.schemaPublish.missingServiceError} Please use the '--service <name>' parameter.`,
-          );
-          this.exit(1);
+          throw new SchemaPublishMissingServiceError(result.schemaPublish.missingServiceError);
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          this.logFailure(
-            `${result.schemaPublish.missingUrlError} Please use the '--url <url>' parameter.`,
-          );
-          this.exit(1);
+          throw new SchemaPublishMissingUrlError(result.schemaPublish.missingUrlError);
         } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
           const changes = result.schemaPublish.changes;
           const errors = result.schemaPublish.errors;
@@ -340,8 +337,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           this.log('');
 
           if (!force) {
-            this.logFailure('Failed to publish schema');
-            this.exit(1);
+            throw new SchemaPublishFailedError();
           } else {
             this.logSuccess('Schema published (forced)');
           }
@@ -352,17 +348,19 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
           this.logSuccess(result.schemaPublish.message);
         } else {
-          this.error(
-            'message' in result.schemaPublish ? result.schemaPublish.message : 'Unknown error',
+          throw new APIError(
+            'message' in result.schemaPublish
+              ? result.schemaPublish.message
+              : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
           );
         }
       } while (result === null);
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure('Failed to publish schema');
-        this.handleFetchError(error);
+        throw new UnexpectedError(error instanceof Error ? error.message : JSON.stringify(error));
       }
     }
   }
