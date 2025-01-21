@@ -140,7 +140,7 @@ const PreflightScript_TargetFragment = graphql(`
   }
 `);
 
-type LogRecord = LogMessage | { type: 'separator' };
+export type LogRecord = LogMessage | { type: 'separator' };
 
 function safeParseJSON(str: string): Record<string, unknown> | null {
   try {
@@ -150,7 +150,7 @@ function safeParseJSON(str: string): Record<string, unknown> | null {
   }
 }
 
-const enum PreflightWorkerState {
+export const enum PreflightWorkerState {
   running,
   ready,
 }
