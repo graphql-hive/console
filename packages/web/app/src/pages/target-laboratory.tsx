@@ -57,6 +57,7 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
+import { captureException } from '@sentry/react';
 
 const explorer = explorerPlugin();
 
@@ -782,6 +783,9 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
                 logType = log.split(':')[0].toLowerCase() as 'error' | 'warn' | 'info' | 'log';
                 logMessage = log.substring(log.indexOf(':') + 1).trim();
               } else {
+                captureException(new Error('Unexpected log type in Preflight Script Logs'), {
+                  extra: { log },
+                });
                 return null;
               }
 
