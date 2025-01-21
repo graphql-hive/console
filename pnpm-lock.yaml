@@ -2049,8 +2049,8 @@ importers:
         specifier: 0.5.16
         version: 0.5.16(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.5)(typescript@5.7.3)))
       '@theguild/components':
-        specifier: 7.6.1
-        version: 7.6.1(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.23(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))
+        specifier: 7.6.2
+        version: 7.6.2(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.23(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -7657,8 +7657,8 @@ packages:
     resolution: {integrity: sha512-kUiFyUQDiVdpeeL/qwOZAdDZrYFTwqppwNZDxOXcPSKeqGCZe8ajbbN64OAS7VlGMnXWxEEHcjhyFzB9gtHn5w==}
     hasBin: true
 
-  '@theguild/components@7.6.1':
-    resolution: {integrity: sha512-5HnuvISB7Kll+g8SLnQqVWSOHdeNL7gkztSYelVpbeqCrjpDFId9vjMV9GitPhhf44uzf1zksp9NbTriMmys8A==}
+  '@theguild/components@7.6.2':
+    resolution: {integrity: sha512-Qibz7M8w+hYs4yNUrsiZAPyBx+SnsJcg94h/c4hpKaLeD+MS5IFyyuvntE8lUnJ2XemuniX5xgH2+xvecOtzZA==}
     peerDependencies:
       '@theguild/tailwind-config': 0.6.2
       next: ^13 || ^14 || ^15.0.0
@@ -23740,7 +23740,7 @@ snapshots:
       typescript: 4.9.5
       yargs: 16.2.0
 
-  '@theguild/components@7.6.1(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.23(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))':
+  '@theguild/components@7.6.2(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.11))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(next@14.2.23(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.94.0(@swc/core@1.10.6(@swc/helpers@0.5.11))(esbuild@0.23.1))':
     dependencies:
       '@giscus/react': 3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@next/bundle-analyzer': 15.1.0
