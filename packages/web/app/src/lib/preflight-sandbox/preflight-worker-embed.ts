@@ -104,9 +104,10 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
 
         if (ev.data.type === WorkerEvents.Outgoing.Event.result) {
           postMessage({
-            ...ev.data,
             type: IFrameEvents.Outgoing.Event.result,
             runId,
+            environmentVariables: ev.data.environmentVariables,
+            request: ev.data.request,
           });
           terminate();
           return;
