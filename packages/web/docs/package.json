@@ -14,7 +14,6 @@
     "@radix-ui/react-tabs": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.6",
     "@theguild/components": "9.2.0-alpha-20250120172902-d3ff5f907d1bae071ddc3040c4a0a5a9dd7eaa68",
-    "clsx": "2.1.1",
     "date-fns": "4.1.0",
     "next": "15.1.0",
     "react": "19.0.0",
