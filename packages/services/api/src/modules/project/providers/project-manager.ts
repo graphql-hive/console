@@ -3,7 +3,6 @@ import type { Organization, Project, ProjectType } from '../../../shared/entitie
 import { share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { ActivityManager } from '../../shared/providers/activity-manager';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
@@ -26,7 +25,6 @@ export class ProjectManager {
     private storage: Storage,
     private session: Session,
     private tokenStorage: TokenStorage,
-    private activityManager: ActivityManager,
     private auditLog: AuditLogRecorder,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
@@ -67,16 +65,6 @@ export class ProjectManager {
         this.storage.completeGetStartedStep({
           organizationId: organization,
           step: 'creatingProject',
-        }),
-        this.activityManager.create({
-          type: 'PROJECT_CREATED',
-          selector: {
-            organizationId: organization,
-            projectId: result.project.id,
-          },
-          meta: {
-            projectType: type,
-          },
         }),
         this.auditLog.record({
           eventType: 'PROJECT_CREATED',
@@ -120,17 +108,6 @@ export class ProjectManager {
       },
     });
     await this.tokenStorage.invalidateTokens(deletedProject.tokens);
-
-    await this.activityManager.create({
-      type: 'PROJECT_DELETED',
-      selector: {
-        organizationId: organization,
-      },
-      meta: {
-        name: deletedProject.name,
-        cleanId: deletedProject.slug,
-      },
-    });
 
     return deletedProject;
   }
@@ -250,16 +227,6 @@ export class ProjectManager {
     });
 
     if (result.ok) {
-      await this.activityManager.create({
-        type: 'PROJECT_ID_UPDATED',
-        selector: {
-          organizationId: organization,
-          projectId: project,
-        },
-        meta: {
-          value: slug,
-        },
-      });
       await this.auditLog.record({
         eventType: 'PROJECT_SLUG_UPDATED',
         organizationId: organization,
