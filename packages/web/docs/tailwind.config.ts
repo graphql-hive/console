@@ -7,6 +7,7 @@ import { default as flattenColorPalette } from 'tailwindcss/lib/util/flattenColo
 import plugin from 'tailwindcss/plugin';
 import type { PluginAPI } from 'tailwindcss/types/config';
 import tailwindTypography from '@tailwindcss/typography';
+// @ts-expect-error @theguild/tailwind-config types require moduleResolution: bundler
 import baseConfig from '@theguild/tailwind-config';
 
 const config: Config = {

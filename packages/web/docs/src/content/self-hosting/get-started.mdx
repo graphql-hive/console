@@ -1,12 +1,12 @@
 import NextImage from 'next/image'
-import { Callout } from '@theguild/components'
+import { Callout, Cards, Tabs } from '@theguild/components'
 import diagram from '../../../public/docs/pages/self-hosting/diagram.png'
 
 # Self-Hosting Hive
 
 If you are not able to use Hive Cloud service, you can self-host it. The self-hosted version is free
 and open-source. You can find the full
-[source code on GitHub](https://github.com/graphql-hive/platform).
+[source code on GitHub](https://github.com/graphql-hive/console).
 
 <Callout>
   **Self-hosting Hive** does currently not support all of the features as the Cloud version.
@@ -68,7 +68,7 @@ The following diagram shows the architecture of a self-hosted GraphQL Hive insta
 ### Services Overview
 
 > The dependencies between the different services are described in the
-> [`docker-compose.community.yml`](https://github.com/graphql-hive/platform/blob/main/docker/docker-compose.community.yml)
+> [`docker-compose.community.yml`](https://github.com/graphql-hive/console/blob/main/docker/docker-compose.community.yml)
 > file.
 
 #### Databases / Storage
@@ -134,39 +134,58 @@ in less than 15 minutes.
 ## Running GraphQL Hive
 
 First download the `docker-compose.community.yml` file from the
-[GitHub repository](https://github.com/graphql-hive/platform/blob/main/docker/docker-compose.community.yml)
-using `wget`. This's going to download the latest version available.
+[GitHub repository](https://github.com/graphql-hive/console/blob/main/docker/docker-compose.community.yml)
+using `wget` or `curl`. This's going to download the latest version available.
 
 <Callout type="info">
   Note: make sure you've Docker installed to be able to continue with the setup process.
 </Callout>
 
-> You can also download the file directly from GitHub, if you don't have wget installed using the
-> link below
->
-> ```sh
-> bash wget https://raw.githubusercontent.com/graphql-hive/platform/main/docker/docker-compose.community.yml
-> ```
+You can also download the file directly from GitHub, if you don't have `wget` or `curl` installed
+using the link below
+
+<Tabs items={['curl', 'wget']}>
+
+<Tabs.Tab>
+
+```sh
+curl -O https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```sh
+bash wget https://raw.githubusercontent.com/graphql-hive/console/main/docker/docker-compose.community.yml
+```
+
+</Tabs.Tab>
+
+</Tabs>
 
 After downloading the `docker-compose.community.yml` file, this includes all the services required
 for running Hive locally in a self hosted environment. But before we can spin it up, we first need
 to set some environment variables.
 
 <Callout>
-  **Docker Tag.** Docker images are built and published for each single commit within the GraphQL
-  Hive repository and tagged with the corresponding commit sha. You can also find all available
-  images on the [Hive Docker Registry
-  Overview](https://github.com/graphql-hive?tab=packages&repo_name=platform). We recommend using one
-  of the latest versions. Right now we do not have a stable release strategy yet. However, every
-  commit on the `main` branch can be considered as stable as it is the version we are running in
-  production. After picking a version set the `DOCKER_TAG` environment variable to that value (e.g.
-  `export DOCKER_TAG=":3b635063294a4636ee89579f57e531de04ef087f"`). We do not recommend using the
-  tag `latest`. Instead use an exact commit from the `main` branch.
+  **Docker images** are built and published for each version of GraphQL Hive and tagged accordingly.
+  You can find all the available versions on the [GitHub Releases page prefixed with `hive@`](https://github.com/graphql-hive/console/releases).
+
+We recommend sticking to a specific version to avoid breaking changes. The `latest` version
+correspons to the latest stable release.
+
+```sh
+export DOCKER_TAG=":3.0.0"
+```
+
+After picking a version set the `DOCKER_TAG` environment variable to that value.
+
 </Callout>
 
 ```bash
 export DOCKER_REGISTRY="ghcr.io/graphql-hive/"
-export DOCKER_TAG=":latest" # Pin this to an exact commit hash from our `main` branch, we publish a Docker image per each commit on main, and for PRs.
+export DOCKER_TAG=":latest" # Pin this to an exact version
 export HIVE_ENCRYPTION_SECRET=$(openssl rand -hex 16)
 export HIVE_APP_BASE_URL="http://localhost:8080"
 export HIVE_EMAIL_FROM="no-reply@graphql-hive.com"
@@ -186,9 +205,12 @@ export CDN_AUTH_PRIVATE_KEY=$(openssl rand -hex 16)
   We recommend saving the environment variables in a file that you can reuse later. E.g. a `.env` file that you
   can later on expand using `source .env`. We are using `openssl` here for generating passwords on the fly.
 
-You can also embed the values within a new docker-compose file by running
-`docker-compose -f docker-compose.community.yml config > docker-compose.with-env.yml` after setting
-the environment variables.
+You can also embed the values within a new docker-compose file by running the following command
+after setting the environment variables.
+
+```sh
+docker compose -f docker-compose.community.yml config > docker-compose.with-env.yml
+```
 
 </Callout>
 
@@ -196,15 +218,17 @@ After setting the environment variables, pull the required images for GraphQL Hi
 going to take some time if you're doing it for the first time.
 
 ```bash
-docker-compose -f docker-compose.community.yml pull
+docker compose -f docker-compose.community.yml pull
+# or if you embedded the environment variables into your docker-compose file
+docker compose -f docker-compose.with-env.yml pull
 ```
 
-After it's done, you can start the GraphQL Hive services using `docker-compose`.
+After it's done, you can start the GraphQL Hive services using `docker compose`.
 
 ```bash
-docker-compose -f docker-compose.community.yml up
-# or of you embedded the environment variables into your docker-compose file and called it `docker-compose.with-env.yml`
-docker-compose -f docker-compose.with-env.yml up
+docker compose -f docker-compose.community.yml up
+# or if you embedded the environment variables into your docker-compose file
+docker compose -f docker-compose.with-env.yml up
 ```
 
 Wait until all the services are up and running.
@@ -252,17 +276,8 @@ this message:
 >
 > You can publish a schema with Hive CLI and Hive Client
 
-If you already have a Node.js project with a graphql schema that's great you can skip over the next
-step, but if not so we're going to initialize a new package in our directory, you can use your
-preferred package manager to do so:
-
-```bash
-# you can do the same with npm or yarn
-pnpm init
-```
-
-Then create a `schema.graphql` file wherever you want, you can put it at the root for example with
-any simple graphql schema like the following:
+Create a `schema.graphql` file wherever you want, you can put it at the root for example with any
+simple graphql schema like the following:
 
 ```graphql
 type Query {
@@ -270,7 +285,9 @@ type Query {
 }
 ```
 
-You also need to have a git repository initialized for your project, because Hive automatically uses
+#### Setting up a local project
+
+You also need to have a git repository initilaized for your project, because Hive automatically uses
 the last commit hash to determine who the author is and ties the schema with the commit hash. So
 we're going to do that.
 
@@ -282,7 +299,6 @@ Make sure you exclude the following in your `.gitignore` file, because you don't
 your commits:
 
 ```
-node_modules
 .hive
 hive.json
 .env
@@ -292,30 +308,26 @@ Make sure to at least have a single commit so that Hive can associate the schema
 
 ```bash
 git add .
-git commit -m"init"
+git commit -m "init"
 ```
 
-Now that you've your Nodejs project setup, start by installing the GraphQL Hive CLI which we're
-going to use to interact with Hive's server.
+#### Installing Hive CLI
+
+Now that you've your project setup, start by installing the Hive CLI which we're going to use to
+interact with Hive's server.
+
+<Cards>
+  <Cards.Card arrow title="Install Hive CLI as a binary" href="/docs/api-reference/cli#binary" />
+  <Cards.Card arrow title="Install Hive CLI from NPM" href="/docs/api-reference/cli#nodejs" />
+</Cards>
+
+After installing it, you can check the version of the CLI, to make sure it's installed correctly.
 
 ```bash
-# you can do the same with npm or yarn
-pnpm i -D @graphql-hive/cli
+hive --version
 ```
 
-<Callout type="info">
-  We recommend that you install the GraphQL Hive CLI as a dev dependency
-</Callout>
-
-After installing it, the CLI's bin is set to `hive` which means you can check if it was installed by
-using this command:
-
-```bash
-# you can do the same with npm or yarn
-pnpm hive --version
-```
-
-Make sure you get an output specifying the installed version for your CLI.
+#### Publishing your first schema
 
 And since we're using the Self Hosted version, we need to configure the Hive CLI to use our local
 endpoint, by creating a `hive.json` file at the root of your directory. Then specify the `registry`
@@ -345,7 +357,7 @@ Now we're all setup to use the GraphQL Hive CLI against our Setup!
 We can publish our first schema by using:
 
 ```bash
-pnpm hive schema:publish ./schema.graphql
+hive schema:publish ./schema.graphql
 ```
 
 Go to the `Schema` tab in your project target and you're going to see your latest published schema.
@@ -371,8 +383,8 @@ After doing your first testing with GraphQL Hive you should consider the followi
 - Set up a monitoring solution for your GraphQL Hive instance (leverage healthchecks, sentry error
   reporting, prometheus metrics, etc.).
 - Configure the `emails` service to use a real email provider (by default it uses `sendmail`).
-- Watch and follow the [GraphQL Hive GitHub repository](https://github.com/graphql-hive/platform)
-  for new releases and updates.
+- Watch and follow the [GraphQL Hive GitHub repository](https://github.com/graphql-hive/console) for
+  new releases and updates.
 - Set up a weekly reminder for updating your GraphQL Hive instance to the latest version and
   applying maintenance.
 - Get yourself familiar with SuperTokens and follow their changelogs in order to keep your
@@ -384,12 +396,12 @@ After doing your first testing with GraphQL Hive you should consider the followi
 
 You can review the configuration options of all the services in the corresponding Readme files.
 
-- [`@hive/app`](https://github.com/graphql-hive/platform/tree/main/packages/web/app/README.md)
-- [`@hive/server`](https://github.com/graphql-hive/platform/tree/main/packages/services/server/README.md)
-- [`@hive/schema`](https://github.com/graphql-hive/platform/tree/main/packages/services/schema/README.md)
-- [`@hive/webhooks`](https://github.com/graphql-hive/platform/tree/main/packages/services/webhooks/README.md)
-- [`@hive/usage`](https://github.com/graphql-hive/platform/tree/main/packages/services/usage/README.md)
-- [`@hive/usage-ingestor`](https://github.com/graphql-hive/platform/tree/main/packages/services/usage-ingestor/README.md)
-- [`@hive/tokens`](https://github.com/graphql-hive/platform/tree/main/packages/services/tokens/README.md)
-- [`@hive/storage`](https://github.com/graphql-hive/platform/tree/main/packages/services/storage/README.md)
-- [`@hive/emails`](https://github.com/graphql-hive/platform/tree/main/packages/services/emails/README.md)
+- [`@hive/app`](https://github.com/graphql-hive/console/tree/main/packages/web/app/README.md)
+- [`@hive/server`](https://github.com/graphql-hive/console/tree/main/packages/services/server/README.md)
+- [`@hive/schema`](https://github.com/graphql-hive/console/tree/main/packages/services/schema/README.md)
+- [`@hive/webhooks`](https://github.com/graphql-hive/console/tree/main/packages/services/webhooks/README.md)
+- [`@hive/usage`](https://github.com/graphql-hive/console/tree/main/packages/services/usage/README.md)
+- [`@hive/usage-ingestor`](https://github.com/graphql-hive/console/tree/main/packages/services/usage-ingestor/README.md)
+- [`@hive/tokens`](https://github.com/graphql-hive/console/tree/main/packages/services/tokens/README.md)
+- [`@hive/storage`](https://github.com/graphql-hive/console/tree/main/packages/services/storage/README.md)
+- [`@hive/emails`](https://github.com/graphql-hive/console/tree/main/packages/services/emails/README.md)

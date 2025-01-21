@@ -61,7 +61,7 @@
     "@stripe/stripe-js": "5.5.0",
     "@tanstack/react-query": "5.63.0",
     "@tanstack/react-router": "1.34.9",
-    "@tanstack/react-table": "8.17.3",
+    "@tanstack/react-table": "8.20.6",
     "@tanstack/router-devtools": "1.34.9",
     "@theguild/editor": "1.2.5",
     "@trpc/client": "10.45.2",

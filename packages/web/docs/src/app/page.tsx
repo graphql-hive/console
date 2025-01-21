@@ -231,7 +231,7 @@ function LearnGraphQLFederationSection(props: { className?: string }) {
   return (
     <section
       className={cn(
-        'bg-green-1000 relative rounded-3xl p-8 sm:py-12 md:px-6 md:text-center lg:px-24 lg:py-16',
+        'to-green-1000 relative rounded-3xl bg-gradient-to-br from-[#003834] p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
         props.className,
       )}
     >
@@ -247,7 +247,7 @@ function LearnGraphQLFederationSection(props: { className?: string }) {
         What Is GraphQL Federation?
       </Heading>
 
-      <p className="mt-6 text-pretty font-medium text-white/80 md:mt-8">
+      <p className="mt-4 text-pretty font-medium text-white/80">
         Understand what federated GraphQL API is, how it works, and why it may be the right choice
         for your API.
       </p>

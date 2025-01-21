@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, ReactElement, ReactNode } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, cn } from '@theguild/components';
+import { CallToAction, cn, ContactTextLink } from '@theguild/components';
 import { PricingSlider } from './pricing-slider';
 
 function Tooltip({ content, children }: { content: string; children: ReactNode }) {

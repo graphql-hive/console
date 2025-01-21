@@ -115,7 +115,9 @@ export function GotAnIdeaSection({ className }: { className?: string }) {
       <p className="mb-8 mt-4 text-white/80">
         Join our community to chat with us and let's build something together!
       </p>
-      <ContactButton variant="primary-inverted">Get in touch</ContactButton>
+      <ContactButton variant="primary-inverted" className="mt-8">
+        Get in touch
+      </ContactButton>
     </div>
   );
 }
