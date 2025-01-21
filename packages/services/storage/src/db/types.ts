@@ -13,6 +13,17 @@ export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type user_role = 'ADMIN' | 'MEMBER';
 
+export interface activities {
+  activity_metadata: any;
+  activity_type: string;
+  created_at: Date;
+  id: string;
+  organization_id: string;
+  project_id: string | null;
+  target_id: string | null;
+  user_id: string;
+}
+
 export interface alert_channels {
   created_at: Date;
   id: string;
@@ -407,6 +418,7 @@ export interface versions {
 }
 
 export interface DBTables {
+  activities: activities;
   alert_channels: alert_channels;
   alerts: alerts;
   app_deployments: app_deployments;
