@@ -32,7 +32,7 @@ function toUnixTimestamp(utcDate: string): any {
   return new UTCDate(iso).getTime();
 }
 
-export interface Percentiles {
+export interface DurationMetrics {
   avg: number;
   p75: number;
   p90: number;
@@ -40,23 +40,13 @@ export interface Percentiles {
   p99: number;
 }
 
-function toPercentiles(item: Percentiles | number[], avg: number) {
-  if (Array.isArray(item)) {
-    return {
-      avg,
-      p75: item[0],
-      p90: item[1],
-      p95: item[2],
-      p99: item[3],
-    };
-  }
-
+function toDurationMetrics(percentiles: [number, number, number, number], avg: number) {
   return {
     avg,
-    p75: item.p75,
-    p90: item.p90,
-    p95: item.p95,
-    p99: item.p99,
+    p75: percentiles[0],
+    p90: percentiles[1],
+    p95: percentiles[2],
+    p99: percentiles[3],
   };
 }
 
@@ -1726,7 +1716,7 @@ export class OperationsReader {
   }): Promise<
     Array<{
       date: any;
-      duration: Percentiles;
+      duration: DurationMetrics;
     }>
   > {
     return this.getDurationAndCountOverTime({
@@ -1748,9 +1738,10 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-  }): Promise<Percentiles> {
+  }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
+      average: number;
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
@@ -1766,10 +1757,10 @@ export class OperationsReader {
       }),
     );
 
-    return toPercentiles(result.data[0].percentiles, result.data[0].average);
+    return toDurationMetrics(result.data[0].percentiles, result.data[0].average);
   }
 
-  async durationPercentiles({
+  async durationMetrics({
     target,
     period,
     operations,
@@ -1819,10 +1810,10 @@ export class OperationsReader {
       }),
     );
 
-    const collection = new Map<string, Percentiles>();
+    const collection = new Map<string, DurationMetrics>();
 
     result.data.forEach(row => {
-      collection.set(row.hash, toPercentiles(row.percentiles, row.average));
+      collection.set(row.hash, toDurationMetrics(row.percentiles, row.average));
     });
 
     return collection;
@@ -1946,7 +1937,7 @@ export class OperationsReader {
         date: toUnixTimestamp(row.date),
         total: ensureNumber(row.total),
         totalOk: ensureNumber(row.totalOk),
-        duration: toPercentiles(row.percentiles, row.average),
+        duration: toDurationMetrics(row.percentiles, row.average),
       };
     });
   }
