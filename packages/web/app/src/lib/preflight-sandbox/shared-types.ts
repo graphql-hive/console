@@ -34,7 +34,7 @@ export namespace IFrameEvents {
       export interface Result {
         type: Event.result;
         runId: string;
-        environmentVariables: Record<string, string>;
+        environmentVariables: Record<string, Kit.JSON.Value>;
         request: {
           headers: Kit.Headers.Encoded;
         };
@@ -79,7 +79,7 @@ export namespace IFrameEvents {
         type: Event.run;
         id: string;
         script: string;
-        environmentVariables: Record<string, unknown>;
+        environmentVariables: Record<string, Kit.JSON.Value>;
       }
 
       export interface Abort {
@@ -135,7 +135,7 @@ export namespace WorkerEvents {
 
       export interface Result {
         type: Event.result;
-        environmentVariables: Record<string, string>;
+        environmentVariables: Record<string, Kit.JSON.Value>;
         request: {
           headers: Kit.Headers.Encoded;
         };
@@ -173,7 +173,7 @@ export namespace WorkerEvents {
       export interface Run {
         type: Event.run;
         script: string;
-        environmentVariables: Record<string, unknown>;
+        environmentVariables: Record<string, Kit.JSON.Value>;
       }
     }
 

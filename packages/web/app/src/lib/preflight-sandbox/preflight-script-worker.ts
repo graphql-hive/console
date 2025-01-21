@@ -9,7 +9,7 @@ interface WorkerData {
   request: {
     headers: Headers;
   };
-  environmentVariables: Record<string, unknown>;
+  environmentVariables: Record<string, Kit.JSON.Value>;
 }
 
 export type LogMessage = string | Error;
@@ -192,8 +192,7 @@ ${script}})()`;
 
   sendMessage({
     type: WorkerEvents.Outgoing.Event.result,
-    // todo: We need to more precisely type environment value. Currently unknown. Why?
-    environmentVariables: workerData.environmentVariables as any,
+    environmentVariables: workerData.environmentVariables,
     request: {
       headers: Array.from(workerData.request.headers.entries()),
     },
