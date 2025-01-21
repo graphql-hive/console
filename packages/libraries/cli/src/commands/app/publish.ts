@@ -2,7 +2,7 @@ import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import { APIError, MissingEndpointError, MissingRegistryTokenError } from '../../helpers/errors';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -26,18 +26,29 @@ export default class AppPublish extends Command<typeof AppPublish> {
   async run() {
     const { flags } = await this.parse(AppPublish);
 
-    const endpoint = this.ensure({
-      key: 'registry.endpoint',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
-    });
-    const accessToken = this.ensure({
-      key: 'registry.accessToken',
-      args: flags,
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let endpoint: string, accessToken: string;
+    try {
+      endpoint = this.ensure({
+        key: 'registry.endpoint',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: AppPublish.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+
+    try {
+      accessToken = this.ensure({
+        key: 'registry.accessToken',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: AppPublish.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
 
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: ActivateAppDeploymentMutation,
@@ -50,7 +61,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
     });
 
     if (result.activateAppDeployment.error) {
-      throw new Error(result.activateAppDeployment.error.message);
+      throw new APIError(result.activateAppDeployment.error.message);
     }
 
     if (result.activateAppDeployment.ok) {

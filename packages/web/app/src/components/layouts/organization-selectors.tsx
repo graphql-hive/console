@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 
 const OrganizationSelector_OrganizationConnectionFragment = graphql(`
   fragment OrganizationSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -14,6 +14,7 @@ const OrganizationSelector_OrganizationConnectionFragment = graphql(`
 export function OrganizationSelector(props: {
   currentOrganizationSlug: string;
   organizations: FragmentType<typeof OrganizationSelector_OrganizationConnectionFragment> | null;
+  isOIDCUser: boolean;
 }) {
   const router = useRouter();
   const organizations = useFragment(
@@ -25,7 +26,23 @@ export function OrganizationSelector(props: {
     node => node.slug === props.currentOrganizationSlug,
   );
 
-  return organizations ? (
+  if (!organizations) {
+    return <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />;
+  }
+
+  if (props.isOIDCUser) {
+    return (
+      <Link
+        to="/$organizationSlug"
+        params={{ organizationSlug: props.currentOrganizationSlug }}
+        className="max-w-[200px] shrink-0 truncate font-medium"
+      >
+        {props.currentOrganizationSlug}
+      </Link>
+    );
+  }
+
+  return (
     <Select
       value={props.currentOrganizationSlug}
       onValueChange={id => {
@@ -54,7 +71,5 @@ export function OrganizationSelector(props: {
         ))}
       </SelectContent>
     </Select>
-  ) : (
-    <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />
   );
 }
