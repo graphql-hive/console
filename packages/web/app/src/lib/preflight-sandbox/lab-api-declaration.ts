@@ -13,9 +13,10 @@ interface LabAPI {
    */
   request: {
     /**
-     * Headers that will be added to the request. They are merged in as follows:
+     * Headers that will be added to the request. They are merged
+     * using the following rules:
      *
-     * 1. Do not support interpolation of environment variables.
+     * 1. Do *not* interpolate environment variables.
      *
      * 2. Upon a collision with a base header, this header takes precedence.
      *    This means that if the base headers contain "foo: bar" and you add "foo: qux"
