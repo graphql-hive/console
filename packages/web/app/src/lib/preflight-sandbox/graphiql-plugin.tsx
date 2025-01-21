@@ -165,9 +165,14 @@ export function usePreflightScript(args: {
     false,
   );
 
-  const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', ''); // prettier-ignore
+  const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
+    'hive:laboratory:environment',
+    '',
+  );
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
-  useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
+  useEffect(() => {
+    latestEnvironmentVariablesRef.current = environmentVariables;
+  });
   const decodeResultEnvironmentVariables = (encoded: string) => {
     const result = Kit.JSON.decodeSafe<PreflightScriptResultData['environmentVariables']>(encoded);
     return result instanceof SyntaxError ? {} : result;
