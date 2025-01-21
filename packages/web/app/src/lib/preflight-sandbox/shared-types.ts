@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
 import { Kit } from '../kit';
-import { JSONValue } from './json';
+import { JSONPrimitive } from './json';
 
 type _MessageEvent<T> = MessageEvent<T>;
 
@@ -35,7 +35,7 @@ export namespace IFrameEvents {
       export interface Result {
         type: Event.result;
         runId: string;
-        environmentVariables: Record<string, JSONValue>;
+        environmentVariables: Record<string, JSONPrimitive>;
         request: {
           headers: Kit.Headers.Encoded;
         };
@@ -80,7 +80,7 @@ export namespace IFrameEvents {
         type: Event.run;
         id: string;
         script: string;
-        environmentVariables: Record<string, JSONValue>;
+        environmentVariables: Record<string, JSONPrimitive>;
       }
 
       export interface Abort {
@@ -136,7 +136,7 @@ export namespace WorkerEvents {
 
       export interface Result {
         type: Event.result;
-        environmentVariables: Record<string, JSONValue>;
+        environmentVariables: Record<string, JSONPrimitive>;
         request: {
           headers: Kit.Headers.Encoded;
         };
@@ -174,7 +174,7 @@ export namespace WorkerEvents {
       export interface Run {
         type: Event.run;
         script: string;
-        environmentVariables: Record<string, JSONValue>;
+        environmentVariables: Record<string, JSONPrimitive>;
       }
     }
 
