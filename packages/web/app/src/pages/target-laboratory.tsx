@@ -59,6 +59,7 @@ import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
+import { JSONValue } from '@/lib/preflight-sandbox/json';
 import { captureException } from '@sentry/react';
 
 const explorer = explorerPlugin();
@@ -259,7 +260,7 @@ function Save(props: {
 
 function substituteVariablesInHeaders(
   headers: Record<string, string>,
-  environmentVariables: Record<string, Kit.JSON.Value>,
+  environmentVariables: Record<string, JSONValue>,
 ) {
   return Object.fromEntries(
     Object.entries(headers).map(([key, value]) => {

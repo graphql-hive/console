@@ -1,15 +1,14 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
-import { Kit } from '../kit';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive } from './json';
+import { isJSONPrimitive, JSONValue } from './json';
 import { WorkerEvents } from './shared-types';
 
 interface WorkerData {
   request: {
     headers: Headers;
   };
-  environmentVariables: Record<string, Kit.JSON.Value>;
+  environmentVariables: Record<string, JSONValue>;
 }
 
 export type LogMessage = string | Error;
