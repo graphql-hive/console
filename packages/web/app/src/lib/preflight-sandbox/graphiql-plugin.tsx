@@ -210,7 +210,8 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          environmentVariables: decodeResultEnvironmentVariables(environmentVariables),
+          // Preflight Script has read/write relationship with environment variables.
+          environmentVariables: result.environmentVariables,
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
@@ -273,7 +274,8 @@ export function usePreflightScript(args: {
           result.environmentVariables = mergedEnvironmentVariables;
           result.request.headers = ev.data.request.headers;
 
-          // Write the new state of environment variables back to local storage.
+          // Cause the new state of environment variables to be
+          // written back to local storage.
           const mergedEnvironmentVariablesEncoded = JSON.stringify(
             result.environmentVariables,
             null,
