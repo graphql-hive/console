@@ -27,153 +27,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { AuthProvider } from '@/gql/graphql';
-import { RoleSelector } from './common';
 import { MemberInvitationButton } from './invitations';
-import { ResourcePicker, ResourceSelection } from './resource-picker';
-
-const OrganizationMemberRoleSwitcher_AssignRoleMutation = graphql(`
-  mutation OrganizationMemberRoleSwitcher_AssignRoleMutation($input: AssignMemberRoleInput!) {
-    assignMemberRole(input: $input) {
-      ok {
-        updatedMember {
-          id
-          user {
-            id
-            displayName
-          }
-          role {
-            id
-            # Updates the members count of the role
-            membersCount
-          }
-        }
-        previousMemberRole {
-          id
-          # Updates the members count of the role
-          membersCount
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
-
-const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
-  fragment OrganizationMemberRoleSwitcher_OrganizationFragment on Organization {
-    id
-    slug
-    viewerCanAssignUserRoles
-    owner {
-      id
-    }
-    memberRoles {
-      id
-      name
-      description
-      locked
-    }
-  }
-`);
-
-const OrganizationMemberRoleSwitcher_MemberFragment = graphql(`
-  fragment OrganizationMemberRoleSwitcher_MemberFragment on Member {
-    id
-    user {
-      id
-    }
-  }
-`);
-
-function OrganizationMemberRoleSwitcher(props: {
-  organization: FragmentType<typeof OrganizationMemberRoleSwitcher_OrganizationFragment>;
-  memberId: string;
-  memberName: string;
-  memberRoleId: string;
-  member?: FragmentType<typeof OrganizationMemberRoleSwitcher_MemberFragment>;
-}) {
-  const organization = useFragment(
-    OrganizationMemberRoleSwitcher_OrganizationFragment,
-    props.organization,
-  );
-  const member = useFragment(OrganizationMemberRoleSwitcher_MemberFragment, props.member);
-  const canAssignRole = organization.viewerCanAssignUserRoles;
-  const roles = organization.memberRoles ?? [];
-  const { toast } = useToast();
-  const [assignRoleState, assignRole] = useMutation(
-    OrganizationMemberRoleSwitcher_AssignRoleMutation,
-  );
-  const memberRole = roles?.find(role => role.id === props.memberRoleId);
-
-  if (!memberRole || !member) {
-    console.error('No role or member provided to OrganizationMemberRoleSwitcher');
-    return null;
-  }
-
-  return (
-    <RoleSelector
-      className="mx-auto"
-      searchPlaceholder="Select new role..."
-      roles={roles}
-      onSelect={async role => {
-        try {
-          const result = await assignRole({
-            input: {
-              organizationSlug: organization.slug,
-              roleId: role.id,
-              userId: member.user.id,
-              // resources: {
-              //   allProjects: true,
-              // },
-            },
-          });
-
-          if (result.error) {
-            toast({
-              variant: 'destructive',
-              title: `Failed to assign role to ${props.memberName}`,
-              description: result.error.message,
-            });
-          } else if (result.data?.assignMemberRole.error) {
-            toast({
-              variant: 'destructive',
-              title: `Failed to assign role to ${props.memberName}`,
-              description: result.data.assignMemberRole.error.message,
-            });
-          } else if (result.data?.assignMemberRole.ok) {
-            toast({
-              title: `Assigned ${role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
-            });
-          }
-        } catch (error: any) {
-          console.error(error);
-          toast({
-            variant: 'destructive',
-            title: `Failed to assign role to ${props.memberName}`,
-            description: 'message' in error ? error.message : String(error),
-          });
-        }
-      }}
-      defaultRole={memberRole}
-      disabled={!canAssignRole || assignRoleState.fetching}
-      isRoleActive={role => {
-        const isCurrentRole = role.id === props.memberRoleId;
-
-        if (isCurrentRole) {
-          return {
-            active: false,
-            reason: 'This is the current role',
-          };
-        }
-
-        return {
-          active: true,
-        };
-      }}
-    />
-  );
-}
+import { MemberRolePicker } from './member-role-picker';
 
 export const authProviderToIconAndTextMap: Record<
   AuthProvider,
@@ -231,8 +86,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     isOwner
     viewerCanRemove
-    ...OrganizationMemberRoleSwitcher_MemberFragment
-    ...AssignedResources_MemberFragment
+    ...MemberRole_MemberFragment
   }
 `);
 
@@ -336,20 +190,7 @@ function OrganizationMemberRow(props: {
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <OrganizationMemberRoleSwitcher
-              organization={organization}
-              memberId={member.id}
-              memberName={member.user.displayName}
-              memberRoleId={member.role.id}
-              member={member}
-            />
-          )}
-        </td>
-        <td className="relative py-3 text-center text-sm">
-          {member.isOwner ? (
-            'all resources'
-          ) : (
-            <AssignedResources member={member} organization={organization} />
+            <MemberRole member={member} organization={organization} />
           )}
         </td>
         <td className="py-3 text-right text-sm">
@@ -372,16 +213,21 @@ function OrganizationMemberRow(props: {
   );
 }
 
-const AssignedResources_OrganizationFragment = graphql(`
-  fragment AssignedResources_OrganizationFragment on Organization {
+const MemberRole_OrganizationFragment = graphql(`
+  fragment MemberRole_OrganizationFragment on Organization {
     id
-    ...ResourcePicker_OrganizationFragment
+    viewerCanAssignUserRoles
+    ...MemberRolePicker_OrganizationFragment
   }
 `);
 
-const AssignedResources_MemberFragment = graphql(`
-  fragment AssignedResources_MemberFragment on Member {
+const MemberRole_MemberFragment = graphql(`
+  fragment MemberRole_MemberFragment on Member {
     id
+    role {
+      id
+      name
+    }
     resourceAssignment {
       allProjects
       projects {
@@ -389,85 +235,42 @@ const AssignedResources_MemberFragment = graphql(`
           id
           slug
         }
-        targets {
-          allTargets
-          targets {
-            target {
-              id
-              slug
-            }
-            services {
-              allServices
-              services
-            }
-            appDeployments {
-              allAppDeployments
-              appDeployments
-            }
-          }
-        }
       }
     }
+    ...MemberRolePicker_MemberFragment
   }
 `);
 
-function AssignedResources(props: {
-  member: FragmentType<typeof AssignedResources_MemberFragment>;
-  organization: FragmentType<typeof AssignedResources_OrganizationFragment>;
+function MemberRole(props: {
+  member: FragmentType<typeof MemberRole_MemberFragment>;
+  organization: FragmentType<typeof MemberRole_OrganizationFragment>;
 }) {
-  const member = useFragment(AssignedResources_MemberFragment, props.member);
-  const organization = useFragment(AssignedResources_OrganizationFragment, props.organization);
-
+  const member = useFragment(MemberRole_MemberFragment, props.member);
+  const organization = useFragment(MemberRole_OrganizationFragment, props.organization);
   const [isOpen, setIsOpen] = useState(false);
-  const initialSelection = useMemo<ResourceSelection>(() => {
-    return {
-      projects:
-        member.resourceAssignment.allProjects === true
-          ? '*'
-          : (member.resourceAssignment.projects ?? []).map(record => ({
-              id: record.project.id,
-              slug: record.project.slug,
-              targets:
-                record.targets.allTargets === true
-                  ? '*'
-                  : (record.targets.targets ?? []).map(record => ({
-                      id: record.target.id,
-                      slug: record.target.slug,
-                      appDeployments:
-                        record.appDeployments.allAppDeployments === true
-                          ? '*'
-                          : (record.appDeployments.appDeployments ?? []),
-                      services:
-                        record.services.allServices === true
-                          ? '*'
-                          : (record.services.services ?? []),
-                    })),
-            })),
-    };
-  }, [member]);
 
   return (
     <>
+      {member.role.name}
       {member.resourceAssignment.allProjects ? (
-        'all resources'
+        ' (all resources)'
       ) : member.resourceAssignment.projects?.length ? (
         <>
-          {member.resourceAssignment.projects.length} project
+          {'(' + member.resourceAssignment.projects.length} project
           {member.resourceAssignment.projects.length === 1 ? '' : 's'}
+          {')'}
         </>
-      ) : (
-        'none'
-      )}{' '}
-      <Dialog open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
-        <DialogTrigger asChild>
-          <Link>manage</Link>
-        </DialogTrigger>
-        <DialogContent className="min-w-[800px]">
-          {isOpen && (
-            <ResourcePicker initialSelection={initialSelection} organization={organization} />
-          )}
-        </DialogContent>
-      </Dialog>
+      ) : null}{' '}
+      {organization.viewerCanAssignUserRoles && (
+        <Dialog open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
+          <DialogTrigger asChild>
+            <Link>change</Link>
+          </DialogTrigger>
+          <DialogContent className="min-w-[800px]">
+            {isOpen && <MemberRolePicker organization={organization} member={member} />}
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
@@ -494,9 +297,8 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       total
     }
     viewerCanManageInvitations
-    ...OrganizationMemberRoleSwitcher_OrganizationFragment
     ...MemberInvitationForm_OrganizationFragment
-    ...AssignedResources_OrganizationFragment
+    ...MemberRole_OrganizationFragment
   }
 `);
 
@@ -593,12 +395,6 @@ export function OrganizationMembers(props: {
                   ) : null
                 ) : null}
               </span>
-            </th>
-            <th
-              className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold"
-              onClick={() => updateSorting('role')}
-            >
-              Projects
             </th>
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>
