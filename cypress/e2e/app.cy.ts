@@ -63,7 +63,9 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get('[data-cy="organization-picker-current"]').contains(slug);
+      cy.get(`a[href="/${slug}"]`).should('exist');
+      // Organization picker should not be visible
+      cy.get('[data-cy="organization-picker-current"]').should('not.exist');
     });
   });
 
@@ -89,7 +91,7 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get('[data-cy="organization-picker-current"]').contains(slug);
+      cy.get(`a[href="/${slug}"]`).should('exist');
     });
   });
 
@@ -115,7 +117,7 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get('[data-cy="organization-picker-current"]').contains(slug);
+      cy.get(`a[href="/${slug}"]`).should('exist');
     });
   });
 
@@ -144,7 +146,7 @@ describe('oidc', () => {
     cy.get('input[id="Input_Password"]').type('password');
     cy.get('button[value="login"]').click();
 
-    cy.get('[data-cy="organization-picker-current"]').contains(slug);
+    cy.get(`a[href="/${slug}"]`).should('exist');
     // Check if the user has the Admin role by checking if the Members tab is visible
     cy.get(`a[href^="/${slug}/view/members"]`).should('exist');
   });

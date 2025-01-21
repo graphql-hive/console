@@ -46,7 +46,6 @@ import {
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrators/tokens';
 import { sharedModule } from './modules/shared';
-import { ActivityManager } from './modules/shared/providers/activity-manager';
 import { CryptoProvider, encryptionSecretProvider } from './modules/shared/providers/crypto';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { Emails, EMAILS_ENDPOINT } from './modules/shared/providers/emails';
@@ -209,7 +208,6 @@ export function createRegistry({
 
   const providers: Provider[] = [
     AuditLogRecorder,
-    ActivityManager,
     HttpClient,
     IdTranslator,
     Mutex,

@@ -11,7 +11,6 @@ import { ProjectAccessScope } from '../../auth/providers/project-access';
 import { TargetAccessScope } from '../../auth/providers/target-access';
 import { BillingProvider } from '../../billing/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
-import { ActivityManager } from '../../shared/providers/activity-manager';
 import { Emails, mjml } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -66,7 +65,6 @@ export class OrganizationManager {
     private authManager: AuthManager,
     private auditLog: AuditLogRecorder,
     private tokenStorage: TokenStorage,
-    private activityManager: ActivityManager,
     private billingProvider: BillingProvider,
     private oidcIntegrationProvider: OIDCIntegrationsProvider,
     private emails: Emails,
@@ -221,17 +219,6 @@ export class OrganizationManager {
       organizationId: organizationId,
     });
 
-    await this.activityManager.create({
-      type: 'MEMBER_LEFT',
-      selector: {
-        organizationId: organizationId,
-      },
-      user: user,
-      meta: {
-        email: user.email,
-      },
-    });
-
     // Because we checked the access before, it's stale by now
     this.authManager.resetAccessCache();
     this.session.reset();
@@ -338,22 +325,13 @@ export class OrganizationManager {
     });
 
     if (result.ok) {
-      await Promise.all([
-        this.activityManager.create({
-          type: 'ORGANIZATION_CREATED',
-          selector: {
-            organizationId: result.organization.id,
-          },
-          user,
-        }),
-        this.auditLog.record({
-          eventType: 'ORGANIZATION_CREATED',
-          organizationId: result.organization.id,
-          metadata: {
-            organizationSlug: result.organization.id,
-          },
-        }),
-      ]);
+      await this.auditLog.record({
+        eventType: 'ORGANIZATION_CREATED',
+        organizationId: result.organization.id,
+        metadata: {
+          organizationSlug: result.organization.id,
+        },
+      });
     }
 
     return result;
@@ -413,17 +391,6 @@ export class OrganizationManager {
     const result = await this.storage.updateOrganizationPlan({
       billingPlan: plan,
       organizationId: organization.id,
-    });
-
-    await this.activityManager.create({
-      type: 'ORGANIZATION_PLAN_UPDATED',
-      selector: {
-        organizationId: organization.id,
-      },
-      meta: {
-        newPlan: plan,
-        previousPlan: organization.billingPlan,
-      },
     });
 
     await this.auditLog.record({
@@ -521,26 +488,17 @@ export class OrganizationManager {
       reservedSlugs: reservedOrganizationSlugs,
     });
 
-    await this.auditLog.record({
-      eventType: 'ORGANIZATION_SLUG_UPDATED',
-      organizationId: organization.id,
-      metadata: {
-        previousSlug: organization.slug,
-        newSlug: slug,
-      },
-    });
-
     if (result.ok) {
-      await this.activityManager.create({
-        type: 'ORGANIZATION_ID_UPDATED',
-        selector: {
-          organizationId: organization.id,
-        },
-        meta: {
-          value: result.organization.slug,
+      await this.auditLog.record({
+        eventType: 'ORGANIZATION_SLUG_UPDATED',
+        organizationId: organization.id,
+        metadata: {
+          previousSlug: organization.slug,
+          newSlug: slug,
         },
       });
     }
+
     return result;
   }
 
@@ -730,22 +688,14 @@ export class OrganizationManager {
         organizationId: organization.id,
         step: 'invitingMembers',
       }),
-      this.activityManager.create({
-        type: 'MEMBER_ADDED',
-        selector: {
-          organizationId: organization.id,
-          userId: user.id,
+      this.auditLog.record({
+        eventType: 'USER_JOINED',
+        organizationId: organization.id,
+        metadata: {
+          inviteeEmail: user.email,
         },
       }),
     ]);
-
-    await this.auditLog.record({
-      eventType: 'USER_JOINED',
-      organizationId: organization.id,
-      metadata: {
-        inviteeEmail: user.email,
-      },
-    });
 
     return organization;
   }
@@ -939,18 +889,6 @@ export class OrganizationManager {
       userId: user,
       organizationId: organization,
     });
-
-    if (member) {
-      await this.activityManager.create({
-        type: 'MEMBER_DELETED',
-        selector: {
-          organizationId: organization,
-        },
-        meta: {
-          email: member.user.email,
-        },
-      });
-    }
 
     // Because we checked the access before, it's stale by now
     this.authManager.resetAccessCache();

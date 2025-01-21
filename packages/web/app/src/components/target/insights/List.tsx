@@ -1,11 +1,13 @@
 import { ReactElement, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
+import { InfoIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Scale, Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sortable, Table, TBody, Td, Th, THead, Tooltip, Tr } from '@/components/v2';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput } from '@/gql/graphql';
@@ -34,6 +36,7 @@ interface Operation {
   failureRate: number;
   requests: number;
   percentage: number;
+  impact: number;
   hash: string;
 }
 
@@ -56,6 +59,9 @@ function OperationRow({
   const p90 = useFormattedDuration(operation.p90);
   const p95 = useFormattedDuration(operation.p95);
   const p99 = useFormattedDuration(operation.p99);
+  const impact = useFormattedNumber(
+    operation.impact < 1000 ? Math.round(operation.impact * 100) / 100 : operation.impact,
+  );
 
   return (
     <>
@@ -83,11 +89,16 @@ function OperationRow({
               </Link>
             </Button>
             {operation.name === 'anonymous' && (
-              <Tooltip.Provider delayDuration={200}>
-                <Tooltip content="Anonymous operation detected. Naming your operations is a recommended practice">
-                  <ExclamationTriangleIcon className="text-yellow-500" />
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <ExclamationTriangleIcon className="text-yellow-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Anonymous operation detected. Naming your operations is a recommended practice
+                  </TooltipContent>
                 </Tooltip>
-              </Tooltip.Provider>
+              </TooltipProvider>
             )}
           </div>
         </Td>
@@ -99,6 +110,7 @@ function OperationRow({
         <Td align="center">{p99}</Td>
         <Td align="center">{failureRate}%</Td>
         <Td align="center">{count}</Td>
+        <Td align="center">{impact}</Td>
         <Td align="right">{percentage}%</Td>
         <Td>
           <Scale value={operation.percentage} size={10} max={100} className="justify-end" />
@@ -151,6 +163,12 @@ const columns = [
   }),
   columnHelper.accessor('requests', {
     header: 'Requests',
+    meta: {
+      align: 'center',
+    },
+  }),
+  columnHelper.accessor('impact', {
+    header: 'Impact',
     meta: {
       align: 'center',
     },
@@ -222,7 +240,7 @@ function OperationsTable({
 
       <Table>
         <THead>
-          <Tooltip.Provider>
+          <TooltipProvider>
             {headers.map(header => {
               const canSort = header.column.getCanSort();
               const align: 'center' | 'left' | 'right' =
@@ -230,21 +248,39 @@ function OperationsTable({
               const name = flexRender(header.column.columnDef.header, header.getContext());
               return (
                 <Th key={header.id} className="text-sm font-semibold" align={align}>
-                  {canSort ? (
-                    <Sortable
-                      sortOrder={header.column.getIsSorted()}
-                      onClick={header.column.getToggleSortingHandler()}
-                      otherColumnSorted={sortedColumnsById.some(id => id !== header.id)}
-                    >
-                      {name}
-                    </Sortable>
-                  ) : (
-                    name
-                  )}
+                  <div className="inline-flex items-center gap-x-2">
+                    {canSort ? (
+                      <Sortable
+                        sortOrder={header.column.getIsSorted()}
+                        onClick={header.column.getToggleSortingHandler()}
+                        otherColumnSorted={sortedColumnsById.some(id => id !== header.id)}
+                      >
+                        {name}
+                      </Sortable>
+                    ) : (
+                      name
+                    )}
+                    {header.column.columnDef.header === 'Impact' ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <InfoIcon className="size-4 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[300px] text-left text-sm">
+                            <p className="mb-4">
+                              Equals to the total time spent on this operation in the selected
+                              period in seconds.
+                            </p>
+                            <code>Impact = Requests * avg/1000</code>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
+                  </div>
                 </Th>
               );
             })}
-          </Tooltip.Provider>
+          </TooltipProvider>
         </THead>
         <TBody>
           {tableInstance
@@ -326,6 +362,7 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
           p90
           p95
           p99
+          avg
         }
         countOk
         count
@@ -381,6 +418,7 @@ function OperationsTableContainer({
           failureRate: (1 - op.countOk / op.count) * 100,
           requests: op.count,
           percentage: op.percentage,
+          impact: op.duration.avg > 0 ? op.count * (op.duration.avg / 1000) : 0,
           hash: op.operationHash!,
         });
       }
