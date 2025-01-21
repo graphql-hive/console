@@ -1,7 +1,14 @@
-import { CallToAction, ContactButton, DecorationIsolation, Heading } from '@theguild/components';
+import {
+  CallToAction,
+  ContactButton,
+  DecorationIsolation,
+  Heading,
+  HiveLayoutConfig,
+} from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
 import { GetYourAPIGameWhite } from '../../components/get-your-api-game-white';
 import { HeroLinks } from '../../components/hero';
+import { LandingPageContainer } from '../../components/landing-page-container';
 import { CaseStudyCard } from './case-study-card';
 import { CaseStudyFrontmatter } from './case-study-frontmatter';
 import { companyLogos } from './company-logos';
@@ -12,7 +19,8 @@ export const metadata = {
 
 export default async function CaseStudiesPage() {
   return (
-    <article className="mx-auto box-content max-w-[90rem] overflow-hidden px-6">
+    <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden px-6">
+      <HiveLayoutConfig widths="landing-narrow" />
       <header className="bg-primary dark:bg-primary/[0.01] dark:border-primary/5 relative isolate flex flex-col gap-6 overflow-hidden rounded-3xl px-4 py-6 max-sm:mt-2 sm:py-12 md:gap-8 lg:py-24">
         <Heading
           size="xl"
@@ -42,7 +50,7 @@ export default async function CaseStudiesPage() {
       <AllCaseStudiesList />
       {/* TODO: DeveloperLovedSection, like CommunitySection, but just four tweets */}
       <GetYourAPIGameWhite />
-    </article>
+    </LandingPageContainer>
   );
 }
 

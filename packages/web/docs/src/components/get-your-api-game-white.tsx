@@ -16,7 +16,7 @@ export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>)
   return (
     <section
       {...props}
-      className={cn('relative mx-auto my-24 h-[348px] max-w-[90rem]', props.className)}
+      className={cn('relative mx-auto my-24 h-[348px] w-full max-w-[90rem]', props.className)}
     >
       <div className="flex h-full flex-col items-center justify-center gap-10">
         <Heading size="lg" as="h2" className="text-green-1000 dark:text-white">
