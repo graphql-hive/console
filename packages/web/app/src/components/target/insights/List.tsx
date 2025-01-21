@@ -268,10 +268,10 @@ function OperationsTable({
                           </TooltipTrigger>
                           <TooltipContent className="max-w-[300px] text-left text-sm">
                             <p className="mb-4">
-                              Equals to the total time spent (p95) on this operation in the selected
+                              Equals to the total time spent on this operation in the selected
                               period in seconds.
                             </p>
-                            <code>Impact = Requests * p95/1000</code>
+                            <code>Impact = Requests * avg/1000</code>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
