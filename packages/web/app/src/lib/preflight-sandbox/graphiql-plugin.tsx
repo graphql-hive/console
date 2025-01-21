@@ -62,7 +62,7 @@ export const preflightScriptPlugin: GraphiQLPlugin = {
     </svg>
   ),
   title: 'Preflight Script',
-  content: preflightScriptPluginContent,
+  content: PreflightScriptContent,
 };
 
 const classes = {
@@ -180,7 +180,6 @@ export function usePreflightScript(args: {
   // for off-work alerting.
 
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', {} as Result['environmentVariables']); // prettier-ignore
-  console.log('useLocalStorage', { environmentVariables });
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
   useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
   // const decodeResultEnvironmentVariables = (encoded: string) => {
@@ -189,13 +188,12 @@ export function usePreflightScript(args: {
   // };
 
   const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', [] as Result['request']['headers']); // prettier-ignore
-  console.log('useLocalStorage', { headers });
   const latestHeadersRef = useRef(headers);
   useEffect(() => { latestHeadersRef.current = headers; }); // prettier-ignore
-  // const decodeResultHeaders = (encoded: string) => {
-  //   const result = Kit.JSON.decodeSafe<Result['request']['headers']>(encoded);
-  //   return result instanceof SyntaxError ? [] : result;
-  // };
+  const decodeResultHeaders = (encoded: string) => {
+    const result = Kit.JSON.decodeSafe<Result['request']['headers']>(encoded);
+    return result instanceof SyntaxError ? [] : result;
+  };
 
   const decodeResult = (): Result => {
     return {
@@ -426,13 +424,12 @@ export function usePreflightScript(args: {
   } as const;
 }
 
-type PreflightScript = ReturnType<typeof usePreflightScript>;
+type PreflightScriptObject = ReturnType<typeof usePreflightScript>;
 
-const PreflightScriptContext = createContext<PreflightScript | null>(null);
+const PreflightScriptContext = createContext<PreflightScriptObject | null>(null);
 export const PreflightScriptProvider = PreflightScriptContext.Provider;
 
-// todo: Move toward module top
-function preflightScriptPluginContent() {
+function PreflightScriptContent() {
   const preflightScript = useContext(PreflightScriptContext);
   if (preflightScript === null) {
     throw new Error('PreflightScriptContent used outside PreflightScriptContext.Provider');
@@ -573,25 +570,9 @@ function preflightScriptPluginContent() {
       <MonacoEditor
         height={128}
         value={JSON.stringify(preflightScript.data.environmentVariables, null, 2)}
-        onChange={content => {
-          const contentTrimmed = content?.trim();
-          const contentIsEmpty = !contentTrimmed;
-
-          if (contentIsEmpty) {
-            console.debug('environment variables editor: change: empty -> clear');
-            preflightScript.data.setEnvironmentVariables({});
-            return;
-          }
-
-          const valueDecoded = Kit.JSON.decodeSafe<Record<string, string>>(contentTrimmed);
-          if (valueDecoded instanceof SyntaxError) {
-            console.debug('environment variables editor: change: invalid JSON -> ignore');
-            return;
-          }
-
-          console.debug('environment variables editor: change: OK');
-          preflightScript.data.setEnvironmentVariables(valueDecoded);
-        }}
+        onChange={value =>
+          preflightScript.data.setEnvironmentVariables(value ? JSON.parse(value) : {})
+        }
         {...monacoProps.env}
         className={classes.monacoMini}
         wrapperProps={{
