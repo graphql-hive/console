@@ -363,18 +363,6 @@ function LaboratoryPageContent(props: {
           // in preflight headers.
           //
           ...substituteVariablesInHeaders(opts?.headers ?? {}, preflightData.environmentVariables),
-
-          // todo: test case covering this limitation
-          // todo: website documentation mentioning this limitation to our users.
-          // todo: jsdoc on `lab` mentioning this limitation to our users.
-          // todo: https://github.com/graphql/graphiql/pull/3854
-          // We have submitted a PR to GraphiQL to fix the issue described below.
-          // Once shipped, remove our lossy code below.
-          //
-          // GraphiQLFetcher only support record-shaped headers which
-          // precludes complete usage of Headers data structure, namely where there are multiple values for one
-          // header.
-          //
           ...Object.fromEntries(preflightData.request.headers),
         };
 
