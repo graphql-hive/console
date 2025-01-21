@@ -44,7 +44,10 @@ import labApiDefinitionRaw from './lab-api-declaration?raw';
 import type { LogMessage } from './preflight-script-worker';
 import { IFrameEvents } from './shared-types';
 
-type Result = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
+export type PreflightScriptResultData = Omit<
+  IFrameEvents.Outgoing.EventData.Result,
+  'type' | 'runId'
+>;
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -166,7 +169,7 @@ export function usePreflightScript(args: {
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
   useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
   const decodeResultEnvironmentVariables = (encoded: string) => {
-    const result = Kit.JSON.decodeSafe<Result['environmentVariables']>(encoded);
+    const result = Kit.JSON.decodeSafe<PreflightScriptResultData['environmentVariables']>(encoded);
     return result instanceof SyntaxError ? {} : result;
   };
 
@@ -178,8 +181,8 @@ export function usePreflightScript(args: {
   async function execute(
     script = target?.preflightScript?.sourceCode ?? '',
     isPreview = false,
-  ): Promise<Result> {
-    const result: Result = {
+  ): Promise<PreflightScriptResultData> {
+    const result: PreflightScriptResultData = {
       environmentVariables: decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current),
       request: {
         headers: [],

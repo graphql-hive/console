@@ -36,6 +36,7 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
   preflightScriptPlugin,
   PreflightScriptProvider,
+  PreflightScriptResultData,
   usePreflightScript,
 } from '@/lib/preflight-sandbox/graphiql-plugin';
 import { cn } from '@/lib/utils';
@@ -313,7 +314,6 @@ function LaboratoryPageContent(props: {
 
   const fetcher = useMemo<Fetcher>(() => {
     return async (params, opts) => {
-      let headers = opts?.headers ?? {};
       const url =
         (actualSelectedApiEndpoint === 'linkedApi' ? target?.graphqlEndpointUrl : undefined) ??
         mockEndpoint;
@@ -326,34 +326,10 @@ function LaboratoryPageContent(props: {
             preflightScript.abort();
           }
         });
+
+        let preflightData: PreflightScriptResultData;
         try {
-          const result = await preflightScript.execute();
-          // We merge the result headers into the fetcher headers AFTER performing header variable substitution.
-          // This ensures users have a predictable standards-compliant experience working with headers in their
-          // preflight script.
-          // todo: add test case covering this case.
-          //
-          headers = substituteVariablesInHeaders(headers, result.environmentVariables);
-          // todo: test case showing this is a limitation.
-          // todo: website documentation mentioning this limitation to our users.
-          // todo: jsdoc on `lab` mentioning this limitation to our users.
-          // todo: https://github.com/graphql/graphiql/pull/3854
-          // We have submitted a PR to GraphiQL to fix the issue described below.
-          // Once shipped, remove our lossy code below.
-          //
-          // GraphiQLFetcher only support record-shaped headers which
-          // precludes complete usage of Headers data structure, namely where there are multiple values for one
-          // header.
-          //
-          // We could try to hack a solution here by doing merges of such cases but that seems
-          // likely to introduce more bugs given the different formats that different kinds of headers use to
-          // delineate multiple values.
-          //
-          const newHeadersLossy = Object.fromEntries(result.request.headers);
-          headers = {
-            ...headers,
-            ...newHeadersLossy,
-          };
+          preflightData = await preflightScript.execute();
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
@@ -374,6 +350,28 @@ function LaboratoryPageContent(props: {
         } finally {
           hasFinishedPreflightScript = true;
         }
+
+        const headers = {
+          // todo: test case covering point below
+          // We want to prevent users from interpolating environment variables into
+          // their preflight script headers. So, apply substitution BEFORE merging
+          // in preflight headers.
+          //
+          ...substituteVariablesInHeaders(opts?.headers ?? {}, preflightData.environmentVariables),
+
+          // todo: test case covering this limitation
+          // todo: website documentation mentioning this limitation to our users.
+          // todo: jsdoc on `lab` mentioning this limitation to our users.
+          // todo: https://github.com/graphql/graphiql/pull/3854
+          // We have submitted a PR to GraphiQL to fix the issue described below.
+          // Once shipped, remove our lossy code below.
+          //
+          // GraphiQLFetcher only support record-shaped headers which
+          // precludes complete usage of Headers data structure, namely where there are multiple values for one
+          // header.
+          //
+          ...Object.fromEntries(preflightData.request.headers),
+        };
 
         const graphiqlFetcher = createGraphiQLFetcher({ url, fetch });
         const result = await graphiqlFetcher(params, {
