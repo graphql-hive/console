@@ -170,7 +170,8 @@ export function usePreflightScript(args: {
   // Use a proper versioned schema with codecs for coercing, defaults, validation, etc.
   //
   // todo: Improve `useLocalStorage` by allowing passing a codec? Then we can co-locate
-  // the codec with the data and have it applied transparently
+  // the codec with the data and have it applied transparently, use a decoded value
+  // for the default, etc. ?
   //
   // todo: Stop swallowing decode errors (we return null on parse failure), monitor them.
   // If JSON parsing fails, it should only be because a stored value was actually invalid.
@@ -179,15 +180,15 @@ export function usePreflightScript(args: {
   // errors such as error rate analysis and only keep the most clearly egregious signals
   // for off-work alerting.
 
-  const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', {} as Result['environmentVariables']); // prettier-ignore
+  const [environmentVariables, setEnvironmentVariables] = useLocalStorage('hive:laboratory:environment', '{}'); // prettier-ignore
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
   useEffect(() => { latestEnvironmentVariablesRef.current = environmentVariables; }); // prettier-ignore
-  // const decodeResultEnvironmentVariables = (encoded: string) => {
-  //   const result = Kit.JSON.decodeSafe<Result['environmentVariables']>(encoded);
-  //   return result instanceof SyntaxError ? {} : result;
-  // };
+  const decodeResultEnvironmentVariables = (encoded: string) => {
+    const result = Kit.JSON.decodeSafe<Result['environmentVariables']>(encoded);
+    return result instanceof SyntaxError ? {} : result;
+  };
 
-  const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', [] as Result['request']['headers']); // prettier-ignore
+  const [headers, setHeaders] = useLocalStorage('hive:laboratory:headers', '[]');
   const latestHeadersRef = useRef(headers);
   useEffect(() => { latestHeadersRef.current = headers; }); // prettier-ignore
   const decodeResultHeaders = (encoded: string) => {
@@ -197,9 +198,9 @@ export function usePreflightScript(args: {
 
   const decodeResult = (): Result => {
     return {
-      environmentVariables: latestEnvironmentVariablesRef.current,
+      environmentVariables: decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current), // prettier-ignore
       request: {
-        headers: latestHeadersRef.current,
+        headers: decodeResultHeaders(latestHeadersRef.current),
       },
     };
   };
@@ -235,7 +236,7 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          environmentVariables,
+          environmentVariables: decodeResultEnvironmentVariables(environmentVariables),
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
@@ -291,16 +292,24 @@ export function usePreflightScript(args: {
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
-          const mergedEnvironmentVariables = {
-            ...latestEnvironmentVariablesRef.current,
-            ...ev.data.environmentVariables,
-          };
-          setEnvironmentVariables(mergedEnvironmentVariables);
-          latestEnvironmentVariablesRef.current = mergedEnvironmentVariables;
+          const mergedEnvironmentVariablesEncoded = JSON.stringify(
+            {
+              ...decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current),
+              ...ev.data.environmentVariables,
+            },
+            null,
+            2,
+          );
+          setEnvironmentVariables(mergedEnvironmentVariablesEncoded);
+          latestEnvironmentVariablesRef.current = mergedEnvironmentVariablesEncoded;
 
-          const mergedHeaders = [...latestHeadersRef.current, ...ev.data.request.headers];
-          setHeaders(mergedHeaders);
-          latestHeadersRef.current = mergedHeaders;
+          const mergedHeadersEncoded = JSON.stringify(
+            [...decodeResultHeaders(latestHeadersRef.current), ...ev.data.request.headers],
+            null,
+            2,
+          );
+          setHeaders(mergedHeadersEncoded);
+          latestHeadersRef.current = mergedHeadersEncoded;
 
           setLogs(logs => [
             ...logs,
@@ -400,10 +409,8 @@ export function usePreflightScript(args: {
     isPreflightScriptEnabled,
     setIsPreflightScriptEnabled,
     script: target?.preflightScript?.sourceCode ?? '',
-    data: {
-      environmentVariables,
-      setEnvironmentVariables,
-    },
+    environmentVariables,
+    setEnvironmentVariables,
     state,
     logs,
     clearLogs: () => setLogs([]),
@@ -487,8 +494,8 @@ function PreflightScriptContent() {
         logs={preflightScript.logs}
         clearLogs={preflightScript.clearLogs}
         onScriptValueChange={handleScriptChange}
-        envValue={JSON.stringify(preflightScript.data.environmentVariables, null, 2)}
-        onEnvValueChange={value => preflightScript.data.setEnvironmentVariables(JSON.parse(value))}
+        envValue={preflightScript.environmentVariables}
+        onEnvValueChange={preflightScript.setEnvironmentVariables}
       />
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
@@ -569,10 +576,8 @@ function PreflightScriptContent() {
       </Subtitle>
       <MonacoEditor
         height={128}
-        value={JSON.stringify(preflightScript.data.environmentVariables, null, 2)}
-        onChange={value =>
-          preflightScript.data.setEnvironmentVariables(value ? JSON.parse(value) : {})
-        }
+        value={preflightScript.environmentVariables}
+        onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
         {...monacoProps.env}
         className={classes.monacoMini}
         wrapperProps={{
