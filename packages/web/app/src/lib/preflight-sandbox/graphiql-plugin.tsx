@@ -164,7 +164,6 @@ export function usePreflightScript(args: {
     'hive:laboratory:isPreflightScriptEnabled',
     false,
   );
-
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
     'hive:laboratory:environment',
     '',
@@ -173,10 +172,6 @@ export function usePreflightScript(args: {
   useEffect(() => {
     latestEnvironmentVariablesRef.current = environmentVariables;
   });
-  const decodeResultEnvironmentVariables = (encoded: string) => {
-    const result = Kit.JSON.decodeSafe<PreflightScriptResultData['environmentVariables']>(encoded);
-    return result instanceof SyntaxError ? {} : result;
-  };
 
   const [state, setState] = useState<PreflightWorkerState>(PreflightWorkerState.ready);
   const [logs, setLogs] = useState<LogRecord[]>([]);
@@ -187,11 +182,16 @@ export function usePreflightScript(args: {
     script = target?.preflightScript?.sourceCode ?? '',
     isPreview = false,
   ): Promise<PreflightScriptResultData> {
+    const resultEnvironmentVariablesDecoded: PreflightScriptResultData['environmentVariables'] =
+      Kit.tryOr(
+        () => JSON.parse(latestEnvironmentVariablesRef.current),
+        () => ({}),
+      );
     const result: PreflightScriptResultData = {
-      environmentVariables: decodeResultEnvironmentVariables(latestEnvironmentVariablesRef.current),
       request: {
         headers: [],
       },
+      environmentVariables: resultEnvironmentVariablesDecoded,
     };
 
     if (isPreview === false && !isPreflightScriptEnabled) {
