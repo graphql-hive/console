@@ -139,13 +139,7 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
         }
       },
     },
-    /**
-     * Contains aspects of the request that you can manipulate before it is sent.
-     */
     request: {
-      /**
-       * The headers of the request.
-       */
       headers: workerData.request.headers,
     },
     /**

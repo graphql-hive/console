@@ -9,6 +9,15 @@
 
 interface LabAPI {
   /**
+   * Contains aspects of the request that you can manipulate before it is sent.
+   */
+  request: {
+    /**
+     * The headers of the request.
+     */
+    headers: Headers;
+  };
+  /**
    * [CryptoJS](https://cryptojs.gitbook.io/docs) library.
    */
   CryptoJS: any;
