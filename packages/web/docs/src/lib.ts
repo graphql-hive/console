@@ -1,25 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect } from 'react';
-
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-
-/**
- * Add to pages without dark mode.
- */
-export function AddLightClassToBody() {
-  useIsomorphicLayoutEffect(() => {
-    // We add .light class to body to style the Headless UI
-    // portal containing search results.
-    document.body.classList.add('light');
-
-    return () => {
-      document.body.classList.remove('light');
-    };
-  }, []);
-
-  return null;
-}
+import { useEffect } from 'react';
 
 const pagesWithFAQ = ['/', '/federation', '/pricing'];
 
