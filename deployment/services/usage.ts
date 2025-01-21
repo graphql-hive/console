@@ -5,6 +5,7 @@ import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Kafka } from './kafka';
+import { Observability } from './observability';
 import { RateLimitService } from './rate-limit';
 import { Sentry } from './sentry';
 import { Tokens } from './tokens';
@@ -19,8 +20,10 @@ export function deployUsage({
   rateLimit,
   image,
   docker,
+  observability,
   sentry,
 }: {
+  observability: Observability;
   image: string;
   environment: Environment;
   tokens: Tokens;
@@ -58,6 +61,12 @@ export function deployUsage({
         KAFKA_TOPIC: kafka.config.topic,
         TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
         RATE_LIMIT_ENDPOINT: serviceLocalEndpoint(rateLimit.service),
+        OPENTELEMETRY_COLLECTOR_ENDPOINT:
+          observability.enabled &&
+          observability.enabledForUsageService &&
+          observability.tracingEndpoint
+            ? observability.tracingEndpoint
+            : '',
       },
       exposesMetrics: true,
       port: 4000,

@@ -91,7 +91,7 @@ export function IndexPage(): ReactElement {
       <EnterpriseFocusedCards className="mx-4 my-6 md:mx-6" />
       <TeamSection className="mx-4 md:mx-6" />
       <CommunitySection className="mx-4 mt-6 md:mx-6" />
-      <ToolsAndLibrariesCards className="mx-4 mt-6 md:mx-6" />
+      <ToolsAndLibrariesCards isHive className="mx-4 mt-6 md:mx-6" />
       <FrequentlyAskedQuestions className="mx-4 md:mx-6" />
       <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />
     </Page>
@@ -207,19 +207,32 @@ function UltimatePerformanceCards() {
 
 function LearnGraphQLFederationSection(props: { className?: string }) {
   return (
-    <section className={cn('bg-green-1000 rounded-3xl p-24 text-center', props.className)}>
-      <Heading as="h2" size="md" className="flex items-center justify-center gap-4 text-white">
+    <section
+      className={cn(
+        'to-green-1000 relative rounded-3xl bg-gradient-to-br from-[#003834] p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
+        props.className,
+      )}
+    >
+      <DecorationIsolation className="opacity-80">
+        <ArchDecoration className="absolute -right-1/2 top-1/2 sm:-right-1/4 md:right-[-105px] md:top-[120px] [&>path]:fill-none [&>path]:stroke-white/30" />
+        <HighlightDecoration className="absolute -bottom-16 -right-1 size-[600px] rotate-180 -scale-x-100 overflow-visible" />
+      </DecorationIsolation>
+      <Heading
+        as="h2"
+        size="md"
+        className="flex items-center justify-center gap-4 text-pretty text-white"
+      >
         What Is GraphQL Federation?
       </Heading>
 
-      <p className="mt-8 font-medium text-white/80">
+      <p className="mt-4 text-pretty font-medium text-white/80">
         Understand what federated GraphQL API is, how it works, and why it may be the right choice
         for your API.
       </p>
       <CallToAction
         variant="secondary"
         href="/federation"
-        className="mx-auto mt-8"
+        className="mx-auto mt-6 md:mt-8"
         title="Introduction to federated GraphQL APIs"
       >
         Introduction to Federation

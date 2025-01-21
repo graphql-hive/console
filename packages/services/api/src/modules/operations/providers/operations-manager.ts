@@ -715,7 +715,7 @@ export class OperationsManager {
   }
 
   @cache<{ period: DateRange } & TargetSelector>(selector => JSON.stringify(selector))
-  async readDetailedDurationPercentiles({
+  async readDetailedDurationMetrics({
     period,
     organizationId: organization,
     projectId: project,
@@ -744,7 +744,7 @@ export class OperationsManager {
       },
     });
 
-    return this.reader.durationPercentiles({
+    return this.reader.durationMetrics({
       target,
       period,
       operations,

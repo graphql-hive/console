@@ -1,35 +1,49 @@
 import { ComponentProps, ReactElement, ReactNode } from 'react';
-import { Tooltip } from '@/components/v2/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TriangleUpIcon } from '@radix-ui/react-icons';
 import { SortDirection } from '@tanstack/react-table';
 
-export function Sortable({
-  children,
-  sortOrder,
-  onClick,
-}: {
+export function Sortable(props: {
   children: ReactNode;
   sortOrder: SortDirection | false;
-  onClick: ComponentProps<'button'>['onClick'];
+  /**
+   * Whether another column is sorted in addition to this one.
+   * It's used to show a different tooltip when sorting by multiple columns.
+   */
+  otherColumnSorted?: boolean;
+  onClick?: ComponentProps<'button'>['onClick'];
 }): ReactElement {
   const tooltipText =
-    sortOrder === false
-      ? 'Click to sort descending'
+    props.sortOrder === false
+      ? 'Click to sort descending' + props.otherColumnSorted
+        ? ' (hold shift to sort by multiple columns)'
+        : ''
       : {
           asc: 'Click to cancel sorting',
           desc: 'Click to sort ascending',
-        }[sortOrder];
+        }[props.sortOrder];
 
   return (
-    <Tooltip content={tooltipText}>
-      <button className="flex items-center justify-center" onClick={onClick}>
-        <div>{children}</div>
+    <TooltipProvider delayDuration={100}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className="inline-flex items-center justify-center"
+            onClick={e => {
+              e.stopPropagation();
+              props.onClick?.(e);
+            }}
+          >
+            <div>{props.children}</div>
 
-        {sortOrder === 'asc' ? <TriangleUpIcon className="ml-2 text-orange-500" /> : null}
-        {sortOrder === 'desc' ? (
-          <TriangleUpIcon className="ml-2 rotate-180 text-orange-500" />
-        ) : null}
-      </button>
-    </Tooltip>
+            {props.sortOrder === 'asc' ? <TriangleUpIcon className="ml-2 text-orange-500" /> : null}
+            {props.sortOrder === 'desc' ? (
+              <TriangleUpIcon className="ml-2 rotate-180 text-orange-500" />
+            ) : null}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltipText}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

@@ -42,7 +42,6 @@ import openTelemetryPlugin, { OpenTelemetryPluginOptions } from './fastify-traci
 export { trace, context, Span, SpanKind, SamplingDecision, SpanStatusCode };
 
 type Instrumentations = NodeSDKConfiguration['instrumentations'];
-
 export class TracingInstance {
   private instrumentations: Instrumentations = [];
   private sdk: NodeSDK | undefined;

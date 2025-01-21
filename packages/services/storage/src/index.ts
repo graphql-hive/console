@@ -34,11 +34,9 @@ import {
 } from '../../api/src/shared/entities';
 import { batch } from '../../api/src/shared/helpers';
 import {
-  activities,
   alert_channels,
   alerts,
   getPool,
-  objectToParams,
   organization_invitations,
   organization_member,
   organization_member_roles,
@@ -2646,27 +2644,6 @@ export async function createStorage(
         );
       });
     }),
-    async createActivity({
-      organizationId: organization,
-      projectId: project,
-      targetId: target,
-      userId: user,
-      type,
-      meta,
-    }) {
-      const { identifiers, values } = objectToParams<Omit<activities, 'id' | 'created_at'>>({
-        activity_metadata: meta,
-        activity_type: type,
-        organization_id: organization,
-        project_id: project ?? null,
-        target_id: target ?? null,
-        user_id: user ?? null,
-      });
-
-      await pool.query<Slonik<activities>>(
-        sql`/* createActivity */ INSERT INTO activities (${identifiers}) VALUES (${values}) RETURNING *;`,
-      );
-    },
     async addSlackIntegration({ organizationId: organization, token }) {
       await pool.query<Slonik<organizations>>(
         sql`/* addSlackIntegration */

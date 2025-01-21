@@ -28,6 +28,7 @@ export interface OperationsStatsMapper {
   clients: readonly string[];
 }
 export interface DurationValuesMapper {
+  avg: number | null;
   p75: number | null;
   p90: number | null;
   p95: number | null;

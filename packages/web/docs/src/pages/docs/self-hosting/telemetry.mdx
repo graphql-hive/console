@@ -5,6 +5,10 @@ import { Steps } from '@theguild/components'
 When self-hosting Hive, you can enable telemetry to help us understand how Hive is being used and
 how we can improve it. Telemetry is disabled by default.
 
+> By default, all services emits OpenTelemetry traces, except for the `usage` service. To enable
+> this service, you need to set the `OPENTELEMETRY_COLLECTOR_ENDPOINT=...` environment variable
+> explicitly for this service.
+
 ## OpenTelemetry Traces
 
 <Steps>
@@ -57,6 +61,11 @@ docker run \
   otel/opentelemetry-collector-contrib \
   --config otel-local-config.yaml
 ```
+
+Alternatively, you can use
+[these following instructions for running a Grafana with Tempo service locally using Docker](https://grafana.com/docs/tempo/latest/getting-started/docker-example/).
+In that case, use `OPENTELEMETRY_COLLECTOR_ENDPOINT="http://localhost:4318/v1/traces"` as the OTLP
+endpoint.
 
 ### Configure Hive to send traces to the OTLP Collector
 
