@@ -312,7 +312,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         throw new APIError(result.schemaCheck.message);
       }
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure('Failed to check schema');

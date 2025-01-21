@@ -198,7 +198,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
       throw new InvalidDocumentsError(operationsWithErrors);
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure('Failed to validate operations');

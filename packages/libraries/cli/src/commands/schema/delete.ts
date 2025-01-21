@@ -152,7 +152,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         throw new APIError(renderErrors(errors));
       }
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure(`Failed to complete`);

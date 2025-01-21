@@ -356,7 +356,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         }
       } while (result === null);
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure('Failed to publish schema');
