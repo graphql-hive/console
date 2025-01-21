@@ -1,17 +1,24 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import { ReactNode } from 'react';
 import localFont from 'next/font/local';
-import { Layout } from 'nextra-theme-docs';
-import { Head } from 'nextra/components';
-import { PRODUCTS } from '@theguild/components';
-import { getDefaultMetadata, getPageMap } from '@theguild/components/server';
-import { Footer } from '../components/footer';
-import { NavigationMenu } from '../components/navigation-menu';
+import {
+  AccountBox,
+  GitHubIcon,
+  GraphQLConfCard,
+  HiveFooter,
+  HiveNavigation,
+  PaperIcon,
+  PencilIcon,
+  PRODUCTS,
+  RightCornerIcon,
+  TargetIcon,
+} from '@theguild/components';
+import { getDefaultMetadata, getPageMap, HiveLayout } from '@theguild/components/server';
 import { DynamicMetaTags } from './dynamic-meta-tags';
+import graphQLConfLocalImage from '../components/graphql-conf-image.webp';
 import '@theguild/components/style.css';
-// import '../components/navigation-menu/navbar-global-styles.css';
 import '../selection-styles.css';
 import '../mermaid.css';
+import { NarrowPages } from './narrow-pages';
 
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
@@ -28,68 +35,80 @@ const neueMontreal = localFont({
   ],
 });
 
-/**
- * Alternative to `GuildLayout` for Hive and Hive Gateway websites.
- * TODO: Move this to `@theguild/components`
- */
-const HiveLayout = async ({ children }: { children: ReactNode }) => {
+export default async function HiveDocsLayout({ children }: { children: ReactNode }) {
   const pageMap = await getPageMap();
-  return (
-    <html
-      lang="en"
-      // Required to be set for `nextra-theme-docs` styles
-      dir="ltr"
-      // Suggested by `next-themes` package https://github.com/pacocoursey/next-themes#with-app
-      suppressHydrationWarning
-      className="font-sans"
-    >
-      <Head>
-        <style>{
-          /* css */ `
-          :root {
-            --font-sans: ${neueMontreal.style.fontFamily};
-          }
-          :root.dark {
-            --nextra-primary-hue: 67.1deg;
-            --nextra-primary-saturation: 100%;
-            --nextra-primary-lightness: 55%;
-            --nextra-bg: 17, 17, 17;
-          }
-          :root.dark *::selection {
-            background-color: hsl(191deg 95% 72% / 0.25)
-          }
-          :root.light, body.light {
-            --nextra-primary-hue: 191deg;
-            --nextra-primary-saturation: 40%;
-            --nextra-bg: 255, 255, 255;
-          }
-          .x\\:tracking-tight,
-          .nextra-steps :is(h2, h3, h4) {
-            letter-spacing: normal;
-          }
-        `
-        }</style>
-        <DynamicMetaTags pageMap={pageMap} />
-      </Head>
-      <body>
-        <Layout
-          editLink="Edit this page on GitHub"
-          docsRepositoryBase="https://github.com/graphql-hive/platform/tree/main/packages/web/docs"
-          pageMap={pageMap}
-          feedback={{
-            labels: 'kind/docs',
-          }}
-          navbar={<NavigationMenu />}
-          sidebar={{
-            defaultMenuCollapseLevel: 1,
-          }}
-          footer={<Footer />}
-        >
-          {children}
-        </Layout>
-      </body>
-    </html>
-  );
-};
 
-export default HiveLayout;
+  const lightOnlyPages = [
+    '/',
+    '/pricing',
+    '/federation',
+    '/oss-friends',
+    '/ecosystem',
+    '/partners',
+  ];
+
+  return (
+    <HiveLayout
+      lightOnlyPages={lightOnlyPages}
+      head={<DynamicMetaTags pageMap={pageMap} />}
+      docsRepositoryBase="https://github.com/graphql-hive/platform/tree/main/packages/web/docs"
+      fontFamily={neueMontreal.style.fontFamily}
+      navbar={
+        <HiveNavigation
+          companyMenuChildren={<GraphQLConfCard image={graphQLConfLocalImage} />}
+          productName={PRODUCTS.HIVE.name}
+          developerMenu={[
+            {
+              href: '/docs',
+              icon: <PaperIcon />,
+              children: 'Documentation',
+            },
+            { href: 'https://status.graphql-hive.com/', icon: <TargetIcon />, children: 'Status' },
+            {
+              href: '/product-updates',
+              icon: <RightCornerIcon />,
+              children: 'Product Updates',
+            },
+            {
+              href: '/case-studies',
+              icon: <AccountBox />,
+              children: 'Case Studies',
+            },
+            { href: 'https://the-guild.dev/blog', icon: <PencilIcon />, children: 'Blog' },
+            {
+              href: 'https://github.com/graphql-hive/console',
+              icon: <GitHubIcon />,
+              children: 'GitHub',
+            },
+          ]}
+        />
+      }
+      footer={
+        <HiveFooter
+          items={{
+            resources: [
+              {
+                children: 'Privacy Policy',
+                href: 'https://the-guild.dev/graphql/hive/privacy-policy.pdf',
+                title: 'Privacy Policy',
+              },
+              {
+                children: 'Terms of Use',
+                href: 'https://the-guild.dev/graphql/hive/terms-of-use.pdf',
+                title: 'Terms of Use',
+              },
+              {
+                children: 'Partners',
+                href: '/partners',
+                title: 'Partners',
+              },
+            ],
+          }}
+        />
+      }
+    >
+      {children}
+      <NarrowPages pages={lightOnlyPages} />
+    </HiveLayout>
+  );
+}

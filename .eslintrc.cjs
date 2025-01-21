@@ -52,7 +52,6 @@ module.exports = {
     'packages/libraries/cli/src/gql/**/*',
     'packages/services/storage/src/db/types.ts',
     'packages/web/app/src/gql/**/*',
-    'packages/web/app/src/components/ui/changelog/generated-changelog.ts',
     'codegen.cjs',
     'tsup',
   ],

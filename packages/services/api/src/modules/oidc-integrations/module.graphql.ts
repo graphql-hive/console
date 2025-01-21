@@ -19,6 +19,7 @@ export default gql`
     authorizationEndpoint: String!
     organization: Organization!
     oidcUserAccessOnly: Boolean!
+    defaultMemberRole: MemberRole!
   }
 
   extend type Mutation {
@@ -26,6 +27,9 @@ export default gql`
     updateOIDCIntegration(input: UpdateOIDCIntegrationInput!): UpdateOIDCIntegrationResult!
     deleteOIDCIntegration(input: DeleteOIDCIntegrationInput!): DeleteOIDCIntegrationResult!
     updateOIDCRestrictions(input: UpdateOIDCRestrictionsInput!): UpdateOIDCRestrictionsResult!
+    updateOIDCDefaultMemberRole(
+      input: UpdateOIDCDefaultMemberRoleInput!
+    ): UpdateOIDCDefaultMemberRoleResult!
   }
 
   type Subscription {
@@ -147,6 +151,27 @@ export default gql`
   }
 
   type UpdateOIDCRestrictionsError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultMemberRoleInput {
+    oidcIntegrationId: ID!
+    defaultMemberRoleId: ID!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultMemberRoleResult {
+    ok: UpdateOIDCDefaultMemberRoleOk
+    error: UpdateOIDCDefaultMemberRoleError
+  }
+
+  type UpdateOIDCDefaultMemberRoleOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultMemberRoleError implements Error {
     message: String!
   }
 `;

@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
+import { RoleSelector } from '../members/common';
 
 function CopyInput(props: { value: string; id?: string }) {
   const copy = useClipboard();
@@ -75,6 +76,16 @@ const OIDCIntegrationSection_OrganizationFragment = graphql(`
       ...UpdateOIDCIntegration_OIDCIntegrationFragment
       authorizationEndpoint
     }
+    memberRoles {
+      ...OIDCDefaultRoleSelector_MemberRoleFragment
+    }
+    me {
+      id
+      role {
+        id
+        name
+      }
+    }
   }
 `);
 
@@ -88,6 +99,7 @@ export function OIDCIntegrationSection(props: {
 }): ReactElement {
   const router = useRouter();
   const organization = useFragment(OIDCIntegrationSection_OrganizationFragment, props.organization);
+  const isAdmin = organization.me.role.name === 'Admin';
 
   const hash = router.latestLocation.hash;
   const openCreateModalHash = 'create-oidc-integration';
@@ -152,7 +164,10 @@ export function OIDCIntegrationSection(props: {
       />
       <ManageOIDCIntegrationModal
         key={organization.oidcIntegration?.id ?? 'noop'}
+        isAdmin={isAdmin}
+        organizationId={organization.id}
         oidcIntegration={organization.oidcIntegration ?? null}
+        memberRoles={organization.memberRoles ?? null}
         isOpen={isUpdateOIDCIntegrationModalOpen}
         close={closeModal}
         openCreateModalHash={openCreateModalHash}
@@ -547,40 +562,138 @@ function CreateOIDCIntegrationForm(props: {
 function ManageOIDCIntegrationModal(props: {
   isOpen: boolean;
   close: () => void;
-  oidcIntegration: FragmentType<typeof UpdateOIDCIntegration_OIDCIntegrationFragment> | null;
+  organizationId: string;
+  isAdmin: boolean;
   openCreateModalHash: string;
-}): ReactElement {
+  oidcIntegration: FragmentType<typeof UpdateOIDCIntegration_OIDCIntegrationFragment> | null;
+  memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>> | null;
+}) {
   const oidcIntegration = useFragment(
     UpdateOIDCIntegration_OIDCIntegrationFragment,
     props.oidcIntegration,
   );
 
-  return oidcIntegration == null ? (
-    <Dialog open={props.isOpen} onOpenChange={props.close}>
-      <DialogContent className={classes.modal}>
-        <DialogHeader>
-          <DialogTitle>Manage OpenID Connect Integration</DialogTitle>
-          <DialogDescription>
-            You are trying to update an OpenID Connect integration for an organization that has no
-            integration.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="space-x-2 text-right">
-          <Button variant="outline" onClick={props.close}>
-            Close
-          </Button>
-          <Button asChild>
-            <Link hash={props.openCreateModalHash}>Connect OIDC Provider</Link>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  ) : (
+  if (oidcIntegration == null) {
+    return (
+      <Dialog open={props.isOpen} onOpenChange={props.close}>
+        <DialogContent className={classes.modal}>
+          <DialogHeader>
+            <DialogTitle>Manage OpenID Connect Integration</DialogTitle>
+            <DialogDescription>
+              You are trying to update an OpenID Connect integration for an organization that has no
+              integration.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="space-x-2 text-right">
+            <Button variant="outline" onClick={props.close}>
+              Close
+            </Button>
+            <Button asChild>
+              <Link hash={props.openCreateModalHash}>Connect OIDC Provider</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!props.memberRoles) {
+    console.error('ManageOIDCIntegrationModal is missing member roles');
+    return null;
+  }
+
+  return (
     <UpdateOIDCIntegrationForm
       close={props.close}
       isOpen={props.isOpen}
+      isAdmin={props.isAdmin}
       key={oidcIntegration.id}
       oidcIntegration={oidcIntegration}
+      memberRoles={props.memberRoles}
+    />
+  );
+}
+
+const OIDCDefaultRoleSelector_MemberRoleFragment = graphql(`
+  fragment OIDCDefaultRoleSelector_MemberRoleFragment on MemberRole {
+    id
+    name
+    description
+  }
+`);
+
+const OIDCDefaultRoleSelector_UpdateMutation = graphql(`
+  mutation OIDCDefaultRoleSelector_UpdateMutation($input: UpdateOIDCDefaultMemberRoleInput!) {
+    updateOIDCDefaultMemberRole(input: $input) {
+      ok {
+        updatedOIDCIntegration {
+          id
+          defaultMemberRole {
+            ...OIDCDefaultRoleSelector_MemberRoleFragment
+          }
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+function OIDCDefaultRoleSelector(props: {
+  oidcIntegrationId: string;
+  disabled: boolean;
+  defaultRole: FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>;
+  memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>>;
+}) {
+  const defaultRole = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.defaultRole);
+  const memberRoles = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.memberRoles);
+  const [_, mutate] = useMutation(OIDCDefaultRoleSelector_UpdateMutation);
+  const { toast } = useToast();
+
+  return (
+    <RoleSelector
+      roles={memberRoles}
+      defaultRole={defaultRole}
+      disabled={props.disabled}
+      onSelect={async role => {
+        if (role.id === defaultRole.id) {
+          return;
+        }
+
+        try {
+          const result = await mutate({
+            input: {
+              oidcIntegrationId: props.oidcIntegrationId,
+              defaultMemberRoleId: role.id,
+            },
+          });
+
+          if (result.data?.updateOIDCDefaultMemberRole.ok) {
+            toast({
+              title: 'Default member role updated',
+              description: `${role.name} is now the default role for new OIDC members`,
+            });
+            return;
+          }
+
+          toast({
+            title: 'Failed to update default member role',
+            description:
+              result.data?.updateOIDCDefaultMemberRole.error?.message ??
+              result.error?.message ??
+              'Please try again later',
+          });
+        } catch (error) {
+          toast({
+            title: 'Failed to update default member role',
+            description: 'Please try again later',
+            variant: 'destructive',
+          });
+          console.error(error);
+        }
+      }}
+      isRoleActive={_ => true}
     />
   );
 }
@@ -594,6 +707,10 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     clientId
     clientSecretPreview
     oidcUserAccessOnly
+    defaultMemberRole {
+      id
+      ...OIDCDefaultRoleSelector_MemberRoleFragment
+    }
   }
 `);
 
@@ -648,6 +765,8 @@ function UpdateOIDCIntegrationForm(props: {
   close: () => void;
   isOpen: boolean;
   oidcIntegration: DocumentType<typeof UpdateOIDCIntegration_OIDCIntegrationFragment>;
+  isAdmin: boolean;
+  memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>>;
 }): ReactElement {
   const [oidcUpdateMutation, oidcUpdateMutate] = useMutation(
     UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation,
@@ -771,8 +890,8 @@ function UpdateOIDCIntegrationForm(props: {
                 <Separator orientation="horizontal" />
 
                 <div className="space-y-5">
-                  <div className="text-lg font-medium">Restrictions</div>
-                  <div>
+                  <div className="text-lg font-medium">Other Options</div>
+                  <div className="space-y-5">
                     <div className="flex items-center justify-between space-x-4">
                       <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                         <p>OIDC-Only Access</p>
@@ -788,6 +907,28 @@ function UpdateOIDCIntegrationForm(props: {
                         checked={props.oidcIntegration.oidcUserAccessOnly}
                         onCheckedChange={onOidcUserAccessOnlyChange}
                         disabled={oidcRestrictionsMutation.fetching}
+                      />
+                    </div>
+                    <div
+                      className={cn(
+                        'flex items-center justify-between space-x-4',
+                        props.isAdmin ? null : 'cursor-not-allowed',
+                      )}
+                    >
+                      <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                        <p>Default Member Role</p>
+                        <p className="text-muted-foreground text-xs font-normal leading-snug">
+                          This role is assigned to new members who sign in via OIDC.{' '}
+                          <span className="font-medium">
+                            Only members with the Admin role can modify it.
+                          </span>
+                        </p>
+                      </div>
+                      <OIDCDefaultRoleSelector
+                        disabled={!props.isAdmin}
+                        oidcIntegrationId={props.oidcIntegration.id}
+                        defaultRole={props.oidcIntegration.defaultMemberRole}
+                        memberRoles={props.memberRoles}
                       />
                     </div>
                   </div>

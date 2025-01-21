@@ -128,6 +128,7 @@ function OrganizationMemberRoleSwitcher(props: {
   return (
     <>
       <RoleSelector
+        searchPlaceholder="Select new role..."
         roles={roles}
         onSelect={async role => {
           try {

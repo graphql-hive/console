@@ -25,7 +25,7 @@ export type ObservabilityConfig =
     };
 
 // prettier-ignore
-export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.96.0');
+export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.111.2');
 // prettier-ignore
 export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', '0.35.0');
 
@@ -111,8 +111,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: '256m',
-          memory: '512Mi',
+          cpu: '512m',
+          memory: '1000Mi',
         },
       },
       podAnnotations: {
@@ -168,7 +168,7 @@ export class Observability {
       config: {
         exporters: {
           ...exporters,
-          logging: {
+          debug: {
             verbosity: 'basic',
           },
         },
@@ -196,12 +196,11 @@ export class Observability {
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
                 // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_usage-service-.*") == true',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
+                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage" and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
                 // Ignore metrics scraping
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                 // Ignore webapp HTTP calls
+                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
               ],
             },
@@ -358,11 +357,10 @@ export class Observability {
                 'batch',
               ],
               exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'otlp/grafana_cloud_traces'],
+                this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters:
-                this.config === 'local' ? ['logging'] : ['logging', 'prometheusremotewrite'],
+              exporters: this.config === 'local' ? ['debug'] : ['debug', 'prometheusremotewrite'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },

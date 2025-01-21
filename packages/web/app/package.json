@@ -6,6 +6,8 @@
     "build": "tsx ../../../scripts/runify.ts src/server/index.ts && vite build --outDir dist/client",
     "build-storybook": "storybook build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
+    "generate-changelog": "node ../../../scripts/generate-changelog.js",
+    "postinstall": "pnpm generate-changelog",
     "storybook": "storybook dev -p 6006",
     "typecheck": "tsc --noEmit"
   },
@@ -59,7 +61,7 @@
     "@stripe/stripe-js": "5.5.0",
     "@tanstack/react-query": "5.63.0",
     "@tanstack/react-router": "1.34.9",
-    "@tanstack/react-table": "8.17.3",
+    "@tanstack/react-table": "8.20.6",
     "@tanstack/router-devtools": "1.34.9",
     "@theguild/editor": "1.2.5",
     "@trpc/client": "10.45.2",

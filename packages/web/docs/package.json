@@ -8,14 +8,15 @@
   "scripts": {
     "build": "next build && next-sitemap",
     "dev": "next --turbopack",
-    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
+    "validate-mdx-links": "pnpx validate-mdx-links@1.0.6 --files 'src/**/*.mdx'"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-icons": "1.3.2",
     "@radix-ui/react-tabs": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.6",
-    "@theguild/components": "9.0.0",
+    "@theguild/components": "9.2.0-alpha-20250120172902-d3ff5f907d1bae071ddc3040c4a0a5a9dd7eaa68",
     "date-fns": "4.1.0",
     "next": "15.1.0",
     "react": "19.0.0",
@@ -26,7 +27,7 @@
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "0.5.15",
+    "@tailwindcss/typography": "0.5.16",
     "@theguild/tailwind-config": "0.6.2",
     "@types/react": "18.3.18",
     "@types/rss": "^0.0.32",

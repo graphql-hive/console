@@ -4,7 +4,6 @@ import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { ActivityManager } from '../../shared/providers/activity-manager';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
@@ -29,7 +28,6 @@ export class TargetManager {
     private storage: Storage,
     private tokenStorage: TokenStorage,
     private session: Session,
-    private activityManager: ActivityManager,
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
   ) {
@@ -82,15 +80,6 @@ export class TargetManager {
     });
 
     if (result.ok) {
-      await this.activityManager.create({
-        type: 'TARGET_CREATED',
-        selector: {
-          organizationId: organization,
-          projectId: project,
-          targetId: result.target.id,
-        },
-      });
-
       await this.auditLog.record({
         eventType: 'TARGET_CREATED',
         organizationId: result.target.orgId,
@@ -132,18 +121,6 @@ export class TargetManager {
       organizationId: organization,
     });
     await this.tokenStorage.invalidateTokens(deletedTarget.tokens);
-
-    await this.activityManager.create({
-      type: 'TARGET_DELETED',
-      selector: {
-        organizationId: organization,
-        projectId: project,
-      },
-      meta: {
-        name: deletedTarget.name,
-        cleanId: deletedTarget.slug,
-      },
-    });
 
     await this.auditLog.record({
       eventType: 'TARGET_DELETED',
@@ -317,18 +294,6 @@ export class TargetManager {
     });
 
     if (result.ok) {
-      await this.activityManager.create({
-        type: 'TARGET_ID_UPDATED',
-        selector: {
-          organizationId: organization,
-          projectId: project,
-          targetId: target,
-        },
-        meta: {
-          value: slug,
-        },
-      });
-
       await this.auditLog.record({
         eventType: 'TARGET_SLUG_UPDATED',
         organizationId: organization,

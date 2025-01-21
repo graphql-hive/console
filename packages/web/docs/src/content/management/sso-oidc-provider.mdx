@@ -23,6 +23,7 @@ import hiveOidcModalImage from '../../../public/docs/pages/management/sso/hive-c
 import hiveOidcImage from '../../../public/docs/pages/management/sso/hive-connect-openid-provider.png'
 import hiveManageOidcImage from '../../../public/docs/pages/management/sso/hive-manage-openid-connect-modal.png'
 import hiveLoginUrlImage from '../../../public/docs/pages/management/sso/hive-manage-openid-okta-login-url.png'
+import hiveOidcDefaultRoleImage from '../../../public/docs/pages/management/sso/oidc-default-role.png'
 import oktaAdminButtonImage from '../../../public/docs/pages/management/sso/okta-admin-button.webp'
 import oktaAppConfigClientIdImage from '../../../public/docs/pages/management/sso/okta-app-config-client-id.webp'
 import oktaAppConfigClientSecretImage from '../../../public/docs/pages/management/sso/okta-app-config-client-secret.webp'
@@ -110,6 +111,19 @@ organization's slug, and you will then be redirected to your OIDC provider.
   **Settings** page and in the **OpenID Connect** configuration disable the **OIDC-Only Access**
   option.
 </Callout>
+
+### Default Role for OIDC Users
+
+When a new member signs in via OIDC, they'll now be automatically assigned the default role
+configured by your organization. The role is set to system `Viewer` by default, but you can change
+it in the OIDC configuration to any role you've created
+([How to create a new role](/docs/management/organizations#members)).
+
+<NextImage
+  alt="Default Member Role Setting"
+  src={hiveOidcDefaultRoleImage}
+  className="mt-8 max-w-3xl rounded-lg drop-shadow-md"
+/>
 
 </Steps>
 

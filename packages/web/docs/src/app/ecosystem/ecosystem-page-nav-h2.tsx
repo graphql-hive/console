@@ -10,9 +10,7 @@ export const EcosystemPageNavH2 = (props: React.HTMLAttributes<HTMLHeadingElemen
         if (previousElement) {
           (previousElement as HTMLElement).focus();
         }
-        return;
-      }
-      if (event.key === 'ArrowRight') {
+      } else if (event.key === 'ArrowRight') {
         const nextElement = event.currentTarget.nextElementSibling;
         if (nextElement) {
           (nextElement as HTMLElement).focus();

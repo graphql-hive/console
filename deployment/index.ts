@@ -190,6 +190,7 @@ const usage = deployUsage({
   dbMigrations,
   rateLimit,
   sentry,
+  observability,
 });
 
 const usageIngestor = deployUsageIngestor({

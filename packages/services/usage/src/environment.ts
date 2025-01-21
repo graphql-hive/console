@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import zod from 'zod';
+import { OpenTelemetryConfigurationModel } from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -22,6 +23,7 @@ const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   TOKENS_ENDPOINT: zod.string().url(),
   RATE_LIMIT_ENDPOINT: emptyString(zod.string().url().optional()),
+  RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
 });
@@ -99,6 +101,8 @@ const configs = {
   prometheus: PrometheusModel.safeParse(process.env),
   // eslint-disable-next-line no-process-env
   log: LogModel.safeParse(process.env),
+  // eslint-disable-next-line no-process-env
+  tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -127,12 +131,17 @@ const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
+const tracing = extractConfig(configs.tracing);
 
 export const env = {
   environment: base.ENVIRONMENT,
   release: base.RELEASE ?? 'local',
   http: {
     port: base.PORT ?? 5000,
+  },
+  tracing: {
+    enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
+    collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
   hive: {
     tokens: {
@@ -141,6 +150,7 @@ export const env = {
     rateLimit: base.RATE_LIMIT_ENDPOINT
       ? {
           endpoint: base.RATE_LIMIT_ENDPOINT,
+          ttl: base.RATE_LIMIT_TTL,
         }
       : null,
   },

@@ -34,11 +34,9 @@ import {
 } from '../../api/src/shared/entities';
 import { batch } from '../../api/src/shared/helpers';
 import {
-  activities,
   alert_channels,
   alerts,
   getPool,
-  objectToParams,
   organization_invitations,
   organization_member,
   organization_member_roles,
@@ -361,6 +359,8 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_request_count'
+      | 'validation_breaking_change_formula'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -370,6 +370,8 @@ export async function createStorage(
         enabled: row.validation_enabled,
         percentage: row.validation_percentage,
         period: row.validation_period,
+        requestCount: row.validation_request_count ?? 1,
+        breakingChangeFormula: row.validation_breaking_change_formula ?? 'PERCENTAGE',
         targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
@@ -493,17 +495,24 @@ export async function createStorage(
         return;
       }
 
-      const viewerRole = await shared.getOrganizationMemberRoleByName(
-        { organizationId: linkedOrganizationId, roleName: 'Viewer' },
-        connection,
-      );
-      // TODO: turn it into a default role and let the admin choose the default role
+      // Add user and assign default role (either Viewer or custom default role)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
             (organization_id, user_id, role_id)
           VALUES
-            (${linkedOrganizationId}, ${args.userId}, ${viewerRole.id})
+            (
+              ${linkedOrganizationId},
+              ${args.userId},
+              (
+                COALESCE(
+                  (SELECT default_role_id FROM oidc_integrations 
+                    WHERE id = ${args.oidcIntegrationId}),
+                  (SELECT id FROM organization_member_roles
+                    WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
+                )
+              )
+            )
           ON CONFLICT DO NOTHING
           RETURNING *
         `,
@@ -601,7 +610,6 @@ export async function createStorage(
             {
               oidcIntegrationId: oidcIntegration.id,
               userId: internalUser.id,
-              // TODO: pass a default role here
             },
             t,
           );
@@ -1813,6 +1821,8 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_request_count'
+          | 'validation_breaking_change_formula'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1822,6 +1832,8 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_request_count,
+          t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
@@ -1852,6 +1864,8 @@ export async function createStorage(
               | 'validation_percentage'
               | 'validation_period'
               | 'validation_excluded_clients'
+              | 'validation_breaking_change_formula'
+              | 'validation_request_count'
             > & {
               targets: target_validation['destination_target_id'][];
             }
@@ -1870,7 +1884,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
           WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets
+          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
         `);
         }),
       ).validation;
@@ -1882,6 +1896,8 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      breakingChangeFormula,
+      requestCount,
     }) {
       return transformTargetSettings(
         await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
@@ -1910,7 +1926,7 @@ export async function createStorage(
             SET validation_percentage = ${percentage}, validation_period = ${period}, validation_excluded_clients = ${sql.array(
               excludedClients,
               'text',
-            )}
+            )} , validation_request_count = ${requestCount}, validation_breaking_change_formula = ${breakingChangeFormula}
             FROM (
               SELECT
                 it.id,
@@ -1922,7 +1938,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
           `);
         }),
       ).validation;
@@ -2628,27 +2644,6 @@ export async function createStorage(
         );
       });
     }),
-    async createActivity({
-      organizationId: organization,
-      projectId: project,
-      targetId: target,
-      userId: user,
-      type,
-      meta,
-    }) {
-      const { identifiers, values } = objectToParams<Omit<activities, 'id' | 'created_at'>>({
-        activity_metadata: meta,
-        activity_type: type,
-        organization_id: organization,
-        project_id: project ?? null,
-        target_id: target ?? null,
-        user_id: user ?? null,
-      });
-
-      await pool.query<Slonik<activities>>(
-        sql`/* createActivity */ INSERT INTO activities (${identifiers}) VALUES (${values}) RETURNING *;`,
-      );
-    },
     async addSlackIntegration({ organizationId: organization, token }) {
       await pool.query<Slonik<organizations>>(
         sql`/* addSlackIntegration */
@@ -3039,6 +3034,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3065,6 +3061,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
         FROM
           "oidc_integrations"
         WHERE
@@ -3127,6 +3124,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "oidc_user_access_only"
+            , "default_role_id"
         `);
 
         return {
@@ -3181,6 +3179,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3203,9 +3202,49 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "default_role_id"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultMemberRole(args) {
+      return tracedTransaction('updateOIDCDefaultMemberRole', pool, async trx => {
+        // Make sure the role exists and is associated with the organization
+        const roleId = await trx.oneFirst<string>(sql`/* checkRoleExists */
+          SELECT id FROM "organization_member_roles" 
+          WHERE
+            "id" = ${args.roleId} AND
+            "organization_id" = (
+              SELECT "linked_organization_id" FROM "oidc_integrations" WHERE "id" = ${args.oidcIntegrationId}
+            )
+        `);
+
+        if (!roleId) {
+          throw new Error('Role does not exist');
+        }
+
+        const result = await pool.one(sql`/* updateOIDCDefaultMemberRole */
+          UPDATE "oidc_integrations"
+          SET
+            "default_role_id" = ${roleId}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_access_only"
+          , "default_role_id"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async deleteOIDCIntegration(args) {
@@ -4563,6 +4602,7 @@ const OktaIntegrationBaseModel = zod.object({
   client_id: zod.string(),
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
+  default_role_id: zod.string().nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4597,6 +4637,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      defaultMemberRoleId: rawRecord.default_role_id,
     };
   }
 
@@ -4609,6 +4650,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    defaultMemberRoleId: rawRecord.default_role_id,
   };
 };
 

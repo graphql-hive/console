@@ -16,7 +16,7 @@ type NormalizedResult = ReturnType<typeof normalizePages>;
 function createBreadcrumb(normalizedResult: NormalizedResult) {
   const activePaths = normalizedResult.activePath.slice();
 
-  if (activePaths[0].route !== '/') {
+  if (activePaths[0]?.route !== '/') {
     // Add the home page to all pages except the home page
     activePaths.unshift({
       route: '/',
@@ -43,7 +43,7 @@ function createBreadcrumb(normalizedResult: NormalizedResult) {
 }
 
 export function DynamicMetaTags({ pageMap }: { pageMap: any[] }) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   if (pathname === '/_not-found') {
     return;
   }

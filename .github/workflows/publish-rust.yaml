@@ -53,7 +53,6 @@ jobs:
         with:
           actor: publish-rust
           codegen: false
-          cacheTurbo: false
 
       - name: Prepare MacOS
         if: ${{ matrix.os == 'macos-latest' }}

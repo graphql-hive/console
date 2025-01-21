@@ -4,7 +4,13 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  InvalidSchemaError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaNotFoundError,
+  UnsupportedFileExtensionError,
+} from '../../helpers/errors';
 import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
@@ -119,21 +125,30 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
   async run() {
     const { flags, args } = await this.parse(SchemaFetch);
 
-    const endpoint = this.ensure({
-      key: 'registry.endpoint',
-      args: flags,
-      env: 'HIVE_REGISTRY',
-      legacyFlagName: 'registry',
-      defaultValue: graphqlEndpoint,
-    });
-
-    const accessToken = this.ensure({
-      key: 'registry.accessToken',
-      args: flags,
-      legacyFlagName: 'token',
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let endpoint: string, accessToken: string;
+    try {
+      endpoint = this.ensure({
+        key: 'registry.endpoint',
+        args: flags,
+        env: 'HIVE_REGISTRY',
+        legacyFlagName: 'registry',
+        defaultValue: graphqlEndpoint,
+        description: SchemaFetch.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+    try {
+      accessToken = this.ensure({
+        key: 'registry.accessToken',
+        args: flags,
+        legacyFlagName: 'token',
+        env: 'HIVE_TOKEN',
+        description: SchemaFetch.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
 
     const { actionId } = args;
 
@@ -172,11 +187,11 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }
 
     if (schemaVersion == null) {
-      return this.error(`No schema found for action id ${actionId}`);
+      throw new SchemaNotFoundError(actionId);
     }
 
     if (schemaVersion.valid === false) {
-      return this.error(`Schema is invalid for action id ${actionId}`);
+      throw new InvalidSchemaError(actionId);
     }
 
     if (schemaVersion.schemas) {
@@ -202,7 +217,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       const schema = schemaVersion.sdl ?? schemaVersion.supergraph;
 
       if (schema == null) {
-        return this.error(`No ${sdlType} found for action id ${actionId}`);
+        throw new SchemaNotFoundError(actionId);
       }
 
       if (flags.write) {
@@ -215,8 +230,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
             await writeFile(filepath, schema, 'utf8');
             break;
           default:
-            this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
-            this.exit(1);
+            throw new UnsupportedFileExtensionError(flags.write);
         }
         return;
       }

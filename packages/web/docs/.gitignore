@@ -3,3 +3,4 @@ build
 temp
 public/sitemap.xml
 public/changelog.json
+public/_pagefind/

@@ -136,6 +136,7 @@ export default gql`
   }
 
   type DurationValues {
+    avg: Int!
     p75: Int!
     p90: Int!
     p95: Int!

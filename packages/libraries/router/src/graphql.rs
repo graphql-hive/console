@@ -189,6 +189,16 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         }
 
         let type_name = self.resolve_type_name(var.var_type.clone());
+        let type_def = info.schema.type_by_name(&type_name);
+
+        match type_def {
+            Some(TypeDefinition::Scalar(scalar_def)) => {
+                ctx.schema_coordinates
+                    .insert(format!("{}", scalar_def.name.as_str(),));
+                return ();
+            }
+            _ => {}
+        }
 
         if let Some(inner_types) = self.resolve_references(&info.schema, &type_name) {
             for inner_type in inner_types {
@@ -232,26 +242,50 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
 
             match info.current_input_type() {
                 Some(input_type) => {
-                    let input_type_name = input_type.name();
-                    match arg_value {
-                        Value::Enum(value) => {
-                            let value_str = value.to_string();
-                            ctx.schema_coordinates
-                                .insert(format!("{input_type_name}.{value_str}").to_string());
+                    match input_type {
+                        TypeDefinition::Scalar(scalar_def) => {
+                            ctx.schema_coordinates.insert(scalar_def.name.clone());
                         }
-                        Value::List(_) => {
-                            // handled by enter_list_value
+                        _ => {
+                            let input_type_name = input_type.name();
+                            match arg_value {
+                                Value::Enum(value) => {
+                                    let value_str = value.to_string();
+                                    ctx.schema_coordinates.insert(
+                                        format!("{input_type_name}.{value_str}").to_string(),
+                                    );
+                                }
+                                Value::List(_) => {
+                                    // handled by enter_list_value
+                                }
+                                Value::Object(a) => {
+                                    // handled by enter_object_field
+                                }
+                                Value::Variable(_) => {
+                                    // handled by enter_variable_definition
+                                }
+                                _ => {}
+                            }
                         }
-                        Value::Object(_) => {
-                            // handled by enter_object_field
-                        }
-                        Value::Variable(_) => {
-                            // handled by enter_variable_definition
-                        }
-                        _ => {}
                     }
                 }
                 None => {}
+            }
+        }
+    }
+
+    fn enter_object_field(
+        &mut self,
+        info: &mut OperationVisitorContext<'a>,
+        ctx: &mut SchemaCoordinatesContext,
+        object_field: &(String, graphql_tools::static_graphql::query::Value),
+    ) {
+        if let Some(input_type) = info.current_input_type() {
+            match input_type {
+                TypeDefinition::Scalar(scalar_def) => {
+                    ctx.schema_coordinates.insert(scalar_def.name.clone());
+                }
+                _ => {}
             }
         }
     }
@@ -270,7 +304,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             for value in values {
                 match value {
                     Value::Object(_) => {
-                        // object fields are handled by enter_object_field
+                        // object fields are handled by enter_object_value
                     }
                     Value::List(_) => {
                         // handled by enter_list_value
@@ -324,7 +358,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             // handled by enter_list_value
                         }
                         Value::Object(_) => {
-                            // handled by enter_object_field
+                            // handled by enter_object_value
                         }
                         Value::Variable(_) => {
                             // handled by enter_variable_definition
@@ -699,6 +733,7 @@ mod tests {
             projectsByType(type: ProjectType!): [Project!]!
             projectsByTypes(types: [ProjectType!]!): [Project!]!
             projects(filter: FilterInput, and: [FilterInput!]): [Project!]!
+            projectsByMetadata(metadata: JSON): [Project!]!
         }
 
         type Mutation {
@@ -714,6 +749,7 @@ mod tests {
             type: ProjectType
             pagination: PaginationInput
             order: [ProjectOrderByInput!]
+            metadata: JSON
         }
 
         input PaginationInput {
@@ -755,6 +791,8 @@ mod tests {
             STITCHING
             SINGLE
         }
+
+        scalar JSON
     ";
 
     #[test]
@@ -843,6 +881,7 @@ mod tests {
             "PaginationInput.limit",
             "Int",
             "PaginationInput.offset",
+            "FilterInput.metadata",
             "FilterInput.order",
             "ProjectOrderByInput.field",
             "String",
@@ -886,6 +925,7 @@ mod tests {
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.metadata",
             "PaginationInput.limit",
             "Int",
             "PaginationInput.offset",
@@ -1350,6 +1390,209 @@ mod tests {
             "ProjectType.SINGLE",
             "FilterInput.pagination",
             "FilterInput.type",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn custom_scalar_as_argument_inlined() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects {
+                projectsByMetadata(metadata: { key: { value: \"value\" } }) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projectsByMetadata",
+            "Query.projectsByMetadata.metadata",
+            "Project.name",
+            "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn custom_scalar_as_argument_variable() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects($metadata: JSON) {
+                projectsByMetadata(metadata: $metadata) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projectsByMetadata",
+            "Query.projectsByMetadata.metadata",
+            "Project.name",
+            "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn custom_scalar_as_argument_variable_with_default() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects($metadata: JSON = { key: { value: \"value\" } }) {
+                projectsByMetadata(metadata: $metadata) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projectsByMetadata",
+            "Query.projectsByMetadata.metadata",
+            "Project.name",
+            "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    //
+
+    #[test]
+    fn custom_scalar_as_input_field_inlined() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects {
+                projects(filter: { metadata: { key: \"value\" } }) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projects",
+            "Query.projects.filter",
+            "FilterInput.metadata",
+            "Project.name",
+            "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn custom_scalar_as_input_field_variable() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects($metadata: JSON) {
+                projects(filter: { metadata: $metadata }) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projects",
+            "Query.projects.filter",
+            "FilterInput.metadata",
+            "Project.name",
+            "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn custom_scalar_as_input_field_variable_with_default() {
+        let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
+        let document = parse_query::<String>(
+            "
+            query getProjects($metadata: JSON = { key: { value: \"value\" } }) {
+                projects(filter: { metadata: $metadata }) {
+                    name
+                }
+            }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+
+        let expected = vec![
+            "Query.projects",
+            "Query.projects.filter",
+            "FilterInput.metadata",
+            "Project.name",
+            "JSON",
         ]
         .into_iter()
         .map(|s| s.to_string())
