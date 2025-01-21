@@ -19,8 +19,8 @@ interface LabAPI {
      * 1. Do *not* interpolate environment variables.
      *
      * 2. Upon a collision with a base header, this header takes precedence.
-     *    This means that if the base headers contain "foo: bar" and you add "foo: qux"
-     *    here, the final headers become "foo: qux" (*not* "foo: bar, qux").
+     *    This means that if the base headers contain "foo: bar" and you've added
+     *    "foo: qux" here, the final headers become "foo: qux" (*not* "foo: bar, qux").
      */
     headers: Headers;
   };
