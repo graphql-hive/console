@@ -116,11 +116,7 @@ export function GotAnIdeaSection({ className }: { className?: string }) {
       <p className="mt-4 text-white/80">
         Join our community to chat with us and let's build something together!
       </p>
-      <ContactButton
-        href="https://the-guild.dev/contact"
-        variant="primary-inverted"
-        className="mt-8"
-      >
+      <ContactButton variant="primary-inverted" className="mt-8">
         Get in touch
       </ContactButton>
     </div>
