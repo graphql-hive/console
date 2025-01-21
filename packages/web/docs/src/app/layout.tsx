@@ -17,6 +17,7 @@ import graphQLConfLocalImage from '../components/graphql-conf-image.webp';
 import '@theguild/components/style.css';
 import '../selection-styles.css';
 import '../mermaid.css';
+import { NarrowPages } from './narrow-pages';
 
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
@@ -35,9 +36,19 @@ const neueMontreal = localFont({
 
 export default async function HiveDocsLayout({ children }: { children: ReactNode }) {
   const pageMap = await getPageMap();
+
+  const lightOnlyPages = [
+    '/',
+    '/pricing',
+    '/federation',
+    '/oss-friends',
+    '/ecosystem',
+    '/partners',
+  ];
+
   return (
     <HiveLayout
-      lightOnlyPages={['/', '/pricing', '/federation', '/oss-friends', '/ecosystem', '/partners']}
+      lightOnlyPages={lightOnlyPages}
       head={<DynamicMetaTags pageMap={pageMap} />}
       docsRepositoryBase="https://github.com/graphql-hive/platform/tree/main/packages/web/docs"
       fontFamily={neueMontreal.style.fontFamily}
@@ -91,6 +102,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
       }
     >
       {children}
+      <NarrowPages pages={lightOnlyPages} />
     </HiveLayout>
   );
 }
