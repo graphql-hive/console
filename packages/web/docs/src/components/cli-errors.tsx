@@ -18,7 +18,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
         id={`errors-${props.code}`}
         className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-2xl dark:_text-slate-100"
       >
-        HC{props.code} "{props.title}"
+        {props.code} "{props.title}" <a href={`#errors-${props.code}`} className='nextra-focus subheading-anchor' aria-label="Permalink for this error code"/>
       </h3>
       <h4 className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-xl dark:_text-slate-100">
         Example: <Code contentEditable="false">{props.example}</Code>
