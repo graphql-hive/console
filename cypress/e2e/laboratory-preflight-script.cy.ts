@@ -1,5 +1,16 @@
 import { dedent } from '../support/testkit';
 
+const selectors = {
+  buttonModal: 'preflight-script-modal-button',
+  buttonToggle: 'toggle-preflight-script',
+  graphiql: {
+    buttonExecute: '.graphiql-execute-button',
+  },
+  modal: {
+    buttonSubmit: 'preflight-script-modal-submit',
+  },
+};
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
@@ -186,23 +197,63 @@ throw new TypeError('Test')`,
 });
 
 describe('Execution', () => {
-  it.only('result.request.headers are added to the graphiql request base headers', () => {
-    cy.dataCy('toggle-preflight-script').click();
-    cy.dataCy('preflight-script-modal-button').click();
-    setEditorScript(`lab.request.headers.append('x-foo', 'bar')`);
-    cy.dataCy('preflight-script-modal-submit').click();
-
+  it('result.request.headers are added to the graphiql request base headers', () => {
+    const headers = {
+      foo: { name: 'foo', value: 'bar' },
+    };
+    cy.dataCy(selectors.buttonToggle).click();
+    cy.dataCy(selectors.buttonModal).click();
+    setEditorScript(`lab.request.headers.append('${headers.foo.name}', '${headers.foo.value}')`);
+    cy.dataCy(selectors.modal.buttonSubmit).click();
     cy.intercept({
       method: 'POST',
       headers: {
-        'x-foo': 'bar',
+        [headers.foo.name]: headers.foo.value,
       },
     }).as('post');
-    cy.get('.graphiql-execute-button').click();
+    cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@post');
   });
 
-  it('result.request.headers take precedence over graphiql request base headers');
+  it('result.request.headers take precedence over graphiql request base headers', () => {
+    // --- Pre Assert Integrity Check: make sure the header we think we're overriding is actually there.
+    const baseHeaders = {
+      accept: {
+        name: 'accept',
+        value: 'application/json, multipart/mixed',
+      },
+    };
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        [baseHeaders.accept.name]: baseHeaders.accept.value,
+      },
+    }).as('integrityCheck');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@integrityCheck');
+    // ---
+
+    const preflightHeaders = {
+      accept: {
+        name: 'accept',
+        value: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
+      },
+    };
+    cy.dataCy(selectors.buttonToggle).click();
+    cy.dataCy(selectors.buttonModal).click();
+    setEditorScript(
+      `lab.request.headers.append('${preflightHeaders.accept.name}', '${preflightHeaders.accept.value}')`,
+    );
+    cy.dataCy(selectors.modal.buttonSubmit).click();
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        [preflightHeaders.accept.name]: preflightHeaders.accept.value,
+      },
+    }).as('post');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@post');
+  });
 
   it('result.request.headers do not receive placeholder substitution');
 
