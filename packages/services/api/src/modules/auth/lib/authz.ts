@@ -141,7 +141,12 @@ export abstract class Session {
   }): Promise<void> {
     const permissions = await this._loadPolicyStatementsForOrganization(args.organizationId);
 
+    this.logger.debug('Resolved permission statements for viewer. (permissions=%o)', permissions);
+
     const resourceIdsForAction = actionDefinitions[args.action](args.params as any);
+
+    this.logger.debug('Resolved action resource IDs. (resourceIds=%o)', resourceIdsForAction);
+
     let isAllowed = false;
 
     for (const permission of permissions) {

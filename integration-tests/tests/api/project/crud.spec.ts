@@ -212,7 +212,7 @@ test.concurrent('prevent access to projects with assigned resources on member', 
   expect(projects).toHaveLength(1);
   expect(projects.at(0)?.id).toEqual(project.id);
 
-  // Limit the users access to no project using the "Viewer" role
+  // Limit the users access to no projects using the "Viewer" role
   await assignMemberRole({
     roleId: member.role.id,
     userId: member.user.id,
@@ -240,7 +240,7 @@ test.concurrent('restrict access to single project with assigned resources on me
   expect(projects.at(0)?.id).toEqual(secondProject.id);
   expect(projects.at(1)?.id).toEqual(firstProject.id);
 
-  // Limit the users access to no project using the "Viewer" role
+  // Limit the users access to a single project using the "Viewer" role
   await assignMemberRole({
     roleId: member.role.id,
     userId: member.user.id,
