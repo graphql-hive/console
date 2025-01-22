@@ -186,6 +186,12 @@ throw new TypeError('Test')`,
 });
 
 describe('Execution', () => {
+  it('result.request.headers are added to the graphiql request base headers');
+
+  it('result.request.headers take precedence over graphiql request base headers');
+
+  it('result.request.headers do not receive placeholder substitution');
+
   it('header placeholders are substituted with environment variables', () => {
     cy.dataCy('toggle-preflight-script').click();
     cy.get('[data-name="headers"]').click();
