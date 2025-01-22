@@ -58,7 +58,6 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
-import { captureException } from '@sentry/react';
 
 const explorer = explorerPlugin();
 
