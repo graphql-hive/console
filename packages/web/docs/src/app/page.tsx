@@ -1,4 +1,5 @@
 import { ReactElement } from 'react';
+import { Metadata } from 'next';
 import {
   Anchor,
   ArchDecoration,
@@ -31,7 +32,7 @@ import { StatsItem, StatsList } from '../components/stats';
 import { TeamSection } from '../components/team-section';
 import { metadata as rootMetadata } from './layout';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Open-Source GraphQL Federation Platform',
   description:
     'Fully Open-Source schema registry, analytics and gateway for GraphQL federation and other GraphQL APIs',
@@ -43,6 +44,7 @@ export const metadata = {
     ...rootMetadata.openGraph,
     // to remove leading slash
     url: '.',
+    images: [new URL('./opengraph-image.png', import.meta.url).toString()],
   },
 };
 
