@@ -399,11 +399,3 @@ export const getStaticProps: GetStaticProps<{ ssg: { cliErrors: CLIError[] } }> 
     },
   };
 };
-
-// ### HC110 "Github Commit Required"
-
-// Example: `hive schema:check FILE --github`
-
-// > "Couldn't resolve commit sha required for GitHub Application."
-
-// #### Suggested Fix
