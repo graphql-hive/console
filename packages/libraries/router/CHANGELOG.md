@@ -1,5 +1,14 @@
 # 16.10.2024
 
+## 1.1.1
+
+### Patch Changes
+
+- [#6383](https://github.com/graphql-hive/console/pull/6383)
+  [`ec356a7`](https://github.com/graphql-hive/console/commit/ec356a7784d1f59722f80a69f501f1f250b2f6b2)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Collect custom scalars from arguments
+  and input object fields
+
 ## 1.1.0
 
 ### Minor Changes
