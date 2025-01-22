@@ -76,7 +76,7 @@ describe('Preflight Script Modal', () => {
   it('logs show console/error information', () => {
     setEditorScript(script);
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       `console.info(1)
@@ -87,16 +87,11 @@ throw new TypeError('Test')`,
 
     cy.dataCy('run-preflight-script').click();
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
-      [
-        'Info: 1 (Line: 1, Column: 1)',
-        'Warn: true (Line: 2, Column: 1)',
-        'Error: Fatal (Line: 3, Column: 1)',
-        'TypeError: Test (Line: 4, Column: 7)',
-      ].join(''),
+      ['info: 1 (1:1)', 'warn: true (2:1)', 'error: Fatal (3:1)', 'error: Test (4:7)'].join(''),
     );
   });
 
@@ -104,7 +99,7 @@ throw new TypeError('Test')`,
     setEditorScript(script);
 
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       dedent`
@@ -118,12 +113,12 @@ throw new TypeError('Test')`,
     cy.dataCy('prompt').get('form').submit();
 
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
       dedent`
-        Info: test-username (Line: 2, Column: 1)
+        info: test-username (2:1)
       `,
     );
   });
@@ -132,7 +127,7 @@ throw new TypeError('Test')`,
     setEditorScript(script);
 
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       dedent`
@@ -146,12 +141,12 @@ throw new TypeError('Test')`,
     cy.dataCy('prompt').get('[data-cy="prompt-cancel"]').click();
 
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
       dedent`
-        Info: null (Line: 2, Column: 1)
+        info: null (2:1)
       `,
     );
   });
@@ -170,10 +165,10 @@ throw new TypeError('Test')`,
   it('`crypto-js` can be used for generating hashes', () => {
     setEditorScript('console.log(lab.CryptoJS.SHA256("🐝"))');
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Info: Using crypto-js version:');
+    cy.dataCy('console-output').should('contain', 'info: Using crypto-js version:');
     cy.dataCy('console-output').should(
       'contain',
-      'Log: d5b51e79e4be0c4f4d6b9a14e16ca864de96afe68459e60a794e80393a4809e8',
+      'log: d5b51e79e4be0c4f4d6b9a14e16ca864de96afe68459e60a794e80393a4809e8',
     );
   });
 
@@ -339,12 +334,12 @@ describe('Execution', () => {
     cy.get('#preflight-script-logs [data-cy="logs"]').should(
       'contain',
       [
-        '> start running script: > Start running script',
-        'info: 1 (Line: 1, Column: 1)',
-        'warn: true (Line: 2, Column: 1)',
-        'error: Fatal (Line: 3, Column: 1)',
-        'error: TypeError: Test (Line: 4, Column: 7)',
-        '> preflight script failed: > Preflight script failed',
+        'log: Running script...',
+        'info: 1 (1:1)',
+        'warn: true (2:1)',
+        'error: Fatal (3:1)',
+        'error: Test (4:7)',
+        'log: Script failed',
       ].join(''),
     );
   });
@@ -375,15 +370,16 @@ describe('Execution', () => {
       // it's because the button is not fully visible on the screen
       force: true,
     });
+
     cy.get('#preflight-script-logs [data-cy="logs"]').should(
       'contain',
       [
-        '> start running script: > Start running script',
-        'info: 1 (Line: 1, Column: 1)',
-        'warn: true (Line: 2, Column: 1)',
-        'error: Fatal (Line: 3, Column: 1)',
-        'error: TypeError: Test (Line: 4, Column: 7)',
-        '> preflight script failed: > Preflight script failed',
+        'log: Running script...',
+        'info: 1 (1:1)',
+        'warn: true (2:1)',
+        'error: Fatal (3:1)',
+        'error: Test (4:7)',
+        'log: Script failed',
       ].join(''),
     );
 

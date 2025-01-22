@@ -185,7 +185,7 @@ export function usePreflightScript(args: {
       ...prev,
       {
         level: 'log',
-        message: '> Start running script',
+        message: 'Running script...',
       },
     ]);
 
@@ -271,7 +271,7 @@ export function usePreflightScript(args: {
             ...logs,
             {
               level: 'log',
-              message: `> End running script. Done in ${(Date.now() - now) / 1000}s`,
+              message: `Done in ${(Date.now() - now) / 1000}s`,
             },
             {
               type: 'separator' as const,
@@ -293,7 +293,7 @@ export function usePreflightScript(args: {
             },
             {
               level: 'log',
-              message: '> Preflight script failed',
+              message: 'Script failed',
             },
             {
               type: 'separator' as const,
@@ -339,7 +339,7 @@ export function usePreflightScript(args: {
           },
           {
             level: 'log',
-            message: '> Preflight script failed',
+            message: 'Script failed',
           },
           {
             type: 'separator' as const,
@@ -608,13 +608,6 @@ function PreflightScriptModal({
     consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
   }, [logs]);
 
-  const logColor = {
-    error: 'text-red-400',
-    info: 'text-emerald-400',
-    warn: 'text-yellow-400',
-    log: 'text-gray-400',
-  };
-
   return (
     <Dialog
       open={isOpen}
@@ -713,25 +706,9 @@ function PreflightScriptModal({
               className="h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]"
               data-cy="console-output"
             >
-              {logs.map((log, index) => {
-                if ('type' in log && log.type === 'separator') {
-                  return <hr key={index} className="my-2 border-dashed border-current" />;
-                }
-
-                if (!('level' in log)) {
-                  captureException(new Error('Unexpected log type in Preflight Script Editor'), {
-                    extra: { log },
-                  });
-                  return null;
-                }
-
-                return (
-                  <div key={index} className={logColor[log.level] ?? ''}>
-                    {log.level}: {log.message}{' '}
-                    {log.line && log.column ? `(${log.line}:${log.column})` : ''}
-                  </div>
-                );
-              })}
+              {logs.map((log, index) => (
+                <LogLine key={index} log={log} />
+              ))}
             </section>
             <EditorTitle className="flex gap-2 p-2">
               Environment Variables
@@ -775,4 +752,31 @@ function PreflightScriptModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+const LOG_COLORS = {
+  error: 'text-red-400',
+  info: 'text-emerald-400',
+  warn: 'text-yellow-400',
+  log: 'text-gray-400',
+};
+
+export function LogLine({ log }: { log: LogRecord }) {
+  if ('type' in log && log.type === 'separator') {
+    return <hr className="my-2 border-dashed border-current" />;
+  }
+
+  if ('level' in log && log.level in LOG_COLORS) {
+    return (
+      <div className={LOG_COLORS[log.level]}>
+        {log.level}: {log.message}
+        {log.line && log.column ? ` (${log.line}:${log.column})` : ''}
+      </div>
+    );
+  }
+
+  captureException(new Error('Unexpected log type in Preflight Script output'), {
+    extra: { log },
+  });
+  return null;
 }
