@@ -5,7 +5,7 @@ repository = "https://github.com/graphql-hive/console/"
 edition = "2021"
 license = "MIT"
 publish = true
-version = "1.1.0"
+version = "1.1.1"
 description = "Apollo-Router Plugin for Hive"
 
 [[bin]]

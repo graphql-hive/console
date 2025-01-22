@@ -36,6 +36,7 @@ import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
+  LogLine,
   LogRecord,
   preflightScriptPlugin,
   PreflightScriptProvider,
@@ -57,7 +58,6 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
-import { captureException } from '@sentry/react';
 
 const explorer = explorerPlugin();
 
@@ -702,13 +702,6 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
     consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
   }, [props.logs, isOpen]);
 
-  const logColor = {
-    error: 'text-red-400',
-    info: 'text-emerald-400',
-    warn: 'text-yellow-400',
-    log: '', // default
-  };
-
   return (
     <Collapsible
       open={isOpen}
@@ -768,33 +761,9 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
           </div>
         ) : (
           <>
-            {props.logs.map((log, index) => {
-              if (typeof log !== 'string' && 'type' in log && log.type === 'separator') {
-                return <hr key={index} className="my-2 border-dashed border-current" />;
-              }
-
-              let logType: 'error' | 'warn' | 'info' | 'log' = 'log';
-              let logMessage = '';
-
-              if (log instanceof Error) {
-                logType = 'error';
-                logMessage = `${log.name}: ${log.message}`;
-              } else if (typeof log === 'string') {
-                logType = log.split(':')[0].toLowerCase() as 'error' | 'warn' | 'info' | 'log';
-                logMessage = log.substring(log.indexOf(':') + 1).trim();
-              } else {
-                captureException(new Error('Unexpected log type in Preflight Script Logs'), {
-                  extra: { log },
-                });
-                return null;
-              }
-
-              return (
-                <div key={index} className={logColor[logType] ?? ''}>
-                  {logType}: {logMessage}
-                </div>
-              );
-            })}
+            {props.logs.map((log, index) => (
+              <LogLine key={index} log={log} />
+            ))}
           </>
         )}
       </CollapsibleContent>
