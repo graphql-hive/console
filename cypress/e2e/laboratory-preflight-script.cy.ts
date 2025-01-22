@@ -203,6 +203,7 @@ throw new TypeError('Test')`,
 
 describe('Execution', () => {
   it('result.request.headers are added to the graphiql request base headers', () => {
+    // Setup Preflight Script
     const preflightHeaders = {
       foo: 'bar',
     };
@@ -210,23 +211,23 @@ describe('Execution', () => {
     cy.dataCy(selectors.buttonModalCy).click();
     setEditorScript(`lab.request.headers.append('foo', '${preflightHeaders.foo}')`);
     cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@request');
   });
 
   it('result.request.headers take precedence over graphiql request base headers', () => {
-    // --- Integrity Check: Ensure the header we think we're overriding is actually there to override.
-    // --- We achieve this by asserting a sent GraphiQL request includes the certain header and assume
-    // --- if its there once its there every time.
+    // Integrity Check: Ensure the header we think we're overriding is actually there to override.
+    // We achieve this by asserting a sent GraphiQL request includes the certain header and assume
+    // if its there once its there every time.
     const baseHeaders = {
       accept: 'application/json, multipart/mixed',
     };
     cy.intercept({ headers: baseHeaders }).as('integrityCheck');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@integrityCheck');
-    // ---
-
+    // Setup Preflight Script
     const preflightHeaders = {
       accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
     };
@@ -234,6 +235,7 @@ describe('Execution', () => {
     cy.dataCy(selectors.buttonModalCy).click();
     setEditorScript(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
     cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@request');
@@ -241,7 +243,7 @@ describe('Execution', () => {
 
   it.only('result.request.headers are NOT substituted with environment variables', () => {
     const barEnVarInterpolation = '{{bar}}';
-
+    // Setup Static Headers
     const staticHeaders = {
       foo_static: barEnVarInterpolation,
     };
@@ -250,7 +252,7 @@ describe('Execution', () => {
       force: true,
       parseSpecialCharSequences: false,
     });
-
+    // Setup Preflight Script
     const environmentVariables = {
       bar: 'BAR_VALUE',
     };
@@ -264,6 +266,7 @@ describe('Execution', () => {
       lab.request.headers.append('foo_preflight', '${preflightHeaders.foo_preflight}')
     `);
     cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
     cy.intercept({
       headers: {
         ...preflightHeaders,
