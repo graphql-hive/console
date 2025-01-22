@@ -1,8 +1,9 @@
 import { writeFileSync } from 'node:fs';
 import { extname, resolve } from 'node:path';
-import { buildSchema, GraphQLError, introspectionFromSchema } from 'graphql';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { Args, Flags } from '@oclif/core';
 import Command from '../base-command';
+import { APIError, UnexpectedError, UnsupportedFileExtensionError } from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
 
 export default class Introspect extends Command<typeof Introspect> {
@@ -46,19 +47,11 @@ export default class Introspect extends Command<typeof Introspect> {
       headers,
       method: 'POST',
     }).catch(err => {
-      if (err instanceof GraphQLError) {
-        this.logFailure(err.message);
-        this.exit(1);
-      }
-
-      this.error(err, {
-        exit: 1,
-      });
+      throw new APIError(err);
     });
 
     if (!schema) {
-      this.logFailure('Unable to load schema');
-      this.exit(1);
+      throw new UnexpectedError('Unable to load schema');
     }
 
     if (!flags.write) {
@@ -89,8 +82,7 @@ export default class Introspect extends Command<typeof Introspect> {
           break;
         }
         default:
-          this.logFailure(`Unsupported file extension ${extname(flags.write)}`);
-          this.exit(1);
+          throw new UnsupportedFileExtensionError(flags.write);
       }
 
       this.logSuccess(`Saved to ${filepath}`);

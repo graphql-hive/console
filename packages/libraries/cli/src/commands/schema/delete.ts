@@ -2,7 +2,12 @@ import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
@@ -99,20 +104,30 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         }
       }
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
-      });
+      let accessToken: string, endpoint: string;
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: SchemaDelete.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: SchemaDelete.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaDeleteMutation,
@@ -134,15 +149,14 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       const errors = result.schemaDelete.errors;
 
       if (errors) {
-        this.log(renderErrors(errors));
-        this.exit(1);
+        throw new APIError(renderErrors(errors));
       }
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure(`Failed to complete`);
-        this.handleFetchError(error);
+        throw new UnexpectedError(error);
       }
     }
   }

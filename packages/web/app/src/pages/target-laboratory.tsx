@@ -1,14 +1,16 @@
-import { ReactElement, useCallback, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cx } from 'class-variance-authority';
 import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
+import { ChevronDownIcon, EraserIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
 import {
   DropdownMenu,
@@ -34,6 +36,8 @@ import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
+  LogLine,
+  LogRecord,
   preflightScriptPlugin,
   PreflightScriptProvider,
   usePreflightScript,
@@ -518,7 +522,7 @@ function LaboratoryPageContent(props: {
           .graphiql-dialog a {
             --color-primary: 40, 89%, 60% !important;
           }
-          
+
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
@@ -529,25 +533,49 @@ function LaboratoryPageContent(props: {
             line-height: 1.75rem !important;
             color: white;
           }
-          
+
           .graphiql-container,
           .graphiql-dialog,
           .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
-          
+
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
             background: #030711;
           }
-          
+
           .graphiql-tab {
             white-space: nowrap;
           }
 
           .graphiql-sidebar > button.active {
             background-color: hsla(var(--color-neutral),var(--alpha-background-light))
+          }
+
+          .graphiql-container .graphiql-footer {
+            border: 0;
+            margin-top: 15px;
+          }
+
+          #preflight-script-logs {
+            background-color: hsl(var(--color-base));
+            border-radius: var(--border-radius-12);
+            box-shadow: var(--popover-box-shadow);
+            color: hsla(var(--color-neutral), var(--alpha-tertiary));
+          }
+
+          #preflight-script-logs h2 {
+            color: hsla(var(--color-neutral), var(--alpha-secondary));
+          }
+
+          #preflight-script-logs button[data-state="open"] > h2 {
+            color: hsl(var(--color-neutral));
+          }
+
+          #preflight-script-logs > div {
+            border-color: hsl(var(--border));
           }
         `}</style>
       </Helmet>
@@ -592,6 +620,16 @@ function LaboratoryPageContent(props: {
                 </>
               )}
             </GraphiQL.Toolbar>
+            <GraphiQL.Footer>
+              <div>
+                {preflightScript.isPreflightScriptEnabled ? (
+                  <PreflightScriptLogs
+                    logs={preflightScript.logs}
+                    onClear={preflightScript.clearLogs}
+                  />
+                ) : null}
+              </div>
+            </GraphiQL.Footer>
           </GraphiQL>
         </PreflightScriptProvider>
       )}
@@ -654,4 +692,81 @@ function useApiTabValueState(graphqlEndpointUrl: string | null) {
       [setState],
     ),
   ] as const;
+}
+
+function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const consoleRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const consoleEl = consoleRef.current;
+    consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
+  }, [props.logs, isOpen]);
+
+  return (
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
+      id="preflight-script-logs"
+    >
+      <div
+        className={cn(
+          'flex shrink-0 items-center justify-between px-4 py-3',
+          isOpen ? 'border-b' : 'border-b-0',
+        )}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex h-auto items-center gap-2 p-0 hover:bg-transparent"
+            data-cy="trigger"
+          >
+            <ChevronDownIcon
+              className={`size-4 text-gray-500 transition-transform ${
+                isOpen ? 'rotate-0' : '-rotate-90'
+              }`}
+            />
+            <h2 className="text-[15px] font-normal">Preflight Script Logs</h2>
+          </Button>
+        </CollapsibleTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            data-cy="erase-logs"
+            className={cn(
+              'size-8 text-gray-500 hover:text-white',
+              isOpen ? 'visible' : 'invisible',
+            )}
+            onClick={props.onClear}
+          >
+            <EraserIcon className="size-4" />
+            <span className="sr-only">Clear logs</span>
+          </Button>
+        </div>
+      </div>
+      <CollapsibleContent
+        className="grow overflow-auto p-4 font-mono text-xs/[18px]"
+        ref={consoleRef}
+        data-cy="logs"
+      >
+        {props.logs.length === 0 ? (
+          <div
+            data-cy="empty-state"
+            className="flex flex-col items-center justify-center text-gray-400"
+          >
+            <p>No logs available</p>
+            <p>Execute a query to see logs</p>
+          </div>
+        ) : (
+          <>
+            {props.logs.map((log, index) => (
+              <LogLine key={index} log={log} />
+            ))}
+          </>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }

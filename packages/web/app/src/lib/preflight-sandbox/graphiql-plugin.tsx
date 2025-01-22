@@ -28,19 +28,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
-import { Editor as MonacoEditor, OnMount } from '@monaco-editor/react';
-import {
-  Cross2Icon,
-  CrossCircledIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  Pencil1Icon,
-  TriangleRightIcon,
-} from '@radix-ui/react-icons';
+import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
+import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
+import { captureException } from '@sentry/react';
 import { useParams } from '@tanstack/react-router';
 import { cn } from '../utils';
-import type { LogMessage } from './preflight-script-worker';
-import { IFrameEvents } from './shared-types';
+import labApiDefinitionRaw from './lab-api-declaration?raw';
+import { IFrameEvents, LogMessage } from './shared-types';
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -139,7 +133,7 @@ const PreflightScript_TargetFragment = graphql(`
   }
 `);
 
-type LogRecord = LogMessage | { type: 'separator' };
+export type LogRecord = LogMessage | { type: 'separator' };
 
 function safeParseJSON(str: string): Record<string, unknown> | null {
   try {
@@ -149,7 +143,7 @@ function safeParseJSON(str: string): Record<string, unknown> | null {
   }
 }
 
-const enum PreflightWorkerState {
+export const enum PreflightWorkerState {
   running,
   ready,
 }
@@ -187,7 +181,13 @@ export function usePreflightScript(args: {
     const id = crypto.randomUUID();
     setState(PreflightWorkerState.running);
     const now = Date.now();
-    setLogs(prev => [...prev, '> Start running script']);
+    setLogs(prev => [
+      ...prev,
+      {
+        level: 'log',
+        message: 'Running script...',
+      },
+    ]);
 
     try {
       const contentWindow = iframeRef.current?.contentWindow;
@@ -269,7 +269,10 @@ export function usePreflightScript(args: {
           latestEnvironmentVariablesRef.current = mergedEnvironmentVariables;
           setLogs(logs => [
             ...logs,
-            `> End running script. Done in ${(Date.now() - now) / 1000}s`,
+            {
+              level: 'log',
+              message: `Done in ${(Date.now() - now) / 1000}s`,
+            },
             {
               type: 'separator' as const,
             },
@@ -282,8 +285,16 @@ export function usePreflightScript(args: {
           const error = ev.data.error;
           setLogs(logs => [
             ...logs,
-            error,
-            '> Preflight script failed',
+            {
+              level: 'error',
+              message: error.message,
+              line: error.line,
+              column: error.column,
+            },
+            {
+              level: 'log',
+              message: 'Script failed',
+            },
             {
               type: 'separator' as const,
             },
@@ -322,8 +333,14 @@ export function usePreflightScript(args: {
       if (err instanceof Error) {
         setLogs(prev => [
           ...prev,
-          err,
-          '> Preflight script failed',
+          {
+            level: 'error',
+            message: err.message,
+          },
+          {
+            level: 'log',
+            message: 'Script failed',
+          },
           {
             type: 'separator' as const,
           },
@@ -568,6 +585,18 @@ function PreflightScriptModal({
   const handleEnvEditorDidMount: OnMount = useCallback(editor => {
     envEditorRef.current = editor;
   }, []);
+
+  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+    // Add custom typings for globalThis
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+      `
+        ${labApiDefinitionRaw}
+        declare const lab: LabAPI;
+      `,
+      'global.d.ts',
+    );
+  }, []);
+
   const handleSubmit = useCallback(() => {
     onScriptValueChange(scriptEditorRef.current?.getValue() ?? '');
     onEnvValueChange(envEditorRef.current?.getValue() ?? '');
@@ -646,6 +675,7 @@ function PreflightScriptModal({
             </div>
             <MonacoEditor
               value={scriptValue}
+              beforeMount={handleMonacoEditorBeforeMount}
               onMount={handleScriptEditorDidMount}
               {...monacoProps.script}
               options={{
@@ -673,43 +703,12 @@ function PreflightScriptModal({
             </div>
             <section
               ref={consoleRef}
-              className='h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-[Menlo,Monaco,"Courier_New",monospace] text-xs/[18px]'
+              className="h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]"
               data-cy="console-output"
             >
-              {logs.map((log, index) => {
-                let type = '';
-                if (log instanceof Error) {
-                  type = 'error';
-                  log = `${log.name}: ${log.message}`;
-                }
-                if (typeof log === 'string') {
-                  type ||= log.split(':')[0].toLowerCase();
-
-                  const ComponentToUse = {
-                    error: CrossCircledIcon,
-                    warn: ExclamationTriangleIcon,
-                    info: InfoCircledIcon,
-                  }[type];
-
-                  return (
-                    <div
-                      key={index}
-                      className={clsx(
-                        'relative',
-                        {
-                          error: 'text-red-500',
-                          warn: 'text-yellow-500',
-                          info: 'text-green-500',
-                        }[type],
-                      )}
-                    >
-                      {ComponentToUse && <ComponentToUse className={classes.icon} />}
-                      {log}
-                    </div>
-                  );
-                }
-                return <hr key={index} className="my-2 border-dashed border-current" />;
-              })}
+              {logs.map((log, index) => (
+                <LogLine key={index} log={log} />
+              ))}
             </section>
             <EditorTitle className="flex gap-2 p-2">
               Environment Variables
@@ -753,4 +752,31 @@ function PreflightScriptModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+const LOG_COLORS = {
+  error: 'text-red-400',
+  info: 'text-emerald-400',
+  warn: 'text-yellow-400',
+  log: 'text-gray-400',
+};
+
+export function LogLine({ log }: { log: LogRecord }) {
+  if ('type' in log && log.type === 'separator') {
+    return <hr className="my-2 border-dashed border-current" />;
+  }
+
+  if ('level' in log && log.level in LOG_COLORS) {
+    return (
+      <div className={LOG_COLORS[log.level]}>
+        {log.level}: {log.message}
+        {log.line && log.column ? ` (${log.line}:${log.column})` : ''}
+      </div>
+    );
+  }
+
+  captureException(new Error('Unexpected log type in Preflight Script output'), {
+    extra: { log },
+  });
+  return null;
 }

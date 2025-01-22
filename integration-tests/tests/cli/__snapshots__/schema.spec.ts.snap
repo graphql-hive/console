@@ -96,10 +96,13 @@ exports[`FEDERATION > publishing invalid schema SDL provides meaningful feedback
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
+ ›   Error: The SDL is not valid at line 1, column 1:
+ ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;
 
 exports[`FEDERATION > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -160,10 +163,13 @@ exports[`FEDERATION > schema:publish should see Invalid Token error when token i
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
+ ›   Error: A valid registry token is required to perform the action. The 
+ ›   registry token used does not exist or has been revoked.  [106]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;
 
 exports[`SINGLE > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -246,10 +252,13 @@ exports[`SINGLE > publishing invalid schema SDL provides meaningful feedback for
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
+ ›   Error: The SDL is not valid at line 1, column 1:
+ ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;
 
 exports[`SINGLE > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -310,10 +319,13 @@ exports[`SINGLE > schema:publish should see Invalid Token error when token is in
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
+ ›   Error: A valid registry token is required to perform the action. The 
+ ›   registry token used does not exist or has been revoked.  [106]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;
 
 exports[`STITCHING > can publish a schema with breaking, warning and safe changes > schemaCheck 1`] = `
@@ -412,10 +424,13 @@ exports[`STITCHING > publishing invalid schema SDL provides meaningful feedback 
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
-    Error: The SDL is not valid at line 1, column 1:
-     Syntax Error: Unexpected Name "iliketurtles".
+ ›   Error: The SDL is not valid at line 1, column 1:
+ ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;
 
 exports[`STITCHING > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -478,8 +493,11 @@ exports[`STITCHING > schema:publish should see Invalid Token error when token is
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: Invalid token provided
- ›   Reference: __ID__
+ ›   Error: A valid registry token is required to perform the action. The 
+ ›   registry token used does not exist or has been revoked.  [106]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
-✖ Failed to publish schema
+__NONE__
 `;

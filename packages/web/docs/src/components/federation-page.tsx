@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import Image from 'next/image';
-import { Anchor, CallToAction, Heading } from '@theguild/components';
+import { Anchor, CallToAction, ContactButton, Heading } from '@theguild/components';
 import { cn } from '../lib';
 import { ArrowIcon } from './arrow-icon';
 import { FrequentlyAskedFederationQuestions } from './frequently-asked-questions';
@@ -38,15 +38,12 @@ export function FederationPage(): ReactElement {
           >
             Try Hive for Federation
           </CallToAction>
-          <CallToAction
+          <ContactButton
             variant="secondary"
             title="Contact our experts to learn more about GraphQL Federation"
-            onClick={() => {
-              (window as any).$crisp?.push(['do', 'chat:open']);
-            }}
           >
             Contact an Expert
-          </CallToAction>
+          </ContactButton>
         </HeroLinks>
       </Hero>
       <Intro />

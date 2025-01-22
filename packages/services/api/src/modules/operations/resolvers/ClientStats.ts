@@ -45,7 +45,7 @@ export const ClientStats: ClientStatsResolvers = {
         period,
         clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
       }),
-      operationsManager.readDetailedDurationPercentiles({
+      operationsManager.readDetailedDurationMetrics({
         organizationId: organization,
         projectId: project,
         targetId: target,

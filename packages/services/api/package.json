@@ -34,7 +34,7 @@
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
     "@slack/web-api": "7.8.0",
-    "@theguild/federation-composition": "0.14.2",
+    "@theguild/federation-composition": "0.14.3",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@types/bcryptjs": "2.4.6",
@@ -66,7 +66,7 @@
     "slonik": "30.4.4",
     "supertokens-node": "16.7.5",
     "tslib": "2.8.1",
-    "undici": "6.21.0",
+    "undici": "6.21.1",
     "vitest": "2.0.5",
     "zod": "3.24.1",
     "zod-validation-error": "3.4.0"

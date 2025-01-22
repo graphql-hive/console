@@ -2,6 +2,19 @@
 
 type _MessageEvent<T> = MessageEvent<T>;
 
+export type LogMessage = {
+  level: 'log' | 'warn' | 'error' | 'info';
+  message: string;
+  line?: number;
+  column?: number;
+};
+
+export type ErrorMessage = {
+  message: string;
+  line?: number;
+  column?: number;
+};
+
 export namespace IFrameEvents {
   export namespace Outgoing {
     export const enum Event {
@@ -25,7 +38,7 @@ export namespace IFrameEvents {
     type LogEventData = {
       type: Event.log;
       runId: string;
-      log: string | Error;
+      log: LogMessage;
     };
 
     type ResultEventData = {
@@ -37,7 +50,7 @@ export namespace IFrameEvents {
     type ErrorEventData = {
       type: Event.error;
       runId: string;
-      error: Error;
+      error: ErrorMessage;
     };
 
     type PromptEventData = {
@@ -100,8 +113,8 @@ export namespace WorkerEvents {
       prompt = 'prompt',
     }
 
-    type LogEventData = { type: Event.log; message: string };
-    type ErrorEventData = { type: Event.error; error: Error };
+    type LogEventData = { type: Event.log; message: LogMessage };
+    type ErrorEventData = { type: Event.error; error: ErrorMessage };
     type PromptEventData = {
       type: Event.prompt;
       promptId: number;
