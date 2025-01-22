@@ -148,7 +148,7 @@ export const Organization: Pick<
 
   viewerCanManageInvitations: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
@@ -157,7 +157,7 @@ export const Organization: Pick<
   },
   viewerCanAssignUserRoles: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:assignRole',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
@@ -166,7 +166,7 @@ export const Organization: Pick<
   },
   viewerCanManageRoles: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,

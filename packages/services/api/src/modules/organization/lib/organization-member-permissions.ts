@@ -57,37 +57,14 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         title: 'View members',
         description: 'Member can access the organization member overview.',
       },
+
       {
-        id: 'member:assignRole',
-        title: 'Assign member role',
-        description: 'Member can assign roles to users.',
+        id: 'member:modify',
+        title: 'Manage members',
+        description: 'Member can invite users, update and assign roles.',
         dependsOn: 'member:describe',
         warning:
-          'Granting a role the ability to assign roles enables it to elevate its own permissions.',
-      },
-      {
-        id: 'member:modifyRole',
-        title: 'Modify member role',
-        description: 'Member can modify, create and delete roles.',
-        dependsOn: 'member:assignRole',
-        warning:
-          'Granting a role the ability to modify roles enables it to elevate its own permissions.',
-      },
-      {
-        id: 'member:removeMember',
-        title: 'Remove member',
-        description: 'Member can remove users from the organization.',
-        dependsOn: 'member:describe',
-        warning:
-          'Granting a role the ability to remove members enables it to remove any member form the organization, except the owner.',
-      },
-      {
-        id: 'member:manageInvites',
-        title: 'Manage invites',
-        description: 'Member can invite users via email and modify or delete pending invites.',
-        dependsOn: 'member:assignRole',
-        warning:
-          'Granting a role the ability to manage invites enables it to elevate its own permissions.',
+          'Granting a role the ability to manage members enables it to elevate its own permissions.',
       },
     ],
   },

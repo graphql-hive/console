@@ -384,7 +384,7 @@ export class OIDCIntegrationsProvider {
 
     if (
       !(await this.session.canPerformAction({
-        action: 'member:assignRole',
+        action: 'member:modify',
         organizationId: oidcIntegration.linkedOrganizationId,
         params: {
           organizationId: oidcIntegration.linkedOrganizationId,

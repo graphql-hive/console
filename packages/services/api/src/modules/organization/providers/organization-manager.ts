@@ -259,7 +259,7 @@ export class OrganizationManager {
   @cache((selector: OrganizationSelector) => selector.organizationId)
   async getInvitations(selector: OrganizationSelector) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -478,7 +478,7 @@ export class OrganizationManager {
 
   async deleteInvitation(input: { email: string; organizationId: string }) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: input.organizationId,
       params: {
         organizationId: input.organizationId,
@@ -489,7 +489,7 @@ export class OrganizationManager {
 
   async inviteByEmail(input: { email: string; organization: string; role?: string | null }) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: input.organization,
       params: {
         organizationId: input.organization,
@@ -792,7 +792,7 @@ export class OrganizationManager {
   ): Promise<Organization> {
     this.logger.info('Deleting a member from an organization (selector=%o)', selector);
     await this.session.assertPerformAction({
-      action: 'member:removeMember',
+      action: 'member:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -859,7 +859,7 @@ export class OrganizationManager {
     const organizationId = await this.idTranslator.translateOrganizationId(input);
 
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId,
       params: {
         organizationId,
@@ -932,7 +932,7 @@ export class OrganizationManager {
 
   async deleteMemberRole(input: { organizationId: string; roleId: string }) {
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: input.organizationId,
       params: {
         organizationId: input.organizationId,
@@ -985,7 +985,7 @@ export class OrganizationManager {
     const organizationId = await this.idTranslator.translateOrganizationId(input);
 
     await this.session.assertPerformAction({
-      action: 'member:assignRole',
+      action: 'member:modify',
       organizationId,
       params: {
         organizationId,
@@ -1075,7 +1075,7 @@ export class OrganizationManager {
   }) {
     const organizationId = await this.idTranslator.translateOrganizationId(input);
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId,
       params: {
         organizationId,

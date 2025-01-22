@@ -50,7 +50,7 @@ export const OnlyAllowedPermissions: Story = {
       'billing:update',
       'project:describe',
       'member:describe',
-      'member:manageInvites',
+      'member:modify',
     ],
     showOnlyAllowedPermissions: true,
   },

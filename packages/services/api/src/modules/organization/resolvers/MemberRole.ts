@@ -7,7 +7,7 @@ export const MemberRole: MemberRoleResolvers = {
       return false;
     }
     return await injector.get(Session).canPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: role.organizationId,
       params: {
         organizationId: role.organizationId,
@@ -19,7 +19,7 @@ export const MemberRole: MemberRoleResolvers = {
       return false;
     }
     return await injector.get(Session).canPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: role.organizationId,
       params: {
         organizationId: role.organizationId,
@@ -28,7 +28,7 @@ export const MemberRole: MemberRoleResolvers = {
   },
   canInvite: async (role, _, { injector }) => {
     return await injector.get(Session).canPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: role.organizationId,
       params: {
         organizationId: role.organizationId,

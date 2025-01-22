@@ -14,7 +14,7 @@ export const Member: MemberResolvers = {
     }
 
     return await session.canPerformAction({
-      action: 'member:removeMember',
+      action: 'member:modify',
       organizationId: member.organizationId,
       params: {
         organizationId: member.organizationId,

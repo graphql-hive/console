@@ -70,46 +70,13 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
       {
         __typename: 'Permission',
         isReadOnly: false,
-        id: 'member:assignRole',
+        id: 'member:modify',
         dependsOnId: 'member:describe',
         description: 'Member can assign roles to users.',
         level: PermissionLevel.Organization,
         title: 'Assign member role',
         warning:
           'Granting a role the ability to assign roles enables it to elevate its own permissions.',
-      },
-      {
-        __typename: 'Permission',
-        isReadOnly: false,
-        id: 'member:modifyRole',
-        dependsOnId: 'member:describe',
-        description: 'Member can modify, create and delete roles.',
-        level: PermissionLevel.Organization,
-        title: 'Modify member role',
-        warning:
-          'Granting a role the ability to modify roles enables it to elevate its own permissions.',
-      },
-      {
-        __typename: 'Permission',
-        isReadOnly: false,
-        id: 'member:removeMember',
-        dependsOnId: 'member:describe',
-        description: 'Member can remove users from the organization.',
-        level: PermissionLevel.Organization,
-        title: 'Remove member',
-        warning:
-          'Granting a role the ability to remove members enables it to remove any member form the organization, except the owner.',
-      },
-      {
-        __typename: 'Permission',
-        isReadOnly: false,
-        id: 'member:manageInvites',
-        dependsOnId: 'member:describe',
-        description: 'Member can invite users via email and modify or delete pending invites.',
-        level: PermissionLevel.Organization,
-        title: 'Manage invites',
-        warning:
-          'Granting a role the ability to manage invites enables it to elevate its own permissions.',
       },
     ],
   },
