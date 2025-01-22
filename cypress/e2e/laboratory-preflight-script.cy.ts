@@ -199,17 +199,15 @@ throw new TypeError('Test')`,
 describe('Execution', () => {
   it('result.request.headers are added to the graphiql request base headers', () => {
     const headers = {
-      foo: { name: 'foo', value: 'bar' },
+      foo: 'bar',
     };
     cy.dataCy(selectors.buttonToggle).click();
     cy.dataCy(selectors.buttonModal).click();
-    setEditorScript(`lab.request.headers.append('${headers.foo.name}', '${headers.foo.value}')`);
+    setEditorScript(`lab.request.headers.append('foo', '${headers.foo}')`);
     cy.dataCy(selectors.modal.buttonSubmit).click();
     cy.intercept({
       method: 'POST',
-      headers: {
-        [headers.foo.name]: headers.foo.value,
-      },
+      headers,
     }).as('post');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@post');
@@ -218,38 +216,26 @@ describe('Execution', () => {
   it('result.request.headers take precedence over graphiql request base headers', () => {
     // --- Pre Assert Integrity Check: make sure the header we think we're overriding is actually there.
     const baseHeaders = {
-      accept: {
-        name: 'accept',
-        value: 'application/json, multipart/mixed',
-      },
+      accept: 'application/json, multipart/mixed',
     };
     cy.intercept({
       method: 'POST',
-      headers: {
-        [baseHeaders.accept.name]: baseHeaders.accept.value,
-      },
+      headers: baseHeaders,
     }).as('integrityCheck');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@integrityCheck');
     // ---
 
     const preflightHeaders = {
-      accept: {
-        name: 'accept',
-        value: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
-      },
+      accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
     };
     cy.dataCy(selectors.buttonToggle).click();
     cy.dataCy(selectors.buttonModal).click();
-    setEditorScript(
-      `lab.request.headers.append('${preflightHeaders.accept.name}', '${preflightHeaders.accept.value}')`,
-    );
+    setEditorScript(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
     cy.dataCy(selectors.modal.buttonSubmit).click();
     cy.intercept({
       method: 'POST',
-      headers: {
-        [preflightHeaders.accept.name]: preflightHeaders.accept.value,
-      },
+      headers: preflightHeaders,
     }).as('post');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@post');
