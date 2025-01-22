@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { MemberRoleSelector } from './member-role-selector';
 import { ResourceSelector, type ResourceSelection } from './resource-selector';
 
@@ -62,6 +64,14 @@ const MemberRolePicker_AssignRoleMutation = graphql(`
       ok {
         updatedMember {
           id
+          role {
+            id
+            name
+          }
+          user {
+            id
+            displayName
+          }
           ...OrganizationMemberRow_MemberFragment
         }
         previousMemberRole {
@@ -80,6 +90,7 @@ const MemberRolePicker_AssignRoleMutation = graphql(`
 export function MemberRolePicker(props: {
   organization: FragmentType<typeof MemberRolePicker_OrganizationFragment>;
   member: FragmentType<typeof MemberRolePicker_MemberFragment>;
+  close: VoidFunction;
 }) {
   const organization = useFragment(MemberRolePicker_OrganizationFragment, props.organization);
   const member = useFragment(MemberRolePicker_MemberFragment, props.member);
@@ -108,6 +119,7 @@ export function MemberRolePicker(props: {
   }));
 
   const [assignRoleState, assignRole] = useMutation(MemberRolePicker_AssignRoleMutation);
+  const { toast } = useToast();
 
   return (
     <>
@@ -139,48 +151,78 @@ export function MemberRolePicker(props: {
       </div>
       <DialogFooter>
         <Button
-          onClick={() => {
-            assignRole({
-              input: {
-                organizationSlug: organization.slug,
-                roleId: selectedRoleId,
-                userId: member.user.id,
-                resources: selection,
-              },
-            });
+          disabled={assignRoleState.fetching}
+          onClick={async () => {
+            try {
+              const result = await assignRole({
+                input: {
+                  organizationSlug: organization.slug,
+                  roleId: selectedRoleId,
+                  userId: member.user.id,
+                  resources:
+                    transformResourceSelectionToGraphQLMemberResourceAssignmentInput(selection),
+                },
+              });
+              if (result.error) {
+                toast({
+                  variant: 'destructive',
+                  title: `Failed to assign role to ${member.user.displayName}`,
+                  description: result.error.message,
+                });
+              } else if (result.data?.assignMemberRole.error) {
+                toast({
+                  variant: 'destructive',
+                  title: `Failed to assign role to ${member.user.displayName}`,
+                  description: result.data.assignMemberRole.error.message,
+                });
+              } else if (result.data?.assignMemberRole.ok) {
+                toast({
+                  title: `Assigned ${result.data?.assignMemberRole.ok.updatedMember.role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
+                });
+                props.close();
+              }
+            } catch (error: any) {
+              console.error(error);
+              toast({
+                variant: 'destructive',
+                title: `Failed to assign role to ${member.user.displayName}`,
+                description: 'message' in error ? error.message : String(error),
+              });
+            }
           }}
         >
-          Confirm
+          {assignRoleState.fetching ? 'Loading...' : 'Confirm'}
         </Button>
       </DialogFooter>
     </>
   );
 }
 
-// const { toast } = useToast();
+function transformResourceSelectionToGraphQLMemberResourceAssignmentInput(
+  selection: ResourceSelection,
+): GraphQLSchema.MemberResourceAssignmentInput {
+  if (selection.projects === '*') {
+    return {
+      allProjects: true,
+    };
+  }
 
-// if (result.error) {
-//             toast({
-//               variant: 'destructive',
-//               title: `Failed to assign role to ${props.memberName}`,
-//               description: result.error.message,
-//             });
-//           } else if (result.data?.assignMemberRole.error) {
-//             toast({
-//               variant: 'destructive',
-//               title: `Failed to assign role to ${props.memberName}`,
-//               description: result.data.assignMemberRole.error.message,
-//             });
-//           } else if (result.data?.assignMemberRole.ok) {
-//             toast({
-//               title: `Assigned ${role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
-//             });
-//           }
-//         } catch (error: any) {
-//           console.error(error);
-//           toast({
-//             variant: 'destructive',
-//             title: `Failed to assign role to ${props.memberName}`,
-//             description: 'message' in error ? error.message : String(error),
-//           });
-//         }
+  return {
+    projects: selection.projects.map(project => ({
+      projectId: project.id,
+      targets:
+        project.targets === '*'
+          ? { allTargets: true }
+          : {
+              targets: project.targets.map(target => ({
+                targetId: target.id,
+                appDeployments: { appDeployments: [] },
+                services:
+                  target.services === '*'
+                    ? { allServices: true }
+                    : { services: target.services.map(service => ({ serviceName: service })) },
+              })),
+            },
+    })),
+  };
+}

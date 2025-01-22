@@ -495,7 +495,7 @@ export default gql`
     """
     Specific services within the target for which the permissions should be applied.
     """
-    services: MemberServiceAssignmentInput
+    services: [MemberServiceAssignmentInput!]
   }
 
   input MemberTargetAssignmentInput {

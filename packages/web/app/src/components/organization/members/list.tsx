@@ -257,8 +257,7 @@ function MemberRole(props: {
       ) : member.resourceAssignment.projects?.length ? (
         <>
           {'(' + member.resourceAssignment.projects.length} project
-          {member.resourceAssignment.projects.length === 1 ? '' : 's'}
-          {')'}
+          {member.resourceAssignment.projects.length === 1 ? '' : 's'})
         </>
       ) : null}{' '}
       {organization.viewerCanAssignUserRoles && (
@@ -267,7 +266,13 @@ function MemberRole(props: {
             <Link>change</Link>
           </DialogTrigger>
           <DialogContent className="min-w-[800px]">
-            {isOpen && <MemberRolePicker organization={organization} member={member} />}
+            {isOpen && (
+              <MemberRolePicker
+                organization={organization}
+                member={member}
+                close={() => setIsOpen(false)}
+              />
+            )}
           </DialogContent>
         </Dialog>
       )}

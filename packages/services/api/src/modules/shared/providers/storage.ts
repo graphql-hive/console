@@ -195,11 +195,6 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  assignOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    userId: string;
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;

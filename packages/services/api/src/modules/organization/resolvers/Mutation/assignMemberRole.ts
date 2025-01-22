@@ -10,5 +10,6 @@ export const assignMemberRole: NonNullable<MutationResolvers['assignMemberRole']
     organizationSlug: input.organizationSlug,
     userId: input.userId,
     roleId: input.roleId,
+    resources: input.resources,
   });
 };

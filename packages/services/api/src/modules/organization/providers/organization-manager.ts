@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { cache, share } from '../../../shared/helpers';
@@ -981,7 +982,12 @@ export class OrganizationManager {
     };
   }
 
-  async assignMemberRole(input: { organizationSlug: string; userId: string; roleId: string }) {
+  async assignMemberRole(input: {
+    organizationSlug: string;
+    userId: string;
+    roleId: string;
+    resources: GraphQLSchema.MemberResourceAssignmentInput;
+  }) {
     const organizationId = await this.idTranslator.translateOrganizationId(input);
 
     await this.session.assertPerformAction({
@@ -1016,11 +1022,18 @@ export class OrganizationManager {
       };
     }
 
+    const resourceAssignmentGroup =
+      await this.organizationMembers.transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
+        organization,
+        input.resources,
+      );
+
     // Assign the role to the member
-    await this.storage.assignOrganizationMemberRole({
+    await this.organizationMembers.assignOrganizationMemberRole({
       organizationId,
       userId: input.userId,
       roleId: input.roleId,
+      resourceAssignmentGroup,
     });
 
     // Access cache is stale by now
