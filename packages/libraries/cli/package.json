@@ -96,6 +96,9 @@
         "host": "https://cli.graphql-hive.com/",
         "bucket": "graphql-hive-cli"
       }
+    },
+    "hooks": {
+      "command_not_found": "./dist/hooks/command-not-found"
     }
   }
 }
