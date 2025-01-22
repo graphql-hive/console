@@ -5,6 +5,19 @@ import { JSONPrimitive } from './json';
 
 type _MessageEvent<T> = MessageEvent<T>;
 
+export type LogMessage = {
+  level: 'log' | 'warn' | 'error' | 'info';
+  message: string;
+  line?: number;
+  column?: number;
+};
+
+export type ErrorMessage = {
+  message: string;
+  line?: number;
+  column?: number;
+};
+
 export namespace IFrameEvents {
   export namespace Outgoing {
     export const enum Event {
@@ -29,7 +42,7 @@ export namespace IFrameEvents {
       export interface Log {
         type: Event.log;
         runId: string;
-        log: string | globalThis.Error;
+        log: LogMessage;
       }
 
       export interface Result {
@@ -44,7 +57,7 @@ export namespace IFrameEvents {
       export interface Error {
         type: Event.error;
         runId: string;
-        error: globalThis.Error;
+        error: ErrorMessage;
       }
 
       export interface Prompt {
@@ -119,12 +132,12 @@ export namespace WorkerEvents {
     export namespace EventData {
       export interface Log {
         type: Event.log;
-        message: string;
+        message: LogMessage;
       }
 
       export interface Error {
         type: Event.error;
-        error: globalThis.Error;
+        error: ErrorMessage;
       }
 
       export interface Prompt {

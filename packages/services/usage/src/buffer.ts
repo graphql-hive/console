@@ -131,6 +131,7 @@ export function createKVBuffer<T>(config: {
   calculateReportSize(report: T): number;
   split(report: T, numOfChunks: number): readonly T[];
   onRetry(reports: readonly T[]): void;
+  isTooLargePayloadError(error: unknown): boolean;
   sender(
     reports: readonly T[],
     estimatedSizeInBytes: number,
@@ -254,8 +255,10 @@ export function createKVBuffer<T>(config: {
         await flushBuffer(reports, size, batchId);
       } catch (error) {
         logger.error(error);
-        // the payload size was most likely too big
-        estimator.overflowed(batchId);
+        if (config.isTooLargePayloadError(error)) {
+          // the payload size was most likely too big
+          estimator.overflowed(batchId);
+        }
       }
     }
 

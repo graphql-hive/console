@@ -2,7 +2,7 @@ import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
 import { ALLOWED_GLOBALS } from './allowed-globals';
 import { isJSONPrimitive, JSONPrimitive } from './json';
-import { WorkerEvents } from './shared-types';
+import { LogMessage, WorkerEvents } from './shared-types';
 
 interface WorkerData {
   request: {
@@ -10,8 +10,6 @@ interface WorkerData {
   };
   environmentVariables: Record<string, JSONPrimitive>;
 }
-
-export type LogMessage = string | Error;
 
 /**
  * Unique id for each prompt request.
@@ -91,13 +89,22 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     (level: 'log' | 'warn' | 'error' | 'info') =>
     (...args: unknown[]) => {
       console[level](...args);
-      let message = `${level.charAt(0).toUpperCase()}${level.slice(1)}: ${args.map(String).join(' ')}`;
-      message += appendLineAndColumn(new Error(), {
+      const message = args.map(String).join(' ');
+      const { line, column } = readLineAndColumn(new Error(), {
         columnOffset: 'console.'.length,
       });
       // The messages should be streamed to the main thread as they occur not gathered and send to
       // the main thread at the end of the execution of the preflight script
-      postMessage({ type: 'log', message });
+      // const message: LogMessage = { level, message };
+      postMessage({
+        type: 'log',
+        message: {
+          level,
+          message,
+          line,
+          column,
+        } satisfies LogMessage,
+      });
     };
 
   function getValidEnvVariable(value: unknown) {
@@ -176,10 +183,15 @@ ${script}})()`;
       'undefined',
     )(labApi, consoleApi);
   } catch (error) {
-    if (error instanceof Error) {
-      error.message += appendLineAndColumn(error);
-    }
-    sendMessage({ type: WorkerEvents.Outgoing.Event.error, error: error as Error });
+    const { line, column } = error instanceof Error ? readLineAndColumn(error) : {};
+    sendMessage({
+      type: WorkerEvents.Outgoing.Event.error,
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+        line,
+        column,
+      },
+    });
     return;
   }
 
@@ -192,11 +204,14 @@ ${script}})()`;
   });
 }
 
-function appendLineAndColumn(error: Error, { columnOffset = 0 } = {}): string {
+function readLineAndColumn(error: Error, { columnOffset = 0 } = {}) {
   const regex = /<anonymous>:(?<line>\d+):(?<column>\d+)/; // Regex to match the line and column numbers
 
   const { line, column } = error.stack?.match(regex)?.groups || {};
-  return ` (Line: ${Number(line) - 3}, Column: ${Number(column) - columnOffset})`;
+  return {
+    line: Number(line) - 3,
+    column: Number(column) - columnOffset,
+  };
 }
 
 sendMessage({ type: WorkerEvents.Outgoing.Event.ready });
