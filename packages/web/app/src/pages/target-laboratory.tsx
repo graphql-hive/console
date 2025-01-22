@@ -769,20 +769,11 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
         ) : (
           <>
             {props.logs.map((log, index) => {
-              if (typeof log !== 'string' && 'type' in log && log.type === 'separator') {
+              if ('type' in log && log.type === 'separator') {
                 return <hr key={index} className="my-2 border-dashed border-current" />;
               }
 
-              let logType: 'error' | 'warn' | 'info' | 'log' = 'log';
-              let logMessage = '';
-
-              if (log instanceof Error) {
-                logType = 'error';
-                logMessage = `${log.name}: ${log.message}`;
-              } else if (typeof log === 'string') {
-                logType = log.split(':')[0].toLowerCase() as 'error' | 'warn' | 'info' | 'log';
-                logMessage = log.substring(log.indexOf(':') + 1).trim();
-              } else {
+              if (!('level' in log)) {
                 captureException(new Error('Unexpected log type in Preflight Script Logs'), {
                   extra: { log },
                 });
@@ -790,8 +781,9 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
               }
 
               return (
-                <div key={index} className={logColor[logType] ?? ''}>
-                  {logType}: {logMessage}
+                <div key={index} className={logColor[log.level] ?? ''}>
+                  {log.level}: {log.message} $
+                  {log.line && log.column ? `(${log.line}:${log.column})` : ''}
                 </div>
               );
             })}

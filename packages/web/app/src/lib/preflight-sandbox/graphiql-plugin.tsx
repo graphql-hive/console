@@ -29,19 +29,12 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
-import {
-  Cross2Icon,
-  CrossCircledIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  Pencil1Icon,
-  TriangleRightIcon,
-} from '@radix-ui/react-icons';
+import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
+import { captureException } from '@sentry/react';
 import { useParams } from '@tanstack/react-router';
 import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
-import type { LogMessage } from './preflight-script-worker';
-import { IFrameEvents } from './shared-types';
+import { IFrameEvents, LogMessage } from './shared-types';
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -188,7 +181,13 @@ export function usePreflightScript(args: {
     const id = crypto.randomUUID();
     setState(PreflightWorkerState.running);
     const now = Date.now();
-    setLogs(prev => [...prev, '> Start running script']);
+    setLogs(prev => [
+      ...prev,
+      {
+        level: 'log',
+        message: '> Start running script',
+      },
+    ]);
 
     try {
       const contentWindow = iframeRef.current?.contentWindow;
@@ -270,7 +269,10 @@ export function usePreflightScript(args: {
           latestEnvironmentVariablesRef.current = mergedEnvironmentVariables;
           setLogs(logs => [
             ...logs,
-            `> End running script. Done in ${(Date.now() - now) / 1000}s`,
+            {
+              level: 'log',
+              message: `> End running script. Done in ${(Date.now() - now) / 1000}s`,
+            },
             {
               type: 'separator' as const,
             },
@@ -283,8 +285,16 @@ export function usePreflightScript(args: {
           const error = ev.data.error;
           setLogs(logs => [
             ...logs,
-            error,
-            '> Preflight script failed',
+            {
+              level: 'error',
+              message: error.message,
+              line: error.line,
+              column: error.column,
+            },
+            {
+              level: 'log',
+              message: '> Preflight script failed',
+            },
             {
               type: 'separator' as const,
             },
@@ -323,8 +333,14 @@ export function usePreflightScript(args: {
       if (err instanceof Error) {
         setLogs(prev => [
           ...prev,
-          err,
-          '> Preflight script failed',
+          {
+            level: 'error',
+            message: err.message,
+          },
+          {
+            level: 'log',
+            message: '> Preflight script failed',
+          },
           {
             type: 'separator' as const,
           },
@@ -592,6 +608,13 @@ function PreflightScriptModal({
     consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
   }, [logs]);
 
+  const logColor = {
+    error: 'text-red-400',
+    info: 'text-emerald-400',
+    warn: 'text-yellow-400',
+    log: 'text-gray-400',
+  };
+
   return (
     <Dialog
       open={isOpen}
@@ -687,42 +710,27 @@ function PreflightScriptModal({
             </div>
             <section
               ref={consoleRef}
-              className='h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-[Menlo,Monaco,"Courier_New",monospace] text-xs/[18px]'
+              className="h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]"
               data-cy="console-output"
             >
               {logs.map((log, index) => {
-                let type = '';
-                if (log instanceof Error) {
-                  type = 'error';
-                  log = `${log.name}: ${log.message}`;
+                if ('type' in log && log.type === 'separator') {
+                  return <hr key={index} className="my-2 border-dashed border-current" />;
                 }
-                if (typeof log === 'string') {
-                  type ||= log.split(':')[0].toLowerCase();
 
-                  const ComponentToUse = {
-                    error: CrossCircledIcon,
-                    warn: ExclamationTriangleIcon,
-                    info: InfoCircledIcon,
-                  }[type];
-
-                  return (
-                    <div
-                      key={index}
-                      className={clsx(
-                        'relative',
-                        {
-                          error: 'text-red-500',
-                          warn: 'text-yellow-500',
-                          info: 'text-green-500',
-                        }[type],
-                      )}
-                    >
-                      {ComponentToUse && <ComponentToUse className={classes.icon} />}
-                      {log}
-                    </div>
-                  );
+                if (!('level' in log)) {
+                  captureException(new Error('Unexpected log type in Preflight Script Editor'), {
+                    extra: { log },
+                  });
+                  return null;
                 }
-                return <hr key={index} className="my-2 border-dashed border-current" />;
+
+                return (
+                  <div key={index} className={logColor[log.level] ?? ''}>
+                    {log.level}: {log.message}{' '}
+                    {log.line && log.column ? `(${log.line}:${log.column})` : ''}
+                  </div>
+                );
               })}
             </section>
             <EditorTitle className="flex gap-2 p-2">
