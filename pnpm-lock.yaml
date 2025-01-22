@@ -820,8 +820,8 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
       undici:
-        specifier: 6.21.0
-        version: 6.21.0
+        specifier: 6.21.1
+        version: 6.21.1
       vitest:
         specifier: 2.0.5
         version: 2.0.5(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)
@@ -853,8 +853,8 @@ importers:
         specifier: 3.4.0
         version: 3.4.0
       undici:
-        specifier: 6.21.0
-        version: 6.21.0
+        specifier: 6.21.1
+        version: 6.21.1
       vitest:
         specifier: 2.0.5
         version: 2.0.5(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)
@@ -901,8 +901,8 @@ importers:
         specifier: 3.4.0
         version: 3.4.0
       undici:
-        specifier: 6.21.0
-        version: 6.21.0
+        specifier: 6.21.1
+        version: 6.21.1
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -3901,7 +3901,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -15433,8 +15432,8 @@ packages:
     resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
     engines: {node: '>=14.0'}
 
-  undici@6.21.0:
-    resolution: {integrity: sha512-BUgJXc752Kou3oOIuU1i+yZZypyZRqNPW0vqoMPl8VaoalSfeR0D8/t4iAS3yirs79SSMTxTag+ZC86uswv+Cw==}
+  undici@6.21.1:
+    resolution: {integrity: sha512-q/1rj5D0/zayJB2FraXdaWxbhWiNKDvu8naDT2dl1yTlvJp4BLtOcp2a5BvgGNQpYYJzau7tf1WgKv3b+7mqpQ==}
     engines: {node: '>=18.17'}
 
   unenv-nightly@2.0.0-20241218-183400-5d6aec3:
@@ -15959,6 +15958,7 @@ packages:
   wrangler@3.100.0:
     resolution: {integrity: sha512-+nsZK374Xnp2BEQQuB/18pnObgsOey0AHVlg75pAdwNaKAmB2aa0/E5rFb7i89DiiwFYoZMz3cARY1UKcm/WQQ==}
     engines: {node: '>=16.17.0'}
+    deprecated: Downgrade to 3.99.0
     hasBin: true
     peerDependencies:
       '@cloudflare/workers-types': ^4.20241230.0
@@ -33215,7 +33215,7 @@ snapshots:
     dependencies:
       '@fastify/busboy': 2.1.1
 
-  undici@6.21.0: {}
+  undici@6.21.1: {}
 
   unenv-nightly@2.0.0-20241218-183400-5d6aec3:
     dependencies:
