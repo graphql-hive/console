@@ -341,7 +341,16 @@ export function usePreflightScript(args: {
           return;
         }
 
-        Kit.neverCase(ev.data);
+        // Window message events can be emitted from unknowable sources.
+        // For example when our e2e tests runs within Cypress GUI, we see a `MessageEvent` with `.data` of `{ vscodeScheduleAsyncWork: 3 }`.
+        // Since we cannot know if the event source is Preflight Script, we cannot perform an exhaustive check.
+        //
+        // Kit.neverCase(ev.data);
+        //
+        console.debug(
+          'preflight sandbox graphiql plugin: An unknown window message event received. Ignoring.',
+          ev,
+        );
       }
 
       window.addEventListener('message', eventHandler);

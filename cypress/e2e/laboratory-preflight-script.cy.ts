@@ -186,7 +186,21 @@ throw new TypeError('Test')`,
 });
 
 describe('Execution', () => {
-  it('result.request.headers are added to the graphiql request base headers');
+  it.only('result.request.headers are added to the graphiql request base headers', () => {
+    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('preflight-script-modal-button').click();
+    setEditorScript(`lab.request.headers.append('x-foo', 'bar')`);
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+      headers: {
+        'x-foo': 'bar',
+      },
+    }).as('post');
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+  });
 
   it('result.request.headers take precedence over graphiql request base headers');
 
