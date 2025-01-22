@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { FastifyReply, FastifyRequest } from '@hive/service-common';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
+import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 
@@ -312,19 +313,6 @@ function schemaCheckOrPublishIdentity(
   }
 
   return ids;
-}
-
-/** Typed Object.fromEntries */
-function objectFromEntries<$Key extends string, $Value>(
-  entries: Array<[$Key, $Value]>,
-): Record<$Key, $Value> {
-  return Object.fromEntries(entries) as Record<$Key, $Value>;
-}
-
-function objectEntries<$Key extends string, $Value>(
-  object: Record<$Key, $Value>,
-): Array<[$Key, $Value]> {
-  return Object.entries(object) as Array<[$Key, $Value]>;
 }
 
 /**
