@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-self-import
 export * as Kit from './index';
 
 export * from './never';
