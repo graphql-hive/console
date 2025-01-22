@@ -142,7 +142,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
       type: IFrameEvents.Outgoing.Event.error,
       runId,
       error: {
-        message: String(error),
+        message: error instanceof Error ? error.message : String(error),
       },
     });
     terminate();
