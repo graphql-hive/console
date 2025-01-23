@@ -357,7 +357,6 @@ function LaboratoryPageContent(props: {
         }
 
         const headers = {
-          // todo: test case covering point below
           // We want to prevent users from interpolating environment variables into
           // their preflight script headers. So, apply substitution BEFORE merging
           // in preflight headers.
