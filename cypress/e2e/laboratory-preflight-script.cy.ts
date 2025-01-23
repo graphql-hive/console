@@ -241,7 +241,7 @@ describe('Execution', () => {
     cy.wait('@request');
   });
 
-  it.only('result.request.headers are NOT substituted with environment variables', () => {
+  it('result.request.headers are NOT substituted with environment variables', () => {
     const barEnVarInterpolation = '{{bar}}';
     // Setup Static Headers
     const staticHeaders = {
