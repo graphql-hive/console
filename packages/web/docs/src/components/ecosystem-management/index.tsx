@@ -2,17 +2,19 @@ import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import NextLink from 'next/link';
 import {
   CallToAction,
+  CodegenIcon,
   DecorationIsolation,
   Heading,
   HighlightDecoration,
+  HiveGatewayIcon,
+  HiveIcon,
+  YogaIcon,
 } from '@theguild/components';
 import { cn } from '../../lib';
 import { ArrowIcon } from '../arrow-icon';
 import { BookIcon } from '../book-icon';
 import { CheckIcon } from '../check-icon';
 import styles from './ecosystem-management.module.css';
-
-const svgHref = new URL('./ecosystem-management.svg', import.meta.url).toString();
 
 export function EcosystemManagementSection({ className }: { className?: string }) {
   return (
@@ -200,6 +202,7 @@ function Illustration(props: { className?: string }) {
         styles.container,
       )}
     >
+      <SafariLinearGradientDefs />
       <div className={'flex flex-row ' + styles.vars}>
         <Edge top bottom left highlighted={highlightedEdge === 5}>
           <div
@@ -230,10 +233,7 @@ function Illustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48}>
-              <SafariLinearGradientDefs />
-              <use width="100%" height="100%" xlinkHref={`${svgHref}#hive`} />
-            </svg>
+            <HiveGatewayIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
           </Node>
           <Edge
             left
@@ -252,9 +252,7 @@ function Illustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg className="size-[var(--big-logo-size)]">
-              <use width="100%" height="100%" xlinkHref={`${svgHref}#hive`} />
-            </svg>
+            <HiveIcon className="size-[var(--big-logo-size)] [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
           <Edge
             left
@@ -272,9 +270,7 @@ function Illustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48}>
-              <use xlinkHref={`${svgHref}#yoga`} />
-            </svg>
+            <YogaIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
           </Node>
         </div>
         <div>
@@ -308,9 +304,7 @@ function Illustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48} viewBox="0 0 100 100">
-              <use xlinkHref={`${svgHref}#gql-logo`} />
-            </svg>
+            <GraphQLLogo className="size-12" />
           </Node>
           <Edge
             left
@@ -330,9 +324,7 @@ function Illustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48} viewBox="0 0 48 48">
-              <use xlinkHref={`${svgHref}#codegen`} />
-            </svg>
+            <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
           </Node>
         </div>
       </div>
@@ -478,29 +470,51 @@ function Node({
  */
 function SafariLinearGradientDefs() {
   return (
-    <defs>
-      <linearGradient
-        id="linear-blue"
-        x1="0"
-        y1="0"
-        x2="100%"
-        y2="100%"
-        gradientUnits="objectBoundingBox"
-      >
-        <stop stopColor="#8CBEB3" />
-        <stop offset="1" stopColor="#68A8B6" />
-      </linearGradient>
-      <linearGradient
-        id="linear-white"
-        x1="0"
-        y1="0"
-        x2="100%"
-        y2="100%"
-        gradientUnits="objectBoundingBox"
-      >
-        <stop stopColor="white" stopOpacity="0.4" />
-        <stop offset="1" stopColor="white" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
+    <svg className="absolute size-0">
+      <defs>
+        <linearGradient
+          id="linear-blue"
+          x1="0"
+          y1="0"
+          x2="100%"
+          y2="100%"
+          gradientUnits="objectBoundingBox"
+        >
+          <stop stopColor="#8CBEB3" />
+          <stop offset="1" stopColor="#68A8B6" />
+        </linearGradient>
+        <linearGradient
+          id="linear-white"
+          x1="0"
+          y1="0"
+          x2="100%"
+          y2="100%"
+          gradientUnits="objectBoundingBox"
+        >
+          <stop stopColor="white" stopOpacity="0.5" />
+          <stop offset="1" stopColor="white" stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function GraphQLLogo(props: { className?: string }) {
+  return (
+    <svg className={props.className} viewBox="0 0 100 100">
+      <g fill="url(#linear-blue)">
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M50 6.90308L87.323 28.4515V71.5484L50 93.0968L12.677 71.5484V28.4515L50 6.90308ZM16.8647 30.8693V62.5251L44.2795 15.0414L16.8647 30.8693ZM50 13.5086L18.3975 68.2457H81.6025L50 13.5086ZM77.4148 72.4334H22.5852L50 88.2613L77.4148 72.4334ZM83.1353 62.5251L55.7205 15.0414L83.1353 30.8693V62.5251Z"
+        />
+        <circle cx="50" cy="9.3209" r="8.82" />
+        <circle cx="85.2292" cy="29.6605" r="8.82" />
+        <circle cx="85.2292" cy="70.3396" r="8.82" />
+        <circle cx="50" cy="90.6791" r="8.82" />
+        <circle cx="14.7659" cy="70.3396" r="8.82" />
+        <circle cx="14.7659" cy="29.6605" r="8.82" />
+      </g>
+    </svg>
   );
 }
