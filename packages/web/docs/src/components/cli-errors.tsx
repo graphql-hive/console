@@ -279,7 +279,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     {
       instance: {
         name: 'ServiceAndUrlLengthMismatch',
-        code: '400',
+        code: '600',
         message: 'Not every services has a matching url. Got 2 services and 1 url.',
       },
       example:
@@ -289,7 +289,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     {
       instance: {
         name: 'LocalCompositionError',
-        code: '401',
+        code: '601',
         message: 'Local composition failed:\n[reason]',
       },
       example:
@@ -299,7 +299,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     {
       instance: {
         name: 'RemoteCompositionError',
-        code: '402',
+        code: '602',
         message: 'Remote composition failed:\nDetected 1 error\n- [reason]',
       },
       example:
@@ -309,7 +309,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     {
       instance: {
         name: 'InvalidCompositionResultError',
-        code: '403',
+        code: '603',
         message: 'Composition resulted in an invalid supergraph: [supergraph]',
       },
       example:
@@ -319,7 +319,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     {
       instance: {
         name: 'PersistedOperationsMalformedError',
-        code: '500',
+        code: '400',
         message: 'Persisted Operations file "operations.json" is malformed.',
       },
       example: 'hive app:create --name ios --version 1.0.0 operations.json',
