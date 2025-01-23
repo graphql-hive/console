@@ -40,7 +40,7 @@
     "prerelease": "pnpm build:libraries",
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
-    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin sync-cargo-file",
+    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin sync-cargo-file && pnpm build:libraries",
     "seed": "tsx scripts/seed-local-env.ts",
     "start": "pnpm run local:setup",
     "test": "vitest",
