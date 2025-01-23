@@ -12,7 +12,7 @@ APIs (usage service and GraphQL API).
 | `POSTGRES_PORT`                      | **Yes**  | Port of the postgres database                                                                            | `5432`                                               |
 | `POSTGRES_DB`                        | **Yes**  | Name of the postgres database.                                                                           | `registry`                                           |
 | `POSTGRES_USER`                      | **Yes**  | User name for accessing the postgres database.                                                           | `postgres`                                           |
-| `POSTGRES_PASSWORD`                  | **Yes**  | Password for accessing the postgres database.                                                            | `postgres`                                           |
+| `POSTGRES_PASSWORD`                  | No       | Password for accessing the postgres database.                                                            | `postgres`                                           |
 | `POSTGRES_SSL`                       | No       | Whether the postgres connection should be established via SSL.                                           | `1` (enabled) or `0` (disabled)                      |
 | `REDIS_HOST`                         | **Yes**  | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                         | **Yes**  | The port of your redis instance.                                                                         | `6379`                                               |
