@@ -2,17 +2,18 @@ import NextImage from 'next/image'
 
 # Member, Roles, and Permissions
 
-A Hive organization can have an unlimited amount of members. Each member can be assigned a single
-role. A role is a collection of permissions that grant access to performing actions within the
-organization.
+A Hive organization can have an unlimited number of members. Member actions are allowed or
+explicitly denied using roles, which are named collections of permissions.
 
-Organization owners or users with the necessary permissions can assign pre-defined member roles or
-create and assign custom member roles with specific permissions tailored to your teams workflows.
+Hive provides two predefined roles for convenience.
+
+Alternatively, organization owners or members with specific permissions can create and/or assign
+custom roles tailored to your teams workflows.
 
 ## Managing Members
 
 Managing members, roles and permissions is done within the organizations `Member` section on the
-Hive Console dashboard.
+Hive Dashboard.
 
 Organization owners or organization members with sufficient permissions can access this section.
 
@@ -26,7 +27,7 @@ import membersTabImage from '../../../../public/docs/pages/management/members-ro
 
 ## Member Roles
 
-Member roles specify the actions a organization member can perform within the organization. Each
+Member roles specify the actions an organization member can perform within the organization. Each
 organization member has a member role assigned.
 
 ### Predefined Member Roles
@@ -195,8 +196,8 @@ or custom role you created.
 Within the `Members` section, select the role you wish to assign to a specific user by using the
 dropdown.
 
-A organization owners role can not be changed, as he always has full access to everything within the
-organization.
+Organization owners always have full access to everything within an organization and cannot be
+assigned a role.
 
 import userAssignRole01Image from '../../../../public/docs/pages/management/members-roles-permissions/user-assign-role-01-assign-role.png'
 
