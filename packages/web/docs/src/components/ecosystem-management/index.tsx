@@ -202,7 +202,7 @@ function Illustration(props: { className?: string }) {
         styles.container,
       )}
     >
-      <SafariLinearGradientDefs />
+      <IconGradientDefs />
       <div className={'flex flex-row ' + styles.vars}>
         <Edge top bottom left highlighted={highlightedEdge === 5}>
           <div
@@ -468,7 +468,7 @@ function Node({
 /**
  * This must be included in one of the SVGs here so they work nicely in Safari.
  */
-function SafariLinearGradientDefs() {
+function IconGradientDefs() {
   return (
     <svg className="absolute size-0">
       <defs>
