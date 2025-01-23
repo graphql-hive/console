@@ -10,7 +10,8 @@ const {
 
 function cn(dbName = POSTGRES_DB) {
   const user = encodeURIComponent(POSTGRES_USER);
-  const password = typeof POSTGRES_PASSWORD === 'string' ? `:${encodeURIComponent(POSTGRES_PASSWORD)}` : '';
+  const password =
+    typeof POSTGRES_PASSWORD === 'string' ? `:${encodeURIComponent(POSTGRES_PASSWORD)}` : '';
   const host = encodeURIComponent(POSTGRES_HOST);
   const dbNameEncoded = encodeURIComponent(dbName);
   const sslMode = POSTGRES_SSL ? 'require' : 'disable';
