@@ -424,6 +424,7 @@ export default gql`
     organizationSlug: String!
     userId: ID!
     roleId: ID!
+    resources: MemberResourceAssignmentInput!
   }
 
   type AssignMemberRoleOk {
@@ -449,6 +450,7 @@ export default gql`
     isOwner: Boolean!
     canLeaveOrganization: Boolean!
     role: MemberRole!
+    resourceAssignment: MemberResourceAssignment!
     """
     Whether the viewer can remove this member from the organization.
     """
@@ -458,5 +460,125 @@ export default gql`
   type MemberConnection {
     nodes: [Member!]!
     total: Int!
+  }
+
+  input MemberAppDeploymentAssignmentInput {
+    appDeployment: String!
+  }
+
+  """
+  @oneOf
+  """
+  input MemberTargetAppDeploymentsAssignmentInput {
+    """
+    Whether the permissions should apply for all app deployments within the target.
+    """
+    allAppDeployments: Boolean
+    """
+    Specific app deployments within the target for which the permissions should be applied.
+    """
+    appDeployments: [MemberAppDeploymentAssignmentInput!]
+  }
+
+  input MemberServiceAssignmentInput {
+    serviceName: String!
+  }
+
+  """
+  @oneOf
+  """
+  input MemberTargetServicesAssignmentInput {
+    """
+    Whether the permissions should apply for all services within the target.
+    """
+    allServices: Boolean
+    """
+    Specific services within the target for which the permissions should be applied.
+    """
+    services: [MemberServiceAssignmentInput!]
+  }
+
+  input MemberTargetAssignmentInput {
+    targetId: ID!
+    services: MemberTargetServicesAssignmentInput!
+    appDeployments: MemberTargetAppDeploymentsAssignmentInput!
+  }
+
+  """
+  @oneOf
+  """
+  input MemberProjectTargetsAssignmentInput {
+    """
+    Whether the permissions should apply for all targets within the project.
+    """
+    allTargets: Boolean
+    """
+    Specific targets within the projects for which the permissions should be applied.
+    """
+    targets: [MemberTargetAssignmentInput!]
+  }
+
+  input MemberProjectAssignmentInput {
+    projectId: ID!
+    targets: MemberProjectTargetsAssignmentInput!
+  }
+
+  """
+  @oneOf
+  """
+  input MemberResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all projects within the organization.
+    """
+    allProjects: Boolean
+    """
+    Specific projects within the organization for which the permissions should be applied.
+    """
+    projects: [MemberProjectAssignmentInput!]
+  }
+
+  """
+  @oneOf
+  """
+  type MemberTargetServicesAssignment {
+    allServices: Boolean
+    services: [String!]
+  }
+
+  """
+  @oneOf
+  """
+  type MemberTargetAppDeploymentAssignment {
+    allAppDeployments: Boolean
+    appDeployments: [String!]
+  }
+
+  type MemberTargetAssignment {
+    targetId: ID!
+    target: Target!
+    services: MemberTargetServicesAssignment!
+    appDeployments: MemberTargetAppDeploymentAssignment!
+  }
+
+  """
+  @oneOf
+  """
+  type MemberProjectTargetsAssignment {
+    allTargets: Boolean
+    targets: [MemberTargetAssignment!]
+  }
+
+  type MemberProjectAssignment {
+    projectId: ID!
+    project: Project!
+    targets: MemberProjectTargetsAssignment!
+  }
+
+  """
+  @oneOf
+  """
+  type MemberResourceAssignment {
+    allProjects: Boolean
+    projects: [MemberProjectAssignment!]
   }
 `;

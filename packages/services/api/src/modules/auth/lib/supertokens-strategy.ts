@@ -140,7 +140,7 @@ export class SuperTokensCookieBasedSession extends Session {
     }
 
     if (resource.type === 'target') {
-      return `hrn:${organizationId}:project/${resource.targetId}`;
+      return `hrn:${organizationId}:target/${resource.targetId}`;
     }
 
     if (resource.type === 'service') {

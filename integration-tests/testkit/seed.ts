@@ -48,6 +48,7 @@ import {
   updateMemberRole,
   updateTargetValidationSettings,
 } from './flow';
+import * as GraphQLSchema from './gql/graphql';
 import {
   BreakingChangeFormula,
   OrganizationAccessScope,
@@ -185,10 +186,10 @@ export function initSeed() {
 
               return members;
             },
-            async projects() {
+            async projects(token = ownerToken) {
               const projectsResult = await getOrganizationProjects(
                 { organizationSlug: organization.slug },
-                ownerToken,
+                token,
               ).then(r => r.expectNoGraphQLErrors());
 
               const projects = projectsResult.organization?.organization.projects.nodes;
@@ -806,6 +807,7 @@ export function initSeed() {
                   input: {
                     roleId: string;
                     userId: string;
+                    resouces?: GraphQLSchema.MemberResourceAssignmentInput;
                   },
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
@@ -816,6 +818,7 @@ export function initSeed() {
                       organizationSlug: organization.slug,
                       userId: input.userId,
                       roleId: input.roleId,
+                      resources: input.resouces ?? { allProjects: true },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());

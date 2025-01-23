@@ -177,6 +177,7 @@ export interface organization_invitations {
 }
 
 export interface organization_member {
+  assigned_resources: any | null;
   connected_to_zendesk: boolean;
   organization_id: string;
   role: user_role;

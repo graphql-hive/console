@@ -181,6 +181,7 @@ export function joinOrganization(code: string, authToken: string) {
                 }
                 role {
                   id
+                  name
                   permissions
                 }
               }

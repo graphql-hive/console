@@ -7,5 +7,9 @@ export default {
       ALTER "scopes" DROP NOT NULL
       , ADD COLUMN "permissions" text[]
     ;
+
+    ALTER TABLE "organization_member"
+      ADD COLUMN "assigned_resources" JSONB
+    ;
   `,
 } satisfies MigrationExecutor;

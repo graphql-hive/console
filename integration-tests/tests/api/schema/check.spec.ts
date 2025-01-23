@@ -1316,6 +1316,342 @@ test.concurrent(
 );
 
 test.concurrent(
+  'can not approve schema check with insufficient permissions granted by default user role',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    expect(member.role.name).toEqual('Viewer');
+    await assignMemberRole({
+      roleId: member.role.id,
+      userId: member.user.id,
+      resouces: { projects: [] },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can not approve schema check with insufficient permissions granted by member role (no access to project resource)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, assignMemberRole, createMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resouces: { projects: [] },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can not approve schema check with insufficient permissions granted by member role (no access to target resource)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target, targets } = await createProject(
+      ProjectType.Single,
+    );
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, createMemberRole, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resouces: {
+        projects: [
+          {
+            projectId: project.id,
+            targets: {
+              targets: [],
+            },
+          },
+        ],
+      },
+    });
+
+    // Attempt approving the failed schema check
+    const errors = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors.at(0)).toMatchObject({
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'schemaCheck:approve' on resource")`,
+      path: ['approveFailedSchemaCheck'],
+    });
+  },
+);
+
+test.concurrent(
+  'can approve schema with sufficient permissions granted by member role (access to target)',
+  async () => {
+    const { createOrg } = await initSeed().createOwner();
+    const { organization, createProject, inviteAndJoinMember } = await createOrg();
+
+    // Setup Start: Create a failed schema check
+
+    const { project, createTargetAccessToken, target } = await createProject(ProjectType.Single);
+
+    // Create a token with write rights
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish schema with write rights
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    // Schema publish should be successful
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = await checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+
+    // Setup Done: Create a failed schema check
+
+    // Create a member with no access to projects
+    const { member, createMemberRole, assignMemberRole, memberToken } = await inviteAndJoinMember();
+    const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.user.id,
+      resouces: {
+        projects: [
+          {
+            projectId: project.id,
+            targets: {
+              targets: [
+                {
+                  targetId: target.id,
+                  appDeployments: { allAppDeployments: true },
+                  services: { allServices: true },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    // Attempt approving the failed schema check
+    const result = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(result.approveFailedSchemaCheck.ok).toMatchObject({
+      schemaCheck: {
+        __typename: 'SuccessfulSchemaCheck',
+        isApproved: true,
+      },
+    });
+  },
+);
+
+test.concurrent(
   'subsequent schema check with shared contextId that contains new breaking changes that have not been approved fails',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();

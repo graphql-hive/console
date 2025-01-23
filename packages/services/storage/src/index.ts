@@ -19,6 +19,7 @@ import type {
   Project,
   Schema,
   Storage,
+  Target,
   TargetSettings,
 } from '@hive/api';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
@@ -505,7 +506,7 @@ export async function createStorage(
               ${args.userId},
               (
                 COALESCE(
-                  (SELECT default_role_id FROM oidc_integrations 
+                  (SELECT default_role_id FROM oidc_integrations
                     WHERE id = ${args.oidcIntegrationId}),
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
@@ -1010,7 +1011,7 @@ export async function createStorage(
           WHERE
             organization_id = ${organizationId}
             AND id = ${roleId}
-            AND locked = false 
+            AND locked = false
             AND (
               SELECT count(*)
               FROM organization_member
@@ -1086,7 +1087,7 @@ export async function createStorage(
     },
     async updateOrganizationRateLimits({ monthlyRateLimit, organizationId: organization }) {
       return transformOrganization(
-        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */ 
+        await pool.one<Slonik<organizations>>(sql`/* updateOrganizationRateLimits */
           UPDATE organizations
           SET limit_operations_monthly = ${monthlyRateLimit.operations}, limit_retention_days = ${monthlyRateLimit.retentionInDays}
           WHERE id = ${organization}
@@ -1274,15 +1275,6 @@ export async function createStorage(
         `,
       );
     },
-    async assignOrganizationMemberRole({ userId, organizationId, roleId }) {
-      await pool.query(
-        sql`/* assignOrganizationMemberRole */
-          UPDATE organization_member
-          SET role_id = ${roleId}
-          WHERE organization_id = ${organizationId} AND user_id = ${userId}
-        `,
-      );
-    },
     async getProjectId({ projectSlug, organizationSlug }) {
       // Based on project's clean_id and organization's clean_id, resolve the actual uuid of the project
       const result = await pool.one<Pick<projects, 'id'>>(
@@ -1301,7 +1293,7 @@ export async function createStorage(
           SELECT t.id FROM targets as t
           LEFT JOIN projects AS p ON (p.id = t.project_id)
           LEFT JOIN organizations AS o ON (o.id = p.org_id)
-          WHERE 
+          WHERE
             t.clean_id = ${selector.targetSlug} AND
             p.clean_id = ${selector.projectSlug} AND
             o.clean_id = ${selector.organizationSlug} AND
@@ -1405,6 +1397,18 @@ export async function createStorage(
       );
 
       return result.rows.map(transformProject);
+    },
+    async findProjectsByIds(ids) {
+      const result = await pool.query<Slonik<projects>>(
+        sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(ids, 'uuid')}) AND type != 'CUSTOM'`,
+      );
+
+      const map = new Map<string, Project>();
+      result.rows.forEach(row => {
+        const project = transformProject(row);
+        map.set(project.id, project);
+      });
+      return map;
     },
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
@@ -1697,6 +1701,29 @@ export async function createStorage(
         orgId: organization,
       }));
     },
+    async findTargetsByIds(organizationId, targetIds) {
+      const map = new Map<string, Target>();
+
+      if (targetIds.length === 0) {
+        return map;
+      }
+
+      const results = await pool.query<unknown>(sql`/* getTargets */
+        SELECT
+          ${targetSQLFields}
+        FROM
+          "targets"
+        WHERE
+          "id" = ANY(${sql.array(targetIds, 'uuid')})
+      `);
+
+      for (const row of results.rows) {
+        const target: Target = { ...TargetModel.parse(row), orgId: organizationId };
+        map.set(target.id, target);
+      }
+
+      return map;
+    },
     async getTargetIdsOfOrganization({ organizationId: organization }) {
       const results = await pool.query<Slonik<Pick<targets, 'id'>>>(
         sql`/* getTargetIdsOfOrganization */
@@ -1856,7 +1883,7 @@ export async function createStorage(
         }>(sql`/* countPeriodSchemaVersionsOfProject */
           SELECT COUNT(*) as total FROM schema_versions as sv
           LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE 
+          WHERE
             t.project_id = ${project}
             AND sv.created_at >= ${period.from.toISOString()}
             AND sv.created_at < ${period.to.toISOString()}
@@ -1878,7 +1905,7 @@ export async function createStorage(
           total: number;
         }>(sql`/* countPeriodSchemaVersionsOfTarget */
           SELECT COUNT(*) as total FROM schema_versions
-          WHERE 
+          WHERE
             target_id = ${target}
             AND created_at >= ${period.from.toISOString()}
             AND created_at < ${period.to.toISOString()}
@@ -2198,7 +2225,7 @@ export async function createStorage(
 
     async getVersion({ projectId: project, targetId: target, versionId: version }) {
       const result = await pool.one(sql`/* getVersion */
-        SELECT 
+        SELECT
           ${schemaVersionSQLFields(sql`sv.`)}
         FROM schema_versions as sv
         LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
@@ -2225,7 +2252,7 @@ export async function createStorage(
       }
 
       const query = sql`/* getPaginatedSchemaVersionsForTargetId */
-        SELECT 
+        SELECT
           ${schemaVersionSQLFields()}
         FROM
           "schema_versions"
@@ -2809,7 +2836,7 @@ export async function createStorage(
       `);
 
       // get organizations data
-      const organizationsResult = pool.query<Slonik<organizations>>(sql`/* adminGetOrganizations */ 
+      const organizationsResult = pool.query<Slonik<organizations>>(sql`/* adminGetOrganizations */
         SELECT * FROM organizations
       `);
 
@@ -2892,7 +2919,7 @@ export async function createStorage(
     },
     async deleteOrganizationBilling(selector) {
       await pool.query<Slonik<organizations_billing>>(
-        sql`/* deleteOrganizationBilling */ 
+        sql`/* deleteOrganizationBilling */
           DELETE FROM organizations_billing
           WHERE organization_id = ${selector.organizationId}`,
       );
@@ -3117,7 +3144,7 @@ export async function createStorage(
       return tracedTransaction('updateOIDCDefaultMemberRole', pool, async trx => {
         // Make sure the role exists and is associated with the organization
         const roleId = await trx.oneFirst<string>(sql`/* checkRoleExists */
-          SELECT id FROM "organization_member_roles" 
+          SELECT id FROM "organization_member_roles"
           WHERE
             "id" = ${args.roleId} AND
             "organization_id" = (
@@ -3198,7 +3225,7 @@ export async function createStorage(
 
     async getCDNAccessTokenById(args) {
       const result = await pool.maybeOne(sql`/* getCDNAccessTokenById */
-        SELECT 
+        SELECT
           "id"
           , "target_id"
           , "s3_key"
@@ -3319,7 +3346,7 @@ export async function createStorage(
         DO UPDATE
           SET "config" = ${sql.jsonb(input.policy)},
               "allow_overriding" = ${input.allowOverrides},
-              "updated_at" = now() 
+              "updated_at" = now()
         RETURNING *;
       `);
 
@@ -3334,7 +3361,7 @@ export async function createStorage(
         (resource_type, resource_id)
       DO UPDATE
         SET "config" = ${sql.jsonb(input.policy)},
-            "updated_at" = now() 
+            "updated_at" = now()
       RETURNING *;
     `);
 
@@ -3979,7 +4006,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
-          RETURNING 
+          RETURNING
             "id"
         `);
       } else if (didUpdateContractChecks) {
@@ -3997,7 +4024,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
-          RETURNING 
+          RETURNING
             "id"
         `);
       }
@@ -5075,7 +5102,7 @@ export const userFields = (
   , ${user}"supertoken_user_id" AS "superTokensUserId"
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
-  , ${user}"zendesk_user_id" AS "zendeskId" 
+  , ${user}"zendesk_user_id" AS "zendeskId"
   , ${superTokensThirdParty}"third_party_id" AS "provider"
 `;
 

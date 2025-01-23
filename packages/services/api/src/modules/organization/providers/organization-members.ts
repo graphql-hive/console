@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
@@ -57,14 +58,14 @@ const RawOrganizationMembershipModel = z.object({
    * Resources that are assigned to the membership
    * If no resources are defined the permissions of the role are applied to all resources within the organization.
    */
-  // TODO: introduce this value
-  // assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
+  assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
 });
 
 export type OrganizationMembershipRoleAssignment = {
   role: OrganizationMemberRole;
   /**
    * Resource assignments as stored within the database.
+   * They are used for displaying the selection UI on the frontend.
    */
   resources: ResourceAssignmentGroup;
   /**
@@ -149,8 +150,7 @@ export class OrganizationMembers {
           throw new Error('Could not resolve role.');
         }
 
-        // TODO: use value read from database
-        const resources: ResourceAssignmentGroup = '*';
+        const resources: ResourceAssignmentGroup = record.assignedResources ?? '*';
 
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
@@ -249,12 +249,245 @@ export class OrganizationMembers {
     const mapping = await this.resolveMemberships(organization, [membership]);
     return mapping.get(membership.userId) ?? null;
   }
+
+  async assignOrganizationMemberRole(args: {
+    organizationId: string;
+    roleId: string;
+    userId: string;
+    resourceAssignmentGroup: ResourceAssignmentGroup;
+  }) {
+    await this.pool.query(
+      sql`/* assignOrganizationMemberRole */
+        UPDATE
+          "organization_member"
+        SET
+          "role_id" = ${args.roleId}
+          , "assigned_resources" = ${JSON.stringify(
+            /** we parse it to avoid additional properties being stored within the database. */
+            AssignedResourceModel.parse(args.resourceAssignmentGroup),
+          )}
+        WHERE
+          "organization_id" = ${args.organizationId}
+          AND "user_id" = ${args.userId}
+      `,
+    );
+  }
+
+  /**
+   * This method translates the database stored member resource assignment to the GraphQL layer
+   * exposed resource assignment.
+   *
+   * Note: This currently by-passes access checks, granting the viewer read access to all resources
+   * within the organization.
+   */
+  async resolveGraphQLMemberResourceAssignment(
+    member: OrganizationMembership,
+  ): Promise<GraphQLSchema.ResolversTypes['MemberResourceAssignment']> {
+    if (member.assignedRole.resources === '*') {
+      return {
+        allProjects: true,
+      };
+    }
+
+    const projects = await this.storage.findProjectsByIds(
+      member.assignedRole.resources.map(project => project.id),
+    );
+
+    // if there is no project all the assignments do not longer exist.
+    const [firstProject] = projects.values();
+    if (!firstProject) {
+      return {
+        projects: [],
+      };
+    }
+
+    const filteredProjects = member.assignedRole.resources.filter(row => projects.get(row.id));
+
+    const targetAssignments = filteredProjects.flatMap(project =>
+      project.targets === '*' ? [] : project.targets,
+    );
+
+    const targets = await this.storage.findTargetsByIds(
+      firstProject.orgId,
+      targetAssignments.map(target => target.id),
+    );
+
+    return {
+      projects: filteredProjects
+        .map(projectAssignment => {
+          const project = projects.get(projectAssignment.id);
+          if (!project) {
+            return null;
+          }
+
+          return {
+            projectId: project.id,
+            project,
+            targets:
+              projectAssignment.targets === '*'
+                ? { allTargets: true }
+                : {
+                    targets: projectAssignment.targets
+                      .map(targetAssignment => {
+                        const target = targets.get(targetAssignment.id);
+                        if (!target) return null;
+
+                        return {
+                          targetId: target.id,
+                          target,
+                          appDeployments:
+                            targetAssignment.appDeployments === '*'
+                              ? { allAppDeployments: true }
+                              : {
+                                  appDeployments: targetAssignment.appDeployments.map(
+                                    deployment => deployment.appName,
+                                  ),
+                                },
+                          services:
+                            targetAssignment.services === '*'
+                              ? { allServices: true }
+                              : {
+                                  services: targetAssignment.services.map(
+                                    service => service.serviceName,
+                                  ),
+                                },
+                        };
+                      })
+                      .filter(isSome),
+                  },
+          };
+        })
+        .filter(isSome),
+    };
+  }
+
+  /**
+   * Transforms and resolves a {GraphQL.MemberResourceAssignmentInput} to a {ResourceAssignmentGroup}
+   * that can eb stored within our database
+   *
+   * - Projects and Targets that can not be found in our database are omitted from the resolved object.
+   * - Projects and Targets that do not follow the hierarchical structure are omitted from teh resolved object.
+   *
+   * These measures are done in order to prevent users to grant access to other organizations.
+   */
+  async transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
+    organization: Organization,
+    input: GraphQLSchema.MemberResourceAssignmentInput,
+  ): Promise<ResourceAssignmentGroup> {
+    if (input.allProjects) {
+      return '*';
+    }
+
+    if (input.projects == null) {
+      return [];
+    }
+
+    const projects = await this.storage.findProjectsByIds(
+      input.projects.map(record => record.projectId),
+    );
+
+    /** Mutable array that we populate with the resolved data from the database */
+    const resourceAssignmentGroup: ResourceAssignmentGroup = [];
+
+    // In case we are not assigning all targets to the project,
+    // we need to  load all the targets/projects that would be assigned
+    // for verifying they belong to the organization and/or project.
+    // This prevents breaking permission boundaries through fault/sus input.
+    const targetLookupIds = new Set<string>();
+    const projectTargetAssignments: Array<{
+      projectId: string;
+      /**  mutable array that is within "resourceAssignmentGroup" */
+      projectTargets: Array<z.TypeOf<typeof TargetAssignmentModel>>;
+      targets: readonly GraphQLSchema.MemberTargetAssignmentInput[];
+    }> = [];
+
+    for (const record of input.projects) {
+      const project = projects.get(record.projectId);
+
+      // In case the project was not found or does not belogn the the organization,
+      // we omit it as it could grant an user permissions for a project within another organization.
+      if (!project || project.orgId !== organization.id) {
+        this.logger.debug('Omitted non-existing project.');
+        continue;
+      }
+
+      if (record.targets.allTargets === true) {
+        resourceAssignmentGroup.push({
+          type: 'project',
+          id: project.id,
+          targets: '*',
+        });
+        continue;
+      }
+
+      const projectTargets: Array<z.TypeOf<typeof TargetAssignmentModel>> = [];
+
+      resourceAssignmentGroup.push({
+        type: 'project',
+        id: project.id,
+        targets: projectTargets,
+      });
+
+      if (record.targets.targets) {
+        for (const target of record.targets.targets) {
+          targetLookupIds.add(target.targetId);
+        }
+        projectTargetAssignments.push({
+          projectTargets,
+          targets: record.targets.targets,
+          projectId: project.id,
+        });
+      }
+    }
+
+    const targets = await this.storage.findTargetsByIds(
+      organization.id,
+      Array.from(targetLookupIds),
+    );
+
+    for (const record of projectTargetAssignments) {
+      for (const targetRecord of record.targets) {
+        const target = targets.get(targetRecord.targetId);
+
+        // In case the target was not found or does not belogn the the organization,
+        // we omit it as it could grant an user permissions for a target within another organization.
+        if (!target || target.projectId !== record.projectId) {
+          this.logger.debug('Omitted non-existing target.');
+          continue;
+        }
+
+        record.projectTargets.push({
+          type: 'target',
+          id: target.id,
+          appDeployments: targetRecord.appDeployments.allAppDeployments
+            ? '*'
+            : (targetRecord.appDeployments.appDeployments ?? []).map(record => ({
+                type: 'appDeployment',
+                appName: record.appDeployment,
+              })),
+          services: targetRecord.services.allServices
+            ? '*'
+            : (targetRecord.services.services ?? []).map(record => ({
+                type: 'service',
+                serviceName: record?.serviceName,
+              })),
+        });
+      }
+    }
+
+    return resourceAssignmentGroup;
+  }
+}
+
+function isSome<T>(input: T | null): input is Exclude<T, null> {
+  return input != null;
 }
 
 const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
   ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
+  , ${prefix}."assigned_resources" AS "assignedResources"
 `;
 
 type OrganizationAssignment = {

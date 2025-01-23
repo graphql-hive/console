@@ -195,11 +195,6 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  assignOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    userId: string;
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;
@@ -209,6 +204,8 @@ export interface Storage {
   getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
+
+  findProjectsByIds(projectIds: Array<string>): Promise<Map<string, Project>>;
 
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
     | {
@@ -306,6 +303,8 @@ export interface Storage {
   getTarget(_: TargetSelector): Promise<Target | never>;
 
   getTargets(_: ProjectSelector): Promise<readonly Target[]>;
+
+  findTargetsByIds(organizationId: string, targetIds: Array<string>): Promise<Map<string, Target>>;
 
   getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
