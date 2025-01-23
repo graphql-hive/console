@@ -172,11 +172,13 @@ export function createKVBuffer<T>(config: {
     reports: readonly T[],
     size: number,
     batchId: string,
-    isRetry = false,
+    isChunkedBuffer = false,
   ) {
     logger.info(`Flushing (reports=%s, bufferSize=%s, id=%s)`, reports.length, size, batchId);
     const estimatedSizeInBytes = estimator.estimate(size);
-    buffer = [];
+    if (isChunkedBuffer) {
+      buffer = [];
+    }
     await config
       .sender(reports, estimatedSizeInBytes, batchId, function validateSize(bytes) {
         if (!config.useEstimator) {
@@ -203,7 +205,7 @@ export function createKVBuffer<T>(config: {
         }
       })
       .catch(error => {
-        if (!isRetry && isBufferTooBigError(error)) {
+        if (!isChunkedBuffer && isBufferTooBigError(error)) {
           config.onRetry(reports);
           logger.info(`Retrying (reports=%s, bufferSize=%s, id=%s)`, reports.length, size, batchId);
 

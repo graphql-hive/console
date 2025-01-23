@@ -15,10 +15,10 @@ import {
 } from './metrics';
 
 enum Status {
-  Waiting,
-  Ready,
-  Unhealthy,
-  Stopped,
+  Waiting = 'Waiting',
+  Ready = 'Ready',
+  Unhealthy = 'Unhealthy',
+  Stopped = 'Stopped',
 }
 
 const levelMap = {
@@ -30,11 +30,11 @@ const levelMap = {
 } as const;
 
 const retryOptions = {
-  maxRetryTime: 15 * 1000,
-  initialRetryTime: 300,
+  maxRetryTime: 30_000,
+  initialRetryTime: 500,
   factor: 0.2,
   multiplier: 2,
-  retries: 3,
+  retries: 10,
 } satisfies RetryOptions; // why satisfies? To be able to use `retryOptions.retries` and get `number` instead of `number | undefined`
 
 export function splitReport(report: RawReport, numOfChunks: number) {
@@ -140,15 +140,19 @@ export function createUsage(config: {
     },
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
     requestTimeout: 60_000, //
-    connectionTimeout: 5000,
-    authenticationTimeout: 5000,
+    connectionTimeout: 15_000,
+    authenticationTimeout: 15_000,
     retry: retryOptions,
   });
+
   const producer = kafka.producer({
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
     metadataMaxAge: 180_000,
     createPartitioner: Partitioners.LegacyPartitioner,
     retry: retryOptions,
+    // Usually, there's one flush at a time,
+    // the only exception is when the buffer is chunked or when a reconnect happens
+    maxInFlightRequests: 5.
   });
   const buffer = createKVBuffer<RawReport>({
     logger,
@@ -212,14 +216,14 @@ export function createUsage(config: {
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
         }
 
-        status = Status.Ready;
+        changeStatus(Status.Ready);
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
         if (isBufferTooBigError(error)) {
           logger.debug('Buffer too big, retrying (id=%s, error=%s)', batchId, error.message);
         } else {
-          status = Status.Unhealthy;
+          changeStatus(Status.Unhealthy);
           logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
           Sentry.setTags({
             batchId,
@@ -227,8 +231,6 @@ export function createUsage(config: {
             numOfOperations,
           });
           Sentry.captureException(error);
-
-          scheduleReconnect();
         }
 
         throw error;
@@ -238,57 +240,24 @@ export function createUsage(config: {
 
   let status: Status = Status.Waiting;
 
-  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  let reconnectCounter = 0;
-  function scheduleReconnect() {
-    logger.info('Scheduling reconnect');
-    if (reconnectTimeout) {
-      logger.info('Reconnect was already scheduled. Waiting...');
+
+  function changeStatus(newStatus: Status) {
+    if (status === newStatus) {
       return;
     }
 
-    reconnectCounter++;
-
-    if (reconnectCounter > retryOptions.retries) {
-      const message = 'Failed to reconnect Kafka producer. Too many retries.';
-      logger.error(message);
-      status = Status.Unhealthy;
-      void config.onStop(message);
-      return;
-    }
-
-    logger.info('Reconnecting in 1 second... (attempt=%s)', reconnectCounter);
-    reconnectTimeout = setTimeout(() => {
-      logger.info('Reconnecting Kafka producer');
-      status = Status.Waiting;
-      producer
-        .connect()
-        .then(() => {
-          logger.info('Kafka producer reconnected');
-          reconnectCounter = 0;
-        })
-        .catch(error => {
-          logger.error('Failed to reconnect Kafka producer: %s', error.message);
-          logger.info('Reconnecting in 2 seconds...');
-          setTimeout(scheduleReconnect, 2000);
-        })
-        .finally(() => {
-          if (reconnectTimeout != null) {
-            clearTimeout(reconnectTimeout);
-            reconnectTimeout = null;
-          }
-        });
-    }, 1000);
+    logger.info('Changing status to %s', newStatus);
+    status = newStatus;
   }
 
   producer.on(producer.events.CONNECT, () => {
     logger.info('Kafka producer: connected');
-    status = Status.Ready;
+    changeStatus(Status.Ready);
   });
 
   producer.on(producer.events.DISCONNECT, () => {
     logger.info('Kafka producer: disconnected');
-    status = Status.Stopped;
+    changeStatus(Status.Stopped);
   });
 
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
@@ -298,7 +267,7 @@ export function createUsage(config: {
   async function stop() {
     logger.info('Started Usage shutdown...');
 
-    status = Status.Stopped;
+    changeStatus(Status.Stopped);
     await buffer.stop();
     logger.info(`Buffering stopped`);
     await producer.disconnect();
@@ -332,7 +301,7 @@ export function createUsage(config: {
       logger.info('Starting Kafka producer');
       await producer.connect();
       buffer.start();
-      status = Status.Ready;
+      changeStatus(Status.Ready);
       logger.info('Kafka producer is ready');
     },
     stop,
