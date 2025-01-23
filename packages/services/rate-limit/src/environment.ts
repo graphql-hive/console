@@ -44,7 +44,7 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const PrometheusModel = zod.object({

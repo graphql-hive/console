@@ -16,7 +16,7 @@ This service takes care of estimating the usage of an account.
 | `POSTGRES_PORT`                     | **Yes**  | Port of the postgres database                                                                            | `5432`                                               |
 | `POSTGRES_DB`                       | **Yes**  | Name of the postgres database.                                                                           | `registry`                                           |
 | `POSTGRES_USER`                     | **Yes**  | User name for accessing the postgres database.                                                           | `postgres`                                           |
-| `POSTGRES_PASSWORD`                 | **Yes**  | Password for accessing the postgres database.                                                            | `postgres`                                           |
+| `POSTGRES_PASSWORD`                 | No       | Password for accessing the postgres database.                                                            | `postgres`                                           |
 | `ENVIRONMENT`                       | No       | The environment of your Hive app. (**Note:** This will be used for Sentry reporting.)                    | `staging`                                            |
 | `SENTRY_DSN`                        | No       | The DSN for reporting errors to Sentry.                                                                  | `https://dooobars@o557896.ingest.sentry.io/12121212` |
 | `SENTRY_ENABLED`                    | No       | Whether Sentry error reporting should be enabled.                                                        | `1` (enabled) or `0` (disabled)                      |
