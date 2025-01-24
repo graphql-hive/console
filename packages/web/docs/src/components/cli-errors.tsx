@@ -16,7 +16,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
     <>
       <h3
         id={`errors-${props.code}`}
-        className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-2xl dark:_text-slate-100"
+        className="mt-8 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
       >
         {props.code} "{props.title}"{' '}
         <a
@@ -25,7 +25,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
           aria-label="Permalink for this error code"
         />
       </h3>
-      <h4 className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-xl dark:_text-slate-100">
+      <h4 className="mt-8 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
         Example: <Code contentEditable="false">{props.example}</Code>
       </h4>
       <Callout type="default" emoji=">">
@@ -33,7 +33,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
       </Callout>
       <h4
         id={`errors-${props.code}-fix`}
-        className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-xl dark:_text-slate-100"
+        className="mt-8 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
       >
         Suggested Fix
       </h4>
