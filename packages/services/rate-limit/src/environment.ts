@@ -44,12 +44,13 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: zod.string().optional(),
+  PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()),
 });
 
 const LogModel = zod.object({
@@ -82,8 +83,13 @@ const configs = {
   prometheus: PrometheusModel.safeParse(process.env),
   // eslint-disable-next-line no-process-env
   log: LogModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
-  tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  tracing: zod
+    .object({
+      ...OpenTelemetryConfigurationModel.shape,
+      OPENTELEMETRY_TRACE_USAGE_REQUESTS: emptyString(zod.literal('1').optional()),
+    })
+    // eslint-disable-next-line no-process-env
+    .safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -129,6 +135,7 @@ export const env = {
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
+    traceRequestsFromUsageService: tracing.OPENTELEMETRY_TRACE_USAGE_REQUESTS === '1',
   },
   postgres: {
     host: postgres.POSTGRES_HOST,
@@ -149,6 +156,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'rate-limit',
           },
+          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
 } as const;

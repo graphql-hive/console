@@ -3,7 +3,7 @@ import { OrganizationManager } from '../../../organization/providers/organizatio
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../providers/target-manager';
 import { PercentageModel } from '../../validation';
-import type { MutationResolvers } from './../../../../__generated__/types';
+import { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateTargetValidationSettings: NonNullable<
   MutationResolvers['updateTargetValidationSettings']
@@ -24,6 +24,8 @@ export const updateTargetValidationSettings: NonNullable<
     period: z.number().min(1).max(org.monthlyRateLimit.retentionInDays).int(),
     targetIds: z.array(z.string()).min(1),
     excludedClients: z.optional(z.array(z.string())),
+    requestCount: z.number().min(1),
+    breakingChangeFormula: z.enum(['PERCENTAGE', 'REQUEST_COUNT']),
   });
 
   const result = UpdateTargetValidationSettingsModel.safeParse(input);
@@ -35,6 +37,7 @@ export const updateTargetValidationSettings: NonNullable<
         inputErrors: {
           percentage: result.error.formErrors.fieldErrors.percentage?.[0],
           period: result.error.formErrors.fieldErrors.period?.[0],
+          requestCount: result.error.formErrors.fieldErrors.requestCount?.[0],
         },
       },
     };
@@ -44,6 +47,8 @@ export const updateTargetValidationSettings: NonNullable<
   await targetManager.updateTargetValidationSettings({
     period: input.period,
     percentage: input.percentage,
+    requestCount: input.requestCount ?? 1,
+    breakingChangeFormula: input.breakingChangeFormula ?? 'PERCENTAGE',
     targetId: target,
     projectId: project,
     organizationId: organization,

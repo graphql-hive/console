@@ -71,7 +71,12 @@ export function collectSchemaCoordinates(args: {
   }
 
   function collectNode(node: ObjectFieldNode | ArgumentNode) {
-    const inputType = args.typeInfo.getInputType()!;
+    const inputType = args.typeInfo.getInputType();
+
+    if (!inputType) {
+      throw new Error('Expected an Input type, got nothing');
+    }
+
     const inputTypeName = resolveTypeName(inputType);
 
     if (node.value.kind === Kind.ENUM) {
@@ -278,6 +283,12 @@ export function collectSchemaCoordinates(args: {
         }
 
         const parentInputTypeName = resolveTypeName(parentInputType);
+
+        if (isScalarType(parentInputType)) {
+          collectInputType(parentInputTypeName);
+          // Prevent the visitor into going deeper into ObjectField
+          return null;
+        }
 
         collectNode(node);
         collectInputType(parentInputTypeName, node.name.value);

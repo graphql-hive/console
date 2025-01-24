@@ -3,22 +3,14 @@ title: 'App Deployment (Persisted Operations)'
 ---
 
 import NextImage from 'next/image'
-import { Callout, Tabs } from '@theguild/components'
+import { Callout, ContactTextLink, Tabs } from '@theguild/components'
 
 # App Deployments
 
 <Callout>
   <div>
     App deployments are currently in preview. If you would like to try them out, please{' '}
-    <a
-      href="#"
-      className="inline-block underline"
-      onClick={() => {
-        window?.$crisp?.push(['do', 'chat:open'])
-      }}
-    >
-      reach out to us
-    </a>
+    <ContactTextLink>reach out to us</ContactTextLink>
     {/* If we move the dot out of the quotations/brackets, it will be a new paragraph... */}
     {'.'}
   </div>

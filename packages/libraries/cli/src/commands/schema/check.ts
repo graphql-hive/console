@@ -1,8 +1,18 @@
+import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  GithubCommitRequiredError,
+  GithubRepositoryRequiredError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaFileEmptyError,
+  SchemaFileNotFoundError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import {
   loadSchema,
@@ -115,6 +125,11 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         version: '0.21.0',
       },
     }),
+    experimentalJsonFile: Flags.string({
+      name: 'experimental-json-file',
+      description:
+        "File path to output a JSON file containing the command's result. Useful for e.g. CI scripting with `jq`.",
+    }),
     forceSafe: Flags.boolean({
       description: 'mark the check as safe, breaking changes are expected',
     }),
@@ -157,22 +172,35 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const service = flags.service;
       const forceSafe = flags.forceSafe;
       const usesGitHubApp = flags.github === true;
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
+      let endpoint: string, accessToken: string;
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: SchemaCheck.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
       const file = args.file;
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: SchemaCheck.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
+
+      const sdl = await loadSchema(file).catch(e => {
+        throw new SchemaFileNotFoundError(file, e);
       });
-      const sdl = await loadSchema(file);
       const git = await gitInfo(() => {
         // noop
       });
@@ -181,7 +209,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const author = flags.author || git?.author;
 
       if (typeof sdl !== 'string' || sdl.length === 0) {
-        throw new Errors.CLIError('Schema seems empty');
+        throw new SchemaFileEmptyError(file);
       }
 
       let github: null | {
@@ -192,12 +220,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       if (usesGitHubApp) {
         if (!commit) {
-          throw new Errors.CLIError(`Couldn't resolve commit sha required for GitHub Application`);
+          throw new GithubCommitRequiredError();
         }
         if (!git.repository) {
-          throw new Errors.CLIError(
-            `Couldn't resolve git repository required for GitHub Application`,
-          );
+          throw new GithubRepositoryRequiredError();
         }
         if (!git.pullRequestNumber) {
           this.warn(
@@ -232,6 +258,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           usesGitHubApp,
         },
       });
+
+      if (flags.experimentalJsonFile) {
+        fs.writeFileSync(flags.experimentalJsonFile, JSON.stringify(result, null, 2));
+      }
 
       if (result.schemaCheck.__typename === 'SchemaCheckSuccess') {
         const changes = result.schemaCheck.changes;
@@ -279,14 +309,14 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       } else if (result.schemaCheck.__typename === 'GitHubSchemaCheckSuccess') {
         this.logSuccess(result.schemaCheck.message);
       } else {
-        this.error(result.schemaCheck.message);
+        throw new APIError(result.schemaCheck.message);
       }
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
         this.logFailure('Failed to check schema');
-        this.handleFetchError(error);
+        throw new UnexpectedError(error);
       }
     }
   }

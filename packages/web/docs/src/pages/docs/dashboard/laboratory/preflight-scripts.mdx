@@ -98,6 +98,28 @@ organization.
 
 <Screenshot>![](./editing.png)</Screenshot>
 
+## HTTP Headers
+
+You can set HTTP headers in your script. Every time you run a request from Laboratory, your
+preflight headers, if any, will be merged into the request before it is sent.
+
+You achieve this by interacting with the
+[`Headers`](https://developer.mozilla.org/docs/web/api/headers) instance available at
+`lab.request.headers`. For example, this script would would add a `foo` header with the value `bar`
+to every Laboratory request.
+
+```ts
+lab.request.headers.set('foo', 'bar')
+```
+
+Preflight headers are merged with the following rules:
+
+1. Unlike static headers, preflight headers do not receive
+   [environment variable substitutions](#using-environment-variables-in-http-headers) on their
+   values.
+2. Preflight headers take precedence, overwriting any same-named headers already in the Laboratory
+   request.
+
 ## Using Environment Variables in HTTP Headers
 
 To use environment variables in the HTTP headers of your GraphQL requests, wrap the keys in double

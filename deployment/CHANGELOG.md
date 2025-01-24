@@ -1,5 +1,126 @@
 # hive
 
+## 4.1.0
+
+### Minor Changes
+
+- [#6400](https://github.com/graphql-hive/console/pull/6400)
+  [`d2a4387`](https://github.com/graphql-hive/console/commit/d2a4387b64fe71340159c536a05dd38b1a35c751)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Display logs from the Preflight Script
+  in Laboratory
+
+- [#6348](https://github.com/graphql-hive/console/pull/6348)
+  [`e754700`](https://github.com/graphql-hive/console/commit/e75470021282b84b622560c8a991c196ee7f24d7)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to select a default role
+  for new OIDC users
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added a new environment variable
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS` for `rate-limit` and `tokens` services.
+
+  Self-hosters who wish to report telemetry information for `usage` service, can opt-in and set
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS=1` to these services. This will skip sampling and will always
+  trace requests originating from the `usage` service.
+
+- [#6388](https://github.com/graphql-hive/console/pull/6388)
+  [`a8ff443`](https://github.com/graphql-hive/console/commit/a8ff443307fa9929f0b466c6a83d695bd5e707dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add multi-column sort to Insights >
+  Operations table
+
+- [#6389](https://github.com/graphql-hive/console/pull/6389)
+  [`781b140`](https://github.com/graphql-hive/console/commit/781b140ffb5d5256913941763b79665965c53a6c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Show Impact metric in the Operations
+  list on the Insights page. Impact equals to the total time spent on this operation in the selected
+  period in seconds. It helps assess which operations contribute the most to overall latency.
+
+  ```
+  Impact = Requests * avg/1000
+  ```
+
+- [#6393](https://github.com/graphql-hive/console/pull/6393)
+  [`84fd770`](https://github.com/graphql-hive/console/commit/84fd770b6c7bc3fdd62af6d337889e3c2596ef15)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add type definitions of global.lab to
+  Preflight Script editor
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added OpenTelemetry traces to Usage service
+  using a new `OPENTELEMETRY_COLLECTOR_ENDPOINT` env var.
+
+  This option is disabled by default for self-hosting, you can opt-in by setting
+  `OPENTELEMETRY_COLLECTOR_ENDPOINT`.
+
+### Patch Changes
+
+- [#6386](https://github.com/graphql-hive/console/pull/6386)
+  [`d19229f`](https://github.com/graphql-hive/console/commit/d19229fb6e4f48237a925987ff1a60b6b651a784)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Remove the code leftovers related to
+  activities (no longer a thing)
+
+- [#6380](https://github.com/graphql-hive/console/pull/6380)
+  [`40213fb`](https://github.com/graphql-hive/console/commit/40213fb7dc39cfb2688e6127e8fe2658f7fceb7f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to
+  [v0.14.3](https://github.com/the-guild-org/federation/releases/tag/v0.14.3)
+
+- [#6399](https://github.com/graphql-hive/console/pull/6399)
+  [`607192e`](https://github.com/graphql-hive/console/commit/607192eaa5d6c3dcc6a2d0c4ff406a7d6f06ca42)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Disable "select organization" dropdown
+  for OIDC accounts
+
+## 4.0.1
+
+### Patch Changes
+
+- [`c6a21ff`](https://github.com/graphql-hive/console/commit/c6a21ffa1bbb32afef86fd137ec3aec1e9b48545)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Bump version to test release flow
+
+## 4.0.0
+
+### Major Changes
+
+- [#6259](https://github.com/graphql-hive/console/pull/6259)
+  [`1168564`](https://github.com/graphql-hive/console/commit/1168564ef06e10e90381ad7808f46c5f205be3ea)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - No longer support the legacy registry
+  models. Announcement https://the-guild.dev/blog/graphql-hive-improvements-in-schema-registry
+
+### Minor Changes
+
+- [#6340](https://github.com/graphql-hive/console/pull/6340)
+  [`3183f5a`](https://github.com/graphql-hive/console/commit/3183f5a9b40ab389b413199747aeff4b9ea1cbe8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Remove the legacy member role assignment wizard.
+
+- [#6341](https://github.com/graphql-hive/console/pull/6341)
+  [`2fa3352`](https://github.com/graphql-hive/console/commit/2fa33520b36e4a0662ab9c74abc06fb4705d2a53)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Allow to close the last tab in
+  Laboratory
+
+- [#6254](https://github.com/graphql-hive/console/pull/6254)
+  [`b58d2c5`](https://github.com/graphql-hive/console/commit/b58d2c5fdb856a3f0710d1551e1e9306eb7cbcc0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add option for checking breaking changes by a fixed
+  request count
+
+### Patch Changes
+
+- [#6332](https://github.com/graphql-hive/console/pull/6332)
+  [`6b9192c`](https://github.com/graphql-hive/console/commit/6b9192c71845d3312cb2a9b1e7c1d9a552fb6f8f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Assigns custom roles to members without
+  a role to complete https://the-guild.dev/graphql/hive/product-updates/2023-12-05-member-roles
+
+- [#6369](https://github.com/graphql-hive/console/pull/6369)
+  [`b40cabd`](https://github.com/graphql-hive/console/commit/b40cabda747641f13fcf183557ce023d12eec2b1)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fix the audit log export
+
+- [#6368](https://github.com/graphql-hive/console/pull/6368)
+  [`0c2e953`](https://github.com/graphql-hive/console/commit/0c2e953fac76cff1c7cb397468c480c28366f665)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix connecting slack integration.
+
+- [#6365](https://github.com/graphql-hive/console/pull/6365)
+  [`bab2cf0`](https://github.com/graphql-hive/console/commit/bab2cf08a596892bc2c7ac0a1e5b00673808bff6)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Fix release and package flow for Docker
+  images of `hive`
+
 ## 3.0.0
 
 ### Major Changes

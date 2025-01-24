@@ -47,6 +47,7 @@ export function deployRateLimit({
         USAGE_ESTIMATOR_ENDPOINT: serviceLocalEndpoint(usageEstimator.service),
         EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
         WEB_APP_URL: `https://${environment.appDns}/`,
+        OPENTELEMETRY_TRACE_USAGE_REQUESTS: observability.enabledForUsageService ? '1' : '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint

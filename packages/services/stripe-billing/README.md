@@ -12,7 +12,7 @@ Optional service for billing customers with Stripe.
 | `POSTGRES_PORT`                    | **Yes**  | Port of the postgres database                                                                            | `5432`                                               |
 | `POSTGRES_DB`                      | **Yes**  | Name of the postgres database.                                                                           | `registry`                                           |
 | `POSTGRES_USER`                    | **Yes**  | User name for accessing the postgres database.                                                           | `postgres`                                           |
-| `POSTGRES_PASSWORD`                | **Yes**  | Password for accessing the postgres database.                                                            | `postgres`                                           |
+| `POSTGRES_PASSWORD`                | No       | Password for accessing the postgres database.                                                            | `postgres`                                           |
 | `POSTGRES_SSL`                     | No       | Whether the postgres connection should be established via SSL.                                           | `1` (enabled) or `0` (disabled)                      |
 | `STRIPE_SECRET_KEY`                | **Yes**  | The stripe secret key.                                                                                   | `sk_test_abcd`                                       |
 | `STRIPE_SYNC_INTERVAL_MS`          | No       | The stripe sync interval in milliseconds (Default: `600_000`)                                            | `1_000`                                              |

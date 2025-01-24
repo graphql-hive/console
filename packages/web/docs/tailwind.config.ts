@@ -6,6 +6,7 @@ import { fontFamily } from 'tailwindcss/defaultTheme';
 import { default as flattenColorPalette } from 'tailwindcss/lib/util/flattenColorPalette';
 import plugin from 'tailwindcss/plugin';
 import tailwindTypography from '@tailwindcss/typography';
+// @ts-expect-error @theguild/tailwind-config types require moduleResolution: bundler
 import baseConfig from '@theguild/tailwind-config';
 
 const config: Config = {

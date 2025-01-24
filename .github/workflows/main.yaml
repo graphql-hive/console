@@ -5,18 +5,38 @@ on:
       - main
 
 jobs:
+  # Release NPM packages and tarballs
+  package:
+    uses: ./.github/workflows/release-stable.yaml
+    secrets: inherit
+
   # Build all packages and applications, and creates Docker images.
   build:
+    needs:
+      - package
     uses: ./.github/workflows/build-and-dockerize.yaml
     with:
-      imageTag: ${{ github.sha }}
+      imageTag:
+        # prettier-ignore
+        ${{ needs.package.outputs.hivePublish == 'true' && needs.package.outputs.hiveVersion || github.sha }}
       publishSourceMaps: true
-      publishLatest: false
+      publishLatest: ${{ needs.package.outputs.hivePublish == 'true' }}
       targets: build
       uploadJavaScriptArtifacts: true
     secrets: inherit
 
-  # Trigger deployment
+  # Dockerize the CLI in case a CLI version was released
+  publish_docker_cli:
+    needs:
+      - package
+    uses: ./.github/workflows/dockerize-cli.yaml
+    if: ${{ needs.package.outputs.cliPublish == 'true' }}
+    with:
+      cliVersion: ${{ needs.package.outputs.cliVersion }}
+      publishLatest: true
+    secrets: inherit
+
+  # Trigger deployment for staging
   deploy:
     name: trigger staging deployment
     needs:
@@ -61,11 +81,6 @@ jobs:
   # Deploy Storybook to CloudFlare Pages
   storybook:
     uses: ./.github/workflows/storybook.yaml
-    secrets: inherit
-
-  # Release NPM packages and tarballs
-  package:
-    uses: ./.github/workflows/release-stable.yaml
     secrets: inherit
 
   # GraphQL Schema Publish

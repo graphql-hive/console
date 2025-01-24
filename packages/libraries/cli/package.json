@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.45.0",
+  "version": "0.46.1",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -59,8 +59,7 @@
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "6.0.22",
     "@oclif/plugin-update": "4.2.13",
-    "@sinclair/typebox": "0.34.13",
-    "@theguild/federation-composition": "0.14.2",
+    "@theguild/federation-composition": "0.14.3",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
     "graphql": "^16.8.1",
@@ -97,6 +96,9 @@
         "host": "https://cli.graphql-hive.com/",
         "bucket": "graphql-hive-cli"
       }
+    },
+    "hooks": {
+      "command_not_found": "./dist/hooks/command-not-found"
     }
   }
 }

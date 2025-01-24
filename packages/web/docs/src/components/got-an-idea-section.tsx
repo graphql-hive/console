@@ -1,4 +1,4 @@
-import { CallToAction, DecorationIsolation, Heading } from '@theguild/components';
+import { ContactButton, DecorationIsolation, Heading } from '@theguild/components';
 import { cn } from '../lib';
 
 export function GotAnIdeaSection({ className }: { className?: string }) {
@@ -116,19 +116,9 @@ export function GotAnIdeaSection({ className }: { className?: string }) {
       <p className="mt-4 text-white/80">
         Join our community to chat with us and let's build something together!
       </p>
-      <CallToAction
-        href="https://the-guild.dev/contact"
-        variant="primary-inverted"
-        className="mt-8"
-        onClick={event => {
-          if (window.$crisp) {
-            event.preventDefault();
-            window.$crisp?.push(['do', 'chat:open']);
-          }
-        }}
-      >
+      <ContactButton variant="primary-inverted" className="mt-8">
         Get in touch
-      </CallToAction>
+      </ContactButton>
     </div>
   );
 }
