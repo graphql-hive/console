@@ -4,6 +4,8 @@ import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
+import { AppDeploymentNameModel } from '../../app-deployments/providers/app-deployments';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
@@ -414,8 +416,10 @@ export class OrganizationMembers {
       return resourceAssignmentGroup;
     }
 
+    const sanitizedProjects = input.projects.filter(project => isUUID(project.projectId));
+
     const projects = await this.storage.findProjectsByIds(
-      input.projects.map(record => record.projectId) ?? [],
+      sanitizedProjects.map(record => record.projectId),
     );
 
     // In case we are not assigning all targets to the project,
@@ -430,7 +434,7 @@ export class OrganizationMembers {
       targets: readonly GraphQLSchema.TargetResourceAssignmentInput[];
     }> = [];
 
-    for (const record of input.projects) {
+    for (const record of sanitizedProjects) {
       const project = projects.get(record.projectId);
 
       // In case the project was not found or does not belogn the the organization,
@@ -452,12 +456,13 @@ export class OrganizationMembers {
       });
 
       if (record.targets.targets) {
-        for (const target of record.targets.targets) {
+        const sanitizedTargets = record.targets.targets.filter(target => isUUID(target.targetId));
+        for (const target of sanitizedTargets) {
           targetLookupIds.add(target.targetId);
         }
         projectTargetAssignments.push({
           projectTargets,
-          targets: record.targets.targets,
+          targets: sanitizedTargets,
           projectId: project.id,
         });
       }
@@ -485,14 +490,17 @@ export class OrganizationMembers {
           appDeployments: {
             mode: targetRecord.appDeployments.mode === 'all' ? '*' : 'granular',
             appDeployments:
-              targetRecord.appDeployments.appDeployments?.map(record => ({
-                type: 'appDeployment',
-                appName: record.appDeployment,
-              })) ?? [],
+              targetRecord.appDeployments.appDeployments
+                ?.filter(name => AppDeploymentNameModel.safeParse(name).success)
+                .map(record => ({
+                  type: 'appDeployment',
+                  appName: record.appDeployment,
+                })) ?? [],
           },
           services: {
             mode: targetRecord.services.mode === 'all' ? '*' : 'granular',
             services:
+              // TODO: it seems like we do not validate service names
               targetRecord.services.services?.map(record => ({
                 type: 'service',
                 serviceName: record?.serviceName,
