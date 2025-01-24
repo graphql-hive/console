@@ -15,7 +15,6 @@ const {
 
 function cn(dbName = POSTGRES_DB) {
   const user = encodeURIComponent(POSTGRES_USER);
-  console.log('WTF', POSTGRES_PASSWORD);
   const password =
     typeof POSTGRES_PASSWORD === 'string' ? `:${encodeURIComponent(POSTGRES_PASSWORD)}` : '';
   const host = encodeURIComponent(POSTGRES_HOST);
