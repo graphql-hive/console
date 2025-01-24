@@ -1553,6 +1553,9 @@ importers:
       lru-cache:
         specifier: 11.0.2
         version: 11.0.2
+      p-limit:
+        specifier: 6.2.0
+        version: 6.2.0
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
