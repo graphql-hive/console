@@ -178,14 +178,15 @@ export function createUsage(config: {
         const value = await compress(JSON.stringify(reports)).finally(() => {
           compressLatencyStop();
         });
-        const stopTimer = kafkaDuration.startTimer();
 
+        validateSize(value.byteLength); // this will throw if the size is too big
+        
         estimationError.observe(
           Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength,
         );
 
-        validateSize(value.byteLength);
         bufferFlushes.inc();
+        const stopTimer = kafkaDuration.startTimer();
         const meta = await producer
           .send({
             topic: config.kafka.topic,
