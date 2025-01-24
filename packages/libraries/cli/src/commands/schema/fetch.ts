@@ -230,7 +230,12 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
             await writeFile(filepath, schema, 'utf8');
             break;
           default:
-            throw new UnsupportedFileExtensionError(flags.write);
+            throw new UnsupportedFileExtensionError(flags.write, [
+              '.graphql',
+              '.gql',
+              '.gqls',
+              '.graphqls',
+            ]);
         }
         return;
       }

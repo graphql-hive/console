@@ -156,6 +156,9 @@ export function createUsage(config: {
     interval: config.kafka.buffer.interval,
     limitInBytes: 990_000, // 1MB is the limit of a single request to EventHub, let's keep it below that
     useEstimator: config.kafka.buffer.dynamic,
+    isTooLargePayloadError(error) {
+      return error instanceof Error && 'type' in error && error.type === 'MESSAGE_TOO_LARGE';
+    },
     calculateReportSize(report) {
       return Object.keys(report.map).length;
     },

@@ -82,7 +82,13 @@ export default class Introspect extends Command<typeof Introspect> {
           break;
         }
         default:
-          throw new UnsupportedFileExtensionError(flags.write);
+          throw new UnsupportedFileExtensionError(flags.write, [
+            '.graphql',
+            '.gql',
+            '.gqls',
+            '.graphqls',
+            '.json',
+          ]);
       }
 
       this.logSuccess(`Saved to ${filepath}`);

@@ -36,9 +36,11 @@ import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
+  LogLine,
   LogRecord,
   preflightScriptPlugin,
   PreflightScriptProvider,
+  PreflightScriptResultData,
   usePreflightScript,
 } from '@/lib/preflight-sandbox/graphiql-plugin';
 import { cn } from '@/lib/utils';
@@ -57,7 +59,7 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
-import { captureException } from '@sentry/react';
+import { JSONPrimitive } from '@/lib/preflight-sandbox/json';
 
 const explorer = explorerPlugin();
 
@@ -255,17 +257,17 @@ function Save(props: {
   );
 }
 
-function substituteVariablesInHeader(
+function substituteVariablesInHeaders(
   headers: Record<string, string>,
-  environmentVariables: Record<string, unknown>,
+  environmentVariables: Record<string, JSONPrimitive>,
 ) {
   return Object.fromEntries(
     Object.entries(headers).map(([key, value]) => {
       if (typeof value === 'string') {
         // Replace all occurrences of `{{keyName}}` strings only if key exists in `environmentVariables`
-        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey) => {
+        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey: string) => {
           return Object.hasOwn(environmentVariables, envKey)
-            ? (environmentVariables[envKey] as string)
+            ? String(environmentVariables[envKey])
             : originalString;
         });
       }
@@ -317,7 +319,6 @@ function LaboratoryPageContent(props: {
 
   const fetcher = useMemo<Fetcher>(() => {
     return async (params, opts) => {
-      let headers = opts?.headers;
       const url =
         (actualSelectedApiEndpoint === 'linkedApi' ? target?.graphqlEndpointUrl : undefined) ??
         mockEndpoint;
@@ -330,11 +331,10 @@ function LaboratoryPageContent(props: {
             preflightScript.abort();
           }
         });
+
+        let preflightData: PreflightScriptResultData;
         try {
-          const result = await preflightScript.execute();
-          if (result && headers) {
-            headers = substituteVariablesInHeader(headers, result);
-          }
+          preflightData = await preflightScript.execute();
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
@@ -355,6 +355,15 @@ function LaboratoryPageContent(props: {
         } finally {
           hasFinishedPreflightScript = true;
         }
+
+        const headers = {
+          // We want to prevent users from interpolating environment variables into
+          // their preflight script headers. So, apply substitution BEFORE merging
+          // in preflight headers.
+          //
+          ...substituteVariablesInHeaders(opts?.headers ?? {}, preflightData.environmentVariables),
+          ...Object.fromEntries(preflightData.request.headers),
+        };
 
         const graphiqlFetcher = createGraphiQLFetcher({ url, fetch });
         const result = await graphiqlFetcher(params, {
@@ -702,13 +711,6 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
     consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
   }, [props.logs, isOpen]);
 
-  const logColor = {
-    error: 'text-red-400',
-    info: 'text-emerald-400',
-    warn: 'text-yellow-400',
-    log: '', // default
-  };
-
   return (
     <Collapsible
       open={isOpen}
@@ -768,33 +770,9 @@ function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) 
           </div>
         ) : (
           <>
-            {props.logs.map((log, index) => {
-              if (typeof log !== 'string' && 'type' in log && log.type === 'separator') {
-                return <hr key={index} className="my-2 border-dashed border-current" />;
-              }
-
-              let logType: 'error' | 'warn' | 'info' | 'log' = 'log';
-              let logMessage = '';
-
-              if (log instanceof Error) {
-                logType = 'error';
-                logMessage = `${log.name}: ${log.message}`;
-              } else if (typeof log === 'string') {
-                logType = log.split(':')[0].toLowerCase() as 'error' | 'warn' | 'info' | 'log';
-                logMessage = log.substring(log.indexOf(':') + 1).trim();
-              } else {
-                captureException(new Error('Unexpected log type in Preflight Script Logs'), {
-                  extra: { log },
-                });
-                return null;
-              }
-
-              return (
-                <div key={index} className={logColor[logType] ?? ''}>
-                  {logType}: {logMessage}
-                </div>
-              );
-            })}
+            {props.logs.map((log, index) => (
+              <LogLine key={index} log={log} />
+            ))}
           </>
         )}
       </CollapsibleContent>

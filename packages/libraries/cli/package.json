@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.46.0",
+  "version": "0.46.1",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -96,6 +96,9 @@
         "host": "https://cli.graphql-hive.com/",
         "bucket": "graphql-hive-cli"
       }
+    },
+    "hooks": {
+      "command_not_found": "./dist/hooks/command-not-found"
     }
   }
 }
