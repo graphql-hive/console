@@ -1,19 +1,26 @@
 import { useState } from 'react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Heading } from '@/components/ui/heading';
+import * as Sheet from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { MemberRoleSelector } from './member-role-selector';
 import { ResourceSelector, type ResourceSelection } from './resource-selector';
+import { SelectedPermissionOverview } from './selected-permission-overview';
 
 const MemberRolePicker_OrganizationFragment = graphql(`
   fragment MemberRolePicker_OrganizationFragment on Organization {
     id
     slug
+    memberRoles {
+      id
+      permissions
+    }
     ...ResourceSelector_OrganizationFragment
     ...MemberRoleSelector_OrganizationFragment
+    ...SelectedPermissionOverview_OrganizationFragment
   }
 `);
 
@@ -121,35 +128,58 @@ export function MemberRolePicker(props: {
   const [assignRoleState, assignRole] = useMutation(MemberRolePicker_AssignRoleMutation);
   const { toast } = useToast();
 
+  const selectedRole = organization.memberRoles?.find(role => role.id === selectedRoleId) ?? null;
+
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>
+    <Sheet.SheetContent className="flex max-h-screen min-w-[800px] flex-col overflow-y-scroll">
+      <Sheet.SheetHeader>
+        <Sheet.SheetTitle>
           Assign Member Role for {member.user.displayName} ({member.user.email})
-        </DialogTitle>
-        <DialogDescription>
+        </Sheet.SheetTitle>
+        <Sheet.SheetDescription>
           A member can be granted permissions by attaching a member role. The access to the
           resources within the project can further be restricted.
-        </DialogDescription>
-      </DialogHeader>
-      <div>
-        <div className="mb-1 text-sm font-bold">Member Role</div>
+        </Sheet.SheetDescription>
+      </Sheet.SheetHeader>
+      <div className="pt-2">
+        <Heading size="lg" className="mb-1 text-sm">
+          Assigned Member Role
+        </Heading>
         <MemberRoleSelector
           organization={organization}
           member={member}
           selectedRoleId={selectedRoleId}
           onSelectRoleId={roleId => setSelectedRoleId(roleId)}
         />
+        <p className="text-muted-foreground mt-2 text-sm">
+          The role assigned to the user that will grant permissions.
+        </p>
+        {selectedRole && (
+          <SelectedPermissionOverview
+            showOnlyAllowedPermissions
+            organization={organization}
+            activePermissionIds={selectedRole.permissions}
+            isExpanded={false}
+          />
+        )}
       </div>
-      <div>
-        <div className="mb-1 text-sm font-bold">Resources</div>
+      <div className="pt-10">
+        <Heading size="lg" className="mb-1 text-sm">
+          Assigned Resources
+        </Heading>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Specify the resources on which the permissions will be granted.
+        </p>
         <ResourceSelector
           selection={selection}
           onSelectionChange={setSelection}
           organization={organization}
         />
       </div>
-      <DialogFooter>
+      <Sheet.SheetFooter className="mb-0 mt-auto">
+        <Button onClick={props.close} variant="ghost">
+          Abort
+        </Button>
         <Button
           disabled={assignRoleState.fetching}
           onClick={async () => {
@@ -191,10 +221,10 @@ export function MemberRolePicker(props: {
             }
           }}
         >
-          {assignRoleState.fetching ? 'Loading...' : 'Confirm'}
+          {assignRoleState.fetching ? 'Loading...' : 'Assign Role to user'}
         </Button>
-      </DialogFooter>
-    </>
+      </Sheet.SheetFooter>
+    </Sheet.SheetContent>
   );
 }
 

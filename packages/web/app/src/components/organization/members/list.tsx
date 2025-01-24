@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@/components/ui/link';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import * as Sheet from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -256,25 +257,23 @@ function MemberRole(props: {
         ' (all resources)'
       ) : member.resourceAssignment.projects?.length ? (
         <>
-          {'(' + member.resourceAssignment.projects.length} project
+          {' (' + member.resourceAssignment.projects.length} project
           {member.resourceAssignment.projects.length === 1 ? '' : 's'})
         </>
       ) : null}{' '}
       {organization.viewerCanAssignUserRoles && (
-        <Dialog open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
-          <DialogTrigger asChild>
+        <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
+          <Sheet.SheetTrigger asChild>
             <Link>change</Link>
-          </DialogTrigger>
-          <DialogContent className="min-w-[800px]">
-            {isOpen && (
-              <MemberRolePicker
-                organization={organization}
-                member={member}
-                close={() => setIsOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          </Sheet.SheetTrigger>
+          {isOpen && (
+            <MemberRolePicker
+              organization={organization}
+              member={member}
+              close={() => setIsOpen(false)}
+            />
+          )}
+        </Sheet.Sheet>
       )}
     </>
   );

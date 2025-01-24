@@ -462,16 +462,14 @@ export function ResourceSelector(props: {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="full" variant="content">
-        <p className="text-muted-foreground text-sm">
-          Grant permissions on all resources within the organization.
+        <p className="text-sm">
+          The permissions are granted on all projects, targets and services within the organization.
         </p>
       </TabsContent>
       <TabsContent value="granular" variant="content">
         {projectState && (
           <>
-            <p className="text-muted-foreground mb-4 text-sm">
-              Grant permissions on the selected resources.
-            </p>
+            <p className="mb-4 text-sm">The permissions are granted on the specified resources.</p>
             <div>
               <div className="flex text-sm">
                 <div className="flex-1 rounded-tl-sm border-l border-t border-transparent border-l-inherit border-t-inherit px-2 py-1 font-bold">

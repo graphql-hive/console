@@ -34,6 +34,8 @@ export type SelectedPermissionOverviewProps = {
   organization: FragmentType<typeof SelectedPermissionOverview_OrganizationFragment>;
   activePermissionIds: Array<string>;
   showOnlyAllowedPermissions: boolean;
+  /** default: true */
+  isExpanded?: boolean;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
@@ -72,6 +74,7 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
       activePermissionIds={activePermissionIds}
       memberPermissionGroups={organization.availableMemberPermissionGroups}
       showOnlyAllowedPermissions={props.showOnlyAllowedPermissions}
+      isExpanded={props.isExpanded ?? true}
     />
   ));
 }
@@ -89,6 +92,7 @@ function PermissionLevelGroup(props: {
   activePermissionIds: ReadonlySet<string>;
   /** whether only allowed permissions should be shown */
   showOnlyAllowedPermissions: boolean;
+  isExpanded: boolean;
 }) {
   const [filteredGroups, totalAllowedCount] = useMemo(() => {
     let totalAllowedCount = 0;
@@ -136,7 +140,7 @@ function PermissionLevelGroup(props: {
   return (
     <Accordion
       type="single"
-      defaultValue={totalAllowedCount > 0 ? props.title : undefined}
+      defaultValue={totalAllowedCount > 0 && props.isExpanded ? props.title : undefined}
       collapsible
     >
       <AccordionItem value={props.title}>
