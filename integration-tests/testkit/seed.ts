@@ -807,7 +807,7 @@ export function initSeed() {
                   input: {
                     roleId: string;
                     userId: string;
-                    resouces?: GraphQLSchema.MemberResourceAssignmentInput;
+                    resouces?: GraphQLSchema.ResourceAssignmentInput;
                   },
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
@@ -818,7 +818,10 @@ export function initSeed() {
                       organizationSlug: organization.slug,
                       userId: input.userId,
                       roleId: input.roleId,
-                      resources: input.resouces ?? { allProjects: true },
+                      resources: input.resouces ?? {
+                        mode: GraphQLSchema.ResourceAssignmentMode.All,
+                        projects: [],
+                      },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());

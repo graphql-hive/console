@@ -5,25 +5,8 @@ import { useQuery } from 'urql';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { graphql, useFragment, type FragmentType } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-
-export type ResourceSelection = {
-  projects:
-    | '*'
-    | Array<{
-        id: string;
-        slug: string;
-        targets:
-          | '*'
-          | Array<{
-              id: string;
-              slug: string;
-              appDeployments: '*' | Array<string>;
-              services: '*' | Array<string>;
-            }>;
-      }>;
-};
 
 const ResourceSelector_OrganizationFragment = graphql(`
   fragment ResourceSelector_OrganizationFragment on Organization {
@@ -98,8 +81,8 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
 
 export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
-  selection: ResourceSelection;
-  onSelectionChange: (selection: ResourceSelection) => void;
+  selection: GraphQLSchema.ResourceAssignmentInput;
+  onSelectionChange: (selection: GraphQLSchema.ResourceAssignmentInput) => void;
 }) {
   const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
   const [breadcrumb, setBreadcrumb] = useState(
@@ -110,13 +93,13 @@ export function ResourceSelector(props: {
   );
 
   const projectState = useMemo(() => {
-    if (props.selection.projects === '*') {
+    if (props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All) {
       return null;
     }
 
     type SelectedItem = {
       project: (typeof organization.projects.nodes)[number];
-      projectSelection: (typeof props.selection.projects)[number];
+      projectSelection: GraphQLSchema.ProjectResourceAssignmentInput;
     };
 
     type NotSelectedItem = (typeof organization.projects.nodes)[number];
@@ -124,13 +107,12 @@ export function ResourceSelector(props: {
     const selectedProjects: Array<SelectedItem> = [];
     const notSelectedProjects: Array<NotSelectedItem> = [];
 
-    let activeProject: null | {
-      project: (typeof organization.projects.nodes)[number];
-      projectSelection: (typeof props.selection.projects)[number];
-    } = null;
+    let activeProject: null | SelectedItem = null;
 
     for (const project of organization.projects.nodes) {
-      const projectSelection = props.selection.projects.find(item => item.id === project.id);
+      const projectSelection = props.selection.projects?.find(
+        item => item.projectId === project.id,
+      );
 
       if (projectSelection) {
         selectedProjects.push({ project, projectSelection });
@@ -152,14 +134,12 @@ export function ResourceSelector(props: {
       addProject(item: (typeof organization.projects.nodes)[number]) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') {
-              return;
-            }
-
-            state.projects.push({
-              id: item.id,
-              slug: item.slug,
-              targets: [],
+            state.projects?.push({
+              projectId: item.id,
+              targets: {
+                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                targets: [],
+              },
             });
           }),
         );
@@ -167,10 +147,7 @@ export function ResourceSelector(props: {
       removeProject(item: (typeof organization.projects.nodes)[number]) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') {
-              return;
-            }
-            state.projects = state.projects.filter(project => project.id !== item.id);
+            state.projects = state.projects?.filter(project => project.projectId !== item.id);
           }),
         );
         setBreadcrumb(breadcrumb => {
@@ -202,18 +179,18 @@ export function ResourceSelector(props: {
 
     const projectId = projectState.activeProject.project.id;
 
-    if (projectState.activeProject.projectSelection.targets === '*') {
+    if (
+      projectState.activeProject.projectSelection.targets.mode ===
+      GraphQLSchema.ResourceAssignmentMode.All
+    ) {
       return {
         selection: '*',
         setGranular() {
           props.onSelectionChange(
             produce(props.selection, state => {
-              if (state.projects === '*') return;
-
-              const project = state.projects.find(project => project.id === projectId);
+              const project = state.projects?.find(project => project.projectId === projectId);
               if (!project) return;
-
-              project.targets = [];
+              project.targets.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
             }),
           );
         },
@@ -222,7 +199,10 @@ export function ResourceSelector(props: {
 
     type SelectedItem = {
       target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
-      targetSelection: (typeof projectState.activeProject.projectSelection.targets)[number];
+      targetSelection: Exclude<
+        typeof projectState.activeProject.projectSelection.targets.targets,
+        null | undefined
+      >[number];
     };
 
     type NotSelectedItem =
@@ -232,13 +212,16 @@ export function ResourceSelector(props: {
     const notSelected: Array<NotSelectedItem> = [];
 
     let activeTarget: null | {
-      targetSelection: (typeof projectState.activeProject.projectSelection.targets)[number];
+      targetSelection: Exclude<
+        typeof projectState.activeProject.projectSelection.targets.targets,
+        null | undefined
+      >[number];
       target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
     } = null;
 
     for (const target of organizationProjectTargets.data.organization.project.targets.nodes) {
-      const targetSelection = projectState.activeProject.projectSelection.targets.find(
-        item => item.id === target.id,
+      const targetSelection = projectState.activeProject.projectSelection.targets.targets?.find(
+        item => item.targetId === target.id,
       );
 
       if (targetSelection) {
@@ -268,15 +251,18 @@ export function ResourceSelector(props: {
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
+            const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
-            if (project.targets === '*') return;
-            project.targets.push({
-              id: item.id,
-              slug: item.slug,
-              appDeployments: [],
-              services: [],
+            project.targets.targets?.push({
+              targetId: item.id,
+              appDeployments: {
+                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                appDeployments: [],
+              },
+              services: {
+                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                services: [],
+              },
             });
           }),
         );
@@ -286,11 +272,11 @@ export function ResourceSelector(props: {
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
+            const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
-            if (project.targets === '*') return;
-            project.targets = project.targets.filter(target => target.id !== item.id);
+            project.targets.targets = project.targets.targets?.filter(
+              target => target.targetId !== item.id,
+            );
           }),
         );
         setBreadcrumb(breadcrumb => {
@@ -306,10 +292,9 @@ export function ResourceSelector(props: {
       setAll() {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
+            const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
-            project.targets = '*';
+            project.targets.mode = GraphQLSchema.ResourceAssignmentMode.All;
           }),
         );
         setBreadcrumb({ projectId });
@@ -336,38 +321,43 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      /* breadcrumb.mode !== 'service' || */
       !organizationProjectTarget.data?.organization?.project
     ) {
       return null;
     }
 
-    if (organizationProjectTarget.data.organization.project.type === ProjectType.Single) {
+    if (
+      organizationProjectTarget.data.organization.project.type === GraphQLSchema.ProjectType.Single
+    ) {
       return 'none' as const;
     }
 
-    const projectId = projectState.activeProject.projectSelection.id;
-    const targetId = targetState.activeTarget.targetSelection.id;
+    const projectId = projectState.activeProject.projectSelection.projectId;
+    const targetId = targetState.activeTarget.targetSelection.targetId;
 
-    if (targetState.activeTarget.targetSelection.services === '*') {
+    if (
+      targetState.activeTarget.targetSelection.services.mode ===
+      GraphQLSchema.ResourceAssignmentMode.All
+    ) {
       return {
         selection: '*' as const,
         setGranular() {
           props.onSelectionChange(
             produce(props.selection, state => {
-              if (state.projects === '*') return;
-              const project = state.projects.find(project => project.id === projectId);
-              if (!project || project.targets === '*') return;
-              const target = project.targets.find(target => target.id === targetId);
+              const project = state.projects?.find(project => project.projectId === projectId);
+              if (!project) return;
+              const target = project.targets.targets?.find(target => target.targetId === targetId);
               if (!target) return;
-              target.services = [];
+              target.services.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
             }),
           );
         },
       };
     }
 
-    const selectedServices: Array<string> = [...targetState.activeTarget.targetSelection.services];
+    const selectedServices: GraphQLSchema.ServiceResourceAssignmentInput[] = [
+      ...(targetState.activeTarget.targetSelection.services.services ?? []),
+    ];
     const notSelectedServices: Array<string> = [];
 
     if (
@@ -378,7 +368,7 @@ export function ResourceSelector(props: {
         if (
           schema.__typename === 'CompositeSchema' &&
           schema.service &&
-          !selectedServices.find(serviceName => serviceName === schema.service)
+          !selectedServices.find(service => service.serviceName === schema.service)
         ) {
           notSelectedServices.push(schema.service);
         }
@@ -393,59 +383,68 @@ export function ResourceSelector(props: {
       setAll() {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
-            if (!project || project.targets === '*') return;
-            const target = project.targets.find(target => target.id === targetId);
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+
             if (!target) return;
-            target.services = '*';
+            target.services.mode = GraphQLSchema.ResourceAssignmentMode.All;
           }),
         );
       },
       addService(serviceName: string) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
-            if (!project || project.targets === '*') return;
-            const target = project.targets.find(target => target.id === targetId);
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
             if (
               !target ||
-              target.services === '*' ||
-              target.services.find(service => service === serviceName)
+              target.services.services?.find(service => service.serviceName === serviceName)
             ) {
               return;
             }
 
-            target.services.push(serviceName);
+            target.services.services?.push({
+              serviceName,
+            });
           }),
         );
       },
       removeService(serviceName: string) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            if (state.projects === '*') return;
-            const project = state.projects.find(project => project.id === projectId);
-            if (!project || project.targets === '*') return;
-            const target = project.targets.find(target => target.id === targetId);
-            if (!target || target.services === '*') {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+            if (!target) {
               return;
             }
-            target.services = target.services.filter(name => name !== serviceName);
+            target.services.services = target.services.services?.filter(
+              service => service.serviceName !== serviceName,
+            );
           }),
         );
       },
     };
-  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject]);
+  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject, props.selection]);
 
   return (
-    <Tabs defaultValue="granular" value={props.selection.projects === '*' ? 'full' : 'granular'}>
+    <Tabs
+      defaultValue="granular"
+      value={
+        props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All ? 'full' : 'granular'
+      }
+    >
       <TabsList variant="content" className="mt-1">
         <TabsTrigger
           variant="content"
           value="full"
           onClick={() => {
-            props.onSelectionChange({ projects: '*' });
+            props.onSelectionChange({
+              ...props.selection,
+              mode: GraphQLSchema.ResourceAssignmentMode.All,
+            });
             setBreadcrumb(null);
           }}
         >
@@ -455,7 +454,10 @@ export function ResourceSelector(props: {
           variant="content"
           value="granular"
           onClick={() => {
-            props.onSelectionChange({ projects: [] });
+            props.onSelectionChange({
+              ...props.selection,
+              mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+            });
           }}
         >
           Granular Access
@@ -527,9 +529,10 @@ export function ResourceSelector(props: {
                         key={selection.project.id}
                         title={
                           selection.project.slug +
-                          (selection.projectSelection.targets === '*'
+                          (selection.projectSelection.targets.mode ===
+                          GraphQLSchema.ResourceAssignmentMode.All
                             ? ' (all targets, all services)'
-                            : ` (${selection.projectSelection.targets.length} target${selection.projectSelection.targets.length === 1 ? '' : 's'})`)
+                            : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
                         }
                         isActive={projectState.activeProject?.project.id === selection.project.id}
                         onClick={() => {
@@ -580,11 +583,13 @@ export function ResourceSelector(props: {
                                 key={selection.target.id}
                                 title={
                                   selection.target.slug +
-                                  (targetState.activeProject.project.type === ProjectType.Single
+                                  (targetState.activeProject.project.type ===
+                                  GraphQLSchema.ProjectType.Single
                                     ? ' (full access)'
-                                    : selection.targetSelection.services === '*'
+                                    : selection.targetSelection.services.mode ===
+                                        GraphQLSchema.ResourceAssignmentMode.All
                                       ? ' (all services)'
-                                      : ` (${selection.targetSelection.services.length} service${selection.targetSelection.services.length === 1 ? '' : 's'})`)
+                                      : ` (${selection.targetSelection.services.services?.length ?? 0} service${selection.targetSelection.services?.services?.length === 1 ? '' : 's'})`)
                                 }
                                 isActive={
                                   targetState.activeTarget?.target.id === selection.target.id
@@ -626,7 +631,8 @@ export function ResourceSelector(props: {
                   )}
                 </div>
                 <div className="flex flex-1 flex-col border-y border-r pt-2">
-                  {projectState.activeProject?.projectSelection.targets === '*' ? (
+                  {projectState.activeProject?.projectSelection.targets.mode ===
+                  GraphQLSchema.ResourceAssignmentMode.All ? (
                     <div className="text-muted-foreground px-2 text-xs">
                       Access to all services of projects targets granted.
                     </div>
@@ -650,12 +656,12 @@ export function ResourceSelector(props: {
                             access granted
                           </div>
                           {serviceState.selection.selected.length ? (
-                            serviceState.selection.selected.map(serviceName => (
+                            serviceState.selection.selected.map(service => (
                               <RowItem
-                                key={serviceName}
-                                title={serviceName}
+                                key={service.serviceName}
+                                title={service.serviceName}
                                 isActive={false}
-                                onDelete={() => serviceState.removeService(serviceName)}
+                                onDelete={() => serviceState.removeService(service.serviceName)}
                               />
                             ))
                           ) : (

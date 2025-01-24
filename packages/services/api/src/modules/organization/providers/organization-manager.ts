@@ -986,7 +986,7 @@ export class OrganizationManager {
     organizationSlug: string;
     userId: string;
     roleId: string;
-    resources: GraphQLSchema.MemberResourceAssignmentInput;
+    resources: GraphQLSchema.ResourceAssignmentInput;
   }) {
     const organizationId = await this.idTranslator.translateOrganizationId(input);
 

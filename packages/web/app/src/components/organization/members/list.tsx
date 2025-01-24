@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,30 +26,30 @@ import * as Sheet from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AuthProvider } from '@/gql/graphql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
 export const authProviderToIconAndTextMap: Record<
-  AuthProvider,
+  GraphQLSchema.AuthProvider,
   {
     icon: IconType;
     text: string;
   }
 > = {
-  [AuthProvider.Google]: {
+  [GraphQLSchema.AuthProvider.Google]: {
     icon: FaGoogle,
     text: 'Google OAuth 2.0',
   },
-  [AuthProvider.Github]: {
+  [GraphQLSchema.AuthProvider.Github]: {
     icon: FaGithub,
     text: 'GitHub OAuth 2.0',
   },
-  [AuthProvider.Oidc]: {
+  [GraphQLSchema.AuthProvider.Oidc]: {
     icon: FaOpenid,
     text: 'OpenID Connect',
   },
-  [AuthProvider.UsernamePassword]: {
+  [GraphQLSchema.AuthProvider.UsernamePassword]: {
     icon: FaUserLock,
     text: 'Email & Password',
   },
@@ -230,7 +229,7 @@ const MemberRole_MemberFragment = graphql(`
       name
     }
     resourceAssignment {
-      allProjects
+      mode
       projects {
         project {
           id
@@ -253,7 +252,7 @@ function MemberRole(props: {
   return (
     <>
       {member.role.name}
-      {member.resourceAssignment.allProjects ? (
+      {member.resourceAssignment.mode === GraphQLSchema.ResourceAssignmentMode.All ? (
         ' (all resources)'
       ) : member.resourceAssignment.projects?.length ? (
         <>

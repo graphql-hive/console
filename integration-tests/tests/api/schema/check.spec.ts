@@ -1,4 +1,8 @@
-import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
+import {
+  ProjectType,
+  ResourceAssignmentMode,
+  RuleInstanceSeverityLevel,
+} from 'testkit/gql/graphql';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { graphql } from '../../../testkit/gql';
@@ -1366,7 +1370,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: member.role.id,
       userId: member.user.id,
-      resouces: { projects: [] },
+      resouces: { mode: ResourceAssignmentMode.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1444,7 +1448,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
-      resouces: { projects: [] },
+      resouces: { mode: ResourceAssignmentMode.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1518,17 +1522,19 @@ test.concurrent(
 
     // Setup Done: Create a failed schema check
 
-    // Create a member with no access to projects
+    // Create a member with no access to project targets
     const { member, createMemberRole, assignMemberRole, memberToken } = await inviteAndJoinMember();
     const memberRole = await createMemberRole(['schemaCheck:approve', 'project:describe']);
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
       resouces: {
+        mode: ResourceAssignmentMode.Granular,
         projects: [
           {
             projectId: project.id,
             targets: {
+              mode: ResourceAssignmentMode.Granular,
               targets: [],
             },
           },
@@ -1612,15 +1618,17 @@ test.concurrent(
       roleId: memberRole.id,
       userId: member.user.id,
       resouces: {
+        mode: ResourceAssignmentMode.Granular,
         projects: [
           {
             projectId: project.id,
             targets: {
+              mode: ResourceAssignmentMode.Granular,
               targets: [
                 {
                   targetId: target.id,
-                  appDeployments: { allAppDeployments: true },
-                  services: { allServices: true },
+                  appDeployments: { mode: ResourceAssignmentMode.Granular, appDeployments: [] },
+                  services: { mode: ResourceAssignmentMode.Granular, services: [] },
                 },
               ],
             },

@@ -424,7 +424,7 @@ export default gql`
     organizationSlug: String!
     userId: ID!
     roleId: ID!
-    resources: MemberResourceAssignmentInput!
+    resources: ResourceAssignmentInput!
   }
 
   type AssignMemberRoleOk {
@@ -450,11 +450,16 @@ export default gql`
     isOwner: Boolean!
     canLeaveOrganization: Boolean!
     role: MemberRole!
-    resourceAssignment: MemberResourceAssignment!
+    resourceAssignment: ResourceAssignment!
     """
     Whether the viewer can remove this member from the organization.
     """
     viewerCanRemove: Boolean!
+  }
+
+  enum ResourceAssignmentMode {
+    all
+    granular
   }
 
   type MemberConnection {
@@ -462,123 +467,99 @@ export default gql`
     total: Int!
   }
 
-  input MemberAppDeploymentAssignmentInput {
+  input AppDeploymentResourceAssignmentInput {
     appDeployment: String!
   }
 
-  """
-  @oneOf
-  """
-  input MemberTargetAppDeploymentsAssignmentInput {
+  input TargetAppDeploymentsResourceAssignmentInput {
     """
     Whether the permissions should apply for all app deployments within the target.
     """
-    allAppDeployments: Boolean
+    mode: ResourceAssignmentMode!
     """
     Specific app deployments within the target for which the permissions should be applied.
     """
-    appDeployments: [MemberAppDeploymentAssignmentInput!]
+    appDeployments: [AppDeploymentResourceAssignmentInput!]
   }
 
-  input MemberServiceAssignmentInput {
+  input ServiceResourceAssignmentInput {
     serviceName: String!
   }
 
-  """
-  @oneOf
-  """
-  input MemberTargetServicesAssignmentInput {
+  input TargetServicesResourceAssignmentInput {
     """
-    Whether the permissions should apply for all services within the target.
+    Whether the permissions should apply for all services within the target or only selected ones.
     """
-    allServices: Boolean
+    mode: ResourceAssignmentMode!
     """
     Specific services within the target for which the permissions should be applied.
     """
-    services: [MemberServiceAssignmentInput!]
+    services: [ServiceResourceAssignmentInput!]
   }
 
-  input MemberTargetAssignmentInput {
+  input TargetResourceAssignmentInput {
     targetId: ID!
-    services: MemberTargetServicesAssignmentInput!
-    appDeployments: MemberTargetAppDeploymentsAssignmentInput!
+    services: TargetServicesResourceAssignmentInput!
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput!
   }
 
-  """
-  @oneOf
-  """
-  input MemberProjectTargetsAssignmentInput {
+  input ProjectTargetsResourceAssignmentInput {
     """
-    Whether the permissions should apply for all targets within the project.
+    Whether the permissions should apply for all targets within the project or only selected ones.
     """
-    allTargets: Boolean
+    mode: ResourceAssignmentMode!
     """
     Specific targets within the projects for which the permissions should be applied.
     """
-    targets: [MemberTargetAssignmentInput!]
+    targets: [TargetResourceAssignmentInput!]
   }
 
-  input MemberProjectAssignmentInput {
+  input ProjectResourceAssignmentInput {
     projectId: ID!
-    targets: MemberProjectTargetsAssignmentInput!
+    targets: ProjectTargetsResourceAssignmentInput!
   }
 
-  """
-  @oneOf
-  """
-  input MemberResourceAssignmentInput {
+  input ResourceAssignmentInput {
     """
-    Whether the permissions should apply for all projects within the organization.
+    Whether the permissions should apply for all projects within the organization or only selected ones.
     """
-    allProjects: Boolean
+    mode: ResourceAssignmentMode!
     """
     Specific projects within the organization for which the permissions should be applied.
     """
-    projects: [MemberProjectAssignmentInput!]
+    projects: [ProjectResourceAssignmentInput!]
   }
 
-  """
-  @oneOf
-  """
-  type MemberTargetServicesAssignment {
-    allServices: Boolean
-    services: [String!]
+  type TargetServicesResourceAssignment {
+    mode: ResourceAssignmentMode!
+    services: [String!]!
   }
 
-  """
-  @oneOf
-  """
-  type MemberTargetAppDeploymentAssignment {
-    allAppDeployments: Boolean
-    appDeployments: [String!]
+  type TargetAppDeploymentsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    appDeployments: [String!]!
   }
 
-  type MemberTargetAssignment {
+  type TargetResouceAssignment {
     targetId: ID!
     target: Target!
-    services: MemberTargetServicesAssignment!
-    appDeployments: MemberTargetAppDeploymentAssignment!
+    services: TargetServicesResourceAssignment!
+    appDeployments: TargetAppDeploymentsResourceAssignment!
   }
 
-  """
-  @oneOf
-  """
-  type MemberProjectTargetsAssignment {
-    allTargets: Boolean
-    targets: [MemberTargetAssignment!]
+  type ProjectTargetsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    targets: [TargetResouceAssignment!]
   }
 
-  type MemberProjectAssignment {
+  type ProjectResourceAssignment {
     projectId: ID!
     project: Project!
-    targets: MemberProjectTargetsAssignment!
+    targets: ProjectTargetsResourceAssignment!
   }
 
-  """
-  @oneOf
-  """
-  type MemberResourceAssignment {
-    allProjects: Boolean
-    projects: [MemberProjectAssignment!]
+  type ResourceAssignment {
+    mode: ResourceAssignmentMode!
+    projects: [ProjectResourceAssignment!]
   }
 `;

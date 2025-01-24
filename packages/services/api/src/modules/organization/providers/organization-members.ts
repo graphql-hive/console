@@ -10,6 +10,9 @@ import { Storage } from '../../shared/providers/storage';
 import { OrganizationMemberRole, OrganizationMemberRoles } from './organization-member-roles';
 
 const WildcardAssignmentModel = z.literal('*');
+const GranularAssignmentModel = z.literal('granular');
+
+const SelectionModeModel = z.union([WildcardAssignmentModel, GranularAssignmentModel]);
 
 const AppDeploymentAssignmentModel = z.object({
   type: z.literal('appDeployment'),
@@ -18,17 +21,44 @@ const AppDeploymentAssignmentModel = z.object({
 
 const ServiceAssignmentModel = z.object({ type: z.literal('service'), serviceName: z.string() });
 
+const AssignedServicesModel = z.object({
+  mode: SelectionModeModel,
+  services: z
+    .array(ServiceAssignmentModel)
+    .optional()
+    .nullable()
+    .transform(value => value ?? []),
+});
+
+const AssignedAppDeploymentsModel = z.object({
+  mode: SelectionModeModel,
+  appDeployments: z
+    .array(AppDeploymentAssignmentModel)
+    .optional()
+    .nullable()
+    .transform(value => value ?? []),
+});
+
 const TargetAssignmentModel = z.object({
   type: z.literal('target'),
   id: z.string().uuid(),
-  services: z.union([WildcardAssignmentModel, z.array(ServiceAssignmentModel)]),
-  appDeployments: z.union([WildcardAssignmentModel, z.array(AppDeploymentAssignmentModel)]),
+  services: AssignedServicesModel,
+  appDeployments: AssignedAppDeploymentsModel,
+});
+
+const AssignedTargetsModel = z.object({
+  mode: SelectionModeModel,
+  targets: z
+    .array(TargetAssignmentModel)
+    .optional()
+    .nullable()
+    .transform(value => value ?? []),
 });
 
 const ProjectAssignmentModel = z.object({
   type: z.literal('project'),
   id: z.string().uuid(),
-  targets: z.union([WildcardAssignmentModel, z.array(TargetAssignmentModel)]),
+  targets: AssignedTargetsModel,
 });
 
 /**
@@ -40,12 +70,19 @@ const ProjectAssignmentModel = z.object({
  * If no resources are assigned to a member role, the permissions are granted on all the resources within the
  * organization.
  */
-const AssignedResourceModel = z.union([WildcardAssignmentModel, z.array(ProjectAssignmentModel)]);
+const AssignedProjectsModel = z.object({
+  mode: SelectionModeModel,
+  projects: z
+    .array(ProjectAssignmentModel)
+    .optional()
+    .nullable()
+    .transform(value => value ?? []),
+});
 
 /**
  * Resource assignments as stored within the database.
  */
-type ResourceAssignmentGroup = z.TypeOf<typeof AssignedResourceModel>;
+type ResourceAssignmentGroup = z.TypeOf<typeof AssignedProjectsModel>;
 
 const RawOrganizationMembershipModel = z.object({
   userId: z.string(),
@@ -58,7 +95,9 @@ const RawOrganizationMembershipModel = z.object({
    * Resources that are assigned to the membership
    * If no resources are defined the permissions of the role are applied to all resources within the organization.
    */
-  assignedResources: AssignedResourceModel.nullable().transform(value => value ?? '*'),
+  assignedResources: AssignedProjectsModel.nullable().transform(
+    value => value ?? { mode: '*' as const, projects: [] },
+  ),
 });
 
 export type OrganizationMembershipRoleAssignment = {
@@ -150,7 +189,10 @@ export class OrganizationMembers {
           throw new Error('Could not resolve role.');
         }
 
-        const resources: ResourceAssignmentGroup = record.assignedResources ?? '*';
+        const resources: ResourceAssignmentGroup = record.assignedResources ?? {
+          mode: '*',
+          projects: [],
+        };
 
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
@@ -264,7 +306,7 @@ export class OrganizationMembers {
           "role_id" = ${args.roleId}
           , "assigned_resources" = ${JSON.stringify(
             /** we parse it to avoid additional properties being stored within the database. */
-            AssignedResourceModel.parse(args.resourceAssignmentGroup),
+            AssignedProjectsModel.parse(args.resourceAssignmentGroup),
           )}
         WHERE
           "organization_id" = ${args.organizationId}
@@ -282,37 +324,24 @@ export class OrganizationMembers {
    */
   async resolveGraphQLMemberResourceAssignment(
     member: OrganizationMembership,
-  ): Promise<GraphQLSchema.ResolversTypes['MemberResourceAssignment']> {
-    if (member.assignedRole.resources === '*') {
-      return {
-        allProjects: true,
-      };
-    }
-
+  ): Promise<GraphQLSchema.ResolversTypes['ResourceAssignment']> {
     const projects = await this.storage.findProjectsByIds(
-      member.assignedRole.resources.map(project => project.id),
+      member.assignedRole.resources.projects.map(project => project.id),
     );
 
-    // if there is no project all the assignments do not longer exist.
-    const [firstProject] = projects.values();
-    if (!firstProject) {
-      return {
-        projects: [],
-      };
-    }
-
-    const filteredProjects = member.assignedRole.resources.filter(row => projects.get(row.id));
-
-    const targetAssignments = filteredProjects.flatMap(project =>
-      project.targets === '*' ? [] : project.targets,
+    const filteredProjects = member.assignedRole.resources.projects.filter(row =>
+      projects.get(row.id),
     );
+
+    const targetAssignments = filteredProjects.flatMap(project => project.targets.targets);
 
     const targets = await this.storage.findTargetsByIds(
-      firstProject.orgId,
+      member.organizationId,
       targetAssignments.map(target => target.id),
     );
 
     return {
+      mode: member.assignedRole.resources.mode === '*' ? ('all' as const) : ('granular' as const),
       projects: filteredProjects
         .map(projectAssignment => {
           const project = projects.get(projectAssignment.id);
@@ -323,38 +352,39 @@ export class OrganizationMembers {
           return {
             projectId: project.id,
             project,
-            targets:
-              projectAssignment.targets === '*'
-                ? { allTargets: true }
-                : {
-                    targets: projectAssignment.targets
-                      .map(targetAssignment => {
-                        const target = targets.get(targetAssignment.id);
-                        if (!target) return null;
+            targets: {
+              mode:
+                projectAssignment.targets.mode === '*' ? ('all' as const) : ('granular' as const),
+              targets: projectAssignment.targets.targets
+                .map(targetAssignment => {
+                  const target = targets.get(targetAssignment.id);
+                  if (!target) return null;
 
-                        return {
-                          targetId: target.id,
-                          target,
-                          appDeployments:
-                            targetAssignment.appDeployments === '*'
-                              ? { allAppDeployments: true }
-                              : {
-                                  appDeployments: targetAssignment.appDeployments.map(
-                                    deployment => deployment.appName,
-                                  ),
-                                },
-                          services:
-                            targetAssignment.services === '*'
-                              ? { allServices: true }
-                              : {
-                                  services: targetAssignment.services.map(
-                                    service => service.serviceName,
-                                  ),
-                                },
-                        };
-                      })
-                      .filter(isSome),
-                  },
+                  return {
+                    targetId: target.id,
+                    target,
+                    services: {
+                      mode:
+                        targetAssignment.services.mode === '*'
+                          ? ('all' as const)
+                          : ('granular' as const),
+                      services: targetAssignment.services.services.map(
+                        service => service.serviceName,
+                      ),
+                    },
+                    appDeployments: {
+                      mode:
+                        targetAssignment.appDeployments.mode === '*'
+                          ? ('all' as const)
+                          : ('granular' as const),
+                      appDeployments: targetAssignment.appDeployments.appDeployments.map(
+                        deployment => deployment.appName,
+                      ),
+                    },
+                  };
+                })
+                .filter(isSome),
+            },
           };
         })
         .filter(isSome),
@@ -372,22 +402,21 @@ export class OrganizationMembers {
    */
   async transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
     organization: Organization,
-    input: GraphQLSchema.MemberResourceAssignmentInput,
+    input: GraphQLSchema.ResourceAssignmentInput,
   ): Promise<ResourceAssignmentGroup> {
-    if (input.allProjects) {
-      return '*';
-    }
+    /** Mutable array that we populate with the resolved data from the database */
+    const resourceAssignmentGroup: ResourceAssignmentGroup = {
+      mode: input.mode === 'all' ? '*' : 'granular',
+      projects: [],
+    };
 
-    if (input.projects == null) {
-      return [];
+    if (!input.projects) {
+      return resourceAssignmentGroup;
     }
 
     const projects = await this.storage.findProjectsByIds(
-      input.projects.map(record => record.projectId),
+      input.projects.map(record => record.projectId) ?? [],
     );
-
-    /** Mutable array that we populate with the resolved data from the database */
-    const resourceAssignmentGroup: ResourceAssignmentGroup = [];
 
     // In case we are not assigning all targets to the project,
     // we need to  load all the targets/projects that would be assigned
@@ -398,7 +427,7 @@ export class OrganizationMembers {
       projectId: string;
       /**  mutable array that is within "resourceAssignmentGroup" */
       projectTargets: Array<z.TypeOf<typeof TargetAssignmentModel>>;
-      targets: readonly GraphQLSchema.MemberTargetAssignmentInput[];
+      targets: readonly GraphQLSchema.TargetResourceAssignmentInput[];
     }> = [];
 
     for (const record of input.projects) {
@@ -411,21 +440,15 @@ export class OrganizationMembers {
         continue;
       }
 
-      if (record.targets.allTargets === true) {
-        resourceAssignmentGroup.push({
-          type: 'project',
-          id: project.id,
-          targets: '*',
-        });
-        continue;
-      }
-
       const projectTargets: Array<z.TypeOf<typeof TargetAssignmentModel>> = [];
 
-      resourceAssignmentGroup.push({
+      resourceAssignmentGroup.projects.push({
         type: 'project',
         id: project.id,
-        targets: projectTargets,
+        targets: {
+          mode: record.targets.mode === 'all' ? '*' : 'granular',
+          targets: projectTargets,
+        },
       });
 
       if (record.targets.targets) {
@@ -459,18 +482,22 @@ export class OrganizationMembers {
         record.projectTargets.push({
           type: 'target',
           id: target.id,
-          appDeployments: targetRecord.appDeployments.allAppDeployments
-            ? '*'
-            : (targetRecord.appDeployments.appDeployments ?? []).map(record => ({
+          appDeployments: {
+            mode: targetRecord.appDeployments.mode === 'all' ? '*' : 'granular',
+            appDeployments:
+              targetRecord.appDeployments.appDeployments?.map(record => ({
                 type: 'appDeployment',
                 appName: record.appDeployment,
-              })),
-          services: targetRecord.services.allServices
-            ? '*'
-            : (targetRecord.services.services ?? []).map(record => ({
+              })) ?? [],
+          },
+          services: {
+            mode: targetRecord.services.mode === 'all' ? '*' : 'granular',
+            services:
+              targetRecord.services.services?.map(record => ({
                 type: 'service',
                 serviceName: record?.serviceName,
-              })),
+              })) ?? [],
+          },
         });
       }
     }
@@ -557,7 +584,7 @@ function resolveResourceAssignment(args: {
     organizationId: args.organizationId,
   };
 
-  if (args.projects === '*') {
+  if (args.projects.mode === '*') {
     return {
       organization: organizationAssignment,
       project: organizationAssignment,
@@ -572,19 +599,19 @@ function resolveResourceAssignment(args: {
   let serviceAssignments: ResolvedResourceAssignments['service'] = [];
   let appDeploymentAssignments: ResolvedResourceAssignments['appDeployment'] = [];
 
-  for (const project of args.projects) {
+  for (const project of args.projects.projects) {
     const projectAssignment: ProjectAssignment = {
       type: 'project',
       projectId: project.id,
     };
     projectAssignments.push(projectAssignment);
 
-    if (project.targets === '*') {
+    if (project.targets.mode === '*') {
       targetAssignments.push(projectAssignment);
       continue;
     }
 
-    for (const target of project.targets) {
+    for (const target of project.targets.targets) {
       const targetAssignment: TargetAssignment = {
         type: 'target',
         targetId: target.id,
@@ -593,10 +620,10 @@ function resolveResourceAssignment(args: {
       targetAssignments.push(targetAssignment);
 
       // services
-      if (target.services === '*') {
+      if (target.services.mode === '*') {
         serviceAssignments.push(targetAssignment);
       } else {
-        for (const service of target.services) {
+        for (const service of target.services.services) {
           serviceAssignments.push({
             type: 'service',
             targetId: target.id,
@@ -606,10 +633,10 @@ function resolveResourceAssignment(args: {
       }
 
       // app deployments
-      if (target.appDeployments === '*') {
+      if (target.appDeployments.mode === '*') {
         appDeploymentAssignments.push(targetAssignment);
       } else {
-        for (const appDeployment of target.appDeployments) {
+        for (const appDeployment of target.appDeployments.appDeployments) {
           appDeploymentAssignments.push({
             type: 'appDeployment',
             targetId: target.id,
