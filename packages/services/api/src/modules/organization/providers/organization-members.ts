@@ -345,7 +345,7 @@ export class OrganizationMembers {
       projects: filteredProjects
         .map(projectAssignment => {
           const project = projects.get(projectAssignment.id);
-          if (!project) {
+          if (!project || project.orgId !== member.organizationId) {
             return null;
           }
 
@@ -393,7 +393,7 @@ export class OrganizationMembers {
 
   /**
    * Transforms and resolves a {GraphQL.MemberResourceAssignmentInput} to a {ResourceAssignmentGroup}
-   * that can eb stored within our database
+   * that can be stored within our database
    *
    * - Projects and Targets that can not be found in our database are omitted from the resolved object.
    * - Projects and Targets that do not follow the hierarchical structure are omitted from teh resolved object.
