@@ -32,7 +32,7 @@ import {
   type SchemaLog,
   type SchemaPolicy,
 } from '../../api/src/shared/entities';
-import { batch } from '../../api/src/shared/helpers';
+import { batch, batchBy } from '../../api/src/shared/helpers';
 import {
   alert_channels,
   alerts,
@@ -1398,18 +1398,36 @@ export async function createStorage(
 
       return result.rows.map(transformProject);
     },
-    async findProjectsByIds(ids) {
-      const result = await pool.query<Slonik<projects>>(
-        sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(ids, 'uuid')}) AND type != 'CUSTOM'`,
-      );
+    findProjectsByIds: batch<{ projectIds: Array<string> }, Map<string, Project>>(
+      async function FindProjectByIdsBatchHandler(args) {
+        const allProjectIds = args.flatMap(args => args.projectIds);
+        const allProjectsLookupMap = new Map<string, Project>();
 
-      const map = new Map<string, Project>();
-      result.rows.forEach(row => {
-        const project = transformProject(row);
-        map.set(project.id, project);
-      });
-      return map;
-    },
+        if (allProjectIds.length === 0) {
+          return args.map(async () => allProjectsLookupMap);
+        }
+
+        const result = await pool.query<Slonik<projects>>(
+          sql`/* findProjectsByIds */ SELECT * FROM projects WHERE id = ANY(${sql.array(allProjectIds, 'uuid')}) AND type != 'CUSTOM'`,
+        );
+
+        result.rows.forEach(row => {
+          const project = transformProject(row);
+          allProjectsLookupMap.set(project.id, project);
+        });
+
+        return args.map(async arg => {
+          const map = new Map<string, Project>();
+          for (const projectId of arg.projectIds) {
+            const project = allProjectsLookupMap.get(projectId);
+            if (!project) continue;
+            map.set(projectId, project);
+          }
+
+          return map;
+        });
+      },
+    ),
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
         const projectSlugExists = await t.exists(
@@ -1701,29 +1719,50 @@ export async function createStorage(
         orgId: organization,
       }));
     },
-    async findTargetsByIds(organizationId, targetIds) {
-      const map = new Map<string, Target>();
+    findTargetsByIds: batchBy<
+      {
+        organizationId: string;
+        targetIds: Array<string>;
+      },
+      Map<string, Target>
+    >(
+      org => org.organizationId,
+      async function FindTargetsByIdsBatchHandler(args) {
+        const resultLookupMap = new Map<string, Target>();
 
-      if (targetIds.length === 0) {
-        return map;
-      }
+        const allTargetIds = args.flatMap(arg => arg.targetIds);
 
-      const results = await pool.query<unknown>(sql`/* getTargets */
-        SELECT
+        if (allTargetIds.length === 0) {
+          return args.map(async () => resultLookupMap);
+        }
+
+        const orgId = args[0].organizationId;
+
+        const results = await pool.query<unknown>(sql`/* getTargets */
+          SELECT
           ${targetSQLFields}
-        FROM
+          FROM
           "targets"
-        WHERE
-          "id" = ANY(${sql.array(targetIds, 'uuid')})
-      `);
+          WHERE
+          "id" = ANY(${sql.array(allTargetIds, 'uuid')})
+        `);
 
-      for (const row of results.rows) {
-        const target: Target = { ...TargetModel.parse(row), orgId: organizationId };
-        map.set(target.id, target);
-      }
+        for (const row of results.rows) {
+          const target: Target = { ...TargetModel.parse(row), orgId };
+          resultLookupMap.set(target.id, target);
+        }
 
-      return map;
-    },
+        return args.map(async arg => {
+          const map = new Map<string, Target>();
+          for (const targetId of arg.targetIds) {
+            const target = resultLookupMap.get(targetId);
+            if (!target) continue;
+            map.set(targetId, target);
+          }
+          return map;
+        });
+      },
+    ),
     async getTargetIdsOfOrganization({ organizationId: organization }) {
       const results = await pool.query<Slonik<Pick<targets, 'id'>>>(
         sql`/* getTargetIdsOfOrganization */

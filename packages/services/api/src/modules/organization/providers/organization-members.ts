@@ -327,9 +327,9 @@ export class OrganizationMembers {
   async resolveGraphQLMemberResourceAssignment(
     member: OrganizationMembership,
   ): Promise<GraphQLSchema.ResolversTypes['ResourceAssignment']> {
-    const projects = await this.storage.findProjectsByIds(
-      member.assignedRole.resources.projects.map(project => project.id),
-    );
+    const projects = await this.storage.findProjectsByIds({
+      projectIds: member.assignedRole.resources.projects.map(project => project.id),
+    });
 
     const filteredProjects = member.assignedRole.resources.projects.filter(row =>
       projects.get(row.id),
@@ -337,10 +337,10 @@ export class OrganizationMembers {
 
     const targetAssignments = filteredProjects.flatMap(project => project.targets.targets);
 
-    const targets = await this.storage.findTargetsByIds(
-      member.organizationId,
-      targetAssignments.map(target => target.id),
-    );
+    const targets = await this.storage.findTargetsByIds({
+      organizationId: member.organizationId,
+      targetIds: targetAssignments.map(target => target.id),
+    });
 
     return {
       mode: member.assignedRole.resources.mode === '*' ? ('all' as const) : ('granular' as const),
@@ -418,9 +418,9 @@ export class OrganizationMembers {
 
     const sanitizedProjects = input.projects.filter(project => isUUID(project.projectId));
 
-    const projects = await this.storage.findProjectsByIds(
-      sanitizedProjects.map(record => record.projectId),
-    );
+    const projects = await this.storage.findProjectsByIds({
+      projectIds: sanitizedProjects.map(record => record.projectId),
+    });
 
     // In case we are not assigning all targets to the project,
     // we need to  load all the targets/projects that would be assigned
@@ -468,10 +468,10 @@ export class OrganizationMembers {
       }
     }
 
-    const targets = await this.storage.findTargetsByIds(
-      organization.id,
-      Array.from(targetLookupIds),
-    );
+    const targets = await this.storage.findTargetsByIds({
+      organizationId: organization.id,
+      targetIds: Array.from(targetLookupIds),
+    });
 
     for (const record of projectTargetAssignments) {
       for (const targetRecord of record.targets) {
