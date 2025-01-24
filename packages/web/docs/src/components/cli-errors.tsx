@@ -1,6 +1,5 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import { ReactElement } from 'react';
-import type { GetStaticProps } from 'next';
 import { Callout, Code } from '@theguild/components';
 
 type CLIError = {
@@ -26,7 +25,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
         />
       </h3>
       <h4 className="mt-8 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-        Example: <Code contentEditable="false">{props.example}</Code>
+        Example: <Code>{props.example}</Code>
       </h4>
       <Callout type="default" emoji=">">
         <pre>{props.exampleOutput}</pre>
