@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
+import { Kit } from '../kit';
+import { JSONPrimitive } from './json';
+
 type _MessageEvent<T> = MessageEvent<T>;
 
 export type LogMessage = {
@@ -26,48 +29,54 @@ export namespace IFrameEvents {
       prompt = 'prompt',
     }
 
-    type ReadyEventData = {
-      type: Event.ready;
-    };
+    export namespace EventData {
+      export interface Ready {
+        type: Event.ready;
+      }
 
-    type StartEventData = {
-      type: Event.start;
-      runId: string;
-    };
+      export interface Start {
+        type: Event.start;
+        runId: string;
+      }
 
-    type LogEventData = {
-      type: Event.log;
-      runId: string;
-      log: LogMessage;
-    };
+      export interface Log {
+        type: Event.log;
+        runId: string;
+        log: LogMessage;
+      }
 
-    type ResultEventData = {
-      type: Event.result;
-      runId: string;
-      environmentVariables: Record<string, unknown>;
-    };
+      export interface Result {
+        type: Event.result;
+        runId: string;
+        environmentVariables: Record<string, JSONPrimitive>;
+        request: {
+          headers: Kit.Headers.Encoded;
+        };
+      }
 
-    type ErrorEventData = {
-      type: Event.error;
-      runId: string;
-      error: ErrorMessage;
-    };
+      export interface Error {
+        type: Event.error;
+        runId: string;
+        error: ErrorMessage;
+      }
 
-    type PromptEventData = {
-      type: Event.prompt;
-      runId: string;
-      promptId: number;
-      message: string;
-      defaultValue?: string;
-    };
+      export interface Prompt {
+        type: Event.prompt;
+        runId: string;
+        promptId: number;
+        message: string;
+        defaultValue?: string;
+      }
+    }
 
-    export type EventData =
-      | ReadyEventData
-      | StartEventData
-      | LogEventData
-      | PromptEventData
-      | ResultEventData
-      | ErrorEventData;
+    export type EventData = {
+      ready: EventData.Ready;
+      start: EventData.Start;
+      log: EventData.Log;
+      prompt: EventData.Prompt;
+      result: EventData.Result;
+      error: EventData.Error;
+    }[Event];
 
     export type MessageEvent = _MessageEvent<EventData>;
   }
@@ -79,26 +88,33 @@ export namespace IFrameEvents {
       abort = 'abort',
     }
 
-    type RunEventData = {
-      type: Event.run;
-      id: string;
-      script: string;
-      environmentVariables: Record<string, unknown>;
-    };
+    export namespace EventData {
+      export interface Run {
+        type: Event.run;
+        id: string;
+        script: string;
+        environmentVariables: Record<string, JSONPrimitive>;
+      }
 
-    type AbortEventData = {
-      type: Event.abort;
-      id: string;
-    };
+      export interface Abort {
+        type: Event.abort;
+        id: string;
+      }
 
-    type PromptResponseEventData = {
-      type: Event.promptResponse;
-      id: string;
-      promptId: number;
-      value: string | null;
-    };
+      export interface PromptResponse {
+        type: Event.promptResponse;
+        id: string;
+        promptId: number;
+        value: string | null;
+      }
+    }
 
-    export type EventData = RunEventData | AbortEventData | PromptResponseEventData;
+    export type EventData = {
+      run: EventData.Run;
+      promptResponse: EventData.PromptResponse;
+      abort: EventData.Abort;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 }
@@ -113,23 +129,45 @@ export namespace WorkerEvents {
       prompt = 'prompt',
     }
 
-    type LogEventData = { type: Event.log; message: LogMessage };
-    type ErrorEventData = { type: Event.error; error: ErrorMessage };
-    type PromptEventData = {
-      type: Event.prompt;
-      promptId: number;
-      message: string;
-      defaultValue: string;
-    };
-    type ResultEventData = { type: Event.result; environmentVariables: Record<string, unknown> };
-    type ReadyEventData = { type: Event.ready };
+    export namespace EventData {
+      export interface Log {
+        type: Event.log;
+        message: LogMessage;
+      }
 
-    export type EventData =
-      | ResultEventData
-      | LogEventData
-      | ErrorEventData
-      | ReadyEventData
-      | PromptEventData;
+      export interface Error {
+        type: Event.error;
+        error: ErrorMessage;
+      }
+
+      export interface Prompt {
+        type: Event.prompt;
+        promptId: number;
+        message: string;
+        defaultValue: string;
+      }
+
+      export interface Result {
+        type: Event.result;
+        environmentVariables: Record<string, JSONPrimitive>;
+        request: {
+          headers: Kit.Headers.Encoded;
+        };
+      }
+
+      export interface Ready {
+        type: Event.ready;
+      }
+    }
+
+    export type EventData = {
+      log: EventData.Log;
+      error: EventData.Error;
+      prompt: EventData.Prompt;
+      result: EventData.Result;
+      ready: EventData.Ready;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 
@@ -139,19 +177,25 @@ export namespace WorkerEvents {
       promptResponse = 'promptResponse',
     }
 
-    type PromptResponseEventData = {
-      type: Event.promptResponse;
-      promptId: number;
-      value: string | null;
-    };
+    export namespace EventData {
+      export interface PromptResponse {
+        type: Event.promptResponse;
+        promptId: number;
+        value: string | null;
+      }
 
-    type RunEventData = {
-      type: Event.run;
-      script: string;
-      environmentVariables: Record<string, unknown>;
-    };
+      export interface Run {
+        type: Event.run;
+        script: string;
+        environmentVariables: Record<string, JSONPrimitive>;
+      }
+    }
 
-    export type EventData = PromptResponseEventData | RunEventData;
+    export type EventData = {
+      promptResponse: EventData.PromptResponse;
+      run: EventData.Run;
+    }[Event];
+
     export type MessageEvent = _MessageEvent<EventData>;
   }
 }

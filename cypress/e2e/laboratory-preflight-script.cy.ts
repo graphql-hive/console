@@ -1,5 +1,21 @@
 import { dedent } from '../support/testkit';
 
+const selectors = {
+  buttonModalCy: 'preflight-script-modal-button',
+  buttonToggleCy: 'toggle-preflight-script',
+  buttonHeaders: '[data-name="headers"]',
+  headersEditor: {
+    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
+  },
+  graphiql: {
+    buttonExecute: '.graphiql-execute-button',
+  },
+
+  modal: {
+    buttonSubmitCy: 'preflight-script-modal-submit',
+  },
+};
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
@@ -186,6 +202,81 @@ throw new TypeError('Test')`,
 });
 
 describe('Execution', () => {
+  it('result.request.headers are added to the graphiql request base headers', () => {
+    // Setup Preflight Script
+    const preflightHeaders = {
+      foo: 'bar',
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`lab.request.headers.append('foo', '${preflightHeaders.foo}')`);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({ headers: preflightHeaders }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
+  it('result.request.headers take precedence over graphiql request base headers', () => {
+    // Integrity Check: Ensure the header we think we're overriding is actually there to override.
+    // We achieve this by asserting a sent GraphiQL request includes the certain header and assume
+    // if its there once its there every time.
+    const baseHeaders = {
+      accept: 'application/json, multipart/mixed',
+    };
+    cy.intercept({ headers: baseHeaders }).as('integrityCheck');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@integrityCheck');
+    // Setup Preflight Script
+    const preflightHeaders = {
+      accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({ headers: preflightHeaders }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
+  it('result.request.headers are NOT substituted with environment variables', () => {
+    const barEnVarInterpolation = '{{bar}}';
+    // Setup Static Headers
+    const staticHeaders = {
+      foo_static: barEnVarInterpolation,
+    };
+    cy.get(selectors.buttonHeaders).click();
+    cy.get(selectors.headersEditor.textArea).type(JSON.stringify(staticHeaders), {
+      force: true,
+      parseSpecialCharSequences: false,
+    });
+    // Setup Preflight Script
+    const environmentVariables = {
+      bar: 'BAR_VALUE',
+    };
+    const preflightHeaders = {
+      foo_preflight: barEnVarInterpolation,
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`
+      lab.environment.set('bar', '${environmentVariables.bar}')
+      lab.request.headers.append('foo_preflight', '${preflightHeaders.foo_preflight}')
+    `);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({
+      headers: {
+        ...preflightHeaders,
+        foo_static: environmentVariables.bar,
+      },
+    }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
   it('header placeholders are substituted with environment variables', () => {
     cy.dataCy('toggle-preflight-script').click();
     cy.get('[data-name="headers"]').click();

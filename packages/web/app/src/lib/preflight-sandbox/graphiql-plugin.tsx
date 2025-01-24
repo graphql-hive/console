@@ -32,9 +32,15 @@ import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/rea
 import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
 import { captureException } from '@sentry/react';
 import { useParams } from '@tanstack/react-router';
+import { Kit } from '../kit';
 import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
 import { IFrameEvents, LogMessage } from './shared-types';
+
+export type PreflightScriptResultData = Omit<
+  IFrameEvents.Outgoing.EventData.Result,
+  'type' | 'runId'
+>;
 
 export const preflightScriptPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -135,14 +141,6 @@ const PreflightScript_TargetFragment = graphql(`
 
 export type LogRecord = LogMessage | { type: 'separator' };
 
-function safeParseJSON(str: string): Record<string, unknown> | null {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return null;
-  }
-}
-
 export const enum PreflightWorkerState {
   running,
   ready,
@@ -173,9 +171,24 @@ export function usePreflightScript(args: {
 
   const currentRun = useRef<null | Function>(null);
 
-  async function execute(script = target?.preflightScript?.sourceCode ?? '', isPreview = false) {
+  async function execute(
+    script = target?.preflightScript?.sourceCode ?? '',
+    isPreview = false,
+  ): Promise<PreflightScriptResultData> {
+    const resultEnvironmentVariablesDecoded: PreflightScriptResultData['environmentVariables'] =
+      Kit.tryOr(
+        () => JSON.parse(latestEnvironmentVariablesRef.current),
+        () => ({}),
+      );
+    const result: PreflightScriptResultData = {
+      request: {
+        headers: [],
+      },
+      environmentVariables: resultEnvironmentVariablesDecoded,
+    };
+
     if (isPreview === false && !isPreflightScriptEnabled) {
-      return safeParseJSON(latestEnvironmentVariablesRef.current);
+      return result;
     }
 
     const id = crypto.randomUUID();
@@ -201,7 +214,8 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          environmentVariables: (environmentVariables && safeParseJSON(environmentVariables)) || {},
+          // Preflight Script has read/write relationship with environment variables.
+          environmentVariables: result.environmentVariables,
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
       );
@@ -257,16 +271,23 @@ export function usePreflightScript(args: {
         }
 
         if (ev.data.type === IFrameEvents.Outgoing.Event.result) {
-          const mergedEnvironmentVariables = JSON.stringify(
-            {
-              ...safeParseJSON(latestEnvironmentVariablesRef.current),
-              ...ev.data.environmentVariables,
-            },
+          const mergedEnvironmentVariables = {
+            ...result.environmentVariables,
+            ...ev.data.environmentVariables,
+          };
+          result.environmentVariables = mergedEnvironmentVariables;
+          result.request.headers = ev.data.request.headers;
+
+          // Cause the new state of environment variables to be
+          // written back to local storage.
+          const mergedEnvironmentVariablesEncoded = JSON.stringify(
+            result.environmentVariables,
             null,
             2,
           );
-          setEnvironmentVariables(mergedEnvironmentVariables);
-          latestEnvironmentVariablesRef.current = mergedEnvironmentVariables;
+          setEnvironmentVariables(mergedEnvironmentVariablesEncoded);
+          latestEnvironmentVariablesRef.current = mergedEnvironmentVariablesEncoded;
+
           setLogs(logs => [
             ...logs,
             {
@@ -301,7 +322,6 @@ export function usePreflightScript(args: {
           ]);
           setFinished();
           closedOpenedPrompts();
-
           return;
         }
 
@@ -310,6 +330,27 @@ export function usePreflightScript(args: {
           setLogs(logs => [...logs, log]);
           return;
         }
+
+        if (ev.data.type === IFrameEvents.Outgoing.Event.ready) {
+          console.debug('preflight sandbox graphiql plugin: noop iframe event:', ev.data);
+          return;
+        }
+
+        if (ev.data.type === IFrameEvents.Outgoing.Event.start) {
+          console.debug('preflight sandbox graphiql plugin: noop iframe event:', ev.data);
+          return;
+        }
+
+        // Window message events can be emitted from unknowable sources.
+        // For example when our e2e tests runs within Cypress GUI, we see a `MessageEvent` with `.data` of `{ vscodeScheduleAsyncWork: 3 }`.
+        // Since we cannot know if the event source is Preflight Script, we cannot perform an exhaustive check.
+        //
+        // Kit.neverCase(ev.data);
+        //
+        console.debug(
+          'preflight sandbox graphiql plugin: An unknown window message event received. Ignoring.',
+          ev,
+        );
       }
 
       window.addEventListener('message', eventHandler);
@@ -328,7 +369,8 @@ export function usePreflightScript(args: {
       window.removeEventListener('message', eventHandler);
 
       setState(PreflightWorkerState.ready);
-      return safeParseJSON(latestEnvironmentVariablesRef.current);
+
+      return result;
     } catch (err) {
       if (err instanceof Error) {
         setLogs(prev => [
@@ -346,7 +388,7 @@ export function usePreflightScript(args: {
           },
         ]);
         setState(PreflightWorkerState.ready);
-        return safeParseJSON(latestEnvironmentVariablesRef.current);
+        return result;
       }
       throw err;
     }

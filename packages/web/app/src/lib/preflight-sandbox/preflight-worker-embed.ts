@@ -1,3 +1,4 @@
+import { Kit } from '../kit';
 import PreflightWorker from './preflight-script-worker?worker&inline';
 import { IFrameEvents, WorkerEvents } from './shared-types';
 
@@ -106,6 +107,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
             type: IFrameEvents.Outgoing.Event.result,
             runId,
             environmentVariables: ev.data.environmentVariables,
+            request: ev.data.request,
           });
           terminate();
           return;
@@ -129,6 +131,8 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
           terminate();
           return;
         }
+
+        Kit.neverCase(ev.data);
       },
     );
 

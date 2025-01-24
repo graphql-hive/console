@@ -1,8 +1,15 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive } from './json';
+import { isJSONPrimitive, JSONPrimitive } from './json';
 import { LogMessage, WorkerEvents } from './shared-types';
+
+interface WorkerData {
+  request: {
+    headers: Headers;
+  };
+  environmentVariables: Record<string, JSONPrimitive>;
+}
 
 /**
  * Unique id for each prompt request.
@@ -45,11 +52,16 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     return;
   }
 
-  const { environmentVariables, script } = args;
+  const { script } = args;
 
-  // When running in worker `environmentVariables` will not be a reference to the main thread value
-  // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
-  const workingEnvironmentVariables = { ...environmentVariables };
+  const workerData: WorkerData = {
+    request: {
+      headers: new Headers(),
+    },
+    // When running in worker `environmentVariables` will not be a reference to the main thread value
+    // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
+    environmentVariables: { ...args.environmentVariables },
+  };
 
   // generate list of all in scope variables, we do getOwnPropertyNames and `for in` because each contain slightly different sets of keys
   const allGlobalKeys = Object.getOwnPropertyNames(globalThis);
@@ -123,16 +135,19 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     },
     environment: {
       get(key: string) {
-        return Object.freeze(workingEnvironmentVariables[key]);
+        return Object.freeze(workerData.environmentVariables[key]);
       },
       set(key: string, value: unknown) {
         const validValue = getValidEnvVariable(value);
         if (validValue === undefined) {
-          delete workingEnvironmentVariables[key];
+          delete workerData.environmentVariables[key];
         } else {
-          workingEnvironmentVariables[key] = validValue;
+          workerData.environmentVariables[key] = validValue;
         }
       },
+    },
+    request: {
+      headers: workerData.request.headers,
     },
     /**
      * Mimics the `prompt` function in the browser, by sending a message to the main thread
@@ -179,9 +194,13 @@ ${script}})()`;
     });
     return;
   }
+
   sendMessage({
     type: WorkerEvents.Outgoing.Event.result,
-    environmentVariables: workingEnvironmentVariables,
+    environmentVariables: workerData.environmentVariables,
+    request: {
+      headers: Array.from(workerData.request.headers.entries()),
+    },
   });
 }
 
