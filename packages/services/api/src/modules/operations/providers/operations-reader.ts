@@ -300,10 +300,10 @@ export class OperationsReader {
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
   }): Promise<Record<string, number>> {
-    const coordinates = fields.map(selector => this.makeId(selector));
+    const schemaCoordinates = fields.map(selector => this.makeId(selector));
     return this.countCoordinates({
-      coordinates,
-      target,
+      schemaCoordinates,
+      targetIds: target,
       period,
       operations,
       excludedClients,
