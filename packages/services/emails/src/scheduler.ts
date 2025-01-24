@@ -71,6 +71,7 @@ export function createScheduler(config: {
       config.queueName,
       async job => {
         logger.info('Sending email to %s', job.data.email);
+        logger.debug({ event: 'send_email', email: job.data });
         let body = job.data.body;
         // Poor mans MJML check :)
         if (job.data.body.includes('<mjml>')) {
