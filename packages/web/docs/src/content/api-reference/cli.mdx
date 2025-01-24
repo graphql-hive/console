@@ -456,20 +456,6 @@ List of all available CLI commands and their options can be found
 
 ## Errors
 
-import { useData } from '@theguild/components'
-import { ErrorDetails } from '../../../components/cli-errors'
-
-export { getStaticProps } from '../../../components/cli-errors'
-
-export function CLIErrorsSection() {
-  const { cliErrors } = useData()
-  return (
-    <>
-      {cliErrors.map(item => (
-        <ErrorDetails key={item.code} {...item} />
-      ))}
-    </>
-  )
-}
+import { CLIErrorsSection } from '../../components/cli-errors'
 
 <CLIErrorsSection />

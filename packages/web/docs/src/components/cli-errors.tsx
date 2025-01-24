@@ -386,16 +386,13 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     );
 }
 
-export const getStaticProps: GetStaticProps<{ ssg: { cliErrors: CLIError[] } }> = async () => {
-  return {
-    props: {
-      __nextra_dynamic_opts: {
-        title: 'CLI Errors',
-        frontMatter: {
-          description: 'GraphQL Hive CLI Error Codes and Fixes.',
-        },
-      },
-      ssg: { cliErrors: await getErrorDescriptions() },
-    },
-  };
-};
+export async function CLIErrorsSection() {
+  const cliErrors = await getErrorDescriptions();
+  return (
+    <>
+      {cliErrors.map(item => (
+        <ErrorDetails key={item.code} {...item} />
+      ))}
+    </>
+  );
+}
