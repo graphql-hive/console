@@ -5,6 +5,7 @@ import { compress } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { calculateChunkSize, createKVBuffer, isBufferTooBigError } from './buffer';
 import type { KafkaEnvironment } from './environment';
+import { createFallbackQueue } from './fallback-queue';
 import {
   bufferFlushes,
   compressDuration,
@@ -173,18 +174,15 @@ export function createUsage(config: {
     },
     async sender(reports, estimatedSizeInBytes, batchId, validateSize) {
       const numOfOperations = reports.reduce((sum, report) => report.size + sum, 0);
+      const compressLatencyStop = compressDuration.startTimer();
+      const value = await compress(JSON.stringify(reports)).finally(() => {
+        compressLatencyStop();
+      });
+      estimationError.observe(Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength);
+
+      validateSize(value.byteLength); // this will throw if the size is too big
+
       try {
-        const compressLatencyStop = compressDuration.startTimer();
-        const value = await compress(JSON.stringify(reports)).finally(() => {
-          compressLatencyStop();
-        });
-
-        validateSize(value.byteLength); // this will throw if the size is too big
-        
-        estimationError.observe(
-          Math.abs(estimatedSizeInBytes - value.byteLength) / value.byteLength,
-        );
-
         bufferFlushes.inc();
         const stopTimer = kafkaDuration.startTimer();
         const meta = await producer
@@ -218,27 +216,48 @@ export function createUsage(config: {
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
-        if (isBufferTooBigError(error)) {
-          logger.debug('Buffer too big, retrying (id=%s, error=%s)', batchId, error.message);
-        } else {
-          changeStatus(Status.Unhealthy);
-          logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
-          Sentry.setTags({
-            batchId,
-            message: error.message,
-            numOfOperations,
-          });
-          Sentry.captureException(error);
-        }
+        changeStatus(Status.Unhealthy);
+        logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
+        Sentry.setTags({
+          batchId,
+          message: error.message,
+          numOfOperations,
+        });
+        Sentry.captureException(error);
+
+        logger.info('Adding to fallback queue (id=%s)', batchId);
+        fallback.add(value.toString(), numOfOperations);
 
         throw error;
       }
     },
   });
 
+  const fallback = createFallbackQueue({
+    async send(value, numOfOperations) {
+      bufferFlushes.inc();
+      const stopTimer = kafkaDuration.startTimer();
+      try {
+        await producer.send({
+          topic: config.kafka.topic,
+          compression: CompressionTypes.None,
+          messages: [
+            {
+              value,
+            },
+          ],
+        });
+        rawOperationWrites.inc(numOfOperations);
+      } catch (error) {
+        rawOperationFailures.inc(numOfOperations);
+      } finally {
+        stopTimer();
+      }
+    },
+    logger: logger.child({ namespace: 'fallback' }),
+  });
+
   let status: Status = Status.Waiting;
-
-
   function changeStatus(newStatus: Status) {
     if (status === newStatus) {
       return;
@@ -247,16 +266,6 @@ export function createUsage(config: {
     logger.info('Changing status to %s', newStatus);
     status = newStatus;
   }
-
-  producer.on(producer.events.CONNECT, () => {
-    logger.info('Kafka producer: connected');
-    changeStatus(Status.Ready);
-  });
-
-  producer.on(producer.events.DISCONNECT, () => {
-    logger.info('Kafka producer: disconnected');
-    changeStatus(Status.Stopped);
-  });
 
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
     logger.info('Kafka producer: request timeout');
@@ -268,6 +277,8 @@ export function createUsage(config: {
     changeStatus(Status.Stopped);
     await buffer.stop();
     logger.info(`Buffering stopped`);
+    await fallback.stop();
+    logger.info(`Fallback stopped`);
     await producer.disconnect();
     logger.info(`Producer disconnected`);
 
@@ -293,7 +304,7 @@ export function createUsage(config: {
       },
     ),
     readiness() {
-      return status === Status.Ready;
+      return status === Status.Ready && fallback.size() === 0;
     },
     async start() {
       logger.info('Starting Kafka producer');
@@ -301,6 +312,7 @@ export function createUsage(config: {
       buffer.start();
       changeStatus(Status.Ready);
       logger.info('Kafka producer is ready');
+      fallback.start();
     },
     stop,
   };
