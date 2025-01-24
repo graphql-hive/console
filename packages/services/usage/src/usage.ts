@@ -140,8 +140,8 @@ export function createUsage(config: {
     },
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
     requestTimeout: 60_000, //
-    connectionTimeout: 15_000,
-    authenticationTimeout: 15_000,
+    connectionTimeout: 5_000,
+    authenticationTimeout: 5_000,
     retry: retryOptions,
   });
 
@@ -150,9 +150,6 @@ export function createUsage(config: {
     metadataMaxAge: 180_000,
     createPartitioner: Partitioners.LegacyPartitioner,
     retry: retryOptions,
-    // Usually, there's one flush at a time,
-    // the only exception is when the buffer is chunked or when a reconnect happens
-    maxInFlightRequests: 5.
   });
   const buffer = createKVBuffer<RawReport>({
     logger,
