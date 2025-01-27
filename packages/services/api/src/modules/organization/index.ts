@@ -10,5 +10,5 @@ export const organizationModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [OrganizationManager, OrganizationMemberRoles, OrganizationMembers],
+  providers: [OrganizationMemberRoles, OrganizationMembers, OrganizationManager],
 });

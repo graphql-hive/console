@@ -532,12 +532,12 @@ export default gql`
 
   type TargetServicesResourceAssignment {
     mode: ResourceAssignmentMode!
-    services: [String!]!
+    services: [String!]
   }
 
   type TargetAppDeploymentsResourceAssignment {
     mode: ResourceAssignmentMode!
-    appDeployments: [String!]!
+    appDeployments: [String!]
   }
 
   type TargetResouceAssignment {

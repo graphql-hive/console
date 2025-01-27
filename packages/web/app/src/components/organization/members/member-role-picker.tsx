@@ -114,7 +114,7 @@ export function MemberRolePicker(props: {
               targetId: target.target.id,
               services: {
                 mode: target.services.mode,
-                services: target.services.services.map(
+                services: target.services.services?.map(
                   (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
                     serviceName: service,
                   }),
@@ -122,7 +122,7 @@ export function MemberRolePicker(props: {
               },
               appDeployments: {
                 mode: target.appDeployments.mode,
-                appDeployments: target.appDeployments.appDeployments.map(
+                appDeployments: target.appDeployments.appDeployments?.map(
                   (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
                     appDeployment: appDeploymentName,
                   }),

@@ -45,7 +45,6 @@ export class AuthManager {
     private projectAccess: ProjectAccess,
     private targetAccess: TargetAccess,
     private userManager: UserManager,
-    private storage: Storage,
     private session: Session,
   ) {}
 

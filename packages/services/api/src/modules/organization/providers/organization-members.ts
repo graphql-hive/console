@@ -9,12 +9,14 @@ import { AppDeploymentNameModel } from '../../app-deployments/providers/app-depl
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
-import { OrganizationMemberRole, OrganizationMemberRoles } from './organization-member-roles';
+import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 
-const WildcardAssignmentModel = z.literal('*');
-const GranularAssignmentModel = z.literal('granular');
+const WildcardAssignmentModeModel = z.literal('*');
+const GranularAssignmentModeModel = z.literal('granular');
 
-const SelectionModeModel = z.union([WildcardAssignmentModel, GranularAssignmentModel]);
+const WildcardAssignmentMode = z.object({
+  mode: WildcardAssignmentModeModel,
+});
 
 const AppDeploymentAssignmentModel = z.object({
   type: z.literal('appDeployment'),
@@ -23,23 +25,25 @@ const AppDeploymentAssignmentModel = z.object({
 
 const ServiceAssignmentModel = z.object({ type: z.literal('service'), serviceName: z.string() });
 
-const AssignedServicesModel = z.object({
-  mode: SelectionModeModel,
-  services: z
-    .array(ServiceAssignmentModel)
-    .optional()
-    .nullable()
-    .transform(value => value ?? []),
-});
+const AssignedServicesModel = z.union([
+  z.object({
+    mode: GranularAssignmentModeModel,
+    services: z
+      .array(ServiceAssignmentModel)
+      .optional()
+      .nullable()
+      .transform(value => value ?? []),
+  }),
+  WildcardAssignmentMode,
+]);
 
-const AssignedAppDeploymentsModel = z.object({
-  mode: SelectionModeModel,
-  appDeployments: z
-    .array(AppDeploymentAssignmentModel)
-    .optional()
-    .nullable()
-    .transform(value => value ?? []),
-});
+const AssignedAppDeploymentsModel = z.union([
+  z.object({
+    mode: GranularAssignmentModeModel,
+    appDeployments: z.array(AppDeploymentAssignmentModel),
+  }),
+  WildcardAssignmentMode,
+]);
 
 const TargetAssignmentModel = z.object({
   type: z.literal('target'),
@@ -48,19 +52,23 @@ const TargetAssignmentModel = z.object({
   appDeployments: AssignedAppDeploymentsModel,
 });
 
-const AssignedTargetsModel = z.object({
-  mode: SelectionModeModel,
-  targets: z
-    .array(TargetAssignmentModel)
-    .optional()
-    .nullable()
-    .transform(value => value ?? []),
-});
+const AssignedTargetsModel = z.union([
+  z.object({
+    mode: GranularAssignmentModeModel,
+    targets: z.array(TargetAssignmentModel),
+  }),
+  WildcardAssignmentMode,
+]);
 
 const ProjectAssignmentModel = z.object({
   type: z.literal('project'),
   id: z.string().uuid(),
   targets: AssignedTargetsModel,
+});
+
+const GranularAssignedProjectsModel = z.object({
+  mode: GranularAssignmentModeModel,
+  projects: z.array(ProjectAssignmentModel),
 });
 
 /**
@@ -72,19 +80,13 @@ const ProjectAssignmentModel = z.object({
  * If no resources are assigned to a member role, the permissions are granted on all the resources within the
  * organization.
  */
-const AssignedProjectsModel = z.object({
-  mode: SelectionModeModel,
-  projects: z
-    .array(ProjectAssignmentModel)
-    .optional()
-    .nullable()
-    .transform(value => value ?? []),
-});
+const AssignedProjectsModel = z.union([GranularAssignedProjectsModel, WildcardAssignmentMode]);
 
 /**
  * Resource assignments as stored within the database.
  */
 type ResourceAssignmentGroup = z.TypeOf<typeof AssignedProjectsModel>;
+type GranularAssignedProjects = z.TypeOf<typeof GranularAssignedProjectsModel>;
 
 const RawOrganizationMembershipModel = z.object({
   userId: z.string(),
@@ -327,6 +329,9 @@ export class OrganizationMembers {
   async resolveGraphQLMemberResourceAssignment(
     member: OrganizationMembership,
   ): Promise<GraphQLSchema.ResolversTypes['ResourceAssignment']> {
+    if (member.assignedRole.resources.mode === '*') {
+      return { mode: 'all' };
+    }
     const projects = await this.storage.findProjectsByIds({
       projectIds: member.assignedRole.resources.projects.map(project => project.id),
     });
@@ -335,7 +340,9 @@ export class OrganizationMembers {
       projects.get(row.id),
     );
 
-    const targetAssignments = filteredProjects.flatMap(project => project.targets.targets);
+    const targetAssignments = filteredProjects.flatMap(project =>
+      project.targets.mode === 'granular' ? project.targets.targets : [],
+    );
 
     const targets = await this.storage.findTargetsByIds({
       organizationId: member.organizationId,
@@ -343,7 +350,7 @@ export class OrganizationMembers {
     });
 
     return {
-      mode: member.assignedRole.resources.mode === '*' ? ('all' as const) : ('granular' as const),
+      mode: 'granular' as const,
       projects: filteredProjects
         .map(projectAssignment => {
           const project = projects.get(projectAssignment.id);
@@ -354,39 +361,42 @@ export class OrganizationMembers {
           return {
             projectId: project.id,
             project,
-            targets: {
-              mode:
-                projectAssignment.targets.mode === '*' ? ('all' as const) : ('granular' as const),
-              targets: projectAssignment.targets.targets
-                .map(targetAssignment => {
-                  const target = targets.get(targetAssignment.id);
-                  if (!target) return null;
+            targets:
+              projectAssignment.targets.mode === '*'
+                ? { mode: 'all' as const }
+                : {
+                    mode: 'granular' as const,
+                    targets: projectAssignment.targets.targets
+                      .map(targetAssignment => {
+                        const target = targets.get(targetAssignment.id);
+                        if (!target) return null;
 
-                  return {
-                    targetId: target.id,
-                    target,
-                    services: {
-                      mode:
-                        targetAssignment.services.mode === '*'
-                          ? ('all' as const)
-                          : ('granular' as const),
-                      services: targetAssignment.services.services.map(
-                        service => service.serviceName,
-                      ),
-                    },
-                    appDeployments: {
-                      mode:
-                        targetAssignment.appDeployments.mode === '*'
-                          ? ('all' as const)
-                          : ('granular' as const),
-                      appDeployments: targetAssignment.appDeployments.appDeployments.map(
-                        deployment => deployment.appName,
-                      ),
-                    },
-                  };
-                })
-                .filter(isSome),
-            },
+                        return {
+                          targetId: target.id,
+                          target,
+                          services:
+                            targetAssignment.services.mode === '*'
+                              ? { mode: 'all' as const }
+                              : {
+                                  mode: 'granular' as const,
+                                  services: targetAssignment.services.services.map(
+                                    service => service.serviceName,
+                                  ),
+                                },
+                          appDeployments:
+                            targetAssignment.appDeployments.mode === '*'
+                              ? { mode: 'all' as const }
+                              : {
+                                  mode: 'granular' as const,
+                                  appDeployments:
+                                    targetAssignment.appDeployments.appDeployments.map(
+                                      deployment => deployment.appName,
+                                    ),
+                                },
+                        };
+                      })
+                      .filter(isSome),
+                  },
           };
         })
         .filter(isSome),
@@ -406,15 +416,22 @@ export class OrganizationMembers {
     organization: Organization,
     input: GraphQLSchema.ResourceAssignmentInput,
   ): Promise<ResourceAssignmentGroup> {
+    if (
+      !input.projects ||
+      // No need to resolve the projects if mode "all" is used.
+      // We will not store the selection in the database.
+      input.mode === 'all'
+    ) {
+      return {
+        mode: '*',
+      };
+    }
+
     /** Mutable array that we populate with the resolved data from the database */
-    const resourceAssignmentGroup: ResourceAssignmentGroup = {
-      mode: input.mode === 'all' ? '*' : 'granular',
+    const resourceAssignmentGroup: GranularAssignedProjects = {
+      mode: 'granular',
       projects: [],
     };
-
-    if (!input.projects) {
-      return resourceAssignmentGroup;
-    }
 
     const sanitizedProjects = input.projects.filter(project => isUUID(project.projectId));
 
@@ -455,6 +472,12 @@ export class OrganizationMembers {
         },
       });
 
+      // No need to resolve the projects if mode "a;ll" is used.
+      // We will not store the selection in the database.
+      if (record.targets.mode === 'all') {
+        continue;
+      }
+
       if (record.targets.targets) {
         const sanitizedTargets = record.targets.targets.filter(target => isUUID(target.targetId));
         for (const target of sanitizedTargets) {
@@ -487,25 +510,31 @@ export class OrganizationMembers {
         record.projectTargets.push({
           type: 'target',
           id: target.id,
-          appDeployments: {
-            mode: targetRecord.appDeployments.mode === 'all' ? '*' : 'granular',
-            appDeployments:
-              targetRecord.appDeployments.appDeployments
-                ?.filter(name => AppDeploymentNameModel.safeParse(name).success)
-                .map(record => ({
-                  type: 'appDeployment',
-                  appName: record.appDeployment,
-                })) ?? [],
-          },
-          services: {
-            mode: targetRecord.services.mode === 'all' ? '*' : 'granular',
-            services:
-              // TODO: it seems like we do not validate service names
-              targetRecord.services.services?.map(record => ({
-                type: 'service',
-                serviceName: record?.serviceName,
-              })) ?? [],
-          },
+          services:
+            targetRecord.services.mode === 'all'
+              ? { mode: '*' }
+              : {
+                  mode: 'granular',
+                  services:
+                    // TODO: it seems like we do not validate service names
+                    targetRecord.services.services?.map(record => ({
+                      type: 'service',
+                      serviceName: record?.serviceName,
+                    })) ?? [],
+                },
+          appDeployments:
+            targetRecord.appDeployments.mode === 'all'
+              ? { mode: '*' }
+              : {
+                  mode: 'granular',
+                  appDeployments:
+                    targetRecord.appDeployments.appDeployments
+                      ?.filter(name => AppDeploymentNameModel.safeParse(name).success)
+                      .map(record => ({
+                        type: 'appDeployment',
+                        appName: record.appDeployment,
+                      })) ?? [],
+                },
         });
       }
     }
