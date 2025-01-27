@@ -5,7 +5,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2025.01.20T00-00-00.legacy-registry-model-removal.ts',
-  
+
   run: ({ sql }) => sql`
     ALTER TABLE projects DROP COLUMN IF EXISTS legacy_registry_model;
   `,
