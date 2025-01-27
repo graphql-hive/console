@@ -2,7 +2,7 @@ import { Anchor, ArrowIcon, cn } from '@theguild/components';
 
 export interface CaseStudyCardProps extends React.HTMLAttributes<HTMLAnchorElement> {
   href: string;
-  category: string;
+  category?: string;
   logo: React.ReactNode;
   excerpt: string;
   className?: string;
@@ -26,13 +26,15 @@ export function CaseStudyCard({
       {...rest}
     >
       <div>
-        <div className="text-beige-800 mb-4 text-sm font-medium dark:text-neutral-400">
-          {category}
-        </div>
+        {category && (
+          <div className="text-beige-800 mb-4 text-sm font-medium dark:text-neutral-400">
+            {category}
+          </div>
+        )}
         {logo}
       </div>
       <p className="text-xl">{description}</p>
-      <div className="flex items-center justify-between gap-2">
+      <div className="mt-auto flex items-center justify-between gap-2">
         Read full story
         <ArrowIcon />
       </div>
