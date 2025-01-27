@@ -30,7 +30,7 @@ export default async function Page(props: NextPageProps<'...mdxPath'>) {
   return (
     <Wrapper toc={toc} metadata={metadata}>
       <MDXContent {...props} params={params} />
-      <ConfiguredGiscus />
+      <ConfiguredGiscus className="mt-8" />
     </Wrapper>
   );
 }
