@@ -2,37 +2,37 @@ import { Callout } from '@theguild/components'
 
 # Resources
 
-Finding and defining the right amount of resources for your GraphQL gateway is important to ensure
-ongoing performance and reliability. This guide will help you understand how to define the resources
-for your gateway.
+Defining the right amount of resources for your GraphQL gateway is crucial for maintaining
+performance and reliability. This guide will help you understand how to allocate resources
+effectively.
 
 ## CPU and Memory
 
-The two main resources you need to define for your gateway are CPU and memory. These resources are
-used to ensure that your gateway has enough resources to run efficiently.
+The primary resources you need to allocate for your gateway are CPU and memory. These resources
+ensure that your gateway runs efficiently.
 
-For most applications, you can with the following default values:
+For most applications, you can start with the following default values:
 
 - **CPU: 1**
 - **Memory: 1GB**
 
-These values are a good starting point for most applications. However, you may need to adjust these
-values based on your application's requirements. For example, if your application has a high volume
-of traffic, you may need to increase the CPU and memory resources.
+These values are suitable for most applications. However, you may need to adjust them based on your
+application's specific requirements. For instance, if your application experiences high traffic, you
+may need to increase the CPU and memory allocations.
 
-For production environments with high-traffic, we recommend using the following values:
+For production environments with high traffic, we recommend the following values:
 
 - **CPU: 2**
 - **Memory: 2-4GB**
 
 ## Environment Variables
 
-We recommend setting `NODE_ENV` to `production` to ensure that your gateway runs in production mode.
-This will also enable [parallelism optimizations](https://nodejs.org/api/cluster.html) that can
-improve performance.
+Set `NODE_ENV` to `production` to ensure your gateway runs in production mode. This setting also
+enables [parallelism optimizations](https://nodejs.org/api/cluster.html) that can enhance
+performance.
 
-By default, the gateway will use the available parallelism (amount of CPUs, based on the NodeJS
-`os.availableParallelism`) for the amount of workers to spawn.
+By default, the gateway uses the available parallelism (number of CPUs, based on NodeJS's
+`os.availableParallelism`) to determine the number of workers to spawn.
 
-You can set the `FORK` environment variable to the number of workers you want to spawn. For example,
-to spawn 12 workers, you can set `FORK=12`.
+You can set the `FORK` environment variable to specify the number of workers you want to spawn. For
+example, to spawn 12 workers, set `FORK=12`.
