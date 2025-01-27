@@ -2,7 +2,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { Organization } from '../../../shared/entities';
+import { type Organization, type Project } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { AppDeploymentNameModel } from '../../app-deployments/providers/app-deployments';
@@ -198,6 +198,11 @@ export class OrganizationMembers {
           projects: [],
         };
 
+        const resolvedResources = resolveResourceAssignment({
+          organizationId: organization.id,
+          projects: resources,
+        });
+
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
           userId: record.userId,
@@ -205,10 +210,7 @@ export class OrganizationMembers {
           connectedToZendesk: record.connectedToZendesk,
           assignedRole: {
             resources,
-            resolvedResources: resolveResourceAssignment({
-              organizationId: organization.id,
-              projects: resources,
-            }),
+            resolvedResources,
             role: membershipRole,
           },
         });
@@ -445,7 +447,7 @@ export class OrganizationMembers {
     // This prevents breaking permission boundaries through fault/sus input.
     const targetLookupIds = new Set<string>();
     const projectTargetAssignments: Array<{
-      projectId: string;
+      project: Project;
       /**  mutable array that is within "resourceAssignmentGroup" */
       projectTargets: Array<z.TypeOf<typeof TargetAssignmentModel>>;
       targets: readonly GraphQLSchema.TargetResourceAssignmentInput[];
@@ -486,7 +488,7 @@ export class OrganizationMembers {
         projectTargetAssignments.push({
           projectTargets,
           targets: sanitizedTargets,
-          projectId: project.id,
+          project,
         });
       }
     }
@@ -502,7 +504,7 @@ export class OrganizationMembers {
 
         // In case the target was not found or does not belogn the the organization,
         // we omit it as it could grant an user permissions for a target within another organization.
-        if (!target || target.projectId !== record.projectId) {
+        if (!target || target.projectId !== record.project.id) {
           this.logger.debug('Omitted non-existing target.');
           continue;
         }
@@ -511,6 +513,8 @@ export class OrganizationMembers {
           type: 'target',
           id: target.id,
           services:
+            // monolith schemas do not have services.
+            record.project.type === GraphQLSchema.ProjectType.SINGLE ||
             targetRecord.services.mode === 'all'
               ? { mode: '*' }
               : {
@@ -631,10 +635,10 @@ function resolveResourceAssignment(args: {
     };
   }
 
-  let projectAssignments: ResolvedResourceAssignments['project'] = [];
-  let targetAssignments: ResolvedResourceAssignments['target'] = [];
-  let serviceAssignments: ResolvedResourceAssignments['service'] = [];
-  let appDeploymentAssignments: ResolvedResourceAssignments['appDeployment'] = [];
+  const projectAssignments: ResolvedResourceAssignments['project'] = [];
+  const targetAssignments: ResolvedResourceAssignments['target'] = [];
+  const serviceAssignments: ResolvedResourceAssignments['service'] = [];
+  const appDeploymentAssignments: ResolvedResourceAssignments['appDeployment'] = [];
 
   for (const project of args.projects.projects) {
     const projectAssignment: ProjectAssignment = {
@@ -644,7 +648,10 @@ function resolveResourceAssignment(args: {
     projectAssignments.push(projectAssignment);
 
     if (project.targets.mode === '*') {
+      // allow actions on all sub-resources of this project
       targetAssignments.push(projectAssignment);
+      serviceAssignments.push(projectAssignment);
+      appDeploymentAssignments.push(projectAssignment);
       continue;
     }
 
@@ -658,6 +665,7 @@ function resolveResourceAssignment(args: {
 
       // services
       if (target.services.mode === '*') {
+        // allow actions on all services of this target
         serviceAssignments.push(targetAssignment);
       } else {
         for (const service of target.services.services) {
@@ -671,6 +679,7 @@ function resolveResourceAssignment(args: {
 
       // app deployments
       if (target.appDeployments.mode === '*') {
+        // allow actions on all app deployments of this target
         appDeploymentAssignments.push(targetAssignment);
       } else {
         for (const appDeployment of target.appDeployments.appDeployments) {

@@ -178,6 +178,7 @@ export function ResourceSelector(props: {
     }
 
     const projectId = projectState.activeProject.project.id;
+    const projectType = projectState.activeProject.project.type;
 
     if (
       projectState.activeProject.projectSelection.targets.mode ===
@@ -260,7 +261,11 @@ export function ResourceSelector(props: {
                 appDeployments: [],
               },
               services: {
-                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                mode:
+                  // for single projects we choose "All" by default as there is no granular selection available
+                  projectType === GraphQLSchema.ProjectType.Single
+                    ? GraphQLSchema.ResourceAssignmentMode.All
+                    : GraphQLSchema.ResourceAssignmentMode.Granular,
                 services: [],
               },
             });

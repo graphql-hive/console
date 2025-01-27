@@ -1627,8 +1627,8 @@ test.concurrent(
               targets: [
                 {
                   targetId: target.id,
-                  appDeployments: { mode: ResourceAssignmentMode.Granular, appDeployments: [] },
-                  services: { mode: ResourceAssignmentMode.Granular, services: [] },
+                  appDeployments: { mode: ResourceAssignmentMode.All },
+                  services: { mode: ResourceAssignmentMode.All },
                 },
               ],
             },
