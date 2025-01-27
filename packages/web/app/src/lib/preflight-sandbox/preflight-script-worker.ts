@@ -1,10 +1,15 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive } from './json';
-import { WorkerEvents } from './shared-types';
+import { isJSONPrimitive, JSONPrimitive } from './json';
+import { LogMessage, WorkerEvents } from './shared-types';
 
-export type LogMessage = string | Error;
+interface WorkerData {
+  request: {
+    headers: Headers;
+  };
+  environmentVariables: Record<string, JSONPrimitive>;
+}
 
 /**
  * Unique id for each prompt request.
@@ -47,11 +52,16 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     return;
   }
 
-  const { environmentVariables, script } = args;
+  const { script } = args;
 
-  // When running in worker `environmentVariables` will not be a reference to the main thread value
-  // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
-  const workingEnvironmentVariables = { ...environmentVariables };
+  const workerData: WorkerData = {
+    request: {
+      headers: new Headers(),
+    },
+    // When running in worker `environmentVariables` will not be a reference to the main thread value
+    // but sometimes this will be tested outside the worker, so we don't want to mutate the input in that case
+    environmentVariables: { ...args.environmentVariables },
+  };
 
   // generate list of all in scope variables, we do getOwnPropertyNames and `for in` because each contain slightly different sets of keys
   const allGlobalKeys = Object.getOwnPropertyNames(globalThis);
@@ -79,13 +89,22 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     (level: 'log' | 'warn' | 'error' | 'info') =>
     (...args: unknown[]) => {
       console[level](...args);
-      let message = `${level.charAt(0).toUpperCase()}${level.slice(1)}: ${args.map(String).join(' ')}`;
-      message += appendLineAndColumn(new Error(), {
+      const message = args.map(String).join(' ');
+      const { line, column } = readLineAndColumn(new Error(), {
         columnOffset: 'console.'.length,
       });
       // The messages should be streamed to the main thread as they occur not gathered and send to
       // the main thread at the end of the execution of the preflight script
-      postMessage({ type: 'log', message });
+      // const message: LogMessage = { level, message };
+      postMessage({
+        type: 'log',
+        message: {
+          level,
+          message,
+          line,
+          column,
+        } satisfies LogMessage,
+      });
     };
 
   function getValidEnvVariable(value: unknown) {
@@ -116,16 +135,19 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     },
     environment: {
       get(key: string) {
-        return Object.freeze(workingEnvironmentVariables[key]);
+        return Object.freeze(workerData.environmentVariables[key]);
       },
       set(key: string, value: unknown) {
         const validValue = getValidEnvVariable(value);
         if (validValue === undefined) {
-          delete workingEnvironmentVariables[key];
+          delete workerData.environmentVariables[key];
         } else {
-          workingEnvironmentVariables[key] = validValue;
+          workerData.environmentVariables[key] = validValue;
         }
       },
+    },
+    request: {
+      headers: workerData.request.headers,
     },
     /**
      * Mimics the `prompt` function in the browser, by sending a message to the main thread
@@ -161,23 +183,35 @@ ${script}})()`;
       'undefined',
     )(labApi, consoleApi);
   } catch (error) {
-    if (error instanceof Error) {
-      error.message += appendLineAndColumn(error);
-    }
-    sendMessage({ type: WorkerEvents.Outgoing.Event.error, error: error as Error });
+    const { line, column } = error instanceof Error ? readLineAndColumn(error) : {};
+    sendMessage({
+      type: WorkerEvents.Outgoing.Event.error,
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+        line,
+        column,
+      },
+    });
     return;
   }
+
   sendMessage({
     type: WorkerEvents.Outgoing.Event.result,
-    environmentVariables: workingEnvironmentVariables,
+    environmentVariables: workerData.environmentVariables,
+    request: {
+      headers: Array.from(workerData.request.headers.entries()),
+    },
   });
 }
 
-function appendLineAndColumn(error: Error, { columnOffset = 0 } = {}): string {
+function readLineAndColumn(error: Error, { columnOffset = 0 } = {}) {
   const regex = /<anonymous>:(?<line>\d+):(?<column>\d+)/; // Regex to match the line and column numbers
 
   const { line, column } = error.stack?.match(regex)?.groups || {};
-  return ` (Line: ${Number(line) - 3}, Column: ${Number(column) - columnOffset})`;
+  return {
+    line: Number(line) - 3,
+    column: Number(column) - columnOffset,
+  };
 }
 
 sendMessage({ type: WorkerEvents.Outgoing.Event.ready });

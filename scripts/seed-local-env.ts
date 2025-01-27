@@ -175,6 +175,11 @@ const publishMutationDocument =
 async function federation() {
   const instance = createInstance(null);
   const schemaInventory = /* GraphQL */ `
+    extend schema
+      @link(
+        url: "https://specs.apollo.dev/federation/v2.3"
+        import: ["@key", "@shareable", "@external", "@requires"]
+      )
     type Product implements ProductItf @key(fields: "id") {
       id: ID!
       dimensions: ProductDimension @external
@@ -205,6 +210,7 @@ async function federation() {
   `;
 
   const schemaPandas = /* GraphQL */ `
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"])
     directive @tag(name: String!) repeatable on FIELD_DEFINITION
 
     type Query {
@@ -219,6 +225,11 @@ async function federation() {
   `;
 
   const schemaProducts = /* GraphQL */ `
+    extend schema
+      @link(
+        url: "https://specs.apollo.dev/federation/v2.3"
+        import: ["@key", "@shareable", "@inaccessible", "@tag"]
+      )
     directive @myDirective(a: String!) on FIELD_DEFINITION
     directive @hello on FIELD_DEFINITION
 
@@ -277,6 +288,12 @@ async function federation() {
   `;
 
   const schemaReviews = /* GraphQL */ `
+    extend schema
+      @link(
+        url: "https://specs.apollo.dev/federation/v2.3"
+        import: ["@key", "@shareable", "@override"]
+      )
+
     type Product implements ProductItf @key(fields: "id") {
       id: ID!
       reviewsCount: Int!
@@ -302,12 +319,14 @@ async function federation() {
   `;
 
   const schemaUsers = /* GraphQL */ `
+    extend schema
+      @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag", "@shareable"])
     directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
 
     type User @key(fields: "email") {
       email: ID! @tag(name: "test-from-users")
       name: String
-      totalProductsCreated: Int
+      totalProductsCreated: Int @shareable
       createdAt: DateTime
     }
 

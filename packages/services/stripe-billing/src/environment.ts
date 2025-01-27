@@ -39,7 +39,7 @@ const SentryModel = zod.union([
 const PostgresModel = zod.object({
   POSTGRES_HOST: zod.string(),
   POSTGRES_PORT: NumberFromString,
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
   POSTGRES_USER: zod.string(),
   POSTGRES_DB: zod.string(),
   POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),

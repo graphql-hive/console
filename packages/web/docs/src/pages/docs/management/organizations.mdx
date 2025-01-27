@@ -1,5 +1,5 @@
 import NextImage from 'next/image'
-import { Callout, Tabs } from '@theguild/components'
+import { Callout, ContactTextLink, Tabs } from '@theguild/components'
 import orgImage from '../../../../public/docs/pages/first-steps/org.png'
 import newOrgImage from '../../../../public/docs/pages/management/create-an-organization-button.png'
 import orgCustomRoleImage from '../../../../public/docs/pages/management/org-custom-role.png'
@@ -171,13 +171,10 @@ If you wish to upgrade your plan, you can choose between the **Pro** and **Enter
 For the **Pro** plan, you can use a credit-card and pay monthly for the resevered quota that works
 for your needs. You can modify your plan and resevered quota any time during the month.
 
-<a
-  className="text-primary-500 mt-6 block cursor-pointer"
-  onClick={() => window.$crisp?.push(['do', 'chat:open'])}
->
+<ContactTextLink>
   For the **Enterprise** plan, please reach our to us, and we'll be happy to help you with your
   custom needs.
-</a>
+</ContactTextLink>
 
 #### How do I update my billing information?
 

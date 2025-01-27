@@ -1,3 +1,4 @@
+import { Kit } from '../kit';
 import PreflightWorker from './preflight-script-worker?worker&inline';
 import { IFrameEvents, WorkerEvents } from './shared-types';
 
@@ -71,9 +72,9 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
       postMessage({
         type: IFrameEvents.Outgoing.Event.error,
         runId,
-        error: new Error(
-          `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
-        ),
+        error: {
+          message: `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
+        },
       });
       terminate();
     }, PREFLIGHT_TIMEOUT);
@@ -106,6 +107,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
             type: IFrameEvents.Outgoing.Event.result,
             runId,
             environmentVariables: ev.data.environmentVariables,
+            request: ev.data.request,
           });
           terminate();
           return;
@@ -129,6 +131,8 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
           terminate();
           return;
         }
+
+        Kit.neverCase(ev.data);
       },
     );
 
@@ -141,7 +145,9 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
     postMessage({
       type: IFrameEvents.Outgoing.Event.error,
       runId,
-      error: error as Error,
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+      },
     });
     terminate();
   }
