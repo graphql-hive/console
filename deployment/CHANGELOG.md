@@ -1,5 +1,74 @@
 # hive
 
+## 4.1.0
+
+### Minor Changes
+
+- [#6400](https://github.com/graphql-hive/console/pull/6400)
+  [`d2a4387`](https://github.com/graphql-hive/console/commit/d2a4387b64fe71340159c536a05dd38b1a35c751)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Display logs from the Preflight Script
+  in Laboratory
+
+- [#6348](https://github.com/graphql-hive/console/pull/6348)
+  [`e754700`](https://github.com/graphql-hive/console/commit/e75470021282b84b622560c8a991c196ee7f24d7)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to select a default role
+  for new OIDC users
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added a new environment variable
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS` for `rate-limit` and `tokens` services.
+
+  Self-hosters who wish to report telemetry information for `usage` service, can opt-in and set
+  `OPENTELEMETRY_TRACE_USAGE_REQUESTS=1` to these services. This will skip sampling and will always
+  trace requests originating from the `usage` service.
+
+- [#6388](https://github.com/graphql-hive/console/pull/6388)
+  [`a8ff443`](https://github.com/graphql-hive/console/commit/a8ff443307fa9929f0b466c6a83d695bd5e707dd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add multi-column sort to Insights >
+  Operations table
+
+- [#6389](https://github.com/graphql-hive/console/pull/6389)
+  [`781b140`](https://github.com/graphql-hive/console/commit/781b140ffb5d5256913941763b79665965c53a6c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Show Impact metric in the Operations
+  list on the Insights page. Impact equals to the total time spent on this operation in the selected
+  period in seconds. It helps assess which operations contribute the most to overall latency.
+
+  ```
+  Impact = Requests * avg/1000
+  ```
+
+- [#6393](https://github.com/graphql-hive/console/pull/6393)
+  [`84fd770`](https://github.com/graphql-hive/console/commit/84fd770b6c7bc3fdd62af6d337889e3c2596ef15)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Add type definitions of global.lab to
+  Preflight Script editor
+
+- [#6351](https://github.com/graphql-hive/console/pull/6351)
+  [`ba20748`](https://github.com/graphql-hive/console/commit/ba207485ad8b8868c73b736397c8f7f2416b86d3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Added OpenTelemetry traces to Usage service
+  using a new `OPENTELEMETRY_COLLECTOR_ENDPOINT` env var.
+
+  This option is disabled by default for self-hosting, you can opt-in by setting
+  `OPENTELEMETRY_COLLECTOR_ENDPOINT`.
+
+### Patch Changes
+
+- [#6386](https://github.com/graphql-hive/console/pull/6386)
+  [`d19229f`](https://github.com/graphql-hive/console/commit/d19229fb6e4f48237a925987ff1a60b6b651a784)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Remove the code leftovers related to
+  activities (no longer a thing)
+
+- [#6380](https://github.com/graphql-hive/console/pull/6380)
+  [`40213fb`](https://github.com/graphql-hive/console/commit/40213fb7dc39cfb2688e6127e8fe2658f7fceb7f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to
+  [v0.14.3](https://github.com/the-guild-org/federation/releases/tag/v0.14.3)
+
+- [#6399](https://github.com/graphql-hive/console/pull/6399)
+  [`607192e`](https://github.com/graphql-hive/console/commit/607192eaa5d6c3dcc6a2d0c4ff406a7d6f06ca42)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Disable "select organization" dropdown
+  for OIDC accounts
+
 ## 4.0.1
 
 ### Patch Changes

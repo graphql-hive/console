@@ -18,6 +18,7 @@ export function PricingSlider({ className, ...rest }: { className?: string }) {
         <Slider
           min={min}
           max={max}
+          step={1}
           defaultValue={min}
           // 10$ base price + 10$ per 1M
           style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}

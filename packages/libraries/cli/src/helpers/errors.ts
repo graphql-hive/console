@@ -8,8 +8,6 @@ import { SchemaErrorConnection } from '../gql/graphql';
 import { renderErrors } from './schema';
 import { Texture } from './texture/texture';
 
-export const ACCESS_TOKEN_MISSING = '@TODO FIX';
-
 export enum ExitCode {
   // The command execution succeeded.
   SUCCESS = 0,
@@ -44,6 +42,7 @@ enum ErrorCategory {
   APP_CREATE = 4_00,
   ARTIFACT_FETCH = 5_00,
   DEV = 6_00,
+  OPERATIONS_CHECK = 7_00,
 }
 
 const errorCode = (category: ErrorCategory, id: number): number => {
@@ -72,7 +71,7 @@ export class InvalidCommandError extends HiveCLIError {
 
 export class MissingArgumentsError extends HiveCLIError {
   constructor(...requiredArgs: Array<[string, string]>) {
-    const argsStr = requiredArgs.map(a => `${a[0]} \t${a[1]}`).join('\n');
+    const argsStr = requiredArgs.map(a => `${a[0].toUpperCase()} \t${a[1]}`).join('\n');
     const message = `Missing ${requiredArgs.length} required argument${requiredArgs.length > 1 ? 's' : ''}:\n${argsStr}`;
     super(ExitCode.BAD_INIT, errorCode(ErrorCategory.GENERIC, 2), message);
   }
@@ -192,7 +191,7 @@ export class GithubAuthorRequiredError extends HiveCLIError {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 12),
-      `Couldn't resolve commit sha required for GitHub Application.`,
+      `Couldn't resolve commit author required for GitHub Application.`,
     );
   }
 }
@@ -265,7 +264,7 @@ export class SchemaPublishMissingServiceError extends HiveCLIError {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.SCHEMA_PUBLISH, 2),
-      `${message} Please use the '--service <name>' parameter.`,
+      `${message} Please use the "--service <name>" parameter.`,
     );
   }
 }
@@ -275,7 +274,7 @@ export class SchemaPublishMissingUrlError extends HiveCLIError {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.SCHEMA_PUBLISH, 3),
-      `${message} Please use the '--url <url>' parameter.`,
+      `${message} Please use the "--url <url>" parameter.`,
     );
   }
 }
@@ -287,7 +286,11 @@ export class InvalidDocumentsError extends HiveCLIError {
         return `${Texture.failure(doc.source)}\n${doc.errors.map(e => ` - ${Texture.boldQuotedWords(e.message)}`).join('\n')}`;
       })
       .join('\n');
-    super(ExitCode.ERROR, errorCode(ErrorCategory.SCHEMA_CHECK, 2), message);
+    super(
+      ExitCode.ERROR,
+      errorCode(ErrorCategory.OPERATIONS_CHECK, 0),
+      `Invalid operation syntax:\n${message}`,
+    );
   }
 }
 
@@ -316,7 +319,11 @@ export class LocalCompositionError extends HiveCLIError {
 export class RemoteCompositionError extends HiveCLIError {
   constructor(errors: SchemaErrorConnection) {
     const message = renderErrors(errors);
-    super(ExitCode.ERROR, errorCode(ErrorCategory.DEV, 2), message);
+    super(
+      ExitCode.ERROR,
+      errorCode(ErrorCategory.DEV, 2),
+      `Remote composition failed:\n${message}`,
+    );
   }
 }
 
@@ -342,8 +349,12 @@ export class PersistedOperationsMalformedError extends HiveCLIError {
 }
 
 export class UnsupportedFileExtensionError extends HiveCLIError {
-  constructor(filename: string) {
-    super(ExitCode.BAD_INIT, errorCode(ErrorCategory.GENERIC, 17), `${extname(filename)}`);
+  constructor(filename: string, supported?: string[]) {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 17),
+      `Got unsupported file extension: "${extname(filename)}".${supported ? ` Try using one of the supported extensions: ${supported.join(',')}` : ''}`,
+    );
   }
 }
 

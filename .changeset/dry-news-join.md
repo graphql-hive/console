@@ -2,4 +2,4 @@
 'hive': patch
 ---
 
-Remove the code leftovers related to activities (no longer a thing)
+Remove the db leftovers related to activities (no longer a thing)

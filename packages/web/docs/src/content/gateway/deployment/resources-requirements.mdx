@@ -1,0 +1,38 @@
+import { Callout } from '@theguild/components'
+
+# Resources Requirements
+
+Defining the right amount of resources for your GraphQL gateway is crucial for maintaining
+performance and reliability. This guide will help you understand how to allocate resources
+effectively.
+
+## CPU and Memory
+
+The primary resources you need to allocate for your gateway are CPU and memory. These resources
+ensure that your gateway runs efficiently.
+
+For most applications, you can start with the following default values:
+
+- **CPU: 1**
+- **Memory: 1GB**
+
+These values are suitable for most applications. However, you may need to adjust them based on your
+application's specific requirements. For instance, if your application experiences high traffic, you
+may need to increase the CPU and memory allocations.
+
+For production environments with high traffic, we recommend the following values:
+
+- **CPU: 2**
+- **Memory: 2-4GB**
+
+## Environment Variables
+
+Set `NODE_ENV` to `production` to ensure your gateway runs in production mode. This setting also
+enables [parallelism optimizations](https://nodejs.org/api/cluster.html) that can enhance
+performance.
+
+By default, the gateway uses the available parallelism (number of CPUs, based on NodeJS's
+`os.availableParallelism`) to determine the number of workers to spawn.
+
+You can set the `FORK` environment variable to specify the number of workers you want to spawn. For
+example, to spawn 12 workers, set `FORK=12`.

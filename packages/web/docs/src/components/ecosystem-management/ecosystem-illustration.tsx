@@ -1,10 +1,10 @@
 'use client';
 
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { cn } from '@theguild/components';
+import { cn, CodegenIcon, HiveGatewayIcon, HiveIcon, YogaIcon } from '@theguild/components';
+import { GraphQLLogo } from './graphql-logo';
+import { IconGradientDefs } from './icon-gradient-defs';
 import styles from './ecosystem-management.module.css';
-
-const svgHref = new URL('./ecosystem-management.svg', import.meta.url).toString();
 
 const edgeTexts = [
   'Apps send requests to Hive Gateway that acts as the api gateway to data from your federated graph.',
@@ -87,7 +87,8 @@ export function EcosystemIllustration(props: { className?: string }) {
         styles.container,
       )}
     >
-      <div className={cn('flex', styles.vars)}>
+      <IconGradientDefs />
+      <div className={'flex flex-row ' + styles.vars}>
         <Edge top bottom left highlighted={highlightedEdge === 5}>
           <div
             style={{
@@ -117,10 +118,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48}>
-              <SafariLinearGradientDefs />
-              <use width="100%" height="100%" xlinkHref={`${svgHref}#hive`} />
-            </svg>
+            <HiveGatewayIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
           </Node>
           <Edge
             left
@@ -132,16 +130,14 @@ export function EcosystemIllustration(props: { className?: string }) {
             <div className="ml-[calc(var(--label-h)/2-.5px)] h-[calc((var(--gap)-var(--label-h))/2)]" />
           </Edge>
           <Node
-            className="h-[--big-node-h] w-[--node-w] flex-col text-center"
+            className="h-[var(--big-node-h)] w-[var(--node-w)] flex-col text-center"
             title="Hive"
             description="Registry and CDN"
             edges={[3, 4, 6]}
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg className="size-[--big-logo-size]">
-              <use width="100%" height="100%" xlinkHref={`${svgHref}#hive`} />
-            </svg>
+            <HiveIcon className="size-[var(--big-logo-size)] [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
           <Edge
             left
@@ -159,9 +155,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48}>
-              <use xlinkHref={`${svgHref}#yoga`} />
-            </svg>
+            <YogaIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
           </Node>
         </div>
         <div>
@@ -195,9 +189,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48} viewBox="0 0 100 100">
-              <use xlinkHref={`${svgHref}#gql-logo`} />
-            </svg>
+            <GraphQLLogo className="size-12" />
           </Node>
           <Edge
             left
@@ -217,9 +209,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <svg width={48} height={48} viewBox="0 0 48 48">
-              <use xlinkHref={`${svgHref}#codegen`} />
-            </svg>
+            <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
           </Node>
         </div>
       </div>
@@ -229,7 +219,7 @@ export function EcosystemIllustration(props: { className?: string }) {
         {edgeTexts.map((text, i) => {
           return (
             <span
-              key={text}
+              key={i}
               className={cn(
                 'absolute inset-0',
                 // Makes it accessible by crawlers.
@@ -258,7 +248,7 @@ function Edge({ highlighted, top, bottom, left, className, ...rest }: EdgeProps)
       style={{ '--bw': highlighted ? '2px' : '1px' }}
       className={cn(
         className,
-        '*:transition-colors *:duration-500 [&>:nth-child(odd)]:border-green-700',
+        '[&>*]:transition-colors [&>*]:duration-500 [&>:nth-child(odd)]:border-green-700',
         top &&
           (bottom
             ? '[&>:nth-child(1)]:border-t-[length:var(--bw)] [&>:nth-child(3)]:border-b-[length:var(--bw)]'
@@ -278,7 +268,11 @@ interface EdgeLabelProps extends React.HTMLAttributes<HTMLElement> {
 function EdgeLabel(props: EdgeLabelProps) {
   return (
     <div
-      className="flex size-8 h-[--label-h] cursor-default items-center justify-center rounded bg-green-700 text-sm font-medium leading-5 hover:ring-2 hover:ring-green-700"
+      className={
+        'flex size-8 h-[var(--label-h)] items-center justify-center' +
+        ' cursor-default rounded bg-green-700 text-sm font-medium leading-5' +
+        ' hover:ring-2 hover:ring-green-700'
+      }
       {...props}
     />
   );
@@ -328,12 +322,12 @@ function Node({
       onClick={() => onHighlight(edges)}
       className={cn(
         styles.node,
-        'relative z-10 flex h-[--node-h] items-center gap-2 rounded-2xl p-4 xl:gap-4 xl:p-[22px]',
-        'bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))]',
-        'cursor-pointer transition-colors duration-500 [&>svg]:shrink-0',
+        'relative z-10 flex h-[var(--node-h)] items-center gap-2 rounded-2xl p-4 xl:gap-4 xl:p-[22px]' +
+          ' bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))]' +
+          ' cursor-pointer transition-colors duration-500 [&>svg]:flex-shrink-0',
         // todo: linear gradients don't transition, so we should add white/10 background layer'
         highlighted &&
-          'bg-[linear-gradient(135deg,rgb(255_255_255/.2),rgb(255_255_255/.3))] ring ring-green-300',
+          'bg-[linear-gradient(135deg,rgb(255_255_255_/0.2),rgb(255_255_255/0.3))] ring ring-green-300',
         className,
       )}
       {...rest}
@@ -343,7 +337,7 @@ function Node({
         <div className="font-medium text-green-100">{title}</div>
         {description && (
           <div
-            className="mt-0.5 text-sm/5 text-green-200"
+            className="mt-0.5 text-sm leading-5 text-green-200"
             style={{
               display: 'var(--node-desc-display)',
             }}
@@ -353,37 +347,5 @@ function Node({
         )}
       </div>
     </div>
-  );
-}
-
-/**
- * This must be included in one of the SVGs here so they work nicely in Safari.
- */
-function SafariLinearGradientDefs() {
-  return (
-    <defs>
-      <linearGradient
-        id="linear-blue"
-        x1="0"
-        y1="0"
-        x2="100%"
-        y2="100%"
-        gradientUnits="objectBoundingBox"
-      >
-        <stop stopColor="#8CBEB3" />
-        <stop offset="1" stopColor="#68A8B6" />
-      </linearGradient>
-      <linearGradient
-        id="linear-white"
-        x1="0"
-        y1="0"
-        x2="100%"
-        y2="100%"
-        gradientUnits="objectBoundingBox"
-      >
-        <stop stopColor="white" stopOpacity="0.4" />
-        <stop offset="1" stopColor="white" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
   );
 }

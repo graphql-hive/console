@@ -1,5 +1,21 @@
 import { dedent } from '../support/testkit';
 
+const selectors = {
+  buttonModalCy: 'preflight-script-modal-button',
+  buttonToggleCy: 'toggle-preflight-script',
+  buttonHeaders: '[data-name="headers"]',
+  headersEditor: {
+    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
+  },
+  graphiql: {
+    buttonExecute: '.graphiql-execute-button',
+  },
+
+  modal: {
+    buttonSubmitCy: 'preflight-script-modal-submit',
+  },
+};
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
@@ -76,7 +92,7 @@ describe('Preflight Script Modal', () => {
   it('logs show console/error information', () => {
     setEditorScript(script);
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       `console.info(1)
@@ -87,16 +103,11 @@ throw new TypeError('Test')`,
 
     cy.dataCy('run-preflight-script').click();
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
-      [
-        'Info: 1 (Line: 1, Column: 1)',
-        'Warn: true (Line: 2, Column: 1)',
-        'Error: Fatal (Line: 3, Column: 1)',
-        'TypeError: Test (Line: 4, Column: 7)',
-      ].join(''),
+      ['info: 1 (1:1)', 'warn: true (2:1)', 'error: Fatal (3:1)', 'error: Test (4:7)'].join(''),
     );
   });
 
@@ -104,7 +115,7 @@ throw new TypeError('Test')`,
     setEditorScript(script);
 
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       dedent`
@@ -118,12 +129,12 @@ throw new TypeError('Test')`,
     cy.dataCy('prompt').get('form').submit();
 
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
       dedent`
-        Info: test-username (Line: 2, Column: 1)
+        info: test-username (2:1)
       `,
     );
   });
@@ -132,7 +143,7 @@ throw new TypeError('Test')`,
     setEditorScript(script);
 
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
       dedent`
@@ -146,12 +157,12 @@ throw new TypeError('Test')`,
     cy.dataCy('prompt').get('[data-cy="prompt-cancel"]').click();
 
     // First log previous log message
-    cy.dataCy('console-output').should('contain', 'Log: Hello_world (Line: 1, Column: 1)');
+    cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
     cy.dataCy('console-output').should(
       'contain',
       dedent`
-        Info: null (Line: 2, Column: 1)
+        info: null (2:1)
       `,
     );
   });
@@ -170,10 +181,10 @@ throw new TypeError('Test')`,
   it('`crypto-js` can be used for generating hashes', () => {
     setEditorScript('console.log(lab.CryptoJS.SHA256("🐝"))');
     cy.dataCy('run-preflight-script').click();
-    cy.dataCy('console-output').should('contain', 'Info: Using crypto-js version:');
+    cy.dataCy('console-output').should('contain', 'info: Using crypto-js version:');
     cy.dataCy('console-output').should(
       'contain',
-      'Log: d5b51e79e4be0c4f4d6b9a14e16ca864de96afe68459e60a794e80393a4809e8',
+      'log: d5b51e79e4be0c4f4d6b9a14e16ca864de96afe68459e60a794e80393a4809e8',
     );
   });
 
@@ -191,6 +202,81 @@ throw new TypeError('Test')`,
 });
 
 describe('Execution', () => {
+  it('result.request.headers are added to the graphiql request base headers', () => {
+    // Setup Preflight Script
+    const preflightHeaders = {
+      foo: 'bar',
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`lab.request.headers.append('foo', '${preflightHeaders.foo}')`);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({ headers: preflightHeaders }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
+  it('result.request.headers take precedence over graphiql request base headers', () => {
+    // Integrity Check: Ensure the header we think we're overriding is actually there to override.
+    // We achieve this by asserting a sent GraphiQL request includes the certain header and assume
+    // if its there once its there every time.
+    const baseHeaders = {
+      accept: 'application/json, multipart/mixed',
+    };
+    cy.intercept({ headers: baseHeaders }).as('integrityCheck');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@integrityCheck');
+    // Setup Preflight Script
+    const preflightHeaders = {
+      accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({ headers: preflightHeaders }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
+  it('result.request.headers are NOT substituted with environment variables', () => {
+    const barEnVarInterpolation = '{{bar}}';
+    // Setup Static Headers
+    const staticHeaders = {
+      foo_static: barEnVarInterpolation,
+    };
+    cy.get(selectors.buttonHeaders).click();
+    cy.get(selectors.headersEditor.textArea).type(JSON.stringify(staticHeaders), {
+      force: true,
+      parseSpecialCharSequences: false,
+    });
+    // Setup Preflight Script
+    const environmentVariables = {
+      bar: 'BAR_VALUE',
+    };
+    const preflightHeaders = {
+      foo_preflight: barEnVarInterpolation,
+    };
+    cy.dataCy(selectors.buttonToggleCy).click();
+    cy.dataCy(selectors.buttonModalCy).click();
+    setEditorScript(`
+      lab.environment.set('bar', '${environmentVariables.bar}')
+      lab.request.headers.append('foo_preflight', '${preflightHeaders.foo_preflight}')
+    `);
+    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    // Run GraphiQL
+    cy.intercept({
+      headers: {
+        ...preflightHeaders,
+        foo_static: environmentVariables.bar,
+      },
+    }).as('request');
+    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.wait('@request');
+  });
+
   it('header placeholders are substituted with environment variables', () => {
     cy.dataCy('toggle-preflight-script').click();
     cy.get('[data-name="headers"]').click();
@@ -302,5 +388,96 @@ describe('Execution', () => {
     }).as('post');
     cy.get('.graphiql-execute-button').click();
     cy.wait('@post');
+  });
+
+  it('logs are visible when opened', () => {
+    cy.dataCy('toggle-preflight-script').click();
+
+    cy.dataCy('preflight-script-modal-button').click();
+    setMonacoEditorContents(
+      'preflight-script-editor',
+      dedent`
+        console.info(1)
+        console.warn(true)
+        console.error('Fatal')
+        throw new TypeError('Test')
+        `,
+    );
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+    }).as('post');
+
+    // shows no logs before executing
+    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+      // it's because the button is not fully visible on the screen
+      force: true,
+    });
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      ['No logs available', 'Execute a query to see logs'].join(''),
+    );
+
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      [
+        'log: Running script...',
+        'info: 1 (1:1)',
+        'warn: true (2:1)',
+        'error: Fatal (3:1)',
+        'error: Test (4:7)',
+        'log: Script failed',
+      ].join(''),
+    );
+  });
+
+  it('logs are cleared when requested', () => {
+    cy.dataCy('toggle-preflight-script').click();
+
+    cy.dataCy('preflight-script-modal-button').click();
+    setMonacoEditorContents(
+      'preflight-script-editor',
+      dedent`
+        console.info(1)
+        console.warn(true)
+        console.error('Fatal')
+        throw new TypeError('Test')
+        `,
+    );
+    cy.dataCy('preflight-script-modal-submit').click();
+
+    cy.intercept({
+      method: 'POST',
+    }).as('post');
+    cy.get('.graphiql-execute-button').click();
+    cy.wait('@post');
+
+    // open logs
+    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+      // it's because the button is not fully visible on the screen
+      force: true,
+    });
+
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      [
+        'log: Running script...',
+        'info: 1 (1:1)',
+        'warn: true (2:1)',
+        'error: Fatal (3:1)',
+        'error: Test (4:7)',
+        'log: Script failed',
+      ].join(''),
+    );
+
+    cy.get('#preflight-script-logs button[data-cy="erase-logs"]').click();
+    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+      'contain',
+      ['No logs available', 'Execute a query to see logs'].join(''),
+    );
   });
 });
