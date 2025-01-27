@@ -234,6 +234,9 @@ module.exports = {
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
       },
+      rules: {
+        'import/extensions': 'off',
+      },
     },
     {
       files: 'cypress/**',

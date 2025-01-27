@@ -1,0 +1,57 @@
+.case-studies {
+  --nextra-content-width: 1208px;
+  --article-max-width: 640px;
+
+  /* hide leftmost column to left-align the case study */
+  & > div:first-of-type > :first-child {
+    @apply hidden;
+  }
+
+  & > div > article {
+    box-sizing: content-box;
+    max-width: var(--article-max-width);
+  }
+
+  @apply text-green-1000 dark:text-white;
+
+  & article main > :is(h2, h3, h4, h5, h6, p, li) {
+    @apply text-green-1000 dark:text-white;
+  }
+
+  & article main > :is(h2, h3, h4, h5, h6) {
+    @apply border-none;
+  }
+
+  & img {
+    @apply rounded-2xl;
+  }
+
+  & div:has(> blockquote) {
+    @apply bg-beige-100 mt-10 rounded-2xl p-6 dark:bg-neutral-800;
+
+    & blockquote {
+      @apply text-green-1000 flex gap-6 border-none p-0 not-italic max-sm:flex-col sm:text-xl dark:text-white;
+
+      &::before {
+        @apply bg-primary flex size-12 shrink-0 items-center justify-center rounded-2xl pt-2;
+        content: url('./quotemark.svg');
+      }
+    }
+
+    & cite {
+      @apply mt-6 flex justify-end gap-3 text-sm not-italic;
+
+      & p {
+        @apply mt-0;
+      }
+
+      & :nth-child(2) {
+        @apply font-medium;
+      }
+    }
+  }
+
+  & li > p {
+    @apply mt-2;
+  }
+}

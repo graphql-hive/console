@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import localFont from 'next/font/local';
 import {
+  AccountBox,
   GitHubIcon,
   GraphQLConfCard,
   HiveFooter,
@@ -67,6 +68,11 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
               href: '/product-updates',
               icon: <RightCornerIcon />,
               children: 'Product Updates',
+            },
+            {
+              href: '/case-studies',
+              icon: <AccountBox />,
+              children: 'Case Studies',
             },
             { href: 'https://the-guild.dev/blog', icon: <PencilIcon />, children: 'Blog' },
             {

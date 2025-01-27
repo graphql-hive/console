@@ -19,7 +19,12 @@
         "name": "next"
       }
     ],
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    // Next resolves with package.json imports,
+    // but without .paths, TS thinks we need .jsx extensions for these imports
+    "paths": {
+      "#components/*": ["./src/components/*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
