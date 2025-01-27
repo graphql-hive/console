@@ -1,7 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
-import { Storage } from '../../shared/providers/storage';
 import { Session } from '../lib/authz';
 import { TargetAccessTokenSession } from '../lib/target-access-token-strategy';
 import {
