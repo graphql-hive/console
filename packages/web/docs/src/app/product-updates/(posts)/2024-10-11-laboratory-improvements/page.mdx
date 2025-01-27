@@ -14,7 +14,7 @@ export function Video({ src, alt }) {
   return (
     <>
       <video autoPlay="autoplay" loop muted playsInline>
-        <source src={addBasePath(src)} type="video/mp4" />
+        <source src={src} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       <Caption>{alt}</Caption>
