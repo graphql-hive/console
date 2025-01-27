@@ -1,6 +1,6 @@
 export default {
   index: 'Overview',
-  resources: 'Resources',
+  'resources-requirements': 'Resources',
   docker: 'Docker',
   serverless: 'Serverless / On the Edge',
   'node-frameworks': 'Frameworks',
