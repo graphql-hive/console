@@ -18,7 +18,7 @@ export default function CaseStudiesLayout({ children }: { children: React.ReactN
         <LookingToUseHiveUpsellBlock className="absolute right-2 top-4 max-lg:hidden lg:w-[320px] xl:w-[400px]" />
       </aside>
       {children}
-      <MoreStoriesSection className="sm:my-24" />
+      <MoreStoriesSection />
       <GetYourAPIGameWhite className="sm:my-24" />
     </div>
   );
