@@ -1,10 +1,10 @@
 import { cn, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
 import { CaseStudyCard } from './case-study-card';
-import { CaseStudyFrontmatter } from './case-study-frontmatter';
-import { companyLogos } from './company-logos';
+import { getCompanyLogo } from './company-logos';
+import { isCaseStudy } from './isCaseStudyFile';
 
-// TODO
+// TODO: This can only be grabbed from a client component.
 const CURRENT_CASE_STUDY_NAME = 'sound-xyz';
 
 export interface MoreStoriesSectionProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -29,33 +29,17 @@ export async function MoreStoriesSection({
         More stories {otherStories.length}
       </Heading>
       <ul className="mt-6 flex flex-wrap gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
-        {otherStories.map(item => {
-          if ('name' in item && 'frontMatter' in item && item.frontMatter) {
-            const frontMatter = item.frontMatter as CaseStudyFrontmatter;
-
-            let logo: React.ReactNode = null;
-            if (item.name in companyLogos) {
-              logo = companyLogos[item.name as keyof typeof companyLogos];
-            } else {
-              console.dir({ companyLogos }, { depth: 9 });
-              throw new Error(
-                `No logo found for ${item.name}. We have the following: (${Object.keys(companyLogos).join(', ')})`,
-              );
-            }
-
-            return (
-              <li key={item.name} className="basis-1/3">
-                <CaseStudyCard
-                  category={frontMatter.category}
-                  excerpt={frontMatter.excerpt}
-                  href={item.route}
-                  logo={logo}
-                />
-              </li>
-            );
-          }
-
-          return null;
+        {otherStories.filter(isCaseStudy).map(item => {
+          return (
+            <li key={item.name} className="basis-1/3">
+              <CaseStudyCard
+                category={item.frontMatter.category}
+                excerpt={item.frontMatter.excerpt}
+                href={item.route}
+                logo={getCompanyLogo(item.name)}
+              />
+            </li>
+          );
         })}
       </ul>
     </section>

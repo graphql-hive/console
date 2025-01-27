@@ -6,7 +6,7 @@ import '../case-studies-styles.css';
 
 // We can't use CSS Modules together with Tailwind,
 // because the class responsible for dark mode gets transformed
-// so dark: prefixes don't work.
+// so `dark:` prefixes don't work.
 const ONE_OFF_CLASS_CASE_STUDIES = 'case-studies';
 
 export default function CaseStudiesLayout({ children }: { children: React.ReactNode }) {

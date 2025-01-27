@@ -1,7 +1,7 @@
 'use client';
 
 import { useConfig } from '@theguild/components';
-import { CaseStudyFrontmatter } from './case-study-frontmatter';
+import { CaseStudyFrontmatter } from './case-study-types';
 
 /**
  * TODO: Lobby Dima to add an imperative way to do this in a server component.

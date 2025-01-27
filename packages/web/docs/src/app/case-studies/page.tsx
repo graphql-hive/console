@@ -10,14 +10,20 @@ import { GetYourAPIGameWhite } from '../../components/get-your-api-game-white';
 import { HeroLinks } from '../../components/hero';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { CaseStudyCard } from './case-study-card';
-import { CaseStudyFrontmatter } from './case-study-frontmatter';
-import { companyLogos } from './company-logos';
+import { CaseStudyFrontmatter } from './case-study-types';
+import { getCompanyLogo } from './company-logos';
+import { FeaturedCaseStudiesGrid } from './featured-case-studies-grid';
+import { isCaseStudy } from './isCaseStudyFile';
 
 export const metadata = {
   title: 'Case Studies',
 };
 
 export default async function CaseStudiesPage() {
+  const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
+
+  const caseStudies = pageMap.filter(isCaseStudy);
+
   return (
     <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden px-6">
       <HiveLayoutConfig widths="landing-narrow" />
@@ -44,55 +50,13 @@ export default async function CaseStudiesPage() {
           <ArchDecoration className="absolute bottom-0 right-[-180px] max-md:h-[155px] sm:right-[-100px] xl:right-0" />
         </DecorationIsolation>
       </header>
-      {/* <FeaturedCaseStudiesGrid /> // add when we have 6 case studies */}
+      <FeaturedCaseStudiesGrid caseStudies={caseStudies} />
       {/* TODO: Uncomment this as a separator between FeaturedCaseStudiesGrid and the list of case studies */}
       {/* <TrustedBySection className="mx-auto my-8 md:my-16" /> */}
-      <AllCaseStudiesList />
+      <AllCaseStudiesList caseStudies={caseStudies} />
       {/* TODO: DeveloperLovedSection, like CommunitySection, but just four tweets */}
       <GetYourAPIGameWhite />
     </LandingPageContainer>
-  );
-}
-
-async function AllCaseStudiesList() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
-
-  return (
-    <section className="py-6 sm:pt-24">
-      <Heading size="md" as="h2" className="text-center">
-        Explore customer stories
-      </Heading>
-      <ul className="mt-6 flex gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
-        {pageMap.map(item => {
-          if ('name' in item && 'frontMatter' in item && item.frontMatter) {
-            const frontMatter = item.frontMatter as CaseStudyFrontmatter;
-
-            let logo: React.ReactNode = null;
-            if (item.name in companyLogos) {
-              logo = companyLogos[item.name as keyof typeof companyLogos];
-            } else {
-              console.dir({ companyLogos }, { depth: 9 });
-              throw new Error(
-                `No logo found for ${item.name}. We have the following: (${Object.keys(companyLogos).join(', ')})`,
-              );
-            }
-
-            return (
-              <li key={item.name} className="basis-1/3">
-                <CaseStudyCard
-                  category={frontMatter.category}
-                  excerpt={frontMatter.excerpt}
-                  href={item.route}
-                  logo={logo}
-                />
-              </li>
-            );
-          }
-
-          return null;
-        })}
-      </ul>
-    </section>
   );
 }
 

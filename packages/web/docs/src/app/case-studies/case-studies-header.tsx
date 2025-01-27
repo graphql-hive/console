@@ -2,7 +2,7 @@
 
 import { cn, DecorationIsolation, Heading } from '@theguild/components';
 import { SmallAvatar } from '../../components/small-avatar';
-import { CaseStudyAuthor } from './case-study-frontmatter';
+import { CaseStudyAuthor } from './case-study-types';
 import { companyLogos } from './company-logos';
 import { useFrontmatter } from './use-frontmatter';
 
