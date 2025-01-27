@@ -28,8 +28,11 @@ For production environments with high-traffic, we recommend using the following 
 ## Environment Variables
 
 We recommend setting `NODE_ENV` to `production` to ensure that your gateway runs in production mode.
-This will also enable parallelism optimizations that can improve performance.
+This will also enable [parallelism optimizations](https://nodejs.org/api/cluster.html) that can
+improve performance.
 
-By default, the gateway will available parallelism for the amount of workers to spawn. You can set
-the `FORK` environment variable to the number of workers you want to spawn. For example, to spawn 12
-workers, you can set `FORK=12`.
+By default, the gateway will use the available parallelism (amount of CPUs, based on the NodeJS
+`os.availableParallelism`) for the amount of workers to spawn.
+
+You can set the `FORK` environment variable to the number of workers you want to spawn. For example,
+to spawn 12 workers, you can set `FORK=12`.
