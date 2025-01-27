@@ -1,3 +1,8 @@
+require('dotenv').config({
+  debug: true,
+  encoding: 'utf8',
+});
+
 const {
   POSTGRES_USER = 'postgres',
   POSTGRES_PASSWORD = null,

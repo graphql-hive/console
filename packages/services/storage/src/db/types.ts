@@ -225,7 +225,6 @@ export interface projects {
   git_repository: string | null;
   github_check_with_project_name: boolean;
   id: string;
-  legacy_registry_model: boolean;
   name: string;
   native_federation: boolean | null;
   org_id: string;
