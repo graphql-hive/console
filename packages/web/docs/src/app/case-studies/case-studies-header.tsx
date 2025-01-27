@@ -16,19 +16,19 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
   const logo = companyLogos[name as keyof typeof companyLogos];
 
   return (
-    <header {...props} className={cn('flex gap-8 max-lg:flex-col max-lg:pr-6', props.className)}>
+    <header
+      {...props}
+      className={cn('flex justify-between gap-8 pr-6 max-lg:flex-col lg:pr-2', props.className)}
+    >
       <div className="max-w-[640px]">
         <Heading as="h1" size="md" className="max-sm:text-[32px]">
           {frontmatter.title}
         </Heading>
         <Authors authors={frontmatter.authors} className="mt-8" />
       </div>
-      {/* TODO: This overflow is just for now. */}
-      <div className="max-lg:-order-10 xl:relative">
-        <LogoWithDecorations className="h-[224px] w-full max-w-[640px] max-lg:-order-1 max-sm:mb-6 lg:w-[320px] lg:max-xl:h-[180px] xl:absolute xl:w-[360px] lg:max-xl:[&>svg]:w-[140px] lg:max-xl:[&_svg]:h-[120px]">
-          {logo}
-        </LogoWithDecorations>
-      </div>
+      <LogoWithDecorations className="h-[224px] w-full max-w-[640px] shrink-0 max-lg:-order-1 max-sm:mb-6 lg:w-[320px] lg:max-xl:h-[180px] xl:w-[400px] lg:max-xl:[&>svg]:w-[140px] lg:max-xl:[&_svg]:h-[120px]">
+        {logo}
+      </LogoWithDecorations>
     </header>
   );
 }
