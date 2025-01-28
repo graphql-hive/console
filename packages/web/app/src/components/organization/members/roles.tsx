@@ -229,7 +229,7 @@ function OrganizationMemberRoleEditor(props: {
             <div className="grow">
               <div className="flex h-[400px] flex-col space-y-2">
                 <FormLabel>Permissions</FormLabel>
-                <div className="overflow-scroll">
+                <div className="overflow-y-auto">
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
                     organization={organization}
@@ -481,7 +481,7 @@ function OrganizationMemberRoleCreator(props: {
               <div className="grow">
                 <div className="flex h-[400px] flex-col space-y-2">
                   <FormLabel>Permissions</FormLabel>
-                  <div className="overflow-scroll">
+                  <div className="overflow-y-auto">
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
                       organization={organization}
