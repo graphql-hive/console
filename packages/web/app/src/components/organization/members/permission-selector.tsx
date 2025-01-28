@@ -104,7 +104,11 @@ export function PermissionSelector(props: PermissionSelectorProps) {
       {groups.map(group => {
         return (
           <AccordionItem value={group.title} key={group.title}>
-            <AccordionTrigger className="w-full" key={group.title}>
+            <AccordionTrigger
+              className="w-full"
+              key={group.title}
+              aria-label={`${group.title} permission group with ${group.selectedPermissionCount} permissions selected`}
+            >
               {group.title}{' '}
               <span className="ml-auto mr-0">
                 {group.selectedPermissionCount > 0 && (
