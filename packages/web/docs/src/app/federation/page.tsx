@@ -6,6 +6,7 @@ import { FrequentlyAskedFederationQuestions } from '../../components/frequently-
 import { Hero, HeroLinks } from '../../components/hero';
 import { InfoCard } from '../../components/info-card';
 import { LandingPageContainer } from '../../components/landing-page-container';
+import { metadata as rootMetadata } from '../layout';
 import federationDiagram from '../../../public/federation-diagram.png';
 import queryResultImage from '../../../public/federation/query-result.png';
 import queryImage from '../../../public/federation/query.png';
@@ -17,6 +18,23 @@ export const metadata = {
   title: 'What is GraphQL Federation?',
   description:
     'Discover what GraphQL Federation is, how it unifies multiple APIs into a Supergraph, its core benefits, and the building blocks like subgraphs, schema composition and gateway.',
+  openGraph: {
+    ...rootMetadata.openGraph,
+    /**
+     * We currently have `metadataBase` which includes `basePath`,
+     * so the opengraph-image.png file convention results in a
+     * duplicate `basePath` in the OG Image URL.
+     *
+     * Remove this workaround when we have a fix upstream.
+     * Do not extract this workaround to a separate file, as it will stop working.
+     */
+    images: [
+      new URL('./opengraph-image.png', import.meta.url)
+        .toString()
+        // eslint-disable-next-line no-process-env
+        .replace(process.env.NEXT_BASE_PATH || '', ''),
+    ],
+  },
 };
 
 export default function FederationPage(): ReactElement {

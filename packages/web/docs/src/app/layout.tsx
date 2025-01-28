@@ -27,6 +27,26 @@ export const metadata = getDefaultMetadata({
     'Fully Open-source schema registry, analytics and gateway for GraphQL federation and other GraphQL APIs',
 });
 
+metadata.openGraph = {
+  ...metadata.openGraph,
+  // to remove leading slash
+  url: '.',
+  /**
+   * We currently have `metadataBase` which includes `basePath`,
+   * so the opengraph-image.png file convention results in a
+   * duplicate `basePath` in the OG Image URL.
+   *
+   * Remove this workaround when we have a fix upstream.
+   * Do not extract this workaround to a separate file, as it will stop working.
+   */
+  images: [
+    new URL('./opengraph-image.png', import.meta.url)
+      .toString()
+      // eslint-disable-next-line no-process-env
+      .replace(process.env.NEXT_BASE_PATH || '', ''),
+  ],
+};
+
 const neueMontreal = localFont({
   src: [
     { path: '../fonts/PPNeueMontreal-Regular.woff2', weight: '400' },
