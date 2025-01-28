@@ -121,113 +121,120 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                   !props.selectedPermissionIds.has(permission.dependsOnId);
 
                 return (
-                  <div
-                    className={cn(
-                      'flex flex-row items-center justify-between space-x-4 border-orange-500 pb-2 text-sm',
-                      focusedPermission === permission.id && '-m-[1px] border',
-                    )}
-                    key={permission.id}
-                    data-permission-id={permission.id}
-                    ref={ref => {
-                      if (ref) {
-                        permissionRefs.current.set(permission.id, ref);
-                      }
-                    }}
-                  >
-                    <div className={cn(needsDependency && 'opacity-30')}>
-                      <div className="font-semibold text-white">{permission.title}</div>
-                      <div className="text-xs text-gray-400">{permission.description}</div>
-                    </div>
-                    {permission.warning && props.selectedPermissionIds.has(permission.id) ? (
-                      <div className="flex grow justify-end">
-                        <TooltipProvider delayDuration={0}>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <TriangleAlert className="text-yellow-700" />
-                            </TooltipTrigger>
-                            <TooltipContent>{permission.warning}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                  <div className="relative">
+                    <div
+                      className={cn(
+                        'flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm',
+                      )}
+                      key={permission.id}
+                      data-permission-id={permission.id}
+                      ref={ref => {
+                        if (ref) {
+                          permissionRefs.current.set(permission.id, ref);
+                        }
+                      }}
+                    >
+                      <div className={cn(needsDependency && 'opacity-30')}>
+                        <div className="font-semibold text-white">{permission.title}</div>
+                        <div className="text-xs text-gray-400">{permission.description}</div>
                       </div>
-                    ) : (
-                      !!permission.dependsOnId &&
-                      permissionToGroupTitleMapping.has(permission.dependsOnId) && (
+                      {permission.warning && props.selectedPermissionIds.has(permission.id) ? (
                         <div className="flex grow justify-end">
                           <TooltipProvider delayDuration={0}>
                             <Tooltip>
                               <TooltipTrigger>
-                                <InfoIcon />
+                                <TriangleAlert className="text-yellow-700" />
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  This permission depends on another permission.{' '}
-                                  <Button
-                                    variant="orangeLink"
-                                    onClick={() => {
-                                      const dependencyPermission = permission.dependsOnId;
-                                      if (!dependencyPermission) {
-                                        return;
-                                      }
-                                      const element =
-                                        permissionRefs.current.get(dependencyPermission);
-
-                                      if (!element) {
-                                        return;
-                                      }
-                                      setOpenAccordions(values => {
-                                        const groupName =
-                                          permissionToGroupTitleMapping.get(dependencyPermission);
-
-                                        if (groupName && values.includes(groupName) === false) {
-                                          return [...values, groupName];
-                                        }
-                                        return values;
-                                      });
-                                      setFocusedPermission(dependencyPermission);
-                                      element.scrollIntoView({ behavior: 'smooth' });
-                                    }}
-                                  >
-                                    View permission.
-                                  </Button>
-                                </p>
-                              </TooltipContent>
+                              <TooltipContent>{permission.warning}</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                      )
-                    )}
-                    <Select
-                      disabled={props.isReadOnly || permission.isReadOnly || needsDependency}
-                      value={
-                        permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
-                          ? 'allow'
-                          : 'not-selected'
-                      }
-                      onValueChange={value => {
-                        const dependents = dependencyGraph.get(permission.id) ?? [];
-                        if (value === 'allow') {
-                          props.onSelectedPermissionsChange(
-                            new Set([...props.selectedPermissionIds, permission.id]),
-                          );
-                        } else if (value === 'not-selected') {
-                          const selectedPermissionIds = new Set(props.selectedPermissionIds);
-                          selectedPermissionIds.delete(permission.id);
-                          for (const dependent of dependents) {
-                            selectedPermissionIds.delete(dependent);
-                          }
-                          props.onSelectedPermissionsChange(selectedPermissionIds);
+                      ) : (
+                        !!permission.dependsOnId &&
+                        permissionToGroupTitleMapping.has(permission.dependsOnId) && (
+                          <div className="flex grow justify-end">
+                            <TooltipProvider delayDuration={0}>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <InfoIcon />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    This permission depends on another permission.{' '}
+                                    <Button
+                                      variant="orangeLink"
+                                      onClick={() => {
+                                        const dependencyPermission = permission.dependsOnId;
+                                        if (!dependencyPermission) {
+                                          return;
+                                        }
+                                        const element =
+                                          permissionRefs.current.get(dependencyPermission);
+
+                                        if (!element) {
+                                          return;
+                                        }
+                                        setOpenAccordions(values => {
+                                          const groupName =
+                                            permissionToGroupTitleMapping.get(dependencyPermission);
+
+                                          if (groupName && values.includes(groupName) === false) {
+                                            return [...values, groupName];
+                                          }
+                                          return values;
+                                        });
+                                        setFocusedPermission(dependencyPermission);
+                                        element.scrollIntoView({
+                                          behavior: 'smooth',
+                                          block: 'center',
+                                        });
+                                      }}
+                                    >
+                                      View permission.
+                                    </Button>
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )
+                      )}
+                      <Select
+                        disabled={props.isReadOnly || permission.isReadOnly || needsDependency}
+                        value={
+                          permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
+                            ? 'allow'
+                            : 'not-selected'
                         }
-                        setFocusedPermission(null);
-                      }}
-                    >
-                      <SelectTrigger className="w-[150px] shrink-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not-selected">Not Selected</SelectItem>
-                        <SelectItem value="allow">Allow</SelectItem>
-                      </SelectContent>
-                    </Select>
+                        onValueChange={value => {
+                          const dependents = dependencyGraph.get(permission.id) ?? [];
+                          if (value === 'allow') {
+                            props.onSelectedPermissionsChange(
+                              new Set([...props.selectedPermissionIds, permission.id]),
+                            );
+                          } else if (value === 'not-selected') {
+                            const selectedPermissionIds = new Set(props.selectedPermissionIds);
+                            selectedPermissionIds.delete(permission.id);
+                            for (const dependent of dependents) {
+                              selectedPermissionIds.delete(dependent);
+                            }
+                            props.onSelectedPermissionsChange(selectedPermissionIds);
+                          }
+                          setFocusedPermission(null);
+                        }}
+                      >
+                        <SelectTrigger className="w-[150px] shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not-selected">Not Selected</SelectItem>
+                          <SelectItem value="allow">Allow</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {focusedPermission === permission.id && (
+                      <div className="pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border border-yellow-400" />
+                    )}
                   </div>
                 );
               })}
