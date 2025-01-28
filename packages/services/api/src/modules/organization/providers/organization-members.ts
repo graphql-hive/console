@@ -616,7 +616,7 @@ type ResolvedResourceAssignments = {
  *
  * If one level specifies "*", it needs to inherit the resources defined on the next upper level.
  */
-function resolveResourceAssignment(args: {
+export function resolveResourceAssignment(args: {
   organizationId: string;
   projects: ResourceAssignmentGroup;
 }): ResolvedResourceAssignments {
