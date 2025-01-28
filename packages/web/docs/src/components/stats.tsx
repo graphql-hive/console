@@ -1,7 +1,8 @@
+'use client';
+
 import { ReactNode } from 'react';
 import CountUp from 'react-countup';
-import { Heading } from '@theguild/components';
-import { cn } from '../lib';
+import { cn, Heading } from '@theguild/components';
 
 export function StatsItem(props: {
   label: string;

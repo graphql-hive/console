@@ -8,10 +8,10 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const productUpdatesDirectory = path.join(
   __dirname,
-  '../packages/web/docs/src/pages/product-updates',
+  '../packages/web/docs/src/app/product-updates',
 );
 
-const files = fs.readdirSync(productUpdatesDirectory);
+const files = fs.globSync('**/*.mdx', { cwd: productUpdatesDirectory });
 const changelogRecords = [];
 
 for (const file of files) {

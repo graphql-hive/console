@@ -1,6 +1,5 @@
 import Image, { StaticImageData } from 'next/image';
-import { CallToAction, Heading } from '@theguild/components';
-import { cn } from '../../lib';
+import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
 import dimaPhoto from './dima.webp';
 // import noamPhoto from './noam.webp';

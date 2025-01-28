@@ -1,6 +1,5 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import { ReactElement } from 'react';
-import type { GetStaticProps } from 'next';
 import { Callout, Code } from '@theguild/components';
 
 type CLIError = {
@@ -16,7 +15,7 @@ export function ErrorDetails(props: CLIError): ReactElement {
     <>
       <h3
         id={`errors-${props.code}`}
-        className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-2xl dark:_text-slate-100"
+        className="mt-8 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
       >
         {props.code} "{props.title}"{' '}
         <a
@@ -25,15 +24,15 @@ export function ErrorDetails(props: CLIError): ReactElement {
           aria-label="Permalink for this error code"
         />
       </h3>
-      <h4 className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-xl dark:_text-slate-100">
-        Example: <Code contentEditable="false">{props.example}</Code>
+      <h4 className="mt-8 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        Example: <Code>{props.example}</Code>
       </h4>
       <Callout type="default" emoji=">">
         <pre>{props.exampleOutput}</pre>
       </Callout>
       <h4
         id={`errors-${props.code}-fix`}
-        className="_font-semibold _tracking-tight _text-slate-900 _mt-8 _text-xl dark:_text-slate-100"
+        className="mt-8 text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100"
       >
         Suggested Fix
       </h4>
@@ -386,16 +385,13 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     );
 }
 
-export const getStaticProps: GetStaticProps<{ ssg: { cliErrors: CLIError[] } }> = async () => {
-  return {
-    props: {
-      __nextra_dynamic_opts: {
-        title: 'CLI Errors',
-        frontMatter: {
-          description: 'GraphQL Hive CLI Error Codes and Fixes.',
-        },
-      },
-      ssg: { cliErrors: await getErrorDescriptions() },
-    },
-  };
-};
+export async function CLIErrorsSection() {
+  const cliErrors = await getErrorDescriptions();
+  return (
+    <>
+      {cliErrors.map(item => (
+        <ErrorDetails key={item.code} {...item} />
+      ))}
+    </>
+  );
+}

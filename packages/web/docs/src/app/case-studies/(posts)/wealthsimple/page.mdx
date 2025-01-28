@@ -1,0 +1,182 @@
+---
+title: "Building a Unified Financial API: Wealthsimple's Hive Implementation"
+excerpt:
+  'As the company scaled, the need for a robust, flexible, and efficient API architecture became
+  paramount, leading to the adoption of GraphQL with Hive as their central API management solution.'
+category: Finance
+# We would need to go through approval to get author images. I guess we can leave this as is for now.
+authors:
+  - name:
+    position:
+    avatar:
+---
+
+import { DocsIcon, LargeCallout } from '#components/large-callout'
+import { Lede } from '#components/lede'
+import { SmallAvatar } from '#components/small-avatar'
+import { CallToAction, ContactButton } from '@theguild/components'
+
+[Wealthsimple](https://www.wealthsimple.com/en-ca) is one of Canada's fastest growing financial
+institutions and offers a full suite of simple, sophisticated financial products. As the company
+scaled, the need for a robust, flexible, and efficient API architecture became paramount, leading to
+the adoption of GraphQL with Hive as their central API management solution.
+
+## Challenges
+
+The primary challenges that led Wealthsimple to seek a GraphQL solution included:
+
+1. **Service Integration Complexity**
+
+- Managing a distributed architecture with many microservices
+- Need for comprehensive usage analytics beyond basic performance monitoring
+- Coordinating API changes across multiple development teams
+- Ensuring consistent performance regardless of customer profile
+
+2. **Development Workflow**
+
+- Lack of visibility into API usage patterns
+- Difficulty in tracking deprecated field usage
+- No systematic way to validate schema changes
+- Coordinating between multiple client applications (mobile and web)
+
+## Architecture
+
+### GraphQL Gateway
+
+At the heart of the system lies a centralized GraphQL gateway that serves as the primary entry point
+for all client applications. Built with TypeScript and Node.js, this gateway acts as an intelligent
+router, orchestrating requests across the service landscape. The gateway implements
+[schema stitching](https://the-guild.dev/graphql/stitching) to unify microservice schemas into a
+cohesive API surface.
+
+### Service Layer
+
+The underlying service layer comprises domain-specific services, representing different areas of
+Wealthsimple's financial ecosystem. Most services are built in Ruby, with a small subset using other
+technologies. These services use a mixed architecture approach, where some endpoints expose GraphQL
+interfaces while others maintain REST APIs. To seamlessly integrate REST services, the gateway
+utilizes Apollo data sources, ensuring consistent data access patterns. The team has also developed
+specialized components, including a custom Spring bean for reporting usage metrics to GraphQL Hive.
+
+<div>
+  > Hive enables Wealthsimple to build flexible and resilient GraphQL APIs. The GitHub integration
+  provides feedback in a format developers are familiar with and conditional breaking changes enable
+  us to focus our discussion on schema design rather than maintenance. Hive empowers us to
+  confidently evolve our schemas by ensuring seamless API updates, detecting potential breaking
+  changes, and guiding developers.
+</div>
+
+## Implementation
+
+The implementation focused on two key areas:
+
+1. **Usage Analytics Integration**
+
+- Implemented complementary tracking alongside existing Datadog setup
+- Enhanced GraphQL usage monitoring capabilities:
+  - Client-specific query tracking
+  - Detailed operation body analysis
+  - Real-time usage statistics
+
+2. **Schema Validation System**
+
+- Established global policy for schema changes
+- Implemented 30-day field usage monitoring
+- Integrated real-time developer feedback system
+- Set up automated validation checks for breaking changes
+
+## Results & Benefits
+
+The implementation has delivered several significant benefits:
+
+1. **Enhanced Development Workflow**
+
+- Data-driven decision making for schema changes.
+- Prevented potentially breaking changes through usage analysis.
+- Improved developer confidence in schema modifications.
+
+2. **Operational Improvements**
+
+- Better visibility into API usage patterns.
+- Reduced risk of breaking changes.
+- More efficient schema management.
+
+<LargeCallout
+  icon={<DocsIcon />}
+  heading="Comprehensive Query Insights"
+  variant="secondary"
+  cta={
+    <CallToAction variant="tertiary" href="/docs/dashboard/insights">
+      Learn More
+    </CallToAction>
+  }
+>
+  Get a detailed view of all GraphQL operations executed by your consumers, including performance
+  metrics and total counts. Click on any specific query to explore the full list of fields and
+  arguments used in the operation.
+</LargeCallout>
+
+## Lessons Learned
+
+1. **Schema Validation Impact**
+
+   Schema validation has helped Wealthsimple's API development process by enabling data-driven
+   decisions based on actual usage patterns. This shift from guesswork to quantifiable insights has
+   allowed teams to confidently evolve the API while maintaining stability for existing clients.
+
+2. **Integration Considerations**
+
+   Cross-platform integration has positioned Wealthsimple as an active contributor to the
+   open-source community, where they now maintain the official
+   [GraphQL Hive Ruby client](https://github.com/rperryng/graphql-ruby-hive?tab=readme-ov-file#graphql-hive-graphql-ruby-integration).
+   This commitment to open-source development not only supports their own cross-platform needs but
+   also benefits the broader GraphQL ecosystem. Their experience demonstrates the importance of both
+   consuming and contributing to open-source tools while building a robust financial platform.
+
+## Future Plans
+
+1. **Schema Registry Migration**
+
+   Wealthsimple plans to transition away from their existing git-ops system in favor of Hive's
+   comprehensive schema registry feature. This strategic move will modernize their schema management
+   process by providing a centralized, automated system for schema validation and distribution. This
+   migration represents a key step in Wealthsimple's broader initiative to enhance their API
+   infrastructure and developer experience.
+
+2. **Security Infrastructure Enhancement**
+
+   Wealthsimple is implementing
+   [Hive's App Deployments feature](https://the-guild.dev/graphql/hive/docs/schema-registry/app-deployments)
+   to optimize performance and track API usage against app versions. This solution will restrict API
+   access to predefined queries only and implement a query hash system for network optimization.
+
+3. **Gateway Evolution**
+
+   Wealthsimple is improving its API gateway infrastructure by focusing on migrating from their
+   current Apollo server with schema stitching to Hive Gateway. Having already tested
+   [GraphQL Yoga](https://the-guild.dev/graphql/yoga-server) in staging with
+   [promising performance gains](https://the-guild.dev/graphql/yoga-server/docs/comparison#better-runtime-performance),
+   the team is now working on adopting Hive Gateway to enable a gradual transition to
+   [federation](https://the-guild.dev/graphql/hive/federation). This approach will allow teams to
+   maintain ownership of their schemas while enabling a methodical, type-by-type migration from the
+   existing stitched schema setup to a federated architecture.
+
+<LargeCallout
+  icon={<DocsIcon />}
+  heading="Elevate Your GraphQL Journey"
+  variant="primary"
+  cta={<ContactButton variant="secondary-inverted" />}
+>
+  Transform your API infrastructure like Wealthsimple. Whether it's migrating to a centralized
+  schema registry, enhancing security, or evolving your gateway architecture, our tools and
+  expertise can help you achieve your goals efficiently.
+</LargeCallout>
+
+## Conclusion
+
+Wealthsimple's implementation of GraphQL with Hive has proven to be a successful strategic decision,
+providing enhanced visibility, improved development workflows, and a solid foundation for future
+scaling. The company's positive experience with the platform has led to expanded usage plans and
+continued investment in the GraphQL ecosystem. The gradual, thoughtful approach to migration and
+feature adoption has enabled the team to maintain stability while advancing their technical
+capabilities.

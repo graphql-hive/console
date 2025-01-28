@@ -1,4 +1,4 @@
-import { cn } from '../lib';
+import { cn } from '@theguild/components';
 
 export function Stud(props: React.HTMLAttributes<HTMLElement>) {
   return (

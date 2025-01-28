@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import { useMounted } from '@theguild/components';
 
