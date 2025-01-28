@@ -246,5 +246,17 @@ module.exports = {
         'cypress/unsafe-to-chain-command': 'off',
       },
     },
+    {
+      files: [
+        // environment should be parsed to avoid global dependencies and sacred .env files
+        'packages/**/environment.ts',
+        // - environment is inlined and must be "registered" in next.config.js
+        // - `import.meta.env` is not supported in Next.js yet
+        'packages/web/docs/**',
+      ],
+      rules: {
+        'no-process-env': 'off',
+      },
+    },
   ],
 };
