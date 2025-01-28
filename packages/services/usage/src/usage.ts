@@ -165,7 +165,7 @@ export function createUsage(config: {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
-      logger.info('Splitting into %s', numOfChunks)
+      logger.info('Splitting into %s', numOfChunks);
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {
@@ -227,7 +227,7 @@ export function createUsage(config: {
         Sentry.captureException(error);
 
         logger.info('Adding to fallback queue (id=%s)', batchId);
-        fallback.add(value.toString(), numOfOperations);
+        fallback.add(value, numOfOperations);
 
         throw error;
       }

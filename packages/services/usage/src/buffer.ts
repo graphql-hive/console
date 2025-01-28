@@ -243,9 +243,7 @@ export function createKVBuffer<T>(config: {
       });
   }
 
-  async function send(options: {
-    scheduleNextSend: boolean;
-  }): Promise<void> {
+  async function send(options: { scheduleNextSend: boolean }): Promise<void> {
     const { scheduleNextSend } = options;
 
     if (timeoutId !== null) {
@@ -274,9 +272,13 @@ export function createKVBuffer<T>(config: {
   }
 
   function schedule() {
-    timeoutId = setTimeout(() => send({
-      scheduleNextSend: true,
-    }), config.interval);
+    timeoutId = setTimeout(
+      () =>
+        send({
+          scheduleNextSend: true,
+        }),
+      config.interval,
+    );
   }
 
   function add(report: T) {
