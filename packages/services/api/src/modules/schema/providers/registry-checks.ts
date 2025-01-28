@@ -497,14 +497,13 @@ export class RegistryChecks {
             // the operations query if no clients are affected, as it will also yield zero results in that case.
 
             const [topAffectedClients, topAffectedOperations] = await Promise.all([
-              this.operationsReader.getTopClientsForSchemaCoordinate(
-                {
-                  targetIds: settings.targetIds,
-                  excludedClients: settings.excludedClientNames,
-                  period: settings.period,
-                  schemaCoordinate: change.breakingChangeSchemaCoordinate,
-                },
-              ), this.operationsReader.getTopOperationsForSchemaCoordinate({
+              this.operationsReader.getTopClientsForSchemaCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: change.breakingChangeSchemaCoordinate,
+              }),
+              this.operationsReader.getTopOperationsForSchemaCoordinate({
                 targetIds: settings.targetIds,
                 excludedClients: settings.excludedClientNames,
                 period: settings.period,
