@@ -140,7 +140,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     </div>
                     {permission.warning && props.selectedPermissionIds.has(permission.id) ? (
                       <div className="flex grow justify-end">
-                        <TooltipProvider>
+                        <TooltipProvider delayDuration={0}>
                           <Tooltip>
                             <TooltipTrigger>
                               <TriangleAlert className="text-yellow-700" />
@@ -153,7 +153,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                       !!permission.dependsOnId &&
                       permissionToGroupTitleMapping.has(permission.dependsOnId) && (
                         <div className="flex grow justify-end">
-                          <TooltipProvider>
+                          <TooltipProvider delayDuration={0}>
                             <Tooltip>
                               <TooltipTrigger>
                                 <InfoIcon />
