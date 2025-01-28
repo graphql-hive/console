@@ -377,7 +377,7 @@ function OrganizationMemberRoleCreator(props: {
 
   const onChangeSelectedPermissions = useCallback((permissions: ReadonlySet<string>) => {
     setSelectedPermissions(new Set(permissions));
-    form.setValue('selectedPermissions', [...selectedPermissions]);
+    form.setValue('selectedPermissions', [...permissions]);
   }, []);
 
   const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);

@@ -121,12 +121,11 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                   !props.selectedPermissionIds.has(permission.dependsOnId);
 
                 return (
-                  <div className="relative">
+                  <div className="relative" key={permission.id}>
                     <div
                       className={cn(
                         'flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm',
                       )}
-                      key={permission.id}
                       data-permission-id={permission.id}
                       ref={ref => {
                         if (ref) {
