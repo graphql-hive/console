@@ -38,7 +38,12 @@ export const metadata: Metadata = {
     ...rootMetadata.openGraph,
     // to remove leading slash
     url: '.',
-    images: [new URL('./opengraph-image.png', import.meta.url).toString()],
+    images: [
+      new URL('./opengraph-image.png', import.meta.url)
+        .toString()
+        // eslint-disable-next-line no-process-env
+        .replace(process.env.NEXT_BASE_PATH || '', ''),
+    ],
   },
 };
 
