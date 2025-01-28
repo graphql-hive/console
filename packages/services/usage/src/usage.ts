@@ -3,7 +3,7 @@ import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
-import { calculateChunkSize, createKVBuffer, isBufferTooBigError } from './buffer';
+import { calculateChunkSize, createKVBuffer } from './buffer';
 import type { KafkaEnvironment } from './environment';
 import { createFallbackQueue } from './fallback-queue';
 import {
@@ -165,6 +165,7 @@ export function createUsage(config: {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
+      logger.info('Splitting into %s', numOfChunks)
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {
@@ -250,6 +251,7 @@ export function createUsage(config: {
         rawOperationWrites.inc(numOfOperations);
       } catch (error) {
         rawOperationFailures.inc(numOfOperations);
+        throw error;
       } finally {
         stopTimer();
       }
