@@ -106,6 +106,11 @@ const team: TeamMember[] = [
     'https://avatars.githubusercontent.com/ardatan?v=4&s=180',
     'https://github.com/ardatan',
   ],
+  [
+    'Jeff Dolle',
+    'https://avatars.githubusercontent.com/jdolle?v=4&s=180',
+    'https://github.com/jdolle',
+  ]
 ];
 
 function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
