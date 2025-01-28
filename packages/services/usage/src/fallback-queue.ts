@@ -44,7 +44,7 @@ export function createFallbackQueue(config: {
     timeoutId = setTimeout(async () => {
       await flushSingle();
       schedule();
-    }, 1000);
+    }, 200);
   }
 
   return {
