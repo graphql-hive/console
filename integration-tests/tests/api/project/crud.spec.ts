@@ -216,7 +216,7 @@ test.concurrent('prevent access to projects with assigned resources on member', 
   await assignMemberRole({
     roleId: member.role.id,
     userId: member.user.id,
-    resouces: {
+    resources: {
       mode: ResourceAssignmentMode.Granular,
       projects: [],
     },
@@ -245,7 +245,7 @@ test.concurrent('restrict access to single project with assigned resources on me
   await assignMemberRole({
     roleId: member.role.id,
     userId: member.user.id,
-    resouces: {
+    resources: {
       mode: ResourceAssignmentMode.Granular,
       projects: [
         {

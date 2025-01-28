@@ -1370,7 +1370,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: member.role.id,
       userId: member.user.id,
-      resouces: { mode: ResourceAssignmentMode.Granular, projects: [] },
+      resources: { mode: ResourceAssignmentMode.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1448,7 +1448,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
-      resouces: { mode: ResourceAssignmentMode.Granular, projects: [] },
+      resources: { mode: ResourceAssignmentMode.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1528,7 +1528,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
-      resouces: {
+      resources: {
         mode: ResourceAssignmentMode.Granular,
         projects: [
           {
@@ -1617,7 +1617,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
-      resouces: {
+      resources: {
         mode: ResourceAssignmentMode.Granular,
         projects: [
           {
