@@ -138,6 +138,7 @@ export function createKVBuffer<T>(config: {
   const { logger } = config;
   let buffer: T[] = [];
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
   const estimator = createEstimator({
     logger,
     defaultBytesPerUnit: config.limitInBytes / config.size,
@@ -172,9 +173,6 @@ export function createKVBuffer<T>(config: {
   ) {
     logger.info(`Flushing (reports=%s, bufferSize=%s, id=%s)`, reports.length, size, batchId);
     const estimatedSizeInBytes = estimator.estimate(size);
-    if (!isChunkedBuffer) {
-      buffer = [];
-    }
     await config
       .sender(reports, estimatedSizeInBytes, batchId, function validateSize(bytes) {
         if (!config.useEstimator) {
@@ -246,16 +244,13 @@ export function createKVBuffer<T>(config: {
   async function send(options: { scheduleNextSend: boolean }): Promise<void> {
     const { scheduleNextSend } = options;
 
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-
     if (buffer.length !== 0) {
       const reports = buffer.slice();
       const size = calculateBufferSize(reports);
       const batchId = randomUUID();
 
       try {
+        buffer = [];
         await flushBuffer(reports, size, batchId);
       } catch (error) {
         logger.error(error);
@@ -272,9 +267,14 @@ export function createKVBuffer<T>(config: {
   }
 
   function schedule() {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+
     timeoutId = setTimeout(
       () =>
-        send({
+        void send({
           scheduleNextSend: true,
         }),
       config.interval,

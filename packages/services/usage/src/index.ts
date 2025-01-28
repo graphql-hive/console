@@ -181,14 +181,14 @@ async function main() {
           }
 
           if (!token) {
-            void res.status(401).send('Missing token');
+            res.status(401).send('Missing token');
             httpRequestsWithoutToken.inc();
             activeSpan?.recordException('Missing token in request');
             return;
           }
 
           if (token.length !== 32) {
-            void res.status(401).send('Invalid token');
+            res.status(401).send('Invalid token');
             httpRequestsWithoutToken.inc();
             activeSpan?.recordException('Invalid token');
             return;
@@ -205,7 +205,7 @@ async function main() {
             });
             httpRequestsWithNonExistingToken.inc();
             req.log.info('Token not found (token=%s)', maskedToken);
-            void res.status(401).send('Missing token');
+            res.status(401).send('Missing token');
             activeSpan?.recordException('Token not found');
             return;
           }
@@ -217,7 +217,7 @@ async function main() {
             });
             httpRequestsWithNoAccess.inc();
             req.log.info('No access (token=%s)', maskedToken);
-            void res.status(403).send('No access');
+            res.status(403).send('No access');
             activeSpan?.recordException('No access');
             return;
           }
@@ -265,7 +265,7 @@ async function main() {
               tokenInfo.target,
               tokenInfo.organization,
             );
-            void res.status(429).send();
+            res.status(429).send();
 
             return;
           }
@@ -296,7 +296,7 @@ async function main() {
               // 503 - Service Unavailable
               // The server is currently unable to handle the request due being not ready.
               // This tells the gateway to retry the request and not to drop it.
-              void res.status(503).send();
+              res.status(503).send();
               return;
             }
 
@@ -309,7 +309,7 @@ async function main() {
               stopTimer({
                 status: 'success',
               });
-              void res.status(200).send({
+              res.status(200).send({
                 id: result.report.id,
                 operations: result.operations,
               });
@@ -333,7 +333,7 @@ async function main() {
                   activeSpan?.recordException(error.path + ': ' + error.message),
                 );
 
-                void res.status(400).send({
+                res.status(400).send({
                   errors: result.errors,
                 });
                 return;
@@ -343,7 +343,7 @@ async function main() {
               stopTimer({
                 status: 'success',
               });
-              void res.status(200).send({
+              res.status(200).send({
                 id: result.report.id,
                 operations: result.operations,
               });
@@ -353,7 +353,7 @@ async function main() {
                 status: 'error',
               });
               activeSpan?.recordException("Invalid 'x-api-version' header value.");
-              void res.status(401).send("Invalid 'x-api-version' header value.");
+              res.status(401).send("Invalid 'x-api-version' header value.");
             }
           } catch (error) {
             stopTimer({
@@ -365,7 +365,7 @@ async function main() {
               level: 'error',
             });
             activeSpan?.recordException(error as Error);
-            void res.status(500).send();
+            res.status(500).send();
           }
         }),
       ),
@@ -375,7 +375,7 @@ async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       handler(_, res) {
-        void res.status(200).send();
+        res.status(200).send();
       },
     });
 
@@ -385,7 +385,7 @@ async function main() {
       handler(_, res) {
         const isReady = readiness();
         reportReadiness(isReady);
-        void res.status(isReady ? 200 : 400).send();
+        res.status(isReady ? 200 : 400).send();
       },
     });
 

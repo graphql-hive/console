@@ -256,7 +256,7 @@ export function createUsage(config: {
         stopTimer();
       }
     },
-    logger: logger.child({ namespace: 'fallback' }),
+    logger: logger.child({ component: 'fallback' }),
   });
 
   let status: Status = Status.Waiting;
