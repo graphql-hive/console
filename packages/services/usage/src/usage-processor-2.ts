@@ -302,12 +302,20 @@ const PersistedDocumentHash = tb.Type.String({
   pattern: '^[a-zA-Z0-9_-]{1,64}~[a-zA-Z0-9._-]{1,64}~([A-Za-z]|[0-9]|_){1,128}$',
 });
 
+const unixTimestampRegex = /^\d{13,}$/;
+function isUnixTimestamp(x: number) {
+  return unixTimestampRegex.test(String(x));
+}
+
+tb.TypeRegistry.Set('UnixTimestampInMs', (_, value) =>
+  typeof value === 'number' ? isUnixTimestamp(value) : false,
+);
+const UnixTimestampInMs = { [tb.Kind]: 'UnixTimestampInMs' } as tb.TSchema;
+
 /** Query + Mutation */
 const RequestOperationSchema = tb.Type.Object(
   {
-    timestamp: tb.Type.Integer({
-      minimum: 1, // TODO: should be valid timestamp
-    }),
+    timestamp: UnixTimestampInMs,
     operationMapKey: tb.Type.String(),
     execution: ExecutionSchema,
     metadata: OptionalAndNullable(MetadataSchema),
@@ -322,9 +330,7 @@ const RequestOperationSchema = tb.Type.Object(
 /** Subscription / Live Query */
 const SubscriptionOperationSchema = tb.Type.Object(
   {
-    timestamp: tb.Type.Integer({
-      minimum: 1, // TODO: should be valid timestamp
-    }),
+    timestamp: UnixTimestampInMs,
     operationMapKey: tb.Type.String(),
     metadata: OptionalAndNullable(MetadataSchema),
     persistedDocumentHash: OptionalAndNullable(PersistedDocumentHash),
@@ -338,7 +344,7 @@ const SubscriptionOperationSchema = tb.Type.Object(
 export const ReportSchema = tb.Type.Object(
   {
     size: tb.Type.Integer({
-      minimum: 1, // TODO: should be valid timestamp
+      minimum: 1,
     }),
     map: tb.Record(tb.String(), OperationMapRecordSchema),
     operations: OptionalAndNullable(tb.Array(RequestOperationSchema)),

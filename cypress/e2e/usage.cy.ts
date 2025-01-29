@@ -458,6 +458,38 @@ describe('usage reporting', () => {
           },
           {
             operationMapKey: 'op1',
+            // ERROR: negative timestamp
+            timestamp: -Date.now(),
+            execution: {
+              ok: true,
+              duration: 20_000_000,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            // ERROR: incorrect timestamp
+            timestamp: 1234,
+            execution: {
+              ok: true,
+              duration: 20_000_000,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
             timestamp: Date.now(),
             execution: {
               ok: true,
