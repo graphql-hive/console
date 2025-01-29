@@ -23,7 +23,7 @@ Hive Dashboard.
 
 Organization owners or organization members with sufficient permissions can access this section.
 
-import membersTabImage from '../../../../public/docs/pages/management/members-roles-permissions/members-tab.png'
+import membersTabImage from '../../../public/docs/pages/management/members-roles-permissions/members-tab.png'
 
 <NextImage
   alt="Organization Member Section"
@@ -51,7 +51,7 @@ organization members. These roles are read-only, permissions can not be added or
 Instead of using the predefined member roles you can create your own member roles. Managing member
 roles is done within the `Roles` tab within the member section.
 
-import createRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-01-start.png'
+import createRole01StartImage from '../../../public/docs/pages/management/members-roles-permissions/create-role-01-start.png'
 
 <NextImage
   alt="Members of an Organization"
@@ -61,7 +61,7 @@ import createRole01StartImage from '../../../../public/docs/pages/management/mem
 
 Click the `Create new role` button for opening the wizard.
 
-import createRole02WizardImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-02-wizard.png'
+import createRole02WizardImage from '../../../public/docs/pages/management/members-roles-permissions/create-role-02-wizard.png'
 
 <NextImage
   alt="Member Role Creator"
@@ -77,7 +77,7 @@ the permissions for viewing a project.
 Once you are satisfied with your selection, click the `Confirm selection` button, for getting a full
 overview about the permissions that will be assigned to that role.
 
-import createRole03ConfirmImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-03-confirm.png'
+import createRole03ConfirmImage from '../../../public/docs/pages/management/members-roles-permissions/create-role-03-confirm.png'
 
 <NextImage
   alt="Member Role Creator - Permission Overview"
@@ -91,7 +91,7 @@ Here you, can double check your selection and proceed with the creation of the r
 The role will now be visible next to the other roles within the overview and is ready to be assigned
 to a organization member.
 
-import createRole04SuccessImage from '../../../../public/docs/pages/management/members-roles-permissions/create-role-04-success.png'
+import createRole04SuccessImage from '../../../public/docs/pages/management/members-roles-permissions/create-role-04-success.png'
 
 <NextImage
   alt="Member Role Creator - Permission Overview"
@@ -106,7 +106,7 @@ section.
 
 Via the triple dot menu on the member role, select the `Edit` action.
 
-import updateRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/update-role-01-start.png'
+import updateRole01StartImage from '../../../public/docs/pages/management/members-roles-permissions/update-role-01-start.png'
 
 <NextImage
   alt="Update member role"
@@ -117,7 +117,7 @@ import updateRole01StartImage from '../../../../public/docs/pages/management/mem
 Within the member role editor, adjust the permissions of the role as desired, then confirm the
 selection.
 
-import updateRole02EditorImage from '../../../../public/docs/pages/management/members-roles-permissions/update-role-02-editor.png'
+import updateRole02EditorImage from '../../../public/docs/pages/management/members-roles-permissions/update-role-02-editor.png'
 
 <NextImage
   alt="Update member role editor"
@@ -137,7 +137,7 @@ In case you want to delete a member role that is still assigned to members, you 
 
 Via the triple dot menu on the member role, select the `Delete` action.
 
-import deleteRole01StartImage from '../../../../public/docs/pages/management/members-roles-permissions/delete-role-01-start.png'
+import deleteRole01StartImage from '../../../public/docs/pages/management/members-roles-permissions/delete-role-01-start.png'
 
 <NextImage
   alt="Delete member role"
@@ -148,7 +148,7 @@ import deleteRole01StartImage from '../../../../public/docs/pages/management/mem
 Confirm the deletion in the dialog using the `Confirm` button to successfully delete the member
 role.
 
-import deleteRole02ConfirmImage from '../../../../public/docs/pages/management/members-roles-permissions/delete-role-02-confirm.png'
+import deleteRole02ConfirmImage from '../../../public/docs/pages/management/members-roles-permissions/delete-role-02-confirm.png'
 
 <NextImage
   alt="Delete member role confirmation"
@@ -171,7 +171,7 @@ organization.
 To invite others to your organization, go to **Members** tab under your organization. To invite a
 new member to your organization, write their email address and click on **Send an invite** button.
 
-import orgInviteMemberImage from '../../../../public/docs/pages/management/org-invite-member.png'
+import orgInviteMemberImage from '../../../public/docs/pages/management/org-invite-member.png'
 
 <NextImage
   alt="Invite Member to Organization"
@@ -185,7 +185,7 @@ a member to your Hive organization.
 Once an invite has been created, you can also copy the personal invite link and share it directly
 using your preferred method.
 
-import orgInviteLinkImage from '../../../../public/docs/pages/management/org-invite-link.png'
+import orgInviteLinkImage from '../../../public/docs/pages/management/org-invite-link.png'
 
 <NextImage
   alt="Copy Invite Link"
@@ -199,19 +199,33 @@ The actions a member can perform within the organization are specified by the as
 default a organization member is assigned the `Viewer` role, however, you can assign any predefined
 or custom role you created.
 
-Within the `Members` section, select the role you wish to assign to a specific user by using the
-dropdown.
+Within the `Members` section, you can see the assigned role for each member.
 
-Organization owners always have full access to everything within an organization and cannot be
+> Organization owners always have full access to the organization and cannot be
 assigned a role.
 
-import userAssignRole01Image from '../../../../public/docs/pages/management/members-roles-permissions/user-assign-role-01-assign-role.png'
+For changing the assigned role click the `change` button.
+
+import assignRole01Image from '../../../public/docs/pages/management/members-roles-permissions/assign-role-01-start.png'
+
+<NextImage
+  alt="Organization Member Overview"
+  src={assignRole01Image}
+  className="mt-8 max-w-lg rounded-lg drop-shadow-md"
+/>
+
+Clicking the `change` button opens a menu for selecting the role for that user, when selecting a role you can see an overview of
+permissions that this role grants to this user.
+
+import assignRole02Image from '../../../public/docs/pages/management/members-roles-permissions/assign-role-02-overview.png'
 
 <NextImage
   alt="Assign member role"
-  src={userAssignRole01Image}
+  src={assignRole02Image}
   className="mt-8 max-w-lg rounded-lg drop-shadow-md"
 />
+
+Confirm the selecton by via the `Assign role to user` button.
 
 #### Restrict Resources Access
 
@@ -290,3 +304,15 @@ flowchart TD
 
 When selecting grnular access for a project, you can further specify which targets and which
 services are included within the selection.
+
+In order assign resources, select `Granular Access` within the `Assigned Resources` section, then assign your resources (projects, targets, services) as desired.
+
+import assignRole03Image from '../../../public/docs/pages/management/members-roles-permissions/assign-role-03-granular-access-service.png'
+
+<NextImage
+  alt="Select Granular Access Mode"
+  src={assignRole03Image}
+  className="mt-8 max-w-lg rounded-lg drop-shadow-md"
+/>
+
+After confirming the selection and assigning the role, permissions specified by the member role will only be granted for the selected resources.
