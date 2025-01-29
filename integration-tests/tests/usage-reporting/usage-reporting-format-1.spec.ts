@@ -12,12 +12,11 @@ test('valid operation is accepted', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
-      size: 3,
+      size: 1,
       map: {
         c3b6d9b0: {
           operationName: 'me',
@@ -67,7 +66,6 @@ test('invalid operation is rejected', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -120,7 +118,6 @@ test('reject a report with a negative timestamp', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -146,7 +143,14 @@ test('reject a report with a negative timestamp', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
 
 test('reject a report with an too short timestamp', async () => {
@@ -160,7 +164,6 @@ test('reject a report with an too short timestamp', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -186,7 +189,14 @@ test('reject a report with an too short timestamp', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
 
 test('reject a report with a negative duration', async () => {
@@ -200,7 +210,6 @@ test('reject a report with a negative duration', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -226,7 +235,14 @@ test('reject a report with a negative duration', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
 
 test('reject a report with a too big duration', async () => {
@@ -240,7 +256,6 @@ test('reject a report with a too big duration', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -266,7 +281,14 @@ test('reject a report with a too big duration', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
 
 test('reject a report with a negative errorsTotal', async () => {
@@ -280,7 +302,6 @@ test('reject a report with a negative errorsTotal', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -306,7 +327,14 @@ test('reject a report with a negative errorsTotal', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
 
 test('reject a report with a too big errorsTotal', async () => {
@@ -320,7 +348,6 @@ test('reject a report with a too big errorsTotal', async () => {
   const response = await fetch(`http://${usageAddress}`, {
     method: 'POST',
     headers: {
-      'X-Usage-API-Version': '2',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
@@ -346,5 +373,12 @@ test('reject a report with a too big errorsTotal', async () => {
       ],
     }),
   });
-  expect(response.status).toBe(400);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    id: expect.any(String),
+    operations: {
+      accepted: 0,
+      rejected: 1,
+    },
+  });
 });
