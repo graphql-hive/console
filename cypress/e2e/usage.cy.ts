@@ -101,12 +101,27 @@ describe('usage reporting', () => {
             timestamp: Date.now(),
             execution: {
               ok: true,
-              duration: 200_000_000,
+              duration: 30_000_000,
               errorsTotal: 0,
             },
             metadata: {
               client: {
                 name: 'ios',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              duration: 50_000_000,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'android',
                 version: 'v1.2.3',
               },
             },
@@ -313,5 +328,166 @@ describe('usage reporting', () => {
     cy.get('h3').contains('Operations').parent().get('a').contains('_pong');
     cy.get('h3').contains('Versions').parent().get('p').contains('vUndefined');
     cy.get('h3').contains('Versions').parent().get('p').contains('vUnknown');
+  });
+
+  it.only('partially corrupted usage report should be visible in Insights', () => {
+    const organizationSlug = generateRandomSlug();
+    const projectSlug = generateRandomSlug();
+    const targetSlug = 'development';
+
+    createUserAndOrganization(organizationSlug);
+    waitForOrganizationPage(organizationSlug);
+
+    createProject(projectSlug);
+    waitForProjectPage(projectSlug);
+
+    // go to the development target
+    cy.get(`a[href="/${organizationSlug}/${projectSlug}/${targetSlug}"]`).click();
+    waitForTargetPage(targetSlug);
+
+    createRegistryAccessToken({ organizationSlug, projectSlug, targetSlug });
+
+    sendUsageReport({
+      report: {
+        size: 1,
+        map: {
+          op1: {
+            operation: 'query ping { ping }',
+            operationName: 'ping',
+            fields: ['Query', 'Query.ping'],
+          },
+        },
+        operations: [
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              // ERROR: negative value
+              duration: -300_000_000_000,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'ios',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              duration: 10_000_000_000,
+              // ERROR: negative value
+              errorsTotal: -2,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              // ERROR: decimal
+              duration: 10_000_000_000.123,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              duration: 10_000_000_000,
+              // ERROR: decimal
+              errorsTotal: 2.5,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              duration: 10_000_000_000,
+              // ERROR: too big value
+              errorsTotal: Math.pow(2, 30),
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              // ERROR: too big value
+              duration: Math.pow(2, 64),
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'web',
+                version: 'v1.2.3',
+              },
+            },
+          },
+          {
+            operationMapKey: 'op1',
+            timestamp: Date.now(),
+            execution: {
+              ok: true,
+              duration: 50_000_000,
+              errorsTotal: 0,
+            },
+            metadata: {
+              client: {
+                name: 'android',
+                version: 'v1.2.3',
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    // visit Insights
+    cy.visit(`/${organizationSlug}/${projectSlug}/${targetSlug}/insights`);
+    cy.get('h3').contains('Operations').parent().get('a').contains('_ping');
+    cy.get('h3').contains('Requests').parent().parent().get('div > div').contains('1');
+    // android should be reported
+    cy.visit(`/${organizationSlug}/${projectSlug}/${targetSlug}/insights/client/android`);
+    cy.get('h3').contains('Operations').parent().get('a').contains('_ping');
+    cy.get('h3').contains('Versions').parent().get('p').contains('v1.2.3');
+    // ios should not be reported (negative duration)
+    cy.visit(`/${organizationSlug}/${projectSlug}/${targetSlug}/insights/client/ios`);
+    cy.get('h3').contains('Operations').parent().get('a').should('not.contain', '_ping');
+    cy.get('h3').contains('Versions').parent().get('p').should('not.contain', 'v1.2.3');
+    // web should not be reported (negative values, decimals, too big values)
+    cy.visit(`/${organizationSlug}/${projectSlug}/${targetSlug}/insights/client/web`);
+    cy.get('h3').contains('Operations').parent().get('a').should('not.contain', '_ping');
+    cy.get('h3').contains('Versions').parent().get('p').should('not.contain', 'v1.2.3');
   });
 });
