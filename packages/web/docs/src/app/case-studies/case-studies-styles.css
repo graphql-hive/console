@@ -2,14 +2,18 @@
   --nextra-content-width: 1208px;
   --article-max-width: 640px;
 
-  /* hide leftmost column to left-align the case study */
-  & > div:first-of-type > :first-child {
-    @apply hidden;
-  }
+  & > .main-content {
+    width: var(--nextra-content-width);
 
-  & > div > article {
-    box-sizing: content-box;
-    max-width: var(--article-max-width);
+    /* hide leftmost column to left-align the case study */
+    & > div:first-of-type > :first-child {
+      @apply hidden;
+    }
+
+    & > div > article {
+      box-sizing: content-box;
+      max-width: var(--article-max-width);
+    }
   }
 
   @apply text-green-1000 dark:text-white;

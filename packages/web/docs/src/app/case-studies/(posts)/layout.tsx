@@ -9,15 +9,16 @@ import { LookingToUseHiveUpsellBlock } from '../looking-to-use-hive-upsell-block
 // because the class responsible for dark mode gets transformed
 // so `dark:` prefixes don't work.
 const ONE_OFF_CLASS_CASE_STUDIES = 'case-studies';
+const MAIN_CONTENT = 'main-content';
 
 export default function CaseStudiesLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={cn(ONE_OFF_CLASS_CASE_STUDIES, 'mx-auto box-content max-w-[90rem]')}>
       <CaseStudiesHeader className="mx-auto max-w-[--nextra-content-width] pl-6 sm:my-12 md:pl-12 lg:my-24" />
-      <aside className="sticky top-[92px] mx-auto max-w-[--nextra-content-width]">
-        <LookingToUseHiveUpsellBlock className="absolute right-2 top-4 max-lg:hidden lg:w-[320px] xl:w-[400px]" />
-      </aside>
-      {children}
+      <div className={cn(MAIN_CONTENT, 'mx-auto flex')}>
+        {children}
+        <LookingToUseHiveUpsellBlock className="sticky right-2 top-[108px] mb-16 h-min max-lg:hidden lg:w-[320px] xl:w-[400px]" />
+      </div>
       <MoreStoriesSection />
       <GetYourAPIGameWhite className="sm:my-24" />
     </div>
