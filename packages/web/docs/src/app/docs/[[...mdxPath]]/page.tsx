@@ -37,9 +37,8 @@ export default async function Page(props: NextPageProps<'...mdxPath'>) {
   const result = await importPage(params.mdxPath);
   const { default: MDXContent, toc, metadata } = result;
   return (
-    <Wrapper toc={toc} metadata={metadata}>
+    <Wrapper toc={toc} metadata={metadata} bottomContent={<ConfiguredGiscus />}>
       <MDXContent {...props} params={params} />
-      <ConfiguredGiscus />
     </Wrapper>
   );
 }

@@ -138,8 +138,8 @@ export const usageProcessorV1 = traceInlineSync(
     return {
       report: report,
       operations: {
-        accepted: size - report.size,
-        rejected: report.size,
+        accepted: report.size,
+        rejected: size - report.size,
       },
     };
   },
@@ -214,11 +214,25 @@ function isUnixTimestamp(x: number) {
   return unixTimestampRegex.test(String(x));
 }
 
+// This is a custom format for positive integers (0 is allowed, decimals are not)
+// Maximum value is 18_446_744_073_709_551_615, but we stick to Math.pow(2, 63).
+// Using 2^64 in JS is problematic and 2^63 is more than enough.
+// https://clickhouse.com/docs/en/sql-reference/data-types/int-uint
+const maxUint64 = Math.pow(2, 63);
+const maxUInt16 = Math.pow(2, 16) - 1;
 const ajv = new Ajv({
   formats: {
     unix_timestamp_in_ms: {
       type: 'number',
       validate: isUnixTimestamp,
+    },
+    uint64: {
+      type: 'number',
+      validate: (x: number) => Number.isInteger(x) && x >= 0 && x <= maxUint64,
+    },
+    uint16: {
+      type: 'number',
+      validate: (x: number) => Number.isInteger(x) && x >= 0 && x <= maxUInt16,
     },
   },
 });
@@ -248,8 +262,8 @@ const operationSchema: JSONSchemaType<IncomingOperation> = {
       required: ['ok', 'duration', 'errorsTotal'],
       properties: {
         ok: { type: 'boolean' },
-        duration: { type: 'number' },
-        errorsTotal: { type: 'number' },
+        duration: { type: 'number', format: 'uint64' },
+        errorsTotal: { type: 'number', format: 'uint16' },
       },
     },
     metadata: {
