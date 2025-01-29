@@ -331,6 +331,7 @@ describe('usage reporting', () => {
   });
 
   it.only('partially corrupted usage report should be visible in Insights', () => {
+  it('partially corrupted usage report should be visible in Insights', () => {
     const organizationSlug = generateRandomSlug();
     const projectSlug = generateRandomSlug();
     const targetSlug = 'development';
