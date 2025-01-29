@@ -306,7 +306,7 @@ const PersistedDocumentHash = tb.Type.String({
 const RequestOperationSchema = tb.Type.Object(
   {
     timestamp: tb.Type.Integer({
-      minimum: 1,
+      minimum: 1, // TODO: should be valid timestamp
     }),
     operationMapKey: tb.Type.String(),
     execution: ExecutionSchema,
@@ -323,7 +323,7 @@ const RequestOperationSchema = tb.Type.Object(
 const SubscriptionOperationSchema = tb.Type.Object(
   {
     timestamp: tb.Type.Integer({
-      minimum: 1,
+      minimum: 1, // TODO: should be valid timestamp
     }),
     operationMapKey: tb.Type.String(),
     metadata: OptionalAndNullable(MetadataSchema),
@@ -338,7 +338,7 @@ const SubscriptionOperationSchema = tb.Type.Object(
 export const ReportSchema = tb.Type.Object(
   {
     size: tb.Type.Integer({
-      minimum: 1,
+      minimum: 1, // TODO: should be valid timestamp
     }),
     map: tb.Record(tb.String(), OperationMapRecordSchema),
     operations: OptionalAndNullable(tb.Array(RequestOperationSchema)),
