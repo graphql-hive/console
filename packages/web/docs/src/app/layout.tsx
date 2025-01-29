@@ -67,6 +67,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
     '/oss-friends',
     '/ecosystem',
     '/partners',
+    '/gateway',
   ];
 
   return (

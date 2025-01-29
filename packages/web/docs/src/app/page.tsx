@@ -16,11 +16,11 @@ import { CheckIcon } from '../components/check-icon';
 import { CommunitySection } from '../components/community-section';
 import { CompanyTestimonialsSection } from '../components/company-testimonials';
 import { EcosystemManagementSection } from '../components/ecosystem-management';
-import { FeatureTabs } from '../components/feature-tabs';
 import { FrequentlyAskedQuestions } from '../components/frequently-asked-questions';
 import { Hero, HeroFeatures, HeroLinks } from '../components/hero';
 import { InfoCard } from '../components/info-card';
 import { LandingPageContainer } from '../components/landing-page-container';
+import { LandingPageFeatureTabs } from '../components/landing-page-feature-tabs';
 import { StatsItem, StatsList } from '../components/stats';
 import { TeamSection } from '../components/team-section';
 import { TrustedBySection } from '../components/trusted-by-section';
@@ -82,7 +82,7 @@ export default function IndexPage(): ReactElement {
           </CallToAction>
         </HeroLinks>
       </Hero>
-      <FeatureTabs className="relative mt-6 sm:mt-[-72px]" />
+      <LandingPageFeatureTabs className="relative mt-6 sm:mt-[-72px]" />
       <TrustedBySection className="mx-auto my-8 md:my-16 lg:my-24" />
       <EcosystemManagementSection className="mx-4 md:mx-6" />
       <StatsList className="mt-6 md:mt-0">
