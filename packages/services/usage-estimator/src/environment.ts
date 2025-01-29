@@ -68,17 +68,16 @@ const ClickHouseModel = zod.object({
 });
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   sentry: SentryModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   clickhouse: ClickHouseModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   prometheus: PrometheusModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   log: LogModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
 };
 

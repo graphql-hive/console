@@ -12,7 +12,6 @@ export function FeaturedCaseStudiesGrid({
   caseStudies: CaseStudyFile[];
   className?: string;
 }) {
-  // eslint-disable-next-line no-process-env
   if (process.env.NODE_ENV === 'development' && caseStudies.length < 6) {
     while (caseStudies.length < 6) {
       caseStudies = [...caseStudies, ...caseStudies, ...caseStudies];

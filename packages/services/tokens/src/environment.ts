@@ -77,24 +77,23 @@ const LogModel = zod.object({
 });
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   sentry: SentryModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   postgres: PostgresModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   redis: RedisModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   prometheus: PrometheusModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   log: LogModel.safeParse(process.env),
   tracing: zod
     .object({
       ...OpenTelemetryConfigurationModel.shape,
       OPENTELEMETRY_TRACE_USAGE_REQUESTS: emptyString(zod.literal('1').optional()),
     })
-    // eslint-disable-next-line no-process-env
+
     .safeParse(process.env),
 };
 

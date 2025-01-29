@@ -13,7 +13,6 @@ export async function MoreStoriesSection({
   let caseStudies = pageMap.filter(isCaseStudy).slice(0, 4);
 
   if (caseStudies.length < 4) {
-    // eslint-disable-next-line no-process-env
     if (process.env.NODE_ENV === 'development') {
       caseStudies = [...caseStudies, ...caseStudies, ...caseStudies];
     } else {
