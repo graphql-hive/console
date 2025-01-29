@@ -307,10 +307,11 @@ function isUnixTimestamp(x: number) {
   return unixTimestampRegex.test(String(x));
 }
 
-tb.TypeRegistry.Set('UnixTimestampInMs', (_, value) =>
+tb.TypeRegistry.Set<number>('UnixTimestampInMs', (_, value) =>
   typeof value === 'number' ? isUnixTimestamp(value) : false,
 );
-const UnixTimestampInMs = { [tb.Kind]: 'UnixTimestampInMs' } as tb.TSchema;
+
+const UnixTimestampInMs = tb.Type.Unsafe<number>({ [tb.Kind]: 'UnixTimestampInMs' });
 
 /** Query + Mutation */
 const RequestOperationSchema = tb.Type.Object(
