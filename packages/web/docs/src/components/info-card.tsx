@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
-import { cn } from '@theguild/components';
-import { Stud } from './stud';
+import { cn, Stud } from '@theguild/components';
 
 export interface InfoCardProps extends React.HTMLAttributes<HTMLElement> {
   icon: ReactNode;

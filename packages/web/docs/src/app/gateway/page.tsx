@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { CallToAction, ExploreMainProductCards, Hero, HiveGatewayIcon } from '@theguild/components';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
+import { GatewayFeatureTabs } from './gateway-feature-tabs';
 
 export const metadata: Metadata = {
   title: 'Hive Gateway',

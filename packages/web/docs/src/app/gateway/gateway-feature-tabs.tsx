@@ -33,7 +33,22 @@ const highlights: Record<Tab, Highlight[]> = {
 };
 
 export function GatewayFeatureTabs() {
-  return <FeatureTabs highlights={highlights} icons={[<PerformanceIcon />, <SecurityIcon />]} />;
+  return (
+    <FeatureTabs highlights={highlights} icons={[<PerformanceIcon />, <SecurityIcon />]}>
+      <FeatureTab
+        title="Observability & Performance Monitoring"
+        documentationLink="/docs/gateway/usage-reporting"
+        description="Publish schemas, compose federated GraphQL api, and detect backward-incompatible changes with ease."
+        highlights={highlights['Observability & Performance Monitoring']}
+      />
+      <FeatureTab
+        title="Security & Access Control"
+        documentationLink="/docs/gateway/authorization-authentication"
+        description="Insights into API usage and user experience metrics."
+        highlights={highlights['Security & Access Control']}
+      />
+    </FeatureTabs>
+  );
 }
 
 function PerformanceIcon() {
@@ -51,3 +66,4 @@ function SecurityIcon() {
     </svg>
   );
 }
+
