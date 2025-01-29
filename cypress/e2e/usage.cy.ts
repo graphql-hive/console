@@ -62,6 +62,8 @@ function sendUsageReport(params: { report: Report }) {
         },
       });
 
+      cy.log('Response: ' + JSON.stringify(await res.clone().json()));
+
       expect(res.status).to.equal(200);
     })
     .wait(2000);
@@ -330,7 +332,6 @@ describe('usage reporting', () => {
     cy.get('h3').contains('Versions').parent().get('p').contains('vUnknown');
   });
 
-  it.only('partially corrupted usage report should be visible in Insights', () => {
   it('partially corrupted usage report should be visible in Insights', () => {
     const organizationSlug = generateRandomSlug();
     const projectSlug = generateRandomSlug();
