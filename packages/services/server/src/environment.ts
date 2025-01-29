@@ -257,7 +257,6 @@ const LogModel = zod.object({
   ),
 });
 
-// eslint-disable-next-line no-process-env
 const processEnv = process.env;
 
 const configs = {

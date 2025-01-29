@@ -64,7 +64,6 @@ export default async function CaseStudiesPage() {
           />
         </DecorationIsolation>
       </header>
-      {/* eslint-disable-next-line no-process-env */}
       {(caseStudies.length >= 6 || process.env.NODE_ENV === 'development') && (
         <>
           <FeaturedCaseStudiesGrid caseStudies={caseStudies} className="mt-6 max-xl:hidden" />
