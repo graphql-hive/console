@@ -256,8 +256,18 @@ type OperationMapRecord = tb.Static<typeof OperationMapRecordSchema>;
 const ExecutionSchema = tb.Type.Object(
   {
     ok: tb.Type.Boolean(),
-    duration: tb.Type.Integer(),
-    errorsTotal: tb.Type.Integer(),
+    duration: tb.Type.Integer({
+      // https://clickhouse.com/docs/en/sql-reference/data-types/int-uint
+      minimum: 0,
+      // Maximum value is 18_446_744_073_709_551_615, but we stick to Math.pow(2, 63).
+      // Using 2^64 in JS is problematic and 2^63 is more than enough.
+      maximum: Math.pow(2, 63),
+    }),
+    errorsTotal: tb.Type.Integer({
+      // https://clickhouse.com/docs/en/sql-reference/data-types/int-uint
+      minimum: 0,
+      maximum: Math.pow(2, 16) - 1,
+    }),
   },
   {
     title: 'Execution',
@@ -295,7 +305,9 @@ const PersistedDocumentHash = tb.Type.String({
 /** Query + Mutation */
 const RequestOperationSchema = tb.Type.Object(
   {
-    timestamp: tb.Type.Integer(),
+    timestamp: tb.Type.Integer({
+      minimum: 1,
+    }),
     operationMapKey: tb.Type.String(),
     execution: ExecutionSchema,
     metadata: OptionalAndNullable(MetadataSchema),
@@ -310,7 +322,9 @@ const RequestOperationSchema = tb.Type.Object(
 /** Subscription / Live Query */
 const SubscriptionOperationSchema = tb.Type.Object(
   {
-    timestamp: tb.Type.Integer(),
+    timestamp: tb.Type.Integer({
+      minimum: 1,
+    }),
     operationMapKey: tb.Type.String(),
     metadata: OptionalAndNullable(MetadataSchema),
     persistedDocumentHash: OptionalAndNullable(PersistedDocumentHash),
@@ -323,7 +337,9 @@ const SubscriptionOperationSchema = tb.Type.Object(
 
 export const ReportSchema = tb.Type.Object(
   {
-    size: tb.Type.Integer(),
+    size: tb.Type.Integer({
+      minimum: 1,
+    }),
     map: tb.Record(tb.String(), OperationMapRecordSchema),
     operations: OptionalAndNullable(tb.Array(RequestOperationSchema)),
     subscriptionOperations: OptionalAndNullable(tb.Array(SubscriptionOperationSchema)),
