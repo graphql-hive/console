@@ -17,7 +17,7 @@ export default function CaseStudiesLayout({ children }: { children: React.ReactN
       <CaseStudiesHeader className="mx-auto max-w-[--nextra-content-width] pl-6 sm:my-12 md:pl-12 lg:my-24" />
       <div className={cn(MAIN_CONTENT, 'mx-auto flex')}>
         {children}
-        <LookingToUseHiveUpsellBlock className="sticky right-2 top-[108px] mb-8 h-min max-lg:hidden lg:w-[320px] xl:w-[400px]" />
+        <LookingToUseHiveUpsellBlock className="sticky right-2 top-[108px] mb-16 h-min max-lg:hidden lg:w-[320px] xl:w-[400px]" />
       </div>
       <MoreStoriesSection />
       <GetYourAPIGameWhite className="sm:my-24" />
