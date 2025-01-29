@@ -249,6 +249,7 @@ export default withGuildDocs({
   ],
   env: {
     SITE_URL: 'https://the-guild.dev/graphql/hive',
+    NEXT_BASE_PATH: process.env.NEXT_BASE_PATH,
   },
   webpack: (config, { webpack }) => {
     config.externals['node:fs'] = 'commonjs node:fs';

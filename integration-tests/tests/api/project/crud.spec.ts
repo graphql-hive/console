@@ -1,4 +1,4 @@
-import { ProjectType } from 'testkit/gql/graphql';
+import { ProjectType, ResourceAssignmentMode } from 'testkit/gql/graphql';
 import { updateProjectSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
@@ -199,3 +199,64 @@ test.concurrent(
     expect(renameResult.updateProjectSlug.error?.message).toBeDefined();
   },
 );
+
+test.concurrent('prevent access to projects with assigned resources on member', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, inviteAndJoinMember, projects: getProjects } = await createOrg();
+  const { project } = await createProject(ProjectType.Single);
+  // By default the viewer will have the "Viewer" role.
+  const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+
+  // By default the user should have access to all the projects within the organization.
+  let projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(1);
+  expect(projects.at(0)?.id).toEqual(project.id);
+
+  // Limit the users access to no projects using the "Viewer" role
+  await assignMemberRole({
+    roleId: member.role.id,
+    userId: member.user.id,
+    resources: {
+      mode: ResourceAssignmentMode.Granular,
+      projects: [],
+    },
+  });
+
+  projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(0);
+});
+
+test.concurrent('restrict access to single project with assigned resources on member', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, inviteAndJoinMember, projects: getProjects } = await createOrg();
+  const { project: firstProject } = await createProject(ProjectType.Single);
+  const { project: secondProject } = await createProject(ProjectType.Single);
+
+  // By default the viewer will have the "Viewer" role.
+  const { member, assignMemberRole, memberToken } = await inviteAndJoinMember();
+
+  // By default the user should have access to all the projects within the organization.
+  let projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(2);
+  expect(projects.at(0)?.id).toEqual(secondProject.id);
+  expect(projects.at(1)?.id).toEqual(firstProject.id);
+
+  // Limit the users access to a single project using the "Viewer" role
+  await assignMemberRole({
+    roleId: member.role.id,
+    userId: member.user.id,
+    resources: {
+      mode: ResourceAssignmentMode.Granular,
+      projects: [
+        {
+          projectId: firstProject.id,
+          targets: { mode: ResourceAssignmentMode.All },
+        },
+      ],
+    },
+  });
+
+  projects = await getProjects(memberToken);
+  expect(projects).toHaveLength(1);
+  expect(projects.at(0)?.id).toEqual(firstProject.id);
+});

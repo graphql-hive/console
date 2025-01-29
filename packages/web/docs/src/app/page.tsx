@@ -34,12 +34,7 @@ export const metadata: Metadata = {
     // to remove leading slash
     canonical: '.',
   },
-  openGraph: {
-    ...rootMetadata.openGraph,
-    // to remove leading slash
-    url: '.',
-    images: [new URL('./opengraph-image.png', import.meta.url).toString()],
-  },
+  openGraph: rootMetadata.openGraph,
 };
 
 export default function IndexPage(): ReactElement {

@@ -20,246 +20,36 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Link } from '@/components/ui/link';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import * as Sheet from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AuthProvider } from '@/gql/graphql';
-import { RoleSelector } from './common';
+import * as GraphQLSchema from '@/gql/graphql';
 import { MemberInvitationButton } from './invitations';
-
-const OrganizationMemberRoleSwitcher_AssignRoleMutation = graphql(`
-  mutation OrganizationMemberRoleSwitcher_AssignRoleMutation($input: AssignMemberRoleInput!) {
-    assignMemberRole(input: $input) {
-      ok {
-        updatedMember {
-          id
-          user {
-            id
-            displayName
-          }
-          role {
-            id
-            # Updates the members count of the role
-            membersCount
-          }
-        }
-        previousMemberRole {
-          id
-          # Updates the members count of the role
-          membersCount
-        }
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
-
-const OrganizationMemberRoleSwitcher_OrganizationFragment = graphql(`
-  fragment OrganizationMemberRoleSwitcher_OrganizationFragment on Organization {
-    id
-    slug
-    viewerCanAssignUserRoles
-    me {
-      id
-      isAdmin
-      organizationAccessScopes
-      projectAccessScopes
-      targetAccessScopes
-    }
-    owner {
-      id
-    }
-    memberRoles {
-      id
-      name
-      description
-      locked
-      organizationAccessScopes
-      projectAccessScopes
-      targetAccessScopes
-    }
-  }
-`);
-
-const OrganizationMemberRoleSwitcher_MemberFragment = graphql(`
-  fragment OrganizationMemberRoleSwitcher_MemberFragment on Member {
-    id
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
-    user {
-      id
-    }
-  }
-`);
-
-function OrganizationMemberRoleSwitcher(props: {
-  organization: FragmentType<typeof OrganizationMemberRoleSwitcher_OrganizationFragment>;
-  memberId: string;
-  memberName: string;
-  memberRoleId: string;
-  member?: FragmentType<typeof OrganizationMemberRoleSwitcher_MemberFragment>;
-}) {
-  const organization = useFragment(
-    OrganizationMemberRoleSwitcher_OrganizationFragment,
-    props.organization,
-  );
-  const member = useFragment(OrganizationMemberRoleSwitcher_MemberFragment, props.member);
-  const { me } = organization;
-  const isOwner = props.memberId === organization.owner.id;
-  const isMe = props.memberId === me.id;
-  // A user can't change its own role
-  const canAssignRole = !isOwner && !isMe && organization.viewerCanAssignUserRoles;
-  const roles = organization.memberRoles ?? [];
-  const { toast } = useToast();
-  const [assignRoleState, assignRole] = useMutation(
-    OrganizationMemberRoleSwitcher_AssignRoleMutation,
-  );
-  const memberRole = roles?.find(role => role.id === props.memberRoleId);
-
-  if (!memberRole || !member) {
-    console.error('No role or member provided to OrganizationMemberRoleSwitcher');
-    return null;
-  }
-
-  return (
-    <>
-      <RoleSelector
-        searchPlaceholder="Select new role..."
-        roles={roles}
-        onSelect={async role => {
-          try {
-            const result = await assignRole({
-              input: {
-                organizationSlug: organization.slug,
-                roleId: role.id,
-                userId: member.user.id,
-              },
-            });
-
-            if (result.error) {
-              toast({
-                variant: 'destructive',
-                title: `Failed to assign role to ${props.memberName}`,
-                description: result.error.message,
-              });
-            } else if (result.data?.assignMemberRole.error) {
-              toast({
-                variant: 'destructive',
-                title: `Failed to assign role to ${props.memberName}`,
-                description: result.data.assignMemberRole.error.message,
-              });
-            } else if (result.data?.assignMemberRole.ok) {
-              toast({
-                title: `Assigned ${role.name} to ${result.data.assignMemberRole.ok.updatedMember.user.displayName}`,
-              });
-            }
-          } catch (error: any) {
-            console.error(error);
-            toast({
-              variant: 'destructive',
-              title: `Failed to assign role to ${props.memberName}`,
-              description: 'message' in error ? error.message : String(error),
-            });
-          }
-        }}
-        defaultRole={memberRole}
-        disabled={!canAssignRole || assignRoleState.fetching}
-        isRoleActive={role => {
-          const isCurrentRole = role.id === props.memberRoleId;
-          const canDowngrade = me.isAdmin;
-          const hasAccessToScopesOfRole =
-            role.organizationAccessScopes.every(scope =>
-              me.organizationAccessScopes.includes(scope),
-            ) &&
-            role.projectAccessScopes.every(scope => me.projectAccessScopes.includes(scope)) &&
-            role.targetAccessScopes.every(scope => me.targetAccessScopes.includes(scope));
-          // If the new role has more or equal access scopes than the current role, we can assign it
-          const newRoleHasMoreOrEqualAccess =
-            // organization
-            role.organizationAccessScopes.length >= memberRole.organizationAccessScopes.length &&
-            role.organizationAccessScopes.every(scope =>
-              memberRole.organizationAccessScopes.includes(scope),
-            ) &&
-            // project
-            role.projectAccessScopes.length >= memberRole.projectAccessScopes.length &&
-            role.projectAccessScopes.every(scope =>
-              memberRole.projectAccessScopes.includes(scope),
-            ) &&
-            // target
-            role.targetAccessScopes.length >= memberRole.targetAccessScopes.length &&
-            role.targetAccessScopes.every(scope => memberRole.targetAccessScopes.includes(scope));
-          const canAssign =
-            (hasAccessToScopesOfRole && newRoleHasMoreOrEqualAccess) || canDowngrade;
-          //
-          // A new role can be assigned to the member if:
-          // - the member is not the owner
-          // - the member is not the current user
-          // - the current user has access to all the access scopes of the new role
-          // - the new role has more or equal access scopes than the current role (or the current user is an admin)
-          // - the new role is not the current role
-          //
-
-          if (isCurrentRole) {
-            return {
-              active: false,
-              reason: 'This is the current role',
-            };
-          }
-
-          if (canAssign) {
-            return {
-              active: true,
-            };
-          }
-
-          if (!hasAccessToScopesOfRole) {
-            return {
-              active: false,
-              reason: 'You do not have enough access to assign this role',
-            };
-          }
-
-          if (!newRoleHasMoreOrEqualAccess) {
-            return {
-              active: false,
-              reason:
-                'The member will experience a downgrade as this role lacks certain permissions they currently possess.',
-            };
-          }
-
-          return {
-            active: false,
-          };
-        }}
-      />
-    </>
-  );
-}
+import { MemberRolePicker } from './member-role-picker';
 
 export const authProviderToIconAndTextMap: Record<
-  AuthProvider,
+  GraphQLSchema.AuthProvider,
   {
     icon: IconType;
     text: string;
   }
 > = {
-  [AuthProvider.Google]: {
+  [GraphQLSchema.AuthProvider.Google]: {
     icon: FaGoogle,
     text: 'Google OAuth 2.0',
   },
-  [AuthProvider.Github]: {
+  [GraphQLSchema.AuthProvider.Github]: {
     icon: FaGithub,
     text: 'GitHub OAuth 2.0',
   },
-  [AuthProvider.Oidc]: {
+  [GraphQLSchema.AuthProvider.Oidc]: {
     icon: FaOpenid,
     text: 'OpenID Connect',
   },
-  [AuthProvider.UsernamePassword]: {
+  [GraphQLSchema.AuthProvider.UsernamePassword]: {
     icon: FaUserLock,
     text: 'Email & Password',
   },
@@ -296,7 +86,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     isOwner
     viewerCanRemove
-    ...OrganizationMemberRoleSwitcher_MemberFragment
+    ...MemberRole_MemberFragment
   }
 `);
 
@@ -400,13 +190,7 @@ function OrganizationMemberRow(props: {
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <OrganizationMemberRoleSwitcher
-              organization={organization}
-              memberId={member.id}
-              memberName={member.user.displayName}
-              memberRoleId={member.role.id}
-              member={member}
-            />
+            <MemberRole member={member} organization={organization} />
           )}
         </td>
         <td className="py-3 text-right text-sm">
@@ -429,14 +213,76 @@ function OrganizationMemberRow(props: {
   );
 }
 
+const MemberRole_OrganizationFragment = graphql(`
+  fragment MemberRole_OrganizationFragment on Organization {
+    id
+    viewerCanAssignUserRoles
+    ...MemberRolePicker_OrganizationFragment
+  }
+`);
+
+const MemberRole_MemberFragment = graphql(`
+  fragment MemberRole_MemberFragment on Member {
+    id
+    role {
+      id
+      name
+    }
+    resourceAssignment {
+      mode
+      projects {
+        project {
+          id
+          slug
+        }
+      }
+    }
+    ...MemberRolePicker_MemberFragment
+  }
+`);
+
+function MemberRole(props: {
+  member: FragmentType<typeof MemberRole_MemberFragment>;
+  organization: FragmentType<typeof MemberRole_OrganizationFragment>;
+}) {
+  const member = useFragment(MemberRole_MemberFragment, props.member);
+  const organization = useFragment(MemberRole_OrganizationFragment, props.organization);
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      {member.role.name}
+      {member.resourceAssignment.mode === GraphQLSchema.ResourceAssignmentMode.All ? (
+        ' (all resources)'
+      ) : member.resourceAssignment.projects?.length ? (
+        <>
+          {' (' + member.resourceAssignment.projects.length} project
+          {member.resourceAssignment.projects.length === 1 ? '' : 's'})
+        </>
+      ) : null}{' '}
+      {organization.viewerCanAssignUserRoles && (
+        <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
+          <Sheet.SheetTrigger asChild>
+            <Link>change</Link>
+          </Sheet.SheetTrigger>
+          {isOpen && (
+            <MemberRolePicker
+              organization={organization}
+              member={member}
+              close={() => setIsOpen(false)}
+            />
+          )}
+        </Sheet.Sheet>
+      )}
+    </>
+  );
+}
+
 const OrganizationMembers_OrganizationFragment = graphql(`
   fragment OrganizationMembers_OrganizationFragment on Organization {
     id
     slug
     owner {
-      id
-    }
-    me {
       id
     }
     members {
@@ -454,8 +300,8 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       total
     }
     viewerCanManageInvitations
-    ...OrganizationMemberRoleSwitcher_OrganizationFragment
     ...MemberInvitationForm_OrganizationFragment
+    ...MemberRole_OrganizationFragment
   }
 `);
 

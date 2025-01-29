@@ -1,20 +1,13 @@
+import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from '../providers/organization-manager';
+import { OrganizationMembers } from '../providers/organization-members';
 import type { MemberResolvers } from './../../../__generated__/types';
 
-export const Member: Pick<
-  MemberResolvers,
-  'canLeaveOrganization' | 'isAdmin' | 'role' | 'viewerCanRemove' | '__isTypeOf'
-> = {
+export const Member: MemberResolvers = {
   canLeaveOrganization: async (member, _, { injector }) => {
-    const { result } = await injector.get(OrganizationManager).canLeaveOrganization({
-      organizationId: member.organization,
-      userId: member.user.id,
-    });
+    const { result } = await injector.get(OrganizationManager).canLeaveOrganization(member);
 
     return result;
-  },
-  isAdmin: (member, _, { injector }) => {
-    return member.isOwner || injector.get(OrganizationManager).isAdminRole(member.role);
   },
   viewerCanRemove: async (member, _arg, { session }) => {
     if (member.isOwner) {
@@ -22,11 +15,27 @@ export const Member: Pick<
     }
 
     return await session.canPerformAction({
-      action: 'member:removeMember',
-      organizationId: member.organization,
+      action: 'member:modify',
+      organizationId: member.organizationId,
       params: {
-        organizationId: member.organization,
+        organizationId: member.organizationId,
       },
     });
+  },
+  role: (member, _arg, _ctx) => {
+    return member.assignedRole.role;
+  },
+  id: async (member, _arg, _ctx) => {
+    return member.userId;
+  },
+  user: async (member, _arg, { injector }) => {
+    const user = await injector.get(Storage).getUserById({ id: member.userId });
+    if (!user) {
+      throw new Error('User not found.');
+    }
+    return user;
+  },
+  resourceAssignment: async (member, _arg, { injector }) => {
+    return injector.get(OrganizationMembers).resolveGraphQLMemberResourceAssignment(member);
   },
 };

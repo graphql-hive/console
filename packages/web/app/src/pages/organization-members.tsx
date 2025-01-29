@@ -17,6 +17,7 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
+    ...SelectedPermissionOverview_OrganizationFragment
     viewerCanManageInvitations
     viewerCanManageRoles
   }

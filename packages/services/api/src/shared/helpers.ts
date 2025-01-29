@@ -413,3 +413,16 @@ export function nsToMs(ns: number) {
 export function msToNs(ms: number) {
   return ms * NS_TO_MS;
 }
+
+/** Typed Object.fromEntries */
+export function objectFromEntries<$Key extends string, $Value>(
+  entries: Array<[$Key, $Value]>,
+): Record<$Key, $Value> {
+  return Object.fromEntries(entries) as Record<$Key, $Value>;
+}
+
+export function objectEntries<$Key extends string, $Value>(
+  object: Record<$Key, $Value>,
+): Array<[$Key, $Value]> {
+  return Object.entries(object) as Array<[$Key, $Value]>;
+}

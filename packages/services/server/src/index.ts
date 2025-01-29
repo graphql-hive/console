@@ -14,7 +14,15 @@ import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
-import { createRegistry, createTaskRunner, CryptoProvider, LogFn, Logger } from '@hive/api';
+import {
+  createRegistry,
+  createTaskRunner,
+  CryptoProvider,
+  LogFn,
+  Logger,
+  OrganizationMemberRoles,
+  OrganizationMembers,
+} from '@hive/api';
 import { HivePubSub } from '@hive/api/src/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/src/modules/shared/providers/redis';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
@@ -401,6 +409,12 @@ export async function main() {
         new SuperTokensUserAuthNStrategy({
           logger: server.log,
           storage,
+          organizationMembers: new OrganizationMembers(
+            storage.pool,
+            new OrganizationMemberRoles(storage.pool, server.log),
+            storage,
+            server.log,
+          ),
         }),
         new TargetAccessTokenStrategy({
           logger: server.log,

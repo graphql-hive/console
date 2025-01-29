@@ -3,7 +3,6 @@ import { LockIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
-import { PermissionsSpace } from '@/components/organization/Permissions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -41,15 +41,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
-import { scopes } from '@/lib/access/common';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+import { PermissionSelector } from './permission-selector';
+import { SelectedPermissionOverview } from './selected-permission-overview';
 
 export const roleFormSchema = z.object({
   name: z
@@ -71,16 +70,10 @@ export const roleFormSchema = z.object({
     .trim()
     .min(2, 'Too short')
     .max(256, 'Description is too long'),
-  organizationScopes: z.array(z.string()),
-  projectScopes: z.array(z.string()),
-  targetScopes: z.array(z.string()),
+  selectedPermissions: z.array(z.string()),
 });
 
 type RoleFormValues = z.infer<typeof roleFormSchema>;
-
-function canAccessScope<T>(scope: T, currentUserScopes: readonly T[]) {
-  return currentUserScopes.includes(scope);
-}
 
 const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   mutation OrganizationMemberRoleEditor_UpdateMemberRoleMutation($input: UpdateMemberRoleInput!) {
@@ -102,100 +95,58 @@ const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   }
 `);
 
-const OrganizationMemberRoleEditor_MeFragment = graphql(`
-  fragment OrganizationMemberRoleEditor_MeFragment on Member {
+const OrganizationMemberRoleEditor_OrganizationFragment = graphql(`
+  fragment OrganizationMemberRoleEditor_OrganizationFragment on Organization {
     id
-    isAdmin
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
+    slug
+    ...PermissionSelector_OrganizationFragment
   }
 `);
 
 function OrganizationMemberRoleEditor(props: {
-  mode?: 'edit' | 'read-only';
   close(): void;
-  organizationSlug: string;
-  me: FragmentType<typeof OrganizationMemberRoleEditor_MeFragment>;
   role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
+  organization: FragmentType<typeof OrganizationMemberRoleEditor_OrganizationFragment>;
 }) {
-  const me = useFragment(OrganizationMemberRoleEditor_MeFragment, props.me);
   const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  const organization = useFragment(
+    OrganizationMemberRoleEditor_OrganizationFragment,
+    props.organization,
+  );
   const [updateMemberRoleState, updateMemberRole] = useMutation(
     OrganizationMemberRoleEditor_UpdateMemberRoleMutation,
   );
   const { toast } = useToast();
-  const isDisabled = props.mode === 'read-only' || updateMemberRoleState.fetching;
+  const isDisabled = updateMemberRoleState.fetching;
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
     mode: 'onChange',
     defaultValues: {
       name: role.name,
       description: role.description,
-      organizationScopes: [...role.organizationAccessScopes],
-      projectScopes: [...role.projectAccessScopes],
-      targetScopes: [...role.targetAccessScopes],
+      selectedPermissions: [...role.permissions],
     },
     disabled: isDisabled,
   });
 
-  const initialScopes = {
-    organization: [...role.organizationAccessScopes],
-    project: [...role.projectAccessScopes],
-    target: [...role.targetAccessScopes],
-  };
-
-  const [targetScopes, setTargetScopes] = useState<TargetAccessScope[]>([
-    ...role.targetAccessScopes,
-  ]);
-  const [projectScopes, setProjectScopes] = useState<ProjectAccessScope[]>([
-    ...role.projectAccessScopes,
-  ]);
-  const [organizationScopes, setOrganizationScopes] = useState<OrganizationAccessScope[]>([
-    ...role.organizationAccessScopes,
-  ]);
-
-  const updateTargetScopes = useCallback(
-    (scopes: TargetAccessScope[]) => {
-      setTargetScopes(scopes);
-      form.setValue('targetScopes', [...scopes]);
-    },
-    [targetScopes],
+  const [selectedPermissions, setSelectedPermissions] = useState<ReadonlySet<string>>(
+    () => new Set(role.permissions),
   );
 
-  const updateProjectScopes = useCallback(
-    (scopes: ProjectAccessScope[]) => {
-      setProjectScopes(scopes);
-      form.setValue('projectScopes', [...scopes]);
-    },
-    [projectScopes],
-  );
-
-  const updateOrganizationScopes = useCallback(
-    (scopes: OrganizationAccessScope[]) => {
-      setOrganizationScopes(scopes);
-      form.setValue('organizationScopes', [...scopes]);
-    },
-    [organizationScopes],
-  );
+  const onChangeSelectedPermissions = useCallback((permissions: ReadonlySet<string>) => {
+    setSelectedPermissions(new Set(permissions));
+    form.setValue('selectedPermissions', [...permissions]);
+  }, []);
 
   async function onSubmit(data: RoleFormValues) {
     try {
       const result = await updateMemberRole({
         input: {
-          organizationSlug: props.organizationSlug,
+          organizationSlug: organization.slug,
           roleId: role.id,
           name: data.name,
           description: data.description,
-          organizationAccessScopes: data.organizationScopes.filter(scope =>
-            Object.values(OrganizationAccessScope).includes(scope as OrganizationAccessScope),
-          ) as OrganizationAccessScope[],
-          projectAccessScopes: data.projectScopes.filter(scope =>
-            Object.values(ProjectAccessScope).includes(scope as ProjectAccessScope),
-          ) as ProjectAccessScope[],
-          targetAccessScopes: data.targetScopes.filter(scope =>
-            Object.values(TargetAccessScope).includes(scope as TargetAccessScope),
-          ) as TargetAccessScope[],
+          selectedPermissions: data.selectedPermissions,
         },
       });
 
@@ -238,30 +189,13 @@ function OrganizationMemberRoleEditor(props: {
     }
   }
 
-  const hasMembers = role.membersCount > 0;
-  const { isAdmin } = me;
-  const noDowngrade = hasMembers && !isAdmin;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <DialogContent className="max-w-[960px]">
           <DialogHeader>
-            <DialogTitle>Member Role{props.mode === 'read-only' ? '' : ' Editor'}</DialogTitle>
-            <DialogDescription>
-              {isAdmin ? (
-                'As an admin, you can add or remove permissions from the role.'
-              ) : hasMembers ? (
-                <>
-                  This role is assigned to at least one member.
-                  <br />
-                  You can only add permissions to the role,{' '}
-                  <span className="font-bold">you cannot downgrade its members.</span>
-                </>
-              ) : (
-                'You can add or remove permissions from the role as it has no members.'
-              )}
-            </DialogDescription>
+            <DialogTitle>Member Role Editor</DialogTitle>
+            <DialogDescription>Adjust the permissions of this role.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-row space-x-6">
             <div className="w-72 shrink-0 space-y-4">
@@ -293,71 +227,94 @@ function OrganizationMemberRoleEditor(props: {
               />
             </div>
             <div className="grow">
-              <div className="space-y-2">
+              <div className="flex h-[400px] flex-col space-y-2">
                 <FormLabel>Permissions</FormLabel>
-                <Tabs defaultValue="Organization" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="Organization">Organization</TabsTrigger>
-                    <TabsTrigger value="Projects">Projects</TabsTrigger>
-                    <TabsTrigger value="Targets">Targets</TabsTrigger>
-                  </TabsList>
-                  <PermissionsSpace
-                    disabled={isDisabled}
-                    title="Organization"
-                    scopes={scopes.organization}
-                    initialScopes={initialScopes.organization}
-                    selectedScopes={organizationScopes}
-                    onChange={updateOrganizationScopes}
-                    checkAccess={scope => canAccessScope(scope, me.organizationAccessScopes)}
-                    noDowngrade={noDowngrade}
+                <div className="overflow-y-auto">
+                  <PermissionSelector
+                    onSelectedPermissionsChange={onChangeSelectedPermissions}
+                    organization={organization}
+                    selectedPermissionIds={selectedPermissions}
                   />
-                  <PermissionsSpace
-                    disabled={isDisabled}
-                    title="Projects"
-                    scopes={scopes.project}
-                    initialScopes={initialScopes.project}
-                    selectedScopes={projectScopes}
-                    onChange={updateProjectScopes}
-                    checkAccess={scope => canAccessScope(scope, me.projectAccessScopes)}
-                    noDowngrade={noDowngrade}
-                  />
-                  <PermissionsSpace
-                    disabled={isDisabled}
-                    title="Targets"
-                    scopes={scopes.target}
-                    initialScopes={initialScopes.target}
-                    selectedScopes={targetScopes}
-                    onChange={updateTargetScopes}
-                    checkAccess={scope => canAccessScope(scope, me.targetAccessScopes)}
-                    noDowngrade={noDowngrade}
-                  />
-                </Tabs>
+                </div>
               </div>
             </div>
           </div>
-          {props.mode === 'read-only' ? null : (
-            <DialogFooter>
-              <Button variant="ghost" onClick={props.close}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={
-                  !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
-                }
-              >
-                {form.formState.isSubmitting
-                  ? 'Creating...'
-                  : targetScopes.length + projectScopes.length + organizationScopes.length === 0
-                    ? 'Submit a read-only role'
-                    : 'Submit'}
-              </Button>
-            </DialogFooter>
-          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={props.close}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={
+                !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
+              }
+            >
+              {form.formState.isSubmitting ? 'Creating...' : 'Confirm selection'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </form>
     </Form>
+  );
+}
+
+const OrganizationMemberRoleView_OrganizationFragment = graphql(`
+  fragment OrganizationMemberRoleView_OrganizationFragment on Organization {
+    id
+    ...SelectedPermissionOverview_OrganizationFragment
+  }
+`);
+
+function OrganizationMemberRoleView(props: {
+  role: FragmentType<typeof OrganizationMemberRoleRow_MemberRoleFragment>;
+  organization: FragmentType<typeof OrganizationMemberRoleView_OrganizationFragment>;
+  close: VoidFunction;
+}) {
+  const role = useFragment(OrganizationMemberRoleRow_MemberRoleFragment, props.role);
+  const organization = useFragment(
+    OrganizationMemberRoleView_OrganizationFragment,
+    props.organization,
+  );
+
+  const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
+
+  return (
+    <DialogContent className="max-w-[960px]">
+      <DialogHeader>
+        <DialogTitle>Member Role: {role.name}</DialogTitle>
+        <DialogDescription>{role.description}</DialogDescription>
+      </DialogHeader>
+      <div className="grow">
+        <div className="flex h-[400px] flex-col space-y-2">
+          <div className="overflow-scroll">
+            <SelectedPermissionOverview
+              showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+              activePermissionIds={role.permissions}
+              organization={organization}
+            />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <div className="mr-2 flex items-center space-x-2">
+          <Checkbox
+            id="show-only-granted-permissions"
+            checked={showOnlyGrantedPermissions}
+            onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+          />
+          <label
+            htmlFor="show-only-granted-permissions"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Show only granted permissions
+          </label>
+        </div>
+        <Button variant="ghost" onClick={props.close}>
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
 
@@ -384,21 +341,23 @@ const OrganizationMemberRoleCreator_CreateMemberRoleMutation = graphql(`
   }
 `);
 
-const OrganizationMemberRoleCreator_MeFragment = graphql(`
-  fragment OrganizationMemberRoleCreator_MeFragment on Member {
+const OrganizationMemberRoleCreator_OrganizationFragment = graphql(`
+  fragment OrganizationMemberRoleCreator_OrganizationFragment on Organization {
     id
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
+    slug
+    ...PermissionSelector_OrganizationFragment
+    ...SelectedPermissionOverview_OrganizationFragment
   }
 `);
 
 function OrganizationMemberRoleCreator(props: {
   close(): void;
-  organizationSlug: string;
-  me: FragmentType<typeof OrganizationMemberRoleCreator_MeFragment>;
+  organization: FragmentType<typeof OrganizationMemberRoleCreator_OrganizationFragment>;
 }) {
-  const me = useFragment(OrganizationMemberRoleCreator_MeFragment, props.me);
+  const organization = useFragment(
+    OrganizationMemberRoleCreator_OrganizationFragment,
+    props.organization,
+  );
   const [createMemberRoleState, createMemberRole] = useMutation(
     OrganizationMemberRoleCreator_CreateMemberRoleMutation,
   );
@@ -409,57 +368,29 @@ function OrganizationMemberRoleCreator(props: {
     defaultValues: {
       name: '',
       description: '',
-      organizationScopes: [],
-      projectScopes: [],
-      targetScopes: [],
+      selectedPermissions: [],
     },
     disabled: createMemberRoleState.fetching,
   });
 
-  const [targetScopes, setTargetScopes] = useState<TargetAccessScope[]>([]);
-  const [projectScopes, setProjectScopes] = useState<ProjectAccessScope[]>([]);
-  const [organizationScopes, setOrganizationScopes] = useState<OrganizationAccessScope[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState(() => new Set<string>());
 
-  const updateTargetScopes = useCallback(
-    (scopes: TargetAccessScope[]) => {
-      setTargetScopes(scopes);
-      form.setValue('targetScopes', [...scopes]);
-    },
-    [targetScopes],
-  );
+  const onChangeSelectedPermissions = useCallback((permissions: ReadonlySet<string>) => {
+    setSelectedPermissions(new Set(permissions));
+    form.setValue('selectedPermissions', [...permissions]);
+  }, []);
 
-  const updateProjectScopes = useCallback(
-    (scopes: ProjectAccessScope[]) => {
-      setProjectScopes(scopes);
-      form.setValue('projectScopes', [...scopes]);
-    },
-    [projectScopes],
-  );
-
-  const updateOrganizationScopes = useCallback(
-    (scopes: OrganizationAccessScope[]) => {
-      setOrganizationScopes(scopes);
-      form.setValue('organizationScopes', [...scopes]);
-    },
-    [organizationScopes],
-  );
+  const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
+  const [state, setState] = useState('select' as 'select' | 'confirm');
 
   async function onSubmit(data: RoleFormValues) {
     try {
       const result = await createMemberRole({
         input: {
-          organizationSlug: props.organizationSlug,
+          organizationSlug: organization.slug,
           name: data.name,
           description: data.description,
-          organizationAccessScopes: data.organizationScopes.filter(scope =>
-            Object.values(OrganizationAccessScope).includes(scope as OrganizationAccessScope),
-          ) as OrganizationAccessScope[],
-          projectAccessScopes: data.projectScopes.filter(scope =>
-            Object.values(ProjectAccessScope).includes(scope as ProjectAccessScope),
-          ) as ProjectAccessScope[],
-          targetAccessScopes: data.targetScopes.filter(scope =>
-            Object.values(TargetAccessScope).includes(scope as TargetAccessScope),
-          ) as TargetAccessScope[],
+          selectedPermissions: data.selectedPermissions,
         },
       });
 
@@ -504,7 +435,7 @@ function OrganizationMemberRoleCreator(props: {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form>
         <DialogContent className="max-w-[960px]">
           <DialogHeader>
             <DialogTitle>Member Role Creator</DialogTitle>
@@ -512,89 +443,114 @@ function OrganizationMemberRoleCreator(props: {
               Create a new role that can be assigned to members of this organization.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-row space-x-6">
-            <div className="w-72 shrink-0 space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter a name" type="text" autoComplete="off" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea autoComplete="off" placeholder="Enter a description" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grow">
-              <div className="space-y-2">
-                <FormLabel>Permissions</FormLabel>
-                <Tabs defaultValue="Organization" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="Organization">Organization</TabsTrigger>
-                    <TabsTrigger value="Projects">Projects</TabsTrigger>
-                    <TabsTrigger value="Targets">Targets</TabsTrigger>
-                  </TabsList>
-                  <PermissionsSpace
-                    title="Organization"
-                    scopes={scopes.organization}
-                    initialScopes={[]}
-                    selectedScopes={organizationScopes}
-                    onChange={updateOrganizationScopes}
-                    checkAccess={scope => canAccessScope(scope, me.organizationAccessScopes)}
-                  />
-                  <PermissionsSpace
-                    title="Projects"
-                    scopes={scopes.project}
-                    initialScopes={[]}
-                    selectedScopes={projectScopes}
-                    onChange={updateProjectScopes}
-                    checkAccess={scope => canAccessScope(scope, me.projectAccessScopes)}
-                  />
-                  <PermissionsSpace
-                    title="Targets"
-                    scopes={scopes.target}
-                    initialScopes={[]}
-                    selectedScopes={targetScopes}
-                    onChange={updateTargetScopes}
-                    checkAccess={scope => canAccessScope(scope, me.targetAccessScopes)}
-                  />
-                </Tabs>
+          {state === 'select' ? (
+            <div className="flex flex-row space-x-6">
+              <div className="w-72 shrink-0 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter a name"
+                          type="text"
+                          autoComplete="off"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea autoComplete="off" placeholder="Enter a description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grow">
+                <div className="flex h-[400px] flex-col space-y-2">
+                  <FormLabel>Permissions</FormLabel>
+                  <div className="overflow-y-auto">
+                    <PermissionSelector
+                      onSelectedPermissionsChange={onChangeSelectedPermissions}
+                      organization={organization}
+                      selectedPermissionIds={selectedPermissions}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="h-[400px] overflow-scroll">
+              <SelectedPermissionOverview
+                activePermissionIds={Array.from(selectedPermissions)}
+                organization={organization}
+                showOnlyAllowedPermissions={showOnlyGrantedPermissions}
+              />
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="ghost" onClick={props.close}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={
-                !form.formState.isValid || form.formState.isSubmitting || form.formState.disabled
-              }
-            >
-              {form.formState.isSubmitting
-                ? 'Creating...'
-                : targetScopes.length + projectScopes.length + organizationScopes.length === 0
-                  ? 'Submit a read-only role'
-                  : 'Submit'}
-            </Button>
+            {state === 'select' ? (
+              <>
+                <Button variant="ghost" onClick={props.close}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  onClick={() => setState('confirm')}
+                  disabled={
+                    !form.formState.isValid ||
+                    form.formState.isSubmitting ||
+                    form.formState.disabled
+                  }
+                >
+                  Confirm selection
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="mr-2 flex items-center space-x-2">
+                  <Checkbox
+                    id="show-only-granted-permissions"
+                    checked={showOnlyGrantedPermissions}
+                    onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
+                  />
+                  <label
+                    htmlFor="show-only-granted-permissions"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Show only granted permissions
+                  </label>
+                </div>
+                <Button variant="ghost" onClick={() => setState('select')}>
+                  Go back
+                </Button>
+                <Button
+                  type="submit"
+                  onClick={form.handleSubmit(onSubmit)}
+                  disabled={
+                    !form.formState.isValid ||
+                    form.formState.isSubmitting ||
+                    form.formState.disabled
+                  }
+                >
+                  {form.formState.isSubmitting
+                    ? 'Creating...'
+                    : `Create role "${form.getValues().name}"`}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </form>
@@ -603,8 +559,7 @@ function OrganizationMemberRoleCreator(props: {
 }
 
 function OrganizationMemberRoleCreateButton(props: {
-  organizationSlug: string;
-  me: FragmentType<typeof OrganizationMemberRoleCreator_MeFragment>;
+  organization: FragmentType<typeof OrganizationMemberRoleCreator_OrganizationFragment>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -615,8 +570,7 @@ function OrganizationMemberRoleCreateButton(props: {
       </DialogTrigger>
       {open ? (
         <OrganizationMemberRoleCreator
-          organizationSlug={props.organizationSlug}
-          me={props.me}
+          organization={props.organization}
           close={() => setOpen(false)}
         />
       ) : null}
@@ -630,12 +584,10 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
     name
     description
     locked
-    organizationAccessScopes
-    projectAccessScopes
-    targetAccessScopes
     canDelete
     canUpdate
     membersCount
+    permissions
   }
 `);
 
@@ -816,8 +768,6 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
         id
         name
       }
-      ...OrganizationMemberRoleCreator_MeFragment
-      ...OrganizationMemberRoleEditor_MeFragment
     }
     oidcIntegration {
       id
@@ -825,6 +775,9 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
         id
       }
     }
+    ...OrganizationMemberRoleCreator_OrganizationFragment
+    ...OrganizationMemberRoleEditor_OrganizationFragment
+    ...OrganizationMemberRoleView_OrganizationFragment
   }
 `);
 
@@ -856,8 +809,7 @@ export function OrganizationMemberRoles(props: {
       >
         {roleToEdit ? (
           <OrganizationMemberRoleEditor
-            organizationSlug={organization.slug}
-            me={organization.me}
+            organization={organization}
             role={roleToEdit}
             close={() => setRoleToEdit(null)}
           />
@@ -872,10 +824,8 @@ export function OrganizationMemberRoles(props: {
         }}
       >
         {roleToShow ? (
-          <OrganizationMemberRoleEditor
-            mode="read-only"
-            organizationSlug={organization.slug}
-            me={organization.me}
+          <OrganizationMemberRoleView
+            organization={organization}
             role={roleToShow}
             close={() => setRoleToShow(null)}
           />
@@ -947,10 +897,7 @@ export function OrganizationMemberRoles(props: {
           subPageTitle="List of roles"
           description="Manage the roles that can be assigned to members of this organization."
         >
-          <OrganizationMemberRoleCreateButton
-            me={organization.me}
-            organizationSlug={organization.slug}
-          />
+          <OrganizationMemberRoleCreateButton organization={organization} />
         </SubPageLayoutHeader>
         <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
           <thead>

@@ -1,77 +1,46 @@
-import { Session } from '../../auth/lib/authz';
-import { isOrganizationScope } from '../../auth/providers/organization-access';
-import { isProjectScope } from '../../auth/providers/project-access';
-import { isTargetScope } from '../../auth/providers/target-access';
-import { OrganizationManager } from '../providers/organization-manager';
+import { Permission, Session } from '../../auth/lib/authz';
 import type { MemberRoleResolvers } from './../../../__generated__/types';
 
 export const MemberRole: MemberRoleResolvers = {
-  organizationAccessScopes: role => {
-    return role.scopes.filter(isOrganizationScope);
-  },
-  projectAccessScopes: role => {
-    return role.scopes.filter(isProjectScope);
-  },
-  targetAccessScopes: role => {
-    return role.scopes.filter(isTargetScope);
-  },
-  membersCount: async (role, _, { injector }) => {
-    if (role.membersCount) {
-      return role.membersCount;
-    }
-
-    return injector
-      .get(OrganizationManager)
-      .getMemberRole({
-        organizationId: role.organizationId,
-        roleId: role.id,
-      })
-      .then(r => r?.membersCount ?? 0);
-  },
   canDelete: async (role, _, { injector }) => {
-    if (role.locked) {
+    if (role.isLocked) {
       return false;
     }
-
-    const currentUser = await injector.get(Session).getViewer();
-    const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
+    return await injector.get(Session).canPerformAction({
+      action: 'member:modify',
       organizationId: role.organizationId,
-      userId: currentUser.id,
+      params: {
+        organizationId: role.organizationId,
+      },
     });
-
-    const result = await injector
-      .get(OrganizationManager)
-      .canDeleteRole(role, currentUserAsMember.scopes);
-
-    return result.ok;
   },
   canUpdate: async (role, _, { injector }) => {
-    if (role.locked) {
+    if (role.isLocked) {
       return false;
     }
-    const currentUser = await injector.get(Session).getViewer();
-    const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
+    return await injector.get(Session).canPerformAction({
+      action: 'member:modify',
       organizationId: role.organizationId,
-      userId: currentUser.id,
+      params: {
+        organizationId: role.organizationId,
+      },
     });
-
-    const result = injector
-      .get(OrganizationManager)
-      .canUpdateRole(role, currentUserAsMember.scopes);
-
-    return result.ok;
   },
   canInvite: async (role, _, { injector }) => {
-    const currentUser = await injector.get(Session).getViewer();
-    const currentUserAsMember = await injector.get(OrganizationManager).getOrganizationMember({
+    return await injector.get(Session).canPerformAction({
+      action: 'member:modify',
       organizationId: role.organizationId,
-      userId: currentUser.id,
+      params: {
+        organizationId: role.organizationId,
+      },
     });
-
-    const result = injector
-      .get(OrganizationManager)
-      .canInviteRole(role, currentUserAsMember.scopes);
-
-    return result.ok;
+  },
+  locked: async (role, _arg, _ctx) => {
+    return role.isLocked;
+  },
+  permissions: (role, _arg, _ctx) => {
+    return Array.from(Object.values(role.permissions)).flatMap((set: Set<Permission>) =>
+      Array.from(set),
+    );
   },
 };

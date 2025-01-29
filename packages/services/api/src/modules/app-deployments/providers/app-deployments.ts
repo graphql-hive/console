@@ -17,7 +17,7 @@ import { Storage } from '../../shared/providers/storage';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
 import { PersistedDocumentScheduler } from './persisted-document-scheduler';
 
-const AppDeploymentNameModel = z
+export const AppDeploymentNameModel = z
   .string()
   .min(1, 'Must be at least 1 character long')
   .max(64, 'Must be at most 64 characters long')

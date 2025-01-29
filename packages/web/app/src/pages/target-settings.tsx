@@ -43,22 +43,15 @@ import { Switch } from '@/components/v2/switch';
 import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql, useFragment } from '@/gql';
 import { BreakingChangeFormula, ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
-import { canAccessTarget, TargetAccessScope } from '@/lib/access/target';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
-
-const RegistryAccessTokens_MeFragment = graphql(`
-  fragment RegistryAccessTokens_MeFragment on Member {
-    ...CanAccessTarget_MemberFragment
-  }
-`);
 
 export const DeleteTokensDocument = graphql(`
   mutation deleteTokens($input: DeleteTokensInput!) {
@@ -89,12 +82,10 @@ export const TokensDocument = graphql(`
 `);
 
 function RegistryAccessTokens(props: {
-  me: FragmentType<typeof RegistryAccessTokens_MeFragment>;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) {
-  const me = useFragment(RegistryAccessTokens_MeFragment, props.me);
   const [{ fetching: deleting }, mutate] = useMutation(DeleteTokensDocument);
   const [checked, setChecked] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -124,8 +115,6 @@ function RegistryAccessTokens(props: {
     setChecked([]);
   }, [checked, mutate, props.organizationSlug, props.projectSlug, props.targetSlug]);
 
-  const canManage = canAccessTarget(TargetAccessScope.TokensWrite, me);
-
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
@@ -147,23 +136,21 @@ function RegistryAccessTokens(props: {
           </>
         }
       />
-      {canManage && (
-        <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
-          <Button data-cy="new-button" onClick={toggleModalOpen}>
-            Create new registry token
+      <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
+        <Button data-cy="new-button" onClick={toggleModalOpen}>
+          Create new registry token
+        </Button>
+        {checked.length === 0 ? null : (
+          <Button
+            data-cy="delete-button"
+            variant="destructive"
+            disabled={deleting}
+            onClick={deleteTokens}
+          >
+            Delete ({checked.length || null})
           </Button>
-          {checked.length === 0 ? null : (
-            <Button
-              data-cy="delete-button"
-              variant="destructive"
-              disabled={deleting}
-              onClick={deleteTokens}
-            >
-              Delete ({checked.length || null})
-            </Button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
       <Table>
         <TBody>
           {tokens?.map(token => (
@@ -176,7 +163,6 @@ function RegistryAccessTokens(props: {
                     )
                   }
                   checked={checked.includes(token.id)}
-                  disabled={!canManage}
                 />
               </Td>
               <Td>{token.alias}</Td>
@@ -1103,15 +1089,6 @@ const TargetSettingsPage_UpdateTargetSlugMutation = graphql(`
   }
 `);
 
-const TargetSettingsPage_OrganizationFragment = graphql(`
-  fragment TargetSettingsPage_OrganizationFragment on Organization {
-    me {
-      ...CanAccessTarget_MemberFragment
-      ...RegistryAccessTokens_MeFragment
-    }
-  }
-`);
-
 function TargetDelete(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -1165,7 +1142,6 @@ const TargetSettingsPageQuery = graphql(`
       organization {
         id
         slug
-        ...TargetSettingsPage_OrganizationFragment
       }
     }
     project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
@@ -1212,10 +1188,6 @@ function TargetSettingsContent(props: {
   const currentOrganization = query.data?.organization?.organization;
   const currentProject = query.data?.project;
   const currentTarget = query.data?.target;
-  const organizationForSettings = useFragment(
-    TargetSettingsPage_OrganizationFragment,
-    currentOrganization,
-  );
 
   useRedirect({
     canAccess: currentTarget?.viewerCanAccessSettings === true,
@@ -1305,13 +1277,7 @@ function TargetSettingsContent(props: {
     );
   }
 
-  if (
-    !resolvedPage ||
-    !currentOrganization ||
-    !currentProject ||
-    !currentTarget ||
-    !organizationForSettings
-  ) {
+  if (!resolvedPage || !currentOrganization || !currentProject || !currentTarget) {
     return null;
   }
 
@@ -1344,7 +1310,7 @@ function TargetSettingsContent(props: {
         })}
       </NavLayout>
       <PageLayoutContent>
-        {currentOrganization && currentProject && currentTarget && organizationForSettings ? (
+        {currentOrganization && currentProject && currentTarget ? (
           <div className="space-y-12">
             {resolvedPage.key === 'general' ? (
               <>
@@ -1377,7 +1343,6 @@ function TargetSettingsContent(props: {
             ) : null}
             {resolvedPage.key === 'registry-token' ? (
               <RegistryAccessTokens
-                me={organizationForSettings.me}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}

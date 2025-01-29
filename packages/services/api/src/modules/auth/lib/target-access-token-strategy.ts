@@ -177,7 +177,6 @@ function transformAccessTokenLegacyScopes(args: {
           {
             effect: 'allow',
             action: [
-              'appDeployment:describe',
               'appDeployment:create',
               'appDeployment:publish',
               'appDeployment:retire',
