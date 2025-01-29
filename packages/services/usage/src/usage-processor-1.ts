@@ -138,8 +138,8 @@ export const usageProcessorV1 = traceInlineSync(
     return {
       report: report,
       operations: {
-        accepted: size - report.size,
-        rejected: report.size,
+        accepted: report.size,
+        rejected: size - report.size,
       },
     };
   },
