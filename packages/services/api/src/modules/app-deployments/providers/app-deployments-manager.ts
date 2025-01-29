@@ -37,20 +37,6 @@ export class AppDeploymentsManager {
       version: appDeploymentInput.version,
     });
 
-    if (!appDeployment) {
-      return null;
-    }
-
-    await this.session.assertPerformAction({
-      action: 'appDeployment:describe',
-      organizationId: target.orgId,
-      params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
-    });
-
     return appDeployment;
   }
 
@@ -195,16 +181,6 @@ export class AppDeploymentsManager {
     target: Target,
     args: { cursor: string | null; first: number | null },
   ) {
-    await this.session.assertPerformAction({
-      action: 'appDeployment:describe',
-      organizationId: target.orgId,
-      params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
-    });
-
     return await this.appDeployments.getPaginatedAppDeployments({
       targetId: target.id,
       cursor: args.cursor,

@@ -312,10 +312,6 @@ const ProjectSettingsPage_OrganizationFragment = graphql(`
   fragment ProjectSettingsPage_OrganizationFragment on Organization {
     id
     slug
-    me {
-      id
-      ...CanAccessProject_MemberFragment
-    }
     ...ExternalCompositionSettings_OrganizationFragment
     ...NativeCompositionSettings_OrganizationFragment
   }

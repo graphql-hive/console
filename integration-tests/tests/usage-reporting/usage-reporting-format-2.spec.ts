@@ -108,3 +108,243 @@ test('invalid operation is rejected', async () => {
     },
   });
 });
+
+test('reject a report with a negative timestamp', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: -1663158676535,
+          execution: {
+            ok: true,
+            duration: 150000000,
+            errorsTotal: 0,
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});
+
+test('reject a report with an too short timestamp', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: 1234,
+          execution: {
+            ok: true,
+            duration: 150000000,
+            errorsTotal: 0,
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});
+
+test('reject a report with a negative duration', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: 1663158676535,
+          execution: {
+            ok: true,
+            duration: -150000000,
+            errorsTotal: 0,
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});
+
+test('reject a report with a too big duration', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: 1663158676535,
+          execution: {
+            ok: true,
+            duration: Math.pow(2, 64),
+            errorsTotal: 0,
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});
+
+test('reject a report with a negative errorsTotal', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: 1663158676535,
+          execution: {
+            ok: true,
+            duration: 150000000,
+            errorsTotal: -2,
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});
+
+test('reject a report with a too big errorsTotal', async () => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject();
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const response = await fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      size: 1,
+      map: {
+        c3b6d9b0: {
+          operationName: 'me',
+          operation: 'query me { me { id name } }',
+          fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'c3b6d9b0',
+          timestamp: 1663158676535,
+          execution: {
+            ok: true,
+            duration: Math.pow(2, 10),
+            errorsTotal: Math.pow(2, 25),
+          },
+        },
+      ],
+    }),
+  });
+  expect(response.status).toBe(400);
+});

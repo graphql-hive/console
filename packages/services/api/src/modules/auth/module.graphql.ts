@@ -57,20 +57,6 @@ export default gql`
     total: Int!
   }
 
-  type Member {
-    id: ID!
-    user: User!
-    isOwner: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
-  }
-
-  type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
-  }
-
   enum AuthProvider {
     GOOGLE
     GITHUB
@@ -109,5 +95,29 @@ export default gql`
     REGISTRY_WRITE
     TOKENS_READ
     TOKENS_WRITE
+  }
+
+  enum PermissionLevel {
+    organization
+    project
+    target
+    service
+    appDeployment
+  }
+
+  type Permission {
+    id: ID!
+    title: String!
+    description: String!
+    level: PermissionLevel!
+    dependsOnId: ID
+    isReadOnly: Boolean!
+    warning: String
+  }
+
+  type PermissionGroup {
+    id: ID!
+    title: String!
+    permissions: [Permission!]!
   }
 `;

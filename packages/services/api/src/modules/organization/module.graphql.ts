@@ -240,6 +240,10 @@ export default gql`
     The organization's audit logs. This field is only available to members with the Admin role.
     """
     viewerCanExportAuditLogs: Boolean!
+    """
+    List of available permission groups that can be assigned to users.
+    """
+    availableMemberPermissionGroups: [PermissionGroup!]!
   }
 
   type OrganizationConnection {
@@ -300,16 +304,6 @@ export default gql`
     message: String!
   }
 
-  extend type Member {
-    canLeaveOrganization: Boolean!
-    role: MemberRole!
-    isAdmin: Boolean!
-    """
-    Whether the viewer can remove this member from the organization.
-    """
-    viewerCanRemove: Boolean!
-  }
-
   type MemberRole {
     id: ID!
     name: String!
@@ -318,9 +312,6 @@ export default gql`
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
     locked: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -333,16 +324,21 @@ export default gql`
     Whether the role can be used to invite new members (based on current user's permissions)
     """
     canInvite: Boolean!
+    """
+    Amount of users within the organization that have this role assigned.
+    """
     membersCount: Int!
+    """
+    List of permissions attached to this member role.
+    """
+    permissions: [String!]!
   }
 
   input CreateMemberRoleInput {
     organizationSlug: String!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type CreateMemberRoleOk {
@@ -375,9 +371,7 @@ export default gql`
     roleId: ID!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type UpdateMemberRoleOk {
@@ -430,6 +424,7 @@ export default gql`
     organizationSlug: String!
     userId: ID!
     roleId: ID!
+    resources: ResourceAssignmentInput!
   }
 
   type AssignMemberRoleOk {
@@ -447,5 +442,124 @@ export default gql`
   type AssignMemberRoleResult {
     ok: AssignMemberRoleOk
     error: AssignMemberRoleError
+  }
+
+  type Member {
+    id: ID!
+    user: User!
+    isOwner: Boolean!
+    canLeaveOrganization: Boolean!
+    role: MemberRole!
+    resourceAssignment: ResourceAssignment!
+    """
+    Whether the viewer can remove this member from the organization.
+    """
+    viewerCanRemove: Boolean!
+  }
+
+  enum ResourceAssignmentMode {
+    all
+    granular
+  }
+
+  type MemberConnection {
+    nodes: [Member!]!
+    total: Int!
+  }
+
+  input AppDeploymentResourceAssignmentInput {
+    appDeployment: String!
+  }
+
+  input TargetAppDeploymentsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all app deployments within the target.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific app deployments within the target for which the permissions should be applied.
+    """
+    appDeployments: [AppDeploymentResourceAssignmentInput!]
+  }
+
+  input ServiceResourceAssignmentInput {
+    serviceName: String!
+  }
+
+  input TargetServicesResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all services within the target or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific services within the target for which the permissions should be applied.
+    """
+    services: [ServiceResourceAssignmentInput!]
+  }
+
+  input TargetResourceAssignmentInput {
+    targetId: ID!
+    services: TargetServicesResourceAssignmentInput!
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput!
+  }
+
+  input ProjectTargetsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all targets within the project or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific targets within the projects for which the permissions should be applied.
+    """
+    targets: [TargetResourceAssignmentInput!]
+  }
+
+  input ProjectResourceAssignmentInput {
+    projectId: ID!
+    targets: ProjectTargetsResourceAssignmentInput!
+  }
+
+  input ResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all projects within the organization or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific projects within the organization for which the permissions should be applied.
+    """
+    projects: [ProjectResourceAssignmentInput!]
+  }
+
+  type TargetServicesResourceAssignment {
+    mode: ResourceAssignmentMode!
+    services: [String!]
+  }
+
+  type TargetAppDeploymentsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    appDeployments: [String!]
+  }
+
+  type TargetResouceAssignment {
+    targetId: ID!
+    target: Target!
+    services: TargetServicesResourceAssignment!
+    appDeployments: TargetAppDeploymentsResourceAssignment!
+  }
+
+  type ProjectTargetsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    targets: [TargetResouceAssignment!]
+  }
+
+  type ProjectResourceAssignment {
+    projectId: ID!
+    project: Project!
+    targets: ProjectTargetsResourceAssignment!
+  }
+
+  type ResourceAssignment {
+    mode: ResourceAssignmentMode!
+    projects: [ProjectResourceAssignment!]
   }
 `;

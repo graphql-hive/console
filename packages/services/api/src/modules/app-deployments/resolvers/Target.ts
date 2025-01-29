@@ -29,7 +29,7 @@ export const Target: Pick<
       first: args.first ?? null,
     });
   },
-  viewerCanViewAppDeployments: async (target, _arg, { injector, session }) => {
+  viewerCanViewAppDeployments: async (target, _arg, { injector }) => {
     const organization = await injector.get(OrganizationManager).getOrganization({
       organizationId: target.orgId,
     });
@@ -40,15 +40,6 @@ export const Target: Pick<
     ) {
       return false;
     }
-
-    return session.canPerformAction({
-      action: 'appDeployment:describe',
-      organizationId: organization.id,
-      params: {
-        organizationId: organization.id,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
-    });
+    return true;
   },
 };

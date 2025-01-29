@@ -382,18 +382,15 @@ export class OIDCIntegrationsProvider {
       } as const;
     }
 
-    const viewer = await this.session.getViewer();
-    const [member, adminRole] = await Promise.all([
-      this.storage.getOrganizationMember({
+    if (
+      !(await this.session.canPerformAction({
+        action: 'member:modify',
         organizationId: oidcIntegration.linkedOrganizationId,
-        userId: viewer.id,
-      }),
-      this.storage.getAdminOrganizationMemberRole({
-        organizationId: oidcIntegration.linkedOrganizationId,
-      }),
-    ]);
-
-    if (member?.role.id !== adminRole.id) {
+        params: {
+          organizationId: oidcIntegration.linkedOrganizationId,
+        },
+      }))
+    ) {
       return {
         type: 'error',
         message: 'You do not have permission to update the default member role.',

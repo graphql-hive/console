@@ -14,20 +14,28 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
    * Fallbacks to Viewer if default member role is not set
    */
   defaultMemberRole: async (oidcIntegration, _, { injector }) => {
-    if (!oidcIntegration.defaultMemberRoleId) {
-      return injector.get(OrganizationManager).getViewerMemberRole({
+    if (oidcIntegration.defaultMemberRoleId) {
+      const role = await injector.get(OrganizationManager).getMemberRole({
         organizationId: oidcIntegration.linkedOrganizationId,
+        roleId: oidcIntegration.defaultMemberRoleId,
       });
+
+      if (!role) {
+        throw new Error(
+          `Default role not found (role_id=${oidcIntegration.defaultMemberRoleId}, organization=${oidcIntegration.linkedOrganizationId})`,
+        );
+      }
+
+      return role;
     }
 
-    const role = await injector.get(OrganizationManager).getMemberRole({
+    const role = await injector.get(OrganizationManager).getViewerMemberRole({
       organizationId: oidcIntegration.linkedOrganizationId,
-      roleId: oidcIntegration.defaultMemberRoleId,
     });
 
     if (!role) {
       throw new Error(
-        `Default role not found (role_id=${oidcIntegration.defaultMemberRoleId}, organization=${oidcIntegration.linkedOrganizationId})`,
+        `Viewer role not found (organization=${oidcIntegration.linkedOrganizationId})`,
       );
     }
 

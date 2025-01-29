@@ -105,20 +105,9 @@ function Schemas(props: { schemas?: readonly CompositeSchema[]; schema?: SingleS
   );
 }
 
-const SchemaView_OrganizationFragment = graphql(`
-  fragment SchemaView_OrganizationFragment on Organization {
-    id
-    slug
-    me {
-      ...CanAccessTarget_MemberFragment
-    }
-  }
-`);
-
 const SchemaView_ProjectFragment = graphql(`
   fragment SchemaView_ProjectFragment on Project {
     id
-    slug
     type
   }
 `);
@@ -156,7 +145,6 @@ const SchemaView_TargetFragment = graphql(`
 `);
 
 function SchemaView(props: {
-  organization: FragmentType<typeof SchemaView_OrganizationFragment>;
   project: FragmentType<typeof SchemaView_ProjectFragment>;
   target: FragmentType<typeof SchemaView_TargetFragment>;
 }): ReactElement | null {
@@ -266,11 +254,6 @@ const TargetSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...SchemaView_OrganizationFragment
-      }
-    }
     project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
       ...SchemaView_ProjectFragment
     }
@@ -304,7 +287,6 @@ function TargetSchemaPage(props: {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
   const currentProject = query.data?.project;
   const target = query.data?.target;
 
@@ -349,8 +331,8 @@ function TargetSchemaPage(props: {
         </div>
       </div>
       <div>
-        {query.fetching ? null : currentOrganization && currentProject && target ? (
-          <SchemaView organization={currentOrganization} project={currentProject} target={target} />
+        {query.fetching ? null : currentProject && target ? (
+          <SchemaView project={currentProject} target={target} />
         ) : null}
       </div>
     </TargetLayout>

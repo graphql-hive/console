@@ -14,7 +14,7 @@ export default function CaseStudiesLayout({ children }: { children: React.ReactN
   return (
     <div className={cn(ONE_OFF_CLASS_CASE_STUDIES, 'mx-auto box-content max-w-[90rem]')}>
       <CaseStudiesHeader className="mx-auto max-w-[--nextra-content-width] pl-6 sm:my-12 md:pl-12 lg:my-24" />
-      <aside className="relative mx-auto max-w-[--nextra-content-width]">
+      <aside className="sticky top-[92px] mx-auto max-w-[--nextra-content-width]">
         <LookingToUseHiveUpsellBlock className="absolute right-2 top-4 max-lg:hidden lg:w-[320px] xl:w-[400px]" />
       </aside>
       {children}

@@ -60,9 +60,6 @@ const OrganizationLayout_OrganizationFragment = graphql(`
     viewerCanDescribeBilling
     viewerCanAccessSettings
     viewerCanSeeMembers
-    me {
-      ...CanAccessOrganization_MemberFragment
-    }
     ...ProPlanBilling_OrganizationFragment
     ...RateLimitWarn_OrganizationFragment
   }

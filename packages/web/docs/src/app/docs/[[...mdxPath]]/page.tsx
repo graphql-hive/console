@@ -4,6 +4,7 @@ import { generateStaticParamsFor, importPage } from 'nextra/pages';
 import { NextPageProps } from '@theguild/components';
 import { useMDXComponents } from '../../../../mdx-components.js';
 import { ConfiguredGiscus } from '../../../components/configured-giscus';
+import { metadata as rootMetadata } from '../../layout';
 
 export const generateStaticParams = generateStaticParamsFor('mdxPath');
 
@@ -13,12 +14,20 @@ export async function generateMetadata(
 ) {
   const { mdxPath } = await props.params;
   const { metadata } = await importPage(mdxPath);
-  return {
+  const docsMetadata = {
     ...metadata,
     ...(mdxPath?.[0] === 'gateway' && {
       title: { absolute: `${metadata.title} | Hive Gateway` },
     }),
   };
+
+  // TODO: Remove this when Components have a fix for OG Images with basePath
+  docsMetadata.openGraph = {
+    ...rootMetadata.openGraph,
+    ...docsMetadata.openGraph,
+  };
+
+  return docsMetadata;
 }
 
 const Wrapper = useMDXComponents().wrapper!;
@@ -28,9 +37,8 @@ export default async function Page(props: NextPageProps<'...mdxPath'>) {
   const result = await importPage(params.mdxPath);
   const { default: MDXContent, toc, metadata } = result;
   return (
-    <Wrapper toc={toc} metadata={metadata}>
+    <Wrapper toc={toc} metadata={metadata} bottomContent={<ConfiguredGiscus />}>
       <MDXContent {...props} params={params} />
-      <ConfiguredGiscus />
     </Wrapper>
   );
 }

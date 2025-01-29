@@ -50,9 +50,10 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                 slug
                 owner {
                   id
-                  organizationAccessScopes
-                  projectAccessScopes
-                  targetAccessScopes
+                  role {
+                    id
+                    permissions
+                  }
                 }
                 memberRoles {
                   id
@@ -178,9 +179,11 @@ export function joinOrganization(code: string, authToken: string) {
                 user {
                   id
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                role {
+                  id
+                  name
+                  permissions
+                }
               }
             }
           }
@@ -213,10 +216,8 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
                 role {
                   id
                   name
+                  permissions
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
               }
             }
           }
@@ -664,9 +665,7 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
                 name
                 description
                 locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                permissions
               }
             }
           }
@@ -724,9 +723,7 @@ export function deleteMemberRole(input: DeleteMemberRoleInput, authToken: string
                 name
                 description
                 locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                permissions
               }
             }
           }
@@ -754,9 +751,7 @@ export function updateMemberRole(input: UpdateMemberRoleInput, authToken: string
               name
               description
               locked
-              organizationAccessScopes
-              projectAccessScopes
-              targetAccessScopes
+              permissions
             }
           }
           error {

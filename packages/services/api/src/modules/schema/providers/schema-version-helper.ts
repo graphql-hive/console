@@ -11,7 +11,6 @@ import {
 import { ProjectType } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -33,7 +32,6 @@ export class SchemaVersionHelper {
     private schemaManager: SchemaManager,
     private schemaHelper: SchemaHelper,
     private projectManager: ProjectManager,
-    private organizationManager: OrganizationManager,
     private registryChecks: RegistryChecks,
     private storage: Storage,
     private logger: Logger,
@@ -57,7 +55,7 @@ export class SchemaVersionHelper {
         organizationId: schemaVersion.organizationId,
         projectId: schemaVersion.projectId,
       }),
-      this.organizationManager.getOrganization({
+      this.storage.getOrganization({
         organizationId: schemaVersion.organizationId,
       }),
     ]);

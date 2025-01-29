@@ -1,14 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { Organization, OrganizationMemberRole } from '../../../shared/entities';
+import * as GraphQLSchema from '../../../__generated__/types';
+import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { cache, share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
-import { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import { ProjectAccessScope } from '../../auth/providers/project-access';
-import { TargetAccessScope } from '../../auth/providers/target-access';
 import { BillingProvider } from '../../billing/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { Emails, mjml } from '../../shared/providers/emails';
@@ -18,34 +16,10 @@ import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
-import {
-  organizationAdminScopes,
-  organizationViewerScopes,
-  reservedOrganizationSlugs,
-} from './organization-config';
-
-function ensureReadAccess(
-  scopes: readonly (OrganizationAccessScope | ProjectAccessScope | TargetAccessScope)[],
-) {
-  const newScopes: (OrganizationAccessScope | ProjectAccessScope | TargetAccessScope)[] = [
-    ...scopes,
-  ];
-
-  if (!scopes.includes(OrganizationAccessScope.READ)) {
-    newScopes.push(OrganizationAccessScope.READ);
-  }
-
-  if (!scopes.includes(ProjectAccessScope.READ)) {
-    newScopes.push(ProjectAccessScope.READ);
-  }
-
-  if (!scopes.includes(TargetAccessScope.READ)) {
-    newScopes.push(TargetAccessScope.READ);
-  }
-
-  // Remove duplicates
-  return newScopes.filter((scope, i, all) => all.indexOf(scope) === i);
-}
+import { createOrUpdateMemberRoleInputSchema } from '../validation';
+import { reservedOrganizationSlugs } from './organization-config';
+import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
+import { OrganizationMembers } from './organization-members';
 
 /**
  * Responsible for auth checks.
@@ -68,6 +42,8 @@ export class OrganizationManager {
     private billingProvider: BillingProvider,
     private oidcIntegrationProvider: OIDCIntegrationsProvider,
     private emails: Emails,
+    private organizationMemberRoles: OrganizationMemberRoles,
+    private organizationMembers: OrganizationMembers,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -261,17 +237,18 @@ export class OrganizationManager {
     return organization;
   }
 
-  @cache((selector: OrganizationSelector) => selector.organizationId)
-  async getOrganizationMembers(selector: OrganizationSelector) {
-    return this.storage.getOrganizationMembers(selector);
-  }
-
   countOrganizationMembers(selector: OrganizationSelector) {
     return this.storage.countOrganizationMembers(selector);
   }
 
   async getOrganizationMember(selector: OrganizationSelector & { userId: string }) {
-    const member = await this.storage.getOrganizationMember(selector);
+    const organization = await this.storage.getOrganization({
+      organizationId: selector.organizationId,
+    });
+    const member = await this.organizationMembers.findOrganizationMembership({
+      organization,
+      userId: selector.userId,
+    });
 
     if (!member) {
       throw new HiveError('Member not found');
@@ -283,7 +260,7 @@ export class OrganizationManager {
   @cache((selector: OrganizationSelector) => selector.organizationId)
   async getInvitations(selector: OrganizationSelector) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -319,8 +296,6 @@ export class OrganizationManager {
     const result = await this.storage.createOrganization({
       slug,
       userId: user.id,
-      adminScopes: organizationAdminScopes,
-      viewerScopes: organizationViewerScopes,
       reservedSlugs: reservedOrganizationSlugs,
     });
 
@@ -504,7 +479,7 @@ export class OrganizationManager {
 
   async deleteInvitation(input: { email: string; organizationId: string }) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: input.organizationId,
       params: {
         organizationId: input.organizationId,
@@ -515,7 +490,7 @@ export class OrganizationManager {
 
   async inviteByEmail(input: { email: string; organization: string; role?: string | null }) {
     await this.session.assertPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: input.organization,
       params: {
         organizationId: input.organization,
@@ -533,11 +508,10 @@ export class OrganizationManager {
       organizationId: input.organization,
     });
 
-    const [members, currentUserAccessScopes] = await Promise.all([
-      this.getOrganizationMembers({ organizationId: input.organization }),
-      this.authManager.getCurrentUserAccessScopes(organization.id),
-    ]);
-    const existingMember = members.find(member => member.user.email === email);
+    const existingMember = await this.organizationMembers.findOrganizationMembershipByEmail(
+      organization,
+      email,
+    );
 
     if (existingMember) {
       return {
@@ -549,31 +523,11 @@ export class OrganizationManager {
     }
 
     const role = input.role
-      ? await this.storage.getOrganizationMemberRole({
-          organizationId: organization.id,
-          roleId: input.role,
-        })
-      : await this.storage.getViewerOrganizationMemberRole({
-          organizationId: organization.id,
-        });
+      ? await this.organizationMemberRoles.findMemberRoleById(input.role)
+      : await this.organizationMemberRoles.findViewerRoleByOrganizationId(input.organization);
+
     if (!role) {
       throw new HiveError(`Role not found`);
-    }
-
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes = role.scopes.filter(
-      scope => !currentUserAccessScopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAccessScopes.join(','));
-      this.logger.debug(`Missing scopes: %s`, currentUserMissingScopes.join(','));
-      return {
-        error: {
-          message: `Not enough access to invite a member with this role`,
-          inputErrors: {},
-        },
-      };
     }
 
     // Delete existing invitation
@@ -839,7 +793,7 @@ export class OrganizationManager {
   ): Promise<Organization> {
     this.logger.info('Deleting a member from an organization (selector=%o)', selector);
     await this.session.assertPerformAction({
-      action: 'member:removeMember',
+      action: 'member:modify',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
@@ -874,17 +828,6 @@ export class OrganizationManager {
       throw new Error(`Logged user is not a member of the organization`);
     }
 
-    // Ensure current user has access to all scopes of the member.
-    // User with less access scopes cannot remove a member with more access scopes.
-    const currentUserMissingScopes = member.scopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %o`, currentUserAsMember.scopes);
-      throw new HiveError(`Not enough access to remove the member`);
-    }
-
     await this.storage.deleteOrganizationMember({
       userId: user,
       organizationId: organization,
@@ -909,57 +852,47 @@ export class OrganizationManager {
   }
 
   async createMemberRole(input: {
-    organizationId: string;
+    organizationSlug: string;
     name: string;
     description: string;
-    organizationAccessScopes: readonly OrganizationAccessScope[];
-    projectAccessScopes: readonly ProjectAccessScope[];
-    targetAccessScopes: readonly TargetAccessScope[];
+    permissions: ReadonlyArray<string>;
   }) {
+    const organizationId = await this.idTranslator.translateOrganizationId(input);
+
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
-      organizationId: input.organizationId,
+      action: 'member:modify',
+      organizationId,
       params: {
-        organizationId: input.organizationId,
+        organizationId,
       },
     });
 
-    const scopes = ensureReadAccess([
-      ...input.organizationAccessScopes,
-      ...input.projectAccessScopes,
-      ...input.targetAccessScopes,
-    ]);
-
-    const currentUser = await this.session.getViewer();
-    const currentUserAsMember = await this.getOrganizationMember({
-      organizationId: input.organizationId,
-      userId: currentUser.id,
+    const inputValidation = createOrUpdateMemberRoleInputSchema.safeParse({
+      name: input.name,
+      description: input.description,
     });
 
-    // Ensure user has access to all scopes in the role
-    const currentMemberMissingScopes = scopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-
-    if (currentMemberMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAsMember.scopes.join(', '));
-      this.logger.debug(`Missing scopes: %s`, currentMemberMissingScopes.join(', '));
+    if (!inputValidation.success) {
       return {
         error: {
-          message: `Missing access to some of the selected scopes`,
+          message: 'Please check your input.',
+          inputErrors: {
+            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
+            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+          },
         },
       };
     }
 
     const roleName = input.name.trim();
 
-    const nameExists = await this.storage.hasOrganizationMemberRoleName({
-      organizationId: input.organizationId,
+    const foundRole = await this.organizationMemberRoles.findRoleByOrganizationIdAndName(
+      organizationId,
       roleName,
-    });
+    );
 
     // Ensure name is unique in the organization
-    if (nameExists) {
+    if (foundRole) {
       const msg = 'Role name already exists. Please choose a different name.';
 
       return {
@@ -972,16 +905,16 @@ export class OrganizationManager {
       };
     }
 
-    const role = await this.storage.createOrganizationMemberRole({
-      organizationId: input.organizationId,
+    const role = await this.organizationMemberRoles.createOrganizationMemberRole({
+      organizationId,
       name: roleName,
       description: input.description,
-      scopes,
+      permissions: input.permissions,
     });
 
     await this.auditLog.record({
       eventType: 'ROLE_CREATED',
-      organizationId: input.organizationId,
+      organizationId,
       metadata: {
         roleId: role.id,
         roleName: role.name,
@@ -991,7 +924,7 @@ export class OrganizationManager {
     return {
       ok: {
         updatedOrganization: await this.storage.getOrganization({
-          organizationId: input.organizationId,
+          organizationId,
         }),
         createdRole: role,
       },
@@ -1000,17 +933,14 @@ export class OrganizationManager {
 
   async deleteMemberRole(input: { organizationId: string; roleId: string }) {
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: input.organizationId,
       params: {
         organizationId: input.organizationId,
       },
     });
 
-    const role = await this.storage.getOrganizationMemberRole({
-      organizationId: input.organizationId,
-      roleId: input.roleId,
-    });
+    const role = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
 
     if (!role) {
       return {
@@ -1020,18 +950,10 @@ export class OrganizationManager {
       };
     }
 
-    const currentUser = await this.session.getViewer();
-    const currentUserAsMember = await this.getOrganizationMember({
-      organizationId: input.organizationId,
-      userId: currentUser.id,
-    });
-
-    const accessCheckResult = await this.canDeleteRole(role, currentUserAsMember.scopes);
-
-    if (!accessCheckResult.ok) {
+    if (role.membersCount > 0) {
       return {
         error: {
-          message: accessCheckResult.message,
+          message: `Cannot delete a role with members`,
         },
       };
     }
@@ -1060,36 +982,37 @@ export class OrganizationManager {
     };
   }
 
-  async assignMemberRole(input: { organizationId: string; userId: string; roleId: string }) {
+  async assignMemberRole(input: {
+    organizationSlug: string;
+    userId: string;
+    roleId: string;
+    resources: GraphQLSchema.ResourceAssignmentInput;
+  }) {
+    const organizationId = await this.idTranslator.translateOrganizationId(input);
+
     await this.session.assertPerformAction({
-      action: 'member:assignRole',
-      organizationId: input.organizationId,
+      action: 'member:modify',
+      organizationId,
       params: {
-        organizationId: input.organizationId,
+        organizationId,
       },
     });
 
+    const organization = await this.storage.getOrganization({
+      organizationId,
+    });
+
     // Ensure selected member is part of the organization
-    const member = await this.storage.getOrganizationMember({
-      organizationId: input.organizationId,
+    const previousMembership = await this.organizationMembers.findOrganizationMembership({
+      organization,
       userId: input.userId,
     });
 
-    if (!member) {
+    if (!previousMembership) {
       throw new Error(`Member is not part of the organization`);
     }
 
-    const currentUser = await this.session.getViewer();
-    const [currentUserAsMember, newRole] = await Promise.all([
-      this.getOrganizationMember({
-        organizationId: input.organizationId,
-        userId: currentUser.id,
-      }),
-      this.storage.getOrganizationMemberRole({
-        organizationId: input.organizationId,
-        roleId: input.roleId,
-      }),
-    ]);
+    const newRole = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
 
     if (!newRole) {
       return {
@@ -1099,82 +1022,53 @@ export class OrganizationManager {
       };
     }
 
-    // Ensure user has access to all scopes in the new role
-    const currentUserMissingScopesInNewRole = newRole.scopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-    if (currentUserMissingScopesInNewRole.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAsMember.scopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopesInNewRole.join(', '));
-
-      return {
-        error: {
-          message: `Missing access to some of the scopes of the new role`,
-        },
-      };
-    }
-
-    // Ensure user has access to all scopes in the old role
-    const currentUserMissingScopesInOldRole = member.scopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-
-    if (currentUserMissingScopesInOldRole.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAsMember.scopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopesInOldRole.join(', '));
-
-      return {
-        error: {
-          message: `Missing access to some of the scopes of the existing role`,
-        },
-      };
-    }
-
-    const memberMissingScopesInNewRole = member.scopes.filter(
-      scope => !newRole.scopes.includes(scope),
-    );
-
-    // Ensure new role has at least the same access scopes as the old role, to avoid downgrading members
-    if (memberMissingScopesInNewRole.length > 0) {
-      // Admin role is an exception, admin can downgrade members
-      if (!this.isAdminRole(currentUserAsMember.role)) {
-        this.logger.debug(`New role scopes: %s`, newRole.scopes.join(', '));
-        this.logger.debug(`Old role scopes: %s`, member.scopes.join(', '));
-        return {
-          error: {
-            message: `Cannot downgrade member to a role with less access scopes`,
-          },
-        };
-      }
-    }
+    const resourceAssignmentGroup =
+      await this.organizationMembers.transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
+        organization,
+        input.resources,
+      );
 
     // Assign the role to the member
-    await this.storage.assignOrganizationMemberRole({
-      organizationId: input.organizationId,
+    await this.organizationMembers.assignOrganizationMemberRole({
+      organizationId,
       userId: input.userId,
       roleId: input.roleId,
+      resourceAssignmentGroup,
     });
 
     // Access cache is stale by now
     this.authManager.resetAccessCache();
     this.session.reset();
 
+    const previousMemberRole = previousMembership.assignedRole.role ?? null;
+    const updatedMembership = await this.organizationMembers.findOrganizationMembership({
+      organization,
+      userId: input.userId,
+    });
+
+    if (!updatedMembership) {
+      throw new Error('Somethign went wrong.');
+    }
+
     const result = {
-      updatedMember: await this.getOrganizationMember({
-        organizationId: input.organizationId,
-        userId: input.userId,
-      }),
-      previousMemberRole: member.role,
+      updatedMember: updatedMembership,
+      previousMemberRole,
     };
+
+    const user = await this.storage.getUserById({ id: previousMembership.userId });
+
+    if (!user) {
+      throw new Error('User not found.');
+    }
 
     if (result) {
       await this.auditLog.record({
         eventType: 'ROLE_ASSIGNED',
-        organizationId: input.organizationId,
+        organizationId,
         metadata: {
-          previousMemberRole: member.role ? member.role.name : null,
+          previousMemberRole: previousMemberRole ? previousMemberRole.name : null,
           roleId: newRole.id,
-          updatedMember: member.user.email,
+          updatedMember: user.email,
           userIdAssigned: input.userId,
         },
       });
@@ -1186,32 +1080,39 @@ export class OrganizationManager {
   }
 
   async updateMemberRole(input: {
-    organizationId: string;
+    organizationSlug: string;
     roleId: string;
     name: string;
     description: string;
-    organizationAccessScopes: readonly OrganizationAccessScope[];
-    projectAccessScopes: readonly ProjectAccessScope[];
-    targetAccessScopes: readonly TargetAccessScope[];
+    permissions: readonly string[];
   }) {
+    const organizationId = await this.idTranslator.translateOrganizationId(input);
     await this.session.assertPerformAction({
-      action: 'member:modifyRole',
-      organizationId: input.organizationId,
+      action: 'member:modify',
+      organizationId,
       params: {
-        organizationId: input.organizationId,
+        organizationId,
       },
     });
-    const currentUser = await this.session.getViewer();
-    const [role, currentUserAsMember] = await Promise.all([
-      this.storage.getOrganizationMemberRole({
-        organizationId: input.organizationId,
-        roleId: input.roleId,
-      }),
-      this.getOrganizationMember({
-        organizationId: input.organizationId,
-        userId: currentUser.id,
-      }),
-    ]);
+
+    const inputValidation = createOrUpdateMemberRoleInputSchema.safeParse({
+      name: input.name,
+      description: input.description,
+    });
+
+    if (!inputValidation.success) {
+      return {
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
+            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+          },
+        },
+      };
+    }
+
+    const role = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
 
     if (!role) {
       return {
@@ -1221,31 +1122,14 @@ export class OrganizationManager {
       };
     }
 
-    const newScopes = ensureReadAccess([
-      ...input.organizationAccessScopes,
-      ...input.projectAccessScopes,
-      ...input.targetAccessScopes,
-    ]);
-
-    const accessCheckResult = this.canUpdateRole(role, currentUserAsMember.scopes);
-
-    if (!accessCheckResult.ok) {
-      return {
-        error: {
-          message: accessCheckResult.message,
-        },
-      };
-    }
-
     // Ensure name is unique in the organization
     const roleName = input.name.trim();
-    const nameExists = await this.storage.hasOrganizationMemberRoleName({
-      organizationId: input.organizationId,
+    const foundRole = await this.organizationMemberRoles.findRoleByOrganizationIdAndName(
+      organizationId,
       roleName,
-      excludeRoleId: input.roleId,
-    });
+    );
 
-    if (nameExists) {
+    if (foundRole && foundRole.id !== input.roleId) {
       const msg = 'Role name already exists. Please choose a different name.';
 
       return {
@@ -1258,50 +1142,13 @@ export class OrganizationManager {
       };
     }
 
-    const existingRoleScopes = role.scopes;
-    const hasAssignedMembers = role.membersCount > 0;
-
-    // Ensure user has access to all new scopes in the role
-    const currentUserMissingAccessInNewRole = newScopes.filter(
-      scope => !currentUserAsMember.scopes.includes(scope),
-    );
-
-    if (currentUserMissingAccessInNewRole.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserAsMember.scopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingAccessInNewRole.join(', '));
-
-      return {
-        error: {
-          message: `Missing access to some of the selected scopes`,
-        },
-      };
-    }
-
-    const missingOldRoleScopesInNewRole = existingRoleScopes.filter(
-      scope => !newScopes.includes(scope),
-    );
-
-    // Ensure new role has at least the same access scopes as the old role, to avoid downgrading members
-    if (hasAssignedMembers && missingOldRoleScopesInNewRole.length > 0) {
-      // Admin role is an exception, admin can downgrade members
-      if (!this.isAdminRole(currentUserAsMember.role)) {
-        this.logger.debug(`New role scopes: %s`, newScopes.join(', '));
-        this.logger.debug(`Old role scopes: %s`, existingRoleScopes.join(', '));
-        return {
-          error: {
-            message: `Cannot downgrade member to a role with less access scopes`,
-          },
-        };
-      }
-    }
-
     // Update the role
-    const updatedRole = await this.storage.updateOrganizationMemberRole({
-      organizationId: input.organizationId,
+    const updatedRole = await this.organizationMemberRoles.updateOrganizationMemberRole({
+      organizationId,
       roleId: input.roleId,
       name: roleName,
       description: input.description,
-      scopes: newScopes,
+      permissions: input.permissions,
     });
 
     // Access cache is stale by now
@@ -1310,17 +1157,18 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ROLE_UPDATED',
-      organizationId: input.organizationId,
+      organizationId,
       metadata: {
         roleId: updatedRole.id,
         roleName: updatedRole.name,
         updatedFields: JSON.stringify({
           name: roleName,
           description: input.description,
-          scopes: newScopes,
+          permissions: input.permissions,
         }),
       },
     });
+
     return {
       ok: {
         updatedRole,
@@ -1337,185 +1185,41 @@ export class OrganizationManager {
       },
     });
 
-    return this.storage.getOrganizationMemberRoles({
-      organizationId: selector.organizationId,
-    });
+    return this.organizationMemberRoles.getMemberRolesForOrganizationId(selector.organizationId);
   }
 
-  async getMemberRole(selector: { organizationId: string; roleId: string }) {
-    await this.session.assertPerformAction({
-      action: 'member:describe',
-      organizationId: selector.organizationId,
-      params: {
-        organizationId: selector.organizationId,
-      },
-    });
+  async getMemberRole(selector: {
+    organizationId: string;
+    roleId: string;
+  }): Promise<OrganizationMemberRole | null> {
+    const role = await this.organizationMemberRoles.findMemberRoleById(selector.roleId);
 
-    return this.storage.getOrganizationMemberRole({
-      organizationId: selector.organizationId,
-      roleId: selector.roleId,
-    });
-  }
-
-  async getViewerMemberRole(selector: { organizationId: string }) {
-    await this.session.assertPerformAction({
-      action: 'member:describe',
-      organizationId: selector.organizationId,
-      params: {
-        organizationId: selector.organizationId,
-      },
-    });
-
-    return this.storage.getViewerOrganizationMemberRole({
-      organizationId: selector.organizationId,
-    });
-  }
-
-  async canDeleteRole(
-    role: OrganizationMemberRole,
-    currentUserScopes: readonly (
-      | OrganizationAccessScope
-      | ProjectAccessScope
-      | TargetAccessScope
-    )[],
-  ): Promise<
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      }
-  > {
-    // Ensure role is not locked (can't be deleted)
-    if (role.locked) {
-      return {
-        ok: false,
-        message: `Cannot delete a built-in role`,
-      };
+    if (!role) {
+      return null;
     }
-    // Ensure role has no members
-    let membersCount: number | undefined = role.membersCount;
 
-    if (typeof membersCount !== 'number') {
-      const freshRole = await this.storage.getOrganizationMemberRole({
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: role.organizationId,
+      params: {
         organizationId: role.organizationId,
-        roleId: role.id,
-      });
+      },
+    });
 
-      if (!freshRole) {
-        throw new Error('Role not found');
-      }
-
-      membersCount = freshRole.membersCount;
-    }
-
-    if (membersCount > 0) {
-      return {
-        ok: false,
-        message: `Cannot delete a role with members`,
-      };
-    }
-
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes = role.scopes.filter(
-      scope => !currentUserScopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserScopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopes.join(', '));
-
-      return {
-        ok: false,
-        message: `Missing access to some of the scopes of the role`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
+    return role;
   }
 
-  canUpdateRole(
-    role: OrganizationMemberRole,
-    currentUserScopes: readonly (
-      | OrganizationAccessScope
-      | ProjectAccessScope
-      | TargetAccessScope
-    )[],
-  ):
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      } {
-    // Ensure role is not locked (can't be updated)
-    if (role.locked) {
-      return {
-        ok: false,
-        message: `Cannot update a built-in role`,
-      };
-    }
+  async getViewerMemberRole(selector: {
+    organizationId: string;
+  }): Promise<OrganizationMemberRole | null> {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+      },
+    });
 
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes = role.scopes.filter(
-      scope => !currentUserScopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserScopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopes.join(', '));
-
-      return {
-        ok: false,
-        message: `Missing access to some of the scopes of the role`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
-  }
-
-  canInviteRole(
-    role: OrganizationMemberRole,
-    currentUserScopes: readonly (
-      | OrganizationAccessScope
-      | ProjectAccessScope
-      | TargetAccessScope
-    )[],
-  ):
-    | {
-        ok: false;
-        message: string;
-      }
-    | {
-        ok: true;
-      } {
-    // Ensure user has access to all scopes in the role
-    const currentUserMissingScopes = role.scopes.filter(
-      scope => !currentUserScopes.includes(scope),
-    );
-
-    if (currentUserMissingScopes.length > 0) {
-      this.logger.debug(`Logged user scopes: %s`, currentUserScopes.join(', '));
-      this.logger.debug(`No access to scopes: %s`, currentUserMissingScopes.join(', '));
-
-      return {
-        ok: false,
-        message: `Missing access to some of the scopes of the role`,
-      };
-    }
-
-    return {
-      ok: true,
-    };
-  }
-
-  isAdminRole(role: { name: string; locked: boolean } | null) {
-    return role?.name === 'Admin' && role.locked === true;
+    return this.organizationMemberRoles.findViewerRoleByOrganizationId(selector.organizationId);
   }
 }

@@ -496,31 +496,25 @@ export class RegistryChecks {
             // Since the affected clients query is lighter it makes more sense to run it first and skip running
             // the operations query if no clients are affected, as it will also yield zero results in that case.
 
-            const topAffectedClients = await this.operationsReader.getTopClientsForSchemaCoordinate(
-              {
+            const [topAffectedClients, topAffectedOperations] = await Promise.all([
+              this.operationsReader.getTopClientsForSchemaCoordinate({
                 targetIds: settings.targetIds,
                 excludedClients: settings.excludedClientNames,
                 period: settings.period,
                 schemaCoordinate: change.breakingChangeSchemaCoordinate,
-              },
-            );
+              }),
+              this.operationsReader.getTopOperationsForSchemaCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: change.breakingChangeSchemaCoordinate,
+              }),
+            ]);
 
-            if (topAffectedClients) {
-              const topAffectedOperations =
-                await this.operationsReader.getTopOperationsForSchemaCoordinate({
-                  targetIds: settings.targetIds,
-                  excludedClients: settings.excludedClientNames,
-                  period: settings.period,
-                  schemaCoordinate: change.breakingChangeSchemaCoordinate,
-                });
-
-              if (topAffectedOperations) {
-                change.usageStatistics = {
-                  topAffectedOperations,
-                  topAffectedClients,
-                };
-              }
-            }
+            change.usageStatistics = {
+              topAffectedOperations: topAffectedOperations ?? [],
+              topAffectedClients: topAffectedClients ?? [],
+            };
           }
 
           change.isSafeBasedOnUsage = !isBreaking;

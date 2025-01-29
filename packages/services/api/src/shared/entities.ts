@@ -192,6 +192,7 @@ export interface Organization {
     appDeployments: boolean;
   };
   zendeskId: string | null;
+  /** ID of the user that owns the organization */
   ownerId: string;
 }
 
@@ -201,7 +202,7 @@ export interface OrganizationInvitation {
   email: string;
   created_at: string;
   expires_at: string;
-  role: OrganizationMemberRole;
+  roleId: string;
 }
 
 export interface OrganizationBilling {
@@ -443,26 +444,3 @@ export type SchemaPolicy = {
 };
 
 export type SchemaPolicyAvailableRuleObject = AvailableRulesResponse[0];
-
-export const OrganizationMemberRoleModel = z
-  .object({
-    id: z.string(),
-    organization_id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    locked: z.boolean(),
-    scopes: z.array(z.string()),
-    members_count: z.number().optional(),
-  })
-  .transform(role => ({
-    id: role.id,
-    // Why? When using organizationId alias for a column, the column name is converted to organizationid
-    organizationId: role.organization_id,
-    membersCount: role.members_count,
-    name: role.name,
-    description: role.description,
-    locked: role.locked,
-    // Cast string to an array of enum
-    scopes: role.scopes as (OrganizationAccessScope | ProjectAccessScope | TargetAccessScope)[],
-  }));
-export type OrganizationMemberRole = z.infer<typeof OrganizationMemberRoleModel>;
