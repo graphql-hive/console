@@ -78,9 +78,8 @@ export type CheckInput = Omit<Types.SchemaCheckInput, 'project' | 'organization'
   TargetSelector;
 
 export type DeleteInput = Types.SchemaDeleteInput &
-  Omit<TargetSelector, 'targetId'> & {
+  TargetSelector & {
     checksum: string;
-    target: Target;
   };
 
 export type PublishInput = Types.SchemaPublishInput &
@@ -1073,7 +1072,7 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.delete', {
     initAttributes: (input, _) => ({
-      'hive.target.id': input.target.id,
+      'hive.target.id': input.targetId,
       'hive.organization.id': input.organizationId,
       'hive.project.id': input.projectId,
     }),
@@ -1085,7 +1084,7 @@ export class SchemaPublisher {
     this.logger.info('Deleting schema (input=%o)', input);
 
     return this.mutex.perform(
-      registryLockId(input.target.id),
+      registryLockId(input.targetId),
       {
         signal,
       },
@@ -1096,7 +1095,7 @@ export class SchemaPublisher {
           params: {
             organizationId: input.organizationId,
             projectId: input.projectId,
-            targetId: input.target.id,
+            targetId: input.targetId,
             serviceName: input.serviceName,
           },
         });
@@ -1113,23 +1112,23 @@ export class SchemaPublisher {
             this.storage.getTarget({
               organizationId: input.organizationId,
               projectId: input.projectId,
-              targetId: input.target.id,
+              targetId: input.targetId,
             }),
             this.storage.getLatestSchemas({
               organizationId: input.organizationId,
               projectId: input.projectId,
-              targetId: input.target.id,
+              targetId: input.targetId,
             }),
             this.storage.getLatestSchemas({
               organizationId: input.organizationId,
               projectId: input.projectId,
-              targetId: input.target.id,
+              targetId: input.targetId,
               onlyComposable: true,
             }),
             this.storage.getBaseSchema({
               organizationId: input.organizationId,
               projectId: input.projectId,
-              targetId: input.target.id,
+              targetId: input.targetId,
             }),
           ]);
 
@@ -1139,7 +1138,7 @@ export class SchemaPublisher {
         ]);
 
         const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-          input.target.id,
+          input.targetId,
           project,
           organization,
         );
@@ -1179,7 +1178,7 @@ export class SchemaPublisher {
         const conditionalBreakingChangeConfiguration =
           await this.getConditionalBreakingChangeConfiguration({
             selector: {
-              targetId: input.target.id,
+              targetId: input.targetId,
               projectId: input.projectId,
               organizationId: input.organizationId,
             },
@@ -1188,7 +1187,7 @@ export class SchemaPublisher {
         const contracts =
           project.type === ProjectType.FEDERATION
             ? await this.contracts.loadActiveContractsWithLatestValidContractVersionsByTargetId({
-                targetId: input.target.id,
+                targetId: input.targetId,
               })
             : null;
 
@@ -1212,7 +1211,7 @@ export class SchemaPublisher {
           project,
           organization,
           selector: {
-            target: input.target.id,
+            target: input.targetId,
             project: input.projectId,
             organization: input.organizationId,
           },
@@ -1236,7 +1235,7 @@ export class SchemaPublisher {
             const schemaVersion = await this.storage.deleteSchema({
               organizationId: input.organizationId,
               projectId: input.projectId,
-              targetId: input.target.id,
+              targetId: input.targetId,
               serviceName: input.serviceName,
               composable: deleteResult.state.composable,
               diffSchemaVersionId,
@@ -1278,7 +1277,7 @@ export class SchemaPublisher {
                   }
 
                   await this.publishToCDN({
-                    target: input.target,
+                    target,
                     project,
                     supergraph: deleteResult.state.supergraph,
                     fullSchemaSdl: deleteResult.state.fullSchemaSdl,
@@ -1292,7 +1291,7 @@ export class SchemaPublisher {
                 conditionalBreakingChangeConfiguration,
                 organizationId: input.organizationId,
                 projectId: input.projectId,
-                targetId: input.target.id,
+                targetId: input.targetId,
               }),
             });
 
@@ -1311,7 +1310,7 @@ export class SchemaPublisher {
                 .triggerSchemaChangeNotifications({
                   organization,
                   project,
-                  target: input.target,
+                  target,
                   schema: {
                     id: schemaVersion.versionId,
                     commit: schemaVersion.id,

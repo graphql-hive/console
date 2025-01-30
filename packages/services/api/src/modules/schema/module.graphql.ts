@@ -2,24 +2,9 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
-    """
-    Requires API Token
-    """
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
-    """
-    Requires API Token
-    """
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
-    """
-    Requires API Token
-    """
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
-    """
-    Requires API Token
-
-    Publish a schema of a single or multiple services and compose a supergraph schema,
-    including the rest of the services in the project.
-    """
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
@@ -287,6 +272,7 @@ export default gql`
   }
 
   input SchemaPublishInput {
+    target: TargetSelectorInput
     service: ID
     url: String
     sdl: String!
@@ -314,6 +300,7 @@ export default gql`
   }
 
   input SchemaComposeInput {
+    target: TargetSelectorInput
     services: [SchemaComposeServiceInput!]!
     """
     Whether to use the latest composable version or just latest schema version for the composition.
@@ -597,6 +584,7 @@ export default gql`
   }
 
   input SchemaCheckInput {
+    target: TargetSelectorInput
     service: ID
     sdl: String!
     github: GitHubSchemaCheckInput
@@ -609,6 +597,7 @@ export default gql`
   }
 
   input SchemaDeleteInput {
+    target: TargetSelectorInput
     serviceName: ID!
     dryRun: Boolean
   }

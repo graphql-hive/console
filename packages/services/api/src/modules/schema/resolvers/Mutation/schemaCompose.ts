@@ -1,26 +1,45 @@
-import { OrganizationManager } from '../../../organization/providers/organization-manager';
-import { ProjectManager } from '../../../project/providers/project-manager';
-import { TargetManager } from '../../../target/providers/target-manager';
+import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaManager } from '../../providers/schema-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const schemaCompose: NonNullable<MutationResolvers['schemaCompose']> = async (
   _,
   { input },
-  { injector },
+  { injector, session },
 ) => {
-  const [organization, project, target] = await Promise.all([
-    injector.get(OrganizationManager).getOrganizationIdByToken(),
-    injector.get(ProjectManager).getProjectIdByToken(),
-    injector.get(TargetManager).getTargetIdByToken(),
-  ]);
+  let selector: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+  };
+
+  if (input.target) {
+    const [organizationId, projectId, targetId] = await Promise.all([
+      injector.get(IdTranslator).translateOrganizationId(input.target),
+      injector.get(IdTranslator).translateProjectId(input.target),
+      injector.get(IdTranslator).translateTargetId(input.target),
+    ]);
+
+    selector = {
+      organizationId,
+      projectId,
+      targetId,
+    };
+  } else {
+    // LEGACY method of resolving the permissions
+    const { organizationId, projectId, targetId } = session.getLegacySelector();
+
+    selector = {
+      organizationId,
+      projectId,
+      targetId,
+    };
+  }
 
   const result = await injector.get(SchemaManager).compose({
     onlyComposable: input.useLatestComposableVersion === true,
     services: input.services,
-    organizationId: organization,
-    projectId: project,
-    targetId: target,
+    ...selector,
   });
 
   if (result.kind === 'error') {

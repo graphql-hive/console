@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
 import { Session } from '../../../auth/lib/authz';
-import { OrganizationManager } from '../../../organization/providers/organization-manager';
-import { ProjectManager } from '../../../project/providers/project-manager';
-import { TargetManager } from '../../../target/providers/target-manager';
+import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaPublisher } from '../../providers/schema-publisher';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -12,11 +10,34 @@ export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = asyn
   { input },
   { injector, request },
 ) => {
-  const [organizationId, projectId, target] = await Promise.all([
-    injector.get(OrganizationManager).getOrganizationIdByToken(),
-    injector.get(ProjectManager).getProjectIdByToken(),
-    injector.get(TargetManager).getTargetFromToken(),
-  ]);
+  let selector: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+  };
+
+  if (input.target) {
+    const [organizationId, projectId, targetId] = await Promise.all([
+      injector.get(IdTranslator).translateOrganizationId(input.target),
+      injector.get(IdTranslator).translateProjectId(input.target),
+      injector.get(IdTranslator).translateTargetId(input.target),
+    ]);
+
+    selector = {
+      organizationId,
+      projectId,
+      targetId,
+    };
+  } else {
+    // LEGACY method of resolving the permissions
+    const { organizationId, projectId, targetId } = session.getLegacySelector();
+
+    selector = {
+      organizationId,
+      projectId,
+      targetId,
+    };
+  }
 
   const token = injector.get(Session).getLegacySelector();
 
@@ -34,9 +55,9 @@ export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = asyn
     {
       dryRun: input.dryRun,
       serviceName: input.serviceName.toLowerCase(),
-      organizationId,
-      projectId,
-      target,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       checksum,
     },
     request.signal,
