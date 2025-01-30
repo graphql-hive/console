@@ -8,7 +8,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const schemaDelete: NonNullable<MutationResolvers['schemaDelete']> = async (
   _,
   { input },
-  { injector, request },
+  { injector, request, session },
 ) => {
   let selector: {
     organizationId: string;
