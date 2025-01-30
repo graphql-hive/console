@@ -2,15 +2,20 @@
 'hive': major
 ---
 
-Introduce new permission system for organization member roles.
+New permission system for organization member roles.
 
-The existing scopes assigned to organization member users are now replaced with permissions.
-Using the permissions allows more granular access control to features in Hive.
+The existing scopes assigned to organization members have been replaced with a permissions-based
+system, enabling more granular access control and role-based access control (RBAC) in Hive.
 
-This introduces the following breaking changes:
+**Breaking Changes**
 
-- Organization members with the default `Viewer` role, will experience downgraded permissions. They will no longer be able to create targets or projects.
-- Organization member roles permissions for inviting, removing or assigning roles have been revoked. A organization admin will have to re-apply the permissions to the desired member roles.
-- Organization members with permissions for managing invites, removing members, assigning roles or modifying roles are no longer restrained in granting more rights to other users. Please be aware when granting these permissions to a user role. We recommend only assigning these to member roles that are considered "Admin" user roles.
+- **Viewer Role Adjustments** – Members with the default Viewer role can no longer create targets or
+  projects.
+- **Restricted Role Management** – Permissions for inviting, removing, and assigning roles have been
+  revoked. An admin must manually reassign these permissions where needed.
+- **Expanded Role Assignment** Capabilities – Members with permissions to manage invites, remove
+  members, or modify roles can now grant additional permissions without restrictions. Caution is
+  advised when assigning these rights, as they should be reserved for "Admin" roles.
 
-A future update will introduce resource based access control (based on project, target, service or app deployments) for organization members.
+These changes enhance security and provide greater flexibility in managing user permissions across
+organizations.
