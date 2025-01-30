@@ -178,6 +178,17 @@ export function usePreflightScript(args: {
     const resultEnvironmentVariablesDecoded: PreflightScriptResultData['environmentVariables'] =
       Kit.tryOr(
         () => JSON.parse(latestEnvironmentVariablesRef.current),
+        // todo: find a better solution than blowing away the user's
+        // invalid localStorage state.
+        //
+        // For example if the user has:
+        //
+        // { "foo": "bar }
+        //
+        // Then when they "Run Script" it will be replaced with:
+        //
+        // {}
+        //
         () => ({}),
       );
     const result: PreflightScriptResultData = {
@@ -280,6 +291,7 @@ export function usePreflightScript(args: {
 
           // Cause the new state of environment variables to be
           // written back to local storage.
+
           const mergedEnvironmentVariablesEncoded = JSON.stringify(
             result.environmentVariables,
             null,
