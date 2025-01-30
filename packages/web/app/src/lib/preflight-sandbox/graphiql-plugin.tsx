@@ -26,7 +26,7 @@ import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
 import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
@@ -153,7 +153,7 @@ export function usePreflightScript(args: {
   const prompt = usePromptManager();
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
-  const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorage(
+  const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorageJson(
     'hive:laboratory:isPreflightScriptEnabled',
     false,
   );

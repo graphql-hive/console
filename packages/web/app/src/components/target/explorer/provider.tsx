@@ -10,7 +10,7 @@ import {
 import { startOfDay } from 'date-fns';
 import { resolveRange, type Period } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
-import { useLocalStorage } from '@/lib/hooks';
+import { useLocalStorageJson } from '@/lib/hooks';
 import { UTCDate } from '@date-fns/utc';
 
 type SchemaExplorerContextType = {
@@ -54,11 +54,11 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
     [dataRetentionInDays],
   );
 
-  const [isArgumentListCollapsed, setArgumentListCollapsed] = useLocalStorage(
+  const [isArgumentListCollapsed, setArgumentListCollapsed] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
     true,
   );
-  const [period, setPeriod] = useLocalStorage<Period>(
+  const [period, setPeriod] = useLocalStorageJson<Period>(
     'hive:schema-explorer:period-1',
     defaultPeriod,
   );
