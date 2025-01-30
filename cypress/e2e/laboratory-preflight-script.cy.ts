@@ -1,6 +1,7 @@
 import { dedent } from '../support/testkit';
 
 const selectors = {
+  buttonPreflightScript: '[aria-label*="Preflight Script"]',
   buttonModalCy: 'preflight-script-modal-button',
   buttonToggleCy: 'toggle-preflight-script',
   buttonHeaders: '[data-name="headers"]',
@@ -16,13 +17,17 @@ const selectors = {
   },
 };
 
+const data: { slug: string } = {
+  slug: '',
+};
+
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
       cy.setCookie('sRefreshToken', refreshToken);
-
+      data.slug = slug;
       cy.visit(`/${slug}/laboratory`);
-      cy.get('[aria-label*="Preflight Script"]').click();
+      cy.get(selectors.buttonPreflightScript).click();
     });
   });
 });
@@ -51,6 +56,11 @@ function setEditorScript(script: string) {
 }
 
 describe('Laboratory > Preflight Script', () => {
+  it('regression: loads even if local storage "hive:laboratory:environment" has an invalid value; Sets it to empty object', () => {
+    window.localStorage.setItem('hive:laboratory:environment', '{}');
+    cy.visit(`/${data.slug}/laboratory`);
+    cy.get(selectors.buttonPreflightScript).click();
+  });
   it('mini script editor is read only', () => {
     cy.dataCy('toggle-preflight-script').click();
     // Wait loading disappears
