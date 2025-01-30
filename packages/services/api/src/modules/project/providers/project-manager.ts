@@ -1,6 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Organization, Project, ProjectType } from '../../../shared/entities';
-import { share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
@@ -111,11 +110,6 @@ export class ProjectManager {
 
     return deletedProject;
   }
-
-  getProjectIdByToken: () => Promise<string | never> = share(async () => {
-    const token = this.session.getLegacySelector();
-    return token.projectId;
-  });
 
   async getProject(selector: ProjectSelector): Promise<Project> {
     this.logger.debug('Fetching project (selector=%o)', selector);

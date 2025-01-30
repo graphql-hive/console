@@ -1,7 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
-import { share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -169,13 +168,6 @@ export class TargetManager {
       projectId: project.id,
     });
   }
-
-  getTargetIdByToken: () => Promise<string | never> = share(async () => {
-    const selector = this.session.getLegacySelector();
-    const { target } = await this.tokenStorage.getToken({ token: selector.token });
-
-    return target;
-  });
 
   getTargetFromToken: () => Promise<Target | never> = share(async () => {
     const selector = this.session.getLegacySelector();
