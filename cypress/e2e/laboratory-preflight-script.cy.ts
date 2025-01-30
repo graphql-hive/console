@@ -56,7 +56,7 @@ function setEditorScript(script: string) {
 }
 
 describe('Laboratory > Preflight Script', () => {
-  it('regression: loads even if local storage "hive:laboratory:environment" has an invalid value; Sets it to empty object', () => {
+  it('loads even if local storage "hive:laboratory:environment" has an invalid value; Sets it to empty object', () => {
     window.localStorage.setItem('hive:laboratory:environment', '{}');
     cy.visit(`/${data.slug}/laboratory`);
     cy.get(selectors.buttonPreflightScript).click();
