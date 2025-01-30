@@ -23,6 +23,7 @@ import {
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
@@ -684,6 +685,16 @@ export class SchemaManager {
       target.id,
       schemaCheckId,
     );
+
+    if (isUUID(schemaCheckId) === false) {
+      this.logger.debug(
+        'Invalid ID provided (targetId=%s, schemaCheckId=%s)',
+        target.id,
+        schemaCheckId,
+      );
+
+      return null;
+    }
 
     const schemaCheck = await this.storage.findSchemaCheck({
       targetId: target.id,
