@@ -1,5 +1,91 @@
 # hive
 
+## 5.0.0
+
+### Major Changes
+
+- [#6231](https://github.com/graphql-hive/console/pull/6231)
+  [`b7e4052`](https://github.com/graphql-hive/console/commit/b7e4052ecfd8f70fefe39c27886619a24faa7526)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - New permission system for organization member
+  roles.
+
+  The existing scopes assigned to organization members have been replaced with a permissions-based
+  system, enabling more granular access control and role-based access control (RBAC) in Hive.
+
+  **Breaking Changes**
+
+  - **Viewer Role Adjustments** – Members with the default Viewer role can no longer create targets
+    or projects.
+  - **Restricted Role Management** – Permissions for inviting, removing, and assigning roles have
+    been revoked. An admin must manually reassign these permissions where needed.
+  - **Expanded Role Assignment** Capabilities – Members with permissions to manage invites, remove
+    members, or modify roles can now grant additional permissions without restrictions. Caution is
+    advised when assigning these rights, as they should be reserved for "Admin" roles.
+
+  These changes enhance security and provide greater flexibility in managing user permissions across
+  organizations.
+
+### Minor Changes
+
+- [#6378](https://github.com/graphql-hive/console/pull/6378)
+  [`f14daa8`](https://github.com/graphql-hive/console/commit/f14daa89760149d6b1eb45d5351d73c4376b7418)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - You can now set HTTP headers in your
+  [Laboratory Preflight Script](https://the-guild.dev/graphql/hive/docs/dashboard/laboratory/preflight-scripts).
+  Every time you run a request from Laboratory, your preflight headers, if any, will be merged into
+  the request before it is sent.
+
+  You achieve this by interacting with the
+  [`Headers`](https://developer.mozilla.org/docs/web/api/headers) instance newly available at
+  `lab.request.headers`. For example, this script would would add a `foo` header with the value
+  `bar` to every Laboratory request.
+
+  ```ts
+  lab.request.headers.set('foo', 'bar')
+  ```
+
+  A few notes about how headers are merged:
+
+  1. Unlike static headers, preflight headers do not receive environment variable substitutions on
+     their values.
+  2. Preflight headers take precedence, overwriting any same-named headers already in the Laboratory
+     request.
+
+  Documentation for this new feature is available at
+  https://the-guild.dev/graphql/hive/docs/dashboard/laboratory/preflight-scripts#http-headers.
+
+- [#6123](https://github.com/graphql-hive/console/pull/6123)
+  [`abfd1b1`](https://github.com/graphql-hive/console/commit/abfd1b1ea9b6850683f31c152516d9e0d97d94aa)
+  Thanks [@Intellicode](https://github.com/Intellicode)! - encode postgres variables and introduce
+  optional password
+
+- [#6412](https://github.com/graphql-hive/console/pull/6412)
+  [`f352bba`](https://github.com/graphql-hive/console/commit/f352bbac977902120527fbea2afb0b0b7dd253fb)
+  Thanks [@Intellicode](https://github.com/Intellicode)! - Added a new environment variable
+  `PROMETHEUS_METRICS_PORT` to control the promethus port of the policy service. The default value
+  is `10254` (no action needed).
+
+### Patch Changes
+
+- [#6398](https://github.com/graphql-hive/console/pull/6398)
+  [`0e4be14`](https://github.com/graphql-hive/console/commit/0e4be14256937f492efcb4a7dc97b59918274a2a)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Remove the db leftovers related to
+  activities (no longer a thing)
+
+- [#6433](https://github.com/graphql-hive/console/pull/6433)
+  [`a902d8b`](https://github.com/graphql-hive/console/commit/a902d8bb974c0ea707a17ff3d921a6cf13972ead)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Improves validation for operation
+  durations and error totals. Prevents processing of invalid usage report data.
+
+- [#6374](https://github.com/graphql-hive/console/pull/6374)
+  [`393ece7`](https://github.com/graphql-hive/console/commit/393ece7eab93ed0b7873e4428f78a5c27cf764fa)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adjust the Kafka message size
+  estimation only when Kafka gives back `MESSAGE_TOO_LARGE` error
+
+- [#6358](https://github.com/graphql-hive/console/pull/6358)
+  [`ab06518`](https://github.com/graphql-hive/console/commit/ab065182d89e6d7e4c90469d0bcaadacfa4c3b1e)
+  Thanks [@jdolle](https://github.com/jdolle)! - Use sum instead of max of top request counts for
+  breaking changes calculation
+
 ## 4.1.0
 
 ### Minor Changes
