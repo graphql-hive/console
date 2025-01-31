@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { cache } from '../../../shared/helpers';
+import { Session } from '../../auth/lib/authz';
 import { Logger } from './logger';
 import { Storage } from './storage';
 
@@ -11,7 +12,7 @@ interface ProjectSelectorInput extends OrganizationSelectorInput {
   projectSlug: string;
 }
 
-interface TargetSelectorInput extends ProjectSelectorInput {
+export interface TargetSelectorInput extends ProjectSelectorInput {
   targetSlug: string;
 }
 
@@ -22,6 +23,7 @@ export class IdTranslator {
   private logger: Logger;
   constructor(
     private storage: Storage,
+    private session: Session,
     logger: Logger,
   ) {
     this.logger = logger.child({ service: 'IdTranslator' });
@@ -83,6 +85,58 @@ export class IdTranslator {
       projectSlug: selector.projectSlug,
       targetSlug: selector.targetSlug,
     });
+  }
+
+  async resolveTargetSlugSelector(args: {
+    selector: TargetSelectorInput | null;
+    onError: () => never;
+  }): Promise<{
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+  }> {
+    this.logger.debug('Resolve target slug selector.');
+    let selector: {
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+    };
+    if (args.selector) {
+      const [organizationId, projectId, targetId] = await Promise.all([
+        this.translateOrganizationId(args.selector),
+        this.translateProjectId(args.selector),
+        this.translateTargetId(args.selector),
+      ]).catch(error => {
+        this.logger.debug(error);
+        this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.selector);
+        args.onError();
+      });
+
+      this.logger.debug(
+        'Target selector resolved. (organization=%s, project=%s, target=%s)',
+        organizationId,
+        projectId,
+        targetId,
+      );
+
+      selector = {
+        organizationId,
+        projectId,
+        targetId,
+      };
+    } else {
+      this.logger.debug('Attempt resolving target selector from access token.');
+      selector = this.session.getLegacySelector();
+    }
+
+    this.logger.debug(
+      'Target selector resolved. (organization=%s, project=%s, target=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
+    );
+
+    return selector;
   }
 }
 

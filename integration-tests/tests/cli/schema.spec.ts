@@ -328,7 +328,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         const { inviteAndJoinMember, createProject } = await createOrg();
         await inviteAndJoinMember();
         const { createTargetAccessToken } = await createProject(projectType);
-        const { secret, latestSchema } = await createTargetAccessToken({});
+        const { secret } = await createTargetAccessToken({});
 
         const cli = createCLI({
           readonly: secret,
@@ -353,5 +353,74 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         await expect(fetchCmd).resolves.toMatchSnapshot('latest sdl');
       },
     );
+  },
+);
+
+test.concurrent(
+  'schema:publish with --target parameter matching the access token',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject, organization } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken, project, target } = await createProject();
+    const { secret } = await createTargetAccessToken({});
+
+    const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'Kamil',
+        '--target',
+        targetSlug,
+        'fixtures/init-schema.graphql',
+      ]),
+    ).resolves.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+      stdout--------------------------------------------:
+      ✔ Published initial schema.
+      ℹ Available at http://__URL__
+    `);
+  },
+);
+
+test.concurrent(
+  'schema:publish fails with --target parameter not matching the access token',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken } = await createProject();
+    const { secret } = await createTargetAccessToken({});
+
+    const targetSlug = 'i/do/not-match';
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'Kamil',
+        '--target',
+        targetSlug,
+        'fixtures/init-schema.graphql',
+      ]),
+    ).rejects.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+      exitCode------------------------------------------:
+      2
+      stderr--------------------------------------------:
+       ›   Error: No access (reason: "Missing permission for performing 
+       ›   'schemaVersion:publish' on resource")  (Request ID: __REQUEST_ID__)  [115]
+       ›   > See https://__URL__ for
+       ›    a complete list of error codes and recommended fixes.
+       ›   To disable this message set HIVE_NO_ERROR_TIP=1
+       ›   Reference: __ID__
+      stdout--------------------------------------------:
+      __NONE__
+    `);
   },
 );

@@ -1,45 +1,15 @@
-import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SchemaPublisher } from '../../providers/schema-publisher';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const schemaCheck: NonNullable<MutationResolvers['schemaCheck']> = async (
   _,
   { input },
-  { injector, session },
+  { injector },
 ) => {
-  let selector: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-  };
-
-  if (input.target) {
-    const [organizationId, projectId, targetId] = await Promise.all([
-      injector.get(IdTranslator).translateOrganizationId(input.target),
-      injector.get(IdTranslator).translateProjectId(input.target),
-      injector.get(IdTranslator).translateTargetId(input.target),
-    ]);
-
-    selector = {
-      organizationId,
-      projectId,
-      targetId,
-    };
-  } else {
-    // LEGACY method of resolving the permissions
-    const { organizationId, projectId, targetId } = session.getLegacySelector();
-
-    selector = {
-      organizationId,
-      projectId,
-      targetId,
-    };
-  }
-
   const result = await injector.get(SchemaPublisher).check({
     ...input,
     service: input.service?.toLowerCase(),
-    ...selector,
+    target: input.target ?? null,
   });
 
   if ('changes' in result && result.changes) {

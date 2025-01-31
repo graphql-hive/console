@@ -6,7 +6,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { traceFn } from '@hive/service-common';
+import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -20,7 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { Session } from '../../auth/lib/authz';
+import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
 import {
   GitHubIntegrationManager,
   type GitHubCheckRun,
@@ -28,6 +28,7 @@ import {
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { RateLimitProvider } from '../../rate-limit/providers/rate-limit.provider';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
@@ -74,18 +75,13 @@ const schemaDeleteCount = new promClient.Counter({
   labelNames: ['model', 'projectType'],
 });
 
-export type CheckInput = Omit<Types.SchemaCheckInput, 'project' | 'organization' | 'target'> &
-  TargetSelector;
+export type CheckInput = Types.SchemaCheckInput;
 
-export type DeleteInput = Types.SchemaDeleteInput &
-  TargetSelector & {
-    checksum: string;
-  };
+export type DeleteInput = Types.SchemaDeleteInput;
 
-export type PublishInput = Types.SchemaPublishInput &
-  TargetSelector & {
-    isSchemaPublishMissingUrlErrorSelected: boolean;
-  };
+export type PublishInput = Types.SchemaPublishInput & {
+  isSchemaPublishMissingUrlErrorSelected: boolean;
+};
 
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
 
@@ -142,6 +138,7 @@ export class SchemaPublisher {
     private contracts: Contracts,
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
+    private idTranslator: IdTranslator,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -255,9 +252,9 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.check', {
     initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.organizationSlug,
+      'hive.project.slug': input.target?.projectSlug,
+      'hive.target.slug': input.target?.targetSlug,
     }),
     resultAttributes: result => ({
       'hive.check.result': result.__typename,
@@ -266,13 +263,26 @@ export class SchemaPublisher {
   async check(input: CheckInput) {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
 
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schemaCheck:create');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
     await this.session.assertPerformAction({
       action: 'schemaCheck:create',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         serviceName: input.service ?? null,
       },
     });
@@ -280,26 +290,26 @@ export class SchemaPublisher {
     const [target, project, organization, latestVersion, latestComposableVersion] =
       await Promise.all([
         this.storage.getTarget({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+          targetId: selector.targetId,
         }),
         this.storage.getProject({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
         }),
         this.storage.getOrganization({
-          organizationId: input.organizationId,
+          organizationId: selector.organizationId,
         }),
         this.storage.getLatestSchemas({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+          targetId: selector.targetId,
         }),
         this.storage.getLatestSchemas({
-          organizationId: input.organizationId,
-          projectId: input.projectId,
-          targetId: input.targetId,
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+          targetId: selector.targetId,
           onlyComposable: true,
         }),
       ]);
@@ -432,12 +442,6 @@ export class SchemaPublisher {
     });
 
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
-
-    const selector = {
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-      targetId: input.targetId,
-    };
 
     const sdl = tryPrettifySDL(input.sdl);
 
@@ -956,49 +960,68 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.publish', {
     initAttributes: (input, _) => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.organizationSlug,
+      'hive.project.slug': input.target?.projectSlug,
+      'hive.target.slug': input.target?.targetSlug,
     }),
     resultAttributes: result => ({
       'hive.publish.result': result.__typename,
     }),
   })
   async publish(input: PublishInput, signal: AbortSignal): Promise<PublishResult> {
-    this.logger.debug(
-      'Schema publication (organization=%s, project=%s, target=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
-    );
+    this.logger.debug('Start schema publication.');
+
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schemaVersion:publish');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        serviceName: input.service ?? null,
+      },
+    });
 
     this.logger.debug(
       'Compute hash (organization=%s, project=%s, target=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
     );
 
-    const selector = this.session.getLegacySelector();
-
     const target = await this.storage.getTarget({
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-      targetId: input.targetId,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
     });
 
     const [contracts, latestVersion] = await Promise.all([
-      this.contracts.getActiveContractsByTargetId({ targetId: input.targetId }),
+      this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
     ]);
+
+    const legacySelector = this.session.getLegacySelector();
 
     const checksum = createHash('md5')
       .update(
         stringify({
           ...input,
-          organization: input.organizationId,
-          project: input.projectId,
-          target: input.targetId,
+          organization: selector.organizationId,
+          project: selector.projectId,
+          target: selector.targetId,
           service: input.service?.toLowerCase(),
           contracts: contracts?.map(contract => ({
             contractId: contract.id,
@@ -1010,19 +1033,19 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(selector.token)
+      .update(legacySelector.token)
       .digest('base64');
 
     this.logger.debug(
       'Hash computation finished (organization=%s, project=%s, target=%s, hash=%s)',
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
     );
 
     return this.mutex
       .perform(
-        registryLockId(input.targetId),
+        registryLockId(selector.targetId),
         {
           /**
            * The global request timeout is 60 seconds.
@@ -1037,16 +1060,6 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          await this.session.assertPerformAction({
-            action: 'schemaVersion:publish',
-            organizationId: input.organizationId,
-            params: {
-              targetId: input.targetId,
-              projectId: input.projectId,
-              organizationId: input.organizationId,
-              serviceName: input.service ?? null,
-            },
-          });
           return this.distributedCache.wrap({
             key: `schema:publish:${checksum}`,
             ttlSeconds: 15,
@@ -1054,6 +1067,7 @@ export class SchemaPublisher {
               this.internalPublish({
                 ...input,
                 checksum,
+                selector,
               }),
           });
         },
@@ -1072,9 +1086,9 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.delete', {
     initAttributes: (input, _) => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.organizationSlug,
+      'hive.project.slug': input.target?.projectSlug,
+      'hive.target.slug': input.target?.targetSlug,
     }),
     resultAttributes: result => ({
       'hive.delete.result': result.__typename,
@@ -1083,52 +1097,77 @@ export class SchemaPublisher {
   async delete(input: DeleteInput, signal: AbortSignal) {
     this.logger.info('Deleting schema (input=%o)', input);
 
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schemaVersion:deleteService');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:deleteService',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+        serviceName: input.serviceName,
+      },
+    });
+
+    const legacySelector = this.session.getLegacySelector();
+
+    const checksum = createHash('md5')
+      .update(
+        stringify({
+          ...input,
+          serviceName: input.serviceName.toLowerCase(),
+        }),
+      )
+      .update(legacySelector.token)
+      .digest('base64');
+
     return this.mutex.perform(
-      registryLockId(input.targetId),
+      registryLockId(selector.targetId),
       {
         signal,
       },
       async () => {
-        await this.session.assertPerformAction({
-          action: 'schemaVersion:deleteService',
-          organizationId: input.organizationId,
-          params: {
-            organizationId: input.organizationId,
-            projectId: input.projectId,
-            targetId: input.targetId,
-            serviceName: input.serviceName,
-          },
-        });
-
         const [organization, project, target, latestVersion, latestComposableVersion, baseSchema] =
           await Promise.all([
             this.storage.getOrganization({
-              organizationId: input.organizationId,
+              organizationId: selector.organizationId,
             }),
             this.storage.getProject({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
             }),
             this.storage.getTarget({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.targetId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
             }),
             this.storage.getLatestSchemas({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.targetId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
             }),
             this.storage.getLatestSchemas({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.targetId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
               onlyComposable: true,
             }),
             this.storage.getBaseSchema({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.targetId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
             }),
           ]);
 
@@ -1138,7 +1177,7 @@ export class SchemaPublisher {
         ]);
 
         const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-          input.targetId,
+          selector.targetId,
           project,
           organization,
         );
@@ -1178,16 +1217,16 @@ export class SchemaPublisher {
         const conditionalBreakingChangeConfiguration =
           await this.getConditionalBreakingChangeConfiguration({
             selector: {
-              targetId: input.targetId,
-              projectId: input.projectId,
-              organizationId: input.organizationId,
+              targetId: selector.targetId,
+              projectId: selector.projectId,
+              organizationId: selector.organizationId,
             },
           });
 
         const contracts =
           project.type === ProjectType.FEDERATION
             ? await this.contracts.loadActiveContractsWithLatestValidContractVersionsByTargetId({
-                targetId: input.targetId,
+                targetId: selector.targetId,
               })
             : null;
 
@@ -1211,9 +1250,9 @@ export class SchemaPublisher {
           project,
           organization,
           selector: {
-            target: input.targetId,
-            project: input.projectId,
-            organization: input.organizationId,
+            target: selector.targetId,
+            project: selector.projectId,
+            organization: selector.organizationId,
           },
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
@@ -1233,9 +1272,9 @@ export class SchemaPublisher {
           this.logger.debug('Delete accepted');
           if (input.dryRun !== true) {
             const schemaVersion = await this.storage.deleteSchema({
-              organizationId: input.organizationId,
-              projectId: input.projectId,
-              targetId: input.targetId,
+              organizationId: selector.organizationId,
+              projectId: selector.projectId,
+              targetId: selector.targetId,
               serviceName: input.serviceName,
               composable: deleteResult.state.composable,
               diffSchemaVersionId,
@@ -1289,9 +1328,9 @@ export class SchemaPublisher {
               },
               conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
                 conditionalBreakingChangeConfiguration,
-                organizationId: input.organizationId,
-                projectId: input.projectId,
-                targetId: input.targetId,
+                organizationId: selector.organizationId,
+                projectId: selector.projectId,
+                targetId: selector.targetId,
               }),
             });
 
@@ -1369,12 +1408,13 @@ export class SchemaPublisher {
   private async internalPublish(
     input: PublishInput & {
       checksum: string;
+      selector: TargetSelector;
     },
   ) {
     const [organizationId, projectId, targetId] = [
-      input.organizationId,
-      input.projectId,
-      input.targetId,
+      input.selector.organizationId,
+      input.selector.projectId,
+      input.selector.targetId,
     ];
     this.logger.info('Publishing schema (input=%o)', {
       ...lodash.omit(input, ['sdl', 'organization', 'project', 'target', 'metadata']),

@@ -46,6 +46,10 @@ const variableReplacements = [
     mask: '$1__ID__',
   },
   {
+    pattern: /(Request ID:)[^)]+"/gi,
+    mask: '$1 __REQUEST_ID__',
+  },
+  {
     pattern: /(https?:\/\/)[^\n ]+/gi,
     mask: '$1__URL__',
   },

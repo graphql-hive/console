@@ -3,7 +3,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { traceFn } from '@hive/service-common';
+import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -25,11 +25,11 @@ import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { Session } from '../../auth/lib/authz';
+import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
-import { IdTranslator } from '../../shared/providers/id-translator';
+import { IdTranslator, TargetSelectorInput } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
   OrganizationSelector,
@@ -101,46 +101,59 @@ export class SchemaManager {
 
   @traceFn('SchemaManager.compose', {
     initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.organizationSlug,
+      'hive.project.slug': input.target?.projectSlug,
+      'hive.target.slug': input.target?.targetSlug,
       'input.only.composable': input.onlyComposable,
       'input.services.count': input.services.length,
     }),
   })
-  async compose(
-    input: TargetSelector & {
-      onlyComposable: boolean;
-      services: ReadonlyArray<{
-        sdl: string;
-        url?: string | null;
-        name: string;
-      }>;
-    },
-  ) {
+  async compose(input: {
+    onlyComposable: boolean;
+    services: ReadonlyArray<{
+      sdl: string;
+      url?: string | null;
+      name: string;
+    }>;
+    target: TargetSelectorInput | null;
+  }) {
     this.logger.debug('Composing schemas (input=%o)', lodash.omit(input, 'services'));
+
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schema:compose');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
     await this.session.canPerformAction({
       action: 'schema:compose',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const [organization, project, latestSchemas] = await Promise.all([
       this.storage.getOrganization({
-        organizationId: input.organizationId,
+        organizationId: selector.organizationId,
       }),
       this.storage.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
       }),
       this.storage.getLatestSchemas({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         onlyComposable: input.onlyComposable,
       }),
     ]);
@@ -178,7 +191,7 @@ export class SchemaManager {
       native: this.checkProjectNativeFederationSupport({
         project,
         organization,
-        targetId: input.targetId,
+        targetId: selector.targetId,
       }),
       contracts: null,
     });
@@ -978,30 +991,12 @@ export class SchemaManager {
     actionId: string;
     target: { targetSlug: string; projectSlug: string; organizationSlug: string } | null;
   }) {
-    let selector: TargetSelector;
-
-    if (args.target) {
-      const [organizationId, projectId, targetId] = await Promise.all([
-        this.idTranslator.translateOrganizationId(args.target),
-        this.idTranslator.translateProjectId(args.target),
-        this.idTranslator.translateTargetId(args.target),
-      ]);
-
-      selector = {
-        organizationId,
-        projectId,
-        targetId,
-      };
-    } else {
-      // LEGACY method of resolving the permissions
-      const { organizationId, projectId, targetId } = this.session.getLegacySelector();
-
-      selector = {
-        organizationId,
-        projectId,
-        targetId,
-      };
-    }
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: args.target,
+      onError() {
+        throw new InsufficientPermissionError('schema:loadFromRegistry');
+      },
+    });
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,
