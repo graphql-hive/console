@@ -543,6 +543,19 @@ importers:
         version: 16.9.0
     publishDirectory: dist
 
+  packages/libraries/federation-link-utils:
+    devDependencies:
+      graphql:
+        specifier: 16.9.0
+        version: 16.9.0
+      tslib:
+        specifier: 2.8.1
+        version: 2.8.1
+      vitest:
+        specifier: 3.0.5
+        version: 3.0.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
+    publishDirectory: dist
+
   packages/libraries/router: {}
 
   packages/libraries/yoga:
@@ -16182,7 +16195,7 @@ snapshots:
 
   '@ampproject/remapping@2.3.0':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.5
+      '@jridgewell/gen-mapping': 0.3.8
       '@jridgewell/trace-mapping': 0.3.25
 
   '@antfu/install-pkg@0.4.1':
@@ -20122,7 +20135,6 @@ snapshots:
       '@jridgewell/set-array': 1.2.1
       '@jridgewell/sourcemap-codec': 1.5.0
       '@jridgewell/trace-mapping': 0.3.25
-    optional: true
 
   '@jridgewell/resolve-uri@3.1.1': {}
 
