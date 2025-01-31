@@ -156,7 +156,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       description: 'Context ID for grouping the schema check.',
     }),
     target: Flags.string({
-      description: 'The target to which to publish to.',
+      description: 'The target against which to check the schema.',
     }),
   };
 

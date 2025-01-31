@@ -118,7 +118,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       description: 'whether to write to a file instead of stdout',
     }),
     target: Flags.string({
-      description: 'The target to which to publish to.',
+      description: 'The target from which to fetch the schema.',
     }),
   };
 
