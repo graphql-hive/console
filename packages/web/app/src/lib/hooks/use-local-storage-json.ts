@@ -31,11 +31,10 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     }
 
     // todo: Some possible improvements:
-    // - Monitor schema parse failures.
+    // - Monitor json/schema parse failures.
     // - Let caller choose an error strategy: 'return' / 'default' / 'throw'
     try {
-      const parsed = JSON.parse(storedValue);
-      return schema.parse(parsed);
+      return schema.parse(JSON.parse(storedValue));
     } catch (_) {
       return defaultValue;
     }
