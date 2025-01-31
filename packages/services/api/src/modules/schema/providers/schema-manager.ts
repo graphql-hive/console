@@ -973,27 +973,27 @@ export class SchemaManager {
   }
 
   async getSchemaVersionByActionId(args: { actionId: string }) {
-    const target = await this.targetManager.getTargetFromToken();
+    const selector = this.session.getLegacySelector();
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
-      projectId: target.projectId,
-      targetId: target.id,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       actionId: args.actionId,
     });
 
     await this.session.assertPerformAction({
       action: 'schema:loadFromRegistry',
-      organizationId: target.orgId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const record = await this.storage.getSchemaVersionByActionId({
-      projectId: target.projectId,
-      targetId: target.id,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       actionId: args.actionId,
     });
 
@@ -1003,9 +1003,9 @@ export class SchemaManager {
 
     return {
       ...record,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+      organizationId: selector.organizationId,
     };
   }
 
