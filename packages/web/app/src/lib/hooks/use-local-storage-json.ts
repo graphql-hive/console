@@ -12,7 +12,7 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
   // of the regular parse process.
   //
   const defaultValue =
-    manualDefaultValue != undefined
+    manualDefaultValue !== undefined
       ? manualDefaultValue
       : Kit.ZodHelpers.isDefaultType(schema)
         ? (schema._def.defaultValue() as z.infer<$Schema>)

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ZodHelpers } from './zod-helpers';
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Json {
   export const Primitive = z.union([z.string(), z.number(), z.boolean(), z.null()]);
   export type Primitive = z.infer<typeof Primitive>;
