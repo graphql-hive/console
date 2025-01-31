@@ -357,7 +357,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
 );
 
 test.concurrent(
-  'schema:publish with --target parameter matching the access token',
+  'schema:publish with --target parameter matching the access token (slug)',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject, organization } = await createOrg();
@@ -388,7 +388,36 @@ test.concurrent(
 );
 
 test.concurrent(
-  'schema:publish fails with --target parameter not matching the access token',
+  'schema:publish with --target parameter matching the access token (UUID)',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { inviteAndJoinMember, createProject, organization } = await createOrg();
+    await inviteAndJoinMember();
+    const { createTargetAccessToken, project, target } = await createProject();
+    const { secret } = await createTargetAccessToken({});
+
+    await expect(
+      schemaPublish([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'Kamil',
+        '--target',
+        target.id,
+        'fixtures/init-schema.graphql',
+      ]),
+    ).resolves.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+      stdout--------------------------------------------:
+      ✔ Published initial schema.
+      ℹ Available at http://__URL__
+    `);
+  },
+);
+
+test.concurrent(
+  'schema:publish fails with --target parameter not matching the access token (slug)',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
@@ -413,7 +442,7 @@ test.concurrent(
       exitCode------------------------------------------:
       2
       stderr--------------------------------------------:
-       ›   Error: No access (reason: "Missing permission for performing 
+       ›   Error: No access (reason: "Missing permission for performing
        ›   'schemaVersion:publish' on resource")  (Request ID: __REQUEST_ID__)  [115]
        ›   > See https://__URL__ for
        ›    a complete list of error codes and recommended fixes.
