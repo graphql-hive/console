@@ -782,6 +782,8 @@ export interface Storage {
     contextId: string;
   }): Promise<Map<string, SchemaChangeType>>;
 
+  getTargetById(targetId: string): Promise<Target | null>;
+
   getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
 
   // Zendesk

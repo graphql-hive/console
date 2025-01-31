@@ -1,6 +1,7 @@
 import { Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { cache } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from './logger';
 import { Storage } from './storage';
@@ -88,6 +89,7 @@ export class IdTranslator {
     });
   }
 
+  /** Resolve a GraphQLSchema.TargetReferenceInput */
   async resolveTargetReference(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
     onError: () => never;
@@ -124,8 +126,22 @@ export class IdTranslator {
         targetId,
       };
     } else if (args.reference?.byId) {
-      // TODO: load by ID
-      throw new Error('nope');
+      if (!isUUID(args.reference.byId)) {
+        this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
+        args.onError();
+      }
+
+      const target = await this.storage.getTargetById(args.reference.byId);
+      if (!target) {
+        this.logger.debug('Target not found. (targetId=%s)', args.reference.byId);
+        args.onError();
+      }
+
+      selector = {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      };
     } else {
       this.logger.debug('Attempt resolving target selector from access token.');
       selector = this.session.getLegacySelector();
