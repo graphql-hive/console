@@ -30,7 +30,7 @@ import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
-import { IdTranslator, TargetSelectorInput } from '../../shared/providers/id-translator';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
   OrganizationSelector,

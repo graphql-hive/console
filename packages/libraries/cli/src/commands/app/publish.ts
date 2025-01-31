@@ -1,4 +1,3 @@
-import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
