@@ -10,12 +10,14 @@ import {
 } from '@theguild/federation-composition';
 import Command from '../base-command';
 import { graphql } from '../gql';
+import * as GraphQLSchema from '../gql/graphql';
 import { graphqlEndpoint } from '../helpers/config';
 import {
   APIError,
   HiveCLIError,
   IntrospectionError,
   InvalidCompositionResultError,
+  InvalidTargetError,
   LocalCompositionError,
   MissingEndpointError,
   MissingRegistryTokenError,
@@ -24,6 +26,7 @@ import {
   UnexpectedError,
 } from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
+import * as TargetSlug from '../helpers/target-slug';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -176,6 +179,9 @@ export default class Dev extends Command<typeof Dev> {
       default: false,
       dependsOn: ['remote'],
     }),
+    target: Flags.string({
+      description: 'The target to which to publish to.',
+    }),
   };
 
   async run() {
@@ -199,6 +205,15 @@ export default class Dev extends Command<typeof Dev> {
         sdl,
       };
     });
+
+    let target: GraphQLSchema.TargetSelectorInput | null = null;
+    if (flags.target) {
+      const result = TargetSlug.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
 
     if (flags.watch === true) {
       if (isRemote) {
@@ -291,6 +306,7 @@ export default class Dev extends Command<typeof Dev> {
         token,
         write: flags.write,
         unstable__forceLatest,
+        target,
         onError: error => {
           throw error;
         },
@@ -354,6 +370,7 @@ export default class Dev extends Command<typeof Dev> {
     token: string;
     write: string;
     unstable__forceLatest: boolean;
+    target: GraphQLSchema.TargetSelectorInput | null;
     onError: (error: HiveCLIError) => void | never;
   }) {
     const result = await this.registryApi(input.registry, input.token).request({
@@ -366,6 +383,7 @@ export default class Dev extends Command<typeof Dev> {
             url: service.url,
             sdl: service.sdl,
           })),
+          target: input.target,
         },
       },
     });
