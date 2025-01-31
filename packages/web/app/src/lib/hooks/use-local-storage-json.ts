@@ -35,7 +35,14 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     // - Let caller choose an error strategy: 'return' / 'default' / 'throw'
     try {
       return schema.parse(JSON.parse(storedValue));
-    } catch (_) {
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.warn(`useLocalStorageJson: JSON parsing failed for key "${key}"`, error);
+      } else if (error instanceof z.ZodError) {
+        console.warn(`useLocalStorageJson: Schema validation failed for key "${key}"`, error);
+      } else {
+        Kit.neverCatch(error);
+      }
       return defaultValue;
     }
   });
