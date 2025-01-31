@@ -1,8 +1,6 @@
 import Image, { StaticImageData } from 'next/image';
 import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
-import dimaPhoto from './dima.webp';
-// import noamPhoto from './noam.webp';
 import saihajPhoto from './saihaj.webp';
 
 export function TeamSection({ className }: { className?: string }) {
@@ -40,9 +38,6 @@ export function TeamSection({ className }: { className?: string }) {
             'max-xl:-mx-4 max-xl:max-w-[calc(100%-1rem)] max-xl:px-4 max-xl:py-6 max-lg:max-w-[calc(100%+2rem)] xl:ml-auto',
             team.length === 12 ? 'xl:w-[628px]' : 'xl:w-[664px]',
           )}
-          style={{
-            '--size': '120px',
-          }}
         />
       </div>
     </section>
@@ -56,7 +51,6 @@ const team: TeamMember[] = [
     'https://avatars.githubusercontent.com/enisdenjo?v=4&s=180',
     'https://github.com/enisdenjo',
   ],
-  ['Dimitri Postolov', dimaPhoto, 'https://github.com/dimaMachina'],
   [
     'Dotan Simha',
     'https://avatars.githubusercontent.com/dotansimha?v=4&s=180',
@@ -119,9 +113,11 @@ function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
       {...props}
       className={cn(
         'nextra-scrollbar flex shrink-0 grid-cols-5 flex-row items-stretch justify-items-stretch gap-2 [scrollbar-color:#00000029_transparent] [scrollbar-width:auto] max-lg:overflow-auto lg:flex-wrap lg:gap-6 lg:max-xl:grid',
-        team.length === 13
-          ? 'grid-cols-5 xl:[&>:nth-child(9n-8)]:ml-[calc(var(--size)/2)]'
-          : 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
+        '[--size:120px]',
+        team.length <= 12 && 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
+        team.length === 13 &&
+          'grid-cols-5 xl:[--size:112px] xl:[&>:nth-child(9n-8)]:ml-[calc(var(--size)/2)]',
+        team.length > 13 && 'nextra-scrollbar size-full flex-col p-1 xl:overflow-scroll',
         props.className,
       )}
     >
