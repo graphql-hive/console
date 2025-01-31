@@ -56,14 +56,14 @@ export class AppDeploymentsManager {
   }
 
   async createAppDeployment(args: {
-    selector: GraphQLSchema.TargetSelectorInput | null;
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: args.selector,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
       onError() {
         throw new InsufficientPermissionError('appDeployment:create');
       },
@@ -88,7 +88,7 @@ export class AppDeploymentsManager {
   }
 
   async addDocumentsToAppDeployment(args: {
-    selector: GraphQLSchema.TargetSelectorInput | null;
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
@@ -98,8 +98,8 @@ export class AppDeploymentsManager {
       body: string;
     }>;
   }) {
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: args.selector,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
       onError() {
         throw new InsufficientPermissionError('appDeployment:create');
       },
@@ -126,14 +126,14 @@ export class AppDeploymentsManager {
   }
 
   async activateAppDeployment(args: {
-    selector: GraphQLSchema.TargetSelectorInput | null;
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: args.selector,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
       onError() {
         throw new InsufficientPermissionError('appDeployment:publish');
       },

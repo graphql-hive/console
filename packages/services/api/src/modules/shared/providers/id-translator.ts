@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from './logger';
@@ -87,28 +88,26 @@ export class IdTranslator {
     });
   }
 
-  async resolveTargetSlugSelector(args: {
-    selector: TargetSelectorInput | null;
+  async resolveTargetReference(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
     onError: () => never;
-  }): Promise<{
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-  }> {
-    this.logger.debug('Resolve target slug selector.');
+  }): Promise<{ organizationId: string; projectId: string; targetId: string }> {
+    this.logger.debug('Resolve target reference. (reference=%o)', args.reference);
+
     let selector: {
       organizationId: string;
       projectId: string;
       targetId: string;
     };
-    if (args.selector) {
+
+    if (args.reference?.bySelector) {
       const [organizationId, projectId, targetId] = await Promise.all([
-        this.translateOrganizationId(args.selector),
-        this.translateProjectId(args.selector),
-        this.translateTargetId(args.selector),
+        this.translateOrganizationId(args.reference.bySelector),
+        this.translateProjectId(args.reference.bySelector),
+        this.translateTargetId(args.reference.bySelector),
       ]).catch(error => {
         this.logger.debug(error);
-        this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.selector);
+        this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
         args.onError();
       });
 
@@ -124,6 +123,9 @@ export class IdTranslator {
         projectId,
         targetId,
       };
+    } else if (args.reference?.byId) {
+      // TODO: load by ID
+      throw new Error('nope');
     } else {
       this.logger.debug('Attempt resolving target selector from access token.');
       selector = this.session.getLegacySelector();

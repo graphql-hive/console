@@ -252,9 +252,10 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.check', {
     initAttributes: input => ({
-      'hive.organization.slug': input.target?.organizationSlug,
-      'hive.project.slug': input.target?.projectSlug,
-      'hive.target.slug': input.target?.targetSlug,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.check.result': result.__typename,
@@ -263,8 +264,8 @@ export class SchemaPublisher {
   async check(input: CheckInput) {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
 
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: input.target ?? null,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
       onError() {
         throw new InsufficientPermissionError('schemaCheck:create');
       },
@@ -960,9 +961,10 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.publish', {
     initAttributes: (input, _) => ({
-      'hive.organization.slug': input.target?.organizationSlug,
-      'hive.project.slug': input.target?.projectSlug,
-      'hive.target.slug': input.target?.targetSlug,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.publish.result': result.__typename,
@@ -971,8 +973,8 @@ export class SchemaPublisher {
   async publish(input: PublishInput, signal: AbortSignal): Promise<PublishResult> {
     this.logger.debug('Start schema publication.');
 
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: input.target ?? null,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
       onError() {
         throw new InsufficientPermissionError('schemaVersion:publish');
       },
@@ -1086,9 +1088,10 @@ export class SchemaPublisher {
 
   @traceFn('SchemaPublisher.delete', {
     initAttributes: (input, _) => ({
-      'hive.organization.slug': input.target?.organizationSlug,
-      'hive.project.slug': input.target?.projectSlug,
-      'hive.target.slug': input.target?.targetSlug,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
     }),
     resultAttributes: result => ({
       'hive.delete.result': result.__typename,
@@ -1097,8 +1100,8 @@ export class SchemaPublisher {
   async delete(input: DeleteInput, signal: AbortSignal) {
     this.logger.info('Deleting schema (input=%o)', input);
 
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: input.target ?? null,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
       onError() {
         throw new InsufficientPermissionError('schemaVersion:deleteService');
       },

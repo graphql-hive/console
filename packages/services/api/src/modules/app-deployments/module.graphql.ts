@@ -95,7 +95,7 @@ export default gql`
   }
 
   input CreateAppDeploymentInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     appName: String!
     appVersion: String!
   }
@@ -148,7 +148,7 @@ export default gql`
   }
 
   input AddDocumentsToAppDeploymentInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     """
     Name of the app.
     """
@@ -192,7 +192,7 @@ export default gql`
   }
 
   input ActivateAppDeploymentInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     appName: String!
     appVersion: String!
   }

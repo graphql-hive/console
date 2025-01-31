@@ -12,6 +12,7 @@ import type {
 } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 import { SchemaChecksFilter } from '../../../__generated__/types';
+import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
   NativeFederationCompatibilityStatus,
@@ -101,9 +102,10 @@ export class SchemaManager {
 
   @traceFn('SchemaManager.compose', {
     initAttributes: input => ({
-      'hive.organization.slug': input.target?.organizationSlug,
-      'hive.project.slug': input.target?.projectSlug,
-      'hive.target.slug': input.target?.targetSlug,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
       'input.only.composable': input.onlyComposable,
       'input.services.count': input.services.length,
     }),
@@ -115,12 +117,12 @@ export class SchemaManager {
       url?: string | null;
       name: string;
     }>;
-    target: TargetSelectorInput | null;
+    target: GraphQLSchema.TargetReferenceInput | null;
   }) {
     this.logger.debug('Composing schemas (input=%o)', lodash.omit(input, 'services'));
 
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: input.target ?? null,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
       onError() {
         throw new InsufficientPermissionError('schema:compose');
       },
@@ -989,10 +991,10 @@ export class SchemaManager {
 
   async getSchemaVersionByActionId(args: {
     actionId: string;
-    target: { targetSlug: string; projectSlug: string; organizationSlug: string } | null;
+    target: GraphQLSchema.TargetReferenceInput | null;
   }) {
-    const selector = await this.idTranslator.resolveTargetSlugSelector({
-      selector: args.target,
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
       onError() {
         throw new InsufficientPermissionError('schema:loadFromRegistry');
       },

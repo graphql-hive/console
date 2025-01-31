@@ -10,7 +10,7 @@ import {
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../../helpers/errors';
-import * as TargetSlug from '../../helpers/target-slug';
+import * as TargetInput from '../../helpers/target-input';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -61,9 +61,9 @@ export default class AppPublish extends Command<typeof AppPublish> {
       throw new MissingRegistryTokenError();
     }
 
-    let target: GraphQLSchema.TargetSelectorInput | null = null;
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
     if (flags.target) {
-      const result = TargetSlug.parse(flags.target);
+      const result = TargetInput.parse(flags.target);
       if (result.type === 'error') {
         throw new InvalidTargetError();
       }

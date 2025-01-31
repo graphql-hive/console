@@ -104,6 +104,22 @@ export default gql`
     targetSlug: String!
   }
 
+  """
+  @oneOf
+
+  Reference to a target.
+  """
+  input TargetReferenceInput {
+    """
+    Reference to a target using it's ID (see "Target.id" field).
+    """
+    byId: ID
+    """
+    Reference to a target using it's slug parts (see "Organization.slug", "Project.slug", "Target.slug").
+    """
+    bySelector: TargetSelectorInput
+  }
+
   input UpdateTargetValidationSettingsInput {
     organizationSlug: String!
     projectSlug: String!

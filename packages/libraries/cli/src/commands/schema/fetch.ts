@@ -13,7 +13,7 @@ import {
   SchemaNotFoundError,
   UnsupportedFileExtensionError,
 } from '../../helpers/errors';
-import * as TargetSlug from '../../helpers/target-slug';
+import * as TargetInput from '../../helpers/target-input';
 import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
@@ -22,7 +22,7 @@ const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
     $includeSubgraphs: Boolean!
-    $target: TargetSelectorInput
+    $target: TargetReferenceInput
   ) {
     schemaVersionForActionId(actionId: $actionId, target: $target) {
       id
@@ -54,7 +54,7 @@ const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
     $includeSubgraphs: Boolean!
-    $target: TargetSelectorInput
+    $target: TargetReferenceInput
   ) {
     latestValidVersion(target: $target) {
       id
@@ -170,9 +170,9 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       defaultValue: 'sdl',
     });
 
-    let target: GraphQLSchema.TargetSelectorInput | null = null;
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
     if (flags.target) {
-      const result = TargetSlug.parse(flags.target);
+      const result = TargetInput.parse(flags.target);
       if (result.type === 'error') {
         throw new InvalidTargetError();
       }

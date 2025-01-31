@@ -30,8 +30,8 @@ export default gql`
   }
 
   extend type Query {
-    schemaVersionForActionId(actionId: ID!, target: TargetSelectorInput): SchemaVersion
-    latestValidVersion(target: TargetSelectorInput): SchemaVersion
+    schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+    latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token
     """
@@ -266,7 +266,7 @@ export default gql`
   }
 
   input SchemaPublishInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     service: ID
     url: String
     sdl: String!
@@ -294,7 +294,7 @@ export default gql`
   }
 
   input SchemaComposeInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     services: [SchemaComposeServiceInput!]!
     """
     Whether to use the latest composable version or just latest schema version for the composition.
@@ -578,7 +578,7 @@ export default gql`
   }
 
   input SchemaCheckInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     service: ID
     sdl: String!
     github: GitHubSchemaCheckInput
@@ -591,7 +591,7 @@ export default gql`
   }
 
   input SchemaDeleteInput {
-    target: TargetSelectorInput
+    target: TargetReferenceInput
     serviceName: ID!
     dryRun: Boolean
   }

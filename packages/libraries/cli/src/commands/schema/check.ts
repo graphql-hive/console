@@ -23,7 +23,7 @@ import {
   renderErrors,
   renderWarnings,
 } from '../../helpers/schema';
-import * as TargetSlug from '../../helpers/target-slug';
+import * as TargetInput from '../../helpers/target-input';
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
   mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
@@ -175,9 +175,9 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       await this.require(flags);
 
-      let target: GraphQLSchema.TargetSelectorInput | null = null;
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
       if (flags.target) {
-        const result = TargetSlug.parse(flags.target);
+        const result = TargetInput.parse(flags.target);
         if (result.type === 'error') {
           throw new InvalidTargetError();
         }

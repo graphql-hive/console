@@ -11,7 +11,7 @@ import {
   UnexpectedError,
 } from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
-import * as TargetSlug from '../../helpers/target-slug';
+import * as TargetInput from '../../helpers/target-input';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
   mutation schemaDelete($input: SchemaDeleteInput!) {
@@ -135,9 +135,9 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         throw new MissingRegistryTokenError();
       }
 
-      let target: GraphQLSchema.TargetSelectorInput | null = null;
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
       if (flags.target) {
-        const result = TargetSlug.parse(flags.target);
+        const result = TargetInput.parse(flags.target);
         if (result.type === 'error') {
           throw new InvalidTargetError();
         }

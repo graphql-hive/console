@@ -26,7 +26,7 @@ import {
   UnexpectedError,
 } from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
-import * as TargetSlug from '../helpers/target-slug';
+import * as TargetInput from '../helpers/target-input';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -206,9 +206,9 @@ export default class Dev extends Command<typeof Dev> {
       };
     });
 
-    let target: GraphQLSchema.TargetSelectorInput | null = null;
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
     if (flags.target) {
-      const result = TargetSlug.parse(flags.target);
+      const result = TargetInput.parse(flags.target);
       if (result.type === 'error') {
         throw new InvalidTargetError();
       }
@@ -371,7 +371,7 @@ export default class Dev extends Command<typeof Dev> {
     token: string;
     write: string;
     unstable__forceLatest: boolean;
-    target: GraphQLSchema.TargetSelectorInput | null;
+    target: GraphQLSchema.TargetReferenceInput | null;
     onError: (error: HiveCLIError) => void | never;
   }) {
     const result = await this.registryApi(input.registry, input.token).request({
