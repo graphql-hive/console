@@ -19,7 +19,12 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
         : Kit.never();
 
   const [value, setValue] = useState<z.infer<$Schema>>(() => {
-    const storedValue = localStorage.getItem(key) ?? undefined;
+    // Note: `null` is returned for missing values. However Zod only kicks in
+    // default values for `undefined`, not `null`. However-however, this is ok,
+    // because we manually pre-compute+return the default value, thus we don't
+    // rely on Zod's behaviour. If that changes this should have `?? undefined`
+    // added.
+    const storedValue = localStorage.getItem(key);
 
     if (!storedValue) {
       return defaultValue;
