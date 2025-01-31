@@ -1,14 +1,17 @@
 import { Args, Errors, Flags, ux } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   UnexpectedError,
 } from '../../helpers/errors';
 import { renderErrors } from '../../helpers/schema';
+import * as TargetSlug from '../../helpers/target-slug';
 
 const schemaDeleteMutation = graphql(/* GraphQL */ `
   mutation schemaDelete($input: SchemaDeleteInput!) {
@@ -76,6 +79,9 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       description: 'Confirm deletion of the service',
       default: false,
     }),
+    target: Flags.string({
+      description: 'The target to which to publish to.',
+    }),
   };
 
   static args = {
@@ -129,12 +135,22 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
         throw new MissingRegistryTokenError();
       }
 
+      let target: GraphQLSchema.TargetSelectorInput | null = null;
+      if (flags.target) {
+        const result = TargetSlug.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
+
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: schemaDeleteMutation,
         variables: {
           input: {
             serviceName: service,
             dryRun: flags.dryRun,
+            target,
           },
         },
       });

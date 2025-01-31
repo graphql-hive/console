@@ -29,6 +29,7 @@ import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
   OrganizationSelector,
@@ -83,6 +84,7 @@ export class SchemaManager {
     private schemaHelper: SchemaHelper,
     private contracts: Contracts,
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
+    private idTranslator: IdTranslator,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -972,8 +974,34 @@ export class SchemaManager {
     });
   }
 
-  async getSchemaVersionByActionId(args: { actionId: string }) {
-    const selector = this.session.getLegacySelector();
+  async getSchemaVersionByActionId(args: {
+    actionId: string;
+    target: { targetSlug: string; projectSlug: string; organizationSlug: string } | null;
+  }) {
+    let selector: TargetSelector;
+
+    if (args.target) {
+      const [organizationId, projectId, targetId] = await Promise.all([
+        this.idTranslator.translateOrganizationId(args.target),
+        this.idTranslator.translateProjectId(args.target),
+        this.idTranslator.translateTargetId(args.target),
+      ]);
+
+      selector = {
+        organizationId,
+        projectId,
+        targetId,
+      };
+    } else {
+      // LEGACY method of resolving the permissions
+      const { organizationId, projectId, targetId } = this.session.getLegacySelector();
+
+      selector = {
+        organizationId,
+        projectId,
+        targetId,
+      };
+    }
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,

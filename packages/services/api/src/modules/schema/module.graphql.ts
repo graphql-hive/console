@@ -30,18 +30,12 @@ export default gql`
   }
 
   extend type Query {
-    """
-    Requires API Token
-    """
-    schemaVersionForActionId(actionId: ID!): SchemaVersion
+    schemaVersionForActionId(actionId: ID!, target: TargetSelectorInput): SchemaVersion
+    latestValidVersion(target: TargetSelectorInput): SchemaVersion
     """
     Requires API Token
     """
     latestVersion: SchemaVersion
-    """
-    Requires API Token
-    """
-    latestValidVersion: SchemaVersion
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!

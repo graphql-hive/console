@@ -137,6 +137,16 @@ export class MissingCdnEndpointError extends HiveCLIError {
   }
 }
 
+export class InvalidTargetError extends HiveCLIError {
+  constructor() {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 8),
+      `Invalid target slug provided for option "--target". Must match "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging").`,
+    );
+  }
+}
+
 export class MissingEnvironmentError extends HiveCLIError {
   constructor(...requiredVars: Array<[string, string]>) {
     const varsStr = requiredVars.map(a => `\t${a[0]} \t${a[1]}`).join('\n');

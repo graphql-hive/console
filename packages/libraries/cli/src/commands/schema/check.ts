@@ -2,11 +2,13 @@ import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   GithubCommitRequiredError,
   GithubRepositoryRequiredError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaFileEmptyError,
@@ -21,6 +23,7 @@ import {
   renderErrors,
   renderWarnings,
 } from '../../helpers/schema';
+import * as TargetSlug from '../../helpers/target-slug';
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
   mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
@@ -152,6 +155,9 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
     }),
+    target: Flags.string({
+      description: 'The target to which to publish to.',
+    }),
   };
 
   static args = {
@@ -168,6 +174,15 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const { flags, args } = await this.parse(SchemaCheck);
 
       await this.require(flags);
+
+      let target: GraphQLSchema.TargetSelectorInput | null = null;
+      if (flags.target) {
+        const result = TargetSlug.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
 
       const service = flags.service;
       const forceSafe = flags.forceSafe;
@@ -254,6 +269,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                   }
                 : null,
             contextId: flags.contextId ?? undefined,
+            target,
           },
           usesGitHubApp,
         },
