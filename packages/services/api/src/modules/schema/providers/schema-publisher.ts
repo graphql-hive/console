@@ -1121,18 +1121,6 @@ export class SchemaPublisher {
       },
     });
 
-    const legacySelector = this.session.getLegacySelector();
-
-    const checksum = createHash('md5')
-      .update(
-        stringify({
-          ...input,
-          serviceName: input.serviceName.toLowerCase(),
-        }),
-      )
-      .update(legacySelector.token)
-      .digest('base64');
-
     return this.mutex.perform(
       registryLockId(selector.targetId),
       {
