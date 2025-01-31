@@ -54,10 +54,10 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
 
 type ArgsInput<$Schema extends z.ZodType> =
   $Schema extends z.ZodDefault<z.ZodType>
-    ? [key: string, schema: GuardZodJsonSchema<$Schema>]
-    : [key: string, schema: GuardZodJsonSchema<$Schema>, defaultValue: z.infer<$Schema>];
+    ? [key: string, schema: ArgsInputGuardZodJsonSchema<$Schema>]
+    : [key: string, schema: ArgsInputGuardZodJsonSchema<$Schema>, defaultValue: z.infer<$Schema>];
 
-type GuardZodJsonSchema<$Schema extends z.ZodType> =
+type ArgsInputGuardZodJsonSchema<$Schema extends z.ZodType> =
   z.infer<$Schema> extends Kit.Json.Value
     ? $Schema
     : 'Error: Your Zod schema is or contains a type that is not valid JSON.';
