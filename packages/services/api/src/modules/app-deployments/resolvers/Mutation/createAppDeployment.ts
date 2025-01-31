@@ -7,6 +7,7 @@ export const createAppDeployment: NonNullable<MutationResolvers['createAppDeploy
   { injector },
 ) => {
   const result = await injector.get(AppDeploymentsManager).createAppDeployment({
+    selector: input.target ?? null,
     appDeployment: {
       name: input.appName,
       version: input.appVersion,

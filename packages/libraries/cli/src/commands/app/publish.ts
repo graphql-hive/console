@@ -1,8 +1,16 @@
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, MissingEndpointError, MissingRegistryTokenError } from '../../helpers/errors';
+import {
+  APIError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+} from '../../helpers/errors';
+import * as TargetSlug from '../../helpers/target-slug';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -20,6 +28,9 @@ export default class AppPublish extends Command<typeof AppPublish> {
     version: Flags.string({
       description: 'app version',
       required: true,
+    }),
+    target: Flags.string({
+      description: 'The target in which the app deployment will be published.',
     }),
   };
 
@@ -50,10 +61,20 @@ export default class AppPublish extends Command<typeof AppPublish> {
       throw new MissingRegistryTokenError();
     }
 
+    let target: GraphQLSchema.TargetSelectorInput | null = null;
+    if (flags.target) {
+      const result = TargetSlug.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
+
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: ActivateAppDeploymentMutation,
       variables: {
         input: {
+          target,
           appName: flags['name'],
           appVersion: flags['version'],
         },

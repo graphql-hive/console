@@ -1,7 +1,9 @@
 import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
 import { batch } from '../../../shared/helpers';
-import { Session } from '../../auth/lib/authz';
+import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
@@ -20,6 +22,7 @@ export class AppDeploymentsManager {
     private session: Session,
     private targetManager: TargetManager,
     private appDeployments: AppDeployments,
+    private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'AppDeploymentsManager' });
   }
@@ -53,32 +56,39 @@ export class AppDeploymentsManager {
   }
 
   async createAppDeployment(args: {
+    selector: GraphQLSchema.TargetSelectorInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: args.selector,
+      onError() {
+        throw new InsufficientPermissionError('appDeployment:create');
+      },
+    });
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.createAppDeployment({
-      organizationId: token.organizationId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
   }
 
   async addDocumentsToAppDeployment(args: {
+    selector: GraphQLSchema.TargetSelectorInput | null;
     appDeployment: {
       name: string;
       version: string;
@@ -88,50 +98,61 @@ export class AppDeploymentsManager {
       body: string;
     }>;
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: args.selector,
+      onError() {
+        throw new InsufficientPermissionError('appDeployment:create');
+      },
+    });
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.addDocumentsToAppDeployment({
-      organizationId: token.organizationId,
-      projectId: token.projectId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
       operations: args.documents,
     });
   }
 
   async activateAppDeployment(args: {
+    selector: GraphQLSchema.TargetSelectorInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const token = this.session.getLegacySelector();
+    const selector = await this.idTranslator.resolveTargetSlugSelector({
+      selector: args.selector,
+      onError() {
+        throw new InsufficientPermissionError('appDeployment:publish');
+      },
+    });
 
     await this.session.assertPerformAction({
       action: 'appDeployment:publish',
-      organizationId: token.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: token.organizationId,
-        projectId: token.projectId,
-        targetId: token.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.activateAppDeployment({
-      organizationId: token.organizationId,
-      targetId: token.targetId,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
   }

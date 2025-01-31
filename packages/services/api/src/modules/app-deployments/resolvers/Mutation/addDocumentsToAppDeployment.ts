@@ -5,6 +5,7 @@ export const addDocumentsToAppDeployment: NonNullable<
   MutationResolvers['addDocumentsToAppDeployment']
 > = async (_parent, { input }, { injector }) => {
   const result = await injector.get(AppDeploymentsManager).addDocumentsToAppDeployment({
+    selector: input.target ?? null,
     appDeployment: {
       name: input.appName,
       version: input.appVersion,

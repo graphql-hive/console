@@ -175,12 +175,12 @@ export default class Dev extends Command<typeof Dev> {
     unstable__forceLatest: Flags.boolean({
       hidden: true,
       description:
-        'Force the command to use the latest version of the CLI, not the latest composable version. ',
+        'Force the command to use the latest version of the CLI, not the latest composable version.',
       default: false,
       dependsOn: ['remote'],
     }),
     target: Flags.string({
-      description: 'The target to which to publish to.',
+      description: 'The target to use for composition.',
     }),
   };
 
@@ -249,6 +249,7 @@ export default class Dev extends Command<typeof Dev> {
             token,
             write: flags.write,
             unstable__forceLatest,
+            target,
             onError: error => {
               // watch mode should not exit. Log instead.
               this.logFailure(error.message);
