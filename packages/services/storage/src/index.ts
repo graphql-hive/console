@@ -4236,7 +4236,7 @@ export async function createStorage(
               WHERE
                 "id" = ANY(${sql.array(targetIds, 'uuid')})
             ) AS "t"
-              INNER JOIN "projects" "p" ON "t"."project_id" = "p"."id"
+              INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
           `,
         )
         .then(rows => rows.map(row => TargetWithOrgIdModel.parse(row)));
