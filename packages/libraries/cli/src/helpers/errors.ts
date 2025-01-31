@@ -141,7 +141,7 @@ export class InvalidTargetError extends HiveCLIError {
   constructor() {
     super(
       ExitCode.BAD_INIT,
-      errorCode(ErrorCategory.GENERIC, 8),
+      errorCode(ErrorCategory.GENERIC, 9),
       `Invalid target slug provided for option "--target". Must match "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging").`,
     );
   }
