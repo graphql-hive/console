@@ -4,7 +4,7 @@ import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/lib/use/ws';
 import { createLogger, createSchema, createYoga } from 'graphql-yoga';
 import nock from 'nock';
-import { beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import { useDeferStream } from '@graphql-yoga/plugin-defer-stream';
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
@@ -14,7 +14,7 @@ import { Response } from '@whatwg-node/fetch';
 import { createHiveTestingLogger } from '../../core/tests/test-utils';
 import { createHive, useHive } from '../src/index.js';
 
-beforeAll(() => {
+afterEach(() => {
   nock.cleanAll();
 });
 
@@ -375,17 +375,14 @@ test('reports usage with response cache', async ({ expect }) => {
   const graphqlScope = nock('http://localhost')
     .post('/usage', body => {
       usageCount++;
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
-            fields: [
-              Query.hi,
-            ],
-            operation: {hi},
-            operationName: anonymous,
-          },
-        }
-      `);
+
+      expect(body.map).toEqual({
+        f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+          fields: ['Query.hi'],
+          operation: '{hi}',
+          operationName: 'anonymous',
+        },
+      });
 
       return true;
     })
@@ -432,7 +429,7 @@ test('reports usage with response cache', async ({ expect }) => {
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => {
       resolve();
-    }, 1000);
+    }, 2000);
     let requestCount = 0;
 
     graphqlScope.on('request', () => {
@@ -459,8 +456,8 @@ test('reports usage with response cache', async ({ expect }) => {
       }
     })().catch(reject);
   });
-  expect(usageCount).toBe(3);
   graphqlScope.done();
+  expect(usageCount).toBe(3);
 });
 
 test('does not report usage for operation that does not pass validation', async ({ expect }) => {

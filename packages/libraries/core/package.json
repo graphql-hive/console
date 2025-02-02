@@ -59,7 +59,7 @@
     "graphql": "16.9.0",
     "nock": "14.0.0",
     "tslib": "2.8.1",
-    "vitest": "2.1.8"
+    "vitest": "3.0.4"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
