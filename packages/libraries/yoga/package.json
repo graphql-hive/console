@@ -60,7 +60,7 @@
     "graphql-ws": "5.16.1",
     "graphql-yoga": "5.10.8",
     "nock": "14.0.0-beta.19",
-    "vitest": "2.0.5",
+    "vitest": "2.1.8",
     "ws": "8.18.0"
   },
   "publishConfig": {
