@@ -1509,8 +1509,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@sinclair/typebox':
-        specifier: 0.34.13
-        version: 0.34.13
+        specifier: 0.34.15
+        version: 0.34.15
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -3907,7 +3907,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -7039,8 +7038,8 @@ packages:
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
-  '@sinclair/typebox@0.34.13':
-    resolution: {integrity: sha512-ceVKqyCEgC355Kw0s/0tyfY9MzMQINSykJ/pG2w6YnaZyrcjV48svZpr8lVZrYgWjzOmrIPBhQRAtr/7eJpA5g==}
+  '@sinclair/typebox@0.34.15':
+    resolution: {integrity: sha512-xeIzl3h1Znn9w/LTITqpiwag0gXjA+ldi2ZkXIBxGEppGCW211Tza+eL6D4pKqs10bj5z2umBWk5WL6spQ2OCQ==}
 
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -23125,7 +23124,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@sinclair/typebox@0.34.13': {}
+  '@sinclair/typebox@0.34.15': {}
 
   '@sindresorhus/is@4.6.0': {}
 
