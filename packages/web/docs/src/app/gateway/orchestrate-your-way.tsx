@@ -3,8 +3,14 @@ import { Anchor, cn, Heading, InfoCard } from '@theguild/components';
 
 export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <section className={cn(className, 'text-green-1000 border border-blue-200 p-4')} {...rest}>
-      <header>
+    <section
+      className={cn(
+        className,
+        'text-green-1000 mx-auto flex max-w-[1248px] flex-wrap rounded-3xl border border-blue-200 p-4',
+      )}
+      {...rest}
+    >
+      <header className="box-content w-[400px] p-12">
         <Heading as="h3" size="sm">
           Orchestrate your way!
         </Heading>
@@ -13,12 +19,12 @@ export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<
           infrastructure.
         </p>
       </header>
-      <ul>
+      <ul className="flex grow basis-2/5 p-12">
         <InfoCard
           as="li"
           heading="Apollo Federation v1 and v2 Support"
           icon={<CodeIcon />}
-          className="flex-1 px-0 sm:px-8 sm:py-0 md:px-8 md:py-0"
+          className="flex-1 bg-transparent px-0 sm:px-8 sm:py-0 md:px-8 md:py-0"
         >
           Ensures full compatibility and seamless operation within Apollo Federation setups,
           simplifying integration with existing GraphQL services.
@@ -27,13 +33,13 @@ export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<
           as="li"
           heading="Plugin System"
           icon={<EditIcon />}
-          className="border-beige-400 flex-1 basis-full px-0 sm:basis-0 sm:border-l sm:px-8 sm:py-0 md:px-8 md:py-0"
+          className="border-beige-400 flex-1 basis-full bg-transparent px-0 sm:basis-0 sm:border-l sm:px-8 sm:py-0 md:py-0 md:pl-8 md:pr-0"
         >
           Extensive customization options, allowing enterprises to tailor the gateway to fit
           specific architectural needs and workflows.
         </InfoCard>
       </ul>
-      <ul className="nextra-scrollbar mt-6 grid max-w-full grid-cols-4 md:mt-12">
+      <ul className="nextra-scrollbar mt-6 grid max-w-full basis-full grid-cols-4 rounded-3xl bg-[#F8F7F6] [background-image:linear-gradient(55deg,#F8F7F6_25%,theme(colors.blue.700/0.25)_70%,#F8F7F6_94%)] md:mt-12 [&>:not(:first-child)]:border-l [&>:not(:first-child)]:border-blue-300">
         <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V1" />
         <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V2" />
         <LinkCard
@@ -76,10 +82,13 @@ function EditIcon() {
 function LinkCard({ href, text, logo }: { href: string; text: ReactNode; logo: ReactNode }) {
   return (
     <li>
-      <Anchor href={href} className="flex min-w-[220px] flex-col items-center justify-center gap-6">
+      <Anchor
+        href={href}
+        className="flex min-w-[220px] flex-col items-center justify-center gap-6 p-16 hover:bg-white/40"
+      >
         {logo}
-        <span className="rounded-3xl border border-blue-400 px-3 py-1 text-sm">
-          <span className="mr-2.5 rounded-full bg-[#24D551]" />
+        <span className="whitespace-pre rounded-3xl border border-blue-400 px-3 py-1 text-sm">
+          <span className="mr-2.5 inline-block size-3 shrink-0 rounded-full bg-[#24D551]" />
           {text}
         </span>
       </Anchor>
