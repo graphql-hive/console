@@ -84,7 +84,7 @@ function LinkCard({ href, text, logo }: { href: string; text: ReactNode; logo: R
     <li>
       <Anchor
         href={href}
-        className="flex min-w-[220px] flex-col items-center justify-center gap-6 p-16 hover:bg-white/40"
+        className="flex min-w-[220px] flex-col items-center justify-center gap-6 p-16 transition hover:bg-white/40"
       >
         {logo}
         <span className="whitespace-pre rounded-3xl border border-blue-400 px-3 py-1 text-sm">
