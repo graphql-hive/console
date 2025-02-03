@@ -27,7 +27,7 @@ export const highlights: Record<Tab, Highlight[]> = {
     {
       title: 'Composition Error Prevention',
       description: 'Avoid runtime errors by validating compatibility of all your subgraphs.',
-      image: registrySchemaChecksImage, // TODO: Replace with correct image
+      image: registrySchemaChecksImage,
     },
     {
       title: 'Schema Explorer',
