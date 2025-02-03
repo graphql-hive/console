@@ -91,7 +91,6 @@ export interface LandingPageFeatureTabsProps {
 }
 
 export function LandingPageFeatureTabs({ className }: LandingPageFeatureTabsProps) {
-  console.log({ highlights });
   const icons = [<SchemaRegistryIcon />, <GraphQLObservabilityIcon />, <GatewayIcon />];
   return (
     <FeatureTabs className={className} highlights={highlights} icons={icons}>

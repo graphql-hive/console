@@ -1,10 +1,9 @@
 import { FeatureTab, FeatureTabs, Highlight } from '#components/feature-tabs';
+import { cn } from '@theguild/components';
+import { GatewayMarqueeRows } from './gateway-marquee-rows';
 
 // TODO: the long values here will be bad for mobiles
 type Tab = 'Observability & Performance Monitoring' | 'Security & Access Control';
-
-const monitoringDocsLink = 'https://the-guild.dev/graphql/hive/docs/gateway/monitoring-tracing';
-const securityDocsLink = 'https://the-guild.dev/graphql/hive/docs/gateway/security';
 
 const highlights: Record<Tab, Highlight[]> = {
   'Observability & Performance Monitoring': [
@@ -29,24 +28,57 @@ const highlights: Record<Tab, Highlight[]> = {
         'Navigate and analyze the connections within your GraphQL schema using Schema Explorer.',
     },
   ],
-  'Security & Access Control': [],
+  'Security & Access Control': [
+    {
+      title: 'JWT Authentication & Authorization',
+      description:
+        'Provides secure user identification and role-based access control, crucial for protecting sensitive data and operations.',
+    },
+    {
+      title: 'Persisted Operations',
+      description:
+        'Allows only pre-registered GraphQL operations to be executed, safeguarding against arbitrary and potentially harmful requests.',
+    },
+    {
+      title: 'Fine-grained Access Control',
+      description:
+        'Prevents unauthorized access with powerful, centralized policies at the gateway level, reducing the risk of security breaches.',
+    },
+    {
+      title: 'CORS and CSRF Prevention',
+      description:
+        'Shields against common web security vulnerabilities, securing your applications from unauthorized inter-domain interactions.',
+    },
+  ],
 };
 
-export function GatewayFeatureTabs() {
+export function GatewayFeatureTabs(props: { className?: string }) {
   return (
-    <FeatureTabs highlights={highlights} icons={[<PerformanceIcon />, <SecurityIcon />]}>
+    <FeatureTabs
+      highlights={highlights}
+      icons={[<PerformanceIcon />, <SecurityIcon />]}
+      className={cn(
+        'border-blue-200 [--tab-bg-dark:theme(colors.blue.300)] [--tab-bg:theme(colors.blue.200)]',
+        props.className,
+      )}
+    >
       <FeatureTab
         title="Observability & Performance Monitoring"
-        documentationLink="/docs/gateway/usage-reporting"
+        documentationLink="/docs/gateway/monitoring-tracing"
         description="Publish schemas, compose federated GraphQL api, and detect backward-incompatible changes with ease."
         highlights={highlights['Observability & Performance Monitoring']}
       />
       <FeatureTab
         title="Security & Access Control"
-        documentationLink="/docs/gateway/authorization-authentication"
+        documentationLink={{
+          text: 'Learn more about plugins',
+          href: '/docs/gateway/other-features/custom-plugins',
+        }}
         description="Insights into API usage and user experience metrics."
         highlights={highlights['Security & Access Control']}
       />
+      {/* todo: these marquee rows should probably be draggable, and connected to one "timeline" */}
+      <GatewayMarqueeRows className="[--pill-bg-hover:#fff] [--pill-bg:#fff] [--pill-text-hover:theme(colors.blue.600)] [--pill-text:theme(colors.blue.400)]" />
     </FeatureTabs>
   );
 }
@@ -66,4 +98,3 @@ function SecurityIcon() {
     </svg>
   );
 }
-

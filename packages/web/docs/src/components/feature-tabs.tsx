@@ -28,7 +28,6 @@ export function FeatureTabs<T extends string>({
   icons,
   children,
 }: FeatureTabsProps<T>) {
-  console.log({ highlights });
   const tabs = Object.keys(highlights) as T[];
   const [currentTab, setCurrentTab] = useState<T>(tabs[0]);
 
@@ -40,8 +39,8 @@ export function FeatureTabs<T extends string>({
   return (
     <section
       className={cn(
-        'border-beige-400 isolate mx-auto w-[1200px] max-w-full rounded-3xl bg-white',
-        'sm:max-w-[calc(100%-4rem)] sm:border md:p-6',
+        'border-beige-400 isolate mx-auto w-[1248px] max-w-full rounded-3xl bg-white',
+        '[--tab-bg-dark:theme(colors.beige.600)] [--tab-bg:theme(colors.beige.200)] sm:max-w-[calc(100%-4rem)] sm:border md:p-6',
         className,
       )}
     >
@@ -56,13 +55,13 @@ export function FeatureTabs<T extends string>({
           }}
           value={currentTab}
         >
-          <Tabs.List className='sm:bg-beige-200 group relative z-10 mx-4 my-6 flex flex-col overflow-hidden focus-within:overflow-visible max-sm:h-[58px] max-sm:focus-within:pointer-events-none max-sm:focus-within:rounded-b-none max-sm:focus-within:has-[>:nth-child(2)[data-state="active"]]:translate-y-[-100%] max-sm:focus-within:has-[>:nth-child(3)[data-state="active"]]:translate-y-[-200%] sm:flex-row sm:rounded-2xl md:mx-0 md:mb-12 md:mt-0'>
+          <Tabs.List className='group relative z-10 mx-4 my-6 flex flex-col overflow-hidden focus-within:overflow-visible max-sm:h-[58px] max-sm:focus-within:pointer-events-none max-sm:focus-within:rounded-b-none max-sm:focus-within:has-[>:nth-child(2)[data-state="active"]]:translate-y-[-100%] max-sm:focus-within:has-[>:nth-child(3)[data-state="active"]]:translate-y-[-200%] sm:flex-row sm:rounded-2xl sm:bg-[--tab-bg] md:mx-0 md:mb-12 md:mt-0'>
             {tabs.map((tab, i) => {
               return (
                 <Tabs.Trigger
                   key={tab}
                   value={tab}
-                  className='hive-focus rdx-state-active:text-green-1000 rdx-state-active:border-beige-600 rdx-state-active:bg-white max-sm:rdx-state-inactive:hidden group-focus-within:rdx-state-inactive:flex max-sm:bg-beige-200 max-sm:rdx-state-inactive:rounded-none max-sm:border-beige-600 max-sm:group-focus-within:rdx-state-inactive:border-y-beige-200 max-sm:group-focus-within:[&:last-child]:border-t-beige-200 max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:border-t-beige-600 max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:rounded-none max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:border-y-beige-200 max-sm:group-focus-within:[[data-state="active"]+&:last-child]:border-b-beige-600 max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:border-b-beige-600 max-sm:group-focus-within:first:rdx-state-active:border-b-beige-200 max-sm:group-focus-within:first:rdx-state-active:rounded-b-none max-sm:rdx-state-inactive:pointer-events-none max-sm:rdx-state-inactive:group-focus-within:pointer-events-auto z-10 flex flex-1 items-center justify-center gap-2.5 rounded-lg border-transparent p-4 text-base font-medium leading-6 text-green-800 max-sm:border max-sm:group-focus-within:aria-selected:z-20 max-sm:group-focus-within:aria-selected:ring-4 sm:rounded-[15px] sm:border sm:text-xs sm:max-lg:p-3 sm:max-[721px]:p-2 md:text-sm lg:text-base max-sm:group-focus-within:[&:nth-child(3)]:rounded-t-none [&>svg]:shrink-0 max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:rounded-t-lg [&[data-state="inactive"]>:last-child]:invisible max-sm:group-focus-within:[[data-state="active"]+&:last-child]:rounded-b-lg max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:rounded-b-lg'
+                  className='hive-focus rdx-state-active:text-green-1000 rdx-state-active:border-[--tab-bg-dark] rdx-state-active:bg-white max-sm:rdx-state-inactive:hidden group-focus-within:rdx-state-inactive:flex max-sm:rdx-state-inactive:rounded-none max-sm:group-focus-within:rdx-state-inactive:border-y-[--tab-bg] max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:rounded-none max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:border-y-[--tab-bg] max-sm:group-focus-within:first:rdx-state-active:border-b-[--tab-bg] max-sm:group-focus-within:first:rdx-state-active:rounded-b-none max-sm:rdx-state-inactive:pointer-events-none max-sm:rdx-state-inactive:group-focus-within:pointer-events-auto z-10 flex flex-1 items-center justify-center gap-2.5 rounded-lg border-transparent p-4 text-base font-medium leading-6 text-green-800 max-sm:border max-sm:border-[--tab-bg-dark] max-sm:bg-[--tab-bg] max-sm:group-focus-within:aria-selected:z-20 max-sm:group-focus-within:aria-selected:ring-4 sm:rounded-[15px] sm:border sm:text-xs sm:max-lg:p-3 sm:max-[721px]:p-2 md:text-sm lg:text-base max-sm:group-focus-within:[&:last-child]:border-t-[--tab-bg] max-sm:group-focus-within:[&:nth-child(3)]:rounded-t-none [&>svg]:shrink-0 max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:rounded-t-lg max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:border-t-[--tab-bg-dark] [&[data-state="inactive"]>:last-child]:invisible max-sm:group-focus-within:[[data-state="active"]+&:last-child]:rounded-b-lg max-sm:group-focus-within:[[data-state="active"]+&:last-child]:border-b-[--tab-bg-dark] max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:rounded-b-lg max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:border-b-[--tab-bg-dark]'
                 >
                   {icons[i]}
                   {tab}
@@ -82,7 +81,12 @@ interface FeatureProps {
   title: string;
   description: string;
   highlights: Highlight[];
-  documentationLink?: string;
+  documentationLink?:
+    | string
+    | {
+        text: string;
+        href: string;
+      };
   setActiveHighlight: (highlight: string) => void;
 }
 
@@ -93,8 +97,15 @@ function Feature({
   highlights,
   setActiveHighlight,
 }: FeatureProps) {
+  if (typeof documentationLink === 'string') {
+    documentationLink = {
+      text: 'Learn more',
+      href: documentationLink,
+    };
+  }
+
   return (
-    <div className="flex flex-col gap-6 px-4 pb-4 md:gap-12 md:pb-12 md:pl-12 md:pr-16">
+    <div className="flex flex-col gap-6 px-4 pb-4 md:gap-12 md:pb-12 md:pl-8 md:pr-16">
       <header className="flex flex-wrap items-center gap-4 md:flex-col md:items-start md:gap-6">
         <Heading as="h2" size="md" className="text-green-1000 max-sm:text-2xl max-sm:leading-8">
           {title}
@@ -131,8 +142,8 @@ function Feature({
         })}
       </dl>
       {documentationLink && (
-        <CallToAction variant="primary" href={documentationLink}>
-          Learn more
+        <CallToAction variant="primary" href={documentationLink.href}>
+          {documentationLink.text}
           <span className="sr-only">
             {/* descriptive text for screen readers and SEO audits */} about {title}
           </span>

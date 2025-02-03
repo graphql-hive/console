@@ -1,63 +1,96 @@
-import { MarqueeRows } from '@theguild/components';
+import { Anchor, cn, MarqueeRows } from '@theguild/components';
 
+// todo: a test that checks if none of the links here are 404
 const terms = new Map<string[], string /* href */>([
   [
     ['authenticated', 'requiresScopes', 'policy'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/authorization-authentication#granular-protection-using-auth-directives-authenticated-requiresscopes-and-policy',
+    '/docs/gateway/authorization-authentication#granular-protection-using-auth-directives-authenticated-requiresscopes-and-policy',
   ],
-  [['Monitoring', 'Tracing'], 'https://the-guild.dev/graphql/hive/docs/gateway/monitoring-tracing'],
-  [
-    ['@stream', '@defer', 'Incremental Delivery'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/defer-stream',
-  ],
-  [['Persisted Documents'], 'https://the-guild.dev/graphql/hive/docs/gateway/persisted-documents'],
-  [
-    ['Response Caching'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/response-caching',
-  ],
-  [
-    ['Content-Encoding'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/compression',
-  ],
+  [['Usage Reporting'], 'https://the-guild.dev/graphql/hive/docs/gateway/usage-reporting'],
+  [['Monitoring', 'Tracing'], '/docs/gateway/monitoring-tracing'],
+  [['@stream', '@defer', 'Incremental Delivery'], '/docs/gateway/defer-stream'],
+  [['Persisted Documents'], '/docs/gateway/persisted-documents'],
+  [['Response Caching'], '/docs/gateway/other-features/performance/response-caching'],
+  [['Content-Encoding'], '/docs/gateway/other-features/performance/compression'],
   [
     ['parserAndValidationCache'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/parsing-and-validation-caching',
+    '/docs/gateway/other-features/performance/parsing-and-validation-caching',
   ],
-  [
-    ['executionCancellation'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/execution-cancellation',
-  ],
-  [
-    ['Upstream Cancellation'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/upstream-cancellation',
-  ],
-  [
-    ['HTTP Caching'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/http-caching',
-  ],
-  [
-    ['useRequestDeduplication'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/deduplicate-request',
-  ],
+  [['executionCancellation'], '/docs/gateway/other-features/performance/execution-cancellation'],
+  [['Upstream Cancellation'], '/docs/gateway/other-features/performance/upstream-cancellation'],
+  [['documentCache', 'errorCache', 'validationCache'], '/docs/gateway/other-features/performance'],
+  [['HTTP Caching'], '/docs/gateway/other-features/performance/http-caching'],
+  [['useRequestDeduplication'], '/docs/gateway/other-features/performance/deduplicate-request'],
   [
     ['APQ', 'Automatic Persisted Queries'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/automatic-persisted-queries',
+    '/docs/gateway/other-features/performance/automatic-persisted-queries',
   ],
-  [['Persisted Documents'], 'https://the-guild.dev/graphql/hive/docs/gateway/persisted-documents'],
+  [['Persisted Documents'], '/docs/gat  eway/persisted-documents'],
   [
-    ['Supergraph', 'Proxy Source'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/supergraph-proxy-source',
+    ['batching', 'Request Batching'],
+    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/request-batching',
   ],
-  [
-    ['Authorization', 'Authentication'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/authorization-authentication',
-  ],
-  [
-    ['Header Propagation'],
-    'https://the-guild.dev/graphql/hive/docs/gateway/other-features/header-propagation',
-  ],
+  [['Supergraph', 'Proxy'], '/docs/gateway/supergraph-proxy-source'],
+  [['Authorization', 'Authentication'], '/docs/gateway/authorization-authentication'],
+  [['Header Propagation'], '/docs/gateway/other-features/header-propagation'],
+  [['Subscriptions'], '/docs/gateway/subscriptions'],
+  [['useMock', 'Mocking'], '/docs/gateway/other-features/testing/mocking'],
+  [['Snapshots'], '/docs/gateway/other-features/testing/snapshot'],
+  [['CSRF Prevention'], '/docs/gateway/other-features/security/csrf-prevention'],
+  [['Rate Limiting'], '/docs/gateway/other-features/security/rate-limiting'],
+  [['Cost Limit'], '/docs/gateway/other-features/security/cost-limit'],
+  [['Security'], '/docs/gateway/other-features/security'],
+  [['maskedErrors'], '/docs/gateway/other-features/security/error-masking'],
 ]);
 
-export function GatewayMarqueeRows() {
-  return <div />;
+export function GatewayMarqueeRows({
+  className,
+  ...rest
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <MarqueeRows
+      pauseOnHover
+      speed="slow"
+      // the design has 9 rows, but _for now_ it looks better with 10
+      // rows={9}
+      rows={10}
+      className={cn(
+        'max-w-full rounded-2xl p-4',
+        // 'flex flex-col justify-center', // <-- todo: uncomment this when the tabs dissapear
+        className,
+      )}
+      {...rest}
+    >
+      {inPlaceShuffle(
+        Array.from(terms.entries()).flatMap(([labels, href], j) =>
+          labels.map((label, i) => (
+            <Anchor
+              key={`${j}-${i}`}
+              className="hive-focus rounded-lg border border-transparent bg-[--pill-bg] px-4 py-3 text-[--pill-text] transition duration-500 hover:border-[--pill-hover-text] hover:bg-[--pill-bg-hover] hover:text-[--pill-text-hover]"
+              href={href}
+            >
+              {label}
+            </Anchor>
+          )),
+        ),
+      )}
+    </MarqueeRows>
+  );
+}
+
+/**
+ * @see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+ */
+function inPlaceShuffle<T>(xs: T[]): T[] {
+  for (let i = xs.length - 1; i >= 1; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = xs[i];
+    xs[i] = xs[j];
+    xs[j] = temp;
+  }
+
+  return xs;
 }

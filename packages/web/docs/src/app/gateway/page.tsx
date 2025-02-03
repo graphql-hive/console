@@ -38,7 +38,8 @@ export default function HiveGatewayPage() {
         heading="Hive Gateway"
         text="Unify and accelerate your data graph across diverse services with Hive Gateway, which seamlessly integrates with Apollo Federation."
         checkmarks={['Fully open source', 'No vendor lock-in', 'Can be self-hosted!']}
-        className="mx-4 md:mx-6"
+        // todo: when the feature cards section get rewritten to the new design, remove these bottom paddings
+        className="mx-4 sm:!pb-28 md:mx-6 lg:!pb-[168px]"
       >
         <CallToAction variant="primary-inverted" href="/docs/gateway">
           Get Started
@@ -48,7 +49,7 @@ export default function HiveGatewayPage() {
         </CallToAction>
         <GatewayHeroDecoration />
       </Hero>
-      <GatewayFeatureTabs />
+      <GatewayFeatureTabs className="relative mt-6 bg-blue-100 sm:mt-[-72px]" />
       {/* observability and performance monitoring */}
       {/* orchestrate your way */}
       {/* Federation-Compatible Gateway Benchmarks */}
