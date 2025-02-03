@@ -25,7 +25,7 @@ const terms = new Map<string[], string /* href */>([
     ['APQ', 'Automatic Persisted Queries'],
     '/docs/gateway/other-features/performance/automatic-persisted-queries',
   ],
-  [['Persisted Documents'], '/docs/gat  eway/persisted-documents'],
+  [['Persisted Documents'], '/docs/gateway/persisted-documents'],
   [
     ['batching', 'Request Batching'],
     'https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance/request-batching',
