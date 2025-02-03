@@ -79,7 +79,7 @@ export function FeatureTabs<T extends string>({
 
 interface FeatureProps {
   title: string;
-  description: string;
+  description?: string;
   highlights: Highlight[];
   documentationLink?:
     | string
@@ -110,7 +110,7 @@ function Feature({
         <Heading as="h2" size="md" className="text-green-1000 max-sm:text-2xl max-sm:leading-8">
           {title}
         </Heading>
-        <p className="basis-full leading-6 text-green-800">{description}</p>
+        {description && <p className="basis-full leading-6 text-green-800">{description}</p>}
       </header>
       <dl className="grid grid-cols-2 gap-4 md:gap-12">
         {highlights.map((highlight, i) => {

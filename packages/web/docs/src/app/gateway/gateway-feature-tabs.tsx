@@ -65,7 +65,6 @@ export function GatewayFeatureTabs(props: { className?: string }) {
       <FeatureTab
         title="Observability & Performance Monitoring"
         documentationLink="/docs/gateway/monitoring-tracing"
-        description="Publish schemas, compose federated GraphQL api, and detect backward-incompatible changes with ease."
         highlights={highlights['Observability & Performance Monitoring']}
       />
       <FeatureTab
@@ -74,7 +73,6 @@ export function GatewayFeatureTabs(props: { className?: string }) {
           text: 'Learn more about plugins',
           href: '/docs/gateway/other-features/custom-plugins',
         }}
-        description="Insights into API usage and user experience metrics."
         highlights={highlights['Security & Access Control']}
       />
       {/* todo: these marquee rows should probably be draggable, and connected to one "timeline" */}
