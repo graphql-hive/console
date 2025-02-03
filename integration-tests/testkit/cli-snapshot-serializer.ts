@@ -53,6 +53,10 @@ const variableReplacements = [
     pattern: /(https?:\/\/)[^\n ]+/gi,
     mask: '$1__URL__',
   },
+  {
+    pattern: /[ ]+\n/gi,
+    mask: '\n',
+  },
 ];
 
 /**

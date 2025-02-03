@@ -4226,8 +4226,8 @@ export async function createStorage(
         .any<unknown>(
           sql`/* getTarget */
             SELECT
-              "t"."*"
-              , "p"."organization_id" AS "orgId"
+              "t".*
+              , "p"."org_id" AS "orgId"
             FROM (
               SELECT
                 ${targetSQLFields}

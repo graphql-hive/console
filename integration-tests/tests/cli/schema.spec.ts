@@ -391,9 +391,9 @@ test.concurrent(
   'schema:publish with --target parameter matching the access token (UUID)',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
-    const { inviteAndJoinMember, createProject, organization } = await createOrg();
+    const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createTargetAccessToken, project, target } = await createProject();
+    const { createTargetAccessToken, target } = await createProject();
     const { secret } = await createTargetAccessToken({});
 
     await expect(
