@@ -54,14 +54,8 @@ export function GatewayMarqueeRows({
     <MarqueeRows
       pauseOnHover
       speed="slow"
-      // the design has 9 rows, but _for now_ it looks better with 10
-      // rows={9}
-      rows={10}
-      className={cn(
-        'max-w-full rounded-2xl p-4',
-        // 'flex flex-col justify-center', // <-- todo: uncomment this when the tabs dissapear
-        className,
-      )}
+      rows={9}
+      className={cn('flex max-w-full flex-col justify-center rounded-2xl p-4 pb-28', className)}
       {...rest}
     >
       {inPlaceShuffle(

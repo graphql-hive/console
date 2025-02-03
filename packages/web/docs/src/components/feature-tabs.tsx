@@ -105,7 +105,7 @@ function Feature({
   }
 
   return (
-    <div className="flex flex-col gap-6 px-4 pb-4 md:gap-12 md:pb-12 md:pl-8 md:pr-16">
+    <div className="flex flex-col gap-6 px-4 pb-4 md:gap-12 md:px-8 md:pb-12">
       <header className="flex flex-wrap items-center gap-4 md:flex-col md:items-start md:gap-6">
         <Heading as="h2" size="md" className="text-green-1000 max-sm:text-2xl max-sm:leading-8">
           {title}
