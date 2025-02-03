@@ -50,7 +50,6 @@ export default function HiveGatewayPage() {
         <GatewayHeroDecoration />
       </Hero>
       <GatewayFeatureTabs className="relative mt-6 bg-blue-100 sm:mt-[-72px]" />
-      {/* observability and performance monitoring */}
       {/* orchestrate your way */}
       {/* Federation-Compatible Gateway Benchmarks */}
       {/* Let's get advanced */}
