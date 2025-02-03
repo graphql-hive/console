@@ -10,6 +10,7 @@ import {
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
+import { OrchestrateYourWay } from './orchestrate-your-way';
 
 export const metadata: Metadata = {
   title: 'Hive Gateway',
@@ -50,7 +51,7 @@ export default function HiveGatewayPage() {
         <GatewayHeroDecoration />
       </Hero>
       <GatewayFeatureTabs className="relative mt-6 bg-blue-100 sm:mt-[-72px]" />
-      {/* orchestrate your way */}
+      <OrchestrateYourWay />
       {/* Federation-Compatible Gateway Benchmarks */}
       {/* Let's get advanced */}
       {/* Cloud-Native Nature */}
