@@ -105,11 +105,9 @@ export default gql`
   }
 
   """
-  @oneOf
-
   Reference to a target.
   """
-  input TargetReferenceInput {
+  input TargetReferenceInput @oneOf {
     """
     Reference to a target using it's ID (see "Target.id" field).
     """
