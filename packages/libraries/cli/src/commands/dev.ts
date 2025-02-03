@@ -180,7 +180,7 @@ export default class Dev extends Command<typeof Dev> {
       dependsOn: ['remote'],
     }),
     target: Flags.string({
-      description: 'The target to use for composition.',
+      description: 'The target to use for composition (slug or ID).',
     }),
   };
 

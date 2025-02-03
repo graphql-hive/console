@@ -32,7 +32,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
       required: true,
     }),
     target: Flags.string({
-      description: 'The target in which the app deployment will be created.',
+      description: 'The target in which the app deployment will be created (slug or ID).',
     }),
   };
 

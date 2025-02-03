@@ -147,7 +147,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       multiple: true,
     }),
     target: Flags.string({
-      description: 'The target to which to publish to.',
+      description: 'The target to which to publish to (slug or ID).',
     }),
   };
 

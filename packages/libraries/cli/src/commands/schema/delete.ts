@@ -80,7 +80,7 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       default: false,
     }),
     target: Flags.string({
-      description: 'The target to which to publish to.',
+      description: 'The target to which to publish to (slug or ID).',
     }),
   };
 

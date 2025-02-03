@@ -3,20 +3,23 @@ import { validate } from '@graphql-inspector/core';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   InvalidDocumentsError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaNotFoundError,
   UnexpectedError,
 } from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
+import * as TargetInput from '../../helpers/target-input';
 import { Texture } from '../../helpers/texture/texture';
 
 const fetchLatestVersionQuery = graphql(/* GraphQL */ `
-  query fetchLatestVersion {
-    latestValidVersion {
+  query fetchLatestVersion($target: TargetReferenceInput) {
+    latestValidVersion(target: $target) {
       sdl
     }
   }
@@ -74,6 +77,9 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       description: 'Supports Apollo Client specific directives',
       default: false,
     }),
+    target: Flags.string({
+      description: 'The target to which to check agains (slug or ID).',
+    }),
   };
 
   static args = {
@@ -117,6 +123,15 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         throw new MissingRegistryTokenError();
       }
 
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
+
       const graphqlTag = flags.graphqlTag;
       const globalGraphqlTag = flags.globalGraphqlTag;
 
@@ -142,6 +157,7 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: fetchLatestVersionQuery,
+        variables: { target },
       });
 
       const sdl = result.latestValidVersion?.sdl;

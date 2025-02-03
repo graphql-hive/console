@@ -29,7 +29,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
       required: true,
     }),
     target: Flags.string({
-      description: 'The target in which the app deployment will be published.',
+      description: 'The target in which the app deployment will be published (slug or ID).',
     }),
   };
 
