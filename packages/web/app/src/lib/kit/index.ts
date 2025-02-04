@@ -10,4 +10,5 @@
 
 import * as Kit from './index_';
 
+// eslint-disable-next-line unicorn/prefer-export-from
 export { Kit };
