@@ -137,16 +137,6 @@ export class MissingCdnEndpointError extends HiveCLIError {
   }
 }
 
-export class InvalidTargetError extends HiveCLIError {
-  constructor() {
-    super(
-      ExitCode.BAD_INIT,
-      errorCode(ErrorCategory.GENERIC, 9),
-      `Invalid slug or ID provided for option "--target". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
-    );
-  }
-}
-
 export class MissingEnvironmentError extends HiveCLIError {
   constructor(...requiredVars: Array<[string, string]>) {
     const varsStr = requiredVars.map(a => `\t${a[0]} \t${a[1]}`).join('\n');
@@ -384,6 +374,16 @@ export class InvalidFileContentsError extends HiveCLIError {
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 19),
       `File "${fileName}" could not be parsed. Please make sure the file is readable and contains a valid ${expectedFormat}.`,
+    );
+  }
+}
+
+export class InvalidTargetError extends HiveCLIError {
+  constructor() {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 20),
+      `Invalid slug or ID provided for option "--target". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
     );
   }
 }
