@@ -118,7 +118,10 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       description: 'whether to write to a file instead of stdout',
     }),
     target: Flags.string({
-      description: 'The target from which to fetch the schema (slug or ID).',
+      description:
+        'The target from which to fetch the schema (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 

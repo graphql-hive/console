@@ -80,7 +80,10 @@ export default class SchemaDelete extends Command<typeof SchemaDelete> {
       default: false,
     }),
     target: Flags.string({
-      description: 'The target to which to publish to (slug or ID).',
+      description:
+        'The target to which to publish to (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 
