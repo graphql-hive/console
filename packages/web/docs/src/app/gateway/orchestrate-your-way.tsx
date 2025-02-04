@@ -6,11 +6,11 @@ export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<
     <section
       className={cn(
         className,
-        'text-green-1000 mx-auto flex max-w-[1248px] flex-wrap rounded-3xl border border-blue-200 p-4',
+        'text-green-1000 flex max-w-[1248px] flex-wrap rounded-3xl border border-blue-200 p-4',
       )}
       {...rest}
     >
-      <header className="box-content w-[400px] p-12">
+      <header className="box-content w-[400px] sm:p-12">
         <Heading as="h3" size="sm">
           Orchestrate your way!
         </Heading>
@@ -19,7 +19,7 @@ export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<
           infrastructure.
         </p>
       </header>
-      <ul className="flex grow basis-2/5 p-12">
+      <ul className="flex grow basis-2/5 max-sm:flex-col sm:p-12">
         <InfoCard
           as="li"
           heading="Apollo Federation v1 and v2 Support"
@@ -33,26 +33,28 @@ export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<
           as="li"
           heading="Plugin System"
           icon={<EditIcon />}
-          className="border-beige-400 flex-1 basis-full bg-transparent px-0 sm:basis-0 sm:border-l sm:px-8 sm:py-0 md:py-0 md:pl-8 md:pr-0"
+          className="flex-1 basis-full border-blue-300 bg-transparent px-0 max-sm:border-t sm:basis-0 sm:border-l sm:px-8 sm:py-0 md:py-0 md:pl-8 md:pr-0"
         >
           Extensive customization options, allowing enterprises to tailor the gateway to fit
           specific architectural needs and workflows.
         </InfoCard>
       </ul>
-      <ul className="nextra-scrollbar mt-6 grid max-w-full basis-full grid-cols-4 rounded-3xl bg-[#F8F7F6] [background-image:linear-gradient(55deg,#F8F7F6_25%,theme(colors.blue.700/0.25)_70%,#F8F7F6_94%)] md:mt-12 [&>:not(:first-child)]:border-l [&>:not(:first-child)]:border-blue-300">
-        <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V1" />
-        <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V2" />
-        <LinkCard
-          href="/docs/get-started/first-steps#create-hive-project"
-          logo={<StitchingLogo />}
-          text="Schema Stitching"
-        />
-        <LinkCard
-          href="/docs/get-started/schema-stitching"
-          logo={<MonolithLogo />}
-          text="Monolith/Single Schema"
-        />
-      </ul>
+      <div className="nextra-scrollbar mt-2 max-w-full basis-full overflow-auto rounded-3xl sm:mt-6">
+        <ul className="grid w-fit grid-cols-[repeat(4,minmax(240px,1fr))] bg-[#F8F7F6] [background-image:linear-gradient(55deg,#F8F7F6_25%,theme(colors.blue.700/0.25)_70%,#F8F7F6_94%)] md:mt-12 [&>:not(:first-child)]:border-l [&>:not(:first-child)]:border-blue-300">
+          <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V1" />
+          <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V2" />
+          <LinkCard
+            href="/docs/get-started/first-steps#create-hive-project"
+            logo={<StitchingLogo />}
+            text="Schema Stitching"
+          />
+          <LinkCard
+            href="/docs/get-started/schema-stitching"
+            logo={<MonolithLogo />}
+            text="Monolith/Single Schema"
+          />
+        </ul>
+      </div>
     </section>
   );
 }
