@@ -38,11 +38,11 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
   LogLine,
   LogRecord,
-  preflightScriptPlugin,
-  PreflightScriptProvider,
-  PreflightScriptResultData,
-  usePreflightScript,
-} from '@/lib/preflight-sandbox/graphiql-plugin';
+  preflightPlugin,
+  PreflightProvider,
+  PreflightResultData,
+  usePreflight,
+} from '@/lib/preflight/graphiql-plugin';
 import { cn } from '@/lib/utils';
 import { explorerPlugin } from '@graphiql/plugin-explorer';
 import {
@@ -64,7 +64,7 @@ import { Kit } from '@/lib/kit';
 const explorer = explorerPlugin();
 
 // Declare outside components, otherwise while clicking on field in explorer operationCollectionsPlugin will be open
-const plugins = [explorer, operationCollectionsPlugin, preflightScriptPlugin];
+const plugins = [explorer, operationCollectionsPlugin, preflightPlugin];
 
 function Share(): ReactElement | null {
   const label = 'Share query';
@@ -315,7 +315,7 @@ function LaboratoryPageContent(props: {
   const mockEndpoint = `${location.origin}/api/lab/${props.organizationSlug}/${props.projectSlug}/${props.targetSlug}`;
   const target = query.data?.target;
 
-  const preflightScript = usePreflightScript({ target: target ?? null });
+  const preflight = usePreflight({ target: target ?? null });
 
   const fetcher = useMemo<Fetcher>(() => {
     return async (params, opts) => {
@@ -324,17 +324,17 @@ function LaboratoryPageContent(props: {
         mockEndpoint;
 
       return new Repeater(async (push, stop) => {
-        let hasFinishedPreflightScript = false;
+        let isFinishedPreflight = false;
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         stop.then(() => {
-          if (!hasFinishedPreflightScript) {
-            preflightScript.abort();
+          if (!isFinishedPreflight) {
+            preflight.abort();
           }
         });
 
-        let preflightData: PreflightScriptResultData;
+        let preflightData: PreflightResultData;
         try {
-          preflightData = await preflightScript.execute();
+          preflightData = await preflight.execute();
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
@@ -353,7 +353,7 @@ function LaboratoryPageContent(props: {
           stop(error);
           return;
         } finally {
-          hasFinishedPreflightScript = true;
+          isFinishedPreflight = true;
         }
 
         const headers = {
@@ -396,8 +396,8 @@ function LaboratoryPageContent(props: {
   }, [
     target?.graphqlEndpointUrl,
     actualSelectedApiEndpoint,
-    preflightScript.execute,
-    preflightScript.isPreflightScriptEnabled,
+    preflight.execute,
+    preflight.isPreflightEnabled,
   ]);
 
   const FullScreenIcon = isFullScreen ? ExitFullScreenIcon : EnterFullScreenIcon;
@@ -450,7 +450,7 @@ function LaboratoryPageContent(props: {
 
   return (
     <>
-      {preflightScript.iframeElement}
+      {preflight.iframeElement}
       <div className="flex py-6">
         <div className="flex-1">
           <Title>Laboratory</Title>
@@ -589,7 +589,7 @@ function LaboratoryPageContent(props: {
         `}</style>
       </Helmet>
       {!query.fetching && !query.stale && (
-        <PreflightScriptProvider value={preflightScript}>
+        <PreflightProvider value={preflight}>
           <GraphiQL
             fetcher={fetcher}
             shouldPersistHeaders
@@ -631,16 +631,13 @@ function LaboratoryPageContent(props: {
             </GraphiQL.Toolbar>
             <GraphiQL.Footer>
               <div>
-                {preflightScript.isPreflightScriptEnabled ? (
-                  <PreflightScriptLogs
-                    logs={preflightScript.logs}
-                    onClear={preflightScript.clearLogs}
-                  />
+                {preflight.isPreflightEnabled ? (
+                  <PreflightLogs logs={preflight.logs} onClear={preflight.clearLogs} />
                 ) : null}
               </div>
             </GraphiQL.Footer>
           </GraphiQL>
-        </PreflightScriptProvider>
+        </PreflightProvider>
       )}
       <ConnectLabModal
         endpoint={mockEndpoint}
@@ -703,7 +700,7 @@ function useApiTabValueState(graphqlEndpointUrl: string | null) {
   ] as const;
 }
 
-function PreflightScriptLogs(props: { logs: LogRecord[]; onClear: () => void }) {
+function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const consoleRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
