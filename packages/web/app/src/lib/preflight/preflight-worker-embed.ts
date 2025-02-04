@@ -1,5 +1,5 @@
 import { Kit } from '../kit';
-import PreflightWorker from './preflight-script-worker?worker&inline';
+import PreflightWorker from './preflight-worker?worker&inline';
 import { IFrameEvents, WorkerEvents } from './shared-types';
 
 function postMessage(data: IFrameEvents.Outgoing.EventData) {
