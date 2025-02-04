@@ -34,7 +34,7 @@ export const usageProcessorV2 = traceInlineSync(
     token: TokensResponse,
     targetRetentionInDays: number | null,
   ):
-    | { success: false; errors: Array<tc.ValueError> }
+    | { success: false; errors: Array<ValueError> }
     | {
         success: true;
         report: RawReport;
@@ -361,14 +361,19 @@ type ReportType = tb.Static<typeof ReportSchema>;
 
 const ReportModel = tc.TypeCompiler.Compile(ReportSchema);
 
+type ValueError = {
+  path: string;
+  message: string;
+};
+
 export function decodeReport(
   report: unknown,
-): { success: true; report: ReportType } | { success: false; errors: tc.ValueError[] } {
-  const errors = getFirstN(ReportModel.Errors(report), 5);
-  if (errors.length) {
+): { success: true; report: ReportType } | { success: false; errors: Array<ValueError> } {
+  const errors = ReportModel.Errors(report);
+  if (ReportModel.Errors(report).First()) {
     return {
       success: false,
-      errors,
+      errors: getTypeBoxErrors(errors),
     };
   }
 
@@ -378,19 +383,14 @@ export function decodeReport(
   };
 }
 
-function getFirstN<TValue>(iterable: Iterable<TValue>, max: number): TValue[] {
-  let counter = 0;
-  const items: Array<TValue> = [];
-  for (const item of iterable) {
-    items.push(item);
-    counter++;
-
-    if (counter >= max) {
-      break;
-    }
-  }
-
-  return items;
+function getTypeBoxErrors(errors: tc.ValueErrorIterator): Array<ValueError> {
+  return [...errors].flatMap(error => [
+    {
+      path: error.path,
+      message: error.message,
+    },
+    ...error.errors.flatMap(errors => getTypeBoxErrors(errors)),
+  ]);
 }
 
 const DAY_IN_MS = 86_400_000;
