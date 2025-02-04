@@ -33,7 +33,7 @@ export function parse(str: string): ParseError | ParseOk {
   const projectSlug = parts.at(1);
   const targetSlug = parts.at(2);
 
-  if (!organizationSlug || !projectSlug || !targetSlug) {
+  if (!organizationSlug || !projectSlug || !targetSlug || parts.length > 3) {
     return {
       type: 'error',
     };
