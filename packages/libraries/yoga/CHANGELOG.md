@@ -1,5 +1,17 @@
 # @graphql-hive/yoga
 
+## 0.39.4
+
+### Patch Changes
+
+- [#6473](https://github.com/graphql-hive/console/pull/6473)
+  [`bba81de`](https://github.com/graphql-hive/console/commit/bba81def2962ddcda5dcec389f70dca1356f2815)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Correctly extract client information when using the
+  response cache plugin.
+
+  The client information was not reported for GraphQL responses served from the response cache
+  plugin.
+
 ## 0.39.3
 
 ### Patch Changes
