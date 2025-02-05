@@ -170,13 +170,6 @@ export class TargetManager {
     });
   }
 
-  getTargetIdByToken: () => Promise<string | never> = share(async () => {
-    const selector = this.session.getLegacySelector();
-    const { target } = await this.tokenStorage.getToken({ token: selector.token });
-
-    return target;
-  });
-
   getTargetFromToken: () => Promise<Target | never> = share(async () => {
     const selector = this.session.getLegacySelector();
     const { target, project, organization } = await this.tokenStorage.getToken({

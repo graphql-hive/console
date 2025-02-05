@@ -4,7 +4,7 @@ import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/lib/use/ws';
 import { createLogger, createSchema, createYoga } from 'graphql-yoga';
 import nock from 'nock';
-import { beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import { useDeferStream } from '@graphql-yoga/plugin-defer-stream';
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
@@ -14,7 +14,7 @@ import { Response } from '@whatwg-node/fetch';
 import { createHiveTestingLogger } from '../../core/tests/test-utils';
 import { createHive, useHive } from '../src/index.js';
 
-beforeAll(() => {
+afterEach(() => {
   nock.cleanAll();
 });
 
@@ -372,25 +372,16 @@ test('reports usage', async ({ expect }) => {
 
 test('reports usage with response cache', async ({ expect }) => {
   let usageCount = 0;
+  const results: Array<Record<string, any>> = [];
   const graphqlScope = nock('http://localhost')
     .post('/usage', body => {
       usageCount++;
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
-            fields: [
-              Query.hi,
-            ],
-            operation: {hi},
-            operationName: anonymous,
-          },
-        }
-      `);
-
+      results.push(body);
       return true;
     })
     .thrice()
     .reply(200);
+
   const yoga = createYoga({
     schema: createSchema({
       typeDefs: /* GraphQL */ `
@@ -432,7 +423,7 @@ test('reports usage with response cache', async ({ expect }) => {
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => {
       resolve();
-    }, 1000);
+    }, 2000);
     let requestCount = 0;
 
     graphqlScope.on('request', () => {
@@ -459,8 +450,25 @@ test('reports usage with response cache', async ({ expect }) => {
       }
     })().catch(reject);
   });
-  expect(usageCount).toBe(3);
   graphqlScope.done();
+  expect(usageCount).toBe(3);
+
+  for (const body of results) {
+    expect(body.operations[0].metadata).toEqual({
+      client: {
+        name: 'brrr',
+        version: '1',
+      },
+    });
+
+    expect(body.map).toEqual({
+      f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+        fields: ['Query.hi'],
+        operation: '{hi}',
+        operationName: 'anonymous',
+      },
+    });
+  }
 });
 
 test('does not report usage for operation that does not pass validation', async ({ expect }) => {
@@ -1110,10 +1118,10 @@ describe('subscription usage reporting', () => {
           expect(res.status).toBe(200);
           expect(await res.text()).toMatchInlineSnapshot(`
             :
-  
+
             event: next
             data: {"errors":[{"message":"Unexpected error.","locations":[{"line":1,"column":1}],"extensions":{"unexpected":true}}]}
-  
+
             event: complete
             data:
           `);

@@ -3,14 +3,17 @@ import { extname, resolve } from 'node:path';
 import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   InvalidSchemaError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaNotFoundError,
   UnsupportedFileExtensionError,
 } from '../../helpers/errors';
+import * as TargetInput from '../../helpers/target-input';
 import { Texture } from '../../helpers/texture/texture';
 
 const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
@@ -19,8 +22,9 @@ const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
     $includeSubgraphs: Boolean!
+    $target: TargetReferenceInput
   ) {
-    schemaVersionForActionId(actionId: $actionId) {
+    schemaVersionForActionId(actionId: $actionId, target: $target) {
       id
       valid
       sdl @include(if: $includeSDL)
@@ -50,8 +54,9 @@ const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
     $includeSubgraphs: Boolean!
+    $target: TargetReferenceInput
   ) {
-    latestValidVersion {
+    latestValidVersion(target: $target) {
       id
       valid
       sdl @include(if: $includeSDL)
@@ -112,6 +117,12 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     outputFile: Flags.string({
       description: 'whether to write to a file instead of stdout',
     }),
+    target: Flags.string({
+      description:
+        'The target from which to fetch the schema (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -162,6 +173,15 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       defaultValue: 'sdl',
     });
 
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
+
     let schemaVersion;
     if (actionId) {
       const result = await this.registryApi(endpoint, accessToken).request({
@@ -171,6 +191,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
           includeSDL: sdlType === 'sdl',
           includeSupergraph: sdlType === 'supergraph',
           includeSubgraphs: sdlType === 'subgraphs',
+          target,
         },
       });
       schemaVersion = result.schemaVersionForActionId;
@@ -181,6 +202,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
           includeSDL: sdlType === 'sdl',
           includeSupergraph: sdlType === 'supergraph',
           includeSubgraphs: sdlType === 'subgraphs',
+          target,
         },
       });
       schemaVersion = result.latestValidVersion;

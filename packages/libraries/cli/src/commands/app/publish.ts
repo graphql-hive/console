@@ -1,8 +1,15 @@
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { APIError, MissingEndpointError, MissingRegistryTokenError } from '../../helpers/errors';
+import {
+  APIError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+} from '../../helpers/errors';
+import * as TargetInput from '../../helpers/target-input';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -20,6 +27,12 @@ export default class AppPublish extends Command<typeof AppPublish> {
     version: Flags.string({
       description: 'app version',
       required: true,
+    }),
+    target: Flags.string({
+      description:
+        'The target in which the app deployment will be published (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 
@@ -50,10 +63,20 @@ export default class AppPublish extends Command<typeof AppPublish> {
       throw new MissingRegistryTokenError();
     }
 
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
+
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: ActivateAppDeploymentMutation,
       variables: {
         input: {
+          target,
           appName: flags['name'],
           appVersion: flags['version'],
         },

@@ -78,7 +78,7 @@ export const gatewayConfig = defineConfig({
       ]
       // Configure where to look for the JWT token: in the headers, or cookies.
       // By default, the plugin will look for the token in the 'authorization' header only.
-      tokentokenLookupLocations: [
+      tokenLookupLocations: [
         extractFromHeader({ name: 'authorization', prefix: 'Bearer' }),
         extractFromCookie({ name: 'auth' }),
       ],

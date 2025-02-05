@@ -2,24 +2,9 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
-    """
-    Requires API Token
-    """
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
-    """
-    Requires API Token
-    """
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
-    """
-    Requires API Token
-    """
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
-    """
-    Requires API Token
-
-    Publish a schema of a single or multiple services and compose a supergraph schema,
-    including the rest of the services in the project.
-    """
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
@@ -45,18 +30,12 @@ export default gql`
   }
 
   extend type Query {
-    """
-    Requires API Token
-    """
-    schemaVersionForActionId(actionId: ID!): SchemaVersion
+    schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+    latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token
     """
     latestVersion: SchemaVersion
-    """
-    Requires API Token
-    """
-    latestValidVersion: SchemaVersion
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!
@@ -287,6 +266,7 @@ export default gql`
   }
 
   input SchemaPublishInput {
+    target: TargetReferenceInput
     service: ID
     url: String
     sdl: String!
@@ -314,6 +294,7 @@ export default gql`
   }
 
   input SchemaComposeInput {
+    target: TargetReferenceInput
     services: [SchemaComposeServiceInput!]!
     """
     Whether to use the latest composable version or just latest schema version for the composition.
@@ -597,6 +578,7 @@ export default gql`
   }
 
   input SchemaCheckInput {
+    target: TargetReferenceInput
     service: ID
     sdl: String!
     github: GitHubSchemaCheckInput
@@ -609,6 +591,7 @@ export default gql`
   }
 
   input SchemaDeleteInput {
+    target: TargetReferenceInput
     serviceName: ID!
     dryRun: Boolean
   }

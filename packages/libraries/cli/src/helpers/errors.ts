@@ -378,6 +378,16 @@ export class InvalidFileContentsError extends HiveCLIError {
   }
 }
 
+export class InvalidTargetError extends HiveCLIError {
+  constructor() {
+    super(
+      ExitCode.BAD_INIT,
+      errorCode(ErrorCategory.GENERIC, 20),
+      `Invalid slug or ID provided for option "--target". Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).`,
+    );
+  }
+}
+
 export class SchemaNotFoundError extends HiveCLIError {
   constructor(actionId?: string) {
     super(

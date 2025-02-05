@@ -185,7 +185,7 @@ export abstract class Session {
               args.organizationId,
               args.params,
             );
-            throw new AccessError(`Missing permission for performing '${args.action}' on resource`);
+            throw new InsufficientPermissionError(args.action);
           } else {
             isAllowed = true;
           }
@@ -201,7 +201,7 @@ export abstract class Session {
         args.params,
       );
 
-      throw new AccessError(`Missing permission for performing '${args.action}' on resource`);
+      throw new InsufficientPermissionError(args.action);
     }
   }
 
@@ -229,6 +229,12 @@ export abstract class Session {
     this.logger.debug('Reset cache.');
     this.performActionCache.clear();
     this.policyStatementCache.clear();
+  }
+}
+
+export class InsufficientPermissionError extends AccessError {
+  constructor(actionName: keyof typeof actionDefinitions) {
+    super(`Missing permission for performing '${actionName}' on resource`);
   }
 }
 

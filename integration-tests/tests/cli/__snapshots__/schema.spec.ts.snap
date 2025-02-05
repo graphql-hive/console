@@ -163,7 +163,7 @@ exports[`FEDERATION > schema:publish should see Invalid Token error when token i
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The 
+ ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]
  ›   > See https://__URL__ for
  ›    a complete list of error codes and recommended fixes.
@@ -319,7 +319,7 @@ exports[`SINGLE > schema:publish should see Invalid Token error when token is in
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The 
+ ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]
  ›   > See https://__URL__ for
  ›    a complete list of error codes and recommended fixes.
@@ -493,7 +493,7 @@ exports[`STITCHING > schema:publish should see Invalid Token error when token is
 exitCode------------------------------------------:
 2
 stderr--------------------------------------------:
- ›   Error: A valid registry token is required to perform the action. The 
+ ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]
  ›   > See https://__URL__ for
  ›    a complete list of error codes and recommended fixes.

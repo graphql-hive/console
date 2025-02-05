@@ -3,13 +3,16 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   PersistedOperationsMalformedError,
 } from '../../helpers/errors';
+import * as TargetInput from '../../helpers/target-input';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -27,6 +30,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
     version: Flags.string({
       description: 'app version',
       required: true,
+    }),
+    target: Flags.string({
+      description:
+        'The target in which the app deployment will be created.' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 
@@ -66,6 +75,15 @@ export default class AppCreate extends Command<typeof AppCreate> {
       throw new MissingRegistryTokenError();
     }
 
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
+
     const file: string = args.file;
     const contents = this.readJSON(file);
     const operations: unknown = JSON.parse(contents);
@@ -81,6 +99,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
         input: {
           appName: flags['name'],
           appVersion: flags['version'],
+          target,
         },
       },
     });
@@ -108,6 +127,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
           operation: AddDocumentsToAppDeploymentMutation,
           variables: {
             input: {
+              target,
               appName: flags['name'],
               appVersion: flags['version'],
               documents: buffer,

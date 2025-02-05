@@ -5,6 +5,7 @@ export const activateAppDeployment: NonNullable<
   MutationResolvers['activateAppDeployment']
 > = async (_parent, { input }, { injector }) => {
   const result = await injector.get(AppDeploymentsManager).activateAppDeployment({
+    reference: input.target ?? null,
     appDeployment: {
       name: input.appName,
       version: input.appVersion,

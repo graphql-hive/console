@@ -1,14 +1,14 @@
 import CryptoJS from 'crypto-js';
 import CryptoJSPackageJson from 'crypto-js/package.json';
+import { Kit } from '../kit';
 import { ALLOWED_GLOBALS } from './allowed-globals';
-import { isJSONPrimitive, JSONPrimitive } from './json';
 import { LogMessage, WorkerEvents } from './shared-types';
 
 interface WorkerData {
   request: {
     headers: Headers;
   };
-  environmentVariables: Record<string, JSONPrimitive>;
+  environmentVariables: Record<string, Kit.Json.Primitive>;
 }
 
 /**
@@ -108,7 +108,7 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
     };
 
   function getValidEnvVariable(value: unknown) {
-    if (isJSONPrimitive(value)) {
+    if (Kit.Json.isPrimitive(value)) {
       return value;
     }
     consoleApi.warn(
