@@ -161,6 +161,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
                 schema: latestSchema,
                 variableValues: record.paramsArgs.variables,
                 operationName: record.paramsArgs.operationName,
+                contextValue: serverContext,
               },
               result,
               record.experimental__documentId,
