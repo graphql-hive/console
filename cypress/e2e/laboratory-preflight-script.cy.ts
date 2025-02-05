@@ -13,7 +13,7 @@ const selectors = {
   },
 
   modal: {
-    buttonSubmitCy: 'preflight-script-modal-submit',
+    buttonSubmitCy: 'preflight-modal-submit',
   },
 };
 
@@ -52,7 +52,7 @@ function setMonacoEditorContents(editorCyName: string, text: string) {
 }
 
 function setEditorScript(script: string) {
-  setMonacoEditorContents('preflight-script-editor', script);
+  setMonacoEditorContents('preflight-editor', script);
 }
 
 describe('Laboratory > Preflight Script', () => {
@@ -65,17 +65,14 @@ describe('Laboratory > Preflight Script', () => {
   it('mini script editor is read only', () => {
     cy.dataCy('toggle-preflight').click();
     // Wait loading disappears
-    cy.dataCy('preflight-script-editor-mini').should('not.contain', 'Loading');
+    cy.dataCy('preflight-editor-mini').should('not.contain', 'Loading');
     // Click
-    cy.dataCy('preflight-script-editor-mini').click();
+    cy.dataCy('preflight-editor-mini').click();
     // And type
-    cy.dataCy('preflight-script-editor-mini').within(() => {
+    cy.dataCy('preflight-editor-mini').within(() => {
       cy.get('textarea').type('🐝', { force: true });
     });
-    cy.dataCy('preflight-script-editor-mini').should(
-      'have.text',
-      'Cannot edit in read-only editor',
-    );
+    cy.dataCy('preflight-editor-mini').should('have.text', 'Cannot edit in read-only editor');
   });
 });
 
@@ -90,19 +87,19 @@ describe('Preflight Script Modal', () => {
 
   it('save script and environment variables when submitting', () => {
     setEditorScript(script);
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
     cy.dataCy('env-editor-mini').should('have.text', env);
     cy.dataCy('toggle-preflight').click();
-    cy.dataCy('preflight-script-editor-mini').should('have.text', script);
+    cy.dataCy('preflight-editor-mini').should('have.text', script);
     cy.reload();
     cy.get('[aria-label*="Preflight Script"]').click();
     cy.dataCy('env-editor-mini').should('have.text', env);
-    cy.dataCy('preflight-script-editor-mini').should('have.text', script);
+    cy.dataCy('preflight-editor-mini').should('have.text', script);
   });
 
   it('logs show console/error information', () => {
     setEditorScript(script);
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
@@ -112,7 +109,7 @@ console.error('Fatal')
 throw new TypeError('Test')`,
     );
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     // First log previous log message
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
     // After the new logs
@@ -125,7 +122,7 @@ throw new TypeError('Test')`,
   it('prompt and pass the awaited response', () => {
     setEditorScript(script);
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
@@ -135,7 +132,7 @@ throw new TypeError('Test')`,
       `,
     );
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('prompt').get('input').type('test-username');
     cy.dataCy('prompt').get('form').submit();
 
@@ -153,7 +150,7 @@ throw new TypeError('Test')`,
   it('prompt and cancel', () => {
     setEditorScript(script);
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
     setEditorScript(
@@ -163,7 +160,7 @@ throw new TypeError('Test')`,
       `,
     );
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('prompt').get('input').type('test-username');
     cy.dataCy('prompt').get('[data-cy="prompt-cancel"]').click();
 
@@ -181,7 +178,7 @@ throw new TypeError('Test')`,
   it('script execution updates environment variables', () => {
     setEditorScript(`lab.environment.set('my-test', "TROLOLOL")`);
 
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('env-editor').should(
       'include.text',
       // replace space with &nbsp;
@@ -191,7 +188,7 @@ throw new TypeError('Test')`,
 
   it('`crypto-js` can be used for generating hashes', () => {
     setEditorScript('console.log(lab.CryptoJS.SHA256("🐝"))');
-    cy.dataCy('run-preflight-script').click();
+    cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'info: Using crypto-js version:');
     cy.dataCy('console-output').should(
       'contain',
@@ -201,13 +198,13 @@ throw new TypeError('Test')`,
 
   it('scripts can not use `eval`', () => {
     setEditorScript('eval()');
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
     cy.get('body').contains('Usage of dangerous statement like eval() or Function("").');
   });
 
   it('invalid code is rejected and can not be saved', () => {
     setEditorScript('🐝');
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
     cy.get('body').contains("[1:1]: Illegal character '}");
   });
 });
@@ -326,8 +323,8 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', '92')`);
-    cy.dataCy('preflight-script-modal-submit').click();
+    setMonacoEditorContents('preflight-editor', `lab.environment.set('foo', '92')`);
+    cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
       method: 'POST',
@@ -354,13 +351,13 @@ describe('Execution', () => {
 
     cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
-      'preflight-script-editor',
+      'preflight-editor',
       dedent`
       const username = await lab.prompt('Enter your username');
       lab.environment.set('username', username);
     `,
     );
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
       method: 'POST',
@@ -386,10 +383,10 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', 92)`);
+    setMonacoEditorContents('preflight-editor', `lab.environment.set('foo', 92)`);
     setMonacoEditorContents('env-editor', `{"foo":10}`);
 
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
       method: 'POST',
@@ -406,7 +403,7 @@ describe('Execution', () => {
 
     cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
-      'preflight-script-editor',
+      'preflight-editor',
       dedent`
         console.info(1)
         console.warn(true)
@@ -414,7 +411,7 @@ describe('Execution', () => {
         throw new TypeError('Test')
         `,
     );
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
       method: 'POST',
@@ -451,7 +448,7 @@ describe('Execution', () => {
 
     cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
-      'preflight-script-editor',
+      'preflight-editor',
       dedent`
         console.info(1)
         console.warn(true)
@@ -459,7 +456,7 @@ describe('Execution', () => {
         throw new TypeError('Test')
         `,
     );
-    cy.dataCy('preflight-script-modal-submit').click();
+    cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
       method: 'POST',
