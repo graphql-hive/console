@@ -361,10 +361,11 @@ type ReportType = tb.Static<typeof ReportSchema>;
 
 const ReportModel = tc.TypeCompiler.Compile(ReportSchema);
 
-type ValueError = {
+interface ValueError {
   path: string;
   message: string;
-};
+  errors?: ValueError[];
+}
 
 export function decodeReport(
   report: unknown,
@@ -384,13 +385,14 @@ export function decodeReport(
 }
 
 function getTypeBoxErrors(errors: tc.ValueErrorIterator): Array<ValueError> {
-  return [...errors].flatMap(error => [
-    {
+  return Array.from(errors).map(error => {
+    const errors = error.errors.flatMap(errors => getTypeBoxErrors(errors));
+    return {
       path: error.path,
       message: error.message,
-    },
-    ...error.errors.flatMap(errors => getTypeBoxErrors(errors)),
-  ]);
+      errors: errors.length ? errors : undefined,
+    };
+  });
 }
 
 const DAY_IN_MS = 86_400_000;
