@@ -324,17 +324,17 @@ function LaboratoryPageContent(props: {
         mockEndpoint;
 
       return new Repeater(async (push, stop) => {
-        let isFinishedPreflight = false;
+        let isPreflightExecutionDone = false;
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         stop.then(() => {
-          if (!isFinishedPreflight) {
-            preflight.abort();
+          if (!isPreflightExecutionDone) {
+            preflight.abortExecution();
           }
         });
 
-        let preflightData: PreflightResultData;
+        let preflightResultData: PreflightResultData;
         try {
-          preflightData = await preflight.execute();
+          preflightResultData = await preflight.execute();
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
@@ -353,7 +353,7 @@ function LaboratoryPageContent(props: {
           stop(error);
           return;
         } finally {
-          isFinishedPreflight = true;
+          isPreflightExecutionDone = true;
         }
 
         const headers = {
@@ -361,8 +361,11 @@ function LaboratoryPageContent(props: {
           // their preflight headers. So, apply substitution BEFORE merging
           // in preflight headers.
           //
-          ...substituteVariablesInHeaders(opts?.headers ?? {}, preflightData.environmentVariables),
-          ...Object.fromEntries(preflightData.request.headers),
+          ...substituteVariablesInHeaders(
+            opts?.headers ?? {},
+            preflightResultData.environmentVariables,
+          ),
+          ...Object.fromEntries(preflightResultData.request.headers),
         };
 
         const graphiqlFetcher = createGraphiQLFetcher({ url, fetch });

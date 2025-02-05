@@ -169,7 +169,7 @@ export function usePreflight(args: {
   const [state, setState] = useState<PreflightWorkerState>(PreflightWorkerState.ready);
   const [logs, setLogs] = useState<LogRecord[]>([]);
 
-  const currentRun = useRef<null | Function>(null);
+  const currentExecution = useRef<null | Function>(null);
 
   async function execute(
     script = target?.preflightScript?.sourceCode ?? '',
@@ -366,7 +366,7 @@ export function usePreflight(args: {
       }
 
       window.addEventListener('message', eventHandler);
-      currentRun.current = () => {
+      currentExecution.current = () => {
         contentWindow.postMessage({
           type: IFrameEvents.Incoming.Event.abort,
           id,
@@ -374,7 +374,7 @@ export function usePreflight(args: {
 
         closedOpenedPrompts();
 
-        currentRun.current = null;
+        currentExecution.current = null;
       };
 
       await isFinishedD.promise;
@@ -406,21 +406,21 @@ export function usePreflight(args: {
     }
   }
 
-  function abort() {
-    currentRun.current?.();
+  function abortExecution() {
+    currentExecution.current?.();
   }
 
   // terminate worker when leaving laboratory
   useEffect(
     () => () => {
-      currentRun.current?.();
+      currentExecution.current?.();
     },
     [],
   );
 
   return {
     execute,
-    abort,
+    abortExecution,
     isEnabled,
     setIsEnabled,
     content: target?.preflightScript?.sourceCode ?? '',
@@ -498,13 +498,13 @@ function PreflightContent() {
         key={String(showModal)}
         isOpen={showModal}
         toggle={toggleShowModal}
-        executeScript={value =>
+        execute={value =>
           preflight.execute(value, true).catch(err => {
             console.error(err);
           })
         }
         state={preflight.state}
-        abortScriptRun={preflight.abort}
+        abortExecution={preflight.abortExecution}
         logs={preflight.logs}
         clearLogs={preflight.clearLogs}
         content={preflight.content}
@@ -605,9 +605,9 @@ function PreflightModal({
   isOpen,
   toggle,
   content,
-  executeScript,
   state,
-  abortScriptRun,
+  execute,
+  abortExecution,
   logs,
   clearLogs,
   onContentChange,
@@ -617,9 +617,9 @@ function PreflightModal({
   isOpen: boolean;
   toggle: () => void;
   content?: string;
-  executeScript: (script: string) => void;
   state: PreflightWorkerState;
-  abortScriptRun: () => void;
+  execute: (script: string) => void;
+  abortExecution: () => void;
   logs: Array<LogRecord>;
   clearLogs: () => void;
   onContentChange: (value: string) => void;
@@ -665,7 +665,7 @@ function PreflightModal({
       open={isOpen}
       onOpenChange={open => {
         if (!open) {
-          abortScriptRun();
+          abortExecution();
         }
         toggle();
       }}
@@ -703,11 +703,11 @@ function PreflightModal({
                 className="size-auto gap-1"
                 onClick={() => {
                   if (state === PreflightWorkerState.running) {
-                    abortScriptRun();
+                    abortExecution();
                     return;
                   }
 
-                  executeScript(scriptEditorRef.current?.getValue() ?? '');
+                  execute(scriptEditorRef.current?.getValue() ?? '');
                 }}
                 data-cy="run-preflight"
               >
