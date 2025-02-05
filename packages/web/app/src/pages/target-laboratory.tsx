@@ -347,7 +347,7 @@ function LaboratoryPageContent(props: {
             null,
             2,
           );
-          const error = new Error(`Error during preflight script execution:\n\n${formatError}`);
+          const error = new Error(`Error during preflight execution:\n\n${formatError}`);
           // We only want to expose the error message, not the whole stack trace.
           delete error.stack;
           stop(error);
@@ -358,7 +358,7 @@ function LaboratoryPageContent(props: {
 
         const headers = {
           // We want to prevent users from interpolating environment variables into
-          // their preflight script headers. So, apply substitution BEFORE merging
+          // their preflight headers. So, apply substitution BEFORE merging
           // in preflight headers.
           //
           ...substituteVariablesInHeaders(opts?.headers ?? {}, preflightData.environmentVariables),

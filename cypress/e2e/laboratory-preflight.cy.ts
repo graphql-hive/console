@@ -1,7 +1,7 @@
 import { dedent } from '../support/testkit';
 
 const selectors = {
-  buttonPreflight: '[aria-label*="Preflight Script"]',
+  buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
   buttonModalCy: 'preflight-modal-button',
   buttonToggleCy: 'toggle-preflight',
   buttonHeaders: '[data-name="headers"]',
@@ -27,7 +27,7 @@ beforeEach(() => {
       cy.setCookie('sRefreshToken', refreshToken);
       data.slug = slug;
       cy.visit(`/${slug}/laboratory`);
-      cy.get(selectors.buttonPreflight).click();
+      cy.get(selectors.buttonGraphiQLPreflight).click();
     });
   });
 });
@@ -60,7 +60,7 @@ describe('Laboratory > Preflight Script', () => {
   it('regression: loads even if local storage is set to {}', () => {
     window.localStorage.setItem('hive:laboratory:environment', '{}');
     cy.visit(`/${data.slug}/laboratory`);
-    cy.get(selectors.buttonPreflight).click();
+    cy.get(selectors.buttonGraphiQLPreflight).click();
   });
   it('mini script editor is read only', () => {
     cy.dataCy('toggle-preflight').click();

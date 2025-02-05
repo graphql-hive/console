@@ -73,7 +73,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
         type: IFrameEvents.Outgoing.Event.error,
         runId,
         error: {
-          message: `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
+          message: `Preflight execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
         },
       });
       terminate();

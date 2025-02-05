@@ -1,7 +1,7 @@
 /* eslint-disable  @typescript-eslint/no-unused-vars */
 
 // The content of this file is used as a string
-// and feed into the context of the Monaco Editor and the Preflight Script.
+// and feed into the context of the Monaco Editor and Preflight.
 // The lack of `declare const lab: LabAPI` is intentional, to avoid messing up the global scope
 // of the web app codebase.
 // This could be a string in `graphiql-plugin.tsx`, but it's better to keep it in a separate file,
