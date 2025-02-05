@@ -3,13 +3,16 @@ import {
   CallToAction,
   DecorationIsolation,
   ExploreMainProductCards,
+  FrequentlyAskedQuestions,
   Hero,
   HeroLogo,
   HiveGatewayIcon,
+  TextLink,
 } from '@theguild/components';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
+import GatewayLandingFAQ from './gateway-landing-faq.mdx';
 import { OrchestrateYourWay } from './orchestrate-your-way';
 
 export const metadata: Metadata = {
@@ -56,6 +59,12 @@ export default function HiveGatewayPage() {
       {/* Let's get advanced */}
       {/* Cloud-Native Nature */}
       <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
+      <FrequentlyAskedQuestions
+        /* todo: I'm pretty sure this prop is redundant, but okay */
+        faqPages={['/gateway']}
+      >
+        <GatewayLandingFAQ />
+      </FrequentlyAskedQuestions>
       {/* big get your API game right section */}
     </LandingPageContainer>
   );
