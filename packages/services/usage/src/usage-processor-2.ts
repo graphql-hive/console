@@ -8,6 +8,7 @@ import {
 } from '@hive/usage-common';
 import * as tb from '@sinclair/typebox';
 import * as tc from '@sinclair/typebox/compiler';
+import * as tbe from '@sinclair/typebox/errors';
 import { invalidRawOperations, rawOperationsSize, totalOperations, totalReports } from './metrics';
 import { TokensResponse } from './tokens';
 import { isValidOperationBody } from './usage-processor-1';
@@ -306,6 +307,12 @@ const unixTimestampRegex = /^\d{13,}$/;
 function isUnixTimestamp(x: number) {
   return unixTimestampRegex.test(String(x));
 }
+
+tbe.SetErrorFunction(param => {
+  return param.schema[tb.Kind] === 'UnixTimestampInMs'
+    ? 'Expected valid unix timestamp in milliseconds'
+    : tbe.DefaultErrorFunction(param);
+});
 
 tb.TypeRegistry.Set<number>('UnixTimestampInMs', (_, value) =>
   typeof value === 'number' ? isUnixTimestamp(value) : false,
