@@ -12,6 +12,7 @@ import { clsx } from 'clsx';
 import { PowerIcon } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
+import { z } from 'zod';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -155,7 +156,7 @@ export function usePreflightScript(args: {
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorageJson(
     'hive:laboratory:isPreflightScriptEnabled',
-    false,
+    z.boolean().default(false),
   );
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
     'hive:laboratory:environment',

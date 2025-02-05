@@ -1,5 +1,27 @@
 # hive
 
+## 5.1.0
+
+### Minor Changes
+
+- [#6449](https://github.com/graphql-hive/console/pull/6449)
+  [`0504530`](https://github.com/graphql-hive/console/commit/05045306b789e97ec39cbd2c8ee2b4f1b721dc9e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Modify GraphQL fields used by CLI to accept an
+  optional specified target that is used for identifying the affected target instead of resolving
+  the target from the access token.
+
+### Patch Changes
+
+- [#6472](https://github.com/graphql-hive/console/pull/6472)
+  [`4d3d6fc`](https://github.com/graphql-hive/console/commit/4d3d6fcdc2d7f65e6366fd76a058c3f687c4da4c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve the usage reporting endpoint error
+  responses to include all the errors for invalid JSON bodies.
+
+- [#6455](https://github.com/graphql-hive/console/pull/6455)
+  [`6924a1a`](https://github.com/graphql-hive/console/commit/6924a1abf91c1c663d752949031e0a5c4078392a)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - A minor defect in Laboratory has been fixed
+  that previously caused the application to crash when local storage was in a particular state.
+
 ## 5.0.0
 
 ### Major Changes

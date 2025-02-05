@@ -4221,6 +4221,35 @@ export async function createStorage(
 
       return TargetBreadcrumbModel.parse(result);
     },
+    getTargetById: batch(async targetIds => {
+      const rows = await pool
+        .any<unknown>(
+          sql`/* getTarget */
+            SELECT
+              "t".*
+              , "p"."org_id" AS "orgId"
+            FROM (
+              SELECT
+                ${targetSQLFields}
+              FROM
+                "targets"
+              WHERE
+                "id" = ANY(${sql.array(targetIds, 'uuid')})
+            ) AS "t"
+              INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          `,
+        )
+        .then(rows => rows.map(row => TargetWithOrgIdModel.parse(row)));
+
+      const resultLookupMap = new Map<string, Target>();
+      for (const target of rows) {
+        resultLookupMap.set(target.id, target);
+      }
+
+      return targetIds.map(async id => {
+        return resultLookupMap.get(id) ?? null;
+      });
+    }),
 
     async updateTargetGraphQLEndpointUrl(args) {
       const result = await pool.maybeOne<unknown>(sql`/* updateTargetGraphQLEndpointUrl */
@@ -5108,6 +5137,10 @@ const TargetModel = zod.object({
   name: zod.string(),
   projectId: zod.string(),
   graphqlEndpointUrl: zod.string().nullable(),
+});
+
+const TargetWithOrgIdModel = TargetModel.extend({
+  orgId: zod.string(),
 });
 
 export * from './schema-change-model';

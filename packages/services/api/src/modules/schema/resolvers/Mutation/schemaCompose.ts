@@ -1,6 +1,3 @@
-import { OrganizationManager } from '../../../organization/providers/organization-manager';
-import { ProjectManager } from '../../../project/providers/project-manager';
-import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -9,18 +6,10 @@ export const schemaCompose: NonNullable<MutationResolvers['schemaCompose']> = as
   { input },
   { injector },
 ) => {
-  const [organization, project, target] = await Promise.all([
-    injector.get(OrganizationManager).getOrganizationIdByToken(),
-    injector.get(ProjectManager).getProjectIdByToken(),
-    injector.get(TargetManager).getTargetIdByToken(),
-  ]);
-
   const result = await injector.get(SchemaManager).compose({
     onlyComposable: input.useLatestComposableVersion === true,
     services: input.services,
-    organizationId: organization,
-    projectId: project,
-    targetId: target,
+    target: input.target ?? null,
   });
 
   if (result.kind === 'error') {

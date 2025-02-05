@@ -2,11 +2,13 @@ import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   GithubCommitRequiredError,
   GithubRepositoryRequiredError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingRegistryTokenError,
   SchemaFileEmptyError,
@@ -21,6 +23,7 @@ import {
   renderErrors,
   renderWarnings,
 } from '../../helpers/schema';
+import * as TargetInput from '../../helpers/target-input';
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
   mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
@@ -152,6 +155,12 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
     contextId: Flags.string({
       description: 'Context ID for grouping the schema check.',
     }),
+    target: Flags.string({
+      description:
+        'The target against which to check the schema (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -168,6 +177,15 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const { flags, args } = await this.parse(SchemaCheck);
 
       await this.require(flags);
+
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
 
       const service = flags.service;
       const forceSafe = flags.forceSafe;
@@ -254,6 +272,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                   }
                 : null,
             contextId: flags.contextId ?? undefined,
+            target,
           },
           usesGitHubApp,
         },

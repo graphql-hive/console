@@ -8,7 +8,8 @@ import {
   useState,
 } from 'react';
 import { startOfDay } from 'date-fns';
-import { resolveRange, type Period } from '@/lib/date-math';
+import { z } from 'zod';
+import { Period, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
 import { useLocalStorageJson } from '@/lib/hooks';
 import { UTCDate } from '@date-fns/utc';
@@ -27,7 +28,7 @@ type SchemaExplorerContextType = {
   refreshResolvedPeriod(): void;
 };
 
-const defaultPeriod = {
+const defaultPeriod: Period = {
   from: 'now-7d',
   to: 'now',
 };
@@ -56,11 +57,11 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
 
   const [isArgumentListCollapsed, setArgumentListCollapsed] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
-    true,
+    z.boolean().default(true),
   );
-  const [period, setPeriod] = useLocalStorageJson<Period>(
+  const [period, setPeriod] = useLocalStorageJson(
     'hive:schema-explorer:period-1',
-    defaultPeriod,
+    Period.default(defaultPeriod),
   );
   const [resolvedPeriod, setResolvedPeriod] = useState<Period>(() => resolveRange(period));
 

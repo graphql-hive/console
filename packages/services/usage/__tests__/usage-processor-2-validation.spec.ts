@@ -1009,3 +1009,50 @@ test('$.operations.execution.errorsTotal is required', () => {
     success: false,
   });
 });
+
+test('invalid duration and timestamp (-1) gives helpful error response', () => {
+  expect(
+    decodeReport({
+      size: 1,
+      map: {
+        op1Key: {
+          operation: `query op1Name { field1 }`,
+          fields: ['Query.field1'],
+        },
+      },
+      operations: [
+        {
+          operationMapKey: 'op1Key',
+          timestamp: -1,
+          execution: {
+            ok: true,
+            duration: -1,
+            errorsTotal: 1,
+          },
+        },
+      ],
+    }),
+  ).toEqual({
+    errors: [
+      {
+        errors: [
+          {
+            message: 'Expected valid unix timestamp in milliseconds',
+            path: '/operations/0/timestamp',
+          },
+          {
+            message: 'Expected integer to be greater or equal to 0',
+            path: '/operations/0/execution/duration',
+          },
+          {
+            message: 'Expected null',
+            path: '/operations',
+          },
+        ],
+        message: 'Expected union value',
+        path: '/operations',
+      },
+    ],
+    success: false,
+  });
+});

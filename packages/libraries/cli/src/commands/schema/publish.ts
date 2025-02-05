@@ -3,12 +3,14 @@ import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
   GithubAuthorRequiredError,
   GithubCommitRequiredError,
   InvalidSDLError,
+  InvalidTargetError,
   MissingEndpointError,
   MissingEnvironmentError,
   MissingRegistryTokenError,
@@ -19,6 +21,7 @@ import {
 } from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
+import * as TargetInput from '../../helpers/target-input';
 import { invariant } from '../../helpers/validation';
 
 const schemaPublishMutation = graphql(/* GraphQL */ `
@@ -143,6 +146,12 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       default: [],
       multiple: true,
     }),
+    target: Flags.string({
+      description:
+        'The target to which to publish to (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -261,6 +270,15 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         };
       }
 
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
+
       let sdl: string;
       try {
         const rawSdl = await loadSchema(file);
@@ -291,6 +309,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               metadata,
               gitHub,
               supportsRetry: true,
+              target,
             },
             usesGitHubApp: !!gitHub,
           },

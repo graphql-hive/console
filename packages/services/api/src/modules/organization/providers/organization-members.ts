@@ -225,6 +225,7 @@ export class OrganizationMembers {
       'Find organization members for organization. (organizationId=%s)',
       organization.id,
     );
+
     const organizationMembers = await this.findOrganizationMembers(organization.id);
     const mapping = await this.resolveMemberships(organization, organizationMembers);
 

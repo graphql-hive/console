@@ -10,12 +10,14 @@ import {
 } from '@theguild/federation-composition';
 import Command from '../base-command';
 import { graphql } from '../gql';
+import * as GraphQLSchema from '../gql/graphql';
 import { graphqlEndpoint } from '../helpers/config';
 import {
   APIError,
   HiveCLIError,
   IntrospectionError,
   InvalidCompositionResultError,
+  InvalidTargetError,
   LocalCompositionError,
   MissingEndpointError,
   MissingRegistryTokenError,
@@ -24,6 +26,7 @@ import {
   UnexpectedError,
 } from '../helpers/errors';
 import { loadSchema } from '../helpers/schema';
+import * as TargetInput from '../helpers/target-input';
 import { invariant } from '../helpers/validation';
 
 const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
@@ -172,9 +175,15 @@ export default class Dev extends Command<typeof Dev> {
     unstable__forceLatest: Flags.boolean({
       hidden: true,
       description:
-        'Force the command to use the latest version of the CLI, not the latest composable version. ',
+        'Force the command to use the latest version of the CLI, not the latest composable version.',
       default: false,
       dependsOn: ['remote'],
+    }),
+    target: Flags.string({
+      description:
+        'The target to use for composition (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
   };
 
@@ -199,6 +208,15 @@ export default class Dev extends Command<typeof Dev> {
         sdl,
       };
     });
+
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
 
     if (flags.watch === true) {
       if (isRemote) {
@@ -234,6 +252,7 @@ export default class Dev extends Command<typeof Dev> {
             token,
             write: flags.write,
             unstable__forceLatest,
+            target,
             onError: error => {
               // watch mode should not exit. Log instead.
               this.logFailure(error.message);
@@ -291,6 +310,7 @@ export default class Dev extends Command<typeof Dev> {
         token,
         write: flags.write,
         unstable__forceLatest,
+        target,
         onError: error => {
           throw error;
         },
@@ -354,6 +374,7 @@ export default class Dev extends Command<typeof Dev> {
     token: string;
     write: string;
     unstable__forceLatest: boolean;
+    target: GraphQLSchema.TargetReferenceInput | null;
     onError: (error: HiveCLIError) => void | never;
   }) {
     const result = await this.registryApi(input.registry, input.token).request({
@@ -366,6 +387,7 @@ export default class Dev extends Command<typeof Dev> {
             url: service.url,
             sdl: service.sdl,
           })),
+          target: input.target,
         },
       },
     });

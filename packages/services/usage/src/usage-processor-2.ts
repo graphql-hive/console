@@ -8,6 +8,7 @@ import {
 } from '@hive/usage-common';
 import * as tb from '@sinclair/typebox';
 import * as tc from '@sinclair/typebox/compiler';
+import * as tbe from '@sinclair/typebox/errors';
 import { invalidRawOperations, rawOperationsSize, totalOperations, totalReports } from './metrics';
 import { TokensResponse } from './tokens';
 import { isValidOperationBody } from './usage-processor-1';
@@ -34,7 +35,7 @@ export const usageProcessorV2 = traceInlineSync(
     token: TokensResponse,
     targetRetentionInDays: number | null,
   ):
-    | { success: false; errors: Array<tc.ValueError> }
+    | { success: false; errors: Array<ValueError> }
     | {
         success: true;
         report: RawReport;
@@ -307,6 +308,12 @@ function isUnixTimestamp(x: number) {
   return unixTimestampRegex.test(String(x));
 }
 
+tbe.SetErrorFunction(param => {
+  return param.schema[tb.Kind] === 'UnixTimestampInMs'
+    ? 'Expected valid unix timestamp in milliseconds'
+    : tbe.DefaultErrorFunction(param);
+});
+
 tb.TypeRegistry.Set<number>('UnixTimestampInMs', (_, value) =>
   typeof value === 'number' ? isUnixTimestamp(value) : false,
 );
@@ -361,14 +368,20 @@ type ReportType = tb.Static<typeof ReportSchema>;
 
 const ReportModel = tc.TypeCompiler.Compile(ReportSchema);
 
+interface ValueError {
+  path: string;
+  message: string;
+  errors?: ValueError[];
+}
+
 export function decodeReport(
   report: unknown,
-): { success: true; report: ReportType } | { success: false; errors: tc.ValueError[] } {
-  const errors = getFirstN(ReportModel.Errors(report), 5);
-  if (errors.length) {
+): { success: true; report: ReportType } | { success: false; errors: Array<ValueError> } {
+  const errors = ReportModel.Errors(report);
+  if (ReportModel.Errors(report).First()) {
     return {
       success: false,
-      errors,
+      errors: getTypeBoxErrors(errors),
     };
   }
 
@@ -378,19 +391,15 @@ export function decodeReport(
   };
 }
 
-function getFirstN<TValue>(iterable: Iterable<TValue>, max: number): TValue[] {
-  let counter = 0;
-  const items: Array<TValue> = [];
-  for (const item of iterable) {
-    items.push(item);
-    counter++;
-
-    if (counter >= max) {
-      break;
-    }
-  }
-
-  return items;
+function getTypeBoxErrors(errors: tc.ValueErrorIterator): Array<ValueError> {
+  return Array.from(errors).map(error => {
+    const errors = error.errors.flatMap(errors => getTypeBoxErrors(errors));
+    return {
+      path: error.path,
+      message: error.message,
+      errors: errors.length ? errors : undefined,
+    };
+  });
 }
 
 const DAY_IN_MS = 86_400_000;

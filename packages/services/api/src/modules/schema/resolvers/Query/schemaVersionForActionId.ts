@@ -3,8 +3,9 @@ import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const schemaVersionForActionId: NonNullable<
   QueryResolvers['schemaVersionForActionId']
-> = async (_, { actionId }, { injector }) => {
+> = async (_, args, { injector }) => {
   return injector.get(SchemaManager).getSchemaVersionByActionId({
-    actionId,
+    actionId: args.actionId,
+    target: args.target ?? null,
   });
 };

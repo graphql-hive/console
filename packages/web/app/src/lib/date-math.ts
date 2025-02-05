@@ -3,12 +3,14 @@
  * @source https://github.com/grafana/grafana/blob/411c89012febe13323e4b8aafc8d692f4460e680/packages/grafana-data/src/datetime/datemath.ts#L1C1-L208C2
  */
 import { add, format, formatISO, parse as parseDate, sub, type Duration } from 'date-fns';
+import { z } from 'zod';
 import { UTCDate } from '@date-fns/utc';
 
-export type Period = {
-  from: string;
-  to: string;
-};
+export const Period = z.object({
+  from: z.string(),
+  to: z.string(),
+});
+export type Period = z.infer<typeof Period>;
 
 export type DurationUnit = 'y' | 'M' | 'w' | 'd' | 'h' | 'm';
 export const units: DurationUnit[] = ['y', 'M', 'w', 'd', 'h', 'm'];

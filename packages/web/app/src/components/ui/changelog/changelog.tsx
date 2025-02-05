@@ -1,5 +1,6 @@
 import { ReactElement, useCallback, useEffect } from 'react';
 import { format } from 'date-fns/format';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocalStorageJson, useToggle } from '@/lib/hooks';
@@ -19,8 +20,14 @@ export function Changelog(props: { changes: Changelog[] }): ReactElement {
 
 function ChangelogPopover(props: { changes: Changelog[] }) {
   const [isOpen, toggle] = useToggle();
-  const [displayDot, setDisplayDot] = useLocalStorageJson<boolean>('hive:changelog:dot', false);
-  const [readChanges, setReadChanges] = useLocalStorageJson<string[]>('hive:changelog:read', []);
+  const [displayDot, setDisplayDot] = useLocalStorageJson(
+    'hive:changelog:dot',
+    z.boolean().default(false),
+  );
+  const [readChanges, setReadChanges] = useLocalStorageJson(
+    'hive:changelog:read',
+    z.array(z.string()).default([]),
+  );
   const hasNewChanges = props.changes.some(change => !readChanges.includes(change.href));
 
   useEffect(() => {

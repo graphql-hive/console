@@ -46,7 +46,7 @@ experience of its final users**.
 GraphQL Hive is completely open-source under the MIT license, meaning that you are free to host on
 your own infrastructure.
 
-- [Changelog](./deployments/CHANGELOG.md)
+- [Changelog](./deployment/CHANGELOG.md)
 
 GraphQL Hive helps you get a global overview of the usage of your GraphQL API with:
 

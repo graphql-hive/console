@@ -19,8 +19,9 @@ them in batches (as a single report, when a buffer is full or every few seconds)
 | Authorization Header | `Authorization: Bearer token-here`   |
 | API version Header   | `X-Usage-API-Version: 2`             |
 | Method               | `POST`                               |
+| Content-Type Header  | `Content-Type: application/json`     |
 
-## Data structure
+## JSON Body structure
 
 <details>
   <summary>TypeScript schema</summary>
@@ -192,4 +193,59 @@ curl -X POST \
   -H 'X-Usage-API-Version: 2' \
   -H 'content-type: application/json' \
   -d '{ "size": 1, "map": { "aaa": { "operationName": "me", "operation": "query me { me { id } }", "fields": ["Query", "Query.me", "User", "User.id"] } }, "operations": [{ "operationMapKey" : "c3b6d9b0", "timestamp" : 1663158676535, "execution" : { "ok" : true, "duration" : 150000000, "errorsTotal" : 0 }, "metadata" : { "client" : { "name" : "demo" , "version" : "0.0.1" } } } ] }'
+```
+
+## Response
+
+| Status Code | Meaning                                              |
+| ----------- | ---------------------------------------------------- |
+| `200`       | Usage data was successfully accepted.                |
+| `400`       | Errors while processing the sent JSON body.          |
+| `401`       | Invalid `X-Usage-API-Version` header provided.       |
+| `429`       | Rate limited due to exceeding usage reporting quota. |
+| `500`       | An unexpected error occured.                         |
+
+The endpoint will return a JSON body response body for `200` and `400` status codes.
+
+### 200 Status Body
+
+```json filename="Response 200"
+{
+  "id": "c6ba1f9c-44c0-40a1-8089-65f7e4de5de5",
+  "operations": {
+    "accepted": 20,
+    "rejected": 0
+  }
+}
+```
+
+### 400 Status Body
+
+A response with status 400 indicates that the report sent within the request body is not valid. The
+response body will contain a JSON Schema validation errors that can be used to debug the faulty
+request body.
+
+```json filename="Response 400"
+{
+  "errors": [
+    {
+      "message": "Expected union value",
+      "path": "/operations",
+      "errors": [
+        {
+          "message": "Expected valid unix timestamp in milliseconds",
+          "path": "/operations/0/timestamp"
+        },
+        {
+          "message": "Expected integer to be greater or equal to 0",
+          "path": "/operations/0/execution/duration"
+        },
+        {
+          "message": "Expected null",
+          "path": "/operations"
+        }
+      ]
+    }
+  ]
+}
 ```

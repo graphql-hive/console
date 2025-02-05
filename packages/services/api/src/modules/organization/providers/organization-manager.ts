@@ -3,7 +3,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
-import { cache, share } from '../../../shared/helpers';
+import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -49,27 +49,6 @@ export class OrganizationManager {
   ) {
     this.logger = logger.child({ source: 'OrganizationManager' });
   }
-
-  getOrganizationFromToken: () => Promise<Organization | never> = share(async () => {
-    const { organizationId } = this.session.getLegacySelector();
-
-    await this.session.assertPerformAction({
-      action: 'organization:describe',
-      organizationId,
-      params: {
-        organizationId,
-      },
-    });
-
-    return this.storage.getOrganization({
-      organizationId,
-    });
-  });
-
-  getOrganizationIdByToken: () => Promise<string | never> = share(async () => {
-    const { organizationId } = this.session.getLegacySelector();
-    return organizationId;
-  });
 
   async getOrganization(selector: OrganizationSelector): Promise<Organization> {
     this.logger.debug('Fetching organization (selector=%o)', selector);
