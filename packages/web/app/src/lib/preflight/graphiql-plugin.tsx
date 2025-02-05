@@ -108,7 +108,7 @@ const monacoProps = {
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
 
-const UpdatePreflightMutation = graphql(`
+const UpdatePreflightScriptMutation = graphql(`
   mutation UpdatePreflightScript($input: UpdatePreflightScriptInput!) {
     updatePreflightScript(input: $input) {
       ok {
@@ -127,7 +127,7 @@ const UpdatePreflightMutation = graphql(`
   }
 `);
 
-const Preflight_TargetFragment = graphql(`
+const PreflightScript_TargetFragment = graphql(`
   fragment PreflightScript_TargetFragment on Target {
     id
     preflightScript {
@@ -145,12 +145,12 @@ export const enum PreflightWorkerState {
 }
 
 export function usePreflight(args: {
-  target: FragmentType<typeof Preflight_TargetFragment> | null;
+  target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const prompt = usePromptManager();
 
-  const target = useFragment(Preflight_TargetFragment, args.target);
+  const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isPreflightEnabled, setIsPreflightEnabled] = useLocalStorageJson(
     // todo: ability to pass historical keys for seamless gradual migration to new key names.
     // 'hive:laboratory:isPreflightEnabled',
@@ -462,7 +462,7 @@ function PreflightContent() {
     from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
   });
 
-  const [, mutate] = useMutation(UpdatePreflightMutation);
+  const [, mutate] = useMutation(UpdatePreflightScriptMutation);
 
   const { toast } = useToast();
 
