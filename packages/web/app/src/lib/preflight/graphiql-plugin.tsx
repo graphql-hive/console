@@ -151,7 +151,7 @@ export function usePreflight(args: {
   const prompt = usePromptManager();
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
-  const [isPreflightEnabled, setIsPreflightEnabled] = useLocalStorageJson(
+  const [isEnabled, setIsEnabled] = useLocalStorageJson(
     // todo: ability to pass historical keys for seamless gradual migration to new key names.
     // 'hive:laboratory:isPreflightEnabled',
     'hive:laboratory:isPreflightScriptEnabled',
@@ -198,7 +198,7 @@ export function usePreflight(args: {
       environmentVariables: resultEnvironmentVariablesDecoded,
     };
 
-    if (isPreview === false && !isPreflightEnabled) {
+    if (isPreview === false && !isEnabled) {
       return result;
     }
 
@@ -421,8 +421,8 @@ export function usePreflight(args: {
   return {
     execute,
     abort,
-    isPreflightEnabled,
-    setIsPreflightEnabled,
+    isEnabled,
+    setIsEnabled,
     content: target?.preflightScript?.sourceCode ?? '',
     environmentVariables,
     setEnvironmentVariables,
@@ -535,11 +535,11 @@ function PreflightContent() {
           size="sm"
           variant="outline"
           className="mt-3"
-          onClick={() => preflight.setIsPreflightEnabled(!preflight.isPreflightEnabled)}
+          onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
           data-cy="toggle-preflight"
         >
           <PowerIcon className="mr-2 size-4" />
-          {preflight.isPreflightEnabled ? 'On' : 'Off'}
+          {preflight.isEnabled ? 'On' : 'Off'}
         </Button>
       </div>
 
@@ -551,7 +551,7 @@ function PreflightContent() {
       </EditorTitle>
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
-        {preflight.isPreflightEnabled ? null : (
+        {preflight.isEnabled ? null : (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
             <div className="rounded-md bg-[#0f1520] p-4 text-sm">
               Preflight Script is disabled and will not be executed

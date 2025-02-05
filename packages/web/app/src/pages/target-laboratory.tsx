@@ -397,7 +397,7 @@ function LaboratoryPageContent(props: {
     target?.graphqlEndpointUrl,
     actualSelectedApiEndpoint,
     preflight.execute,
-    preflight.isPreflightEnabled,
+    preflight.isEnabled,
   ]);
 
   const FullScreenIcon = isFullScreen ? ExitFullScreenIcon : EnterFullScreenIcon;
@@ -631,7 +631,7 @@ function LaboratoryPageContent(props: {
             </GraphiQL.Toolbar>
             <GraphiQL.Footer>
               <div>
-                {preflight.isPreflightEnabled ? (
+                {preflight.isEnabled ? (
                   <PreflightLogs logs={preflight.logs} onClear={preflight.clearLogs} />
                 ) : null}
               </div>
