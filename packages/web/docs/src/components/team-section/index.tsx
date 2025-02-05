@@ -91,9 +91,9 @@ const team: TeamMember[] = [
     'https://github.com/EmrysMyrddin',
   ],
   [
-    'Yassin Eldeeb',
-    'https://avatars.githubusercontent.com/YassinEldeeb?v=4&s=180',
-    'https://github.com/YassinEldeeb',
+    'Jason Kuhrt',
+    'https://avatars.githubusercontent.com/jasonkuhrt?v=4&s=180',
+    'https://github.com/jasonkuhrt',
   ],
   [
     'Arda Tanrikulu',

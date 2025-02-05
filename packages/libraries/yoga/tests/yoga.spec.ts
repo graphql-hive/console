@@ -372,22 +372,16 @@ test('reports usage', async ({ expect }) => {
 
 test('reports usage with response cache', async ({ expect }) => {
   let usageCount = 0;
+  const results: Array<Record<string, any>> = [];
   const graphqlScope = nock('http://localhost')
     .post('/usage', body => {
       usageCount++;
-
-      expect(body.map).toEqual({
-        f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
-          fields: ['Query.hi'],
-          operation: '{hi}',
-          operationName: 'anonymous',
-        },
-      });
-
+      results.push(body);
       return true;
     })
     .thrice()
     .reply(200);
+
   const yoga = createYoga({
     schema: createSchema({
       typeDefs: /* GraphQL */ `
@@ -458,6 +452,23 @@ test('reports usage with response cache', async ({ expect }) => {
   });
   graphqlScope.done();
   expect(usageCount).toBe(3);
+
+  for (const body of results) {
+    expect(body.operations[0].metadata).toEqual({
+      client: {
+        name: 'brrr',
+        version: '1',
+      },
+    });
+
+    expect(body.map).toEqual({
+      f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+        fields: ['Query.hi'],
+        operation: '{hi}',
+        operationName: 'anonymous',
+      },
+    });
+  }
 });
 
 test('does not report usage for operation that does not pass validation', async ({ expect }) => {
@@ -1107,10 +1118,10 @@ describe('subscription usage reporting', () => {
           expect(res.status).toBe(200);
           expect(await res.text()).toMatchInlineSnapshot(`
             :
-  
+
             event: next
             data: {"errors":[{"message":"Unexpected error.","locations":[{"line":1,"column":1}],"extensions":{"unexpected":true}}]}
-  
+
             event: complete
             data:
           `);
