@@ -46,6 +46,7 @@
     "test": "vitest",
     "test:e2e": "CYPRESS_BASE_URL=$HIVE_APP_BASE_URL cypress run --browser chrome",
     "test:e2e:open": "CYPRESS_BASE_URL=$HIVE_APP_BASE_URL cypress open",
+    "test:e2e:local": "CYPRESS_BASE_URL=http://localhost:3000 RUN_AGAINST_LOCAL_SERVICES=1 cypress open --browser chrome",
     "test:integration": "cd integration-tests && pnpm test:integration",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
     "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
