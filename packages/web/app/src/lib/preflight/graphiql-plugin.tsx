@@ -519,7 +519,7 @@ function PreflightContent() {
           size="icon-sm"
           className="size-auto gap-1"
           onClick={toggleShowModal}
-          data-cy="preflight-script-modal-button"
+          data-cy="preflight-modal-button"
         >
           <Pencil1Icon className="shrink-0" />
           Edit
@@ -536,7 +536,7 @@ function PreflightContent() {
           variant="outline"
           className="mt-3"
           onClick={() => preflight.setIsPreflightEnabled(!preflight.isPreflightEnabled)}
-          data-cy="toggle-preflight-script"
+          data-cy="toggle-preflight"
         >
           <PowerIcon className="mr-2 size-4" />
           {preflight.isPreflightEnabled ? 'On' : 'Off'}
@@ -564,7 +564,7 @@ function PreflightContent() {
           {...monacoProps.script}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
-            ['data-cy']: 'preflight-script-editor-mini',
+            ['data-cy']: 'preflight-editor-mini',
           }}
           options={{
             ...monacoProps.script.options,
@@ -709,7 +709,7 @@ function PreflightModal({
 
                   executeScript(scriptEditorRef.current?.getValue() ?? '');
                 }}
-                data-cy="run-preflight-script"
+                data-cy="run-preflight"
               >
                 {state === PreflightWorkerState.running && (
                   <>
@@ -735,7 +735,7 @@ function PreflightModal({
                 wordWrap: 'wordWrapColumn',
               }}
               wrapperProps={{
-                ['data-cy']: 'preflight-script-editor',
+                ['data-cy']: 'preflight-editor',
               }}
             />
           </div>
@@ -789,14 +789,14 @@ function PreflightModal({
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
-          <Button type="button" onClick={toggle} data-cy="preflight-script-modal-cancel">
+          <Button type="button" onClick={toggle} data-cy="preflight-modal-cancel">
             Close
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={handleSubmit}
-            data-cy="preflight-script-modal-submit"
+            data-cy="preflight-modal-submit"
           >
             Save
           </Button>

@@ -568,22 +568,22 @@ function LaboratoryPageContent(props: {
             margin-top: 15px;
           }
 
-          #preflight-script-logs {
+          #preflight-logs {
             background-color: hsl(var(--color-base));
             border-radius: var(--border-radius-12);
             box-shadow: var(--popover-box-shadow);
             color: hsla(var(--color-neutral), var(--alpha-tertiary));
           }
 
-          #preflight-script-logs h2 {
+          #preflight-logs h2 {
             color: hsla(var(--color-neutral), var(--alpha-secondary));
           }
 
-          #preflight-script-logs button[data-state="open"] > h2 {
+          #preflight-logs button[data-state="open"] > h2 {
             color: hsl(var(--color-neutral));
           }
 
-          #preflight-script-logs > div {
+          #preflight-logs > div {
             border-color: hsl(var(--border));
           }
         `}</style>
@@ -713,7 +713,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
       open={isOpen}
       onOpenChange={setIsOpen}
       className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
-      id="preflight-script-logs"
+      id="preflight-logs"
     >
       <div
         className={cn(

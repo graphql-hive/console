@@ -2,8 +2,8 @@ import { dedent } from '../support/testkit';
 
 const selectors = {
   buttonPreflight: '[aria-label*="Preflight Script"]',
-  buttonModalCy: 'preflight-script-modal-button',
-  buttonToggleCy: 'toggle-preflight-script',
+  buttonModalCy: 'preflight-modal-button',
+  buttonToggleCy: 'toggle-preflight',
   buttonHeaders: '[data-name="headers"]',
   headersEditor: {
     textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
@@ -63,7 +63,7 @@ describe('Laboratory > Preflight Script', () => {
     cy.get(selectors.buttonPreflight).click();
   });
   it('mini script editor is read only', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
     // Wait loading disappears
     cy.dataCy('preflight-script-editor-mini').should('not.contain', 'Loading');
     // Click
@@ -84,7 +84,7 @@ describe('Preflight Script Modal', () => {
   const env = '{"foo":123}';
 
   beforeEach(() => {
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents('env-editor', env);
   });
 
@@ -92,7 +92,7 @@ describe('Preflight Script Modal', () => {
     setEditorScript(script);
     cy.dataCy('preflight-script-modal-submit').click();
     cy.dataCy('env-editor-mini').should('have.text', env);
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
     cy.dataCy('preflight-script-editor-mini').should('have.text', script);
     cy.reload();
     cy.get('[aria-label*="Preflight Script"]').click();
@@ -289,7 +289,7 @@ describe('Execution', () => {
   });
 
   it('header placeholders are substituted with environment variables', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
     cy.get('[data-name="headers"]').click();
     cy.get('.graphiql-editor-tool .graphiql-editor:last-child textarea').type(
       '{ "__test": "{{foo}} bar {{nonExist}}" }',
@@ -316,7 +316,7 @@ describe('Execution', () => {
   });
 
   it('executed script updates update env editor and substitute headers', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
     cy.get('[data-name="headers"]').click();
     cy.get('.graphiql-editor-tool .graphiql-editor:last-child textarea').type(
       '{ "__test": "{{foo}}" }',
@@ -325,7 +325,7 @@ describe('Execution', () => {
         parseSpecialCharSequences: false,
       },
     );
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', '92')`);
     cy.dataCy('preflight-script-modal-submit').click();
 
@@ -340,7 +340,7 @@ describe('Execution', () => {
   });
 
   it('execute, prompt and use it in headers', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
 
     cy.get('[data-name="headers"]').click();
     cy.get('[data-name="headers"]').click();
@@ -352,7 +352,7 @@ describe('Execution', () => {
       },
     );
 
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
       'preflight-script-editor',
       dedent`
@@ -385,7 +385,7 @@ describe('Execution', () => {
         parseSpecialCharSequences: false,
       },
     );
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents('preflight-script-editor', `lab.environment.set('foo', 92)`);
     setMonacoEditorContents('env-editor', `{"foo":10}`);
 
@@ -402,9 +402,9 @@ describe('Execution', () => {
   });
 
   it('logs are visible when opened', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
 
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
       'preflight-script-editor',
       dedent`
@@ -421,11 +421,11 @@ describe('Execution', () => {
     }).as('post');
 
     // shows no logs before executing
-    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+    cy.get('#preflight-logs button[data-cy="trigger"]').click({
       // it's because the button is not fully visible on the screen
       force: true,
     });
-    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+    cy.get('#preflight-logs [data-cy="logs"]').should(
       'contain',
       ['No logs available', 'Execute a query to see logs'].join(''),
     );
@@ -433,7 +433,7 @@ describe('Execution', () => {
     cy.get('.graphiql-execute-button').click();
     cy.wait('@post');
 
-    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+    cy.get('#preflight-logs [data-cy="logs"]').should(
       'contain',
       [
         'log: Running script...',
@@ -447,9 +447,9 @@ describe('Execution', () => {
   });
 
   it('logs are cleared when requested', () => {
-    cy.dataCy('toggle-preflight-script').click();
+    cy.dataCy('toggle-preflight').click();
 
-    cy.dataCy('preflight-script-modal-button').click();
+    cy.dataCy('preflight-modal-button').click();
     setMonacoEditorContents(
       'preflight-script-editor',
       dedent`
@@ -468,12 +468,12 @@ describe('Execution', () => {
     cy.wait('@post');
 
     // open logs
-    cy.get('#preflight-script-logs button[data-cy="trigger"]').click({
+    cy.get('#preflight-logs button[data-cy="trigger"]').click({
       // it's because the button is not fully visible on the screen
       force: true,
     });
 
-    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+    cy.get('#preflight-logs [data-cy="logs"]').should(
       'contain',
       [
         'log: Running script...',
@@ -485,8 +485,8 @@ describe('Execution', () => {
       ].join(''),
     );
 
-    cy.get('#preflight-script-logs button[data-cy="erase-logs"]').click();
-    cy.get('#preflight-script-logs [data-cy="logs"]').should(
+    cy.get('#preflight-logs button[data-cy="erase-logs"]').click();
+    cy.get('#preflight-logs [data-cy="logs"]').should(
       'contain',
       ['No logs available', 'Execute a query to see logs'].join(''),
     );
