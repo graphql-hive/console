@@ -169,7 +169,7 @@ export function usePreflight(args: {
   const [state, setState] = useState<PreflightWorkerState>(PreflightWorkerState.ready);
   const [logs, setLogs] = useState<LogRecord[]>([]);
 
-  const currentExecution = useRef<null | Function>(null);
+  const abortExecutionRef = useRef<null | (() => void)>(null);
 
   async function execute(
     script = target?.preflightScript?.sourceCode ?? '',
@@ -366,7 +366,7 @@ export function usePreflight(args: {
       }
 
       window.addEventListener('message', eventHandler);
-      currentExecution.current = () => {
+      abortExecutionRef.current = () => {
         contentWindow.postMessage({
           type: IFrameEvents.Incoming.Event.abort,
           id,
@@ -374,7 +374,7 @@ export function usePreflight(args: {
 
         closedOpenedPrompts();
 
-        currentExecution.current = null;
+        abortExecutionRef.current = null;
       };
 
       await isFinishedD.promise;
@@ -407,13 +407,13 @@ export function usePreflight(args: {
   }
 
   function abortExecution() {
-    currentExecution.current?.();
+    abortExecutionRef.current?.();
   }
 
   // terminate worker when leaving laboratory
   useEffect(
     () => () => {
-      currentExecution.current?.();
+      abortExecutionRef.current?.();
     },
     [],
   );
