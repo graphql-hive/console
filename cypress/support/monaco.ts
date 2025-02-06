@@ -1,10 +1,12 @@
+import type * as Monaco from 'monaco-editor';
+
 /** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
 export function setMonacoEditorContents(editorCyName: string, text: string) {
   // wait for textarea appearing which indicates monaco is loaded
   cy.dataCy(editorCyName).find('textarea');
-  cy.window().then(win => {
+  cy.window().then((win: Window & typeof globalThis & { monaco: typeof Monaco }) => {
     // First, check if monaco is available on the main window
-    const editor = (win as any).monaco.editor
+    const editor = win.monaco.editor
       .getEditors()
       .find(e => e.getContainerDomNode().parentElement.getAttribute('data-cy') === editorCyName);
 

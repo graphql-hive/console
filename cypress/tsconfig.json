@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "es2021",
     "lib": ["es2021", "dom"],
-    "types": ["node", "cypress", "cypress-real-events"]
+    "moduleResolution": "node",
+    "types": ["node", "cypress", "cypress-real-events", "monaco-editor"]
   },
   "include": ["**/*.ts", "../integration-tests/testkit/**/*.ts"]
 }

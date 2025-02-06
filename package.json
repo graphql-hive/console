@@ -87,6 +87,7 @@
     "graphql": "16.9.0",
     "gray-matter": "4.0.3",
     "jest-snapshot-serializer-raw": "2.0.0",
+    "monaco-editor": "0.52.2",
     "pg": "8.13.1",
     "prettier": "3.4.2",
     "prettier-plugin-sql": "0.18.1",
