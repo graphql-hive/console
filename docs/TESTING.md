@@ -69,7 +69,7 @@ We use [Cypress](https://www.cypress.io). Any file that ends with `.cy.ts` is an
 
 #### Running Against Local Development Services
 
-1. Run the [development setup](./DEVELOPMENT.md) per usual.
+1. Run the [development setup](./DEVELOPMENT.md) as usual.
 2. Run `pnpm test:e2e:local`
 
 #### Running Against Locally Built Docker Images
