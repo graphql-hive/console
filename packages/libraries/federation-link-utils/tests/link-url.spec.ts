@@ -1,4 +1,4 @@
-import { FederatedLinkUrl } from '../link-url';
+import { FederatedLinkUrl } from '../src/link-url';
 
 describe('FederatedLinkUrl', () => {
   test.each([

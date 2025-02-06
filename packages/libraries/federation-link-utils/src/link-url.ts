@@ -78,12 +78,49 @@ export class FederatedLinkUrl {
     return this.isCompatibleVersion(major, minor);
   }
 
+  isSupportedBy(version: string): boolean;
+  isSupportedBy(major: number, minor: number): boolean;
+  isSupportedBy(version: FederatedLinkUrl): boolean;
+  isSupportedBy(version: null): boolean;
+  isSupportedBy(...args: [string] | [number, number] | [FederatedLinkUrl] | [null]): boolean {
+    const majorOrVersion = args[0];
+    let major: number, minor: number;
+    if (typeof majorOrVersion === 'string') {
+      [major, minor] = parseVersion(majorOrVersion);
+    } else if (typeof majorOrVersion === 'number') {
+      [major, minor] = args as [number, number];
+    } else if (majorOrVersion instanceof FederatedLinkUrl) {
+      // check that it is the same spec
+      if (majorOrVersion.identity !== this.identity) {
+        return false;
+      }
+      major = majorOrVersion.major;
+      minor = majorOrVersion.minor;
+    } else if (majorOrVersion === null) {
+      // handles null case
+      return majorOrVersion === this.version;
+    } else {
+      throw new Error(`Unsupported version argument: ${JSON.stringify(args)} [${typeof args}].`);
+    }
+    return this.isSupportedByVersion(major, minor);
+  }
+
   private isCompatibleVersion(major: number, minor: number): boolean {
     if (this.major === major) {
       if (this.major === 0) {
         return this.minor === minor;
       }
       return this.minor >= minor;
+    }
+    return false;
+  }
+
+  private isSupportedByVersion(major: number, minor: number): boolean {
+    if (this.major === major) {
+      if (this.major === 0) {
+        return this.minor === minor;
+      }
+      return this.minor <= minor;
     }
     return false;
   }

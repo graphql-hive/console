@@ -48,12 +48,14 @@ export class LinkableSpec<T> {
   private detectLinkVersion(link: FederatedLink): string | null | undefined {
     // for every link, find the highest supported version
     if (link.identity === this.identity) {
+      // This should be flipped so that it finds the first version (ascending) of this spec that supports
+      // the link.
       return (
         this.sortedVersionKeys.find(minVersion =>
-          link.supports(minVersion.split[0], minVersion.split[1]),
+          link.isSupportedBy(minVersion.split[0], minVersion.split[1]),
         )?.key ||
         // check null last since Object.keys doesnt include symbols.
-        (link.supports(null) && this.versions[NULL_VERSION] ? null : undefined)
+        (link.isSupportedBy(null) && this.versions[NULL_VERSION] ? null : undefined)
       );
     }
     return undefined;
@@ -71,9 +73,9 @@ export class LinkableSpec<T> {
         const activeVersion = this.versions[version || NULL_VERSION];
         return activeVersion?.(maybeLink.resolveImportName.bind(maybeLink));
       }
-      console.warn(
-        `Cannot apply @link due to unsupported version found for "${this.identity}". ` +
-          `Available versions: ${this.sortedVersionKeys.map(v => `${v.split.join('.')}`).join(', ')} and any version these are compatible compatible with.`,
+      throw new Error(
+        `Cannot apply @link due to unsupported version found for "${maybeLink}". ` +
+          `Available versions: ${this.sortedVersionKeys.map(v => `${v.split.join('.')}`).join(', ')} and any version these are compatible compatible with. Try downgrading the link version to match these versions.`,
       );
     }
   }

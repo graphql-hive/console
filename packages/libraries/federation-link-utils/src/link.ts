@@ -104,6 +104,15 @@ export class FederatedLink {
     return this.url.supports(...args);
   }
 
+  isSupportedBy(version: string): boolean;
+  isSupportedBy(major: number, minor: number): boolean;
+  isSupportedBy(version: FederatedLinkUrl): boolean;
+  isSupportedBy(version: null): boolean;
+  isSupportedBy(...args: [string] | [number, number] | [FederatedLinkUrl] | [null]): boolean {
+    /** @ts-expect-error: ignore tuple error. These are tuples and can be spread. tsc is wrong. */
+    return this.url.isSupportedBy(...args);
+  }
+
   /**
    * Given the name of an element in a linked schema, this returns the name of that element
    * as it has been imported. This accounts for aliasing and namespacing unreferenced imports.

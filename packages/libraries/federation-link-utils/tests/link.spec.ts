@@ -1,5 +1,5 @@
 import { parse } from 'graphql';
-import { FederatedLink } from '../link';
+import { FederatedLink } from '../src/link';
 
 function trimMultiline(str: string): string {
   return str

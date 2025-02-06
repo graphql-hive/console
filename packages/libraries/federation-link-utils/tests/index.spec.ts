@@ -1,5 +1,5 @@
 import { DocumentNode, parse, StringValueNode, visit } from 'graphql';
-import { detectLinkedImplementations, FEDERATION_V1, LinkableSpec } from '../index';
+import { detectLinkedImplementations, FEDERATION_V1, LinkableSpec } from '../src/index';
 
 const metaSpec = new LinkableSpec('https://specs.graphql-hive.com/metadata', {
   [FEDERATION_V1]: _resolveImportName => (_typeDefs: DocumentNode) => {
@@ -76,7 +76,7 @@ test('LinkableSpec and detectLinkedImplementations can be used to apply linked s
   expect(linked.map(link => link(typeDefs))).toMatchInlineSnapshot(`
     [
       running on v0.1.
-    Found metadata: {"ping":{"name":"owner","content":"hive-console-team"},"pong":{"eg":"1...2...3... Pong"}}},
+    Found metadata: {"ping":{"name":"owner","content":"hive-console-team"},"pong":{"eg":"1...2...3... Pong"}},
     ]
   `);
 });
