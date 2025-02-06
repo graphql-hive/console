@@ -3,57 +3,56 @@ import { Anchor, cn, Heading, InfoCard } from '@theguild/components';
 
 export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <section
-      className={cn(
-        className,
-        'text-green-1000 flex max-w-[1248px] flex-wrap rounded-3xl border border-blue-200 p-4',
-      )}
-      {...rest}
-    >
-      <header className="box-content w-[400px] sm:p-12">
-        <Heading as="h3" size="sm">
-          Orchestrate your way!
-        </Heading>
-        <p className="mt-6">
-          The open nature of Hive Gateway ensures that it fits into your existing GraphQL
-          infrastructure.
-        </p>
-      </header>
-      <ul className="flex grow basis-2/5 max-sm:flex-col sm:p-12">
-        <InfoCard
-          as="li"
-          heading="Apollo Federation v1 and v2 Support"
-          icon={<CodeIcon />}
-          className="flex-1 bg-transparent px-0 sm:px-8 sm:py-0 md:px-8 md:py-0"
-        >
-          Ensures full compatibility and seamless operation within Apollo Federation setups,
-          simplifying integration with existing GraphQL services.
-        </InfoCard>
-        <InfoCard
-          as="li"
-          heading="Plugin System"
-          icon={<EditIcon />}
-          className="flex-1 basis-full border-blue-300 bg-transparent px-0 max-sm:border-t sm:basis-0 sm:border-l sm:px-8 sm:py-0 md:py-0 md:pl-8 md:pr-0"
-        >
-          Extensive customization options, allowing enterprises to tailor the gateway to fit
-          specific architectural needs and workflows.
-        </InfoCard>
-      </ul>
-      <div className="nextra-scrollbar mt-2 max-w-full basis-full overflow-auto rounded-3xl sm:mt-6">
-        <ul className="grid w-fit grid-cols-[repeat(4,minmax(240px,1fr))] bg-[#F8F7F6] [background-image:linear-gradient(55deg,#F8F7F6_25%,theme(colors.blue.700/0.25)_70%,#F8F7F6_94%)] md:mt-12 [&>:not(:first-child)]:border-l [&>:not(:first-child)]:border-blue-300">
-          <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V1" />
-          <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V2" />
-          <LinkCard
-            href="/docs/get-started/first-steps#create-hive-project"
-            logo={<StitchingLogo />}
-            text="Schema Stitching"
-          />
-          <LinkCard
-            href="/docs/get-started/schema-stitching"
-            logo={<MonolithLogo />}
-            text="Monolith/Single Schema"
-          />
+    <section className={className}>
+      <div
+        className="text-green-1000 mx-auto flex max-w-[1248px] flex-wrap rounded-3xl border border-blue-200 p-4"
+        {...rest}
+      >
+        <header className="box-content w-full md:p-12 md:max-xl:pb-0 xl:w-[380px]">
+          <Heading as="h3" size="sm">
+            Orchestrate your way!
+          </Heading>
+          <p className="mt-6">
+            The open nature of Hive Gateway ensures that it fits into your existing GraphQL
+            infrastructure.
+          </p>
+        </header>
+        <ul className="flex grow basis-2/5 max-lg:flex-col md:p-12">
+          <InfoCard
+            as="li"
+            heading="Apollo Federation v1 and v2 Support"
+            icon={<CodeIcon />}
+            className="flex-1 bg-transparent !pl-0 max-lg:!pr-0 md:pt-0 lg:pb-0"
+          >
+            Ensures full compatibility and seamless operation within Apollo Federation setups,
+            simplifying integration with existing GraphQL services.
+          </InfoCard>
+          <InfoCard
+            as="li"
+            heading="Plugin System"
+            icon={<EditIcon />}
+            className="flex-1 basis-full border-blue-300 bg-transparent !pr-0 max-lg:border-t max-lg:!pl-0 md:pb-0 lg:basis-0 lg:border-l lg:pt-0"
+          >
+            Extensive customization options, allowing enterprises to tailor the gateway to fit
+            specific architectural needs and workflows.
+          </InfoCard>
         </ul>
+        <div className="nextra-scrollbar max-w-full basis-full overflow-auto rounded-3xl">
+          <ul className="grid w-fit grid-cols-[repeat(4,minmax(240px,1fr))] bg-[#F8F7F6] [background-image:linear-gradient(55deg,#F8F7F6_25%,theme(colors.blue.700/0.25)_70%,#F8F7F6_94%)] [&>:not(:first-child)]:border-l [&>:not(:first-child)]:border-blue-300">
+            <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V1" />
+            <LinkCard href="/federation" logo={<ApolloLogo />} text="Apollo Federation V2" />
+            <LinkCard
+              href="/docs/get-started/first-steps#create-hive-project"
+              logo={<StitchingLogo />}
+              text="Schema Stitching"
+            />
+            <LinkCard
+              href="/docs/get-started/schema-stitching"
+              logo={<MonolithLogo />}
+              text="Monolith/Single Schema"
+            />
+          </ul>
+        </div>
       </div>
     </section>
   );
