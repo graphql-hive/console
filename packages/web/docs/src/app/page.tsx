@@ -49,7 +49,15 @@ export default function IndexPage(): ReactElement {
           Open-Source GraphQL Federation Platform
         </Heading>
         <p className="mx-auto w-[512px] max-w-[80%] text-center leading-6 text-white/80">
-          Fully open-source schema registry, analytics, metrics and gateway for{' '}
+          Fully open-source schema registry, analytics, metrics and{' '}
+          <Anchor
+            href="/gateway"
+            title="Learn more about Hive Gateway"
+            className="underline decoration-white/30 underline-offset-2 hover:decoration-white/80"
+          >
+            gateway
+          </Anchor>{' '}
+          for{' '}
           <Anchor
             href="/federation"
             title="Visit our guide to learn more about GraphQL federation"
