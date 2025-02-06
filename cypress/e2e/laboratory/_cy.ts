@@ -75,13 +75,21 @@ export namespace cyLaboratory {
       modal: {
         buttonSubmitCy: 'preflight-modal-submit',
         editorCy: 'preflight-editor',
+        variablesEditorCy: 'env-editor',
       },
     };
     /**
      * Sets the content of the preflight editor
      */
-    export function setEditorContent(value: string) {
+    export const setEditorContent = (value: string) => {
       setMonacoEditorContents(selectors.modal.editorCy, value);
-    }
+    };
+
+    /**
+     * Sets the content of the variables editor
+     */
+    export const setEnvironmentEditorContent = (value: string) => {
+      setMonacoEditorContents(selectors.modal.variablesEditorCy, value);
+    };
   }
 }

@@ -1,5 +1,4 @@
 import { dedent } from '../../support/dedent';
-import { setMonacoEditorContents } from '../../support/monaco';
 import { cyLaboratory } from './_cy';
 
 const s = cyLaboratory.preflight.selectors;
@@ -48,7 +47,7 @@ describe('Preflight Modal', () => {
 
   beforeEach(() => {
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('env-editor', env);
+    cyp.setEnvironmentEditorContent(env);
   });
 
   it('code is validated with TypeScript', () => {
@@ -357,8 +356,8 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('preflight-editor', `lab.environment.set('foo', 92)`);
-    setMonacoEditorContents('env-editor', `{"foo":10}`);
+    cyp.setEditorContent(`lab.environment.set('foo', 92)`);
+    cyp.setEnvironmentEditorContent(`{"foo":10}`);
 
     cy.dataCy('preflight-modal-submit').click();
 
@@ -376,8 +375,7 @@ describe('Execution', () => {
     cy.dataCy('toggle-preflight').click();
 
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents(
-      'preflight-editor',
+    cyp.setEditorContent(
       dedent`
         console.info(1)
         console.warn(true)
@@ -421,8 +419,7 @@ describe('Execution', () => {
     cy.dataCy('toggle-preflight').click();
 
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents(
-      'preflight-editor',
+    cyp.setEditorContent(
       dedent`
         console.info(1)
         console.warn(true)
