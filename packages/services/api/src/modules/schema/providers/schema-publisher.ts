@@ -69,6 +69,18 @@ const schemaPublishCount = new promClient.Counter({
   labelNames: ['model', 'projectType', 'conclusion'],
 });
 
+const schemaPublishUnexpectedErrorCount = new promClient.Counter({
+  name: 'registry_publish_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
+});
+
+const schemaCheckUnexpectedErrorCount = new promClient.Counter({
+  name: 'registry_check_unexpected_error_count',
+  help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
+});
+
 const schemaDeleteCount = new promClient.Counter({
   name: 'registry_delete_count',
   help: 'Number of schema deletes',
@@ -250,7 +262,7 @@ export class SchemaPublisher {
     };
   }
 
-  @traceFn('SchemaPublisher.check', {
+  @traceFn('SchemaPublisher.internalCheck', {
     initAttributes: input => ({
       'hive.organization.slug': input.target?.bySelector?.organizationSlug,
       'hive.project.slug': input.target?.bySelector?.projectSlug,
@@ -261,7 +273,7 @@ export class SchemaPublisher {
       'hive.check.result': result.__typename,
     }),
   })
-  async check(input: CheckInput) {
+  private async internalCheck(input: CheckInput) {
     this.logger.info('Checking schema (input=%o)', lodash.omit(input, ['sdl']));
 
     const selector = await this.idTranslator.resolveTargetReference({
@@ -959,6 +971,18 @@ export class SchemaPublisher {
     } as const;
   }
 
+  async check(input: CheckInput) {
+    return await this.internalCheck(input).catch(error => {
+      if (error instanceof HiveError === false) {
+        schemaCheckUnexpectedErrorCount.inc({
+          errorName: (error instanceof Error && error.name) || 'unknown',
+        });
+      }
+
+      throw error;
+    });
+  }
+
   @traceFn('SchemaPublisher.publish', {
     initAttributes: (input, _) => ({
       'hive.organization.slug': input.target?.bySelector?.organizationSlug,
@@ -1080,6 +1104,12 @@ export class SchemaPublisher {
             __typename: 'SchemaPublishRetry',
             reason: 'Another schema publish is currently in progress.',
           } satisfies PublishResult;
+        }
+
+        if (error instanceof HiveError === false) {
+          schemaPublishUnexpectedErrorCount.inc({
+            errorName: (error instanceof Error && error.name) || 'unknown',
+          });
         }
 
         throw error;

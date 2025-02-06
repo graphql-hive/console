@@ -16,49 +16,49 @@ overrides:
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
-    hash: rjgakkkphrejw6qrtph4ar24zq
+    hash: cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9
     path: patches/@apollo__federation@0.38.1.patch
   '@fastify/vite':
-    hash: wz23vdqq6qtsz64wb433afnvou
+    hash: f5ce073a4db250ed3db1d9c19e2a253418454ee379530bdee25869570d7b500b
     path: patches/@fastify__vite.patch
   '@graphiql/react':
-    hash: scbly4qchgvjjjrsxpgbcil634
+    hash: 1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0
     path: patches/@graphiql__react.patch
   '@graphql-eslint/eslint-plugin@3.20.1':
-    hash: n437g5o7zq7pnxdxldn52uql2q
+    hash: 695fba67df25ba9d46472c8398c94c6a2ccf75d902321d8f95150f68e940313e
     path: patches/@graphql-eslint__eslint-plugin@3.20.1.patch
   '@oclif/core@3.26.6':
-    hash: rmd5oidpiuzwrwylcphsrfavay
+    hash: 7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc
     path: patches/@oclif__core@3.26.6.patch
   '@oclif/core@4.0.6':
-    hash: y5acwfkubqiafo3iitlwsynmki
+    hash: d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46
     path: patches/@oclif__core@4.0.6.patch
   '@theguild/editor@1.2.5':
-    hash: pz2nlsfawfhpo6sw62ecmp2yum
+    hash: a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7
     path: patches/@theguild__editor@1.2.5.patch
   countup.js:
-    hash: nfqgtlg7dcp6sipx7lntl54mvi
+    hash: 664547d4d5412a2891bfdfb34790bb773535102f8e26075dfafbd831d79f4410
     path: patches/countup.js.patch
   eslint@8.57.1:
-    hash: fjbpfrtrjd6idngyeqxnwopfva
+    hash: 08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0
     path: patches/eslint@8.57.1.patch
   got@14.4.5:
-    hash: b6pwqmrs3qqykctltsasvrfwti
+    hash: f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299
     path: patches/got@14.4.5.patch
   graphiql:
-    hash: slfrsoypyaawb5yvbcg5g5f3u4
+    hash: 87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d
     path: patches/graphiql.patch
   mjml-core@4.14.0:
-    hash: zxxsxbqejjmcwuzpigutzzq6wa
+    hash: 52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f
     path: patches/mjml-core@4.14.0.patch
   oclif:
-    hash: kmdoz5rhsd4tek3w4wmt7vygge
+    hash: 0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6
     path: patches/oclif.patch
   p-cancelable@4.0.1:
-    hash: qvfog2dtlpkk5j2akszkzrck5a
+    hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
     path: patches/p-cancelable@4.0.1.patch
   slonik@30.4.4:
-    hash: jxrvl4xmdvyktjijg7yfdkb34i
+    hash: 408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299
     path: patches/slonik@30.4.4.patch
 
 importers:
@@ -103,7 +103,7 @@ importers:
         version: 3.0.0(graphql@16.9.0)
       '@graphql-eslint/eslint-plugin':
         specifier: 3.20.1
-        version: 3.20.1(patch_hash=n437g5o7zq7pnxdxldn52uql2q)(@babel/core@7.22.9)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
+        version: 3.20.1(patch_hash=695fba67df25ba9d46472c8398c94c6a2ccf75d902321d8f95150f68e940313e)(@babel/core@7.22.9)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-inspector/cli':
         specifier: 4.0.3
         version: 4.0.3(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
@@ -124,7 +124,7 @@ importers:
         version: 1.10.6(@swc/helpers@0.5.15)
       '@theguild/eslint-config':
         specifier: 0.12.1
-        version: 0.12.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
+        version: 0.12.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
       '@theguild/prettier-config':
         specifier: 2.0.7
         version: 2.0.7(prettier@3.4.2)
@@ -145,10 +145,10 @@ importers:
         version: 16.4.7
       eslint:
         specifier: 8.57.1
-        version: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+        version: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       eslint-plugin-cypress:
         specifier: 4.1.0
-        version: 4.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+        version: 4.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       eslint-plugin-hive:
         specifier: file:rules
         version: link:rules
@@ -347,7 +347,7 @@ importers:
         version: 5.4.2
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+        version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
       strip-ansi:
         specifier: 7.1.0
         version: 7.1.0
@@ -427,7 +427,7 @@ importers:
         version: 3.2.0(graphql@16.9.0)
       '@oclif/core':
         specifier: ^3.26.6
-        version: 3.26.6(patch_hash=rmd5oidpiuzwrwylcphsrfavay)
+        version: 3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)
       '@oclif/plugin-help':
         specifier: 6.0.22
         version: 6.0.22
@@ -461,7 +461,7 @@ importers:
         version: 3.1.4
       oclif:
         specifier: 4.13.6
-        version: 4.13.6(patch_hash=kmdoz5rhsd4tek3w4wmt7vygge)
+        version: 4.13.6(patch_hash=0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6)
       rimraf:
         specifier: 4.4.1
         version: 4.4.1
@@ -492,7 +492,7 @@ importers:
     devDependencies:
       '@apollo/federation':
         specifier: 0.38.1
-        version: 0.38.1(patch_hash=rjgakkkphrejw6qrtph4ar24zq)(encoding@0.1.13)(graphql@16.9.0)
+        version: 0.38.1(patch_hash=cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9)(encoding@0.1.13)(graphql@16.9.0)
       '@apollo/subgraph':
         specifier: 2.9.3
         version: 2.9.3(graphql@16.9.0)
@@ -629,7 +629,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -641,7 +641,7 @@ importers:
         version: 11.10.2(pg-query-stream@4.7.0(pg@8.13.1))
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+        version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.15))(@types/node@22.10.5)(typescript@5.7.3)
@@ -774,7 +774,7 @@ importers:
         version: 2.1.0
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -819,7 +819,7 @@ importers:
         version: 5.0.0-beta.2
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+        version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
       supertokens-node:
         specifier: 16.7.5
         version: 16.7.5(encoding@0.1.13)
@@ -1015,7 +1015,7 @@ importers:
     devDependencies:
       '@graphql-eslint/eslint-plugin':
         specifier: 3.20.1
-        version: 3.20.1(patch_hash=n437g5o7zq7pnxdxldn52uql2q)(@babel/core@7.26.0)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
+        version: 3.20.1(patch_hash=695fba67df25ba9d46472c8398c94c6a2ccf75d902321d8f95150f68e940313e)(@babel/core@7.26.0)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -1039,7 +1039,7 @@ importers:
         version: 16.4.7
       eslint:
         specifier: 8.57.1
-        version: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+        version: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       fastify:
         specifier: 4.29.0
         version: 4.29.0
@@ -1084,7 +1084,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1102,7 +1102,7 @@ importers:
     devDependencies:
       '@apollo/federation':
         specifier: 0.38.1
-        version: 0.38.1(patch_hash=rjgakkkphrejw6qrtph4ar24zq)(encoding@0.1.13)(graphql@16.9.0)
+        version: 0.38.1(patch_hash=cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9)(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-hive/external-composition':
         specifier: workspace:*
         version: link:../../libraries/external-composition/dist
@@ -1141,7 +1141,7 @@ importers:
         version: 4.29.0
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1249,7 +1249,7 @@ importers:
         version: 4.29.0
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1349,7 +1349,7 @@ importers:
         version: 15.1.3
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+        version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -1385,19 +1385,19 @@ importers:
         version: 2.1.0
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       pg-promise:
         specifier: 11.10.2
         version: 11.10.2(pg-query-stream@4.7.0(pg@8.13.1))
       slonik:
         specifier: 30.4.4
-        version: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+        version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
       slonik-interceptor-query-logging:
         specifier: 46.4.0
-        version: 46.4.0(slonik@30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i))
+        version: 46.4.0(slonik@30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299))
       slonik-utilities:
         specifier: 1.9.4
-        version: 1.9.4(slonik@30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i))
+        version: 1.9.4(slonik@30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299))
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1433,7 +1433,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1529,7 +1529,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1571,7 +1571,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1610,7 +1610,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1652,7 +1652,7 @@ importers:
         version: 16.4.7
       got:
         specifier: 14.4.5
-        version: 14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti)
+        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       ioredis:
         specifier: 5.4.2
         version: 5.4.2
@@ -1682,13 +1682,13 @@ importers:
         version: 7.0.4
       '@fastify/vite':
         specifier: 6.0.7
-        version: 6.0.7(patch_hash=wz23vdqq6qtsz64wb433afnvou)(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)
+        version: 6.0.7(patch_hash=f5ce073a4db250ed3db1d9c19e2a253418454ee379530bdee25869570d7b500b)(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)
       '@graphiql/plugin-explorer':
         specifier: 4.0.0-alpha.2
-        version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@graphiql/react':
         specifier: 1.0.0-alpha.4
-        version: 1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@graphiql/toolkit':
         specifier: 0.9.1
         version: 0.9.1(@types/node@22.10.5)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)
@@ -1829,7 +1829,7 @@ importers:
         version: 1.34.9(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@theguild/editor':
         specifier: 1.2.5
-        version: 1.2.5(patch_hash=pz2nlsfawfhpo6sw62ecmp2yum)(@monaco-editor/react@4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -1913,7 +1913,7 @@ importers:
         version: 11.16.1(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphiql:
         specifier: 4.0.0-alpha.5
-        version: 4.0.0-alpha.5(patch_hash=slfrsoypyaawb5yvbcg5g5f3u4)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0-alpha.5(patch_hash=87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -2056,8 +2056,8 @@ importers:
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@theguild/components':
-        specifier: 9.2.0
-        version: 9.2.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.15))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(use-sync-external-store@1.2.0(react@19.0.0))
+        specifier: 9.3.2
+        version: 9.3.2(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.15))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(use-sync-external-store@1.2.0(react@19.0.0))
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
@@ -7794,8 +7794,8 @@ packages:
     resolution: {integrity: sha512-kUiFyUQDiVdpeeL/qwOZAdDZrYFTwqppwNZDxOXcPSKeqGCZe8ajbbN64OAS7VlGMnXWxEEHcjhyFzB9gtHn5w==}
     hasBin: true
 
-  '@theguild/components@9.2.0':
-    resolution: {integrity: sha512-YOk4VpKiRwosjZMfXf4Y+jOGajlrNL8ZWhwVxWrhcWWOk7IZNfP94K5JbMNN9opENQ1y/nRoD0kUg7wjl6yW2g==}
+  '@theguild/components@9.3.2':
+    resolution: {integrity: sha512-FBqcR3QDh5dhtlek+7Q5qWtqsZGXGXk5FnYhXt5w9CY2PGFHPymFyxPyEh5zY22loa8sicv1EjF8BVf734jeJQ==}
     peerDependencies:
       '@theguild/tailwind-config': ^0.6.2
       next: ^13 || ^14 || ^15.0.0
@@ -12770,9 +12770,6 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  mlly@1.7.3:
-    resolution: {integrity: sha512-xUsx5n/mN0uQf4V548PKQ+YShA4/IW0KI1dZhrNrPCLG+xizETbHTkOa1f8/xut9JRPp8kQuMnz0oqwkTiLo/A==}
-
   mlly@1.7.4:
     resolution: {integrity: sha512-qmdSIPC4bDJXgZTCR7XosJiNKySV7O215tsPtDN9iEO/7q/76b/ijtgRu/+epFXSJhijtTCCGp3DWS549P3xKw==}
 
@@ -12909,16 +12906,16 @@ packages:
       sass:
         optional: true
 
-  nextra-theme-docs@4.0.4:
-    resolution: {integrity: sha512-AI6B+0ezFgMPQ8/KNg7IlCX2NHY0VP1ceAUt/CUUDEP2rsR9StaPI+YCe0NZJkq0F9seLcWOKa5yGvYwK7/+jg==}
+  nextra-theme-docs@4.0.5:
+    resolution: {integrity: sha512-aF4HRjbVZvd+VWTssaieXFyJ7xVnGiKlJZ+WfxCG95izoHuYdY3dwibQTc32ERMXWAg//h/t7en5QggF3hKVaA==}
     peerDependencies:
       next: '>=14'
-      nextra: 4.0.4
+      nextra: 4.0.5
       react: '>=18'
       react-dom: '>=18'
 
-  nextra@4.0.4:
-    resolution: {integrity: sha512-UqfBlbc+Is7dNjMnpv0Hd7tXn7yX2wiISNPzp+zhqSO7vUsLtFFeib7G8AdXYR8l1MrJZpw7MBrGXa4u9kacNg==}
+  nextra@4.0.5:
+    resolution: {integrity: sha512-wv1rzzQJtREGZDjdR7G41z3d7NewHvpmgNmPwEABIlEfgsmyEdMSZbrkn5jna8/2SUBsSio/lcBIGemkvuBtSA==}
     engines: {node: '>=18'}
     peerDependencies:
       next: '>=14'
@@ -16227,7 +16224,7 @@ snapshots:
       js-levenshtein: 1.1.6
       uuid: 9.0.1
 
-  '@apollo/federation@0.38.1(patch_hash=rjgakkkphrejw6qrtph4ar24zq)(encoding@0.1.13)(graphql@16.9.0)':
+  '@apollo/federation@0.38.1(patch_hash=cb592719b35ac58f48c97dd557e19223b45b2c5544bec4f6f2e741c58b7f1de9)(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
       '@apollo/subgraph': 0.6.1(graphql@16.9.0)
       apollo-server-types: 3.7.0(encoding@0.1.13)(graphql@16.9.0)
@@ -16540,8 +16537,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16648,11 +16645,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16691,6 +16688,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -16824,11 +16822,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16867,7 +16865,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -16981,7 +16978,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -17100,7 +17097,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -17275,7 +17272,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -18515,9 +18512,9 @@ snapshots:
       graphql: 16.9.0
     optional: true
 
-  '@eslint-community/eslint-utils@4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))':
+  '@eslint-community/eslint-utils@4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))':
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/regexpp@4.11.0': {}
@@ -18631,7 +18628,7 @@ snapshots:
       fastq: 1.17.1
       glob: 10.3.12
 
-  '@fastify/vite@6.0.7(patch_hash=wz23vdqq6qtsz64wb433afnvou)(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)':
+  '@fastify/vite@6.0.7(patch_hash=f5ce073a4db250ed3db1d9c19e2a253418454ee379530bdee25869570d7b500b)(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)':
     dependencies:
       '@fastify/middie': 8.3.1
       '@fastify/static': 6.12.0
@@ -18701,15 +18698,15 @@ snapshots:
       graphql: 16.9.0
       typescript: 5.7.3
 
-  '@graphiql/plugin-explorer@4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@graphiql/plugin-explorer@4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@graphiql/react': 1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@graphiql/react': 1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphiql-explorer: 0.9.0(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql: 16.9.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@graphiql/react@1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@graphiql/toolkit': 0.10.0(@types/node@22.10.5)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)
       '@headlessui/react': 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -18956,7 +18953,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=n437g5o7zq7pnxdxldn52uql2q)(@babel/core@7.22.9)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)':
+  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=695fba67df25ba9d46472c8398c94c6a2ccf75d902321d8f95150f68e940313e)(@babel/core@7.22.9)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
       '@babel/code-frame': 7.26.2
       '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.22.9)(graphql@16.9.0)
@@ -18979,7 +18976,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=n437g5o7zq7pnxdxldn52uql2q)(@babel/core@7.26.0)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)':
+  '@graphql-eslint/eslint-plugin@3.20.1(patch_hash=695fba67df25ba9d46472c8398c94c6a2ccf75d902321d8f95150f68e940313e)(@babel/core@7.26.0)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
       '@babel/code-frame': 7.26.2
       '@graphql-tools/code-file-loader': 7.3.23(@babel/core@7.26.0)(graphql@16.9.0)
@@ -19976,7 +19973,7 @@ snapshots:
       debug: 4.4.0(supports-color@8.1.1)
       kolorist: 1.8.0
       local-pkg: 0.5.0
-      mlly: 1.7.3
+      mlly: 1.7.4
     transitivePeerDependencies:
       - supports-color
 
@@ -20495,7 +20492,7 @@ snapshots:
       promise-all-reject-late: 1.0.1
       promise-call-limit: 3.0.1
       read-package-json-fast: 3.0.2
-      semver: 7.6.2
+      semver: 7.6.3
       ssri: 10.0.5
       treeverse: 3.0.0
       walk-up-path: 3.0.1
@@ -20588,7 +20585,7 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@oclif/core@3.26.6(patch_hash=rmd5oidpiuzwrwylcphsrfavay)':
+  '@oclif/core@3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)':
     dependencies:
       '@types/cli-progress': 3.11.5
       ansi-escapes: 4.3.2
@@ -20619,7 +20616,7 @@ snapshots:
       wordwrap: 1.0.0
       wrap-ansi: 7.0.0
 
-  '@oclif/core@4.0.6(patch_hash=y5acwfkubqiafo3iitlwsynmki)':
+  '@oclif/core@4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.2.0
@@ -20641,23 +20638,23 @@ snapshots:
 
   '@oclif/plugin-help@6.0.22':
     dependencies:
-      '@oclif/core': 3.26.6(patch_hash=rmd5oidpiuzwrwylcphsrfavay)
+      '@oclif/core': 3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)
 
   '@oclif/plugin-help@6.2.2':
     dependencies:
-      '@oclif/core': 4.0.6(patch_hash=y5acwfkubqiafo3iitlwsynmki)
+      '@oclif/core': 4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)
 
   '@oclif/plugin-not-found@3.2.4':
     dependencies:
       '@inquirer/confirm': 3.1.9
-      '@oclif/core': 4.0.6(patch_hash=y5acwfkubqiafo3iitlwsynmki)
+      '@oclif/core': 4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)
       ansis: 3.2.0
       fast-levenshtein: 3.0.0
 
   '@oclif/plugin-update@4.2.13':
     dependencies:
       '@inquirer/select': 2.3.5
-      '@oclif/core': 3.26.6(patch_hash=rmd5oidpiuzwrwylcphsrfavay)
+      '@oclif/core': 3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)
       chalk: 5.3.0
       debug: 4.3.7(supports-color@8.1.1)
       filesize: 6.4.0
@@ -20669,7 +20666,7 @@ snapshots:
 
   '@oclif/plugin-warn-if-update-available@3.0.19':
     dependencies:
-      '@oclif/core': 3.26.6(patch_hash=rmd5oidpiuzwrwylcphsrfavay)
+      '@oclif/core': 3.26.6(patch_hash=7432c7b46bd5e3276faff9af4fc733575417c17a0ec31df3c7a229f766e3cffc)
       chalk: 5.3.0
       debug: 4.4.0(supports-color@8.1.1)
       http-call: 5.3.0
@@ -21378,7 +21375,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.8.1
       require-in-the-middle: 7.3.0
-      semver: 7.6.2
+      semver: 7.6.3
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -24207,7 +24204,7 @@ snapshots:
       typescript: 4.9.5
       yargs: 16.2.0
 
-  '@theguild/components@9.2.0(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.15))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(use-sync-external-store@1.2.0(react@19.0.0))':
+  '@theguild/components@9.3.2(@theguild/tailwind-config@0.6.2(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.10.6(@swc/helpers@0.5.15))(@types/node@22.10.5)(typescript@5.7.3))))(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(use-sync-external-store@1.2.0(react@19.0.0))':
     dependencies:
       '@giscus/react': 3.1.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@next/bundle-analyzer': 15.1.5
@@ -24218,8 +24215,8 @@ snapshots:
       clsx: 2.1.1
       fuzzy: 0.1.3
       next: 15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      nextra: 4.0.4(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
-      nextra-theme-docs: 4.0.4(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.4(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0))
+      nextra: 4.0.5(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+      nextra-theme-docs: 4.0.5(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0))
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       react-paginate: 8.2.0(react@19.0.0)
@@ -24237,7 +24234,7 @@ snapshots:
       - use-sync-external-store
       - utf-8-validate
 
-  '@theguild/editor@1.2.5(patch_hash=pz2nlsfawfhpo6sw62ecmp2yum)(@monaco-editor/react@4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@theguild/editor@1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@monaco-editor/react': 4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql-language-service: 3.2.5(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
@@ -24252,25 +24249,25 @@ snapshots:
       - graphql
       - utf-8-validate
 
-  '@theguild/eslint-config@0.12.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)':
+  '@theguild/eslint-config@0.12.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)':
     dependencies:
       '@rushstack/eslint-patch': 1.10.4
-      '@typescript-eslint/eslint-plugin': 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
-      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-config-prettier: 9.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-jsonc: 2.11.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-jsx-a11y: 6.8.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-mdx: 3.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-n: 17.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-promise: 7.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-react: 7.33.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-sonarjs: 1.0.3(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-unicorn: 55.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-yml: 1.11.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@typescript-eslint/eslint-plugin': 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
+      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-config-prettier: 9.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-jsonc: 2.11.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-jsx-a11y: 6.8.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-mdx: 3.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-n: 17.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-promise: 7.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-react: 7.33.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-sonarjs: 1.0.3(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-unicorn: 55.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-yml: 1.11.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       typescript: 5.7.3
     transitivePeerDependencies:
       - eslint-import-resolver-node
@@ -24713,15 +24710,15 @@ snapshots:
       '@types/node': 22.10.5
     optional: true
 
-  '@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)':
+  '@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)':
     dependencies:
       '@eslint-community/regexpp': 4.11.0
-      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
+      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
       '@typescript-eslint/scope-manager': 7.18.0
-      '@typescript-eslint/type-utils': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
-      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
+      '@typescript-eslint/type-utils': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
+      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
       '@typescript-eslint/visitor-keys': 7.18.0
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare: 1.4.0
@@ -24731,14 +24728,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)':
+  '@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 7.18.0
       '@typescript-eslint/types': 7.18.0
       '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.7.3)
       '@typescript-eslint/visitor-keys': 7.18.0
       debug: 4.4.0(supports-color@8.1.1)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
     optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
@@ -24749,12 +24746,12 @@ snapshots:
       '@typescript-eslint/types': 7.18.0
       '@typescript-eslint/visitor-keys': 7.18.0
 
-  '@typescript-eslint/type-utils@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)':
+  '@typescript-eslint/type-utils@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)':
     dependencies:
       '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.7.3)
-      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
+      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
       debug: 4.4.0(supports-color@8.1.1)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       ts-api-utils: 1.3.0(typescript@5.7.3)
     optionalDependencies:
       typescript: 5.7.3
@@ -24778,13 +24775,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)':
+  '@typescript-eslint/utils@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       '@typescript-eslint/scope-manager': 7.18.0
       '@typescript-eslint/types': 7.18.0
       '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.7.3)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -26010,7 +26007,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.3
 
-  countup.js@2.8.0(patch_hash=nfqgtlg7dcp6sipx7lntl54mvi): {}
+  countup.js@2.8.0(patch_hash=664547d4d5412a2891bfdfb34790bb773535102f8e26075dfafbd831d79f4410): {}
 
   cpu-features@0.0.9:
     dependencies:
@@ -26504,7 +26501,7 @@ snapshots:
 
   docker-modem@5.0.5:
     dependencies:
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0(supports-color@8.1.1)
       readable-stream: 3.6.0
       split-ca: 1.0.1
       ssh2: 1.15.0
@@ -26910,13 +26907,13 @@ snapshots:
 
   escape-string-regexp@5.0.0: {}
 
-  eslint-compat-utils@0.1.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-compat-utils@0.1.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
 
-  eslint-config-prettier@9.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-config-prettier@9.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
 
   eslint-import-resolver-node@0.3.9:
     dependencies:
@@ -26926,13 +26923,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       debug: 4.4.0(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       fast-glob: 3.3.2
       get-tsconfig: 4.7.5
       is-core-module: 2.13.1
@@ -26943,11 +26940,11 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-mdx@3.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-mdx@3.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       acorn: 8.14.0
       acorn-jsx: 5.3.2(acorn@8.14.0)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       espree: 9.6.1
       estree-util-visit: 2.0.0
       remark-mdx: 3.0.0
@@ -26963,30 +26960,30 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       debug: 3.2.7(supports-color@8.1.1)
     optionalDependencies:
-      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-plugin-import@2.29.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-cypress@4.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-cypress@4.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       globals: 15.11.0
 
-  eslint-plugin-es-x@7.5.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-es-x@7.5.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       '@eslint-community/regexpp': 4.11.0
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
 
-  eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-import@2.29.1(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.3
@@ -26994,9 +26991,9 @@ snapshots:
       array.prototype.flatmap: 1.3.2
       debug: 3.2.7(supports-color@8.1.1)
       doctrine: 2.1.0
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       hasown: 2.0.0
       is-core-module: 2.13.1
       is-glob: 4.0.3
@@ -27007,22 +27004,22 @@ snapshots:
       semver: 6.3.1
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))(typescript@5.7.3)
+      '@typescript-eslint/parser': 7.18.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))(typescript@5.7.3)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-jsonc@2.11.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-jsonc@2.11.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       graphemer: 1.4.0
       jsonc-eslint-parser: 2.1.0
       natural-compare: 1.4.0
 
-  eslint-plugin-jsx-a11y@6.8.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-jsx-a11y@6.8.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       '@babel/runtime': 7.24.7
       aria-query: 5.3.0
@@ -27034,7 +27031,7 @@ snapshots:
       damerau-levenshtein: 1.0.8
       emoji-regex: 9.2.2
       es-iterator-helpers: 1.0.15
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       hasown: 2.0.0
       jsx-ast-utils: 3.3.5
       language-tags: 1.0.9
@@ -27042,18 +27039,18 @@ snapshots:
       object.entries: 1.1.7
       object.fromentries: 2.0.7
 
-  eslint-plugin-markdown@3.0.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-markdown@3.0.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       mdast-util-from-markdown: 0.8.5
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-mdx@3.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-mdx@3.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-mdx: 3.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
-      eslint-plugin-markdown: 3.0.1(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-mdx: 3.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
+      eslint-plugin-markdown: 3.0.1(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       remark-mdx: 3.0.0
       remark-parse: 11.0.0
       remark-stringify: 11.0.0
@@ -27063,12 +27060,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-n@17.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-n@17.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       enhanced-resolve: 5.17.1
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-plugin-es-x: 7.5.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-plugin-es-x: 7.5.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       get-tsconfig: 4.7.5
       globals: 14.0.0
       ignore: 5.3.2
@@ -27076,22 +27073,22 @@ snapshots:
       minimatch: 9.0.5
       semver: 7.6.3
 
-  eslint-plugin-promise@7.1.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-promise@7.1.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
 
-  eslint-plugin-react-hooks@4.6.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-react-hooks@4.6.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
 
-  eslint-plugin-react@7.33.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-react@7.33.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.1
       doctrine: 2.1.0
       es-iterator-helpers: 1.0.15
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       estraverse: 5.3.0
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
@@ -27104,18 +27101,18 @@ snapshots:
       semver: 6.3.1
       string.prototype.matchall: 4.0.8
 
-  eslint-plugin-sonarjs@1.0.3(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-sonarjs@1.0.3(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
 
-  eslint-plugin-unicorn@55.0.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-unicorn@55.0.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       '@babel/helper-validator-identifier': 7.25.9
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       ci-info: 4.0.0
       clean-regexp: 1.0.0
       core-js-compat: 3.37.1
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
       esquery: 1.5.0
       globals: 15.11.0
       indent-string: 4.0.0
@@ -27128,11 +27125,11 @@ snapshots:
       semver: 7.6.3
       strip-indent: 3.0.0
 
-  eslint-plugin-yml@1.11.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)):
+  eslint-plugin-yml@1.11.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)):
     dependencies:
       debug: 4.4.0(supports-color@8.1.1)
-      eslint: 8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva)
-      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      eslint: 8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0)
+      eslint-compat-utils: 0.1.2(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       lodash: 4.17.21
       natural-compare: 1.4.0
       yaml-eslint-parser: 1.2.2
@@ -27146,9 +27143,9 @@ snapshots:
 
   eslint-visitor-keys@3.4.3: {}
 
-  eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva):
+  eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=fjbpfrtrjd6idngyeqxnwopfva))
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1(patch_hash=08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0))
       '@eslint-community/regexpp': 4.11.0
       '@eslint/eslintrc': 2.1.4
       '@eslint/js': 8.57.1
@@ -27966,7 +27963,7 @@ snapshots:
       p-cancelable: 3.0.0
       responselike: 3.0.0
 
-  got@14.4.5(patch_hash=b6pwqmrs3qqykctltsasvrfwti):
+  got@14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299):
     dependencies:
       '@sindresorhus/is': 7.0.1
       '@szmarczak/http-timer': 5.0.1
@@ -27976,7 +27973,7 @@ snapshots:
       form-data-encoder: 4.0.2
       http2-wrapper: 2.2.1
       lowercase-keys: 3.0.0
-      p-cancelable: 4.0.1(patch_hash=qvfog2dtlpkk5j2akszkzrck5a)
+      p-cancelable: 4.0.1(patch_hash=195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322)
       responselike: 3.0.0
       type-fest: 4.26.1
 
@@ -27990,9 +27987,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  graphiql@4.0.0-alpha.5(patch_hash=slfrsoypyaawb5yvbcg5g5f3u4)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  graphiql@4.0.0-alpha.5(patch_hash=87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@graphiql/react': 1.0.0-alpha.4(patch_hash=scbly4qchgvjjjrsxpgbcil634)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@graphiql/react': 1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.10.2)(@types/node@22.10.5)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@5.16.1(graphql@16.9.0))(graphql@16.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       graphql: 16.9.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -29347,7 +29344,7 @@ snapshots:
 
   local-pkg@0.5.0:
     dependencies:
-      mlly: 1.7.3
+      mlly: 1.7.4
       pkg-types: 1.3.0
 
   localforage@1.10.0:
@@ -30237,7 +30234,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30245,7 +30242,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30253,7 +30250,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30261,7 +30258,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30272,7 +30269,7 @@ snapshots:
       glob: 7.2.3
       js-beautify: 1.14.6
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-migrate: 4.14.0(encoding@0.1.13)
       mjml-parser-xml: 4.14.0
       mjml-validator: 4.13.0
@@ -30284,11 +30281,11 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
-  mjml-core@4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13):
+  mjml-core@4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13):
     dependencies:
       '@babel/runtime': 7.24.7
       cheerio: 1.0.0-rc.10
@@ -30306,7 +30303,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30314,7 +30311,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30322,7 +30319,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30330,7 +30327,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30338,7 +30335,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30346,7 +30343,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30354,7 +30351,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30362,7 +30359,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30370,7 +30367,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30378,7 +30375,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30386,7 +30383,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30394,7 +30391,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30403,7 +30400,7 @@ snapshots:
       '@babel/runtime': 7.24.7
       js-beautify: 1.14.6
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-parser-xml: 4.14.0
       yargs: 16.2.0
     transitivePeerDependencies:
@@ -30413,7 +30410,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30459,7 +30456,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30467,7 +30464,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30475,7 +30472,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30483,7 +30480,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30491,7 +30488,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30499,7 +30496,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -30511,7 +30508,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       lodash: 4.17.21
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-section: 4.14.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -30520,7 +30517,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
       mjml-cli: 4.14.0(encoding@0.1.13)
-      mjml-core: 4.14.0(patch_hash=zxxsxbqejjmcwuzpigutzzq6wa)(encoding@0.1.13)
+      mjml-core: 4.14.0(patch_hash=52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f)(encoding@0.1.13)
       mjml-migrate: 4.14.0(encoding@0.1.13)
       mjml-preset-core: 4.14.0(encoding@0.1.13)
       mjml-validator: 4.13.0
@@ -30532,13 +30529,6 @@ snapshots:
   mkdirp@1.0.4: {}
 
   mkdirp@3.0.1: {}
-
-  mlly@1.7.3:
-    dependencies:
-      acorn: 8.14.0
-      pathe: 1.1.2
-      pkg-types: 1.3.0
-      ufo: 1.5.4
 
   mlly@1.7.4:
     dependencies:
@@ -30676,13 +30666,13 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextra-theme-docs@4.0.4(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.4(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0)):
+  nextra-theme-docs@4.0.5(@types/react@18.3.18)(immer@10.1.1)(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0)):
     dependencies:
       '@headlessui/react': 2.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       clsx: 2.1.1
       next: 15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-themes: 0.4.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      nextra: 4.0.4(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+      nextra: 4.0.5(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       react: 19.0.0
       react-compiler-runtime: 0.0.0-experimental-22c6e49-20241219(react@19.0.0)
       react-dom: 19.0.0(react@19.0.0)
@@ -30695,7 +30685,7 @@ snapshots:
       - immer
       - use-sync-external-store
 
-  nextra@4.0.4(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3):
+  nextra@4.0.5(next@15.1.6(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.5
       '@headlessui/react': 2.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -30828,7 +30818,7 @@ snapshots:
     dependencies:
       hosted-git-info: 7.0.1
       is-core-module: 2.16.1
-      semver: 7.6.2
+      semver: 7.6.3
       validate-npm-package-license: 3.0.4
 
   normalize-path@2.1.1:
@@ -30964,14 +30954,14 @@ snapshots:
 
   obuf@1.1.2: {}
 
-  oclif@4.13.6(patch_hash=kmdoz5rhsd4tek3w4wmt7vygge):
+  oclif@4.13.6(patch_hash=0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6):
     dependencies:
       '@aws-sdk/client-cloudfront': 3.596.0
       '@aws-sdk/client-s3': 3.723.0
       '@inquirer/confirm': 3.1.9
       '@inquirer/input': 2.1.9
       '@inquirer/select': 2.3.5
-      '@oclif/core': 4.0.6(patch_hash=y5acwfkubqiafo3iitlwsynmki)
+      '@oclif/core': 4.0.6(patch_hash=d1dc04fa0009203663f00e051630035b556b6bd06913c6ab45aeee47ccdedd46)
       '@oclif/plugin-help': 6.2.2
       '@oclif/plugin-not-found': 3.2.4
       '@oclif/plugin-warn-if-update-available': 3.0.19
@@ -31070,7 +31060,7 @@ snapshots:
 
   p-cancelable@3.0.0: {}
 
-  p-cancelable@4.0.1(patch_hash=qvfog2dtlpkk5j2akszkzrck5a): {}
+  p-cancelable@4.0.1(patch_hash=195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322): {}
 
   p-defer@3.0.0: {}
 
@@ -31480,7 +31470,7 @@ snapshots:
   pkg-types@1.3.0:
     dependencies:
       confbox: 0.1.8
-      mlly: 1.7.3
+      mlly: 1.7.4
       pathe: 1.1.2
 
   pluralize@8.0.0: {}
@@ -31822,7 +31812,7 @@ snapshots:
 
   react-countup@6.5.3(react@19.0.0):
     dependencies:
-      countup.js: 2.8.0(patch_hash=nfqgtlg7dcp6sipx7lntl54mvi)
+      countup.js: 2.8.0(patch_hash=664547d4d5412a2891bfdfb34790bb773535102f8e26075dfafbd831d79f4410)
       react: 19.0.0
 
   react-day-picker@8.10.1(date-fns@4.1.0)(react@18.3.1):
@@ -32699,14 +32689,14 @@ snapshots:
 
   slick@1.12.2: {}
 
-  slonik-interceptor-query-logging@46.4.0(slonik@30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)):
+  slonik-interceptor-query-logging@46.4.0(slonik@30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)):
     dependencies:
       crack-json: 1.3.0
       pretty-ms: 7.0.1
       serialize-error: 8.1.0
-      slonik: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+      slonik: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
 
-  slonik-utilities@1.9.4(slonik@30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)):
+  slonik-utilities@1.9.4(slonik@30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)):
     dependencies:
       core-js: 3.25.5
       delay: 4.4.1
@@ -32714,9 +32704,9 @@ snapshots:
       lodash: 4.17.21
       roarr: 7.14.3
       serialize-error: 5.0.0
-      slonik: 30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i)
+      slonik: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
 
-  slonik@30.4.4(patch_hash=jxrvl4xmdvyktjijg7yfdkb34i):
+  slonik@30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299):
     dependencies:
       concat-stream: 2.0.0
       es6-error: 4.1.1
@@ -32785,7 +32775,7 @@ snapshots:
       git-hooks-list: 3.1.0
       globby: 13.1.3
       is-plain-obj: 4.1.0
-      semver: 7.6.2
+      semver: 7.6.3
       sort-object-keys: 1.1.3
 
   source-map-js@1.2.1: {}

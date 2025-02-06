@@ -89,54 +89,59 @@ export function createAnalytics(
         return;
       }
 
-      switch (event.type) {
-        case 'artifact':
-          return engines.usage.writeDataPoint({
-            blobs: [event.version, event.value, targetId],
-            indexes: [targetId.substring(0, 32)],
-          });
-        case 'error':
-          return engines.error.writeDataPoint({
-            blobs: event.value,
-          });
-        case 'r2':
-        case 's3':
-          return engines[event.type].writeDataPoint({
-            blobs: [event.action, event.statusCodeOrErrCode.toString(), targetId],
-            doubles: [event.duration],
-            indexes: [targetId.substring(0, 32)],
-          });
-        case 'response':
-          return engines.response.writeDataPoint({
-            blobs: [event.statusCode.toString(), event.requestPath, targetId],
-            indexes: [targetId.substring(0, 32)],
-          });
-        case 'key-validation':
-          switch (event.value.type) {
-            case 'cache-hit':
-              return engines.keyValidation.writeDataPoint({
-                blobs: [
-                  'cache-hit',
-                  event.value.version,
-                  event.value.isValid ? 'valid' : 'invalid',
-                ],
-                indexes: [targetId.substring(0, 32)],
-              });
-            case 'cache-write':
-              return engines.keyValidation.writeDataPoint({
-                blobs: [
-                  'cache-write',
-                  event.value.version,
-                  event.value.isValid ? 'valid' : 'invalid',
-                ],
-                indexes: [targetId.substring(0, 32)],
-              });
-            case 's3-key-validation':
-              return engines.keyValidation.writeDataPoint({
-                blobs: ['s3-key-validation', event.value.version, event.value.status],
-                indexes: [targetId.substring(0, 32)],
-              });
-          }
+      try {
+        switch (event.type) {
+          case 'artifact':
+            return engines.usage.writeDataPoint({
+              blobs: [event.version, event.value, targetId],
+              indexes: [targetId.substring(0, 32)],
+            });
+          case 'error':
+            return engines.error.writeDataPoint({
+              blobs: event.value,
+            });
+          case 'r2':
+          case 's3':
+            return engines[event.type].writeDataPoint({
+              blobs: [event.action, event.statusCodeOrErrCode.toString(), targetId],
+              doubles: [event.duration],
+              indexes: [targetId.substring(0, 32)],
+            });
+          case 'response':
+            return engines.response.writeDataPoint({
+              blobs: [event.statusCode.toString(), event.requestPath, targetId],
+              indexes: [targetId.substring(0, 32)],
+            });
+          case 'key-validation':
+            switch (event.value.type) {
+              case 'cache-hit':
+                return engines.keyValidation.writeDataPoint({
+                  blobs: [
+                    'cache-hit',
+                    event.value.version,
+                    event.value.isValid ? 'valid' : 'invalid',
+                  ],
+                  indexes: [targetId.substring(0, 32)],
+                });
+              case 'cache-write':
+                return engines.keyValidation.writeDataPoint({
+                  blobs: [
+                    'cache-write',
+                    event.value.version,
+                    event.value.isValid ? 'valid' : 'invalid',
+                  ],
+                  indexes: [targetId.substring(0, 32)],
+                });
+              case 's3-key-validation':
+                return engines.keyValidation.writeDataPoint({
+                  blobs: ['s3-key-validation', event.value.version, event.value.status],
+                  indexes: [targetId.substring(0, 32)],
+                });
+            }
+        }
+      } catch (err) {
+        console.log(`Analytics.track: Error while trying to write databapoints`);
+        console.log(err);
       }
     },
   };
