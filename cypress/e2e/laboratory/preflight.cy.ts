@@ -56,11 +56,7 @@ describe('Preflight Modal', () => {
     const script = 'let a = 1; a = ""';
     cyp.setEditorContent(script);
     cy.wait(1000); // :(
-    cy.dataCy(s.modal.editorCy)
-      .find('textarea')
-      .focus()
-      // @ts-expect-error - Followed instructions but does not work https://github.com/dmtrKovalenko/cypress-real-events?tab=readme-ov-file#installation
-      .realPress(['Alt', 'F8']);
+    cy.dataCy(s.modal.editorCy).find('textarea').focus().realPress(['Alt', 'F8']);
     cy.contains(tsErrorMessage);
   });
 

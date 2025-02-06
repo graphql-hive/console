@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2021",
     "lib": ["es2021", "dom"],
-    "types": ["node", "cypress"]
+    "types": ["node", "cypress", "cypress-real-events"]
   },
   "include": ["**/*.ts", "../integration-tests/testkit/**/*.ts"]
 }
