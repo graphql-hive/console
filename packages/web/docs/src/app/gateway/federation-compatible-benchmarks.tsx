@@ -79,7 +79,10 @@ export function FederationCompatibleBenchmarksSection({
           Learn how Hive Gateway performs against other gateways in&nbsp;terms of correctness and
           compliance with the Apollo Federation specification
         </p>
-        <CallToAction variant="tertiary" href="/">
+        <CallToAction
+          variant="tertiary"
+          href="https://the-guild.dev/graphql/hive/federation-gateway-audit"
+        >
           Learn about our audit and methodology
         </CallToAction>
       </div>
