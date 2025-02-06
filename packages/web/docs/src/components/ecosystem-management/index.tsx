@@ -45,10 +45,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
               <>
                 <div className="font-medium text-white">
                   Powerful and flexible{' '}
-                  <NextLink
-                    className="underline decoration-1 underline-offset-2"
-                    href="/docs/gateway"
-                  >
+                  <NextLink className="underline decoration-1 underline-offset-2" href="/gateway">
                     GraphQL Gateway (Router)
                   </NextLink>
                 </div>
@@ -64,10 +61,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
                   GraphQL federation
                 </NextLink>
                 ,{' '}
-                <NextLink
-                  className="underline decoration-1 underline-offset-2"
-                  href="/docs/gateway"
-                >
+                <NextLink className="underline decoration-1 underline-offset-2" href="/gateway">
                   Hive Gateway
                 </NextLink>
                 ,{' '}
