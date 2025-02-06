@@ -72,11 +72,13 @@ const schemaPublishCount = new promClient.Counter({
 const schemaPublishUnexpectedErrorCount = new promClient.Counter({
   name: 'registry_publish_unexpected_error_count',
   help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
 });
 
 const schemaCheckUnexpectedErrorCount = new promClient.Counter({
   name: 'registry_check_unexpected_error_count',
   help: 'Unexpected, not gracefully handled errors. E.g. from GitHub or other third-party services.',
+  labelNames: ['errorName'],
 });
 
 const schemaDeleteCount = new promClient.Counter({
@@ -969,13 +971,15 @@ export class SchemaPublisher {
     } as const;
   }
 
-  check(input: CheckInput) {
-    return this.internalCheck(input).catch(err => {
-      if (err instanceof HiveError === false) {
-        schemaCheckUnexpectedErrorCount.inc();
+  async check(input: CheckInput) {
+    return await this.internalCheck(input).catch(error => {
+      if (error instanceof HiveError === false) {
+        schemaCheckUnexpectedErrorCount.inc({
+          errorName: (error instanceof Error && error.name) || 'unknown',
+        });
       }
 
-      throw err;
+      throw error;
     });
   }
 
@@ -1101,7 +1105,9 @@ export class SchemaPublisher {
             reason: 'Another schema publish is currently in progress.',
           } satisfies PublishResult;
         } else if (error instanceof HiveError === false) {
-          schemaPublishUnexpectedErrorCount.inc();
+          schemaPublishUnexpectedErrorCount.inc({
+            errorName: (error instanceof Error && error.name) || 'unknown',
+          });
         }
 
         throw error;
