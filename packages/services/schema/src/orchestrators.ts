@@ -1,6 +1,4 @@
-import { createHmac } from 'node:crypto';
 import type { FastifyRequest } from 'fastify';
-import got, { RequestError } from 'got';
 import type { DocumentNode } from 'graphql';
 import {
   ASTNode,
@@ -15,51 +13,33 @@ import {
   visit,
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
-import { z } from 'zod';
-import { composeAndValidate, compositionHasErrors } from '@apollo/federation';
-import type { ErrorCode } from '@graphql-hive/external-composition';
+import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
-import { SpanKind, trace } from '@hive/service-common';
-import * as Sentry from '@sentry/node';
-import {
-  composeServices as nativeComposeServices,
-  compositionHasErrors as nativeCompositionHasErrors,
-  transformSupergraphToPublicSchema,
-} from '@theguild/federation-composition';
 import type { ContractsInputType } from './api';
 import type { Cache } from './cache';
+import { addInaccessibleToUnreachableTypes } from './lib/add-inaccessible-to-unreachable-types';
 import {
-  applyTagFilterOnSubgraphs,
-  extractTagsFromFederation2SupergraphSDL,
-  getInaccessibleDirectiveNameFromFederation2SupergraphSDL,
-  type Federation2SubgraphDocumentNodeByTagsFilter,
+  composeExternalFederation,
+  composeFederationV1,
+  composeFederationV2,
+  ComposerMethodResult,
+  SubgraphInput,
+} from './lib/compose';
+import { CompositionErrorSource, errorWithSource, toValidationError } from './lib/errors';
+import {
+  applyTagFilterToInaccessibleTransformOnSubgraphSchema,
+  createTagDirectiveNameExtractionStrategy,
+  extractTagsFromDocument,
+  Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
-import { addDirectiveOnTypes, getReachableTypes } from './lib/reachable-type-filter';
 import type {
   ComposeAndValidateInput,
   ComposeAndValidateOutput,
   ExternalComposition,
   SchemaType,
 } from './types';
-
-interface BrokerPayload {
-  method: 'POST';
-  url: string;
-  headers: {
-    [key: string]: string;
-    'x-hive-signature-256': string;
-  };
-  body: string;
-}
-
-export type CompositionErrorSource = 'graphql' | 'composition';
-
-export interface CompositionFailureError {
-  message: string;
-  source: CompositionErrorSource;
-}
 
 const { allStitchingDirectivesTypeDefs, stitchingDirectivesValidator } = stitchingDirectives();
 const parsedStitchingDirectives = parse(allStitchingDirectivesTypeDefs);
@@ -80,36 +60,6 @@ function extractDirectiveNames(doc: DocumentNode) {
 function definesStitchingDirective(doc: DocumentNode) {
   return extractDirectiveNames(doc).some(name => stitchingDirectivesNames.includes(name));
 }
-
-const EXTERNAL_COMPOSITION_RESULT = z.union([
-  z.object({
-    type: z.literal('success'),
-    result: z.object({
-      supergraph: z.string(),
-      sdl: z.string(),
-    }),
-    includesNetworkError: z.boolean().optional().default(false),
-  }),
-  z.object({
-    type: z.literal('failure'),
-    result: z.object({
-      supergraph: z.string().optional(),
-      sdl: z.string().optional(),
-      errors: z.array(
-        z.object({
-          message: z.string(),
-          source: z
-            .union([z.literal('composition'), z.literal('graphql')])
-            .optional()
-            .transform(value => value ?? 'graphql'),
-        }),
-      ),
-    }),
-    includesNetworkError: z.boolean().optional().default(false),
-  }),
-]);
-
-type ComposerMethodResult = z.TypeOf<typeof EXTERNAL_COMPOSITION_RESULT>;
 
 type CompositionErrorType = {
   message: string;
@@ -187,39 +137,6 @@ function trimDescriptions(doc: DocumentNode): DocumentNode {
   });
 }
 
-function toValidationError(error: any, source: CompositionErrorSource) {
-  if (error instanceof GraphQLError) {
-    return {
-      message: error.message,
-      source,
-    };
-  }
-
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      source,
-    };
-  }
-
-  return {
-    message: error as string,
-    source,
-  };
-}
-
-function errorWithSource(source: CompositionErrorSource) {
-  return (error: unknown) => toValidationError(error, source);
-}
-
-function errorWithPossibleCode(error: unknown) {
-  if (error instanceof GraphQLError && error.extensions?.code) {
-    return toValidationError(error, 'composition');
-  }
-
-  return toValidationError(error, 'graphql');
-}
-
 interface Orchestrator {
   composeAndValidate(
     input: ComposeAndValidateInput,
@@ -228,378 +145,6 @@ interface Orchestrator {
     contracts?: ContractsInputType,
   ): Promise<ComposeAndValidateOutput>;
 }
-
-function hash(secret: string, alg: string, value: string) {
-  return createHmac(alg, secret).update(value, 'utf-8').digest('hex');
-}
-
-const codeToExplanationMap: Record<ErrorCode, string> = {
-  ERR_EMPTY_BODY: 'The body of the request is empty',
-  ERR_INVALID_SIGNATURE: 'The signature is invalid. Please check your secret',
-};
-
-function translateMessage(errorCode: string) {
-  const explanation = codeToExplanationMap[errorCode as ErrorCode];
-
-  if (explanation) {
-    return `(${errorCode}) ${explanation}`;
-  }
-}
-
-async function callExternalServiceViaBroker(
-  broker: {
-    endpoint: string;
-    signature: string;
-  },
-  payload: BrokerPayload,
-  logger: ServiceLogger,
-  timeoutMs: number,
-  requestId: string,
-) {
-  return callExternalService(
-    {
-      url: broker.endpoint,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'x-hive-signature': broker.signature,
-        'x-request-id': requestId,
-      },
-      body: JSON.stringify(payload),
-    },
-    logger,
-    timeoutMs,
-  );
-}
-
-async function callExternalService(
-  input: { url: string; headers: Record<string, string>; body: string },
-  logger: ServiceLogger,
-  timeoutMs: number,
-) {
-  const tracer = trace.getTracer('external-composition');
-  const parsedUrl = new URL(input.url);
-  const span = tracer.startSpan('External Composition', {
-    kind: SpanKind.CLIENT,
-    attributes: {
-      'http.client': 'got',
-      'client.address': parsedUrl.hostname,
-      'client.port': parsedUrl.port,
-      'http.method': 'POST',
-      'http.route': parsedUrl.pathname,
-    },
-  });
-
-  try {
-    logger.debug('Calling external composition service (url=%s)', input.url);
-    const response = await got(input.url, {
-      method: 'POST',
-      headers: input.headers,
-      body: input.body,
-      responseType: 'text',
-      retry: {
-        limit: 5,
-        methods: ['POST', ...(got.defaults.options.retry.methods ?? [])],
-        statusCodes: [404].concat(got.defaults.options.retry.statusCodes ?? []),
-        backoffLimit: 500,
-      },
-      timeout: {
-        request: timeoutMs,
-      },
-    });
-
-    span.setAttribute('http.response.body.size', response.rawBody.length);
-    span.setAttribute('http.response.status_code', response.statusCode);
-    span.end();
-
-    return JSON.parse(response.body) as unknown;
-  } catch (error) {
-    if (error instanceof RequestError) {
-      if (!error.response) {
-        span.setAttribute('error.message', error.message);
-        span.setAttribute('error.type', error.name);
-
-        logger.error(
-          'Network error without response. (errorName=%s, errorMessage=%s)',
-          error.name,
-          error.message,
-        );
-
-        return {
-          type: 'failure',
-          result: {
-            sdl: null,
-            supergraph: null,
-            errors: [
-              {
-                message: `External composition network failure. Is the service reachable?`,
-                source: 'graphql',
-              },
-            ],
-          },
-          includesNetworkError: true,
-        };
-      }
-
-      if (error.response) {
-        span.setAttribute('http.response.status_code', error.response.statusCode);
-        const message = error.response.body ? error.response.body : error.response.statusMessage;
-
-        // If the response is a string starting with ERR_ it's a special error returned by the composition service.
-        // We don't want to throw an error in this case, but instead return a failure result.
-        if (typeof message === 'string') {
-          const translatedMessage = translateMessage(message);
-          span.setAttribute('error.message', translatedMessage || '');
-          span.setAttribute('error.type', error.name);
-
-          if (translatedMessage) {
-            return {
-              type: 'failure',
-              result: {
-                errors: [
-                  {
-                    message: `External composition failure: ${translatedMessage}`,
-                    source: 'graphql',
-                  },
-                ],
-              },
-              includesNetworkError: true,
-            };
-          }
-        }
-
-        logger.error(
-          'Network error, will return failure (url=%s, status=%s, message=%s)',
-          input.url,
-          error.response.statusCode,
-          error.message,
-        );
-
-        logger.error(error);
-
-        span.setAttribute('error.message', error.message || '');
-        span.setAttribute('error.type', error.name);
-
-        return {
-          type: 'failure',
-          result: {
-            errors: [
-              {
-                message: `External composition network failure: ${error.message}`,
-                source: 'graphql',
-              },
-            ],
-          },
-          includesNetworkError: true,
-        };
-      }
-    }
-
-    logger.error('encountered an unexpected error, throwing. error=%o', error);
-
-    throw error;
-  } finally {
-    span.end();
-  }
-}
-
-function composeFederationV1(
-  subgraphs: Array<{
-    typeDefs: DocumentNode;
-    name: string;
-    url: string | undefined;
-  }>,
-): ComposerMethodResult {
-  const result = composeAndValidate(subgraphs);
-
-  if (compositionHasErrors(result)) {
-    return {
-      type: 'failure',
-      result: {
-        errors: result.errors.map(errorWithPossibleCode),
-        sdl: result.schema ? printSchema(result.schema) : undefined,
-      },
-      includesNetworkError: false,
-    };
-  }
-
-  return {
-    type: 'success',
-    result: {
-      supergraph: result.supergraphSdl,
-      sdl: printSchema(result.schema),
-    },
-    includesNetworkError: false,
-  };
-}
-
-type SubgraphInput = {
-  typeDefs: DocumentNode;
-  name: string;
-  url: string | undefined;
-};
-
-function composeFederationV2(
-  subgraphs: Array<SubgraphInput>,
-  logger: ServiceLogger,
-): ComposerMethodResult & {
-  includesException?: boolean;
-} {
-  try {
-    const result = nativeComposeServices(subgraphs);
-
-    if (nativeCompositionHasErrors(result)) {
-      return {
-        type: 'failure',
-        result: {
-          errors: result.errors.map(errorWithPossibleCode),
-          sdl: undefined,
-        },
-        includesNetworkError: false,
-      } as const;
-    }
-
-    return {
-      type: 'success',
-      result: {
-        supergraph: result.supergraphSdl,
-        sdl: print(transformSupergraphToPublicSchema(parse(result.supergraphSdl))),
-      },
-      includesNetworkError: false,
-    } as const;
-  } catch (error) {
-    logger.error(error);
-    Sentry.captureException(error);
-
-    return {
-      type: 'failure',
-      result: {
-        errors: [
-          {
-            message: 'Unexpected composition error.',
-            source: 'composition',
-          },
-        ],
-        sdl: undefined,
-      },
-      includesNetworkError: false,
-      includesException: true,
-    } as const;
-  }
-}
-
-async function composeExternalFederation(args: {
-  logger: ServiceLogger;
-  subgraphs: Array<SubgraphInput>;
-  decrypt: (value: string) => string;
-  external: Exclude<ExternalComposition, null>;
-  cache: Cache;
-  requestId: string;
-}): Promise<ComposerMethodResult> {
-  args.logger.debug(
-    'Using external composition service (url=%s, schemas=%s)',
-    args.external.endpoint,
-    args.subgraphs.length,
-  );
-  const body = JSON.stringify(
-    args.subgraphs.map(subgraph => {
-      return {
-        sdl: print(subgraph.typeDefs),
-        name: subgraph.name,
-        url: 'url' in subgraph && typeof subgraph.url === 'string' ? subgraph.url : undefined,
-      };
-    }),
-  );
-
-  const signature = hash(args.decrypt(args.external.encryptedSecret), 'sha256', body);
-  args.logger.debug(
-    'Calling external composition service (url=%s, broker=%s)',
-    args.external.endpoint,
-    args.external.broker ? 'yes' : 'no',
-  );
-
-  const request = {
-    url: args.external.endpoint,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'x-hive-signature-256': signature,
-    } as const,
-    body,
-  };
-
-  const externalResponse = await (args.external.broker
-    ? callExternalServiceViaBroker(
-        args.external.broker,
-        {
-          method: 'POST',
-          ...request,
-        },
-        args.logger,
-        args.cache.timeoutMs,
-        args.requestId,
-      )
-    : callExternalService(request, args.logger, args.cache.timeoutMs));
-
-  args.logger.debug('Got response from external composition service, trying to safe parse');
-  const parseResult = EXTERNAL_COMPOSITION_RESULT.safeParse(externalResponse);
-
-  if (!parseResult.success) {
-    args.logger.error('External composition failure: invalid shape of data: %o', parseResult.error);
-
-    throw new Error(`External composition failure: invalid shape of data`);
-  }
-
-  if (parseResult.data.type === 'success') {
-    args.logger.debug('External composition successful, checking compatibility');
-
-    await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
-
-    return {
-      type: 'success',
-      result: {
-        supergraph: parseResult.data.result.supergraph,
-        sdl: print(transformSupergraphToPublicSchema(parse(parseResult.data.result.supergraph))),
-      },
-      includesNetworkError: false,
-    };
-  }
-
-  return parseResult.data;
-}
-
-async function checkExternalCompositionCompatibility(logger: ServiceLogger, maybeSdl: string) {
-  let parsed: DocumentNode | undefined;
-  let errors: ReadonlyArray<GraphQLError> | undefined;
-  try {
-    parsed = parse(maybeSdl);
-    errors = validateSDL(parsed);
-  } catch (err) {
-    if (parsed === undefined) {
-      return;
-    }
-    Sentry.captureException(err);
-  } finally {
-    if (errors === undefined || errors.length > 0) {
-      logger.warn(`External composition GraphQL validity check failed. (info=%o)`, {
-        isParseSuccessful: parsed !== undefined,
-        validationErrors: errors?.map(e => e.message) ?? null,
-      });
-    } else {
-      logger.debug(`External composition GraphQL validity check passed.`);
-    }
-  }
-}
-
-const federationTypes = new Set([
-  'join__FieldSet',
-  'join__Graph',
-  'link__Import',
-  'link__Purpose',
-  'policy__Policy',
-  'requiresScopes__Scope',
-  'join__DirectiveArguments',
-]);
 
 const createFederation: (
   cache: Cache,
@@ -630,6 +175,7 @@ const createFederation: (
         };
       });
 
+      /** Determine the correct compose method... */
       let compose: (subgraphs: Array<SubgraphInput>) => Promise<ComposerMethodResult>;
 
       // Federation v2
@@ -656,38 +202,41 @@ const createFederation: (
         );
         compose = subgraphs => Promise.resolve(composeFederationV1(subgraphs));
       }
-
       let result: CompositionResult & {
         includesNetworkError: boolean;
         tags: Array<string> | null;
       };
 
       {
-        const tempResult: CompositionResult & {
+        const composed: CompositionResult & {
           includesNetworkError: boolean;
           includesException?: boolean;
         } = await compose(subgraphs);
 
-        if (tempResult.type === 'success') {
-          const supergraphSDL = parse(tempResult.result.supergraph);
-          const tags = extractTagsFromFederation2SupergraphSDL(supergraphSDL);
+        if (composed.type === 'success') {
+          const supergraphSDL = parse(composed.result.supergraph);
+          const { resolveImportName } = extractLinkImplementations(supergraphSDL);
+          const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
+          const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
+          const tags = extractTagsFromDocument(supergraphSDL, tagStrategy);
           result = {
-            ...tempResult,
+            ...composed,
             tags,
           };
         } else {
           result = {
-            ...tempResult,
+            ...composed,
             tags: null,
           };
         }
       }
 
       if (!contracts?.length) {
+        // if no contracts, then compose and return the result
         return result;
       }
 
-      if (result.type === 'failure') {
+      if (result.type == 'failure') {
         return {
           ...result,
           result: {
@@ -710,18 +259,34 @@ const createFederation: (
         };
       }
 
-      // Attempt to compose contracts
+      // if there are contracts, then create
       const contractResults = await Promise.all(
         contracts.map(async contract => {
-          // Apply tag filter to subgraph schemas (transform to inaccessible)
-          const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
-            include: new Set(contract.filter.include),
-            exclude: new Set(contract.filter.exclude),
-          };
+          // apply contracts to replace tags with inaccessible directives
+          const filteredSubgraphs = subgraphs.map(subgraph => {
+            const { resolveImportName } = extractLinkImplementations(subgraph.typeDefs);
+            const tagName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
+            const inaccessibleName = resolveImportName(
+              'https://specs.apollo.dev/federation',
+              '@inaccessible',
+            );
+            const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
+              include: new Set(contract.filter.include),
+              exclude: new Set(contract.filter.exclude),
+            };
+            const filteredSubgraph = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+              subgraph.typeDefs,
+              filter,
+              inaccessibleName,
+              tagName,
+            );
+            return {
+              ...subgraph,
+              typeDefs: filteredSubgraph.typeDefs,
+            };
+          });
 
-          const filteredSubgraphs = applyTagFilterOnSubgraphs(subgraphs, filter);
-
-          // attempt to compose contract
+          // attempt to compose the contract filtered subgraph
           const compositionResult = await compose(filteredSubgraphs);
 
           // Remove unreachable types from public API schema
@@ -730,35 +295,16 @@ const createFederation: (
             compositionResult.type === 'success'
           ) {
             let supergraphSDL = parse(compositionResult.result.supergraph);
-
-            const inaccessibleDirectiveName =
-              getInaccessibleDirectiveNameFromFederation2SupergraphSDL(supergraphSDL);
-
-            if (!inaccessibleDirectiveName) {
-              // In case there is no inaccessible directive, we can't remove types from the public api schema as everything is reachable.
-              return {
-                id: contract.id,
-                result: compositionResult,
-              };
-            }
-
-            // we retrieve the list of reachable types from the public api sdl
-            const reachableTypeNames = getReachableTypes(parse(compositionResult.result.sdl));
-            // apollo router does not like @inaccessible on federation types...
-            for (const federationType of federationTypes) {
-              reachableTypeNames.add(federationType);
-            }
-
-            // then we apply the filter to the supergraph SDL (which is the source for the public api sdl)
-            supergraphSDL = addDirectiveOnTypes({
-              documentNode: supergraphSDL,
-              excludedTypeNames: reachableTypeNames,
-              directiveName: inaccessibleDirectiveName,
-            });
-            compositionResult.result.supergraph = print(supergraphSDL);
-            compositionResult.result.sdl = print(transformSupergraphToPublicSchema(supergraphSDL));
+            const { resolveImportName } = extractLinkImplementations(supergraphSDL);
+            return {
+              id: contract.id,
+              result: addInaccessibleToUnreachableTypes(
+                resolveImportName,
+                compositionResult,
+                supergraphSDL,
+              ),
+            };
           }
-
           return {
             id: contract.id,
             result: compositionResult,

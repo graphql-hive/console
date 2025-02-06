@@ -4,9 +4,8 @@
  */
 
 import type { DocumentNode } from 'graphql';
+import { FederatedLinkUrl } from './link-url.js';
 import { FederatedLink } from './link.js';
-
-const FEDERATION_IDENTITY = 'https://specs.apollo.dev/federation';
 
 export const FEDERATION_V1 = Symbol('Federation_V1');
 
@@ -39,20 +38,27 @@ export function extractLinkImplementations(typeDefs: DocumentNode): {
   const linkByIdentity = Object.fromEntries(
     FederatedLink.fromTypedefs(typeDefs).map(l => [l.identity, l]),
   );
-  const supportsFederationV2 = linkByIdentity[FEDERATION_IDENTITY] !== undefined;
+  // Any schema with a `@link` directive present is considered federation 2
+  // although according to federation docs, schemas require linking specifically
+  // the federation 2.x spec. The reason for not being so picky is that supergraphs also
+  // use @link, but do not necessarily link to the federation 2.x spec.
+  const supportsFederationV2 = Object.keys(linkByIdentity).length > 0;
 
   return {
     resolveImportName: (identity, name) => {
       if (!supportsFederationV2) {
-        // @note identities dont matter for Federation v1. There are no links to reference.
+        // Identities dont matter for Federation v1. There are no links to reference.
+        // So return the name without the identity's namespace
         return name.startsWith('@') ? name.substring(1) : name;
       }
 
       const matchingLink = linkByIdentity[identity];
       if (!matchingLink) {
-        throw new Error(
-          'Cannot resolve import name for unlinked resource. Be sure to use check that an identity is implemented using "matchesImplementation" before trying to resolve import name.',
-        );
+        const defaultLink = new FederatedLink(FederatedLinkUrl.fromUrl(identity), null, []);
+        // The identity was not imported, but return we still will return what is assumed to be the name
+        // of the import based off the identity. `matchesImplementation` should be used for cases where
+        // it matters whether or not a specific url was linked.
+        return defaultLink.resolveImportName(name);
       }
       return matchingLink.resolveImportName(name);
     },
