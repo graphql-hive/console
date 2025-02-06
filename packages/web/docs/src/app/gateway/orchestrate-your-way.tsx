@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Anchor, cn, Heading, InfoCard } from '@theguild/components';
+import { Anchor, Heading, InfoCard } from '@theguild/components';
 
 export function OrchestrateYourWay({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
   return (
