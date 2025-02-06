@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import type { FastifyRequest } from 'fastify';
 import got, { RequestError } from 'got';
-import type { DocumentNode } from 'graphql';
+import type { DirectiveNode, DocumentNode } from 'graphql';
 import {
   ASTNode,
   buildASTSchema,
@@ -18,6 +18,11 @@ import { validateSDL } from 'graphql/validation/validate.js';
 import { z } from 'zod';
 import { composeAndValidate, compositionHasErrors } from '@apollo/federation';
 import type { ErrorCode } from '@graphql-hive/external-composition';
+import {
+  detectLinkedImplementations,
+  FEDERATION_V1,
+  LinkableSpec,
+} from '@graphql-hive/federation-link-utils';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
@@ -32,8 +37,7 @@ import type { ContractsInputType } from './api';
 import type { Cache } from './cache';
 import {
   applyTagFilterOnSubgraphs,
-  extractTagsFromFederation2SupergraphSDL,
-  getInaccessibleDirectiveNameFromFederation2SupergraphSDL,
+  createFederationDirectiveStrategy,
   type Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
 import { addDirectiveOnTypes, getReachableTypes } from './lib/reachable-type-filter';
@@ -669,11 +673,37 @@ const createFederation: (
         } = await compose(subgraphs);
 
         if (tempResult.type === 'success') {
+          const tagImpl =
+            (resolveName: (name: string) => string) => (documentNode: DocumentNode) => {
+              const tagStrategy = createFederationDirectiveStrategy(resolveName('@tag'));
+
+              const tags = new Set<string>();
+
+              function collectTagsFromDirective(directiveNode: DirectiveNode) {
+                const tag = tagStrategy(directiveNode);
+                if (tag) {
+                  tags.add(tag);
+                }
+              }
+
+              visit(documentNode, {
+                [Kind.DIRECTIVE](directive) {
+                  collectTagsFromDirective(directive);
+                },
+              });
+
+              return Array.from(tags);
+            };
+          const tagSpec = new LinkableSpec('https://specs.apollo.dev/tag', {
+            [FEDERATION_V1]: tagImpl,
+            v0_1: tagImpl,
+            v0_2: tagImpl,
+          });
           const supergraphSDL = parse(tempResult.result.supergraph);
-          const tags = extractTagsFromFederation2SupergraphSDL(supergraphSDL);
+          const [tags] = detectLinkedImplementations(supergraphSDL, [tagSpec]);
           result = {
             ...tempResult,
-            tags,
+            tags: tags?.(supergraphSDL) ?? [],
           };
         } else {
           result = {
@@ -731,34 +761,49 @@ const createFederation: (
           ) {
             let supergraphSDL = parse(compositionResult.result.supergraph);
 
-            const inaccessibleDirectiveName =
-              getInaccessibleDirectiveNameFromFederation2SupergraphSDL(supergraphSDL);
+            const inaccessibleImpl = (resolveName: (name: string) => string) => {
+              const inaccessibleDirectiveName = resolveName('@inaccessible');
+              if (inaccessibleDirectiveName === undefined) {
+                // In case there is no inaccessible directive, we can't remove types from the public api schema as everything is reachable.
+                return {
+                  id: contract.id,
+                  result: compositionResult,
+                };
+              }
 
-            if (!inaccessibleDirectiveName) {
-              // In case there is no inaccessible directive, we can't remove types from the public api schema as everything is reachable.
+              // we retrieve the list of reachable types from the public api sdl
+              const reachableTypeNames = getReachableTypes(parse(compositionResult.result.sdl));
+              // apollo router does not like @inaccessible on federation types...
+              for (const federationType of federationTypes) {
+                reachableTypeNames.add(federationType);
+              }
+
+              // then we apply the filter to the supergraph SDL (which is the source for the public api sdl)
+              supergraphSDL = addDirectiveOnTypes({
+                documentNode: supergraphSDL,
+                excludedTypeNames: reachableTypeNames,
+                directiveName: inaccessibleDirectiveName,
+              });
               return {
                 id: contract.id,
-                result: compositionResult,
+                result: {
+                  ...compositionResult,
+                  result: {
+                    ...compositionResult.result,
+                    supergraph: print(supergraphSDL),
+                    sdl: print(transformSupergraphToPublicSchema(supergraphSDL)),
+                  },
+                },
               };
-            }
-
-            // we retrieve the list of reachable types from the public api sdl
-            const reachableTypeNames = getReachableTypes(parse(compositionResult.result.sdl));
-            // apollo router does not like @inaccessible on federation types...
-            for (const federationType of federationTypes) {
-              reachableTypeNames.add(federationType);
-            }
-
-            // then we apply the filter to the supergraph SDL (which is the source for the public api sdl)
-            supergraphSDL = addDirectiveOnTypes({
-              documentNode: supergraphSDL,
-              excludedTypeNames: reachableTypeNames,
-              directiveName: inaccessibleDirectiveName,
+            };
+            const inaccessibleSpec = new LinkableSpec('https://specs.apollo.dev/inaccessible', {
+              [FEDERATION_V1]: inaccessibleImpl,
+              v0_1: inaccessibleImpl,
+              v0_2: inaccessibleImpl,
             });
-            compositionResult.result.supergraph = print(supergraphSDL);
-            compositionResult.result.sdl = print(transformSupergraphToPublicSchema(supergraphSDL));
+            const [inaccessible] = detectLinkedImplementations(supergraphSDL, [inaccessibleSpec]);
+            return inaccessible;
           }
-
           return {
             id: contract.id,
             result: compositionResult,
