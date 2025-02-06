@@ -94,7 +94,7 @@ async function execute(args: WorkerEvents.Incoming.EventData): Promise<void> {
         columnOffset: 'console.'.length,
       });
       // The messages should be streamed to the main thread as they occur not gathered and send to
-      // the main thread at the end of the execution of the preflight script
+      // the main thread at the end of preflight execution
       // const message: LogMessage = { level, message };
       postMessage({
         type: 'log',

@@ -118,7 +118,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
           >
-            <HiveGatewayIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
+            <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
           </Node>
           <Edge
             left
