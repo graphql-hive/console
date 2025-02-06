@@ -176,22 +176,32 @@ export class AwsClient {
       try {
         const response = await this._fetch(...(await this.sign(input, init)));
         const duration = performance.now() - attemptStart;
-        init.onAttempt?.({
-          attempt: retryCounter,
-          duration,
-          result: { type: 'success', response },
-        });
+
+        console.log(`AwsClient.fetch (url=${input.toString()}, retry=${retryCounter})`);
 
         if (
           (response.status < 500 && response.status !== 429 && response.status !== 499) ||
           retryCounter === maximumRetryCount
         ) {
           if (init.isResponseOk && !init.isResponseOk(response)) {
+            console.log(
+              `AwsClient.fetch: Response is not okay (url=${input.toString()}, status=${response.status}, retry=${retryCounter})`,
+            );
             throw new ResponseNotOkayError(response);
           }
 
+          init.onAttempt?.({
+            attempt: retryCounter,
+            duration,
+            result: { type: 'success', response },
+          });
+
           return response;
         }
+
+        console.log(
+          `AwsClient.fetch: Schedule another retry (url=${input.toString()}, status=${response.status}, retry=${retryCounter})`,
+        );
       } catch (error) {
         const duration = performance.now() - attemptStart;
         // Retry also when there's an exception

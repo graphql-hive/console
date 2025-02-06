@@ -38,12 +38,9 @@ import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
 import { IFrameEvents, LogMessage } from './shared-types';
 
-export type PreflightScriptResultData = Omit<
-  IFrameEvents.Outgoing.EventData.Result,
-  'type' | 'runId'
->;
+export type PreflightResultData = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
 
-export const preflightScriptPlugin: GraphiQLPlugin = {
+export const preflightPlugin: GraphiQLPlugin = {
   icon: () => (
     <svg
       viewBox="0 0 256 256"
@@ -59,7 +56,7 @@ export const preflightScriptPlugin: GraphiQLPlugin = {
     </svg>
   ),
   title: 'Preflight Script',
-  content: PreflightScriptContent,
+  content: PreflightContent,
 };
 
 const classes = {
@@ -147,14 +144,16 @@ export const enum PreflightWorkerState {
   ready,
 }
 
-export function usePreflightScript(args: {
+export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const prompt = usePromptManager();
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
-  const [isPreflightScriptEnabled, setIsPreflightScriptEnabled] = useLocalStorageJson(
+  const [isEnabled, setIsEnabled] = useLocalStorageJson(
+    // todo: ability to pass historical keys for seamless gradual migration to new key names.
+    // 'hive:laboratory:isPreflightEnabled',
     'hive:laboratory:isPreflightScriptEnabled',
     z.boolean().default(false),
   );
@@ -170,13 +169,13 @@ export function usePreflightScript(args: {
   const [state, setState] = useState<PreflightWorkerState>(PreflightWorkerState.ready);
   const [logs, setLogs] = useState<LogRecord[]>([]);
 
-  const currentRun = useRef<null | Function>(null);
+  const abortExecutionRef = useRef<null | (() => void)>(null);
 
   async function execute(
     script = target?.preflightScript?.sourceCode ?? '',
     isPreview = false,
-  ): Promise<PreflightScriptResultData> {
-    const resultEnvironmentVariablesDecoded: PreflightScriptResultData['environmentVariables'] =
+  ): Promise<PreflightResultData> {
+    const resultEnvironmentVariablesDecoded: PreflightResultData['environmentVariables'] =
       Kit.tryOr(
         () => JSON.parse(latestEnvironmentVariablesRef.current),
         // todo: find a better solution than blowing away the user's
@@ -192,14 +191,14 @@ export function usePreflightScript(args: {
         //
         () => ({}),
       );
-    const result: PreflightScriptResultData = {
+    const result: PreflightResultData = {
       request: {
         headers: [],
       },
       environmentVariables: resultEnvironmentVariablesDecoded,
     };
 
-    if (isPreview === false && !isPreflightScriptEnabled) {
+    if (isPreview === false && !isEnabled) {
       return result;
     }
 
@@ -226,7 +225,7 @@ export function usePreflightScript(args: {
           type: IFrameEvents.Incoming.Event.run,
           id,
           script,
-          // Preflight Script has read/write relationship with environment variables.
+          // Preflight has read/write relationship with environment variables.
           environmentVariables: result.environmentVariables,
         } satisfies IFrameEvents.Incoming.EventData,
         '*',
@@ -356,7 +355,7 @@ export function usePreflightScript(args: {
 
         // Window message events can be emitted from unknowable sources.
         // For example when our e2e tests runs within Cypress GUI, we see a `MessageEvent` with `.data` of `{ vscodeScheduleAsyncWork: 3 }`.
-        // Since we cannot know if the event source is Preflight Script, we cannot perform an exhaustive check.
+        // Since we cannot know if the event source is Preflight, we cannot perform an exhaustive check.
         //
         // Kit.neverCase(ev.data);
         //
@@ -367,7 +366,7 @@ export function usePreflightScript(args: {
       }
 
       window.addEventListener('message', eventHandler);
-      currentRun.current = () => {
+      abortExecutionRef.current = () => {
         contentWindow.postMessage({
           type: IFrameEvents.Incoming.Event.abort,
           id,
@@ -375,7 +374,7 @@ export function usePreflightScript(args: {
 
         closedOpenedPrompts();
 
-        currentRun.current = null;
+        abortExecutionRef.current = null;
       };
 
       await isFinishedD.promise;
@@ -407,24 +406,24 @@ export function usePreflightScript(args: {
     }
   }
 
-  function abort() {
-    currentRun.current?.();
+  function abortExecution() {
+    abortExecutionRef.current?.();
   }
 
   // terminate worker when leaving laboratory
   useEffect(
     () => () => {
-      currentRun.current?.();
+      abortExecutionRef.current?.();
     },
     [],
   );
 
   return {
     execute,
-    abort,
-    isPreflightScriptEnabled,
-    setIsPreflightScriptEnabled,
-    script: target?.preflightScript?.sourceCode ?? '',
+    abortExecution,
+    isEnabled,
+    setIsEnabled,
+    content: target?.preflightScript?.sourceCode ?? '',
     environmentVariables,
     setEnvironmentVariables,
     state,
@@ -447,15 +446,15 @@ export function usePreflightScript(args: {
   } as const;
 }
 
-type PreflightScriptObject = ReturnType<typeof usePreflightScript>;
+type PreflightObject = ReturnType<typeof usePreflight>;
 
-const PreflightScriptContext = createContext<PreflightScriptObject | null>(null);
-export const PreflightScriptProvider = PreflightScriptContext.Provider;
+const PreflightContext = createContext<PreflightObject | null>(null);
+export const PreflightProvider = PreflightContext.Provider;
 
-function PreflightScriptContent() {
-  const preflightScript = useContext(PreflightScriptContext);
-  if (preflightScript === null) {
-    throw new Error('PreflightScriptContent used outside PreflightScriptContext.Provider');
+function PreflightContent() {
+  const preflight = useContext(PreflightContext);
+  if (preflight === null) {
+    throw new Error('PreflightContent used outside PreflightContext.Provider');
   }
 
   const [showModal, toggleShowModal] = useToggle();
@@ -467,7 +466,7 @@ function PreflightScriptContent() {
 
   const { toast } = useToast();
 
-  const handleScriptChange = useCallback(async (newValue = '') => {
+  const handleContentChange = useCallback(async (newValue = '') => {
     const { data, error } = await mutate({
       input: {
         selector: params,
@@ -494,24 +493,24 @@ function PreflightScriptContent() {
 
   return (
     <>
-      <PreflightScriptModal
+      <PreflightModal
         // to unmount on submit/close
         key={String(showModal)}
         isOpen={showModal}
         toggle={toggleShowModal}
-        scriptValue={preflightScript.script}
-        executeScript={value =>
-          preflightScript.execute(value, true).catch(err => {
+        execute={value =>
+          preflight.execute(value, true).catch(err => {
             console.error(err);
           })
         }
-        state={preflightScript.state}
-        abortScriptRun={preflightScript.abort}
-        logs={preflightScript.logs}
-        clearLogs={preflightScript.clearLogs}
-        onScriptValueChange={handleScriptChange}
-        envValue={preflightScript.environmentVariables}
-        onEnvValueChange={preflightScript.setEnvironmentVariables}
+        state={preflight.state}
+        abortExecution={preflight.abortExecution}
+        logs={preflight.logs}
+        clearLogs={preflight.clearLogs}
+        content={preflight.content}
+        onContentChange={handleContentChange}
+        envValue={preflight.environmentVariables}
+        onEnvValueChange={preflight.setEnvironmentVariables}
       />
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
@@ -520,7 +519,7 @@ function PreflightScriptContent() {
           size="icon-sm"
           className="size-auto gap-1"
           onClick={toggleShowModal}
-          data-cy="preflight-script-modal-button"
+          data-cy="preflight-modal-button"
         >
           <Pencil1Icon className="shrink-0" />
           Edit
@@ -536,13 +535,11 @@ function PreflightScriptContent() {
           size="sm"
           variant="outline"
           className="mt-3"
-          onClick={() =>
-            preflightScript.setIsPreflightScriptEnabled(!preflightScript.isPreflightScriptEnabled)
-          }
-          data-cy="toggle-preflight-script"
+          onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
+          data-cy="toggle-preflight"
         >
           <PowerIcon className="mr-2 size-4" />
-          {preflightScript.isPreflightScriptEnabled ? 'On' : 'Off'}
+          {preflight.isEnabled ? 'On' : 'Off'}
         </Button>
       </div>
 
@@ -554,7 +551,7 @@ function PreflightScriptContent() {
       </EditorTitle>
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
-        {preflightScript.isPreflightScriptEnabled ? null : (
+        {preflight.isEnabled ? null : (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
             <div className="rounded-md bg-[#0f1520] p-4 text-sm">
               Preflight Script is disabled and will not be executed
@@ -563,11 +560,11 @@ function PreflightScriptContent() {
         )}
         <MonacoEditor
           height={128}
-          value={preflightScript.script}
+          value={preflight.content}
           {...monacoProps.script}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
-            ['data-cy']: 'preflight-script-editor-mini',
+            ['data-cy']: 'preflight-editor-mini',
           }}
           options={{
             ...monacoProps.script.options,
@@ -592,8 +589,8 @@ function PreflightScriptContent() {
       </Subtitle>
       <MonacoEditor
         height={128}
-        value={preflightScript.environmentVariables}
-        onChange={value => preflightScript.setEnvironmentVariables(value ?? '')}
+        value={preflight.environmentVariables}
+        onChange={value => preflight.setEnvironmentVariables(value ?? '')}
         {...monacoProps.env}
         className={classes.monacoMini}
         wrapperProps={{
@@ -604,28 +601,28 @@ function PreflightScriptContent() {
   );
 }
 
-function PreflightScriptModal({
+function PreflightModal({
   isOpen,
   toggle,
-  scriptValue,
-  executeScript,
+  content,
   state,
-  abortScriptRun,
+  execute,
+  abortExecution,
   logs,
   clearLogs,
-  onScriptValueChange,
+  onContentChange,
   envValue,
   onEnvValueChange,
 }: {
   isOpen: boolean;
   toggle: () => void;
-  scriptValue?: string;
-  executeScript: (script: string) => void;
+  content?: string;
   state: PreflightWorkerState;
-  abortScriptRun: () => void;
+  execute: (script: string) => void;
+  abortExecution: () => void;
   logs: Array<LogRecord>;
   clearLogs: () => void;
-  onScriptValueChange: (value: string) => void;
+  onContentChange: (value: string) => void;
   envValue: string;
   onEnvValueChange: (value: string) => void;
 }) {
@@ -653,7 +650,7 @@ function PreflightScriptModal({
   }, []);
 
   const handleSubmit = useCallback(() => {
-    onScriptValueChange(scriptEditorRef.current?.getValue() ?? '');
+    onContentChange(scriptEditorRef.current?.getValue() ?? '');
     onEnvValueChange(envEditorRef.current?.getValue() ?? '');
     toggle();
   }, []);
@@ -668,7 +665,7 @@ function PreflightScriptModal({
       open={isOpen}
       onOpenChange={open => {
         if (!open) {
-          abortScriptRun();
+          abortExecution();
         }
         toggle();
       }}
@@ -706,13 +703,13 @@ function PreflightScriptModal({
                 className="size-auto gap-1"
                 onClick={() => {
                   if (state === PreflightWorkerState.running) {
-                    abortScriptRun();
+                    abortExecution();
                     return;
                   }
 
-                  executeScript(scriptEditorRef.current?.getValue() ?? '');
+                  execute(scriptEditorRef.current?.getValue() ?? '');
                 }}
-                data-cy="run-preflight-script"
+                data-cy="run-preflight"
               >
                 {state === PreflightWorkerState.running && (
                   <>
@@ -729,7 +726,7 @@ function PreflightScriptModal({
               </Button>
             </div>
             <MonacoEditor
-              value={scriptValue}
+              value={content}
               beforeMount={handleMonacoEditorBeforeMount}
               onMount={handleScriptEditorDidMount}
               {...monacoProps.script}
@@ -738,7 +735,7 @@ function PreflightScriptModal({
                 wordWrap: 'wordWrapColumn',
               }}
               wrapperProps={{
-                ['data-cy']: 'preflight-script-editor',
+                ['data-cy']: 'preflight-editor',
               }}
             />
           </div>
@@ -792,14 +789,14 @@ function PreflightScriptModal({
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
-          <Button type="button" onClick={toggle} data-cy="preflight-script-modal-cancel">
+          <Button type="button" onClick={toggle} data-cy="preflight-modal-cancel">
             Close
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={handleSubmit}
-            data-cy="preflight-script-modal-submit"
+            data-cy="preflight-modal-submit"
           >
             Save
           </Button>

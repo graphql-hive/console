@@ -1,5 +1,5 @@
 import { Kit } from '../kit';
-import PreflightWorker from './preflight-script-worker?worker&inline';
+import PreflightWorker from './preflight-worker?worker&inline';
 import { IFrameEvents, WorkerEvents } from './shared-types';
 
 function postMessage(data: IFrameEvents.Outgoing.EventData) {
@@ -73,7 +73,7 @@ function handleEvent(data: IFrameEvents.Incoming.EventData) {
         type: IFrameEvents.Outgoing.Event.error,
         runId,
         error: {
-          message: `Preflight script execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
+          message: `Preflight execution timed out after ${PREFLIGHT_TIMEOUT / 1000} seconds`,
         },
       });
       terminate();

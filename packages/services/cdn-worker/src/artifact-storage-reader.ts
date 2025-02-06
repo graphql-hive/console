@@ -238,9 +238,15 @@ export class ArtifactStorageReader {
       method: 'GET',
       headers,
       onAttempt: args => {
-        this.breadcrumb(
-          `Fetch attempt (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
-        );
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
 
         this.analytics?.track(
           {
@@ -296,9 +302,15 @@ export class ArtifactStorageReader {
       key,
       method: 'HEAD',
       onAttempt: args => {
-        this.breadcrumb(
-          `Fetch attempt (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
-        );
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
         this.analytics?.track(
           {
             type: args.isMirror ? 's3' : 'r2',
@@ -336,9 +348,15 @@ export class ArtifactStorageReader {
       method: 'GET',
       headers,
       onAttempt: args => {
-        this.breadcrumb(
-          `Fetch attempt (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
-        );
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
         this.analytics?.track(
           {
             type: args.isMirror ? 's3' : 'r2',
@@ -381,9 +399,15 @@ export class ArtifactStorageReader {
       key,
       method: 'GET',
       onAttempt: args => {
-        this.breadcrumb(
-          `Fetch attempt (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
-        );
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
         this.analytics?.track(
           {
             type: args.isMirror ? 's3' : 'r2',
@@ -410,9 +434,16 @@ export class ArtifactStorageReader {
       key,
       method: 'GET',
       onAttempt: args => {
-        this.breadcrumb(
-          `Fetch attempt (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
-        );
+        if (args.result.type === 'error') {
+          this.breadcrumb(
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+          );
+        } else {
+          this.breadcrumb(
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+          );
+        }
+
         this.analytics?.track(
           {
             type: args.isMirror ? 'r2' : 's3',
