@@ -17,7 +17,7 @@
     "date-fns": "4.1.0",
     "dotenv": "16.4.7",
     "got": "14.4.5",
-    "graphql": "16.9.0",
+    "graphql": "16.10.0",
     "kafkajs": "2.2.4",
     "pino-pretty": "11.3.0",
     "tiny-lru": "8.0.2",
