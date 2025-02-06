@@ -1104,7 +1104,9 @@ export class SchemaPublisher {
             __typename: 'SchemaPublishRetry',
             reason: 'Another schema publish is currently in progress.',
           } satisfies PublishResult;
-        } else if (error instanceof HiveError === false) {
+        }
+
+        if (error instanceof HiveError === false) {
           schemaPublishUnexpectedErrorCount.inc({
             errorName: (error instanceof Error && error.name) || 'unknown',
           });
