@@ -7,7 +7,6 @@ import {
   Hero,
   HeroLogo,
   HiveGatewayIcon,
-  TextLink,
 } from '@theguild/components';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
