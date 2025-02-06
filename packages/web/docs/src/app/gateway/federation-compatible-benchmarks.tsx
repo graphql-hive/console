@@ -208,12 +208,11 @@ function BenchmarkLegend() {
     <div className="mt-6 flex flex-wrap gap-2 whitespace-nowrap text-xs text-green-800 sm:gap-4">
       <div className="flex gap-2 max-sm:-mx-1 max-sm:w-full sm:contents">
         <div className="flex items-center gap-1">
-          <CheckmarkIcon className="size-4" style={{ color: functionalTones.positiveDark }} /> All
-          available test cases
+          <CheckmarkIcon className="size-4" style={{ color: functionalTones.positiveDark }} />{' '}
+          Passed tests
         </div>
         <div className="flex items-center gap-1">
-          <XIcon className="size-4" style={{ color: functionalTones.criticalDark }} /> All available
-          test cases
+          <XIcon className="size-4" style={{ color: functionalTones.criticalDark }} /> Failed tests
         </div>
       </div>
       <div className="flex items-center gap-2">
