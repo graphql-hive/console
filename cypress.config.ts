@@ -8,6 +8,14 @@ if (!process.env.RUN_AGAINST_LOCAL_SERVICES) {
   dotenv.config({ path: import.meta.dirname + '/integration-tests/.env' });
 }
 
+if (process.env.RUN_AGAINST_LOCAL_SERVICES === '1') {
+  process.env.SUPERTOKENS_API_KEY = process.env.SUPERTOKENS_API_KEY ?? 'bubatzbieber6942096420';
+  process.env.SUPERTOKENS_CONNECTION_URI =
+    process.env.SUPERTOKENS_CONNECTION_URI ?? 'http://localhost:3567';
+  // It seems that this has to be set in the environment that the cypress cli is executed from.
+  // process.env.CYPRESS_BASE_URL = process.env.CYPRESS_BASE_URL ?? 'http://localhost:3000';
+}
+
 const isCI = Boolean(process.env.CI);
 
 export const seed = initSeed();

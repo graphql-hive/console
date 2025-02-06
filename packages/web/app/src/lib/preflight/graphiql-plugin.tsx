@@ -104,6 +104,12 @@ const monacoProps = {
     defaultLanguage: 'javascript',
     options: {
       ...sharedMonacoProps.options,
+      quickSuggestions: true,
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      folding: true,
+      foldingStrategy: 'indentation',
     },
   },
 } satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
@@ -639,6 +645,29 @@ function PreflightModal({
   }, []);
 
   const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+    // Configure JavaScript defaults for TypeScript validation
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+      noSuggestionDiagnostics: false,
+      diagnosticCodesToIgnore: [], // Can specify codes to ignore
+    });
+
+    // Enable modern JavaScript features and strict checks
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ESNext,
+      allowNonTsExtensions: true,
+      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+      module: monaco.languages.typescript.ModuleKind.ESNext,
+      noEmit: true,
+      lib: ['es2021', 'dom'],
+      strict: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      noImplicitReturns: true,
+      noFallthroughCasesInSwitch: true,
+    });
+
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(
       `

@@ -1,21 +1,9 @@
-import { dedent } from '../support/testkit';
+import { dedent } from '../../support/dedent';
+import { cyLaboratory } from './_cy';
 
-const selectors = {
-  buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
-  buttonModalCy: 'preflight-modal-button',
-  buttonToggleCy: 'toggle-preflight',
-  buttonHeaders: '[data-name="headers"]',
-  headersEditor: {
-    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
-  },
-  graphiql: {
-    buttonExecute: '.graphiql-execute-button',
-  },
+const s = cyLaboratory.preflight.selectors;
 
-  modal: {
-    buttonSubmitCy: 'preflight-modal-submit',
-  },
-};
+const cyp = cyLaboratory.preflight;
 
 const data: { slug: string } = {
   slug: '',
@@ -27,40 +15,17 @@ beforeEach(() => {
       cy.setCookie('sRefreshToken', refreshToken);
       data.slug = slug;
       cy.visit(`/${slug}/laboratory`);
-      cy.get(selectors.buttonGraphiQLPreflight).click();
+      cy.get(s.buttonGraphiQLPreflight).click();
     });
   });
 });
 
-/** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
-function setMonacoEditorContents(editorCyName: string, text: string) {
-  // wait for textarea appearing which indicates monaco is loaded
-  cy.dataCy(editorCyName).find('textarea');
-  cy.window().then(win => {
-    // First, check if monaco is available on the main window
-    const editor = (win as any).monaco.editor
-      .getEditors()
-      .find(e => e.getContainerDomNode().parentElement.getAttribute('data-cy') === editorCyName);
-
-    // If Monaco instance is found
-    if (editor) {
-      editor.setValue(text);
-    } else {
-      throw new Error('Monaco editor not found on the window or frames[0]');
-    }
-  });
-}
-
-function setEditorScript(script: string) {
-  setMonacoEditorContents('preflight-editor', script);
-}
-
-describe('Laboratory > Preflight Script', () => {
+describe('Preflight Tab', () => {
   // https://github.com/graphql-hive/console/pull/6450
   it('regression: loads even if local storage is set to {}', () => {
     window.localStorage.setItem('hive:laboratory:environment', '{}');
     cy.visit(`/${data.slug}/laboratory`);
-    cy.get(selectors.buttonGraphiQLPreflight).click();
+    cy.get(s.buttonGraphiQLPreflight).click();
   });
   it('mini script editor is read only', () => {
     cy.dataCy('toggle-preflight').click();
@@ -76,17 +41,27 @@ describe('Laboratory > Preflight Script', () => {
   });
 });
 
-describe('Preflight Script Modal', () => {
+describe('Preflight Modal', () => {
   const script = 'console.log("Hello_world")';
   const env = '{"foo":123}';
 
   beforeEach(() => {
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('env-editor', env);
+    cyp.setEnvironmentEditorContent(env);
+  });
+
+  it('code is validated with TypeScript', () => {
+    const tsErrorMessage = "Type 'string' is not assignable to type 'number'.";
+    const script = 'let a = 1; a = ""';
+    cyp.setEditorContent(script);
+    // Hack: Seemingly only way to reliably interact with the monaco text area from Cypress.
+    cy.wait(1000);
+    cy.dataCy(s.modal.editorCy).find('textarea').focus().realPress(['Alt', 'F8']);
+    cy.contains(tsErrorMessage);
   });
 
   it('save script and environment variables when submitting', () => {
-    setEditorScript(script);
+    cyp.setEditorContent(script);
     cy.dataCy('preflight-modal-submit').click();
     cy.dataCy('env-editor-mini').should('have.text', env);
     cy.dataCy('toggle-preflight').click();
@@ -98,11 +73,11 @@ describe('Preflight Script Modal', () => {
   });
 
   it('logs show console/error information', () => {
-    setEditorScript(script);
+    cyp.setEditorContent(script);
     cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
-    setEditorScript(
+    cyp.setEditorContent(
       `console.info(1)
 console.warn(true)
 console.error('Fatal')
@@ -120,12 +95,12 @@ throw new TypeError('Test')`,
   });
 
   it('prompt and pass the awaited response', () => {
-    setEditorScript(script);
+    cyp.setEditorContent(script);
 
     cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
-    setEditorScript(
+    cyp.setEditorContent(
       dedent`
         const username = await lab.prompt('Enter your username');
         console.info(username);
@@ -148,12 +123,12 @@ throw new TypeError('Test')`,
   });
 
   it('prompt and cancel', () => {
-    setEditorScript(script);
+    cyp.setEditorContent(script);
 
     cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'log: Hello_world (1:1)');
 
-    setEditorScript(
+    cyp.setEditorContent(
       dedent`
         const username = await lab.prompt('Enter your username');
         console.info(username);
@@ -176,7 +151,7 @@ throw new TypeError('Test')`,
   });
 
   it('script execution updates environment variables', () => {
-    setEditorScript(`lab.environment.set('my-test', "TROLOLOL")`);
+    cyp.setEditorContent(`lab.environment.set('my-test', "TROLOLOL")`);
 
     cy.dataCy('run-preflight').click();
     cy.dataCy('env-editor').should(
@@ -187,7 +162,7 @@ throw new TypeError('Test')`,
   });
 
   it('`crypto-js` can be used for generating hashes', () => {
-    setEditorScript('console.log(lab.CryptoJS.SHA256("🐝"))');
+    cyp.setEditorContent('console.log(lab.CryptoJS.SHA256("🐝"))');
     cy.dataCy('run-preflight').click();
     cy.dataCy('console-output').should('contain', 'info: Using crypto-js version:');
     cy.dataCy('console-output').should(
@@ -197,13 +172,13 @@ throw new TypeError('Test')`,
   });
 
   it('scripts can not use `eval`', () => {
-    setEditorScript('eval()');
+    cyp.setEditorContent('eval()');
     cy.dataCy('preflight-modal-submit').click();
     cy.get('body').contains('Usage of dangerous statement like eval() or Function("").');
   });
 
   it('invalid code is rejected and can not be saved', () => {
-    setEditorScript('🐝');
+    cyp.setEditorContent('🐝');
     cy.dataCy('preflight-modal-submit').click();
     cy.get('body').contains("[1:1]: Illegal character '}");
   });
@@ -215,13 +190,13 @@ describe('Execution', () => {
     const preflightHeaders = {
       foo: 'bar',
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
-    setEditorScript(`lab.request.headers.append('foo', '${preflightHeaders.foo}')`);
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.dataCy(s.buttonToggleCy).click();
+    cy.dataCy(s.buttonModalCy).click();
+    cyp.setEditorContent(`lab.request.headers.append('foo', '${preflightHeaders.foo}')`);
+    cy.dataCy(s.modal.buttonSubmitCy).click();
     // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
-    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.get(s.graphiql.buttonExecute).click();
     cy.wait('@request');
   });
 
@@ -233,19 +208,19 @@ describe('Execution', () => {
       accept: 'application/json, multipart/mixed',
     };
     cy.intercept({ headers: baseHeaders }).as('integrityCheck');
-    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.get(s.graphiql.buttonExecute).click();
     cy.wait('@integrityCheck');
     // Setup Preflight Script
     const preflightHeaders = {
       accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
-    setEditorScript(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.dataCy(s.buttonToggleCy).click();
+    cy.dataCy(s.buttonModalCy).click();
+    cyp.setEditorContent(`lab.request.headers.append('accept', '${preflightHeaders.accept}')`);
+    cy.dataCy(s.modal.buttonSubmitCy).click();
     // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
-    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.get(s.graphiql.buttonExecute).click();
     cy.wait('@request');
   });
 
@@ -255,8 +230,8 @@ describe('Execution', () => {
     const staticHeaders = {
       foo_static: barEnVarInterpolation,
     };
-    cy.get(selectors.buttonHeaders).click();
-    cy.get(selectors.headersEditor.textArea).type(JSON.stringify(staticHeaders), {
+    cy.get(s.buttonHeaders).click();
+    cy.get(s.headersEditor.textArea).type(JSON.stringify(staticHeaders), {
       force: true,
       parseSpecialCharSequences: false,
     });
@@ -267,13 +242,13 @@ describe('Execution', () => {
     const preflightHeaders = {
       foo_preflight: barEnVarInterpolation,
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
-    setEditorScript(`
+    cy.dataCy(s.buttonToggleCy).click();
+    cy.dataCy(s.buttonModalCy).click();
+    cyp.setEditorContent(`
       lab.environment.set('bar', '${environmentVariables.bar}')
       lab.request.headers.append('foo_preflight', '${preflightHeaders.foo_preflight}')
     `);
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.dataCy(s.modal.buttonSubmitCy).click();
     // Run GraphiQL
     cy.intercept({
       headers: {
@@ -281,7 +256,7 @@ describe('Execution', () => {
         foo_static: environmentVariables.bar,
       },
     }).as('request');
-    cy.get(selectors.graphiql.buttonExecute).click();
+    cy.get(s.graphiql.buttonExecute).click();
     cy.wait('@request');
   });
 
@@ -323,7 +298,7 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('preflight-editor', `lab.environment.set('foo', '92')`);
+    cyp.setEditorContent(`lab.environment.set('foo', '92')`);
     cy.dataCy('preflight-modal-submit').click();
 
     cy.intercept({
@@ -350,8 +325,7 @@ describe('Execution', () => {
     );
 
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents(
-      'preflight-editor',
+    cyp.setEditorContent(
       dedent`
       const username = await lab.prompt('Enter your username');
       lab.environment.set('username', username);
@@ -383,8 +357,8 @@ describe('Execution', () => {
       },
     );
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents('preflight-editor', `lab.environment.set('foo', 92)`);
-    setMonacoEditorContents('env-editor', `{"foo":10}`);
+    cyp.setEditorContent(`lab.environment.set('foo', 92)`);
+    cyp.setEnvironmentEditorContent(`{"foo":10}`);
 
     cy.dataCy('preflight-modal-submit').click();
 
@@ -402,8 +376,7 @@ describe('Execution', () => {
     cy.dataCy('toggle-preflight').click();
 
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents(
-      'preflight-editor',
+    cyp.setEditorContent(
       dedent`
         console.info(1)
         console.warn(true)
@@ -447,8 +420,7 @@ describe('Execution', () => {
     cy.dataCy('toggle-preflight').click();
 
     cy.dataCy('preflight-modal-button').click();
-    setMonacoEditorContents(
-      'preflight-editor',
+    cyp.setEditorContent(
       dedent`
         console.info(1)
         console.warn(true)
