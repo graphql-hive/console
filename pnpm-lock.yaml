@@ -137,6 +137,9 @@ importers:
       cypress:
         specifier: 13.17.0
         version: 13.17.0
+      cypress-real-events:
+        specifier: ^1.14.0
+        version: 1.14.0(cypress@13.17.0)
       dotenv:
         specifier: 16.4.7
         version: 16.4.7
@@ -3908,6 +3911,7 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
+    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -9379,6 +9383,11 @@ packages:
 
   csv-stringify@6.5.2:
     resolution: {integrity: sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==}
+
+  cypress-real-events@1.14.0:
+    resolution: {integrity: sha512-XmI8y3OZLh6cjRroPalzzS++iv+pGCaD9G9kfIbtspgv7GVsDt30dkZvSXfgZb4rAN+3pOkMVB7e0j4oXydW7Q==}
+    peerDependencies:
+      cypress: ^4.x || ^5.x || ^6.x || ^7.x || ^8.x || ^9.x || ^10.x || ^11.x || ^12.x || ^13.x || ^14.x
 
   cypress@13.17.0:
     resolution: {integrity: sha512-5xWkaPurwkIljojFidhw8lFScyxhtiFHl/i/3zov+1Z5CmY4t9tjIdvSXfu82Y3w7wt0uR9KkucbhkVvJZLQSA==}
@@ -26064,6 +26073,10 @@ snapshots:
   csstype@3.1.3: {}
 
   csv-stringify@6.5.2: {}
+
+  cypress-real-events@1.14.0(cypress@13.17.0):
+    dependencies:
+      cypress: 13.17.0
 
   cypress@13.17.0:
     dependencies:
