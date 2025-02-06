@@ -198,6 +198,10 @@ export class AwsClient {
 
           return response;
         }
+
+        console.log(
+          `AwsClient.fetch: Schedule another retry (url=${input.toString()}, status=${response.status}, retry=${retryCounter})`,
+        );
       } catch (error) {
         const duration = performance.now() - attemptStart;
         // Retry also when there's an exception
