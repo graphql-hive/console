@@ -93,8 +93,11 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       throw new MissingRegistryTokenError();
     }
 
+    const requestId = crypto.randomUUID();
+
     const result = await this.registryApi(registry, token).request({
       operation: myTokenInfoQuery,
+      requestId,
     });
 
     if (result.tokenInfo.__typename === 'TokenInfo') {
@@ -127,10 +130,11 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       this.log(print());
     } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
       this.debug(result.tokenInfo.message);
-      throw new InvalidRegistryTokenError();
+      throw new InvalidRegistryTokenError(requestId);
     } else {
       throw new UnexpectedError(
         `Token response got an unsupported type: ${(result.tokenInfo as any).__typename}`,
+        requestId,
       );
     }
   }

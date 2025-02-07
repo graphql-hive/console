@@ -112,7 +112,7 @@ export class InvalidRegistryTokenError extends HiveCLIError {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 6),
-      `A valid registry token is required to perform the action. The registry token used does not exist or has been revoked. (requestId=${requestId})`,
+      `A valid registry token is required to perform the action. The registry token used does not exist or has been revoked.\nRequestId: ${requestId}`,
     );
   }
 }
@@ -218,7 +218,7 @@ export class NetworkError extends HiveCLIError {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 14),
-      `A network error occurred while performing the action: "${cause instanceof Error ? `${cause.name}: ${cause.message}` : cause}" (requestId=${requestId})`,
+      `A network error occurred while performing the action: "${cause instanceof Error ? `${cause.name}: ${cause.message}` : cause}"\nRequestId: ${requestId}`,
     );
   }
 }
@@ -409,7 +409,7 @@ export class InvalidSchemaError extends HiveCLIError {
 }
 
 export class UnexpectedError extends HiveCLIError {
-  constructor(cause: unknown) {
+  constructor(cause: unknown, requestId?: string) {
     const message =
       cause instanceof Error
         ? cause.message
@@ -419,7 +419,8 @@ export class UnexpectedError extends HiveCLIError {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 99),
-      `An unexpected error occurred: ${message}\n> Enable DEBUG=* for more details.`,
+      `An unexpected error occurred: ${message}\n> Enable DEBUG=* for more details.` +
+        (requestId ? `\nRequestId: ${requestId}` : ''),
     );
   }
 }

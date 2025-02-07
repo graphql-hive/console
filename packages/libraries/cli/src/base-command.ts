@@ -184,12 +184,10 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   graphql(endpoint: string, additionalHeaders: Record<string, string> = {}) {
-    const requestId = crypto.randomUUID()
     const requestHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       'User-Agent': `hive-cli/${this.config.version}`,
-      'x-request-id': requestId,
       ...additionalHeaders,
     };
 
@@ -201,6 +199,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           operation: TypedDocumentNode<TResult, TVariables>;
           /** timeout in milliseconds */
           timeout?: number;
+          requestId?: string;
         } & (TVariables extends Record<string, never>
           ? {
               variables?: never;
@@ -209,6 +208,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
               variables: TVariables;
             }),
       ): Promise<TResult> => {
+        const requestId = args.requestId ?? crypto.randomUUID();
         let response: Response;
         try {
           response = await http.post(
@@ -231,7 +231,10 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
                   }
                 },
               },
-              headers: requestHeaders,
+              headers: {
+                'x-request-id': requestId,
+                ...requestHeaders,
+              },
               timeout: args.timeout,
             },
           );
@@ -249,7 +252,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
             endpoint,
             response.status,
             response.statusText ?? 'Invalid status code for HTTP call',
-            requestId
+            requestId,
           );
         }
 
@@ -260,7 +263,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           const contentType = response?.headers?.get('content-type');
           throw new APIError(
             `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
-            requestId
+            requestId,
           );
         }
 
@@ -272,10 +275,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           if (isDebug) {
             this.logFailure(jsonData.errors);
           }
-          throw new APIError(
-            jsonData.errors.map(e => e.message).join('\n'),
-            requestId
-          );
+          throw new APIError(jsonData.errors.map(e => e.message).join('\n'), requestId);
         }
 
         return jsonData.data!;
