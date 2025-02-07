@@ -443,44 +443,6 @@ export function createFederationDirectiveStrategy(directiveName: string): TagExt
   };
 }
 
-function createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-  directiveImportUrlPrefix: string,
-  defaultName: string,
-) {
-  return function getDirectiveNameFromFederation2SupergraphSDL(
-    documentNode: DocumentNode,
-  ): string | null {
-    for (const definition of documentNode.definitions) {
-      if (
-        (definition.kind !== Kind.SCHEMA_DEFINITION && definition.kind !== Kind.SCHEMA_EXTENSION) ||
-        !definition.directives
-      ) {
-        continue;
-      }
-
-      for (const directive of definition.directives) {
-        // TODO: maybe not rely on argument order - but the order seems stable
-        if (
-          directive.name.value === 'link' &&
-          directive.arguments?.[0].name.value === 'url' &&
-          directive.arguments[0].value.kind === Kind.STRING &&
-          directive.arguments[0].value.value.startsWith(directiveImportUrlPrefix)
-        ) {
-          if (
-            directive.arguments[1]?.name.value === 'as' &&
-            directive.arguments[1].value.kind === Kind.STRING
-          ) {
-            return directive.arguments[1].value.value;
-          }
-          return defaultName;
-        }
-      }
-      return null;
-    }
-    return null;
-  };
-}
-
 /**
  * Extract all
  */
