@@ -189,7 +189,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
       'Content-Type': 'application/json',
       Accept: 'application/json',
       'User-Agent': `hive-cli/${this.config.version}`,
-      'x-request-id': requestId
+      'x-request-id': requestId,
       ...additionalHeaders,
     };
 
