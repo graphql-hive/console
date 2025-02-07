@@ -15,9 +15,9 @@ test('HTTP call without retries and system level error', async () => {
   }
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     [ERR] Error: getaddrinfo ENOTFOUND ap.localhost.noop
-    [ERR] GET https://ap.localhost.noop failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
   `);
 });
 
@@ -33,12 +33,12 @@ test('HTTP with retries and system', async () => {
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop Attempt (1/2)
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [ERR] Error: getaddrinfo ENOTFOUND ap.localhost.noop
-    [ERR] GET https://ap.localhost.noop failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
-    [INF] GET https://ap.localhost.noop Attempt (2/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (2/2)
     [ERR] Error: getaddrinfo ENOTFOUND ap.localhost.noop
-    [ERR] GET https://ap.localhost.noop failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
   `);
 });
 
@@ -60,8 +60,8 @@ test('HTTP with 4xx status code will not be retried', async () => {
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop Attempt (1/2)
-    [ERR] GET https://ap.localhost.noop failed with status 404 (666ms): Bubatzbieber
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 404 (666ms): Bubatzbieber
     [ERR] Abort retry because of status code 404.
   `);
 });
@@ -85,11 +85,11 @@ test('HTTP with 5xx status code will be retried', async () => {
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop Attempt (1/2)
-    [ERR] GET https://ap.localhost.noop failed with status 500 (666ms): Bubatzbieber
-    [INF] GET https://ap.localhost.noop Attempt (2/2)
-    [ERR] GET https://ap.localhost.noop failed with status 500 (666ms): Bubatzbieber
-    [ERR] GET https://ap.localhost.noop retry limit exceeded after 2 attempts.
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): Bubatzbieber
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (2/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): Bubatzbieber
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) retry limit exceeded after 2 attempts.
   `);
 });
 
@@ -112,11 +112,11 @@ test('HTTP with status 3xx will be retried', async () => {
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop Attempt (1/2)
-    [ERR] GET https://ap.localhost.noop failed with status 302 (666ms): Bubatzbieber
-    [INF] GET https://ap.localhost.noop Attempt (2/2)
-    [ERR] GET https://ap.localhost.noop failed with status 302 (666ms): Bubatzbieber
-    [ERR] GET https://ap.localhost.noop retry limit exceeded after 2 attempts.
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 302 (666ms): Bubatzbieber
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (2/2)
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 302 (666ms): Bubatzbieber
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) retry limit exceeded after 2 attempts.
   `);
 });
 
@@ -140,7 +140,7 @@ test('HTTP with status 3xx will not be retried with custom "isRequestOk" impleme
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] GET https://ap.localhost.noop Attempt (1/2)
-    [INF] GET https://ap.localhost.noop succeeded with status 302 (666ms).
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [INF] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 302 (666ms).
   `);
 });
