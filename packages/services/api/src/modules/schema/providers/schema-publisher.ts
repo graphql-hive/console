@@ -347,13 +347,6 @@ export class SchemaPublisher {
       this.logger.debug('No service name provided (type=%s)', project.type);
       increaseSchemaCheckCountMetric('rejected');
 
-      if (input.github) {
-        return {
-          __typename: 'GitHubSchemaCheckError' as const,
-          message: 'Missing service name provided.',
-        };
-      }
-
       return {
         __typename: 'SchemaCheckError',
         valid: false,
