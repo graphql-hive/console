@@ -65,12 +65,14 @@ To run integration tests locally, from the pre-build Docker image, follow:
 
 ## E2E Tests
 
-e2e Tests are based on Cypress, and matches files that ends with `.cy.ts`. The tests flow runs from
-a pre-build Docker image.
+We use [Cypress](https://www.cypress.io). Any file that ends with `.cy.ts` is an E2E test.
 
-#### Running on built Docker images from source code
+#### Running Against Local Development Services
 
-To run e2e tests locally, from the local source code, follow:
+1. Run the [development setup](./DEVELOPMENT.md) as usual.
+2. Run `pnpm test:e2e:local`
+
+#### Running Against Locally Built Docker Images
 
 1. Make sure you have Docker installed. If you are having issues, try to run `docker system prune`
    to clean the Docker caches.
@@ -79,9 +81,7 @@ To run e2e tests locally, from the local source code, follow:
 4. Run `./local.sh` for building the project and starting the Docker containers
 5. Follow the output instruction from the script for starting the tests
 
-#### Running from pre-built Docker image
-
-To run integration tests locally, from the pre-build Docker image, follow:
+#### Running Against Pre-Built Docker Images
 
 1. Make sure you have Docker installed. If you are having issues, try to run `docker system prune`
    to clean the Docker caches.
