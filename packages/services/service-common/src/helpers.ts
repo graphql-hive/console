@@ -1,4 +1,5 @@
 export function cleanRequestId(requestId?: string | string[] | null): string | undefined {
+  console.log('request ids', requestId);
   if (requestId) {
     if (Array.isArray(requestId)) {
       return cleanRequestId(requestId[0]);
