@@ -108,11 +108,11 @@ export class MissingEndpointError extends HiveCLIError {
 }
 
 export class InvalidRegistryTokenError extends HiveCLIError {
-  constructor() {
+  constructor(requestId: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 6),
-      `A valid registry token is required to perform the action. The registry token used does not exist or has been revoked.`,
+      `A valid registry token is required to perform the action. The registry token used does not exist or has been revoked. (requestId=${requestId})`,
     );
   }
 }
@@ -203,22 +203,22 @@ export class SchemaPublishFailedError extends HiveCLIError {
 }
 
 export class HTTPError extends HiveCLIError {
-  constructor(endpoint: string, status: number, message: string) {
+  constructor(endpoint: string, status: number, message: string, requestId: string) {
     const is400 = status >= 400 && status < 500;
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 13),
-      `A ${is400 ? 'client' : 'server'} error occurred while performing the action. A call to "${endpoint}" failed with Status: ${status}, Text: ${message}`,
+      `A ${is400 ? 'client' : 'server'} error occurred while performing the action. A call to "${endpoint}" failed with Status: ${status}, Text: ${message}, RequestId: ${requestId}`,
     );
   }
 }
 
 export class NetworkError extends HiveCLIError {
-  constructor(cause: Error | string) {
+  constructor(cause: Error | string, requestId: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.GENERIC, 14),
-      `A network error occurred while performing the action: "${cause instanceof Error ? `${cause.name}: ${cause.message}` : cause}"`,
+      `A network error occurred while performing the action: "${cause instanceof Error ? `${cause.name}: ${cause.message}` : cause}" (requestId=${requestId})`,
     );
   }
 }

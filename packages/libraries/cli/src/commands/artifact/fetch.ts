@@ -55,6 +55,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
       throw new MissingCdnKeyError();
     }
 
+    const requestId = crypto.randomUUID();
     const artifactType = flags.artifact;
 
     const url = new URL(`${cdnEndpoint}/${artifactType}`);
@@ -65,6 +66,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         headers: {
           'x-hive-cdn-key': token,
           'User-Agent': `hive-cli/${this.config.version}`,
+          'x-request-id': requestId,
         },
         retry: {
           retries: 3,
@@ -85,9 +87,9 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
     } catch (e: any) {
       const sourceError = e?.cause ?? e;
       if (isAggregateError(sourceError)) {
-        throw new NetworkError(sourceError.errors[0]?.message);
+        throw new NetworkError(sourceError.errors[0]?.message, requestId);
       } else {
-        throw new NetworkError(sourceError);
+        throw new NetworkError(sourceError, requestId);
       }
     }
 
@@ -97,6 +99,7 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         url.toString(),
         response.status,
         responseBody ?? response.statusText ?? 'Invalid status code for HTTP call',
+        requestId,
       );
     }
 

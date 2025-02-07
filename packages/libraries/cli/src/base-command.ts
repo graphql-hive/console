@@ -184,10 +184,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   graphql(endpoint: string, additionalHeaders: Record<string, string> = {}) {
+    const requestId = crypto.randomUUID()
     const requestHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       'User-Agent': `hive-cli/${this.config.version}`,
+      'x-request-id': requestId
       ...additionalHeaders,
     };
 
@@ -236,9 +238,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         } catch (e: any) {
           const sourceError = e?.cause ?? e;
           if (isAggregateError(sourceError)) {
-            throw new NetworkError(sourceError.errors[0]?.message);
+            throw new NetworkError(sourceError.errors[0]?.message, requestId);
           } else {
-            throw new NetworkError(sourceError);
+            throw new NetworkError(sourceError, requestId);
           }
         }
 
@@ -247,6 +249,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
             endpoint,
             response.status,
             response.statusText ?? 'Invalid status code for HTTP call',
+            requestId
           );
         }
 
@@ -257,13 +260,13 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           const contentType = response?.headers?.get('content-type');
           throw new APIError(
             `Response from graphql was not valid JSON.${contentType ? ` Received "content-type": "${contentType}".` : ''}`,
-            this.cleanRequestId(response?.headers?.get('x-request-id')),
+            requestId
           );
         }
 
         if (jsonData.errors && jsonData.errors.length > 0) {
           if (jsonData.errors[0].message === 'Invalid token provided') {
-            throw new InvalidRegistryTokenError();
+            throw new InvalidRegistryTokenError(requestId);
           }
 
           if (isDebug) {
@@ -271,7 +274,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
           }
           throw new APIError(
             jsonData.errors.map(e => e.message).join('\n'),
-            this.cleanRequestId(response?.headers?.get('x-request-id')),
+            requestId
           );
         }
 
