@@ -42,7 +42,7 @@ import {
   PreflightProvider,
   PreflightResultData,
   usePreflight,
-} from '@/lib/preflight/graphiql-plugin';
+} from '@/lib/preflight';
 import { cn } from '@/lib/utils';
 import { explorerPlugin } from '@graphiql/plugin-explorer';
 import {

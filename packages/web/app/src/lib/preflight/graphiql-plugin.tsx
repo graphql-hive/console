@@ -10,35 +10,33 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { PowerIcon } from 'lucide-react';
-import type { editor } from 'monaco-editor';
 import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Subtitle } from '@/components/ui/page';
 import { usePromptManager } from '@/components/ui/prompt';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
 import { GraphiQLPlugin } from '@graphiql/react';
-import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
-import { Cross2Icon, InfoCircledIcon, Pencil1Icon, TriangleRightIcon } from '@radix-ui/react-icons';
-import { captureException } from '@sentry/react';
+import { Pencil1Icon } from '@radix-ui/react-icons';
 import { useParams } from '@tanstack/react-router';
 import { Kit } from '../kit';
 import { cn } from '../utils';
-import labApiDefinitionRaw from './lab-api-declaration?raw';
-import { IFrameEvents, LogMessage } from './shared-types';
+import { EditorTitle } from './components/EditorTitle';
+import { EnvironmentEditor } from './components/EnvironmentEditor';
+import { PreflightModal } from './components/PreflightModal';
+import { ScriptEditor } from './components/ScriptEditor';
+import { IFrameEvents, LogRecord, PreflightWorkerState } from './shared-types';
 
 export type PreflightResultData = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
+
+const classes = {
+  monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
+  // todo: was unused, commented out for now, remove?
+  // icon: clsx('absolute -left-5 top-px'),
+};
 
 export const preflightPlugin: GraphiQLPlugin = {
   icon: () => (
@@ -58,61 +56,6 @@ export const preflightPlugin: GraphiQLPlugin = {
   title: 'Preflight Script',
   content: PreflightContent,
 };
-
-const classes = {
-  monaco: clsx('*:bg-[#10151f]'),
-  monacoMini: clsx('h-32 *:rounded-md *:bg-[#10151f]'),
-  icon: clsx('absolute -left-5 top-px'),
-};
-
-function EditorTitle(props: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn('cursor-default text-base font-semibold tracking-tight', props.className)}>
-      {props.children}
-    </div>
-  );
-}
-
-const sharedMonacoProps = {
-  theme: 'vs-dark',
-  className: classes.monaco,
-  options: {
-    minimap: { enabled: false },
-    padding: {
-      top: 10,
-    },
-    scrollbar: {
-      horizontalScrollbarSize: 6,
-      verticalScrollbarSize: 6,
-    },
-  },
-} satisfies ComponentPropsWithoutRef<typeof MonacoEditor>;
-
-const monacoProps = {
-  env: {
-    ...sharedMonacoProps,
-    defaultLanguage: 'json',
-    options: {
-      ...sharedMonacoProps.options,
-      lineNumbers: 'off',
-      tabSize: 2,
-    },
-  },
-  script: {
-    ...sharedMonacoProps,
-    theme: 'vs-dark',
-    defaultLanguage: 'javascript',
-    options: {
-      ...sharedMonacoProps.options,
-      quickSuggestions: true,
-      suggestOnTriggerCharacters: true,
-      acceptSuggestionOnEnter: 'on',
-      tabCompletion: 'on',
-      folding: true,
-      foldingStrategy: 'indentation',
-    },
-  },
-} satisfies Record<'script' | 'env', ComponentPropsWithoutRef<typeof MonacoEditor>>;
 
 const UpdatePreflightScriptMutation = graphql(`
   mutation UpdatePreflightScript($input: UpdatePreflightScriptInput!) {
@@ -142,13 +85,6 @@ const PreflightScript_TargetFragment = graphql(`
     }
   }
 `);
-
-export type LogRecord = LogMessage | { type: 'separator' };
-
-export const enum PreflightWorkerState {
-  running,
-  ready,
-}
 
 export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
@@ -564,16 +500,14 @@ function PreflightContent() {
             </div>
           </div>
         )}
-        <MonacoEditor
+        <ScriptEditor
           height={128}
           value={preflight.content}
-          {...monacoProps.script}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
             ['data-cy']: 'preflight-editor-mini',
           }}
           options={{
-            ...monacoProps.script.options,
             lineNumbers: 'off',
             domReadOnly: true,
             readOnly: true,
@@ -593,11 +527,10 @@ function PreflightContent() {
       <Subtitle className="mb-3">
         Declare variables that can be used by both the script and headers.
       </Subtitle>
-      <MonacoEditor
+      <EnvironmentEditor
         height={128}
         value={preflight.environmentVariables}
         onChange={value => preflight.setEnvironmentVariables(value ?? '')}
-        {...monacoProps.env}
         className={classes.monacoMini}
         wrapperProps={{
           ['data-cy']: 'env-editor-mini',
@@ -605,259 +538,4 @@ function PreflightContent() {
       />
     </>
   );
-}
-
-function PreflightModal({
-  isOpen,
-  toggle,
-  content,
-  state,
-  execute,
-  abortExecution,
-  logs,
-  clearLogs,
-  onContentChange,
-  envValue,
-  onEnvValueChange,
-}: {
-  isOpen: boolean;
-  toggle: () => void;
-  content?: string;
-  state: PreflightWorkerState;
-  execute: (script: string) => void;
-  abortExecution: () => void;
-  logs: Array<LogRecord>;
-  clearLogs: () => void;
-  onContentChange: (value: string) => void;
-  envValue: string;
-  onEnvValueChange: (value: string) => void;
-}) {
-  const scriptEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const envEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const consoleRef = useRef<HTMLElement>(null);
-
-  const handleScriptEditorDidMount: OnMount = useCallback(editor => {
-    scriptEditorRef.current = editor;
-  }, []);
-
-  const handleEnvEditorDidMount: OnMount = useCallback(editor => {
-    envEditorRef.current = editor;
-  }, []);
-
-  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
-    // Configure JavaScript defaults for TypeScript validation
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false,
-      noSuggestionDiagnostics: false,
-      diagnosticCodesToIgnore: [], // Can specify codes to ignore
-    });
-
-    // Enable modern JavaScript features and strict checks
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ESNext,
-      allowNonTsExtensions: true,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      module: monaco.languages.typescript.ModuleKind.ESNext,
-      noEmit: true,
-      lib: ['es2021', 'dom'],
-      strict: true,
-      noUnusedLocals: true,
-      noUnusedParameters: true,
-      noImplicitReturns: true,
-      noFallthroughCasesInSwitch: true,
-    });
-
-    // Add custom typings for globalThis
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(
-      `
-        ${labApiDefinitionRaw}
-        declare const lab: LabAPI;
-      `,
-      'global.d.ts',
-    );
-  }, []);
-
-  const handleSubmit = useCallback(() => {
-    onContentChange(scriptEditorRef.current?.getValue() ?? '');
-    onEnvValueChange(envEditorRef.current?.getValue() ?? '');
-    toggle();
-  }, []);
-
-  useEffect(() => {
-    const consoleEl = consoleRef.current;
-    consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
-  }, [logs]);
-
-  return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={open => {
-        if (!open) {
-          abortExecution();
-        }
-        toggle();
-      }}
-    >
-      <DialogContent
-        className="w-11/12 max-w-[unset] xl:w-4/5"
-        onEscapeKeyDown={ev => {
-          // prevent pressing escape in monaco to close the modal
-          if (ev.target instanceof HTMLTextAreaElement) {
-            ev.preventDefault();
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Edit your Preflight Script</DialogTitle>
-          <DialogDescription>
-            This script will run in each user's browser and be stored in plain text on our servers.
-            Don't share any secrets here.
-            <br />
-            All team members can view the script and toggle it off when they need to.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
-          <div className="mr-4 flex flex-col">
-            <div className="flex justify-between p-2">
-              <EditorTitle className="flex gap-2">
-                Script Editor
-                <Badge className="text-xs" variant="outline">
-                  JavaScript
-                </Badge>
-              </EditorTitle>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className="size-auto gap-1"
-                onClick={() => {
-                  if (state === PreflightWorkerState.running) {
-                    abortExecution();
-                    return;
-                  }
-
-                  execute(scriptEditorRef.current?.getValue() ?? '');
-                }}
-                data-cy="run-preflight"
-              >
-                {state === PreflightWorkerState.running && (
-                  <>
-                    <Cross2Icon className="shrink-0" />
-                    Stop Script
-                  </>
-                )}
-                {state === PreflightWorkerState.ready && (
-                  <>
-                    <TriangleRightIcon className="shrink-0" />
-                    Run Script
-                  </>
-                )}
-              </Button>
-            </div>
-            <MonacoEditor
-              value={content}
-              beforeMount={handleMonacoEditorBeforeMount}
-              onMount={handleScriptEditorDidMount}
-              {...monacoProps.script}
-              options={{
-                ...monacoProps.script.options,
-                wordWrap: 'wordWrapColumn',
-              }}
-              wrapperProps={{
-                ['data-cy']: 'preflight-editor',
-              }}
-            />
-          </div>
-          <div className="flex h-[inherit] flex-col">
-            <div className="flex justify-between p-2">
-              <EditorTitle>Console Output</EditorTitle>
-              <Button
-                variant="orangeLink"
-                size="icon-sm"
-                className="size-auto gap-1"
-                onClick={clearLogs}
-                disabled={state === PreflightWorkerState.running}
-              >
-                <Cross2Icon className="shrink-0" height="12" />
-                Clear Output
-              </Button>
-            </div>
-            <section
-              ref={consoleRef}
-              className="h-1/2 overflow-hidden overflow-y-scroll bg-[#10151f] py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]"
-              data-cy="console-output"
-            >
-              {logs.map((log, index) => (
-                <LogLine key={index} log={log} />
-              ))}
-            </section>
-            <EditorTitle className="flex gap-2 p-2">
-              Environment Variables
-              <Badge className="text-xs" variant="outline">
-                JSON
-              </Badge>
-            </EditorTitle>
-            <MonacoEditor
-              value={envValue}
-              onChange={value => onEnvValueChange(value ?? '')}
-              onMount={handleEnvEditorDidMount}
-              {...monacoProps.env}
-              options={{
-                ...monacoProps.env.options,
-                wordWrap: 'wordWrapColumn',
-              }}
-              wrapperProps={{
-                ['data-cy']: 'env-editor',
-              }}
-            />
-          </div>
-        </div>
-        <DialogFooter className="items-center">
-          <p className="me-5 flex items-center gap-2 text-sm">
-            <InfoCircledIcon />
-            Changes made to this Preflight Script will apply to all users on your team using this
-            target.
-          </p>
-          <Button type="button" onClick={toggle} data-cy="preflight-modal-cancel">
-            Close
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleSubmit}
-            data-cy="preflight-modal-submit"
-          >
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-const LOG_COLORS = {
-  error: 'text-red-400',
-  info: 'text-emerald-400',
-  warn: 'text-yellow-400',
-  log: 'text-gray-400',
-};
-
-export function LogLine({ log }: { log: LogRecord }) {
-  if ('type' in log && log.type === 'separator') {
-    return <hr className="my-2 border-dashed border-current" />;
-  }
-
-  if ('level' in log && log.level in LOG_COLORS) {
-    return (
-      <div className={LOG_COLORS[log.level]}>
-        {log.level}: {log.message}
-        {log.line && log.column ? ` (${log.line}:${log.column})` : ''}
-      </div>
-    );
-  }
-
-  captureException(new Error('Unexpected log type in Preflight Script output'), {
-    extra: { log },
-  });
-  return null;
 }
