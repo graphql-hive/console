@@ -1,6 +1,6 @@
 import nock from 'nock';
-import { maskRequestId } from 'test-utils';
 import { createSchemaFetcher, createServicesFetcher } from '../src/client/gateways';
+import { maskRequestId } from './test-utils.js';
 
 afterEach(() => {
   nock.cleanAll();

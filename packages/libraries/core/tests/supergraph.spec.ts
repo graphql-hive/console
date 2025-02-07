@@ -1,8 +1,8 @@
 import nock from 'nock';
-import { maskRequestId } from 'test-utils.js';
 import { describe, expect, test } from 'vitest';
 import { createSupergraphSDLFetcher } from '../src/index.js';
 import { version } from '../src/version';
+import { maskRequestId } from './test-utils.js';
 
 describe('supergraph SDL fetcher', async () => {
   test('createSupergraphSDLFetcher without ETag', async () => {
