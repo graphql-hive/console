@@ -33,7 +33,7 @@ const OrganizationAccessTokenModel = z.object({
   createdAt: z.string(),
   title: z.string(),
   description: z.string(),
-  permissions: z.array(PermissionsModel).nullable(),
+  permissions: z.array(PermissionsModel),
   assignedResources: AssignedProjectsModel.nullable().transform(
     value => value ?? { mode: '*' as const, projects: [] },
   ),
@@ -231,6 +231,7 @@ export class OrganizationAccessTokens {
 
     return {
       type: 'success' as const,
+      organizationAccessTokenId: args.organizationAccessTokenId,
     };
   }
 
