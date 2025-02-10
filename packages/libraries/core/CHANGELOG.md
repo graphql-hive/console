@@ -1,5 +1,14 @@
 # @graphql-hive/core
 
+## 0.9.1
+
+### Patch Changes
+
+- [#6494](https://github.com/graphql-hive/console/pull/6494)
+  [`ae2d16d`](https://github.com/graphql-hive/console/commit/ae2d16d553e264c813ac65d78eacab3d7a2efeae)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Replace usage of `crypto.randomUUID()` with a
+  custom UUID generation for better backwards compatability.
+
 ## 0.9.0
 
 ### Minor Changes
