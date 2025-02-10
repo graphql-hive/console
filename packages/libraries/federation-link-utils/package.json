@@ -1,0 +1,62 @@
+{
+  "name": "@graphql-hive/federation-link-utils",
+  "version": "0.0.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "graphql-hive/platform",
+    "directory": "packages/libraries/federation-link-utils"
+  },
+  "homepage": "https://the-guild.dev/graphql/hive",
+  "author": {
+    "email": "contact@the-guild.dev",
+    "name": "The Guild",
+    "url": "https://the-guild.dev"
+  },
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/typings/index.d.cts",
+        "default": "./dist/cjs/index.js"
+      },
+      "import": {
+        "types": "./dist/typings/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "default": {
+        "types": "./dist/typings/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typings": "dist/typings/index.d.ts",
+  "scripts": {
+    "build": "node ../../../scripts/generate-version.mjs && bob build",
+    "check:build": "bob check"
+  },
+  "peerDependencies": {
+    "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
+  },
+  "devDependencies": {
+    "graphql": "16.9.0",
+    "tslib": "2.8.1",
+    "vitest": "3.0.5"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "directory": "dist"
+  },
+  "sideEffects": false,
+  "typescript": {
+    "definition": "dist/typings/index.d.ts"
+  }
+}
