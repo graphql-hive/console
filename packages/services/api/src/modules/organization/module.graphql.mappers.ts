@@ -3,6 +3,7 @@ import type {
   OrganizationGetStarted,
   OrganizationInvitation,
 } from '../../shared/entities';
+import { OrganizationAccessToken } from './providers/organization-access-tokens';
 import { OrganizationMemberRole } from './providers/organization-member-roles';
 import { OrganizationMembership } from './providers/organization-members';
 
@@ -13,3 +14,4 @@ export type OrganizationGetStartedMapper = OrganizationGetStarted;
 export type OrganizationInvitationMapper = OrganizationInvitation;
 export type MemberConnectionMapper = readonly OrganizationMembership[];
 export type MemberMapper = OrganizationMembership;
+export type OrganizationAccessTokenMapper = OrganizationAccessToken;

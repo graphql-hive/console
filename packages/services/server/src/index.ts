@@ -12,6 +12,8 @@ import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
 import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
+import { OrganizationAccessTokenStrategy } from 'packages/services/api/src/modules/auth/lib/organization-access-token-strategy';
+import { OrganizationAccessTokens } from 'packages/services/api/src/modules/organization/providers/organization-access-tokens';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
@@ -413,9 +415,13 @@ export async function main() {
             organizationMembers: new OrganizationMembers(
               storage.pool,
               new OrganizationMemberRoles(storage.pool, logger),
-              storage,
               logger,
             ),
+          }),
+        (logger: Logger) =>
+          new OrganizationAccessTokenStrategy({
+            logger,
+            pool: storage.pool,
           }),
         (logger: Logger) =>
           new TargetAccessTokenStrategy({

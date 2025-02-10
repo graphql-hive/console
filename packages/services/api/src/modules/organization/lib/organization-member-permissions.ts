@@ -1,19 +1,5 @@
 import { allPermissions, Permission } from '../../auth/lib/authz';
-
-export type PermissionRecord = {
-  id: Permission;
-  title: string;
-  description: string;
-  dependsOn?: Permission;
-  isReadyOnly?: true;
-  warning?: string;
-};
-
-export type PermissionGroup = {
-  id: string;
-  title: string;
-  permissions: Array<PermissionRecord>;
-};
+import { PermissionGroup } from './permissions';
 
 export const allPermissionGroups: Array<PermissionGroup> = [
   {
@@ -272,7 +258,6 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
  */
 assertAllRulesAreAssigned([
   /** These are CLI only actions for now. */
-  'schema:loadFromRegistry',
   'schema:compose',
   'schemaCheck:create',
   'schemaVersion:publish',
