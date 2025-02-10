@@ -8,8 +8,8 @@ import { isUUID } from '../../../shared/is-uuid';
 import {
   OrganizationMembers,
   OrganizationMembershipRoleAssignment,
-  ResourceAssignment,
 } from '../../organization/providers/organization-members';
+import { ResourceAssignment } from '../../organization/providers/resource-assignments';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
