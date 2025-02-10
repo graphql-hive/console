@@ -8,6 +8,7 @@ import {
   HeroLogo,
   HiveGatewayIcon,
 } from '@theguild/components';
+import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
@@ -64,7 +65,7 @@ export default function HiveGatewayPage() {
       >
         <GatewayLandingFAQ />
       </FrequentlyAskedQuestions>
-      {/* big get your API game right section */}
+      <GetYourAPIGameRightList className="mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
   );
 }
