@@ -35,6 +35,88 @@ export default gql`
     updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
     deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
     assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
+    createOrganizationAccessToken(
+      input: CreateOrganizationAccessTokenInput!
+    ): CreateOrganizationAccessTokenResult!
+    updateOrganizationAccessToken(
+      input: CreateOrganizationAccessTokenInput!
+    ): CreateOrganizationAccessTokenResult!
+    deleteOrganizationAccessToken(
+      input: DeleteOrganizationAccessTokenInput!
+    ): DeleteOrganizationAccessTokenResult!
+  }
+
+  input OrganizationReferenceInput @oneOf {
+    byOrganizationSlug: String
+    byOrganizationId: ID
+  }
+
+  input CreateOrganizationAccessTokenInput {
+    organization: OrganizationReferenceInput!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignmentInput!
+  }
+
+  type CreateOrganizationAccessTokenResult {
+    ok: CreateOrganizationAccessTokenResultOk
+    error: CreateOrganizationAccessTokenResultError
+  }
+
+  type CreateOrganizationAccessTokenResultOk {
+    createdOrganizationAccessToken: OrganizationAccessToken!
+  }
+
+  type CreateOrganizationAccessTokenResultError implements Error {
+    message: String!
+  }
+
+  type OrganizationAccessToken {
+    id: ID!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignment!
+    createdAt: Date!
+  }
+
+  input UpdateOrganizationAccessTokenInput {
+    organizationAccessTokenId: ID!
+    title: String
+    description: String
+    permissions: [String!]
+    resources: ResourceAssignmentInput
+  }
+
+  type UpdateOrganizationAccessTokenResult {
+    ok: UpdateOrganizationAccessTokenResultOk
+    error: UpdateOrganizationAccessTokenResultError
+  }
+
+  type UpdateOrganizationAccessTokenResultOk {
+    updatedOrganizationAccessToken: OrganizationAccessToken!
+  }
+
+  type UpdateOrganizationAccessTokenResultError implements Error {
+    message: String!
+  }
+
+  input DeleteOrganizationAccessTokenInput {
+    organizationAccessTokenId: ID!
+  }
+
+  type DeleteOrganizationAccessTokenResult {
+    ok: DeleteOrganizationAccessTokenResultOk
+    error: DeleteOrganizationAccessTokenResultError
+  }
+
+  type DeleteOrganizationAccessTokenResultOk {
+    deletedOrganizationAccessTokenId: ID!
+  }
+
+  type DeleteOrganizationAccessTokenResultError implements Error {
+    message: String!
   }
 
   type UpdateOrganizationSlugResult {

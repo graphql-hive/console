@@ -1007,12 +1007,11 @@ export class SchemaManager {
     });
 
     await this.session.assertPerformAction({
-      action: 'schema:loadFromRegistry',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
-        targetId: selector.targetId,
       },
     });
 
