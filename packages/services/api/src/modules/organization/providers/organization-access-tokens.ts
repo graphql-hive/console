@@ -49,6 +49,8 @@ export type OrganizationAccessToken = z.TypeOf<typeof OrganizationAccessTokenMod
 export class OrganizationAccessTokens {
   logger: Logger;
 
+  private findById: ReturnType<typeof findById>;
+
   constructor(
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     private resourceAssignments: ResourceAssignments,
@@ -59,6 +61,7 @@ export class OrganizationAccessTokens {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
     });
+    this.findById = findById({ logger: this.logger, pool });
   }
 
   async create(args: {
@@ -147,7 +150,7 @@ export class OrganizationAccessTokens {
       assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
     };
   }) {
-    const record = await this.findOrganizationAccessTokenById(args.organizationAccessTokenId);
+    const record = await this.findById(args.organizationAccessTokenId);
     if (record === null) {
       throw new InsufficientPermissionError('accessToken:modify');
     }
@@ -210,7 +213,7 @@ export class OrganizationAccessTokens {
   }
 
   async delete(args: { organizationAccessTokenId: string }) {
-    const record = await this.findOrganizationAccessTokenById(args.organizationAccessTokenId);
+    const record = await this.findById(args.organizationAccessTokenId);
     if (record === null) {
       throw new InsufficientPermissionError('accessToken:modify');
     }
@@ -234,22 +237,24 @@ export class OrganizationAccessTokens {
       organizationAccessTokenId: args.organizationAccessTokenId,
     };
   }
+}
 
-  private async findOrganizationAccessTokenById(organizationAccessTokenId: string) {
-    this.logger.debug(
+export function findById(deps: { pool: DatabasePool; logger: Logger }) {
+  return async function findByIdImplementation(organizationAccessTokenId: string) {
+    deps.logger.debug(
       'Resolve organization access token by id. (organizationAccessTokenId=%s)',
       organizationAccessTokenId,
     );
 
     if (isUUID(organizationAccessTokenId) === false) {
-      this.logger.debug(
+      deps.logger.debug(
         'Invalid UUID provided. (organizationAccessTokenId=%s)',
         organizationAccessTokenId,
       );
       return null;
     }
 
-    const data = await this.pool.maybeOne<unknown>(sql`
+    const data = await deps.pool.maybeOne<unknown>(sql`
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -260,7 +265,7 @@ export class OrganizationAccessTokens {
     `);
 
     if (data === null) {
-      this.logger.debug(
+      deps.logger.debug(
         'Organization access token not found. (organizationAccessTokenId=%s)',
         organizationAccessTokenId,
       );
@@ -269,13 +274,13 @@ export class OrganizationAccessTokens {
 
     const result = OrganizationAccessTokenModel.parse(data);
 
-    this.logger.debug(
+    deps.logger.debug(
       'Organization access token found. (organizationAccessTokenId=%s)',
       organizationAccessTokenId,
     );
 
     return result;
-  }
+  };
 }
 
 const organizationAccessTokenFields = sql`

@@ -66,3 +66,7 @@ export async function create(recordId: string) {
     firstCharacters,
   };
 }
+
+export async function verify(secret: string, hash: string) {
+  return await bcrypt.compare(secret, hash);
+}

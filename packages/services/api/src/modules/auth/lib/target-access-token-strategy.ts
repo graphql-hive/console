@@ -110,11 +110,6 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
       return null;
     }
 
-    // if (accessToken.length !== 32) {
-    //   this.logger.debug('Invalid access token length.');
-    //   return null;
-    // }
-
     const tokens = new TokenStorage(this.logger, this.tokensConfig, {
       requestId: args.req.headers['x-request-id'] as string,
     } as any);
