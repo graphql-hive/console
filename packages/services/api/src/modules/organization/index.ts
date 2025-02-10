@@ -1,4 +1,5 @@
 import { createModule } from 'graphql-modules';
+import { OrganizationAccessTokens } from './providers/organization-access-tokens';
 import { OrganizationManager } from './providers/organization-manager';
 import { OrganizationMemberRoles } from './providers/organization-member-roles';
 import { OrganizationMembers } from './providers/organization-members';
@@ -10,5 +11,10 @@ export const organizationModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [OrganizationMemberRoles, OrganizationMembers, OrganizationManager],
+  providers: [
+    OrganizationMemberRoles,
+    OrganizationMembers,
+    OrganizationManager,
+    OrganizationAccessTokens,
+  ],
 });
