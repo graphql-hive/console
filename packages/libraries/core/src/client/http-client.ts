@@ -1,6 +1,7 @@
 import asyncRetry from 'async-retry';
 import { fetch, URL } from '@whatwg-node/fetch';
 import type { Logger } from './types.js';
+import { uuidV4 } from './utils.js';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -96,7 +97,7 @@ export async function makeFetchCall(
 
   return await asyncRetry(
     async (bail, attempt) => {
-      const requestId = crypto.randomUUID();
+      const requestId = uuidV4();
 
       logger?.info(
         `${config.method} ${endpoint} (x-request-id=${requestId})` +
