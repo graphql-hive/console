@@ -1005,7 +1005,7 @@ export class OrganizationManager {
 
     const resourceAssignmentGroup =
       await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-        organization,
+        organization.id,
         input.resources,
       );
 

@@ -996,7 +996,7 @@ export class SchemaManager {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
       onError() {
-        throw new InsufficientPermissionError('schema:loadFromRegistry');
+        throw new InsufficientPermissionError('project:describe');
       },
     });
 

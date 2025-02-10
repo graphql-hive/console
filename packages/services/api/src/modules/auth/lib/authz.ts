@@ -349,6 +349,7 @@ const permissionsByLevel = {
     z.literal('project:create'),
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
+    z.literal('accessToken:modify'),
   ],
   project: [
     z.literal('project:describe'),
