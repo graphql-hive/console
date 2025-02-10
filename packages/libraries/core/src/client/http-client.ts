@@ -1,5 +1,5 @@
 import asyncRetry from 'async-retry';
-import { fetch, URL } from '@whatwg-node/fetch';
+import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { Logger } from './types.js';
 
 interface SharedConfig {
