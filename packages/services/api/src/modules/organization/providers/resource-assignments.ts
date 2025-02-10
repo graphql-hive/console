@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Logger, Organization, Project } from '@hive/api';
+import { Logger, Project } from '@hive/api';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
 import { AppDeploymentNameModel } from '../../app-deployments/providers/app-deployments';
@@ -183,7 +183,7 @@ export class ResourceAssignments {
    * These measures are done in order to prevent users to grant access to other organizations.
    */
   async transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-    organization: Organization,
+    organizationId: string,
     input: GraphQLSchema.ResourceAssignmentInput,
   ): Promise<ResourceAssignmentGroup> {
     if (
@@ -226,7 +226,7 @@ export class ResourceAssignments {
 
       // In case the project was not found or does not belogn the the organization,
       // we omit it as it could grant an user permissions for a project within another organization.
-      if (!project || project.orgId !== organization.id) {
+      if (!project || project.orgId !== organizationId) {
         this.logger.debug('Omitted non-existing project.');
         continue;
       }
@@ -262,7 +262,7 @@ export class ResourceAssignments {
     }
 
     const targets = await this.storage.findTargetsByIds({
-      organizationId: organization.id,
+      organizationId,
       targetIds: Array.from(targetLookupIds),
     });
 

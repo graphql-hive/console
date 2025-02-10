@@ -39,16 +39,16 @@ export default gql`
       input: CreateOrganizationAccessTokenInput!
     ): CreateOrganizationAccessTokenResult!
     updateOrganizationAccessToken(
-      input: CreateOrganizationAccessTokenInput!
-    ): CreateOrganizationAccessTokenResult!
+      input: UpdateOrganizationAccessTokenInput!
+    ): UpdateOrganizationAccessTokenResult!
     deleteOrganizationAccessToken(
       input: DeleteOrganizationAccessTokenInput!
     ): DeleteOrganizationAccessTokenResult!
   }
 
   input OrganizationReferenceInput @oneOf {
-    byOrganizationSlug: String
-    byOrganizationId: ID
+    bySelector: OrganizationSelectorInput
+    byId: ID
   }
 
   input CreateOrganizationAccessTokenInput {
@@ -66,10 +66,23 @@ export default gql`
 
   type CreateOrganizationAccessTokenResultOk {
     createdOrganizationAccessToken: OrganizationAccessToken!
+    privateAccessKey: String!
   }
 
   type CreateOrganizationAccessTokenResultError implements Error {
     message: String!
+    details: CreateOrganizationAccessTokenResultErrorDetails
+  }
+
+  type CreateOrganizationAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
   }
 
   type OrganizationAccessToken {
@@ -100,6 +113,18 @@ export default gql`
 
   type UpdateOrganizationAccessTokenResultError implements Error {
     message: String!
+    details: UpdateOrganizationAccessTokenResultErrorDetails
+  }
+
+  type UpdateOrganizationAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
   }
 
   input DeleteOrganizationAccessTokenInput {
