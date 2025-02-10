@@ -18,6 +18,7 @@ export default {
     CREATE INDEX IF NOT EXISTS "organization_access_tokens_organization_id" ON "organization_access_tokens" (
       "organization_id"
       , "created_at" DESC
+      , "id" DESC
     );
   `,
 } satisfies MigrationExecutor;
