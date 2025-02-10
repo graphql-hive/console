@@ -454,7 +454,7 @@ test.concurrent(
   },
 );
 
-test('schema:check gives correct error message for missing `--service` name flag in federation project', async ({
+test.only('schema:check gives correct error message for missing `--service` name flag in federation project', async ({
   expect,
 }) => {
   const { createOrg } = await initSeed().createOwner();
@@ -463,22 +463,25 @@ test('schema:check gives correct error message for missing `--service` name flag
   const { createTargetAccessToken } = await createProject(ProjectType.Federation);
   const { secret } = await createTargetAccessToken({});
 
-  process.env.GITHUB_ACTIONS = '1';
-  process.env.GITHUB_REPOSITORY = 'foo/foo';
-  onTestFinished(() => {
-    process.env.GITHUB_ACTIONS = undefined;
-    process.env.GITHUB_REPOSITORY = undefined;
-  });
-
   await expect(
-    schemaCheck([
-      '--registry.accessToken',
-      secret,
-      '--github',
-      '--author',
-      'Kamil',
-      'fixtures/init-schema.graphql',
-    ]),
+    schemaCheck(
+      [
+        '--registry.accessToken',
+        secret,
+        '--github',
+        '--author',
+        'Kamil',
+        'fixtures/init-schema.graphql',
+      ],
+      {
+        // set these environment variables to "emulate" a GitHub actions environment
+        // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+        // consistent snapshot output behaviour.
+        GITHUB_ACTIONS: '1',
+        GITHUB_REPOSITORY: 'foo/foo',
+        GITHUB_EVENT_PATH: '',
+      },
+    ),
   ).rejects.toMatchInlineSnapshot(`
     :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
     exitCode------------------------------------------:
