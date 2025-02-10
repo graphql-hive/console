@@ -453,3 +453,44 @@ test.concurrent(
     `);
   },
 );
+
+test.only('schema:check gives correct error message for missing `--service` name flag in federation project', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+  const { secret } = await createTargetAccessToken({});
+
+  process.env.GITHUB_ACTIONS = '1';
+  process.env.GITHUB_REPOSITORY = 'foo/foo';
+  onTestFinished(() => {
+    process.env.GITHUB_ACTIONS = undefined;
+    process.env.GITHUB_REPOSITORY = undefined;
+  });
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      secret,
+      '--github',
+      '--author',
+      'Kamil',
+      'fixtures/init-schema.graphql',
+    ]),
+  ).rejects.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+    exitCode------------------------------------------:
+    1
+    stderr--------------------------------------------:
+     ›   Warning: Could not resolve pull request number. Are you running this
+     ›   command on a 'pull_request' event?
+     ›   See https://__URL__
+     ›   b-workflow-for-ci
+    stdout--------------------------------------------:
+    ✖ Detected 1 error
+
+       - Missing service name
+  `);
+});
