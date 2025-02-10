@@ -454,7 +454,7 @@ test.concurrent(
   },
 );
 
-test.only('schema:check gives correct error message for missing `--service` name flag in federation project', async ({
+test('schema:check gives correct error message for missing `--service` name flag in federation project', async ({
   expect,
 }) => {
   const { createOrg } = await initSeed().createOwner();
