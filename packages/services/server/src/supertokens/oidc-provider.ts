@@ -29,10 +29,13 @@ export const getOIDCSuperTokensOverrides = (): ThirdPartEmailPasswordTypeInput['
 
 export type BroadcastOIDCIntegrationLog = (oidcId: string, message: string) => void;
 
+function getLoggerFromUserContext(userContext: unknown): FastifyBaseLogger {
+  return (userContext as any)._default.request.request.log;
+}
+
 export const createOIDCSuperTokensProvider = (args: {
   internalApi: InternalApiCaller;
   broadcastLog: BroadcastOIDCIntegrationLog;
-  logger: FastifyBaseLogger;
 }): ProviderInput => ({
   config: {
     thirdPartyId: 'oidc',
@@ -40,10 +43,10 @@ export const createOIDCSuperTokensProvider = (args: {
   override(originalImplementation) {
     return {
       ...originalImplementation,
-
       async getConfigForClientType(input) {
-        args.logger.info('resolve config for OIDC provider.');
-        const config = await getOIDCConfigFromInput(args.internalApi, args.logger, input);
+        const logger = getLoggerFromUserContext(input.userContext);
+        logger.info('resolve config for OIDC provider.');
+        const config = await getOIDCConfigFromInput(args.internalApi, logger, input);
         if (!config) {
           // In the next step the override `authorisationUrlGET` from `getOIDCSuperTokensOverrides` is called.
           // We use the user context to return a `GENERAL_ERROR` with a human readable message.
@@ -70,8 +73,9 @@ export const createOIDCSuperTokensProvider = (args: {
       },
 
       async getAuthorisationRedirectURL(input) {
-        args.logger.info('resolve authorization redirect url of OIDC provider.');
-        const oidcConfig = await getOIDCConfigFromInput(args.internalApi, args.logger, input);
+        const logger = getLoggerFromUserContext(input.userContext);
+        logger.info('resolve authorization redirect url of OIDC provider.');
+        const oidcConfig = await getOIDCConfigFromInput(args.internalApi, logger, input);
 
         if (!oidcConfig) {
           // This case should never be reached (guarded by getConfigForClientType).
@@ -96,14 +100,15 @@ export const createOIDCSuperTokensProvider = (args: {
       },
 
       async exchangeAuthCodeForOAuthTokens(input) {
-        const config = await getOIDCConfigFromInput(args.internalApi, args.logger, input);
+        const logger = getLoggerFromUserContext(input.userContext);
+        const config = await getOIDCConfigFromInput(args.internalApi, logger, input);
         if (!config) {
           // This case should never be reached (guarded by getConfigForClientType).
           // We still have it for security reasons.
           throw new Error('Could not find OIDC integration.');
         }
 
-        args.logger.info('exchange auth code for oauth token (oidcId=%s)', config.id);
+        logger.info('exchange auth code for oauth token (oidcId=%s)', config.id);
 
         args.broadcastLog(
           config.id,
@@ -131,15 +136,16 @@ export const createOIDCSuperTokensProvider = (args: {
       },
 
       async getUserInfo(input) {
-        args.logger.info('retrieve profile info from OIDC provider');
-        const config = await getOIDCConfigFromInput(args.internalApi, args.logger, input);
+        const logger = getLoggerFromUserContext(input.userContext);
+        logger.info('retrieve profile info from OIDC provider');
+        const config = await getOIDCConfigFromInput(args.internalApi, logger, input);
         if (!config) {
           // This case should never be reached (guarded by getConfigForClientType).
           // We still have it for security reasons.
           throw new Error('Could not find OIDC integration.');
         }
 
-        args.logger.info('fetch info for OIDC provider (oidcId=%s)', config.id);
+        logger.info('fetch info for OIDC provider (oidcId=%s)', config.id);
 
         args.broadcastLog(
           config.id,
@@ -168,7 +174,7 @@ export const createOIDCSuperTokensProvider = (args: {
 
         if (response.status !== 200) {
           clearTimeout(timeout);
-          args.logger.info('received invalid status code (oidcId=%s)', config.id);
+          logger.info('received invalid status code (oidcId=%s)', config.id);
           args.broadcastLog(
             config.id,
             `failed fetching user info from endpoint "${config.userinfoEndpoint}". Received status code ${response.status}. Expected 200.`,
@@ -184,10 +190,7 @@ export const createOIDCSuperTokensProvider = (args: {
         try {
           rawData = JSON.parse(body);
         } catch (err) {
-          args.logger.error(
-            'Could not parse JSON response from OIDC provider (oidcId=%s)',
-            config.id,
-          );
+          logger.error('Could not parse JSON response from OIDC provider (oidcId=%s)', config.id);
           if (err instanceof Error) {
             args.broadcastLog(
               config.id,
@@ -197,19 +200,16 @@ export const createOIDCSuperTokensProvider = (args: {
           throw new Error('Could not parse JSON response.');
         }
 
-        args.logger.info('retrieved profile info for provider (oidcId=%s)', config.id);
+        logger.info('retrieved profile info for provider (oidcId=%s)', config.id);
 
         const dataParseResult = OIDCProfileInfoSchema.safeParse(rawData);
 
         if (!dataParseResult.success) {
-          args.logger.error(
-            'Could not parse profile info for OIDC provider (oidcId=%s)',
-            config.id,
-          );
-          args.logger.error('Raw data: %s', JSON.stringify(rawData));
-          args.logger.error('Error: %s', JSON.stringify(dataParseResult.error));
+          logger.error('Could not parse profile info for OIDC provider (oidcId=%s)', config.id);
+          logger.error('Raw data: %s', JSON.stringify(rawData));
+          logger.error('Error: %s', JSON.stringify(dataParseResult.error));
           for (const issue of dataParseResult.error.issues) {
-            args.logger.debug('Issue: %s', JSON.stringify(issue));
+            logger.debug('Issue: %s', JSON.stringify(issue));
           }
           args.broadcastLog(
             config.id,

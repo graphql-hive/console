@@ -1,5 +1,21 @@
 # @graphql-hive/apollo
 
+## 0.37.0
+
+### Minor Changes
+
+- [#6488](https://github.com/graphql-hive/console/pull/6488)
+  [`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Include and log a `x-request-id` header for all
+  requests sent to the Hive API. This helps users to share more context with Hive staff when
+  encountering errors.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)]:
+  - @graphql-hive/core@0.9.0
+
 ## 0.36.5
 
 ### Patch Changes
