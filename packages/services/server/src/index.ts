@@ -12,8 +12,6 @@ import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
 import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
-import { OrganizationAccessTokenStrategy } from 'packages/services/api/src/modules/auth/lib/organization-access-token-strategy';
-import { OrganizationAccessTokens } from 'packages/services/api/src/modules/organization/providers/organization-access-tokens';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
@@ -57,8 +55,10 @@ import {
 } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
+import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
 import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
+import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { createContext, internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -421,7 +421,7 @@ export async function main() {
         (logger: Logger) =>
           new OrganizationAccessTokenStrategy({
             logger,
-            pool: storage.pool,
+            cache: registry.injector.get(OrganizationAccessTokensCache),
           }),
         (logger: Logger) =>
           new TargetAccessTokenStrategy({

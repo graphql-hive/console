@@ -1,8 +1,14 @@
+import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { Logger, Project } from '@hive/api';
 import * as GraphQLSchema from '../../../__generated__/types';
+import type { Project } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
 import { AppDeploymentNameModel } from '../../app-deployments/providers/app-deployments';
+import {
+  AuthorizationPolicyStatement,
+  PermissionsPerResourceLevelAssignment,
+} from '../../auth/lib/authz';
+import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 
 const WildcardAssignmentModeModel = z.literal('*');
@@ -85,6 +91,9 @@ export const AssignedProjectsModel = z.union([
 export type ResourceAssignmentGroup = z.TypeOf<typeof AssignedProjectsModel>;
 type GranularAssignedProjects = z.TypeOf<typeof GranularAssignedProjectsModel>;
 
+@Injectable({
+  scope: Scope.Operation,
+})
 export class ResourceAssignments {
   private logger: Logger;
 
@@ -461,4 +470,94 @@ export function resolveResourceAssignment(args: {
     service: serviceAssignments,
     appDeployment: appDeploymentAssignments,
   };
+}
+
+function casesExhausted(_value: never): never {
+  throw new Error('Not all cases were handled.');
+}
+
+export function toResourceIdentifier(organizationId: string, resource: ResourceAssignment): string;
+export function toResourceIdentifier(
+  organizationId: string,
+  resource: ResourceAssignment | Array<ResourceAssignment>,
+): Array<string>;
+export function toResourceIdentifier(
+  organizationId: string,
+  resource: ResourceAssignment | Array<ResourceAssignment>,
+): string | Array<string> {
+  if (Array.isArray(resource)) {
+    return resource.map(resource => toResourceIdentifier(organizationId, resource));
+  }
+
+  if (resource.type === 'organization') {
+    return `hrn:${organizationId}:organization/${resource.organizationId}`;
+  }
+
+  if (resource.type === 'project') {
+    return `hrn:${organizationId}:project/${resource.projectId}`;
+  }
+
+  if (resource.type === 'target') {
+    return `hrn:${organizationId}:target/${resource.targetId}`;
+  }
+
+  if (resource.type === 'service') {
+    return `hrn:${organizationId}:target/${resource.targetId}/service/${resource.serviceName}`;
+  }
+
+  if (resource.type === 'appDeployment') {
+    return `hrn:${organizationId}:target/${resource.targetId}/appDeployment/${resource.appDeploymentName}`;
+  }
+
+  casesExhausted(resource);
+}
+
+export function translateResolvedResourcesToAuthorizationPolicyStatements(
+  organizationId: string,
+  permissions: PermissionsPerResourceLevelAssignment,
+  resourceAssignments: ResolvedResourceAssignments,
+) {
+  const policyStatements: Array<AuthorizationPolicyStatement> = [];
+
+  if (permissions.organization.size) {
+    policyStatements.push({
+      action: Array.from(permissions.organization),
+      effect: 'allow',
+      resource: toResourceIdentifier(organizationId, resourceAssignments.organization),
+    });
+  }
+
+  if (permissions.project.size) {
+    policyStatements.push({
+      action: Array.from(permissions.project),
+      effect: 'allow',
+      resource: toResourceIdentifier(organizationId, resourceAssignments.project),
+    });
+  }
+
+  if (permissions.target.size) {
+    policyStatements.push({
+      action: Array.from(permissions.target),
+      effect: 'allow',
+      resource: toResourceIdentifier(organizationId, resourceAssignments.target),
+    });
+  }
+
+  if (permissions.service.size) {
+    policyStatements.push({
+      action: Array.from(permissions.service),
+      effect: 'allow',
+      resource: toResourceIdentifier(organizationId, resourceAssignments.service),
+    });
+  }
+
+  if (permissions.appDeployment.size) {
+    policyStatements.push({
+      action: Array.from(permissions.appDeployment),
+      effect: 'allow',
+      resource: toResourceIdentifier(organizationId, resourceAssignments.appDeployment),
+    });
+  }
+
+  return policyStatements;
 }

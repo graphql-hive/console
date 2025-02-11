@@ -265,6 +265,9 @@ assertAllRulesAreAssigned([
   'appDeployment:create',
   'appDeployment:publish',
   'appDeployment:retire',
+
+  'accessToken:modify',
+  'usage:report',
 ]);
 
 /**

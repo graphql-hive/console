@@ -38,9 +38,6 @@ export default gql`
     createOrganizationAccessToken(
       input: CreateOrganizationAccessTokenInput!
     ): CreateOrganizationAccessTokenResult!
-    updateOrganizationAccessToken(
-      input: UpdateOrganizationAccessTokenInput!
-    ): UpdateOrganizationAccessTokenResult!
     deleteOrganizationAccessToken(
       input: DeleteOrganizationAccessTokenInput!
     ): DeleteOrganizationAccessTokenResult!
@@ -92,39 +89,6 @@ export default gql`
     permissions: [String!]!
     resources: ResourceAssignment!
     createdAt: Date!
-  }
-
-  input UpdateOrganizationAccessTokenInput {
-    organizationAccessTokenId: ID!
-    title: String
-    description: String
-    permissions: [String!]
-    resources: ResourceAssignmentInput
-  }
-
-  type UpdateOrganizationAccessTokenResult {
-    ok: UpdateOrganizationAccessTokenResultOk
-    error: UpdateOrganizationAccessTokenResultError
-  }
-
-  type UpdateOrganizationAccessTokenResultOk {
-    updatedOrganizationAccessToken: OrganizationAccessToken!
-  }
-
-  type UpdateOrganizationAccessTokenResultError implements Error {
-    message: String!
-    details: UpdateOrganizationAccessTokenResultErrorDetails
-  }
-
-  type UpdateOrganizationAccessTokenResultErrorDetails {
-    """
-    Error message for the input title.
-    """
-    title: String
-    """
-    Error message for the input description.
-    """
-    description: String
   }
 
   input DeleteOrganizationAccessTokenInput {

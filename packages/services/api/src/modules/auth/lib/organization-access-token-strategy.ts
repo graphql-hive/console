@@ -1,7 +1,6 @@
-import { DatabasePool } from 'slonik';
 import { type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import * as OrganizationAccessKey from '../../organization/lib/organization-access-key';
-import { findById } from '../../organization/providers/organization-access-tokens';
+import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
 
@@ -33,12 +32,12 @@ export class OrganizationAccessTokenSession extends Session {
 export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationAccessTokenSession> {
   private logger: Logger;
 
-  private findOrganizationAccessTokenById: ReturnType<typeof findById>;
+  private cache: OrganizationAccessTokensCache;
 
-  constructor(deps: { logger: Logger; pool: DatabasePool }) {
+  constructor(deps: { logger: Logger; cache: OrganizationAccessTokensCache }) {
     super();
     this.logger = deps.logger.child({ module: 'OrganizationAccessTokenStrategy' });
-    this.findOrganizationAccessTokenById = findById(deps);
+    this.cache = deps.cache;
   }
 
   async parse(args: {
@@ -67,21 +66,19 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
 
     const accessToken = value.replace('Bearer ', '');
     const result = OrganizationAccessKey.decode(accessToken);
-    if (result.type === 'failure') {
+    if (result.type === 'error') {
       this.logger.debug(result.reason);
       return null;
     }
 
-    const organizationAccessToken = await this.findOrganizationAccessTokenById(
-      result.token.accessTokenRecordId,
-    );
-
+    const organizationAccessToken = await this.cache.get(result.accessKey.id);
     if (!organizationAccessToken) {
       return null;
     }
 
+    // TODO: we should probably cache this verification
     const isHashMatch = await OrganizationAccessKey.verify(
-      result.token.privateKey,
+      result.accessKey.id,
       organizationAccessToken.hash,
     );
 
@@ -93,8 +90,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
     return new OrganizationAccessTokenSession(
       {
         organizationId: organizationAccessToken.organizationId,
-        // TODO: translate access tokens stuff to policies
-        policies: [],
+        policies: organizationAccessToken.authorizationPolicyStatements,
       },
       {
         logger: args.req.log,

@@ -1,4 +1,3 @@
-import { allPermissions, type Permission } from '../../auth/lib/authz';
 import { type PermissionGroup } from './permissions';
 
 export const allPermissionGroups: Array<PermissionGroup> = [

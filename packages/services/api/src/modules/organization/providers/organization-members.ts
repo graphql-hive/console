@@ -1,16 +1,17 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { type Organization, type Project } from '../../../shared/entities';
+import { type Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
+import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import {
   AssignedProjectsModel,
-  ResolvedResourceAssignments,
   resolveResourceAssignment,
   ResourceAssignmentGroup,
+  translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
 
 const RawOrganizationMembershipModel = z.object({
@@ -37,9 +38,9 @@ export type OrganizationMembershipRoleAssignment = {
    */
   resources: ResourceAssignmentGroup;
   /**
-   * Resolved resource groups, used for runtime permission checks.
+   * Resolved policy statements
    */
-  resolvedResources: ResolvedResourceAssignments;
+  authorizationPolicyStatements: AuthorizationPolicyStatement[];
 };
 
 export type OrganizationMembership = {
@@ -122,20 +123,26 @@ export class OrganizationMembers {
           projects: [],
         };
 
-        const resolvedResources = resolveResourceAssignment({
-          organizationId: organization.id,
-          projects: resources,
-        });
-
         organizationMembershipByUserId.set(record.userId, {
           organizationId: organization.id,
           userId: record.userId,
           isOwner: organization.ownerId === record.userId,
           connectedToZendesk: record.connectedToZendesk,
           assignedRole: {
-            resources,
-            resolvedResources,
             role: membershipRole,
+            resources,
+            get authorizationPolicyStatements() {
+              const resolvedResources = resolveResourceAssignment({
+                organizationId: organization.id,
+                projects: resources,
+              });
+
+              return translateResolvedResourcesToAuthorizationPolicyStatements(
+                organization.id,
+                membershipRole.permissions,
+                resolvedResources,
+              );
+            },
           },
         });
       }

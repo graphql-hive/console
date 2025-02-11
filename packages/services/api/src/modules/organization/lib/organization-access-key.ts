@@ -6,6 +6,11 @@ import bcrypt from 'bcryptjs';
  * Contains functions for generating an organization acces key.
  */
 
+type DecodedAccessKey = {
+  id: string;
+  privateKey: string;
+};
+
 /**
  * Prefix for the access key
  * **hv** -> Hive
@@ -13,14 +18,16 @@ import bcrypt from 'bcryptjs';
  * **1**  -> Version 1
  */
 const keyPrefix = 'hvo1/';
-const decodeError = { type: 'failure', reason: 'Invalid access token.' } as const;
+const decodeError = { type: 'error' as const, reason: 'Invalid access token.' };
 
 function encode(recordId: string, secret: string) {
   const keyContents = [recordId, secret].join(':');
   return keyPrefix + btoa(keyContents);
 }
 
-export function decode(accessToken: string) {
+export function decode(
+  accessToken: string,
+): { type: 'error'; reason: string } | { type: 'ok'; accessKey: DecodedAccessKey } {
   if (!accessToken.startsWith(keyPrefix)) {
     return decodeError;
   }
@@ -41,23 +48,23 @@ export function decode(accessToken: string) {
     return decodeError;
   }
 
-  const accessTokenRecordId = parts.at(0);
+  const id = parts.at(0);
   const privateKey = parts.at(1);
 
-  if (accessTokenRecordId && privateKey) {
-    return { type: 'success', token: { accessTokenRecordId, privateKey } } as const;
+  if (id && privateKey) {
+    return { type: 'ok', accessKey: { id, privateKey } } as const;
   }
 
   return decodeError;
 }
 
-export async function create(recordId: string) {
+export async function create(id: string) {
   const secret = Crypto.createHash('sha256')
     .update(Crypto.randomBytes(20).toString())
     .digest('hex');
 
   const hash = await bcrypt.hash(secret, await bcrypt.genSalt());
-  const privateAccessToken = encode(recordId, secret);
+  const privateAccessToken = encode(id, secret);
   const firstCharacters = privateAccessToken.substr(0, 10);
 
   return {

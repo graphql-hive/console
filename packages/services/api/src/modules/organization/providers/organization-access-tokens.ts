@@ -1,17 +1,24 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { DatabasePool, sql } from 'slonik';
+import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
-import { InsufficientPermissionError, PermissionsModel, Session } from '../../auth/lib/authz';
+import {
+  InsufficientPermissionError,
+  PermissionsModel,
+  permissionsToPermissionsPerResourceLevelAssignment,
+  Session,
+} from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
+import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import {
   AssignedProjectsModel,
-  ResourceAssignmentGroup,
+  resolveResourceAssignment,
   ResourceAssignments,
+  translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
 
 const TitleInputModel = z
@@ -27,19 +34,36 @@ const DescriptionInputModel = z
   .max(248, 'Maximum length is 248 characters.')
   .nullable();
 
-const OrganizationAccessTokenModel = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
-  createdAt: z.string(),
-  title: z.string(),
-  description: z.string(),
-  permissions: z.array(PermissionsModel),
-  assignedResources: AssignedProjectsModel.nullable().transform(
-    value => value ?? { mode: '*' as const, projects: [] },
-  ),
-  firstCharacters: z.string(),
-  hash: z.string(),
-});
+const OrganizationAccessTokenModel = z
+  .object({
+    id: z.string().uuid(),
+    organizationId: z.string().uuid(),
+    createdAt: z.string(),
+    title: z.string(),
+    description: z.string(),
+    permissions: z.array(PermissionsModel),
+    assignedResources: AssignedProjectsModel.nullable().transform(
+      value => value ?? { mode: '*' as const, projects: [] },
+    ),
+    firstCharacters: z.string(),
+    hash: z.string(),
+  })
+  .transform(record => ({
+    ...record,
+    get authorizationPolicyStatements() {
+      const permissions = permissionsToPermissionsPerResourceLevelAssignment(record.permissions);
+      const resolvedResources = resolveResourceAssignment({
+        organizationId: record.organizationId,
+        projects: record.assignedResources,
+      });
+
+      return translateResolvedResourcesToAuthorizationPolicyStatements(
+        record.organizationId,
+        permissions,
+        resolvedResources,
+      );
+    },
+  }));
 
 export type OrganizationAccessToken = z.TypeOf<typeof OrganizationAccessTokenModel>;
 
@@ -53,6 +77,7 @@ export class OrganizationAccessTokens {
 
   constructor(
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
+    private cache: OrganizationAccessTokensCache,
     private resourceAssignments: ResourceAssignments,
     private idTranslator: IdTranslator,
     private session: Session,
@@ -123,7 +148,7 @@ export class OrganizationAccessTokens {
         , ${organizationId}
         , ${titleResult.data}
         , ${descriptionResult.data}
-        , ${sql.array(args.permissions, 'text')},
+        , ${sql.array(args.permissions, 'text')}
         , ${sql.jsonb(assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}
@@ -134,81 +159,12 @@ export class OrganizationAccessTokens {
 
     const organizationAccessToken = OrganizationAccessTokenModel.parse(result);
 
+    await this.cache.add(organizationAccessToken);
+
     return {
       type: 'success' as const,
       organizationAccessToken,
       privateAccessKey: accessKey.privateAccessToken,
-    };
-  }
-
-  async update(args: {
-    organizationAccessTokenId: string;
-    data: {
-      title: string | null;
-      description: string | null;
-      permissions: Array<string> | null;
-      assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
-    };
-  }) {
-    const record = await this.findById(args.organizationAccessTokenId);
-    if (record === null) {
-      throw new InsufficientPermissionError('accessToken:modify');
-    }
-
-    await this.session.assertPerformAction({
-      action: 'accessToken:modify',
-      organizationId: record.organizationId,
-      params: { organizationId: record.organizationId },
-    });
-
-    const titleResult = TitleInputModel.nullable().safeParse(args.data.title);
-    const descriptionResult = DescriptionInputModel.nullable().safeParse(args.data.description);
-
-    if (titleResult.error || descriptionResult.error) {
-      return {
-        type: 'error' as const,
-        message: 'Invalid input provided.',
-        details: {
-          title: titleResult.error?.issues.at(0)?.message ?? null,
-          description: descriptionResult.error?.issues.at(0)?.message ?? null,
-        },
-      };
-    }
-
-    let assignedResources: ResourceAssignmentGroup | null = null;
-
-    if (args.data.assignedResources) {
-      assignedResources =
-        await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-          record.organizationId,
-          args.data.assignedResources,
-        );
-    }
-
-    let permissions: Array<string> | null = null;
-    if (args.data.permissions) {
-      // TODO: validate permissions
-      permissions = args.data.permissions;
-    }
-
-    const result = await this.pool.maybeOne<unknown>(sql`
-      UPDATE
-        "organization_access_tokens"
-      SET
-        "title" = COALESCE(${titleResult.data}, "title")
-        , "description" = COALESCE(${descriptionResult.data}, "description")
-        , "permissions" = COALESCE(${permissions}, "permissions")
-        , "assigned_resources" = COALESCE(${sql.jsonb(assignedResources)}, "permissions")
-      )
-      WHERE
-        "id" = ${args.organizationAccessTokenId}
-      RETURNING
-        ${organizationAccessTokenFields}
-    `);
-
-    return {
-      type: 'success' as const,
-      organizationAccessToken: OrganizationAccessTokenModel.parse(result),
     };
   }
 
@@ -232,6 +188,8 @@ export class OrganizationAccessTokens {
         "id" = ${args.organizationAccessTokenId}
     `);
 
+    await this.cache.purge(record);
+
     return {
       type: 'success' as const,
       organizationAccessTokenId: args.organizationAccessTokenId,
@@ -239,6 +197,10 @@ export class OrganizationAccessTokens {
   }
 }
 
+/**
+ * Implementation for finding a organization access token from the PG database.
+ * It is a function, so we can use it for the organization access tokens cache.
+ */
 export function findById(deps: { pool: DatabasePool; logger: Logger }) {
   return async function findByIdImplementation(organizationAccessTokenId: string) {
     deps.logger.debug(
