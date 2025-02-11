@@ -14,8 +14,7 @@ export function setMonacoEditorContents(editorCyName: string, text: string) {
     if (editor) {
       editor.setValue(text);
       // Force a change event to be triggered
-      cy.dataCy(editorCyName).find('textarea').type(' ', { force: true });
-      editor.setValue(text);
+      cy.dataCy(editorCyName).find('textarea').type(' {backspace}', { force: true });
     } else {
       throw new Error('Monaco editor not found on the window or frames[0]');
     }
