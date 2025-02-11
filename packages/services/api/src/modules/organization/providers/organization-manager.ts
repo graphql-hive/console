@@ -541,9 +541,9 @@ export class OrganizationManager {
             <mj-body>
               <mj-section>
                 <mj-column>
-                <mj-image width="200px" src="https://the-guild.dev/graphql/hive/github-org-image.png"></mj-image>
-                <mj-divider border-color="#ca8a04"></mj-divider>
-                <mj-text>
+                  <mj-image width="200px" src="https://the-guild.dev/graphql/hive/github-org-image.png"></mj-image>
+                  <mj-divider border-color="#ca8a04"></mj-divider>
+                  <mj-text>
                     Someone from <strong>${organization.name}</strong> invited you to join GraphQL Hive.
                   </mj-text>.
                   <mj-button href="${mjml.raw(this.appBaseUrl)}/join/${invitation.code}">
