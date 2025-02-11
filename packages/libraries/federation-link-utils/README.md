@@ -14,7 +14,7 @@ directive.
 
 - Link version support.
 - Import `as`/namespacing support that follows the [link spec](https://specs.apollo.dev/link/v1.0/).
-- Only `graphql` as a dependency.
+- Only `graphql` as a peer dependency.
 
 ## Usage
 
@@ -40,7 +40,7 @@ type User {
 ```typescript
 // specs.ts
 import {
-  detectLinkedImplementations,
+  extractLinkedImplementations,
   FEDERATION_V1,
   LinkableSpec
 } from '@graphql-hive/federation-link-utils'
@@ -69,7 +69,7 @@ const exampleSpec = new LinkableSpec('https://specs.graphql-hive.com/example', {
   }
 })
 const typeDefs = parse(sdl)
-const linkedSpecs = detectLinkedImplementations(typeDefs, [exampleSpec])
+const linkedSpecs = extractLinkedImplementations(typeDefs, [exampleSpec])
 const result = linkedSpecs.map(apply => apply(typeDefs))
 
 // result[0] ==> { user: "query { user { id name } }"}

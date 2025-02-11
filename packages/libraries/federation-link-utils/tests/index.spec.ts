@@ -1,70 +1,14 @@
-import { DocumentNode, parse, StringValueNode, visit } from 'graphql';
-import { detectLinkedImplementations, FEDERATION_V1, LinkableSpec } from '../src/index';
+import { parse, StringValueNode, visit } from 'graphql';
+import { extractLinkImplementations, FEDERATION_V1 } from '../src/index';
 
-const metaSpec = new LinkableSpec('https://specs.graphql-hive.com/metadata', {
-  [FEDERATION_V1]: _resolveImportName => (_typeDefs: DocumentNode) => {
-    return 'Missing federation 2 support';
-  },
-
-  // The return value could be used to map sdl, collect information, or create a graphql yoga plugin.
-  // In this test, it's used to collect metadata information from the schema.
-  'v0.1': resolveImportName => (typeDefs: DocumentNode) => {
-    const collectedMeta: Record<string, Record<string, string>> = {};
-    const metaName = resolveImportName('@meta');
-    const exampleName = resolveImportName('@example');
-    visit(typeDefs, {
-      FieldDefinition: node => {
-        let metaData: Record<string, string> = {};
-        const fieldName = node.name.value;
-        const meta = node.directives?.find(d => d.name.value === metaName);
-        if (meta) {
-          metaData['name'] =
-            (
-              meta.arguments?.find(a => a.name.value === 'name')?.value as
-                | StringValueNode
-                | undefined
-            )?.value ?? '??';
-          metaData['content'] =
-            (
-              meta.arguments?.find(a => a.name.value === 'content')?.value as
-                | StringValueNode
-                | undefined
-            )?.value ?? '??';
-        }
-
-        const example = node.directives?.find(d => d.name.value === exampleName);
-        if (example) {
-          metaData['eg'] =
-            (
-              example.arguments?.find(a => a.name.value === 'eg')?.value as
-                | StringValueNode
-                | undefined
-            )?.value ?? '??';
-        }
-        if (Object.keys(metaData).length) {
-          collectedMeta[fieldName] ??= {};
-          collectedMeta[fieldName] = Object.assign(collectedMeta[fieldName], metaData);
-        }
-        return;
-      },
-    });
-    // collect metadata
-    return `running on v0.1.\nFound metadata: ${JSON.stringify(collectedMeta)}`;
-  },
-  'v0.2': _resolveImportName => (_typeDefs: DocumentNode) => {
-    // collect metadata
-    return `running on v0.2...`;
-  },
-  v0_3: _resolveImportName => (_: DocumentNode) => 'Version 0.3 used',
-});
-
-test('LinkableSpec and detectLinkedImplementations can be used to apply linked schema in Federation 2.x', () => {
+describe('extractLinkImplementations', () => {
   const sdl = `
     directive @meta(name: String!, content: String!) on SCHEMA | FIELD
     directive @metadata__example(eg: String!) on FIELD
     extend schema
       @link(url: "https://specs.apollo.dev/federation/v2.3")
       @link(url: "https://specs.graphql-hive.com/metadata/v0.1", import: ["@meta"])
+      @link(url: "https://specs.graphql-hive.com/foo/v1.1")
 
     type Query {
       ping: String @meta(name: "owner", content: "hive-console-team")
@@ -72,48 +16,115 @@ test('LinkableSpec and detectLinkedImplementations can be used to apply linked s
     }
   `;
   const typeDefs = parse(sdl);
-  const linked = detectLinkedImplementations(typeDefs, [metaSpec]);
-  expect(linked.map(link => link(typeDefs))).toMatchInlineSnapshot(`
-    [
-      running on v0.1.
-    Found metadata: {"ping":{"name":"owner","content":"hive-console-team"},"pong":{"eg":"1...2...3... Pong"}},
-    ]
-  `);
-});
+  const { matchesImplementation, resolveImportName } = extractLinkImplementations(typeDefs);
 
-test('LinkableSpec and detectLinkedImplementations can be used to apply linked schema in schemas that are missing the link directive', () => {
-  const sdl = `
-    directive @meta(name: String!, content: String!) on SCHEMA | FIELD
+  test('can match alpha (v0.x) versions correctly', () => {
+    expect(matchesImplementation('https://specs.graphql-hive.com/metadata', 'v0.1')).toBe(true);
+    expect(matchesImplementation('https://specs.graphql-hive.com/metadata', 'v0.2')).toBe(false);
+  });
 
-    type Query {
-      ping: String @meta(name: "owner", content: "hive-console-team")
+  test('can match non-alpha (v1.x+) versions correctly', () => {
+    expect(matchesImplementation('https://specs.graphql-hive.com/metadata', 'v1.0')).toBe(false);
+    expect(
+      matchesImplementation('https://specs.graphql-hive.com/foo', { major: 1, minor: 0 }),
+    ).toBe(true);
+    expect(matchesImplementation('https://specs.graphql-hive.com/foo', 'v1.1')).toBe(true);
+    expect(
+      matchesImplementation('https://specs.graphql-hive.com/foo', { major: 1, minor: 2 }),
+    ).toBe(false);
+    expect(
+      matchesImplementation('https://specs.graphql-hive.com/foo', { major: 2, minor: 0 }),
+    ).toBe(false);
+  });
+
+  test('does not match FEDERATION_V1 version if linked', () => {
+    expect(matchesImplementation('https://specs.graphql-hive.com/metadata', FEDERATION_V1)).toBe(
+      false,
+    );
+  });
+
+  test('matches FEDERATION_V1 version if no federation link is provided', () => {
+    const sdl = `
+      directive @meta(name: String!, content: String!) on SCHEMA | FIELD
+
+      type Query {
+        ping: String @meta(name: "owner", content: "hive-console-team")
+      }
+    `;
+    const typeDefs = parse(sdl);
+    const { matchesImplementation, resolveImportName } = extractLinkImplementations(typeDefs);
+    expect(matchesImplementation('https://specs.graphql-hive.com', FEDERATION_V1)).toBe(true);
+    expect(resolveImportName('https://specs.graphql-hive.com', '@meta')).toBe('meta');
+  });
+
+  test('does not match NULL version if linked to a specific version', () => {
+    expect(matchesImplementation('https://specs.graphql-hive.com/metadata', null)).toBe(false);
+  });
+
+  test('matches NULL version if link does not include a specific version', () => {
+    const sdl = `
+      directive @meta(name: String!, content: String!) on SCHEMA | FIELD
+      extend schema
+        @link(url: "https://specs.apollo.dev/federation/v2.3")
+        @link(url: "https://specs.graphql-hive.com", import: ["@meta"])
+
+      type Query {
+        ping: String @meta(name: "owner", content: "hive-console-team")
+      }
+    `;
+    const typeDefs = parse(sdl);
+    const { matchesImplementation } = extractLinkImplementations(typeDefs);
+    expect(matchesImplementation('https://specs.graphql-hive.com', null)).toBe(true);
+  });
+
+  test('can resolve name of import', () => {
+    expect(resolveImportName('https://specs.graphql-hive.com/metadata', '@meta')).toBe('meta');
+  });
+
+  test('can resolve a namespaced import', () => {
+    expect(resolveImportName('https://specs.graphql-hive.com/metadata', '@example')).toBe(
+      'metadata__example',
+    );
+  });
+
+  test('can be used to develop plugins', () => {
+    if (matchesImplementation('https://specs.graphql-hive.com/metadata', 'v0.1')) {
+      const collectedMeta: Record<string, Record<string, string>> = {};
+      const metaName = resolveImportName('https://specs.graphql-hive.com/metadata', '@meta');
+      visit(typeDefs, {
+        FieldDefinition: node => {
+          let metaData: Record<string, string> = {};
+          const id = node.name.value;
+          const meta = node.directives?.find(d => d.name.value === metaName);
+          if (meta) {
+            metaData['name'] =
+              (
+                meta.arguments?.find(a => a.name.value === 'name')?.value as
+                  | StringValueNode
+                  | undefined
+              )?.value ?? '??';
+            metaData['content'] =
+              (
+                meta.arguments?.find(a => a.name.value === 'content')?.value as
+                  | StringValueNode
+                  | undefined
+              )?.value ?? '??';
+          }
+          if (Object.keys(metaData).length) {
+            collectedMeta[id] ??= {};
+            collectedMeta[id] = Object.assign(collectedMeta[id], metaData);
+          }
+          return;
+        },
+      });
+      expect(collectedMeta).toMatchInlineSnapshot(`
+        {
+          ping: {
+            content: hive-console-team,
+            name: owner,
+          },
+        }
+      `);
     }
-  `;
-  const typeDefs = parse(sdl);
-  const linked = detectLinkedImplementations(typeDefs, [metaSpec]);
-  expect(linked.map(link => link(typeDefs))).toMatchInlineSnapshot(`
-    [
-      Missing federation 2 support,
-    ]
-  `);
-});
-
-test('LinkableSpec supports underscores in versions', () => {
-  const sdl = `
-    directive @meta(name: String!, content: String!) on SCHEMA | FIELD
-    extend schema
-      @link(url: "https://specs.apollo.dev/federation/v2.3")
-      @link(url: "https://specs.graphql-hive.com/metadata/v0.3", import: ["@meta"])
-
-    type Query {
-      ping: String @meta(name: "owner", content: "hive-console-team")
-    }
-  `;
-  const typeDefs = parse(sdl);
-  const linked = detectLinkedImplementations(typeDefs, [metaSpec]);
-  expect(linked.map(link => link(typeDefs))).toMatchInlineSnapshot(`
-    [
-      Version 0.3 used,
-    ]
-  `);
+  });
 });

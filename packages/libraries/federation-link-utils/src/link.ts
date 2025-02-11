@@ -50,7 +50,6 @@ function namespaced(namespace: string | null, name: string) {
 }
 
 export class FederatedLink {
-  // @todo does this need to include import names for every feature or just the namespace?
   constructor(
     private readonly url: FederatedLinkUrl,
     private readonly as: string | null,
@@ -102,15 +101,6 @@ export class FederatedLink {
   supports(...args: [string] | [number, number] | [FederatedLinkUrl] | [null]): boolean {
     /** @ts-expect-error: ignore tuple error. These are tuples and can be spread. tsc is wrong. */
     return this.url.supports(...args);
-  }
-
-  isSupportedBy(version: string): boolean;
-  isSupportedBy(major: number, minor: number): boolean;
-  isSupportedBy(version: FederatedLinkUrl): boolean;
-  isSupportedBy(version: null): boolean;
-  isSupportedBy(...args: [string] | [number, number] | [FederatedLinkUrl] | [null]): boolean {
-    /** @ts-expect-error: ignore tuple error. These are tuples and can be spread. tsc is wrong. */
-    return this.url.isSupportedBy(...args);
   }
 
   /**
