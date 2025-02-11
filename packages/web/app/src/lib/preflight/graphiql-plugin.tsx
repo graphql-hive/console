@@ -63,14 +63,17 @@ function content() {
   const { toast } = useToast();
   const [showModal, toggleShowModal] = useToggle();
   const preflight = usePreflightContext();
+  // console.log(1, preflight.environmentVariables);
   const params = useParams({
     from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug',
   });
   const [, mutate] = useMutation(UpdatePreflightScriptMutation);
 
-  const onPreflightEditorSave = async (value: PreflightModalEditorValue) => {
+  // We only update script on submit, but environment variables on every change.
+  const onPreflightEditorChange = (value: PreflightModalEditorValue) => {
     preflight.setEnvironmentVariables(value.environmentVariables);
-
+  };
+  const onPreflightEditorSave = async (value: PreflightModalEditorValue) => {
     const { data, error } = await mutate({
       input: {
         selector: params,
@@ -115,6 +118,7 @@ function content() {
           script: preflight.script,
           environmentVariables: preflight.environmentVariables,
         }}
+        onChange={onPreflightEditorChange}
         onSubmit={onPreflightEditorSave}
       />
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">

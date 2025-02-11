@@ -31,6 +31,7 @@ export function PreflightModal({
   logs,
   clearLogs,
   value,
+  onChange,
 }: {
   onSubmit?: (values: PreflightModalEditorValue) => void;
   isOpen: boolean;
@@ -41,12 +42,18 @@ export function PreflightModal({
   logs: Array<LogRecord>;
   clearLogs: () => void;
   value: PreflightModalEditorValue;
+  onChange?: (value: PreflightModalEditorValue) => void;
 }) {
   const [scriptValue, setScriptValue] = useState(value.script);
-  const [environmentVariablesValue, setEnvironmentVariablesValue] = useState(
-    value.environmentVariables,
-  );
+  const [environmentVariablesValue, setEnvironmentVariablesValue] = useState(value.environmentVariables); // prettier-ignore
   const consoleRef = useRef<HTMLElement>(null);
+
+  // It is possible for the script, upon running, to change the environment variables.
+  // We need to update the local state of the environment variables value when this happens.
+  useEffect(() => {
+    setEnvironmentVariablesValue(value.environmentVariables);
+  }, [value.environmentVariables]);
+
   const handleSave = () => {
     onSubmit?.({
       script: scriptValue,
@@ -127,7 +134,14 @@ export function PreflightModal({
             </div>
             <ScriptEditor
               value={scriptValue}
-              onChange={value => setScriptValue(value ?? '')}
+              onChange={value => {
+                const value_ = value ?? '';
+                setScriptValue(value_);
+                onChange?.({
+                  script: value_,
+                  environmentVariables: environmentVariablesValue,
+                });
+              }}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}
@@ -167,7 +181,14 @@ export function PreflightModal({
             </EditorTitle>
             <EnvironmentEditor
               value={environmentVariablesValue}
-              onChange={value => setEnvironmentVariablesValue(value ?? '')}
+              onChange={value => {
+                const value_ = value ?? '';
+                setEnvironmentVariablesValue(value_);
+                onChange?.({
+                  script: scriptValue,
+                  environmentVariables: value_,
+                });
+              }}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}
