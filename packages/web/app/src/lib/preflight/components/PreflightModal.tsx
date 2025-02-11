@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { editor } from 'monaco-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,150 +10,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { MonacoEditorReact } from '@/lib/MonacoEditorReact';
 import { Cross2Icon, InfoCircledIcon, TriangleRightIcon } from '@radix-ui/react-icons';
-import labApiDefinitionRaw from '../lab-api-declaration?raw';
 import { LogRecord, PreflightWorkerState } from '../shared-types';
 import { EditorTitle } from './EditorTitle';
 import { EnvironmentEditor } from './EnvironmentEditor';
 import { LogLine } from './LogLine';
 import { ScriptEditor } from './ScriptEditor';
 
+export interface SaveResult {
+  scriptEditorValue: string;
+  environmentEditorValue: string;
+}
+
 export function PreflightModal({
   isOpen,
   toggle,
-  content,
+  onSave,
   state,
   execute,
   abortExecution,
   logs,
   clearLogs,
-  onContentChange,
-  envValue,
-  onEnvValueChange,
+  scriptEditorValue: scriptEditorValueInit,
+  environmentEditorValue: environmentEditorValueInit,
 }: {
+  onSave?: (values: SaveResult) => void;
   isOpen: boolean;
   toggle: () => void;
-  content?: string;
   state: PreflightWorkerState;
   execute: (script: string) => void;
   abortExecution: () => void;
   logs: Array<LogRecord>;
   clearLogs: () => void;
-  onContentChange: (value: string) => void;
-  envValue: string;
-  onEnvValueChange: (value: string) => void;
+  scriptEditorValue?: string;
+  environmentEditorValue?: string;
 }) {
-  const scriptEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const envEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const [scriptEditorValue, setScriptEditorValue] = useState(scriptEditorValueInit ?? '');
+  const [environmentEditorValue, setEnvironmentEditorValue] = useState(
+    environmentEditorValueInit ?? '',
+  );
   const consoleRef = useRef<HTMLElement>(null);
-
-  const handleScriptEditorDidMount: MonacoEditorReact.OnMount = useCallback(editor => {
-    scriptEditorRef.current = editor;
-  }, []);
-
-  const handleEnvEditorDidMount: MonacoEditorReact.OnMount = useCallback(editor => {
-    envEditorRef.current = editor;
-  }, []);
-
-  const handleMonacoEditorBeforeMount = useCallback((monaco: MonacoEditorReact.Monaco) => {
-    // Configure JavaScript defaults for TypeScript validation
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false,
-      noSuggestionDiagnostics: false,
-      diagnosticCodesToIgnore: [], // Can specify codes to ignore
+  const handleSave = useCallback(() => {
+    onSave?.({
+      scriptEditorValue: scriptEditorValue,
+      environmentEditorValue: environmentEditorValue,
     });
-    // monaco.languages.typescript.
-
-    // Enable modern JavaScript features and strict checks
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      allowNonTsExtensions: true,
-      allowJs: true,
-      checkJs: true,
-      // noEmit: true,
-      target: monaco.languages.typescript.ScriptTarget.ES2020,
-      // moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      // module: monaco.languages.typescript.ModuleKind.ESNext,
-      lib: [],
-      // types: [],
-      strict: true,
-      noUnusedLocals: true,
-      noUnusedParameters: true,
-      noImplicitReturns: true,
-      noFallthroughCasesInSwitch: true,
-    });
-
-    // Add custom typings for globalThis
-    monaco.languages.typescript.javascriptDefaults.addExtraLib(
-      `
-        /// <reference lib="es2020" />
-
-        ${labApiDefinitionRaw}
-        declare const lab: LabAPI;
-
-
-        // ------------------------------------------------------------------------------------------------
-        // The following declarations are taken from:
-        // https://github.com/microsoft/TypeScript/blob/main/src/lib/dom.generated.d.ts
-        // ------------------------------------------------------------------------------------------------
-
-        /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console) */
-        interface Console {
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/assert_static) */
-          assert(condition?: boolean, ...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/clear_static) */
-          clear(): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/count_static) */
-          count(label?: string): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/countReset_static) */
-          countReset(label?: string): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/debug_static) */
-          debug(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/dir_static) */
-          dir(item?: any, options?: any): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/dirxml_static) */
-          dirxml(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/error_static) */
-          error(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/group_static) */
-          group(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/groupCollapsed_static) */
-          groupCollapsed(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/groupEnd_static) */
-          groupEnd(): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/info_static) */
-          info(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/log_static) */
-          log(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/table_static) */
-          table(tabularData?: any, properties?: string[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/time_static) */
-          time(label?: string): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/timeEnd_static) */
-          timeEnd(label?: string): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/timeLog_static) */
-          timeLog(label?: string, ...data: any[]): void;
-          timeStamp(label?: string): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/trace_static) */
-          trace(...data: any[]): void;
-          /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/warn_static) */
-          warn(...data: any[]): void;
-        }
-        declare const console: Console;
-
-        /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/setTimeout) */
-        declare function setTimeout(handler: TimerHandler, timeout?: number, ...arguments: any[]): number;
-
-        type TimerHandler = string | Function;
-      `,
-      'global.d.ts',
-    );
-  }, []);
-
-  const handleSubmit = useCallback(() => {
-    onContentChange(scriptEditorRef.current?.getValue() ?? '');
-    onEnvValueChange(envEditorRef.current?.getValue() ?? '');
     toggle();
   }, []);
 
@@ -209,7 +110,7 @@ export function PreflightModal({
                     return;
                   }
 
-                  execute(scriptEditorRef.current?.getValue() ?? '');
+                  execute(scriptEditorValue);
                 }}
                 data-cy="run-preflight"
               >
@@ -228,9 +129,8 @@ export function PreflightModal({
               </Button>
             </div>
             <ScriptEditor
-              value={content}
-              beforeMount={handleMonacoEditorBeforeMount}
-              onMount={handleScriptEditorDidMount}
+              value={scriptEditorValue}
+              onChange={value => setScriptEditorValue(value ?? '')}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}
@@ -269,9 +169,8 @@ export function PreflightModal({
               </Badge>
             </EditorTitle>
             <EnvironmentEditor
-              value={envValue}
-              onChange={value => onEnvValueChange(value ?? '')}
-              onMount={handleEnvEditorDidMount}
+              value={environmentEditorValue}
+              onChange={value => setEnvironmentEditorValue(value ?? '')}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}
@@ -293,7 +192,7 @@ export function PreflightModal({
           <Button
             type="button"
             variant="primary"
-            onClick={handleSubmit}
+            onClick={handleSave}
             data-cy="preflight-modal-submit"
           >
             Save

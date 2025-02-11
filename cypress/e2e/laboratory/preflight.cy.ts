@@ -50,16 +50,6 @@ describe('Preflight Modal', () => {
     cyp.setEnvironmentEditorContent(env);
   });
 
-  it('code is validated with TypeScript', () => {
-    const tsErrorMessage = "Type 'string' is not assignable to type 'number'.";
-    const script = 'let a = 1; a = ""';
-    cyp.setEditorContent(script);
-    // Hack: Seemingly only way to reliably interact with the monaco text area from Cypress.
-    cy.wait(1000);
-    cy.dataCy(s.modal.editorCy).find('textarea').focus().realPress(['Alt', 'F8']);
-    cy.contains(tsErrorMessage);
-  });
-
   it('save script and environment variables when submitting', () => {
     cyp.setEditorContent(script);
     cy.dataCy('preflight-modal-submit').click();

@@ -1,13 +1,4 @@
-import {
-  ComponentPropsWithoutRef,
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { clsx } from 'clsx';
 import { PowerIcon } from 'lucide-react';
 import { useMutation } from 'urql';
@@ -26,7 +17,7 @@ import { Kit } from '../kit';
 import { cn } from '../utils';
 import { EditorTitle } from './components/EditorTitle';
 import { EnvironmentEditor } from './components/EnvironmentEditor';
-import { PreflightModal } from './components/PreflightModal';
+import { PreflightModal, SaveResult } from './components/PreflightModal';
 import { ScriptEditor } from './components/ScriptEditor';
 import { IFrameEvents, LogRecord, PreflightWorkerState } from './shared-types';
 
@@ -54,7 +45,7 @@ export const preflightPlugin: GraphiQLPlugin = {
     </svg>
   ),
   title: 'Preflight Script',
-  content: PreflightContent,
+  content: content,
 };
 
 const UpdatePreflightScriptMutation = graphql(`
@@ -391,9 +382,10 @@ export function usePreflight(args: {
 type PreflightObject = ReturnType<typeof usePreflight>;
 
 const PreflightContext = createContext<PreflightObject | null>(null);
+
 export const PreflightProvider = PreflightContext.Provider;
 
-function PreflightContent() {
+function content() {
   const preflight = useContext(PreflightContext);
   if (preflight === null) {
     throw new Error('PreflightContent used outside PreflightContext.Provider');
@@ -408,7 +400,7 @@ function PreflightContent() {
 
   const { toast } = useToast();
 
-  const handleContentChange = useCallback(async (newValue = '') => {
+  const onPreflightScriptEditorSave = useCallback(async (newValue = '') => {
     const { data, error } = await mutate({
       input: {
         selector: params,
@@ -433,6 +425,11 @@ function PreflightContent() {
     });
   }, []);
 
+  const onPreflightEditorSave = ({ environmentEditorValue, scriptEditorValue }: SaveResult) => {
+    onPreflightScriptEditorSave(scriptEditorValue);
+    preflight.setEnvironmentVariables(environmentEditorValue);
+  };
+
   return (
     <>
       <PreflightModal
@@ -449,10 +446,9 @@ function PreflightContent() {
         abortExecution={preflight.abortExecution}
         logs={preflight.logs}
         clearLogs={preflight.clearLogs}
-        content={preflight.content}
-        onContentChange={handleContentChange}
-        envValue={preflight.environmentVariables}
-        onEnvValueChange={preflight.setEnvironmentVariables}
+        scriptEditorValue={preflight.content}
+        onSave={onPreflightEditorSave}
+        environmentEditorValue={preflight.environmentVariables}
       />
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
