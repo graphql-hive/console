@@ -9,8 +9,10 @@ import {
   HiveGatewayIcon,
 } from '@theguild/components';
 import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
+import { ErrorBoundary } from '../../components/error-boundary';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
+import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
 import GatewayLandingFAQ from './gateway-landing-faq.mdx';
 import { OrchestrateYourWay } from './orchestrate-your-way';
@@ -55,7 +57,14 @@ export default function HiveGatewayPage() {
       </Hero>
       <GatewayFeatureTabs className="relative mt-6 sm:mt-[-72px] sm:bg-blue-100" />
       <OrchestrateYourWay className="mx-4 mt-6 sm:mx-8" />
-      {/* Federation-Compatible Gateway Benchmarks */}
+      <ErrorBoundary
+        fallback={
+          // this section doesn't make sense if data didn't load, so we just unmount
+          null
+        }
+      >
+        <FederationCompatibleBenchmarksSection />
+      </ErrorBoundary>
       {/* Let's get advanced */}
       {/* Cloud-Native Nature */}
       <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
