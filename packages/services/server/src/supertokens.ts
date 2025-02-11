@@ -87,7 +87,6 @@ export const backendConfig = (requirements: {
       createOIDCSuperTokensProvider({
         internalApi,
         broadcastLog: requirements.broadcastLog,
-        logger,
       }),
     );
   }

@@ -1,6 +1,6 @@
 import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
-import type { FastifyReply, FastifyRequest, ServiceLogger } from '@hive/service-common';
+import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import type { User } from '../../../shared/entities';
 import { AccessError, HiveError } from '../../../shared/errors';
@@ -211,12 +211,12 @@ export class SuperTokensCookieBasedSession extends Session {
 }
 
 export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCookieBasedSession> {
-  private logger: ServiceLogger;
+  private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
 
   constructor(deps: {
-    logger: ServiceLogger;
+    logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
   }) {
