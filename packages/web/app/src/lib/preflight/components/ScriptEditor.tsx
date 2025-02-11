@@ -33,7 +33,6 @@ export const ScriptEditor: React.FC<EditorProps> = props => {
     <Editor
       {...defaultProps}
       {...props}
-      onChange={x => console.log({ x })}
       options={{
         ...defaultProps.options,
         ...props.options,
