@@ -1,5 +1,29 @@
 # @graphql-hive/yoga
 
+## 0.40.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`ae2d16d`](https://github.com/graphql-hive/console/commit/ae2d16d553e264c813ac65d78eacab3d7a2efeae)]:
+  - @graphql-hive/core@0.9.1
+
+## 0.40.0
+
+### Minor Changes
+
+- [#6488](https://github.com/graphql-hive/console/pull/6488)
+  [`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Include and log a `x-request-id` header for all
+  requests sent to the Hive API. This helps users to share more context with Hive staff when
+  encountering errors.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)]:
+  - @graphql-hive/core@0.9.0
+
 ## 0.39.4
 
 ### Patch Changes

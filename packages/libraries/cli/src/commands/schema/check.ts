@@ -26,10 +26,10 @@ import {
 import * as TargetInput from '../../helpers/target-input';
 
 const schemaCheckMutation = graphql(/* GraphQL */ `
-  mutation schemaCheck($input: SchemaCheckInput!, $usesGitHubApp: Boolean!) {
+  mutation schemaCheck($input: SchemaCheckInput!) {
     schemaCheck(input: $input) {
       __typename
-      ... on SchemaCheckSuccess @skip(if: $usesGitHubApp) {
+      ... on SchemaCheckSuccess {
         valid
         initial
         warnings {
@@ -60,7 +60,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           webUrl
         }
       }
-      ... on SchemaCheckError @skip(if: $usesGitHubApp) {
+      ... on SchemaCheckError {
         valid
         changes {
           nodes {
@@ -90,10 +90,10 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           webUrl
         }
       }
-      ... on GitHubSchemaCheckSuccess @include(if: $usesGitHubApp) {
+      ... on GitHubSchemaCheckSuccess {
         message
       }
-      ... on GitHubSchemaCheckError @include(if: $usesGitHubApp) {
+      ... on GitHubSchemaCheckError {
         message
       }
     }
@@ -274,7 +274,6 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             contextId: flags.contextId ?? undefined,
             target,
           },
-          usesGitHubApp,
         },
       });
 
