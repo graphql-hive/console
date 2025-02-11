@@ -506,11 +506,11 @@ export abstract class AuthNStrategy<TSession extends Session> {
 
 /** Helper class to Authenticate an incoming request. */
 export class AuthN {
-  private strategies: Array<AuthNStrategy<Session>>;
+  private strategies: Array<AuthNStrategy<Session> | ((logger: Logger) => AuthNStrategy<Session>)>;
 
   constructor(deps: {
     /** List of strategies for authentication a user */
-    strategies: Array<AuthNStrategy<Session>>;
+    strategies: Array<AuthNStrategy<Session> | ((logger: Logger) => AuthNStrategy<Session>)>;
   }) {
     this.strategies = deps.strategies;
   }
@@ -520,7 +520,10 @@ export class AuthN {
    * If no authentication strategy succeeds a `UnauthenticatedSession` is returned instead.
    */
   async authenticate(args: { req: FastifyRequest; reply: FastifyReply }): Promise<Session> {
-    for (const strategy of this.strategies) {
+    for (let strategy of this.strategies) {
+      if (strategy instanceof AuthNStrategy === false) {
+        strategy = strategy(args.req.log as Logger);
+      }
       const session = await strategy.parse(args);
       if (session) {
         return session;

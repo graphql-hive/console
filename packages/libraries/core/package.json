@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/core",
-  "version": "0.8.4",
+  "version": "0.9.1",
   "type": "module",
   "repository": {
     "type": "git",

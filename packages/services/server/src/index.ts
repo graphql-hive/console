@@ -406,22 +406,24 @@ export async function main() {
 
     const authN = new AuthN({
       strategies: [
-        new SuperTokensUserAuthNStrategy({
-          logger: server.log,
-          storage,
-          organizationMembers: new OrganizationMembers(
-            storage.pool,
-            new OrganizationMemberRoles(storage.pool, server.log),
+        (logger: Logger) =>
+          new SuperTokensUserAuthNStrategy({
+            logger,
             storage,
-            server.log,
-          ),
-        }),
-        new TargetAccessTokenStrategy({
-          logger: server.log,
-          tokensConfig: {
-            endpoint: env.hiveServices.tokens.endpoint,
-          },
-        }),
+            organizationMembers: new OrganizationMembers(
+              storage.pool,
+              new OrganizationMemberRoles(storage.pool, logger),
+              storage,
+              logger,
+            ),
+          }),
+        (logger: Logger) =>
+          new TargetAccessTokenStrategy({
+            logger,
+            tokensConfig: {
+              endpoint: env.hiveServices.tokens.endpoint,
+            },
+          }),
       ],
     });
 
