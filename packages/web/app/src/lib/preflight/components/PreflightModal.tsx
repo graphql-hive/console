@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { editor } from 'monaco-editor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,23 +17,22 @@ import { LogLine } from './LogLine';
 import { ScriptEditor } from './ScriptEditor';
 
 export interface PreflightModalEditorValue {
-  scriptEditorValue: string;
-  environmentEditorValue: string;
+  script: string;
+  environmentVariables: string;
 }
 
 export function PreflightModal({
   isOpen,
   toggle,
-  onSave,
+  onSubmit,
   state,
   execute,
   abortExecution,
   logs,
   clearLogs,
-  scriptEditorValue: scriptEditorValueInit,
-  environmentEditorValue: environmentEditorValueInit,
+  value,
 }: {
-  onSave?: (values: PreflightModalEditorValue) => void;
+  onSubmit?: (values: PreflightModalEditorValue) => void;
   isOpen: boolean;
   toggle: () => void;
   state: PreflightWorkerState;
@@ -42,21 +40,20 @@ export function PreflightModal({
   abortExecution: () => void;
   logs: Array<LogRecord>;
   clearLogs: () => void;
-  scriptEditorValue?: string;
-  environmentEditorValue?: string;
+  value: PreflightModalEditorValue;
 }) {
-  const [scriptEditorValue, setScriptEditorValue] = useState(scriptEditorValueInit ?? '');
-  const [environmentEditorValue, setEnvironmentEditorValue] = useState(
-    environmentEditorValueInit ?? '',
+  const [scriptValue, setScriptValue] = useState(value.script);
+  const [environmentVariablesValue, setEnvironmentVariablesValue] = useState(
+    value.environmentVariables,
   );
   const consoleRef = useRef<HTMLElement>(null);
-  const handleSave = useCallback(() => {
-    onSave?.({
-      scriptEditorValue: scriptEditorValue,
-      environmentEditorValue: environmentEditorValue,
+  const handleSave = () => {
+    onSubmit?.({
+      script: scriptValue,
+      environmentVariables: environmentVariablesValue,
     });
     toggle();
-  }, []);
+  };
 
   useEffect(() => {
     const consoleEl = consoleRef.current;
@@ -110,7 +107,7 @@ export function PreflightModal({
                     return;
                   }
 
-                  execute(scriptEditorValue);
+                  execute(scriptValue);
                 }}
                 data-cy="run-preflight"
               >
@@ -129,8 +126,8 @@ export function PreflightModal({
               </Button>
             </div>
             <ScriptEditor
-              value={scriptEditorValue}
-              onChange={value => setScriptEditorValue(value ?? '')}
+              value={scriptValue}
+              onChange={value => setScriptValue(value ?? '')}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}
@@ -169,8 +166,8 @@ export function PreflightModal({
               </Badge>
             </EditorTitle>
             <EnvironmentEditor
-              value={environmentEditorValue}
-              onChange={value => setEnvironmentEditorValue(value ?? '')}
+              value={environmentVariablesValue}
+              onChange={value => setEnvironmentVariablesValue(value ?? '')}
               options={{
                 wordWrap: 'wordWrapColumn',
               }}

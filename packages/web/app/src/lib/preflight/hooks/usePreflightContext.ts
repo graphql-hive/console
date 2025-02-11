@@ -1,7 +1,5 @@
 import { createContext, useContext } from 'react';
-import { usePreflight } from './usePreflight';
-
-type PreflightObject = ReturnType<typeof usePreflight>;
+import { PreflightObject } from './usePreflight';
 
 const PreflightContext = createContext<PreflightObject | null>(null);
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -17,6 +17,8 @@ const PreflightScript_TargetFragment = graphql(`
     }
   }
 `);
+
+export type PreflightObject = ReturnType<typeof usePreflight>;
 
 export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
@@ -297,7 +299,7 @@ export function usePreflight(args: {
     abortExecution,
     isEnabled,
     setIsEnabled,
-    content: target?.preflightScript?.sourceCode ?? '',
+    script: target?.preflightScript?.sourceCode ?? '',
     environmentVariables,
     setEnvironmentVariables,
     state,

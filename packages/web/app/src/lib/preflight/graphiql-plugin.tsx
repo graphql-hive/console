@@ -69,12 +69,12 @@ function content() {
   const [, mutate] = useMutation(UpdatePreflightScriptMutation);
 
   const onPreflightEditorSave = async (value: PreflightModalEditorValue) => {
-    preflight.setEnvironmentVariables(value.environmentEditorValue);
+    preflight.setEnvironmentVariables(value.environmentVariables);
 
     const { data, error } = await mutate({
       input: {
         selector: params,
-        sourceCode: value.scriptEditorValue,
+        sourceCode: value.script,
       },
     });
     const err = error || data?.updatePreflightScript?.error;
@@ -111,9 +111,11 @@ function content() {
         abortExecution={preflight.abortExecution}
         logs={preflight.logs}
         clearLogs={preflight.clearLogs}
-        scriptEditorValue={preflight.content}
-        onSave={onPreflightEditorSave}
-        environmentEditorValue={preflight.environmentVariables}
+        value={{
+          script: preflight.script,
+          environmentVariables: preflight.environmentVariables,
+        }}
+        onSubmit={onPreflightEditorSave}
       />
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
@@ -163,7 +165,7 @@ function content() {
         )}
         <ScriptEditor
           height={128}
-          value={preflight.content}
+          value={preflight.script}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
             ['data-cy']: 'preflight-editor-mini',
