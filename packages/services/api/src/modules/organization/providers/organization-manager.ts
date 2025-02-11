@@ -541,7 +541,7 @@ export class OrganizationManager {
             <mj-body>
               <mj-section>
                 <mj-column>
-<svg width="97" height="32" fill="none" viewBox="0 0 97 32" xamlns="http://www.w3.org/2000/svg" class="text-green-1000 dark:text-neutral-200"><g clip-path="url(#hive-combomark)" fill="currentColor"><path d="M22.402 0H9.598L0 9.598v12.804L9.598 32h12.804L32 22.402V9.598L22.402 0Zm7.554 17.746L17.744 29.958a2.468 2.468 0 0 1-3.49 0L2.044 17.746a2.468 2.468 0 0 1 0-3.49l12.21-12.212a2.468 2.468 0 0 1 3.49 0l12.212 12.212a2.468 2.468 0 0 1 0 3.49ZM49.771 5.836v8.242h9.413V5.836h3.313v19.911h-3.313V16.92H49.77v8.827h-3.313V5.836h3.313ZM65.195 7.562c0-1.003.836-1.531 1.643-1.531.864 0 1.67.53 1.67 1.531 0 1.002-.806 1.56-1.67 1.56-.807 0-1.643-.558-1.643-1.56Zm3.119 3.954v14.23H65.39v-14.23h2.924ZM72.391 11.516l3.593 11.14h.028l3.592-11.14h3.092l-5.04 14.23h-3.314l-5.04-14.23h3.092-.003ZM93.046 21.402h2.923c-.724 2.702-2.84 4.762-6.488 4.762-4.428 0-7.13-3.062-7.13-7.519 0-4.456 2.702-7.518 6.99-7.518 4.595 0 6.85 3.202 6.85 8.27H85.275c0 2.395 1.531 4.372 4.122 4.372 2.422 0 3.397-1.503 3.648-2.367Zm-7.77-4.177h7.992c0-2.2-1.56-3.787-3.927-3.787s-4.066 1.587-4.066 3.787h.001Z"></path><path d="M16 12.65 12.65 16 16 19.35 19.35 16 16 12.65Z"></path></g><defs><clipPath id="hive-combomark"><path fill="#fff" d="M0 0h96.192v32H0z"></path></clipPath></defs></svg>                  <mj-divider border-color="#ca8a04"></mj-divider>
+                <mj-image width="200px" src="https://the-guild.dev/graphql/hive/github-org-image.png"></mj-image>
                   <mj-text>
                     Someone from <strong>${organization.name}</strong> invited you to join GraphQL Hive.
                   </mj-text>.
