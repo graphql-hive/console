@@ -152,13 +152,16 @@ export function usePreflight(args: {
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isEnabled, setIsEnabled] = useLocalStorageJson(
-    // todo: ability to pass historical keys for seamless gradual migration to new key names.
+    // todo
     // 'hive:laboratory:isPreflightEnabled',
     'hive:laboratory:isPreflightScriptEnabled',
     z.boolean().default(false),
   );
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
-    'hive:laboratory:environment',
+    [
+      { key: `hive/target:${target?.id ?? '__null__'}/laboratory/environment-variables` },
+      { key: 'hive:laboratory:environment' },
+    ],
     '',
   );
   const latestEnvironmentVariablesRef = useRef(environmentVariables);

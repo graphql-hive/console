@@ -1,9 +1,12 @@
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import { Kit } from '../kit';
+import { readVersionedEntry, VersionedEntrySpec } from '../versioned-entry';
 
 export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInput<$Schema>) {
   const [key, schema, manualDefaultValue] = args as any as Args<$Schema>;
+  const versionedEntry: VersionedEntrySpec = typeof key === 'string' ? [{ key }] : key;
+
   // The parameter types will force the user to give a manual default
   // if their given Zod schema does not have default.
   //
@@ -24,7 +27,7 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     // because we manually pre-compute+return the default value, thus we don't
     // rely on Zod's behaviour. If that changes this should have `?? undefined`
     // added.
-    const storedValue = localStorage.getItem(key);
+    const storedValue = readVersionedEntry(versionedEntry);
 
     if (!storedValue) {
       return defaultValue;
@@ -49,10 +52,10 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
 
   const set = useCallback(
     (value: z.infer<$Schema>) => {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(versionedEntry[0].key, JSON.stringify(value));
       setValue(value);
     },
-    [key],
+    [versionedEntry.map(({ key }) => key).join('+')],
   );
 
   return [value, set] as const;
@@ -60,8 +63,8 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
 
 type ArgsInput<$Schema extends z.ZodType> =
   $Schema extends z.ZodDefault<z.ZodType>
-    ? [key: string, schema: ArgsInputGuardZodJsonSchema<$Schema>]
-    : [key: string, schema: ArgsInputGuardZodJsonSchema<$Schema>, defaultValue: z.infer<$Schema>];
+    ? [key: KeyInput, schema: ArgsInputGuardZodJsonSchema<$Schema>]
+    : [key: KeyInput, schema: ArgsInputGuardZodJsonSchema<$Schema>, defaultValue: z.infer<$Schema>];
 
 type ArgsInputGuardZodJsonSchema<$Schema extends z.ZodType> =
   z.infer<$Schema> extends Kit.Json.Value
@@ -69,7 +72,9 @@ type ArgsInputGuardZodJsonSchema<$Schema extends z.ZodType> =
     : 'Error: Your Zod schema is or contains a type that is not valid JSON.';
 
 type Args<$Schema extends z.ZodType> = [
-  key: string,
+  key: KeyInput,
   schema: $Schema,
   defaultValue?: z.infer<$Schema>,
 ];
+
+type KeyInput = string | VersionedEntrySpec;
