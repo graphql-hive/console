@@ -1,7 +1,7 @@
 import clsx from 'clsx';
-import { EditorProps } from '@monaco-editor/react';
+import { MonacoEditorReact } from '@/lib/MonacoEditorReact';
 
-export const defaultEditorProps: Readonly<EditorProps> = {
+export const defaultEditorProps: Readonly<MonacoEditorReact.EditorProps> = {
   theme: 'vs-dark',
   className: clsx('*:bg-[#10151f]'),
   options: {

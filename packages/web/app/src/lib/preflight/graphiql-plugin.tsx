@@ -17,7 +17,7 @@ import { Kit } from '../kit';
 import { cn } from '../utils';
 import { EditorTitle } from './components/EditorTitle';
 import { EnvironmentEditor } from './components/EnvironmentEditor';
-import { PreflightModal, SaveResult } from './components/PreflightModal';
+import { PreflightModal, PreflightModalEditorValue } from './components/PreflightModal';
 import { ScriptEditor } from './components/ScriptEditor';
 import { IFrameEvents, LogRecord, PreflightWorkerState } from './shared-types';
 
@@ -45,7 +45,7 @@ export const preflightPlugin: GraphiQLPlugin = {
     </svg>
   ),
   title: 'Preflight Script',
-  content: content,
+  content,
 };
 
 const UpdatePreflightScriptMutation = graphql(`
@@ -400,7 +400,7 @@ function content() {
 
   const { toast } = useToast();
 
-  const onPreflightScriptEditorSave = useCallback(async (newValue = '') => {
+  const onPreflightScriptEditorSave = useCallback(async (newValue: string) => {
     const { data, error } = await mutate({
       input: {
         selector: params,
@@ -425,9 +425,9 @@ function content() {
     });
   }, []);
 
-  const onPreflightEditorSave = ({ environmentEditorValue, scriptEditorValue }: SaveResult) => {
-    onPreflightScriptEditorSave(scriptEditorValue);
-    preflight.setEnvironmentVariables(environmentEditorValue);
+  const onPreflightEditorSave = async (value: PreflightModalEditorValue) => {
+    preflight.setEnvironmentVariables(value.environmentEditorValue);
+    await onPreflightScriptEditorSave(value.scriptEditorValue);
   };
 
   return (

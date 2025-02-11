@@ -17,7 +17,7 @@ import { EnvironmentEditor } from './EnvironmentEditor';
 import { LogLine } from './LogLine';
 import { ScriptEditor } from './ScriptEditor';
 
-export interface SaveResult {
+export interface PreflightModalEditorValue {
   scriptEditorValue: string;
   environmentEditorValue: string;
 }
@@ -34,7 +34,7 @@ export function PreflightModal({
   scriptEditorValue: scriptEditorValueInit,
   environmentEditorValue: environmentEditorValueInit,
 }: {
-  onSave?: (values: SaveResult) => void;
+  onSave?: (values: PreflightModalEditorValue) => void;
   isOpen: boolean;
   toggle: () => void;
   state: PreflightWorkerState;
