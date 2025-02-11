@@ -1,7 +1,7 @@
 import { allPermissions, Permission } from '../../auth/lib/authz';
 import { PermissionGroup } from './permissions';
 
-export const allPermissionGroups: Array<PermissionGroup> = [
+export const permissionGroups: Array<PermissionGroup> = [
   {
     id: 'organization',
     title: 'Organization',
@@ -239,7 +239,7 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
     permissionsToCheck.delete(item);
   }
 
-  for (const group of allPermissionGroups) {
+  for (const group of permissionGroups) {
     for (const permission of group.permissions) {
       permissionsToCheck.delete(permission.id);
     }
@@ -276,7 +276,7 @@ assertAllRulesAreAssigned([
 export const permissions = (() => {
   const assignable = new Set<Permission>();
   const readOnly = new Set<Permission>();
-  for (const group of allPermissionGroups) {
+  for (const group of permissionGroups) {
     for (const permission of group.permissions) {
       if (permission.isReadyOnly === true) {
         readOnly.add(permission.id);

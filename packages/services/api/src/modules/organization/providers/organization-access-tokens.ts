@@ -13,6 +13,7 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
+import { assignablePermissions } from '../lib/organization-access-token-permissions';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import {
   AssignedProjectsModel,
@@ -129,6 +130,10 @@ export class OrganizationAccessTokens {
         args.assignedResources ?? { mode: 'granular' },
       );
 
+    const permissions = Array.from(
+      new Set(args.permissions.filter(permission => assignablePermissions.has(permission as any))),
+    );
+
     const id = crypto.randomUUID();
     const accessKey = await OrganizationAccessKey.create(id);
 
@@ -148,7 +153,7 @@ export class OrganizationAccessTokens {
         , ${organizationId}
         , ${titleResult.data}
         , ${descriptionResult.data}
-        , ${sql.array(args.permissions, 'text')}
+        , ${sql.array(permissions, 'text')}
         , ${sql.jsonb(assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}

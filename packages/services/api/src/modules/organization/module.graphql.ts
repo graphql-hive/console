@@ -315,6 +315,10 @@ export default gql`
     List of available permission groups that can be assigned to users.
     """
     availableMemberPermissionGroups: [PermissionGroup!]!
+    """
+    List of available permission groups that can be assigned to organization access tokens.
+    """
+    availableOrganizationPermissionGroups: [PermissionGroup!]!
   }
 
   type OrganizationConnection {

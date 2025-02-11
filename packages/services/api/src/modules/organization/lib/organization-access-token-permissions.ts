@@ -1,6 +1,6 @@
 import { type PermissionGroup } from './permissions';
 
-export const allPermissionGroups: Array<PermissionGroup> = [
+export const permissionGroups: Array<PermissionGroup> = [
   {
     id: 'organization',
     title: 'Organization',
@@ -9,7 +9,6 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         id: 'organization:describe',
         title: 'View organization',
         description: 'Member can see the organization. Permission can not be modified.',
-        isReadyOnly: true,
       },
     ],
   },
@@ -68,3 +67,7 @@ export const allPermissionGroups: Array<PermissionGroup> = [
     ],
   },
 ];
+
+export const assignablePermissions = new Set(
+  permissionGroups.flatMap(group => group.permissions.map(permission => permission.id)),
+);
