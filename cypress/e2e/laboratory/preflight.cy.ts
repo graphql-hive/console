@@ -142,7 +142,6 @@ throw new TypeError('Test')`,
 
   it('script execution updates environment variables', () => {
     cyp.setEditorContent(`lab.environment.set('my-test', "TROLOLOL")`);
-
     cy.dataCy('run-preflight').click();
     cy.dataCy('env-editor').should(
       'include.text',
