@@ -116,6 +116,24 @@ export default {
 }
 ```
 
+### Upstash Redis
+
+Upstash is a serverless Redis service that provides a fully managed Redis database. You can use
+Upstash Redis as a cache storage for your Hive Gateway.
+[Learn more about Upstash Redis](https://upstash.com/docs/redis/overall/getstarted)
+
+```ts
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  cache: {
+    type: 'upstash-redis',
+    url: '<UPSTASH_REDIS_REST_URL>',
+    password: '<UPSTASH_REDIS_REST_TOKEN>'
+  }
+})
+```
+
 ## Custom Cache Storage
 
 You can also implement your own cache storage by extending the `CacheStorage` class. It needs to
