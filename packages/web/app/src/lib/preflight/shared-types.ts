@@ -2,14 +2,6 @@
 
 import { Kit } from '../kit';
 
-// todo stop using enums
-export const enum PreflightWorkerState {
-  running,
-  ready,
-}
-
-export type LogRecord = LogMessage | { type: 'separator' };
-
 type _MessageEvent<T> = MessageEvent<T>;
 
 export type LogMessage = {
