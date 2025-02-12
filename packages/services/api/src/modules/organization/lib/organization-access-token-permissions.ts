@@ -7,8 +7,8 @@ export const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'organization:describe',
-        title: 'View organization',
-        description: 'Member can see the organization. Permission can not be modified.',
+        title: 'Describe organization',
+        description: 'Fetch information about the specified organization.',
       },
     ],
   },
@@ -19,18 +19,7 @@ export const permissionGroups: Array<PermissionGroup> = [
       {
         id: 'project:describe',
         title: 'View project',
-        description: 'Member can access the specified projects.',
-      },
-    ],
-  },
-  {
-    id: 'schema-checks',
-    title: 'Schema Checks',
-    permissions: [
-      {
-        id: 'schemaCheck:create',
-        title: 'Create schema checks',
-        description: 'Grant access to performing schema checks.',
+        description: 'Fetch information about the specified projects.',
       },
     ],
   },
@@ -40,13 +29,18 @@ export const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'schemaCheck:create',
+        title: 'Check schema/service/subgraph',
+        description: 'Grant access to publish services/schemas.',
+      },
+      {
+        id: 'schemaVersion:publish',
         title: 'Publish schema/service/subgraph',
         description: 'Grant access to publish services/schemas.',
       },
       {
-        id: 'schemaCheck:create',
+        id: 'schemaVersion:deleteService',
         title: 'Delete service',
-        description: 'Grant access to deleting services.',
+        description: 'Deletes a service from the schema registry.',
       },
     ],
   },
