@@ -52,7 +52,7 @@ describe('Preflight Modal', () => {
   });
 
   it('script is validated with TypeScript', () => {
-    cyPreflight.setScriptEditorContent('let a = 1; a = ""');
+    cyPreflight.setScriptEditorContent('let a = 1; a; a = ""');
     cyMonaco.nextProblemContains(selectors.modal.scriptEditor, "Type 'string' is not assignable to type 'number'."); // prettier-ignore
   });
 
