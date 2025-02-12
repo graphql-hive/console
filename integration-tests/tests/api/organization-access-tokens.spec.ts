@@ -1,4 +1,3 @@
-import { createProject } from 'packages/services/api/src/modules/project/resolvers/Mutation/createProject';
 import { graphql } from '../../testkit/gql';
 import * as GraphQLSchema from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
@@ -141,6 +140,38 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
       message: Invalid input provided.,
     }
   `);
+});
+
+test.concurrent('create: failure because no access to organization', async ({ expect }) => {
+  const actor1 = await initSeed().createOwner();
+  const actor2 = await initSeed().createOwner();
+  const org = await actor1.createOrg();
+
+  const errors = await execute({
+    document: CreateOrganizationAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'a access token',
+        description: 'Some description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentMode.All },
+        permissions: [],
+      },
+    },
+    authToken: actor2.ownerToken,
+  }).then(e => e.expectGraphQLErrors());
+  expect(errors).toMatchObject([
+    {
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+
+      message: `No access (reason: "Missing permission for performing 'accessToken:modify' on resource")`,
+      path: ['createOrganizationAccessToken'],
+    },
+  ]);
 });
 
 test.concurrent('query GraphQL API on resources with access', async ({ expect }) => {
