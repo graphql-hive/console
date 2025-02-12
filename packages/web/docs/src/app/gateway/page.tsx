@@ -9,6 +9,7 @@ import {
   HiveGatewayIcon,
 } from '@theguild/components';
 import { ErrorBoundary } from '../../components/error-boundary';
+import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
@@ -73,7 +74,7 @@ export default function HiveGatewayPage() {
       >
         <GatewayLandingFAQ />
       </FrequentlyAskedQuestions>
-      {/* big get your API game right section */}
+      <GetYourAPIGameRightList className="mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
   );
 }
