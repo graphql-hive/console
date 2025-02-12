@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { readVersionedEntry, VersionedEntrySpec } from '../versioned-entry';
+import { readVersionedEntryLocalStorage, VersionedEntrySpec } from '../versioned-entry';
 
 export function useLocalStorage(key: string | VersionedEntrySpec, defaultValue: string) {
   const versionedEntry: VersionedEntrySpec = typeof key === 'string' ? [{ key }] : key;
 
   const [value, setValue] = useState<string>(() => {
-    const value = readVersionedEntry(versionedEntry);
+    const value = readVersionedEntryLocalStorage(versionedEntry);
     return value ?? defaultValue;
   });
 

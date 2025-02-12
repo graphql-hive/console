@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import { Kit } from '../kit';
-import { readVersionedEntry, VersionedEntrySpec } from '../versioned-entry';
+import { readVersionedEntryLocalStorage, VersionedEntrySpec } from '../versioned-entry';
 
 export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInput<$Schema>) {
   const [key, schema, manualDefaultValue] = args as any as Args<$Schema>;
@@ -27,7 +27,7 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     // because we manually pre-compute+return the default value, thus we don't
     // rely on Zod's behaviour. If that changes this should have `?? undefined`
     // added.
-    const storedValue = readVersionedEntry(versionedEntry);
+    const storedValue = readVersionedEntryLocalStorage(versionedEntry);
 
     if (!storedValue) {
       return defaultValue;
