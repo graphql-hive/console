@@ -19,7 +19,7 @@
     "ajv": "8.17.1",
     "dotenv": "16.4.7",
     "got": "14.4.5",
-    "graphql": "16.9.0",
+    "graphql": "16.10.0",
     "kafkajs": "2.2.4",
     "lru-cache": "11.0.2",
     "pino-pretty": "11.3.0",
