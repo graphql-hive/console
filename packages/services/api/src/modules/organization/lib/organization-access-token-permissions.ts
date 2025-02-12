@@ -13,8 +13,8 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
-    id: 'organization',
-    title: 'Organization',
+    id: 'project',
+    title: 'Project',
     permissions: [
       {
         id: 'project:describe',
