@@ -639,6 +639,25 @@ function PreflightModal({
   }, []);
 
   const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+    // Setup validation of JavaScript code.
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+      noSuggestionDiagnostics: false,
+      diagnosticCodesToIgnore: [],
+    });
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      allowNonTsExtensions: true,
+      allowJs: true,
+      checkJs: true,
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
+      lib: ['webworker'],
+      strict: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
+      noImplicitReturns: true,
+      noFallthroughCasesInSwitch: true,
+    });
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(
       `
