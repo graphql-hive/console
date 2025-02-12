@@ -28,8 +28,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       `);
 
       const outputSdl = print(
-        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter, 'inaccessible', 'tag')
-          .typeDefs,
+        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
       schema {
