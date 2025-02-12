@@ -8,8 +8,8 @@ import {
   HeroLogo,
   HiveGatewayIcon,
 } from '@theguild/components';
-import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { ErrorBoundary } from '../../components/error-boundary';
+import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
