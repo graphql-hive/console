@@ -1,4 +1,4 @@
-import { cyLaboratory } from './_cy';
+import { cyLaboratory } from './__cypress__';
 
 beforeEach(() => {
   cy.clearAllLocalStorage().then(() => {

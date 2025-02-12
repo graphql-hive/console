@@ -1,5 +1,5 @@
 import { dedent } from '../../support/dedent';
-import { cyLaboratory } from './_cy';
+import { cyLaboratory } from './__cypress__';
 
 const s = cyLaboratory.preflight.selectors;
 
