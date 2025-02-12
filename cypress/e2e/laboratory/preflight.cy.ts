@@ -57,7 +57,7 @@ describe('Preflight Modal', () => {
   });
 
   it('script cannot have TypeScript syntax', () => {
-    cyPreflight.setScriptEditorContent('let a:number = 1');
+    cyPreflight.setScriptEditorContent('const a:number = 1; a');
     cyMonaco.nextProblemContains(selectors.modal.scriptEditor, 'Type annotations can only be used in TypeScript files.'); // prettier-ignore
   });
 
