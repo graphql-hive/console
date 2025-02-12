@@ -657,6 +657,13 @@ function PreflightModal({
       noUnusedParameters: true,
       noImplicitReturns: true,
       noFallthroughCasesInSwitch: true,
+      // This is a workaround.
+      // 3 = 'force'
+      //
+      // Problem: https://github.com/graphql-hive/console/pull/6476#issuecomment-2654056957
+      // Solution: https://github.com/microsoft/monaco-editor/issues/2976#issuecomment-2334468503
+      // Reference: https://www.typescriptlang.org/tsconfig/#moduleDetection
+      moduleDetection: 3,
     });
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(

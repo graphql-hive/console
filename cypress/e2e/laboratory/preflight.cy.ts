@@ -62,10 +62,9 @@ describe('Preflight Modal', () => {
   });
 
   it('regression: saving and re-opening clears previous validation state', () => {
-    cyPreflight.setScriptEditorContent('const a = 1');
+    cyPreflight.setScriptEditorContent('const a = 1; a');
     cy.get(selectors.modal.buttonSubmit).click();
     cy.get(selectors.buttonModal).click();
-    cy.wait(1000);
     cyMonaco.goToNextProblem(selectors.modal.scriptEditor);
     cy.contains('Cannot redeclare block-scoped variable').should('not.exist');
   });
