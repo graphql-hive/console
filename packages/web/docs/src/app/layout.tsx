@@ -42,7 +42,7 @@ metadata.openGraph = {
   images: [
     new URL('./opengraph-image.png', import.meta.url)
       .toString()
-      // eslint-disable-next-line no-process-env
+
       .replace(process.env.NEXT_BASE_PATH || '', ''),
   ],
 };

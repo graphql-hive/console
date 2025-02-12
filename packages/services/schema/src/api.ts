@@ -7,7 +7,7 @@ import type { Cache } from './cache';
 import { composeAndValidateCounter } from './metrics';
 import { pickOrchestrator } from './orchestrators';
 
-export type { CompositionFailureError, CompositionErrorSource } from './orchestrators';
+export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
 
 export interface Context {
   req: FastifyRequest;

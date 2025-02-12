@@ -80,6 +80,30 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+#### Redis Sentinel
+
+If you are using
+[Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/), You can
+use the `sentinels` option to connect to the Redis Sentinel.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  cache: {
+    type: 'redis',
+    sentinels: [
+      { host: 'localhost', port: 26379 },
+      { host: 'localhost', port: 26380 },
+      { host: 'localhost', port: 26381 }
+    ]
+  },
+  responseCaching: {
+    session: () => null
+  }
+})
+```
+
 ### Cloudflare Workers KV
 
 Cloudflare Workers KV is a distributed, eventually consistent key-value store available in the

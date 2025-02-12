@@ -61,6 +61,14 @@ export function GatewayFeatureTabs(props: { className?: string }) {
         'border-blue-200 [--tab-bg-dark:theme(colors.blue.300)] [--tab-bg:theme(colors.blue.200)]',
         props.className,
       )}
+      tabTexts={{
+        'Observability & Performance Monitoring': (
+          <span>
+            Observability & Performance{' '}
+            <span className="[@media(width<420px)]:hidden">Monitoring</span>
+          </span>
+        ),
+      }}
     >
       <FeatureTab
         title="Observability & Performance Monitoring"

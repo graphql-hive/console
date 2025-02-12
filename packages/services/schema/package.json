@@ -11,11 +11,12 @@
   "devDependencies": {
     "@apollo/federation": "0.38.1",
     "@graphql-hive/external-composition": "workspace:*",
+    "@graphql-hive/federation-link-utils": "workspace:*",
     "@graphql-tools/stitch": "9.4.13",
     "@graphql-tools/stitching-directives": "3.1.24",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
-    "@theguild/federation-composition": "0.14.3",
+    "@theguild/federation-composition": "0.14.4",
     "@trpc/server": "10.45.2",
     "@types/async-retry": "1.4.8",
     "@types/ioredis-mock": "8.2.5",

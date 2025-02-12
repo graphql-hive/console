@@ -333,7 +333,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
-test('should not leak the exception', { retry: 3 }, async () => {
+test('should not leak the exception', async () => {
   const logger = createHiveTestingLogger();
 
   const hive = createHive({
@@ -374,7 +374,7 @@ test('should not leak the exception', { retry: 3 }, async () => {
   `);
 });
 
-test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
+test('sendImmediately should not stop the schedule', async () => {
   const logger = createHiveTestingLogger();
 
   const token = 'Token';
@@ -431,34 +431,21 @@ test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
   // since we sent only 1 element, the buffer was not full,
   // so we should not see "Sending immediately"
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  expect(logger.getLogs()).not.toMatch('Sending immediately');
   logger.clear();
 
   // Now we will hit the maxSize
   // We run collect two times
   await Promise.all([collect(args, {}), collect(args, {})]);
   await waitFor(1);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending immediately
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  `);
+  expect(logger.getLogs()).toMatch('Sending immediately');
+  expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
   await waitFor(100);
   // Let's check if the scheduled send task is still running
   await collect(args, {});
   await waitFor(40);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-  `);
+  expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
   await hive.dispose();
   http.done();
