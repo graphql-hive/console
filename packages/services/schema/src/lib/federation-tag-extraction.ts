@@ -356,10 +356,7 @@ export function applyTagFilterOnSubgraphs<
   let filteredSubgraphs = subgraphs.map(subgraph => {
     return {
       ...subgraph,
-      ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(
-        subgraph.typeDefs,
-        filter,
-      ),
+      ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(subgraph.typeDefs, filter),
     };
   });
 
