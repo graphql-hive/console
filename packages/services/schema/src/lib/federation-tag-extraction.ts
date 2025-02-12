@@ -5,7 +5,6 @@ import {
   Kind,
   ObjectTypeExtensionNode,
   visit,
-  type ArgumentNode,
   type ConstDirectiveNode,
   type DirectiveNode,
   type DocumentNode,
@@ -14,15 +13,13 @@ import {
   type InputObjectTypeDefinitionNode,
   type InputValueDefinitionNode,
   type InterfaceTypeDefinitionNode,
-  type ObjectFieldNode,
   type ObjectTypeDefinitionNode,
   type ScalarTypeDefinitionNode,
   type UnionTypeDefinitionNode,
 } from 'graphql';
+import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 
 type TagExtractionStrategy = (directiveNode: DirectiveNode) => string | null;
-
-const federationSubgraphSpecificationUrl = 'https://specs.apollo.dev/federation/';
 
 function createTransformTagDirectives(tagDirectiveName: string, inaccessibleDirectiveName: string) {
   return function transformTagDirectives(
@@ -66,118 +63,6 @@ function hasIntersection<T>(a: Set<T>, b: Set<T>): boolean {
   return false;
 }
 
-/**
- * Retrieve both the url and import argument from an `@link` directive AST node.
- * @link https://specs.apollo.dev/link/v1.0/#@link
- **/
-function getUrlAndImportDirectiveArgumentsFromLinkDirectiveNode(directiveNode: DirectiveNode): {
-  url: ArgumentNode | null;
-  import: ArgumentNode | null;
-} {
-  let urlArgument: ArgumentNode | null = null;
-  let importArgument: ArgumentNode | null = null;
-
-  if (directiveNode.arguments) {
-    for (const argument of directiveNode.arguments) {
-      if (argument.name.value === 'url') {
-        urlArgument = argument;
-      }
-      if (argument.name.value === 'import') {
-        importArgument = argument;
-      }
-    }
-  }
-
-  return {
-    url: urlArgument,
-    import: importArgument,
-  };
-}
-
-/**
- * Resolve the actual directive name from an ObjectValueNode, that has been passed to a `@link` directive import argument.
- * @link https://specs.apollo.dev/link/v1.0/#Import
- */
-function resolveImportedDirectiveNameFromObjectFieldNodes(
-  forName: string,
-  objectFieldNodes: ReadonlyArray<ObjectFieldNode>,
-) {
-  let alias: string | null = null;
-  let name: string | null = null;
-
-  for (const field of objectFieldNodes) {
-    if (field.name.value === 'name' && field.value.kind === Kind.STRING) {
-      name = field.value.value;
-      if (name !== forName) {
-        return null;
-      }
-    }
-    if (field.name.value === 'as' && field.value.kind === Kind.STRING) {
-      alias = field.value.value;
-    }
-  }
-
-  const final = alias ?? name;
-
-  if (final && final[0] === '@') {
-    return final.substring(1);
-  }
-
-  return null;
-}
-
-/**
- * Helper function for creating a function that resolves the federation directive name within the subgraph.
- */
-function createGetFederationDirectiveNameForSubgraphSDL(directiveName: string) {
-  const prefixedName = `federation__${directiveName}`;
-  const defaultName = directiveName;
-  const importName = `@${directiveName}`;
-
-  return function getFederationTagDirectiveNameForSubgraphSDL(documentNode: DocumentNode): string {
-    for (const definition of documentNode.definitions) {
-      if (
-        (definition.kind !== Kind.SCHEMA_DEFINITION && definition.kind !== Kind.SCHEMA_EXTENSION) ||
-        !definition.directives
-      ) {
-        continue;
-      }
-
-      for (const directive of definition.directives) {
-        const args = getUrlAndImportDirectiveArgumentsFromLinkDirectiveNode(directive);
-        if (
-          args.url?.value.kind === Kind.STRING &&
-          args.url.value.value.startsWith(federationSubgraphSpecificationUrl)
-        ) {
-          if (!args.import || args.import.value.kind !== Kind.LIST) {
-            return prefixedName;
-          }
-
-          for (const item of args.import.value.values) {
-            if (item.kind === Kind.STRING && item.value === importName) {
-              return defaultName;
-            }
-
-            if (item.kind === Kind.OBJECT && item.fields) {
-              const resolvedDirectiveName = resolveImportedDirectiveNameFromObjectFieldNodes(
-                importName,
-                item.fields,
-              );
-              if (resolvedDirectiveName) {
-                return resolvedDirectiveName;
-              }
-            }
-          }
-          return prefixedName;
-        }
-      }
-    }
-
-    // no directives? this must be Federation 1.X
-    return defaultName;
-  };
-}
-
 function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
   let queryName: string | null = 'Query';
   let mutationName: string | null = 'Mutation';
@@ -208,13 +93,6 @@ function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
   return names;
 }
 
-/** Retrieve the actual `@tag` directive name from a given subgraph */
-export const getFederationTagDirectiveNameForSubgraphSDL =
-  createGetFederationDirectiveNameForSubgraphSDL('tag');
-/** Retrieve the actual `@inaccessible` directive name from a given subgraph */
-const getFederationInaccessibleDirectiveNameForSubgraphSDL =
-  createGetFederationDirectiveNameForSubgraphSDL('inaccessible');
-
 /**
  * Takes a subgraph document node and a set of tag filters and transforms the document node to contain `@inaccessible` directives on all fields not included by the applied filter.
  * Note: you probably want to use `filterSubgraphs` instead, as it also applies the correct post step required after applying this.
@@ -227,9 +105,12 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   typesWithAllFieldsInaccessible: Map<string, boolean>;
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>;
 } {
-  const tagDirectiveName = getFederationTagDirectiveNameForSubgraphSDL(documentNode);
-  const inaccessibleDirectiveName =
-    getFederationInaccessibleDirectiveNameForSubgraphSDL(documentNode);
+  const { resolveImportName } = extractLinkImplementations(documentNode);
+  const inaccessibleDirectiveName = resolveImportName(
+    'https://specs.apollo.dev/federation',
+    '@inaccessible',
+  );
+  const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
   const getTagsOnNode = buildGetTagsOnNode(tagDirectiveName);
   const transformTagDirectives = createTransformTagDirectives(
     tagDirectiveName,
@@ -472,10 +353,12 @@ export function applyTagFilterOnSubgraphs<
     name: string;
   },
 >(subgraphs: Array<TType>, filter: Federation2SubgraphDocumentNodeByTagsFilter): Array<TType> {
-  const filteredSubgraphs = subgraphs.map(subgraph => ({
-    ...subgraph,
-    ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(subgraph.typeDefs, filter),
-  }));
+  let filteredSubgraphs = subgraphs.map(subgraph => {
+    return {
+      ...subgraph,
+      ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(subgraph.typeDefs, filter),
+    };
+  });
 
   const intersectionOfTypesWhereAllFieldsAreInaccessible = new Set<string>();
   // We need to traverse all subgraphs to find the intersection of types where all fields are inaccessible.
@@ -515,81 +398,10 @@ export function applyTagFilterOnSubgraphs<
   }));
 }
 
-function createFederationDirectiveStrategy(directiveName: string): TagExtractionStrategy {
-  return (directiveNode: DirectiveNode) => {
-    if (
-      directiveNode.name.value === directiveName &&
-      directiveNode.arguments?.[0].name.value === 'name' &&
-      directiveNode.arguments?.[0]?.value.kind === Kind.STRING
-    ) {
-      return directiveNode.arguments[0].value.value ?? null;
-    }
-    return null;
-  };
-}
-
-function createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-  directiveImportUrlPrefix: string,
-  defaultName: string,
-) {
-  return function getDirectiveNameFromFederation2SupergraphSDL(
-    documentNode: DocumentNode,
-  ): string | null {
-    for (const definition of documentNode.definitions) {
-      if (
-        (definition.kind !== Kind.SCHEMA_DEFINITION && definition.kind !== Kind.SCHEMA_EXTENSION) ||
-        !definition.directives
-      ) {
-        continue;
-      }
-
-      for (const directive of definition.directives) {
-        // TODO: maybe not rely on argument order - but the order seems stable
-        if (
-          directive.name.value === 'link' &&
-          directive.arguments?.[0].name.value === 'url' &&
-          directive.arguments[0].value.kind === Kind.STRING &&
-          directive.arguments[0].value.value.startsWith(directiveImportUrlPrefix)
-        ) {
-          if (
-            directive.arguments[1]?.name.value === 'as' &&
-            directive.arguments[1].value.kind === Kind.STRING
-          ) {
-            return directive.arguments[1].value.value;
-          }
-          return defaultName;
-        }
-      }
-      return null;
-    }
-    return null;
-  };
-}
-
-export const getTagDirectiveNameFromFederation2SupergraphSDL =
-  createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-    'https://specs.apollo.dev/tag/',
-    'tag',
-  );
-
-export const getInaccessibleDirectiveNameFromFederation2SupergraphSDL =
-  createGetImportedDirectiveNameFromFederation2SupergraphSDL(
-    'https://specs.apollo.dev/inaccessible/',
-    'inaccessible',
-  );
-
-/**
- * Extract all
- */
-export function extractTagsFromFederation2SupergraphSDL(documentNode: DocumentNode) {
-  const federationDirectiveName = getTagDirectiveNameFromFederation2SupergraphSDL(documentNode);
-
-  if (federationDirectiveName === null) {
-    return null;
-  }
-
-  const tagStrategy = createFederationDirectiveStrategy(federationDirectiveName);
-
+export const extractTagsFromDocument = (
+  documentNode: DocumentNode,
+  tagStrategy: TagExtractionStrategy,
+) => {
   const tags = new Set<string>();
 
   function collectTagsFromDirective(directiveNode: DirectiveNode) {
@@ -606,7 +418,26 @@ export function extractTagsFromFederation2SupergraphSDL(documentNode: DocumentNo
   });
 
   return Array.from(tags);
+};
+
+export function createTagDirectiveNameExtractionStrategy(
+  directiveName: string,
+): TagExtractionStrategy {
+  return (directiveNode: DirectiveNode) => {
+    if (
+      directiveNode.name.value === directiveName &&
+      directiveNode.arguments?.[0].name.value === 'name' &&
+      directiveNode.arguments?.[0]?.value.kind === Kind.STRING
+    ) {
+      return directiveNode.arguments[0].value.value ?? null;
+    }
+    return null;
+  };
 }
+
+/**
+ * Extract all
+ */
 
 export type Federation2SubgraphDocumentNodeByTagsFilter = {
   include: Set<string>;

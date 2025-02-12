@@ -1,4 +1,4 @@
-import type { CompositionErrorSource } from './orchestrators';
+import type { CompositionErrorSource } from './lib/errors';
 
 export type SchemaType = 'single' | 'federation' | 'stitching';
 
