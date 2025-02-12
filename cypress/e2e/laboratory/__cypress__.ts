@@ -1,4 +1,4 @@
-import { setMonacoEditorContents } from '../../support/monaco';
+import { cyMonaco } from '../../support/monaco';
 
 export namespace cyLaboratory {
   /**
@@ -81,15 +81,15 @@ export namespace cyLaboratory {
     /**
      * Sets the content of the preflight editor
      */
-    export const setEditorContent = (value: string) => {
-      setMonacoEditorContents(selectors.modal.editorCy, value);
+    export const setScriptEditorContent = (value: string) => {
+      cyMonaco.setContent(selectors.modal.editorCy, value);
     };
 
     /**
      * Sets the content of the variables editor
      */
     export const setEnvironmentEditorContent = (value: string) => {
-      setMonacoEditorContents(selectors.modal.variablesEditorCy, value);
+      cyMonaco.setContent(selectors.modal.variablesEditorCy, value);
     };
   }
 }
