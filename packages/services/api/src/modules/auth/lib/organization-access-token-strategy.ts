@@ -78,7 +78,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
 
     // TODO: we should probably cache this verification
     const isHashMatch = await OrganizationAccessKey.verify(
-      result.accessKey.id,
+      result.accessKey.privateKey,
       organizationAccessToken.hash,
     );
 
