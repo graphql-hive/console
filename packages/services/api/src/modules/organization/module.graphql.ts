@@ -88,7 +88,7 @@ export default gql`
     description: String
     permissions: [String!]!
     resources: ResourceAssignment!
-    createdAt: Date!
+    createdAt: DateTime!
   }
 
   input DeleteOrganizationAccessTokenInput {
