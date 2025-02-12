@@ -62,8 +62,8 @@ export namespace cyLaboratory {
   export namespace preflight {
     export const selectors = {
       buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
-      buttonModalCy: 'preflight-modal-button',
-      buttonToggleCy: 'toggle-preflight',
+      buttonModal: '[data-cy="preflight-modal-button"]',
+      buttonToggle: '[data-cy="toggle-preflight"]',
       buttonHeaders: '[data-name="headers"]',
       headersEditor: {
         textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
@@ -73,23 +73,18 @@ export namespace cyLaboratory {
       },
 
       modal: {
-        buttonSubmitCy: 'preflight-modal-submit',
-        editorCy: 'preflight-editor',
-        variablesEditorCy: 'env-editor',
+        buttonSubmit: '[data-cy="preflight-modal-submit"]',
+        scriptEditor: '[data-cy="preflight-editor"]',
+        variablesEditor: '[data-cy="env-editor"]',
       },
     };
-    /**
-     * Sets the content of the preflight editor
-     */
+
     export const setScriptEditorContent = (value: string) => {
-      cyMonaco.setContent(selectors.modal.editorCy, value);
+      cyMonaco.setContent(selectors.modal.scriptEditor, value);
     };
 
-    /**
-     * Sets the content of the variables editor
-     */
     export const setEnvironmentEditorContent = (value: string) => {
-      cyMonaco.setContent(selectors.modal.variablesEditorCy, value);
+      cyMonaco.setContent(selectors.modal.variablesEditor, value);
     };
   }
 }

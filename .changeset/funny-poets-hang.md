@@ -29,7 +29,7 @@ a = b;
 a = b;
 ```
 
-The advantage of `@ts-expect-error` is that if there is no error to ignore, then the comment itself becomes an error whereas `@ts-ignore` sits there quietly whether it has effect or not.
+The advantage of `@ts-expect-error` is that if there is no error to ignore, then the comment itself becomes an error whereas `@ts-ignore` sits there quietly whether it has an effect or not.
 
 There is more you can do with TypeScript in JavaScript, such as providing type annotations via JSDoc. Learn more about it all here:
 

@@ -53,12 +53,21 @@ describe('Preflight Modal', () => {
 
   it('script is validated with TypeScript', () => {
     cyPreflight.setScriptEditorContent('let a = 1; a = ""');
-    cyMonaco.nextProblemContains(selectors.modal.editorCy, "Type 'string' is not assignable to type 'number'."); // prettier-ignore
+    cyMonaco.nextProblemContains(selectors.modal.scriptEditor, "Type 'string' is not assignable to type 'number'."); // prettier-ignore
   });
 
   it('script cannot have TypeScript syntax', () => {
     cyPreflight.setScriptEditorContent('let a:number = 1');
-    cyMonaco.nextProblemContains(selectors.modal.editorCy, 'Type annotations can only be used in TypeScript files.'); // prettier-ignore
+    cyMonaco.nextProblemContains(selectors.modal.scriptEditor, 'Type annotations can only be used in TypeScript files.'); // prettier-ignore
+  });
+
+  it('regression: saving and re-opening clears previous validation state', () => {
+    cyPreflight.setScriptEditorContent('const a = 1');
+    cy.get(selectors.modal.buttonSubmit).click();
+    cy.get(selectors.buttonModal).click();
+    cy.wait(1000);
+    cyMonaco.goToNextProblem(selectors.modal.scriptEditor);
+    cy.contains('Cannot redeclare block-scoped variable').should('not.exist');
   });
 
   it('save script and environment variables when submitting', () => {
@@ -191,12 +200,12 @@ describe('Execution', () => {
     const preflightHeaders = {
       foo: 'bar',
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
+    cy.get(selectors.buttonToggle).click();
+    cy.get(selectors.buttonModal).click();
     cyPreflight.setScriptEditorContent(
       `lab.request.headers.append('foo', '${preflightHeaders.foo}')`,
     );
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.get(selectors.modal.buttonSubmit).click();
     // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
@@ -217,12 +226,12 @@ describe('Execution', () => {
     const preflightHeaders = {
       accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
+    cy.get(selectors.buttonToggle).click();
+    cy.get(selectors.buttonModal).click();
     cyPreflight.setScriptEditorContent(
       `lab.request.headers.append('accept', '${preflightHeaders.accept}')`,
     );
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.get(selectors.modal.buttonSubmit).click();
     // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
@@ -247,13 +256,13 @@ describe('Execution', () => {
     const preflightHeaders = {
       foo_preflight: barEnVarInterpolation,
     };
-    cy.dataCy(selectors.buttonToggleCy).click();
-    cy.dataCy(selectors.buttonModalCy).click();
+    cy.get(selectors.buttonToggle).click();
+    cy.get(selectors.buttonModal).click();
     cyPreflight.setScriptEditorContent(`
       lab.environment.set('bar', '${environmentVariables.bar}')
       lab.request.headers.append('foo_preflight', '${preflightHeaders.foo_preflight}')
     `);
-    cy.dataCy(selectors.modal.buttonSubmitCy).click();
+    cy.get(selectors.modal.buttonSubmit).click();
     // Run GraphiQL
     cy.intercept({
       headers: {
