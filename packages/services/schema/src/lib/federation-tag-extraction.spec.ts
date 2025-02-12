@@ -71,8 +71,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         applyTagFilterToInaccessibleTransformOnSubgraphSchema(
           sdl,
           filter,
-          'federation__inaccessible',
-          'federation__tag',
         ).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
@@ -115,8 +113,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         applyTagFilterToInaccessibleTransformOnSubgraphSchema(
           sdl,
           filter,
-          'inaccessible',
-          'federation__tag',
         ).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
@@ -163,8 +159,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         applyTagFilterToInaccessibleTransformOnSubgraphSchema(
           sdl,
           filter,
-          'inaccessible__federation',
-          'federation__tag',
         ).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
@@ -204,8 +198,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -241,8 +233,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -278,8 +268,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -315,8 +303,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -355,8 +341,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -397,8 +381,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -442,8 +424,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -487,8 +467,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -533,8 +511,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -579,8 +555,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -626,8 +600,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -675,8 +647,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -725,8 +695,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -771,8 +739,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -816,8 +782,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -861,8 +825,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -909,8 +871,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -957,8 +917,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1002,8 +960,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1049,8 +1005,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1094,8 +1048,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1144,8 +1096,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1190,8 +1140,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1228,8 +1176,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1261,8 +1207,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1296,8 +1240,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1334,8 +1276,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
@@ -1374,8 +1314,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1414,8 +1352,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1455,8 +1391,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1496,8 +1430,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1537,8 +1469,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1586,8 +1516,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1642,8 +1570,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1702,8 +1628,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1762,8 +1686,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
@@ -1822,8 +1744,6 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         sdl,
         filter,
-        'federation__inaccessible',
-        'tag',
       );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`

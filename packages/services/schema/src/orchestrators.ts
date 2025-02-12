@@ -264,12 +264,6 @@ const createFederation: (
         contracts.map(async contract => {
           // apply contracts to replace tags with inaccessible directives
           const filteredSubgraphs = subgraphs.map(subgraph => {
-            const { resolveImportName } = extractLinkImplementations(subgraph.typeDefs);
-            const tagName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
-            const inaccessibleName = resolveImportName(
-              'https://specs.apollo.dev/federation',
-              '@inaccessible',
-            );
             const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
               include: new Set(contract.filter.include),
               exclude: new Set(contract.filter.exclude),
@@ -277,8 +271,6 @@ const createFederation: (
             const filteredSubgraph = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
               subgraph.typeDefs,
               filter,
-              inaccessibleName,
-              tagName,
             );
             return {
               ...subgraph,

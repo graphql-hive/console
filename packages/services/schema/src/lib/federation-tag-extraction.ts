@@ -17,7 +17,7 @@ import {
   type ScalarTypeDefinitionNode,
   type UnionTypeDefinitionNode,
 } from 'graphql';
-import { extractLinkImplementations, FEDERATION_V1 } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 
 type TagExtractionStrategy = (directiveNode: DirectiveNode) => string | null;
 
@@ -100,13 +100,17 @@ function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
 export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   documentNode: DocumentNode,
   filter: Federation2SubgraphDocumentNodeByTagsFilter,
-  inaccessibleDirectiveName: string,
-  tagDirectiveName: string,
 ): {
   typeDefs: DocumentNode;
   typesWithAllFieldsInaccessible: Map<string, boolean>;
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>;
 } {
+  const { resolveImportName } = extractLinkImplementations(documentNode);
+  const inaccessibleDirectiveName = resolveImportName(
+    'https://specs.apollo.dev/federation',
+    '@inaccessible',
+  );
+  const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
   const getTagsOnNode = buildGetTagsOnNode(tagDirectiveName);
   const transformTagDirectives = createTransformTagDirectives(
     tagDirectiveName,
@@ -350,19 +354,11 @@ export function applyTagFilterOnSubgraphs<
   },
 >(subgraphs: Array<TType>, filter: Federation2SubgraphDocumentNodeByTagsFilter): Array<TType> {
   let filteredSubgraphs = subgraphs.map(subgraph => {
-    const { resolveImportName } = extractLinkImplementations(subgraph.typeDefs);
-    const inaccessibleName = resolveImportName(
-      'https://specs.apollo.dev/federation',
-      '@inaccessible',
-    );
-    const tagName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
     return {
       ...subgraph,
       ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         subgraph.typeDefs,
         filter,
-        inaccessibleName,
-        tagName,
       ),
     };
   });
