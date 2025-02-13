@@ -148,9 +148,10 @@ export class ArtifactStorageReader {
         const abortOtherRequest = (ctrl: AbortController, source: string) => {
           return (res: Response) => {
             this.breadcrumb(`Successful fetch from "${source}", aborting other request`);
-            // abort other pending request
-            const error = new PendingRequestAbortedError();
-            ctrl.abort(error);
+            if (!ctrl.signal.aborted) {
+              // abort other pending request
+              ctrl.abort(new PendingRequestAbortedError());
+            }
 
             return res;
           };
@@ -183,7 +184,13 @@ export class ArtifactStorageReader {
                 });
               },
             })
-            .then(abortOtherRequest(mirrorController, 'primary')),
+            .then(abortOtherRequest(mirrorController, 'primary'))
+            .catch(error => {
+              this.breadcrumb(
+                `Failed to fetch from primary (error=${error instanceof Error ? error.message : String(error)})`,
+              );
+              return Promise.reject(error);
+            }),
           this.s3Mirror.client
             .fetch(mirrorObjectEndpoint, {
               method: args.method,
@@ -202,8 +209,24 @@ export class ArtifactStorageReader {
                 });
               },
             })
-            .then(abortOtherRequest(primaryController, 'mirror')),
-        ]);
+            .then(abortOtherRequest(primaryController, 'mirror'))
+            .catch(error => {
+              this.breadcrumb(
+                `Failed to fetch from mirror (error=${error instanceof Error ? error.message : String(error)})`,
+              );
+              return Promise.reject(error);
+            }),
+        ]).catch(error => {
+          this.breadcrumb(`Both requests failed: ${String(error)}`);
+
+          if (error instanceof AggregateError && error.errors) {
+            for (let i = 0; i < error.errors.length; i++) {
+              this.breadcrumb(`Request ${i} failed: ${String(error.errors[i])}`);
+            }
+          }
+
+          return Promise.reject(error);
+        });
       });
   }
 
