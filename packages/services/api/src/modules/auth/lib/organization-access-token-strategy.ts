@@ -1,8 +1,26 @@
+import * as crypto from 'node:crypto';
+import { BentoCache, bentostore } from 'bentocache';
+import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import * as OrganizationAccessKey from '../../organization/lib/organization-access-key';
 import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
+
+const cache = new BentoCache({
+  default: 'organizationAccessTokenValidation',
+  stores: {
+    organizationAccessTokenValidation: bentostore().useL1Layer(
+      memoryDriver({
+        maxItems: 10_000,
+      }),
+    ),
+  },
+});
+
+function hashToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export class OrganizationAccessTokenSession extends Session {
   public readonly organizationId: string;
@@ -76,11 +94,13 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
       return null;
     }
 
-    // TODO: we should probably cache this verification
-    const isHashMatch = await OrganizationAccessKey.verify(
-      result.accessKey.privateKey,
-      organizationAccessToken.hash,
-    );
+    // let's hash it so we do not store the plain private key in memory
+    const key = hashToken(accessToken);
+    const isHashMatch = await cache.getOrSetForever({
+      factory: () =>
+        OrganizationAccessKey.verify(result.accessKey.privateKey, organizationAccessToken.hash),
+      key,
+    });
 
     if (!isHashMatch) {
       this.logger.debug('Provided private key does not match hash.');
