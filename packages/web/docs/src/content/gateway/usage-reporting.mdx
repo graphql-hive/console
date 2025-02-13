@@ -125,11 +125,48 @@ export const gatewayConfig = defineConfig({
      */
     apiKey: '<api_key>',
     /**
-     * Usage report endpoint
-     *
-     * Defaults to GraphOS endpoint (https://usage-reporting.api.apollographql.com/api/ingress/traces)
+     * Maximum number of retries to attempt when fetching the schema from the managed federation up link.
      */
-    endpoint?: string;
+    maxRetries: 5,
+    /**
+     * Minimum delay in seconds
+     */
+    minDelaySeconds: 1,
+    /**
+     * Delay of seconds on retries
+     */
+    retryDelaySeconds: 1,
+    /**
+     * The URL of the managed federation up link. When retrying after a failure, you should cycle through the default up links using this option.
+     *
+     * Uplinks are available in `DEFAULT_UPLINKS` constant.
+     *
+     * This options can also be defined using the `APOLLO_SCHEMA_CONFIG_DELIVERY_ENDPOINT` environment variable.
+     * It should be a comma separated list of up links, but only the first one will be used.
+     *
+     * Default: 'https://uplink.api.apollographql.com/' (Apollo's managed federation up link on GCP)
+     *
+     * Alternative: 'https://aws.uplink.api.apollographql.com/' (Apollo's managed federation up link on AWS)
+     */
+    upLink: 'https://uplink.api.apollographql.com/',
+    /**
+     * Agent Version to report to the usage reporting API
+     *
+     * @default "hive-gateway@VERSION_OF_GW"
+     */
+    agentVersion: 'hive-gateway@1.0.0',
+    /**
+     * Client name to report to the usage reporting API
+     *
+     * @default incoming `apollo-graphql-client-name` HTTP header
+     */
+    clientName: req => req.headers.get('apollo-graphql-client-name'),
+    /**
+     * Client version to report to the usage reporting API
+     *
+     * @default incoming `apollo-graphql-client-version` HTTP header
+     */
+    clientVersion: req => req.headers.get('apollo-graphql-client-version')
   }
 })
 ```
