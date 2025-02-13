@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -288,7 +288,7 @@ export class OrganizationAccessTokens {
  * Implementation for finding a organization access token from the PG database.
  * It is a function, so we can use it for the organization access tokens cache.
  */
-export function findById(deps: { pool: DatabasePool; logger: Logger }) {
+export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
   return async function findByIdImplementation(organizationAccessTokenId: string) {
     deps.logger.debug(
       'Resolve organization access token by id. (organizationAccessTokenId=%s)',
