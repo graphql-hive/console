@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import {
-  ResourceAssignmentModel,
-  ResourceAssignments,
-} from '../../organization/providers/resource-assignments';
+import { ResourceAssignmentModel } from '../../organization/providers/resource-assignments';
 
 export const AuditLogModel = z.union([
   z.object({

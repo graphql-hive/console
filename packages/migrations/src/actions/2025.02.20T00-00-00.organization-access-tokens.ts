@@ -13,13 +13,12 @@ export default {
       , "assigned_resources" jsonb
       , "hash" text NOT NULL
       , "first_characters" text NOT NULL
-      , "deleted_at" timestamptz DEFAULT NULL
     );
 
     CREATE INDEX IF NOT EXISTS "organization_access_tokens_organization_id" ON "organization_access_tokens" (
       "organization_id"
       , "created_at" DESC
       , "id" DESC
-    ) WHERE "deleted_at" IS NULL;
+    );
   `,
 } satisfies MigrationExecutor;
