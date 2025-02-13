@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2025.01.30T00-02-03.organization-access-tokens.ts',
+  name: '2025.02.20T00-00-00.organization-access-tokens.ts',
   run: ({ sql }) => sql`
     CREATE TABLE IF NOT EXISTS "organization_access_tokens" (
       "id" UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4()
