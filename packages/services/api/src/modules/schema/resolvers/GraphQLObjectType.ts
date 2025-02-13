@@ -14,7 +14,10 @@ export const GraphQLObjectType: GraphQlObjectTypeResolvers = {
       },
       usage: t.usage,
       supergraph: t.supergraph
-        ? { ownedByServiceNames: t.supergraph.getFieldOwnedByServices(f.name) }
+        ? {
+            ownedByServiceNames: t.supergraph.getFieldOwnedByServices(f.name),
+            metadata: t.supergraph.getFieldMetadata(f.name),
+          }
         : null,
     })),
   interfaces: t => t.entity.interfaces,

@@ -1,6 +1,7 @@
 import {
   Kind,
   NamedTypeNode,
+  StringValueNode,
   TypeNode,
   visit,
   type ConstArgumentNode,
@@ -10,11 +11,15 @@ import {
   type FieldDefinitionNode,
   type NameNode,
 } from 'graphql';
+import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { traceInlineSync } from '@hive/service-common';
+
+type SchemaMetadata = { name: string; content: string };
 
 export type SuperGraphInformation = {
   /** Mapping of schema coordinate to the services that own it. */
   schemaCoordinateServicesMappings: Map<string, Array<string>>;
+  schemaCoordinateMetadataMappings: Map<string, Array<SchemaMetadata>>;
 };
 
 /**
@@ -29,6 +34,30 @@ export const extractSuperGraphInformation = traceInlineSync(
     const serviceEnumValueToServiceNameMappings = new Map<string, string>();
     const schemaCoordinateToServiceEnumValueMappings = new Map<string, Set<string>>();
 
+    // Collect metadata from SDL
+    let schemaCoordinateMetadataMappings = new Map<string, Array<SchemaMetadata>>();
+    const { resolveImportName, matchesImplementation } = extractLinkImplementations(documentAst);
+    const implementsHiveSpec = matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0');
+    const metaDirectiveName = resolveImportName('https://specs.graphql-hive.com/hive', '@meta');
+    const joinFieldDirectiveName = resolveImportName('https://specs.apollo.dev/join', '@field');
+    const joinGraphName = resolveImportName('https://specs.apollo.dev/join', 'Graph');
+    const joinGraphDirectiveName = resolveImportName('https://specs.apollo.dev/join', '@graph');
+    const joinTypeDirectiveName = resolveImportName('https://specs.apollo.dev/join', '@type');
+    const joinEnumTypeDirectiveName = resolveImportName(
+      'https://specs.apollo.dev/join',
+      '@enumValue',
+    );
+
+    function getJoinGraphEnumServiceName(enumValueDefinitionNode: EnumValueDefinitionNode) {
+      const arg = enumValueDefinitionNode.directives
+        ?.find(directive => directive.name.value === joinGraphDirectiveName)
+        ?.arguments?.find(argument => argument.name.value === 'name');
+      if (arg === undefined) {
+        return null;
+      }
+      return getStringValueArgumentValue(arg);
+    }
+
     // START -- Federation 1.0 support - this can be removed once we ship Federation 2.0 by default.
     const potentialTypeServiceOwners = new Map<string, string>();
     const typeFieldMappings = new Map<string, Set<string>>();
@@ -42,7 +71,7 @@ export const extractSuperGraphInformation = traceInlineSync(
       const objectTypeServiceReferences = new Set(
         getJoinTypeEnumServiceName({
           directives: node.directives ?? [],
-          valueName: 'type',
+          joinDirectiveName: joinTypeDirectiveName,
         }),
       );
 
@@ -57,9 +86,38 @@ export const extractSuperGraphInformation = traceInlineSync(
       for (const fieldNode of node.fields) {
         const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
 
+        if (implementsHiveSpec) {
+          // collect metadata applied to fields. @note that during orchestration, all metadata from the schema, type, and interface nodes
+          // are copied to the corresponding field nodes. This is because 1) after composition this inheritance info is lost (or at least more
+          // difficult to calculate because youd have to use the join__ directives.), 2) to make this quicker, and 3) to more clearly show metadata
+          // in the SDL.
+          const metadata = fieldNode.directives
+            ?.filter(directive => directive.name.value === metaDirectiveName)
+            .reduce((acc, meta) => {
+              const metaNameArg = meta.arguments?.find(
+                arg => arg.name.value === 'name' && arg.value.kind === Kind.STRING,
+              );
+              const metaContentArg = meta.arguments?.find(
+                arg => arg.name.value === 'content' && arg.value.kind === Kind.STRING,
+              );
+              // Ignore if the directive is missing data or is malformed for now. This may change in the future
+              //  but this metadata isnt considered a critical part of the schema just yet.
+              if (metaNameArg && metaContentArg) {
+                acc.push({
+                  name: (metaNameArg.value as StringValueNode).value,
+                  content: (metaContentArg.value as StringValueNode).value,
+                });
+              }
+              return acc;
+            }, [] as SchemaMetadata[]);
+          if (metadata) {
+            schemaCoordinateMetadataMappings.set(schemaCoordinate, metadata);
+          }
+        }
+
         const joinField = fieldNode.directives?.find(
           directive =>
-            directive.name.value === 'join__field' &&
+            directive.name.value === joinFieldDirectiveName &&
             !directive.arguments?.find(
               arg =>
                 arg.name.value === 'usedOverridden' &&
@@ -115,7 +173,7 @@ export const extractSuperGraphInformation = traceInlineSync(
     visit(documentAst, {
       /** Collect the service enum to service name mappings. */
       EnumTypeDefinition(node) {
-        if (node.name.value === 'join__Graph' && node.values?.length) {
+        if (node.name.value === joinGraphName && node.values?.length) {
           for (const enumValueNode of node.values) {
             const serviceName = getJoinGraphEnumServiceName(enumValueNode);
             if (serviceName === null) {
@@ -128,7 +186,7 @@ export const extractSuperGraphInformation = traceInlineSync(
 
         const enumServiceNames = getJoinTypeEnumServiceName({
           directives: node.directives ?? [],
-          valueName: 'type',
+          joinDirectiveName: joinTypeDirectiveName,
         });
 
         if (enumServiceNames.size) {
@@ -139,7 +197,7 @@ export const extractSuperGraphInformation = traceInlineSync(
           for (const enumValueNode of node.values) {
             const enumValueServiceNames = getJoinTypeEnumServiceName({
               directives: enumValueNode.directives ?? [],
-              valueName: 'enumValue',
+              joinDirectiveName: joinEnumTypeDirectiveName,
             });
 
             if (enumValueServiceNames.size) {
@@ -164,7 +222,7 @@ export const extractSuperGraphInformation = traceInlineSync(
         const serviceReferences = new Set(
           getJoinTypeEnumServiceName({
             directives: node.directives ?? [],
-            valueName: 'type',
+            joinDirectiveName: joinTypeDirectiveName,
           }),
         );
 
@@ -174,7 +232,7 @@ export const extractSuperGraphInformation = traceInlineSync(
         const serviceReferences = new Set(
           getJoinTypeEnumServiceName({
             directives: node.directives ?? [],
-            valueName: 'type',
+            joinDirectiveName: joinTypeDirectiveName,
           }),
         );
 
@@ -188,7 +246,7 @@ export const extractSuperGraphInformation = traceInlineSync(
           const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
 
           const graphArg = fieldNode.directives
-            ?.find(directive => directive.name.value === 'join__field')
+            ?.find(directive => directive.name.value === joinFieldDirectiveName)
             ?.arguments?.find(arg => arg.name.value === 'graph');
 
           if (graphArg === undefined) {
@@ -214,7 +272,7 @@ export const extractSuperGraphInformation = traceInlineSync(
         const objectTypeServiceReferences = new Set(
           getJoinTypeEnumServiceName({
             directives: node.directives ?? [],
-            valueName: 'type',
+            joinDirectiveName: joinTypeDirectiveName,
           }),
         );
 
@@ -271,30 +329,20 @@ export const extractSuperGraphInformation = traceInlineSync(
     }
     // END -- Federation 1.0 support
 
-    return { schemaCoordinateServicesMappings };
+    return { schemaCoordinateServicesMappings, schemaCoordinateMetadataMappings };
   },
 );
 
-function getJoinGraphEnumServiceName(enumValueDefinitionNode: EnumValueDefinitionNode) {
-  const arg = enumValueDefinitionNode.directives
-    ?.find(directive => directive.name.value === 'join__graph')
-    ?.arguments?.find(argument => argument.name.value === 'name');
-  if (arg === undefined) {
-    return null;
-  }
-  return getStringValueArgumentValue(arg);
-}
-
 function getJoinTypeEnumServiceName(args: {
   directives: ReadonlyArray<ConstDirectiveNode>;
-  valueName: 'enumValue' | 'type';
+  joinDirectiveName: string;
 }) {
   if (!args.directives?.length) {
     return new Set<string>();
   }
   const enumServiceValues = new Set<string>();
   for (const directiveNode of args.directives) {
-    if (directiveNode.name.value !== `join__${args.valueName}`) {
+    if (directiveNode.name.value !== args.joinDirectiveName) {
       continue;
     }
 

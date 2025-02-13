@@ -46,12 +46,6 @@ export function extractLinkImplementations(typeDefs: DocumentNode): {
 
   return {
     resolveImportName: (identity, name) => {
-      if (!supportsFederationV2) {
-        // Identities dont matter for Federation v1. There are no links to reference.
-        // So return the name without the identity's namespace
-        return name.startsWith('@') ? name.substring(1) : name;
-      }
-
       const matchingLink = linkByIdentity[identity];
       if (!matchingLink) {
         const defaultLink = new FederatedLink(FederatedLinkUrl.fromUrl(identity), null, []);

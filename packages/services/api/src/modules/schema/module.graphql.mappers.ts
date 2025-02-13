@@ -130,6 +130,7 @@ export type GraphQLFieldMapper = WithSchemaCoordinatesUsage<
     };
     supergraph: null | {
       ownedByServiceNames: Array<string> | null;
+      metadata: Array<SchemaMetadataMapper> | null;
     };
   }>
 >;
@@ -179,6 +180,7 @@ export type GraphQLObjectTypeMapper = WithSchemaCoordinatesUsage<{
   };
   supergraph: null | {
     ownedByServiceNames: Array<string> | null;
+    getFieldMetadata: (fieldName: string) => Array<SchemaMetadataMapper> | null;
     getFieldOwnedByServices: (fieldName: string) => Array<string> | null;
   };
 }>;
@@ -192,6 +194,7 @@ export type GraphQLInterfaceTypeMapper = WithSchemaCoordinatesUsage<{
   };
   supergraph: null | {
     ownedByServiceNames: Array<string> | null;
+    getFieldMetadata: (fieldName: string) => Array<SchemaMetadataMapper> | null;
     getFieldOwnedByServices: (fieldName: string) => Array<string> | null;
   };
 }>;
@@ -292,4 +295,9 @@ export type ContractVersionMapper = ContractVersion;
 export type BreakingChangeMetadataTargetMapper = {
   name: string;
   id: string;
+};
+
+export type SchemaMetadataMapper = {
+  name: string;
+  content: string;
 };
