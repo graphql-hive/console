@@ -48,6 +48,31 @@ const OrganizationProjectTargetQuery = graphql(`
   }
 `);
 
+const PaginatedAccessTokensQuery = graphql(`
+  query PaginatedAccessTokensQuery($organizationSlug: String!, $first: Int, $after: String) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      accessTokens(first: $first, after: $after) {
+        edges {
+          cursor
+          node {
+            id
+            title
+            description
+            permissions
+            createdAt
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+`);
+
 test.concurrent('create: success', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
@@ -268,6 +293,121 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
       id: expect.any(String),
       project: null,
       slug: org.organization.slug,
+    },
+  });
+});
+
+test.concurrent('pagination', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
+
+  let paginatedResult = await execute({
+    document: PaginatedAccessTokensQuery,
+    variables: {
+      organizationSlug: org.organization.slug,
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  expect(paginatedResult.organization?.accessTokens).toEqual({
+    edges: [],
+    pageInfo: {
+      endCursor: '',
+      hasNextPage: false,
+    },
+  });
+
+  await execute({
+    document: CreateOrganizationAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'first access token',
+        description: 'a description',
+        resources: {
+          mode: GraphQLSchema.ResourceAssignmentMode.All,
+        },
+        permissions: ['organization:describe'],
+      },
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  await execute({
+    document: CreateOrganizationAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'second access token',
+        description: 'a description',
+        resources: {
+          mode: GraphQLSchema.ResourceAssignmentMode.All,
+        },
+        permissions: ['organization:describe'],
+      },
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  paginatedResult = await execute({
+    document: PaginatedAccessTokensQuery,
+    variables: {
+      organizationSlug: org.organization.slug,
+      first: 1,
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  expect(paginatedResult.organization?.accessTokens).toEqual({
+    edges: [
+      {
+        cursor: expect.any(String),
+        node: {
+          createdAt: expect.any(String),
+          description: 'a description',
+          id: expect.any(String),
+          permissions: ['organization:describe'],
+          title: 'second access token',
+        },
+      },
+    ],
+    pageInfo: {
+      endCursor: expect.any(String),
+      hasNextPage: true,
+    },
+  });
+
+  const endCursor = paginatedResult.organization!.accessTokens!.pageInfo.endCursor;
+
+  paginatedResult = await execute({
+    document: PaginatedAccessTokensQuery,
+    variables: {
+      organizationSlug: org.organization.slug,
+      after: endCursor,
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+
+  expect(paginatedResult.organization?.accessTokens).toEqual({
+    edges: [
+      {
+        cursor: expect.any(String),
+        node: {
+          createdAt: expect.any(String),
+          description: 'a description',
+          id: expect.any(String),
+          permissions: ['organization:describe'],
+          title: 'first access token',
+        },
+      },
+    ],
+    pageInfo: {
+      endCursor: expect.any(String),
+      hasNextPage: false,
     },
   });
 });

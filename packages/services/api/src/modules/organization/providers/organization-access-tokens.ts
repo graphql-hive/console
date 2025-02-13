@@ -1,6 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+} from '@hive/storage';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
 import {
@@ -198,6 +202,81 @@ export class OrganizationAccessTokens {
     return {
       type: 'success' as const,
       organizationAccessTokenId: args.organizationAccessTokenId,
+    };
+  }
+
+  async getPaginated(args: { organizationId: string; first: number | null; after: string | null }) {
+    await this.session.assertPerformAction({
+      organizationId: args.organizationId,
+      params: { organizationId: args.organizationId },
+      action: 'accessToken:modify',
+    });
+
+    let cursor: null | {
+      createdAt: string;
+      id: string;
+    } = null;
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    if (args.after) {
+      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+    }
+
+    const result = await this.pool.any<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+      SELECT
+        ${organizationAccessTokenFields}
+      FROM
+        "organization_access_tokens"
+      WHERE
+        "organization_id" = ${args.organizationId}
+        ${
+          cursor
+            ? sql`
+              AND (
+                (
+                  "created_at" = ${cursor.createdAt}
+                  AND "id" < ${cursor.id}
+                )
+                OR "created_at" < ${cursor.createdAt}
+              )
+            `
+            : sql``
+        }
+      ORDER BY
+        "organization_id" ASC
+        , "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `);
+
+    let edges = result.map(row => {
+      const node = OrganizationAccessTokenModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
     };
   }
 }

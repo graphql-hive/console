@@ -1,6 +1,7 @@
 import { Session } from '../../auth/lib/authz';
 import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
 import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
+import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
 import { OrganizationMembers } from '../providers/organization-members';
@@ -8,6 +9,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'accessTokens'
   | 'availableMemberPermissionGroups'
   | 'availableOrganizationPermissionGroups'
   | 'cleanId'
@@ -189,5 +191,12 @@ export const Organization: Pick<
   },
   availableOrganizationPermissionGroups: () => {
     return OrganizationAccessTokensPermissions.permissionGroups;
+  },
+  accessTokens: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getPaginated({
+      organizationId: organization.id,
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
   },
 };

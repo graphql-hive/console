@@ -319,6 +319,20 @@ export default gql`
     List of available permission groups that can be assigned to organization access tokens.
     """
     availableOrganizationPermissionGroups: [PermissionGroup!]!
+    """
+    Paginated organization access tokens.
+    """
+    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+  }
+
+  type OrganizationAccessTokenEdge {
+    node: OrganizationAccessToken!
+    cursor: String!
+  }
+
+  type OrganizationAccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [OrganizationAccessTokenEdge!]!
   }
 
   type OrganizationConnection {
