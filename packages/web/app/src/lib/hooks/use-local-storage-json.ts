@@ -27,7 +27,7 @@ export function useLocalStorageJson<$Schema extends z.ZodType>(...args: ArgsInpu
     // because we manually pre-compute+return the default value, thus we don't
     // rely on Zod's behaviour. If that changes this should have `?? undefined`
     // added.
-    const storedValue = readVersionedEntryLocalStorage(versionedEntry);
+    const storedValue = readVersionedEntryLocalStorage({ spec: versionedEntry });
 
     if (!storedValue) {
       return defaultValue;

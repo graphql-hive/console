@@ -5,7 +5,7 @@ export function useLocalStorage(key: string | VersionedEntrySpec, defaultValue: 
   const versionedEntry: VersionedEntrySpec = typeof key === 'string' ? [{ key }] : key;
 
   const [value, setValue] = useState<string>(() => {
-    const value = readVersionedEntryLocalStorage(versionedEntry);
+    const value = readVersionedEntryLocalStorage({ spec: versionedEntry });
     return value ?? defaultValue;
   });
 

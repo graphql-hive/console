@@ -34,16 +34,19 @@ interface EntrySpec {
  *
  * 1. The latest entry value is returned.
  * 2. If the latest entry to have a value is NOT the current entry, then current entry is set to the latest value.
- * 3. All entries prior the current that are present are deleted.
+ * 3. All entries prior the current that are present are either deleted or ignored based on removalStrategy.
  *
- * Implied by the above but to make explicit: if multiple entries have values, only the
- * latest entry with a value is considered.
- *
- * @remarks The hardcoding to localStorage is minimal. It could be easily parameterized to support for example Redis.
+ * @param options.removalStrategy - Strategy for handling previous entries (RemovalStrategy.Remove or RemovalStrategy.Ignore, defaults to Ignore)
  */
 export const readVersionedEntry =
   (keyValueStore: KeyValueStore) =>
-  (versionedEntry: VersionedEntrySpec): string | null => {
+  (parameters: {
+    spec: VersionedEntrySpec;
+    /**
+     * @defaultValue 'ignore'
+     */
+    previousEntriesPolicy?: PreviousEntriesPolicy;
+  }): string | null => {
     type SearchResult = SearchResultHit | SearchResultMiss;
 
     interface SearchResultHit extends SearchResultEither {
@@ -61,15 +64,15 @@ export const readVersionedEntry =
     }
 
     // ---
+    const { spec, previousEntriesPolicy = PreviousEntriesPolicy.ignore } = parameters;
 
     const searchResults: SearchResult[] = [];
 
-    for (const { entry, index } of versionedEntry.map((entry, index) => ({ entry, index }))) {
+    for (const { entry, index } of spec.map((entry, index) => ({ entry, index }))) {
       const value = keyValueStore.get(entry.key);
       searchResults.push({ entry, value, index });
-      // remove previous entries
       // Note: Once we have schemas, we should not remove here, wait until _after_ successful migration
-      if (index > 0) {
+      if (index > 0 && previousEntriesPolicy === PreviousEntriesPolicy.remove) {
         keyValueStore.remove(entry.key);
       }
     }
@@ -81,12 +84,19 @@ export const readVersionedEntry =
     if (!latestHit) return null;
 
     if (latestHit.index > 0) {
-      keyValueStore.set(versionedEntry[0].key, latestHit.value);
+      keyValueStore.set(spec[0].key, latestHit.value);
       // Note: Once we have schemas, we will need to run the value through the migration pipeline.
     }
 
     return latestHit.value;
   };
+
+export const PreviousEntriesPolicy = {
+  remove: 'remove',
+  ignore: 'ignore',
+} as const;
+
+export type PreviousEntriesPolicy = keyof typeof PreviousEntriesPolicy;
 
 // --------------------------------------------------------------------
 // KeyValueStore Implementations
