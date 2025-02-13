@@ -125,30 +125,11 @@ export const gatewayConfig = defineConfig({
      */
     apiKey: '<api_key>',
     /**
-     * Maximum number of retries to attempt when fetching the schema from the managed federation up link.
-     */
-    maxRetries: 5,
-    /**
-     * Minimum delay in seconds
-     */
-    minDelaySeconds: 1,
-    /**
-     * Delay of seconds on retries
-     */
-    retryDelaySeconds: 1,
-    /**
-     * The URL of the managed federation up link. When retrying after a failure, you should cycle through the default up links using this option.
+     * Usage report endpoint
      *
-     * Uplinks are available in `DEFAULT_UPLINKS` constant.
-     *
-     * This options can also be defined using the `APOLLO_SCHEMA_CONFIG_DELIVERY_ENDPOINT` environment variable.
-     * It should be a comma separated list of up links, but only the first one will be used.
-     *
-     * Default: 'https://uplink.api.apollographql.com/' (Apollo's managed federation up link on GCP)
-     *
-     * Alternative: 'https://aws.uplink.api.apollographql.com/' (Apollo's managed federation up link on AWS)
+     * Defaults to GraphOS endpoint (https://usage-reporting.api.apollographql.com/api/ingress/traces)
      */
-    upLink: 'https://uplink.api.apollographql.com/',
+    endpoint: 'https://usage-reporting.api.apollographql.com/api/ingress/traces',
     /**
      * Agent Version to report to the usage reporting API
      *
