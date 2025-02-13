@@ -7,6 +7,7 @@ import {
 } from '@hive/storage';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {
   InsufficientPermissionError,
   Permission,
@@ -87,6 +88,7 @@ export class OrganizationAccessTokens {
     private resourceAssignments: ResourceAssignments,
     private idTranslator: IdTranslator,
     private session: Session,
+    private auditLogs: AuditLogRecorder,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -173,6 +175,14 @@ export class OrganizationAccessTokens {
 
     await this.cache.add(organizationAccessToken);
 
+    await this.auditLogs.record({
+      organizationId,
+      eventType: 'ORGANIZATION_ACCESS_TOKEN_CREATED',
+      metadata: {
+        organizationAccessTokenId: organizationAccessToken.id,
+      },
+    });
+
     return {
       type: 'success' as const,
       organizationAccessToken,
@@ -201,6 +211,14 @@ export class OrganizationAccessTokens {
     `);
 
     await this.cache.purge(record);
+
+    await this.auditLogs.record({
+      organizationId: record.organizationId,
+      eventType: 'ORGANIZATION_ACCESS_TOKEN_DELETED',
+      metadata: {
+        organizationAccessTokenId: record.id,
+      },
+    });
 
     return {
       type: 'success' as const,
