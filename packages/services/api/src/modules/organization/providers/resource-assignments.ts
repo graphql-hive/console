@@ -80,7 +80,7 @@ const GranularAssignedProjectsModel = z.object({
  * If no resources are assigned to a member role, the permissions are granted on all the resources within the
  * organization.
  */
-export const AssignedProjectsModel = z.union([
+export const ResourceAssignmentModel = z.union([
   GranularAssignedProjectsModel,
   WildcardAssignmentMode,
 ]);
@@ -88,7 +88,7 @@ export const AssignedProjectsModel = z.union([
 /**
  * Resource assignments as stored within the database.
  */
-export type ResourceAssignmentGroup = z.TypeOf<typeof AssignedProjectsModel>;
+export type ResourceAssignmentGroup = z.TypeOf<typeof ResourceAssignmentModel>;
 type GranularAssignedProjects = z.TypeOf<typeof GranularAssignedProjectsModel>;
 
 @Injectable({

@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  ResourceAssignmentModel,
+  ResourceAssignments,
+} from '../../organization/providers/resource-assignments';
 
 export const AuditLogModel = z.union([
   z.object({
@@ -331,6 +335,8 @@ export const AuditLogModel = z.union([
     eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_CREATED'),
     metadata: z.object({
       organizationAccessTokenId: z.string().uuid(),
+      permissions: z.array(z.string()),
+      assignedResources: ResourceAssignmentModel,
     }),
   }),
   z.object({

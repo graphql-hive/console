@@ -8,9 +8,9 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import {
-  AssignedProjectsModel,
   resolveResourceAssignment,
   ResourceAssignmentGroup,
+  ResourceAssignmentModel,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
 
@@ -25,7 +25,7 @@ const RawOrganizationMembershipModel = z.object({
    * Resources that are assigned to the membership
    * If no resources are defined the permissions of the role are applied to all resources within the organization.
    */
-  assignedResources: AssignedProjectsModel.nullable().transform(
+  assignedResources: ResourceAssignmentModel.nullable().transform(
     value => value ?? { mode: '*' as const, projects: [] },
   ),
 });
@@ -247,7 +247,7 @@ export class OrganizationMembers {
           "role_id" = ${args.roleId}
           , "assigned_resources" = ${JSON.stringify(
             /** we parse it to avoid additional properties being stored within the database. */
-            AssignedProjectsModel.parse(args.resourceAssignmentGroup),
+            ResourceAssignmentModel.parse(args.resourceAssignmentGroup),
           )}
         WHERE
           "organization_id" = ${args.organizationId}

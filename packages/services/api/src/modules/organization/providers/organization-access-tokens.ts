@@ -22,8 +22,8 @@ import * as OrganizationAccessKey from '../lib/organization-access-key';
 import { assignablePermissions } from '../lib/organization-access-token-permissions';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import {
-  AssignedProjectsModel,
   resolveResourceAssignment,
+  ResourceAssignmentModel,
   ResourceAssignments,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
@@ -49,7 +49,7 @@ const OrganizationAccessTokenModel = z
     title: z.string(),
     description: z.string(),
     permissions: z.array(PermissionsModel),
-    assignedResources: AssignedProjectsModel.nullable().transform(
+    assignedResources: ResourceAssignmentModel.nullable().transform(
       value => value ?? { mode: '*' as const, projects: [] },
     ),
     firstCharacters: z.string(),
@@ -183,6 +183,8 @@ export class OrganizationAccessTokens {
       eventType: 'ORGANIZATION_ACCESS_TOKEN_CREATED',
       metadata: {
         organizationAccessTokenId: organizationAccessToken.id,
+        permissions: organizationAccessToken.permissions,
+        assignedResources: organizationAccessToken.assignedResources,
       },
     });
 
