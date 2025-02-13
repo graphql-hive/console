@@ -6,13 +6,20 @@ import bcrypt from 'bcryptjs';
  * Contains functions for generating an organization acces key.
  */
 
+/**
+ * Payload within the access token.
+ */
 type DecodedAccessKey = {
+  /** UUID as stored within the database ("organization_access_tokens"."id") */
   id: string;
+  /** string to compare against the hash within the database ("organization_access_tokens"."hash") */
   privateKey: string;
 };
 
 /**
- * Prefix for the access key
+ * Prefix for the organization access key.
+ * We use this prefix so we can quickly identify whether an organization access token.
+ *
  * **hv** -> Hive
  * **o**  -> Organization
  * **1**  -> Version 1
@@ -25,6 +32,9 @@ function encode(recordId: string, secret: string) {
   return keyPrefix + btoa(keyContents);
 }
 
+/**
+ * Attempt to decode a user provided access token string into the embedded id and private key.
+ */
 export function decode(
   accessToken: string,
 ): { type: 'error'; reason: string } | { type: 'ok'; accessKey: DecodedAccessKey } {
@@ -58,6 +68,9 @@ export function decode(
   return decodeError;
 }
 
+/**
+ * Creates a new organization access key/token for a provided UUID.
+ */
 export async function create(id: string) {
   const secret = Crypto.createHash('sha256')
     .update(Crypto.randomBytes(20).toString())
@@ -74,6 +87,10 @@ export async function create(id: string) {
   };
 }
 
+/**
+ * Verify whether a organization access key private key matches the
+ * hash stored within the "organization_access_tokens"."hash" table.
+ */
 export async function verify(secret: string, hash: string) {
   return await bcrypt.compare(secret, hash);
 }
