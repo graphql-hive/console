@@ -11,8 +11,8 @@ export default {
       , "description" text
       , "permissions" text[] NOT NULL
       , "assigned_resources" jsonb
-      , "hash" text
-      , "first_characters" text
+      , "hash" text NOT NULL
+      , "first_characters" text NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS "organization_access_tokens_organization_id" ON "organization_access_tokens" (
