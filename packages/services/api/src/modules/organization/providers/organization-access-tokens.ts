@@ -9,6 +9,7 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
 import {
   InsufficientPermissionError,
+  Permission,
   PermissionsModel,
   permissionsToPermissionsPerResourceLevelAssignment,
   Session,
@@ -135,7 +136,9 @@ export class OrganizationAccessTokens {
       );
 
     const permissions = Array.from(
-      new Set(args.permissions.filter(permission => assignablePermissions.has(permission as any))),
+      new Set(
+        args.permissions.filter(permission => assignablePermissions.has(permission as Permission)),
+      ),
     );
 
     const id = crypto.randomUUID();
