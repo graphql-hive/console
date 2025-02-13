@@ -19,7 +19,8 @@ export const metadata = {
   description:
     'Discover what GraphQL Federation is, how it unifies multiple APIs into a Supergraph, its core benefits, and the building blocks like subgraphs, schema composition and gateway.',
   openGraph: {
-    ...rootMetadata.openGraph,
+    ...rootMetadata!.openGraph,
+    url: '/federation',
     /**
      * We currently have `metadataBase` which includes `basePath`,
      * so the opengraph-image.png file convention results in a
