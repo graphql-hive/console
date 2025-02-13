@@ -760,11 +760,17 @@ export default gql`
   }
 
   type SupergraphMetadata {
+    metadata: [SchemaMetadata!]
     """
     List of service names that own the field/type.
     Resolves to null if the entity (field, type, scalar) does not belong to any service.
     """
     ownedByServiceNames: [String!]
+  }
+
+  type SchemaMetadata {
+    name: String!
+    content: String!
   }
 
   union GraphQLNamedType =

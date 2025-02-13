@@ -512,6 +512,7 @@ export class CompositeModel {
         supergraph: compositionCheck.result?.supergraph ?? null,
         fullSchemaSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         tags: compositionCheck.result?.tags ?? null,
+        schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
         contracts:
           contractChecks?.map(contractCheck => ({
             contractId: contractCheck.contractId,
@@ -717,6 +718,7 @@ export class CompositeModel {
         compositionErrors: compositionCheck.reason?.errors ?? [],
         supergraph: compositionCheck.result?.supergraph ?? null,
         tags: compositionCheck.result?.tags ?? null,
+        schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
         schemas,
         contracts:
           contractChecks?.map(contractCheck => ({

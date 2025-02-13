@@ -327,6 +327,7 @@ export class SingleModel {
         fullSchemaSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         tags: compositionCheck.result?.tags ?? null,
         contracts: null,
+        schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
       },
     };
   }

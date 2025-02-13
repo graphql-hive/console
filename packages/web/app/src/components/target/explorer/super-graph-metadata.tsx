@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { PackageIcon } from '@/components/ui/icon';
 import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { Link } from '@tanstack/react-router';
 
@@ -13,6 +14,27 @@ function stringToHslColor(str: string, s = 30, l = 80) {
 
   const h = hash % 360;
   return 'hsl(' + h + ', ' + s + '%, ' + l + '%)';
+}
+
+function Metadata(props: { supergraphMetadata: Array<{ name: string; content: string }> }) {
+  if (!props.supergraphMetadata.length) {
+    return null;
+  }
+  return (
+    <Tooltip
+      content={
+        <>
+          {props.supergraphMetadata.map((m, i) => (
+            <div key={i}>
+              <span className="font-bold">{m.name}:</span> {m.content}
+            </div>
+          ))}
+        </>
+      }
+    >
+      <MetadataIcon className="my-[5px] cursor-pointer text-white" />
+    </Tooltip>
+  );
 }
 
 function SubgraphChip(props: {
@@ -60,6 +82,10 @@ function SubgraphChip(props: {
 const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
   fragment SupergraphMetadataList_SupergraphMetadataFragment on SupergraphMetadata {
     ownedByServiceNames
+    metadata {
+      name
+      content
+    }
   }
 `);
 
@@ -76,6 +102,13 @@ export function SupergraphMetadataList(props: {
     SupergraphMetadataList_SupergraphMetadataFragment,
     props.supergraphMetadata,
   );
+
+  const meta = useMemo(() => {
+    if (!supergraphMetadata.metadata?.length) {
+      return null;
+    }
+    return <Metadata supergraphMetadata={supergraphMetadata.metadata} />;
+  }, [supergraphMetadata.metadata]);
 
   const items = useMemo(() => {
     if (supergraphMetadata.ownedByServiceNames == null) {
@@ -124,15 +157,16 @@ export function SupergraphMetadataList(props: {
     ] as const;
   }, [supergraphMetadata.ownedByServiceNames]);
 
-  if (items === null) {
+  if (items === null && meta === null) {
     return null;
   }
 
-  const [previewItems, allItems] = items;
+  const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={100}>
       <div className="flex w-full justify-end">
+        {meta}
         {previewItems}{' '}
         {allItems ? (
           <Tooltip
