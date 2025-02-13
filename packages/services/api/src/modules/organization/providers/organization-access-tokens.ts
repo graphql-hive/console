@@ -57,6 +57,9 @@ const OrganizationAccessTokenModel = z
   })
   .transform(record => ({
     ...record,
+    // We have these as a getter statement as they are
+    // only used in the context of authorization, we do not need
+    // to compute when querying a list of organization access tokens via the GraphQL API.
     get authorizationPolicyStatements() {
       const permissions = permissionsToPermissionsPerResourceLevelAssignment(record.permissions);
       const resolvedResources = resolveResourceAssignment({

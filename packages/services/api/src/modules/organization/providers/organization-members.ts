@@ -131,6 +131,9 @@ export class OrganizationMembers {
           assignedRole: {
             role: membershipRole,
             resources,
+            // We have these as a getter statement as they are
+            // only used in the context of authorization, we do not need
+            // to compute when querying a list of organization mambers via the GraphQL API.
             get authorizationPolicyStatements() {
               const resolvedResources = resolveResourceAssignment({
                 organizationId: organization.id,
