@@ -186,9 +186,7 @@ export class ArtifactStorageReader {
             })
             .then(abortOtherRequest(mirrorController, 'primary'))
             .catch(error => {
-              this.breadcrumb(
-                `Failed to fetch from primary (error=${error instanceof Error ? error.message : String(error)})`,
-              );
+              this.breadcrumb(`Failed to fetch from primary (error=${stringifyError(error)})`);
               return Promise.reject(error);
             }),
           this.s3Mirror.client
@@ -211,17 +209,15 @@ export class ArtifactStorageReader {
             })
             .then(abortOtherRequest(primaryController, 'mirror'))
             .catch(error => {
-              this.breadcrumb(
-                `Failed to fetch from mirror (error=${error instanceof Error ? error.message : String(error)})`,
-              );
+              this.breadcrumb(`Failed to fetch from mirror (error=${stringifyError(error)})`);
               return Promise.reject(error);
             }),
         ]).catch(error => {
-          this.breadcrumb(`Both requests failed: ${String(error)}`);
+          this.breadcrumb(`Both requests failed: ${stringifyError(error)}`);
 
           if (error instanceof AggregateError && error.errors) {
             for (let i = 0; i < error.errors.length; i++) {
-              this.breadcrumb(`Request ${i} failed: ${String(error.errors[i])}`);
+              this.breadcrumb(`Request ${i} failed: ${stringifyError(error.errors[i])}`);
             }
           }
 
