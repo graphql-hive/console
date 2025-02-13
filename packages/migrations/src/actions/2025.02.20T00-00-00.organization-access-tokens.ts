@@ -8,7 +8,7 @@ export default {
       , "organization_id" UUID NOT NULL REFERENCES "organizations" ("id") ON DELETE CASCADE
       , "created_at" timestamptz NOT NULL DEFAULT now()
       , "title" text NOT NULL
-      , "description" text NOT NULL
+      , "description" text
       , "permissions" text[] NOT NULL
       , "assigned_resources" jsonb
       , "hash" text
