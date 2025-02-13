@@ -465,7 +465,7 @@ export class ArtifactStorageReader {
 
         this.analytics?.track(
           {
-            type: args.isMirror ? 'r2' : 's3',
+            type: args.isMirror ? 's3' : 'r2',
             statusCodeOrErrCode:
               args.result.type === 'error'
                 ? String(args.result.error.name ?? 'unknown')
