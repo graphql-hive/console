@@ -23,7 +23,7 @@ export default defineConfig({
   video: isCI,
   screenshotOnRunFailure: isCI,
   defaultCommandTimeout: 15_000, // sometimes the app takes longer to load, especially in the CI
-  retries: 2,
+  retries: isCI ? 2 : 0,
   e2e: {
     setupNodeEvents(on) {
       on('task', {
@@ -33,6 +33,11 @@ export default defineConfig({
           const project = await org.createProject();
           const slug = `${org.organization.slug}/${project.project.slug}/${project.target.slug}`;
           return {
+            targets: {
+              production: project.targets.find(_ => _.name === 'production'),
+              staging: project.targets.find(_ => _.name === 'staging'),
+              development: project.targets.find(_ => _.name === 'development'),
+            },
             slug,
             refreshToken: owner.ownerRefreshToken,
             email: owner.ownerEmail,

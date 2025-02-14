@@ -58,7 +58,6 @@ function setEditorScript(script: string) {
 describe('Laboratory > Preflight Script', () => {
   // https://github.com/graphql-hive/console/pull/6450
   it('regression: loads even if local storage is set to {}', () => {
-    // todo update to have a target id
     window.localStorage.setItem('hive:laboratory:environment', '{}');
     cy.visit(`/${data.slug}/laboratory`);
     cy.get(selectors.buttonGraphiQLPreflight).click();
