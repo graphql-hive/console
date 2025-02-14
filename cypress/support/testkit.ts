@@ -1,3 +1,44 @@
+export function persistAuthenticationCookies() {
+  const ctx = {
+    cookies: [] as Cypress.Cookie[],
+  };
+
+  before(() => {
+    cy.getCookie('sRefreshToken').should('exist');
+    cy.visit('/');
+    cy.wait(2000);
+
+    cy.getCookie('sAccessToken').should('exist');
+    cy.getCookie('sFrontToken').should('exist');
+    cy.getCookie('st-last-access-token-update').should('exist');
+
+    cy.getCookie('sAccessToken').then(sAccessToken => {
+      ctx.cookies.push(sAccessToken);
+    });
+    cy.getCookie('sFrontToken').then(sFrontToken => {
+      ctx.cookies.push(sFrontToken);
+    });
+    cy.getCookie('sRefreshToken').then(sRefreshToken => {
+      ctx.cookies.push(sRefreshToken);
+    });
+
+    cy.getCookie('st-last-access-token-update').then(stLastAccessTokenUpdate => {
+      ctx.cookies.push(stLastAccessTokenUpdate);
+    });
+
+    cy.clearCookie('st-last-access-token-update');
+    cy.clearCookie('sRefreshToken');
+    cy.clearCookie('sAccessToken');
+    cy.clearCookie('sFrontToken');
+  });
+
+  beforeEach(() => {
+    ctx.cookies.forEach(cookie => {
+      cy.setCookie(cookie.name, cookie.value, cookie);
+    });
+  });
+}
+
 export function generateRandomSlug() {
   return Math.random().toString(36).substring(2);
 }

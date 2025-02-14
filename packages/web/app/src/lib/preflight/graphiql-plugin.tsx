@@ -160,8 +160,6 @@ export function usePreflight(args: {
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isEnabled, setIsEnabled] = useLocalStorageJson(
-    // todo
-    // 'hive:laboratory:isPreflightEnabled',
     'hive:laboratory:isPreflightScriptEnabled',
     z.boolean().default(false),
   );

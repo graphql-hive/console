@@ -137,6 +137,9 @@ importers:
       cypress:
         specifier: 13.17.0
         version: 13.17.0
+      cypress-localstorage-commands:
+        specifier: ^2.2.7
+        version: 2.2.7(cypress@13.17.0)
       dotenv:
         specifier: 16.4.7
         version: 16.4.7
@@ -9396,6 +9399,12 @@ packages:
 
   csv-stringify@6.5.2:
     resolution: {integrity: sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==}
+
+  cypress-localstorage-commands@2.2.7:
+    resolution: {integrity: sha512-hUe6hz/3TD9Ph70CUHJLSiTzL0INikUQ4W3CRd7XmaGCDjwR6jGAlvTCGmxZ6yGc4Mq/WN6L8xJAu+dOrIvYCA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      cypress: '>=2.1.0'
 
   cypress@13.17.0:
     resolution: {integrity: sha512-5xWkaPurwkIljojFidhw8lFScyxhtiFHl/i/3zov+1Z5CmY4t9tjIdvSXfu82Y3w7wt0uR9KkucbhkVvJZLQSA==}
@@ -26077,6 +26086,10 @@ snapshots:
   csstype@3.1.3: {}
 
   csv-stringify@6.5.2: {}
+
+  cypress-localstorage-commands@2.2.7(cypress@13.17.0):
+    dependencies:
+      cypress: 13.17.0
 
   cypress@13.17.0:
     dependencies:

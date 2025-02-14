@@ -1,3 +1,9 @@
+import { persistAuthenticationCookies } from '../support/testkit';
+
+Cypress.Cookies.debug(true);
+
+const as = <$Type>() => undefined as $Type;
+
 const selectors = {
   editorEnvironmentVariables: '[data-cy="preflight-editor-mini"]',
   buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
@@ -30,55 +36,63 @@ const data = {
   envarsJson: '{"foo":"123"}',
 };
 
-const as = <$Type>() => undefined as $Type;
-
 const ctx = {
-  // test export interfaces from testKit
+  // todo get an exported type from testKit
   targetDevelopment: as<{ id: string; slug: string; path: string }>(),
   targetProduction: as<{ id: string; slug: string; path: string }>(),
+  cookies: [] as Cypress.Cookie[],
 };
 
 before(() => {
-  cy.clearLocalStorage().then(async () => {
-    cy.task('seedTarget').then(({ refreshToken, targets }: any) => {
-      cy.setCookie('sRefreshToken', refreshToken);
-      ctx.targetDevelopment = targets.development;
-      ctx.targetProduction = targets.production;
-    });
+  cy.task('seedTarget').then(({ refreshToken, targets }: any) => {
+    cy.setCookie('sRefreshToken', refreshToken);
+    ctx.targetDevelopment = targets.development;
+    ctx.targetProduction = targets.production;
   });
 });
 
-const visitTargetDevelopment = () => cy.visit(`/${ctx.targetDevelopment.path}/laboratory`);
-const visitTargetProduction = () => cy.visit(`/${ctx.targetProduction.path}/laboratory`);
+persistAuthenticationCookies();
+
+const visitTargetDevelopment = () => cy.visit(`${ctx.targetDevelopment.path}/laboratory`);
+// const visitTargetProduction = () => cy.visit(`${ctx.targetProduction.path}/laboratory`);
+
 const openPreflightTab = () => cy.get(selectors.buttonGraphiQLPreflight).click();
+
+const storageGlobalGet = () => cy.getLocalStorage(environmentVariablesStorageKey.global);
+const storageGlobalSet = (value: string) => cy.setLocalStorage(environmentVariablesStorageKey.global, value); // prettier-ignore
+
+const storageTargetDevelopmentGet = () => cy.getLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id)); // prettier-ignore
+const storageTargetDevelopmentSet = (value: string) => cy.setLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id), value); // prettier-ignore
+
+beforeEach(() => {
+  cy.removeLocalStorage(environmentVariablesStorageKey.global);
+  cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id));
+  cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetProduction.id));
+});
 
 describe('tab editor', () => {
   it('if state empty, is null', () => {
     visitTargetDevelopment();
     openPreflightTab();
-    expect(
-      window.localStorage.getItem(
-        environmentVariablesStorageKey.scoped(ctx.targetDevelopment.slug),
-      ),
-    ).equals(null);
-    expect(window.localStorage.getItem(environmentVariablesStorageKey.global)).equals(null);
-    // cy.dataCy('preflight-editor-mini').should('have.text', '');
+    storageTargetDevelopmentGet().should('equal', null);
+    storageGlobalGet().should('equal', null);
   });
 
-  it('if state just global value, shows that', () => {
-    window.localStorage.setItem(environmentVariablesStorageKey.global, data.envarsJson);
+  it('if state just scoped value, shows that', () => {
+    storageTargetDevelopmentSet(data.envarsJson);
     visitTargetDevelopment();
     openPreflightTab();
     cy.contains(data.envarsJson);
+    storageGlobalGet().should('equal', null);
   });
 
-  it.only('if state just scoped value, shows that', () => {
-    window.localStorage.setItem(
-      environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id),
-      data.envarsJson,
-    );
+  it('if state just global value, copied to scoped, shows that', () => {
+    storageTargetDevelopmentGet().should('equal', null);
+    storageGlobalSet(data.envarsJson);
     visitTargetDevelopment();
     openPreflightTab();
     cy.contains(data.envarsJson);
+    storageTargetDevelopmentGet().should('equal', data.envarsJson);
+    storageGlobalGet().should('equal', data.envarsJson);
   });
 });

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 // eslint-disable-next-line import/no-extraneous-dependencies -- cypress SHOULD be a dev dependency
 import { defineConfig } from 'cypress';
+import cypressPluginLocalStorageCommands from 'cypress-localstorage-commands/plugin';
 import { initSeed } from './integration-tests/testkit/seed';
 
 if (!process.env.RUN_AGAINST_LOCAL_SERVICES) {
@@ -25,7 +26,9 @@ export default defineConfig({
   defaultCommandTimeout: 15_000, // sometimes the app takes longer to load, especially in the CI
   retries: isCI ? 2 : 0,
   e2e: {
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      cypressPluginLocalStorageCommands(on, config);
+
       on('task', {
         async seedTarget() {
           const owner = await seed.createOwner();
