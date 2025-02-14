@@ -196,6 +196,10 @@ export class AwsClient {
             result: { type: 'success', response },
           });
 
+          if (!response.body) {
+            return response;
+          }
+
           // Read the body first, to make sure it won't be aborted by the signal (timeout)
           // If we get a timeout error during the body reading, we can't retry,
           // as it's out of the control of that function.
