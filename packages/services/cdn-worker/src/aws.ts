@@ -211,7 +211,6 @@ export class AwsClient {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
-            cf: response.cf,
           });
         }
 
