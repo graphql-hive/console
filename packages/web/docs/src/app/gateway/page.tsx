@@ -15,6 +15,7 @@ import { metadata as rootMetadata } from '../layout';
 import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
 import GatewayLandingFAQ from './gateway-landing-faq.mdx';
+import { LetsGetAdvancedSection } from './lets-get-advanced-section';
 import { OrchestrateYourWay } from './orchestrate-your-way';
 
 export const metadata: Metadata = {
@@ -65,7 +66,7 @@ export default function HiveGatewayPage() {
       >
         <FederationCompatibleBenchmarksSection />
       </ErrorBoundary>
-      {/* Let's get advanced */}
+      <LetsGetAdvancedSection />
       {/* Cloud-Native Nature */}
       <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
       <FrequentlyAskedQuestions
