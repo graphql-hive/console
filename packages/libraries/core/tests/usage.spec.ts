@@ -441,10 +441,9 @@ test('sendImmediately should not stop the schedule', async () => {
   expect(logger.getLogs()).toMatch('Sending immediately');
   expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
-  await waitFor(100);
   // Let's check if the scheduled send task is still running
   await collect(args, {});
-  await waitFor(40);
+  await waitFor(60);
   expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
   await hive.dispose();
