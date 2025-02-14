@@ -1,3 +1,33 @@
+export const as = <$Type>() => undefined as $Type;
+
+// todo: instead of copying this, import it from core utility lib.
+export const environmentVariablesStorageKey = {
+  // todo: optional target effectively gives this the possibility of being silently global
+  // which feels subtle and thus likely to introduce hard to trace defects. Should we abort instead?
+  scoped: (targetId?: string) =>
+    `hive/targetId:${targetId ?? '__null__'}/laboratory/environment-variables`,
+  global: 'hive:laboratory:environment',
+};
+
+// todo: Once other PRs are merged these selectors will be scoped to a place for laboratory.
+export const selectors = {
+  editorEnvironmentVariables: '[data-cy="preflight-editor-mini"]',
+  buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
+  buttonModalCy: 'preflight-modal-button',
+  buttonToggleCy: 'toggle-preflight',
+  buttonHeaders: '[data-name="headers"]',
+  headersEditor: {
+    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
+  },
+  graphiql: {
+    buttonExecute: '.graphiql-execute-button',
+  },
+
+  modal: {
+    buttonSubmitCy: 'preflight-modal-submit',
+  },
+};
+
 export function persistAuthenticationCookies() {
   const ctx = {
     cookies: [] as Cypress.Cookie[],

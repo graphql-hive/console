@@ -1,35 +1,9 @@
-import { persistAuthenticationCookies } from '../support/testkit';
-
-Cypress.Cookies.debug(true);
-
-const as = <$Type>() => undefined as $Type;
-
-const selectors = {
-  editorEnvironmentVariables: '[data-cy="preflight-editor-mini"]',
-  buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
-  buttonModalCy: 'preflight-modal-button',
-  buttonToggleCy: 'toggle-preflight',
-  buttonHeaders: '[data-name="headers"]',
-  headersEditor: {
-    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
-  },
-  graphiql: {
-    buttonExecute: '.graphiql-execute-button',
-  },
-
-  modal: {
-    buttonSubmitCy: 'preflight-modal-submit',
-  },
-};
-
-// todo: instead of copying this, import it from core utility lib.
-export const environmentVariablesStorageKey = {
-  // todo: optional target effectively gives this the possibility of being silently global
-  // which feels subtle and thus likely to introduce hard to trace defects. Should we abort instead?
-  scoped: (targetId?: string) =>
-    `hive/targetId:${targetId ?? '__null__'}/laboratory/environment-variables`,
-  global: 'hive:laboratory:environment',
-};
+import {
+  as,
+  environmentVariablesStorageKey,
+  persistAuthenticationCookies,
+  selectors,
+} from '../support/testkit';
 
 const data = {
   envars: { foo: '123' },
