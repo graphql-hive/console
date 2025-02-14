@@ -10,31 +10,59 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
         Hive Gateway features a set of advanced GraphQL features.
       </p>
       <div className="nextra-scrollbar overflow-auto max-sm:-m-4 max-sm:p-4">
-        <ul className="mt-6 flex gap-6 *:rounded-3xl max-sm:*:w-80 max-sm:*:shrink-0 sm:grid sm:grid-cols-2 md:mt-8 md:*:p-8 lg:mt-12 xl:mt-16 xl:grid-cols-4">
-          <InfoCard icon={<ArrowRightWallIcon />} heading="GraphQL Subscriptions">
+        <ul className="mt-6 flex gap-6 *:flex *:flex-col *:rounded-3xl max-sm:*:w-80 max-sm:*:shrink-0 sm:grid sm:grid-cols-2 md:mt-8 md:*:p-8 lg:mt-12 xl:mt-16 xl:grid-cols-4 [&>*>:last-child]:contents [&>*>h3]:mb-4">
+          <InfoCard
+            icon={<ArrowRightWallIcon />}
+            heading="GraphQL Subscriptions"
+            // moved to the last place, because it's the shortest
+            // and it looks like it has too much spacing without seeing other cards
+            className="max-sm:order-10"
+          >
             Supports real-time data streaming capabilities crucial for dynamic user experiences.
-            <CallToAction variant="tertiary" href="/" className="mt-5">
+            <div
+              className="grow" /* we're using a spacer div here bcs mt-[min(20px,auto)] is not supported */
+            />
+            <CallToAction
+              variant="tertiary"
+              className="mt-5 xl:w-full"
+              href="/docs/gateway/deployment/node-frameworks/uwebsockets#subscriptions-with-websockets"
+            >
               Documentation
             </CallToAction>
           </InfoCard>
           <InfoCard icon={<CogIcon />} heading="@defer and @stream Support">
             Allows more efficient data loading patterns, improving user interface responsiveness and
             system performance.
-            <CallToAction variant="tertiary" href="/" className="mt-5">
+            <div className="grow" />
+            <CallToAction
+              variant="tertiary"
+              className="mt-5 xl:w-full"
+              href="/docs/gateway/defer-stream"
+            >
               Documentation
             </CallToAction>
           </InfoCard>
           <InfoCard icon={<StackIcon />} heading="Request Batching">
             Reduces network overhead by enabling multiple GraphQL operations in a single HTTP
             request, enhancing data retrieval efficiency.
-            <CallToAction variant="tertiary" href="/" className="mt-5">
+            <div className="grow" />
+            <CallToAction
+              variant="tertiary"
+              className="mt-5 xl:w-full"
+              href="/docs/gateway/other-features/performance/request-batching"
+            >
               Documentation
             </CallToAction>
           </InfoCard>
           <InfoCard icon={<TargetIcon />} heading="Demand Control">
             Facilitates efficient management of API resources by setting limits on query complexity
             and execution depth, tailored for high-demand cloud environments.
-            <CallToAction variant="tertiary" href="/" className="mt-5">
+            <div className="grow" />
+            <CallToAction
+              variant="tertiary"
+              className="mt-5 xl:w-full"
+              href="/docs/gateway/other-features/security"
+            >
               Documentation
             </CallToAction>
           </InfoCard>
