@@ -24,7 +24,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
             />
             <CallToAction
               variant="tertiary"
-              className="mt-5 xl:w-full"
+              className="!mt-5 xl:w-full"
               href="/docs/gateway/deployment/node-frameworks/uwebsockets#subscriptions-with-websockets"
             >
               Documentation
@@ -36,7 +36,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
             <div className="grow" />
             <CallToAction
               variant="tertiary"
-              className="mt-5 xl:w-full"
+              className="!mt-5 xl:w-full"
               href="/docs/gateway/defer-stream"
             >
               Documentation
@@ -48,7 +48,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
             <div className="grow" />
             <CallToAction
               variant="tertiary"
-              className="mt-5 xl:w-full"
+              className="!mt-5 xl:w-full"
               href="/docs/gateway/other-features/performance/request-batching"
             >
               Documentation
@@ -60,7 +60,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
             <div className="grow" />
             <CallToAction
               variant="tertiary"
-              className="mt-5 xl:w-full"
+              className="!mt-5 xl:w-full"
               href="/docs/gateway/other-features/security"
             >
               Documentation
