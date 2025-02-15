@@ -26,7 +26,7 @@ import { useHive } from '@graphql-hive/yoga';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
 import { cleanRequestId, type TracingInstance } from '@hive/service-common';
-import { runWithAsyncContext } from '@sentry/node';
+import { withIsolationScope } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { asyncStorage } from './async-storage';
 import type { HiveConfig, HivePersistedDocumentsConfig } from './environment';
@@ -266,7 +266,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
         requestId,
       },
       async () => {
-        const response = await runWithAsyncContext(() => {
+        const response = await withIsolationScope(() => {
           return server.handleNodeRequestAndResponse(req, reply, {
             req,
             reply,
