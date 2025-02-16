@@ -106,7 +106,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
       },
       supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata ? new Map(Object.entries(version.schemaMetadata)) : null,
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
       },
     };
@@ -140,7 +142,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
         usedCoordinates,
       },
       supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata ? new Map(Object.entries(version.schemaMetadata)) : null,
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
       },
     };
@@ -166,7 +170,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
       },
       supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata ? new Map(Object.entries(version.schemaMetadata)) : null,
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
       },
     };

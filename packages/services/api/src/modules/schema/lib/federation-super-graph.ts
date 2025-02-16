@@ -16,7 +16,7 @@ import { traceInlineSync } from '@hive/service-common';
 export type SuperGraphInformation = {
   /** Mapping of schema coordinate to the services that own it. */
   schemaCoordinateServicesMappings: Map<string, Array<string>>;
-  schemaCoordinateMetadataMappings: Map<string, Array<{ name: string, content: string }>> | null;
+  schemaCoordinateMetadataMappings: Map<string, Array<{ name: string; content: string }>> | null;
 };
 
 /**

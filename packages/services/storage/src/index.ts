@@ -4874,7 +4874,7 @@ async function insertSchemaVersion(
     supergraphSDL: string | null;
     schemaCompositionErrors: Array<SchemaCompositionError> | null;
     tags: Array<string> | null;
-    schemaMetadata: Record<string, Array<{ name: string, content: string }>> | null;
+    schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
     hasContractCompositionErrors: boolean;
     github: null | {
       sha: string;

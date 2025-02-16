@@ -16,7 +16,7 @@ export type ComposeAndValidateOutput = {
   sdl: string | null;
   supergraph: string | null;
   tags: Array<string> | null;
-  schemaMetadata: null | Record<string, Array<{ name: string, content: string }>>;
+  schemaMetadata: null | Record<string, Array<{ name: string; content: string }>>;
   contracts: Array<{
     id: string;
     errors: Array<{

@@ -34,13 +34,13 @@ import {
   extractTagsFromDocument,
   Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
+import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
 import type {
   ComposeAndValidateInput,
   ComposeAndValidateOutput,
   ExternalComposition,
   SchemaType,
 } from './types';
-import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
 
 const { allStitchingDirectivesTypeDefs, stitchingDirectivesValidator } = stitchingDirectives();
 const parsedStitchingDirectives = parse(allStitchingDirectivesTypeDefs);
@@ -164,7 +164,7 @@ const createFederation: (
       includesNetworkError: boolean;
       includesException?: boolean;
       tags: Array<string> | null;
-      schemaMetadata: Record<string, Array<{name: string, content: string }>> | null;
+      schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
     }
   >(
     'federation',
@@ -267,7 +267,7 @@ const createFederation: (
       let result: CompositionResult & {
         includesNetworkError: boolean;
         tags: Array<string> | null;
-        schemaMetadata: Record<string, Array<{name: string, content: string }>> | null
+        schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
       };
 
       {
@@ -278,7 +278,7 @@ const createFederation: (
 
         if (composed.type === 'success') {
           // merge all metadata from every subgraph by coordinate
-          let metadata: Record<string, Array<{name: string, content: string }>> | null = null;
+          let metadata: Record<string, Array<{ name: string; content: string }>> | null = null;
           try {
             const subgraphMetadatas = subgraphs.map(({ typeDefs }) => extractMetadata(typeDefs));
             metadata = mergeMetadata(...subgraphMetadatas);

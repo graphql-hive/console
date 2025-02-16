@@ -420,7 +420,7 @@ export interface Storage {
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
-            schemaMetadata: null | Record<string, Array<{ name: string, content: string }>>;
+            schemaMetadata: null | Record<string, Array<{ name: string; content: string }>>;
           }
       ),
   ): Promise<DeletedCompositeSchema & { versionId: string }>;
@@ -461,7 +461,7 @@ export interface Storage {
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
-            schemaMetadata: null | Record<string, Array<{ name: string, content: string }>>;
+            schemaMetadata: null | Record<string, Array<{ name: string; content: string }>>;
           }
       ),
   ): Promise<SchemaVersion | never>;
