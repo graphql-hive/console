@@ -1,10 +1,9 @@
 extend schema
   @link(
     url: "https://specs.apollo.dev/federation/v2.3"
-    import: ["@key", "@shareable", "@inaccessible", "@tag", "@composeDirective"]
+    import: ["@key", "@shareable", "@inaccessible", "@tag"]
   )
   @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-  @composeDirective(name: "@meta")
   @meta(name: "priority", content: "tier1")
 
 directive @meta(

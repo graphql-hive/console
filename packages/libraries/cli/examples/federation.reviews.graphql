@@ -4,8 +4,7 @@ extend schema
     import: ["@key", "@shareable", "@override"]
   )
   @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-  @federation__composeDirective(name: "@meta")
-  @meta(name: "owner", content: "review-team")
+  @meta(name: "owner", content: "reviews-team")
 
 directive @meta(
   name: String!

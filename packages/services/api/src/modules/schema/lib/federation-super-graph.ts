@@ -1,7 +1,6 @@
 import {
   Kind,
   NamedTypeNode,
-  StringValueNode,
   TypeNode,
   visit,
   type ConstArgumentNode,
@@ -14,12 +13,10 @@ import {
 import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { traceInlineSync } from '@hive/service-common';
 
-type SchemaMetadata = { name: string; content: string };
-
 export type SuperGraphInformation = {
   /** Mapping of schema coordinate to the services that own it. */
   schemaCoordinateServicesMappings: Map<string, Array<string>>;
-  schemaCoordinateMetadataMappings: Map<string, Array<SchemaMetadata>>;
+  schemaCoordinateMetadataMappings: Map<string, Array<{ name: string, content: string }>> | null;
 };
 
 /**
@@ -28,17 +25,13 @@ export type SuperGraphInformation = {
 export const extractSuperGraphInformation = traceInlineSync(
   'Extract Supergraph Info',
   {},
-  (documentAst: DocumentNode): SuperGraphInformation => {
+  (documentAst: DocumentNode): Pick<SuperGraphInformation, 'schemaCoordinateServicesMappings'> => {
     const schemaCoordinateServicesMappings = new Map<string, Array<string>>();
 
     const serviceEnumValueToServiceNameMappings = new Map<string, string>();
     const schemaCoordinateToServiceEnumValueMappings = new Map<string, Set<string>>();
 
-    // Collect metadata from SDL
-    let schemaCoordinateMetadataMappings = new Map<string, Array<SchemaMetadata>>();
-    const { resolveImportName, matchesImplementation } = extractLinkImplementations(documentAst);
-    const implementsHiveSpec = matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0');
-    const metaDirectiveName = resolveImportName('https://specs.graphql-hive.com/hive', '@meta');
+    const { resolveImportName } = extractLinkImplementations(documentAst);
     const joinFieldDirectiveName = resolveImportName('https://specs.apollo.dev/join', '@field');
     const joinGraphName = resolveImportName('https://specs.apollo.dev/join', 'Graph');
     const joinGraphDirectiveName = resolveImportName('https://specs.apollo.dev/join', '@graph');
@@ -85,35 +78,6 @@ export const extractSuperGraphInformation = traceInlineSync(
 
       for (const fieldNode of node.fields) {
         const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
-
-        if (implementsHiveSpec) {
-          // collect metadata applied to fields. @note that during orchestration, all metadata from the schema, type, and interface nodes
-          // are copied to the corresponding field nodes. This is because 1) after composition this inheritance info is lost (or at least more
-          // difficult to calculate because youd have to use the join__ directives.), 2) to make this quicker, and 3) to more clearly show metadata
-          // in the SDL.
-          const metadata = fieldNode.directives
-            ?.filter(directive => directive.name.value === metaDirectiveName)
-            .reduce((acc, meta) => {
-              const metaNameArg = meta.arguments?.find(
-                arg => arg.name.value === 'name' && arg.value.kind === Kind.STRING,
-              );
-              const metaContentArg = meta.arguments?.find(
-                arg => arg.name.value === 'content' && arg.value.kind === Kind.STRING,
-              );
-              // Ignore if the directive is missing data or is malformed for now. This may change in the future
-              //  but this metadata isnt considered a critical part of the schema just yet.
-              if (metaNameArg && metaContentArg) {
-                acc.push({
-                  name: (metaNameArg.value as StringValueNode).value,
-                  content: (metaContentArg.value as StringValueNode).value,
-                });
-              }
-              return acc;
-            }, [] as SchemaMetadata[]);
-          if (metadata) {
-            schemaCoordinateMetadataMappings.set(schemaCoordinate, metadata);
-          }
-        }
 
         const joinField = fieldNode.directives?.find(
           directive =>
@@ -329,7 +293,7 @@ export const extractSuperGraphInformation = traceInlineSync(
     }
     // END -- Federation 1.0 support
 
-    return { schemaCoordinateServicesMappings, schemaCoordinateMetadataMappings };
+    return { schemaCoordinateServicesMappings };
   },
 );
 

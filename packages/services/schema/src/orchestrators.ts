@@ -40,6 +40,7 @@ import type {
   ExternalComposition,
   SchemaType,
 } from './types';
+import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
 
 const { allStitchingDirectivesTypeDefs, stitchingDirectivesValidator } = stitchingDirectives();
 const parsedStitchingDirectives = parse(allStitchingDirectivesTypeDefs);
@@ -163,6 +164,7 @@ const createFederation: (
       includesNetworkError: boolean;
       includesException?: boolean;
       tags: Array<string> | null;
+      schemaMetadata: Record<string, Array<{name: string, content: string }>> | null;
     }
   >(
     'federation',
@@ -207,7 +209,6 @@ const createFederation: (
             const schemaMetaDirectives = schemaNodes
               .flatMap(node => node.directives?.filter(d => d.name.value === metaDirectiveName))
               .filter(d => d !== undefined);
-            // if (schemaMetaDirectives.length) {
             const interfaceAndObjectHandler = (node: {
               readonly fields?: ReadonlyArray<FieldDefinitionNode> | undefined;
               readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
@@ -232,7 +233,6 @@ const createFederation: (
               ObjectTypeDefinition: interfaceAndObjectHandler,
               InterfaceTypeDefinition: interfaceAndObjectHandler,
             });
-            // }
           }
           return subgraph;
         });
@@ -267,6 +267,7 @@ const createFederation: (
       let result: CompositionResult & {
         includesNetworkError: boolean;
         tags: Array<string> | null;
+        schemaMetadata: Record<string, Array<{name: string, content: string }>> | null
       };
 
       {
@@ -276,6 +277,16 @@ const createFederation: (
         } = await compose(subgraphs);
 
         if (composed.type === 'success') {
+          // merge all metadata from every subgraph by coordinate
+          let metadata: Record<string, Array<{name: string, content: string }>> | null = null;
+          try {
+            const subgraphMetadatas = subgraphs.map(({ typeDefs }) => extractMetadata(typeDefs));
+            metadata = mergeMetadata(...subgraphMetadatas);
+          } catch (e: unknown) {
+            // warn and proceed because metadata isn't considered critical
+            logger.warn(`Cannot extract metadata from subgraphs because ${e}`);
+          }
+
           const supergraphSDL = parse(composed.result.supergraph);
           const { resolveImportName } = extractLinkImplementations(supergraphSDL);
           const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
@@ -284,11 +295,13 @@ const createFederation: (
           result = {
             ...composed,
             tags,
+            schemaMetadata: metadata,
           };
         } else {
           result = {
             ...composed,
             tags: null,
+            schemaMetadata: null,
           };
         }
       }
@@ -335,6 +348,7 @@ const createFederation: (
               filter,
             );
             return {
+              // @note Although it can differ from the supergraph's, ignore metadata on contracts.
               ...subgraph,
               typeDefs: filteredSubgraph.typeDefs,
             };
@@ -374,6 +388,7 @@ const createFederation: (
       if (networkErrorContract) {
         return {
           ...networkErrorContract.result,
+          schemaMetadata: null,
           tags: null,
         };
       }
@@ -413,6 +428,7 @@ const createFederation: (
               supergraph: contract.result.result.supergraph ?? null,
             })) ?? null,
           tags: composed.tags ?? null,
+          schemaMetadata: composed.schemaMetadata ?? null,
         };
       } catch (error) {
         if (cache.isTimeoutError(error)) {
@@ -428,6 +444,7 @@ const createFederation: (
             includesNetworkError: true,
             contracts: null,
             tags: null,
+            schemaMetadata: null,
           };
         }
 
@@ -477,6 +494,7 @@ function createSingle(): Orchestrator {
         supergraph: null,
         contracts: null,
         tags: null,
+        schemaMetadata: null,
       };
     },
   };
@@ -514,6 +532,7 @@ const createStitching: (cache: Cache) => Orchestrator = cache => {
         supergraph: null,
         contracts: null,
         tags: null,
+        schemaMetadata: null,
       };
     },
   };

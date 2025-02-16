@@ -239,7 +239,6 @@ describe('extractSuperGraphInformation', () => {
     const result = extractSuperGraphInformation(federation2SDL);
     expect(result).toMatchInlineSnapshot(`
       {
-        schemaCoordinateMetadataMappings: Map {},
         schemaCoordinateServicesMappings: Map {
           DeliveryEstimates.estimatedDelivery => [
             inventory,
@@ -460,7 +459,6 @@ describe('extractSuperGraphInformation', () => {
     const result = extractSuperGraphInformation(federation1SDL);
     expect(result).toMatchInlineSnapshot(`
       {
-        schemaCoordinateMetadataMappings: Map {},
         schemaCoordinateServicesMappings: Map {
           Query.field => [
             foo,

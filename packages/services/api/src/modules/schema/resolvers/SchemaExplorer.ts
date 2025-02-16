@@ -61,7 +61,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
         supergraph: supergraph
           ? {
               getFieldMetadata: fieldName =>
-                supergraph.schemaCoordinateMetadataMappings.get(`${entity.name}.${fieldName}`) ??
+                supergraph.schemaCoordinateMetadataMappings?.get(`${entity.name}.${fieldName}`) ??
                 null,
               ownedByServiceNames:
                 supergraph.schemaCoordinateServicesMappings.get(entity.name) ?? null,
@@ -79,7 +79,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
         supergraph: supergraph
           ? {
               getFieldMetadata: fieldName =>
-                supergraph.schemaCoordinateMetadataMappings.get(`${entity.name}.${fieldName}`) ??
+                supergraph.schemaCoordinateMetadataMappings?.get(`${entity.name}.${fieldName}`) ??
                 null,
               ownedByServiceNames:
                 supergraph.schemaCoordinateServicesMappings.get(entity.name) ?? null,
@@ -194,7 +194,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
           supergraph: supergraph
             ? {
                 getFieldMetadata: fieldName =>
-                  supergraph.schemaCoordinateMetadataMappings.get(`${typename}.${fieldName}`) ??
+                  supergraph.schemaCoordinateMetadataMappings?.get(`${typename}.${fieldName}`) ??
                   null,
                 ownedByServiceNames:
                   supergraph.schemaCoordinateServicesMappings.get(typename) ?? null,
@@ -213,7 +213,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
           supergraph: supergraph
             ? {
                 getFieldMetadata: fieldName =>
-                  supergraph.schemaCoordinateMetadataMappings.get(`${typename}.${fieldName}`) ??
+                  supergraph.schemaCoordinateMetadataMappings?.get(`${typename}.${fieldName}`) ??
                   null,
                 ownedByServiceNames:
                   supergraph.schemaCoordinateServicesMappings.get(typename) ?? null,
@@ -323,7 +323,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
       supergraph: supergraph
         ? {
             getFieldMetadata: fieldName =>
-              supergraph.schemaCoordinateMetadataMappings.get(`${entity.name}.${fieldName}`) ??
+              supergraph.schemaCoordinateMetadataMappings?.get(`${entity.name}.${fieldName}`) ??
               null,
             ownedByServiceNames:
               supergraph.schemaCoordinateServicesMappings.get(entity.name) ?? null,
@@ -366,7 +366,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
       supergraph: supergraph
         ? {
             getFieldMetadata: fieldName =>
-              supergraph.schemaCoordinateMetadataMappings.get(`${entity.name}.${fieldName}`) ??
+              supergraph.schemaCoordinateMetadataMappings?.get(`${entity.name}.${fieldName}`) ??
               null,
             ownedByServiceNames:
               supergraph.schemaCoordinateServicesMappings.get(entity.name) ?? null,
@@ -409,7 +409,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
       supergraph: supergraph
         ? {
             getFieldMetadata: fieldName =>
-              supergraph.schemaCoordinateMetadataMappings.get(`${entity.name}.${fieldName}`) ??
+              supergraph.schemaCoordinateMetadataMappings?.get(`${entity.name}.${fieldName}`) ??
               null,
             ownedByServiceNames:
               supergraph.schemaCoordinateServicesMappings.get(entity.name) ?? null,
