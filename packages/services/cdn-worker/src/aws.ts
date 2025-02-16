@@ -196,7 +196,26 @@ export class AwsClient {
             result: { type: 'success', response },
           });
 
-          return response;
+          if (!response.body) {
+            return response;
+          }
+
+          // Read the body first, to make sure it won't be aborted by the signal (timeout)
+          // If we get a timeout error during the body reading, we can't retry,
+          // as it's out of the control of that function.
+          // One example of it is when the res.text() is called with a delay due to application logic,
+          // and the timeout is reached at that point. The read will be aborted.
+          //
+          // For this reason, I prefer to read the body first, make it part of the retry logic,
+          // and only then return the response to the consumer,
+          // even at the cost of higher memory footprint (like it matters...).
+          const bodyText = await response.text();
+
+          return new Response(bodyText, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
         }
 
         console.log(
