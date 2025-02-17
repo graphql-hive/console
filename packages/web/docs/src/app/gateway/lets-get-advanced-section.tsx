@@ -2,7 +2,10 @@ import { CallToAction, cn, Heading, InfoCard, TargetIcon } from '@theguild/compo
 
 export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttributes<HTMLElement>) {
   return (
-    <section className={cn('px-4 py-6 sm:py-12 md:px-6 lg:py-16 xl:px-24', className)} {...rest}>
+    <section
+      className={cn('px-4 py-6 sm:py-12 md:px-6 lg:py-16 xl:px-24 xl:pb-24', className)}
+      {...rest}
+    >
       <Heading as="h2" size="md" className="text-center">
         Let's get advanced
       </Heading>

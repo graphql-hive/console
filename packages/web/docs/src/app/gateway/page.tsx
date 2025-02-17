@@ -12,6 +12,7 @@ import { ErrorBoundary } from '../../components/error-boundary';
 import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
+import { CloudNativeSection } from './cloud-native-section';
 import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
 import GatewayLandingFAQ from './gateway-landing-faq.mdx';
@@ -67,7 +68,7 @@ export default function HiveGatewayPage() {
         <FederationCompatibleBenchmarksSection />
       </ErrorBoundary>
       <LetsGetAdvancedSection />
-      {/* Cloud-Native Nature */}
+      <CloudNativeSection className="mx-4 mt-6 md:mx-6" />
       <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
       <FrequentlyAskedQuestions
         /* todo: I'm pretty sure this prop is redundant, but okay */
