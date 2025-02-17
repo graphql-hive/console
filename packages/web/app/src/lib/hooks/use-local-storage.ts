@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { readVersionedEntryLocalStorage, VersionedEntrySpec } from '../versioned-entry';
+import {
+  readVersionedEntryLocalStorage,
+  serializeEntrySpec,
+  serializeVersionedEntrySpec,
+  VersionedEntrySpec,
+} from '../versioned-entry';
 
 export function useLocalStorage(key: string | VersionedEntrySpec, defaultValue: string) {
   const versionedEntry: VersionedEntrySpec = typeof key === 'string' ? [{ key }] : key;
-  const versionedEntrySerialized = versionedEntry.map(_ => _.key).join(',');
+  const versionedEntrySerialized = serializeVersionedEntrySpec(versionedEntry);
+
+  const versionedEntryLatest = versionedEntry[0];
+  const versionedEntryLatestSerialized = serializeEntrySpec(versionedEntryLatest);
 
   const getInitialValue = useCallback(() => {
     const value = readVersionedEntryLocalStorage({ spec: versionedEntry });
@@ -18,10 +26,10 @@ export function useLocalStorage(key: string | VersionedEntrySpec, defaultValue: 
 
   const set = useCallback(
     (value: string) => {
-      localStorage.setItem(versionedEntry[0].key, value);
+      localStorage.setItem(versionedEntryLatest.key, value);
       setValue(value);
     },
-    [getInitialValue],
+    [versionedEntryLatestSerialized],
   );
 
   return [value, set] as const;

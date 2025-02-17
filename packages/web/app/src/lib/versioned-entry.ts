@@ -16,12 +16,17 @@ export type KeyValueStoreDatabase = Record<string, string>;
 
 export type VersionedEntrySpec = readonly [EntrySpec, ...(readonly EntrySpec[])];
 
+export const serializeVersionedEntrySpec = (versionedEntrySpec: VersionedEntrySpec) =>
+  versionedEntrySpec.map(serializeEntrySpec).join(',');
+
 interface EntrySpec {
   key: string;
   // todo once we have use-case
   // schema:
   // fromPrevious:
 }
+
+export const serializeEntrySpec = (entrySpec: EntrySpec) => entrySpec.key;
 
 // --------------------------------------------------------------------
 // Versioned Entry Functions
