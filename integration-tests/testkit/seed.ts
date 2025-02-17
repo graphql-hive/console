@@ -210,9 +210,12 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const targets = projectResult.createProject.ok!.createdTargets;
-              const target = targets[0];
               const project = projectResult.createProject.ok!.createdProject;
+              const targets = projectResult.createProject.ok!.createdTargets.map(target => ({
+                ...target,
+                path: `/${organization.slug}/${project.slug}/${target.slug}`,
+              }));
+              const target = targets[0];
 
               return {
                 project,

@@ -5,6 +5,7 @@
     "esbenp.prettier-vscode",
     "thebearingedge.vscode-sql-lit",
     "hashicorp.hcl",
-    "GraphQL.vscode-graphql"
+    "GraphQL.vscode-graphql",
+    "ms-playwright.playwright"
   ]
 }
