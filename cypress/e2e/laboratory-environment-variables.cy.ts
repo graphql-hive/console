@@ -2,12 +2,14 @@ import {
   environmentVariablesStorageKey,
   persistAuthenticationCookies,
   selectors,
-  Target,
+  type Target,
 } from '../support/testkit';
 
 const data = {
-  envars: { foo: '123' },
-  envarsJson: '{"foo":"123"}',
+  globalEnvars: { foo: '123' },
+  globalEnvarsJson: '{"foo":"123"}',
+  scopedEnvars: { bar: '456' },
+  targetEnvarsJson: '{"bar":"456"}',
 };
 
 interface Ctx {
@@ -29,21 +31,27 @@ before(() => {
 
 persistAuthenticationCookies();
 
-const visitTargetDevelopment = () => cy.visit(`${ctx.targetDevelopment.path}/laboratory`);
-// const visitTargetProduction = () => cy.visit(`${ctx.targetProduction.path}/laboratory`);
-
 const openPreflightTab = () => cy.get(selectors.buttonGraphiQLPreflight).click();
+const openPreflightModal = () => cy.dataCy(selectors.buttonModalCy).click();
 
 const storageGlobalGet = () => cy.getLocalStorage(environmentVariablesStorageKey.global);
 const storageGlobalSet = (value: string) => cy.setLocalStorage(environmentVariablesStorageKey.global, value); // prettier-ignore
+const storageGlobalRemove = () => cy.removeLocalStorage(environmentVariablesStorageKey.global);
 
+const visitTargetDevelopment = () => cy.visit(`${ctx.targetDevelopment.path}/laboratory`);
 const storageTargetDevelopmentGet = () => cy.getLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id)); // prettier-ignore
 const storageTargetDevelopmentSet = (value: string) => cy.setLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id), value); // prettier-ignore
+const storageTargetDevelopmentRemove = () => cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id)); // prettier-ignore
+
+const visitTargetProduction = () => cy.visit(`${ctx.targetProduction.path}/laboratory`);
+// const storageTargetProductionGet = () => cy.getLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetProduction.id)); // prettier-ignore
+// const storageTargetProductionSet = (value: string) => cy.setLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetProduction.id), value); // prettier-ignore
+const storageTargetProductionRemove = () => cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetProduction.id)); // prettier-ignore
 
 beforeEach(() => {
-  cy.removeLocalStorage(environmentVariablesStorageKey.global);
-  cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetDevelopment.id));
-  cy.removeLocalStorage(environmentVariablesStorageKey.scoped(ctx.targetProduction.id));
+  storageGlobalRemove();
+  storageTargetDevelopmentRemove();
+  storageTargetProductionRemove();
 });
 
 describe('tab editor', () => {
@@ -54,21 +62,62 @@ describe('tab editor', () => {
     storageGlobalGet().should('equal', null);
   });
 
-  it('if state just scoped value, shows that', () => {
-    storageTargetDevelopmentSet(data.envarsJson);
+  it('if storage just has target-scope value, value used', () => {
+    storageTargetDevelopmentSet(data.targetEnvarsJson);
     visitTargetDevelopment();
     openPreflightTab();
-    cy.contains(data.envarsJson);
-    storageGlobalGet().should('equal', null);
+    cy.contains(data.targetEnvarsJson);
   });
 
-  it('if state just global value, copied to scoped, shows that', () => {
-    storageTargetDevelopmentGet().should('equal', null);
-    storageGlobalSet(data.envarsJson);
+  it('if storage just has global-scope value, copied to new target-scope value, used', () => {
+    storageGlobalSet(data.globalEnvarsJson);
     visitTargetDevelopment();
     openPreflightTab();
-    cy.contains(data.envarsJson);
-    storageTargetDevelopmentGet().should('equal', data.envarsJson);
-    storageGlobalGet().should('equal', data.envarsJson);
+    cy.contains(data.globalEnvarsJson);
+    storageTargetDevelopmentGet().should('equal', data.globalEnvarsJson);
+  });
+
+  it('if storage has global-scope AND target-scope values, target-scope value used', () => {
+    storageTargetDevelopmentSet(data.targetEnvarsJson);
+    storageGlobalSet(data.globalEnvarsJson);
+    visitTargetDevelopment();
+    openPreflightTab();
+    cy.contains(data.targetEnvarsJson);
   });
 });
+
+describe('modal', () => {
+  it('changing environment variables persists to target-scope', () => {
+    storageGlobalSet(data.globalEnvarsJson);
+    visitTargetDevelopment();
+    openPreflightTab();
+    openPreflightModal();
+    cy.contains(data.globalEnvarsJson);
+    setMonacoEditorContents('env-editor', data.targetEnvarsJson);
+    storageTargetDevelopmentGet().should('equal', data.targetEnvarsJson);
+    cy.contains(data.targetEnvarsJson);
+    visitTargetProduction();
+    openPreflightTab();
+    cy.contains(data.globalEnvarsJson);
+  });
+});
+
+// todo: in another PR this utility is factored out into a shared file
+/** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
+export function setMonacoEditorContents(editorCyName: string, text: string) {
+  // wait for textarea appearing which indicates monaco is loaded
+  cy.dataCy(editorCyName).find('textarea');
+  cy.window().then(win => {
+    // First, check if monaco is available on the main window
+    const editor = (win as any).monaco.editor
+      .getEditors()
+      .find(e => e.getContainerDomNode().parentElement.getAttribute('data-cy') === editorCyName);
+
+    // If Monaco instance is found
+    if (editor) {
+      editor.setValue(text);
+    } else {
+      throw new Error('Monaco editor not found on the window or frames[0]');
+    }
+  });
+}

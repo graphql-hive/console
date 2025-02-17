@@ -1,6 +1,6 @@
 export const as = <$Type>() => undefined as $Type;
 
-export { Target } from '../../integration-tests/testkit/seed';
+export type { Target } from '../../integration-tests/testkit/seed';
 
 // todo: instead of copying this, import it from core utility lib.
 export const environmentVariablesStorageKey = {

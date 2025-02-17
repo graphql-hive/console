@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 /** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
-function setMonacoEditorContents(editorCyName: string, text: string) {
+export function setMonacoEditorContents(editorCyName: string, text: string) {
   // wait for textarea appearing which indicates monaco is loaded
   cy.dataCy(editorCyName).find('textarea');
   cy.window().then(win => {
