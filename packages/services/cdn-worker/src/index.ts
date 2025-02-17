@@ -82,15 +82,19 @@ const handler: ExportedHandler<Env> = {
       release: env.SENTRY_RELEASE,
       dist: 'cdn-worker',
       context: ctx,
+      attachStacktrace: true,
       request,
       requestDataOptions: {
         allowedHeaders: [
           'user-agent',
-          'cf-ipcountry',
           'accept-encoding',
           'accept',
           'x-real-ip',
+          'x-forwarded-for',
+          'x-request-id',
+          'cf-ipcountry',
           'cf-connecting-ip',
+          'cf-ray',
         ],
         allowedSearchParams: /(.*)/,
       },
@@ -143,7 +147,7 @@ const handler: ExportedHandler<Env> = {
           if (i === retries) {
             const res = await fetched;
             if (res.ok) {
-              return res.text();
+              return await res.text();
             }
 
             throw new Error(`Failed to fetch ${url}, status: ${res.status}`);
@@ -152,7 +156,7 @@ const handler: ExportedHandler<Env> = {
           try {
             const res = await fetched;
             if (res.ok) {
-              return res.text();
+              return await res.text();
             }
           } catch (error) {
             // Retry also when there's an exception

@@ -129,7 +129,25 @@ export const gatewayConfig = defineConfig({
      *
      * Defaults to GraphOS endpoint (https://usage-reporting.api.apollographql.com/api/ingress/traces)
      */
-    endpoint?: string;
+    endpoint: 'https://usage-reporting.api.apollographql.com/api/ingress/traces',
+    /**
+     * Agent Version to report to the usage reporting API
+     *
+     * Defaults to the Hive Gateway's version
+     */
+    agentVersion: 'hive-gateway@1.0.0',
+    /**
+     * Client name to report to the usage reporting API
+     *
+     * Defaults to incoming `apollo-graphql-client-name` HTTP header
+     */
+    clientName: req => req.headers.get('apollo-graphql-client-name'),
+    /**
+     * Client version to report to the usage reporting API
+     *
+     * Defaults to incoming `apollo-graphql-client-version` HTTP header
+     */
+    clientVersion: req => req.headers.get('apollo-graphql-client-version')
   }
 })
 ```

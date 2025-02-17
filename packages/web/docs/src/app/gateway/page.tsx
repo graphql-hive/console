@@ -23,14 +23,9 @@ export const metadata: Metadata = {
   title: 'Hive Gateway',
   description:
     'Unify and accelerate your data graph with Hive Gateway, which seamlessly integrates with Apollo Federation.',
-  alternates: {
-    // to remove leading slash
-    canonical: '.',
-  },
   openGraph: {
     ...rootMetadata.openGraph,
-    // to remove leading slash
-    url: '.',
+    url: '/gateway',
   },
 };
 

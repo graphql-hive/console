@@ -23,7 +23,7 @@ export async function generateMetadata(
 
   // TODO: Remove this when Components have a fix for OG Images with basePath
   docsMetadata.openGraph = {
-    ...rootMetadata.openGraph,
+    ...rootMetadata!.openGraph,
     ...docsMetadata.openGraph,
   };
 
