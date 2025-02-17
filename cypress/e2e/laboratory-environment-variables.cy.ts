@@ -1,8 +1,8 @@
 import {
-  as,
   environmentVariablesStorageKey,
   persistAuthenticationCookies,
   selectors,
+  Target,
 } from '../support/testkit';
 
 const data = {
@@ -10,12 +10,14 @@ const data = {
   envarsJson: '{"foo":"123"}',
 };
 
+interface Ctx {
+  targetDevelopment: Target;
+  targetProduction: Target;
+  cookies: Cypress.Cookie[];
+}
 const ctx = {
-  // todo get an exported type from testKit
-  targetDevelopment: as<{ id: string; slug: string; path: string }>(),
-  targetProduction: as<{ id: string; slug: string; path: string }>(),
-  cookies: [] as Cypress.Cookie[],
-};
+  cookies: [],
+} as Ctx;
 
 before(() => {
   cy.task('seedTarget').then(({ refreshToken, targets }: any) => {

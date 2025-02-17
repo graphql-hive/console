@@ -1,5 +1,7 @@
 export const as = <$Type>() => undefined as $Type;
 
+export { Target } from '../../integration-tests/testkit/seed';
+
 // todo: instead of copying this, import it from core utility lib.
 export const environmentVariablesStorageKey = {
   // todo: optional target effectively gives this the possibility of being silently global

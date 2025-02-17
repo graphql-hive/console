@@ -62,6 +62,12 @@ import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from 
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique } from './utils';
 
+export interface Target {
+  id: string
+  path: string
+  slug: string
+}
+
 export function initSeed() {
   function createConnectionPool() {
     const pg = {
