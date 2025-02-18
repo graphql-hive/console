@@ -24,7 +24,7 @@
     "dotenv": "16.4.7",
     "esbuild": "0.25.0",
     "fastify": "4.29.0",
-    "graphql": "16.9.0",
+    "graphql": "16.10.0",
     "itty-router": "4.2.2",
     "itty-router-extras": "0.4.6",
     "toucan-js": "4.1.0",
