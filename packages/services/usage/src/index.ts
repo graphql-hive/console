@@ -259,7 +259,7 @@ async function main() {
           droppedReports
             .labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization })
             .inc();
-          authenticatedRequestLogger.info(
+          authenticatedRequestLogger.debug(
             'Rate limited',
             maskedToken,
             tokenInfo.target,
