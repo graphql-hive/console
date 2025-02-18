@@ -51,8 +51,6 @@ import {
 import * as GraphQLSchema from './gql/graphql';
 import {
   BreakingChangeFormula,
-  OrganizationAccessScope,
-  ProjectAccessScope,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -63,9 +61,9 @@ import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique } from './utils';
 
 export interface Target {
-  id: string
-  path: string
-  slug: string
+  id: string;
+  path: string;
+  slug: string;
 }
 
 export function initSeed() {
@@ -217,9 +215,9 @@ export function initSeed() {
               ).then(r => r.expectNoGraphQLErrors());
 
               const project = projectResult.createProject.ok!.createdProject;
-              const targets = projectResult.createProject.ok!.createdTargets.map(_ => ({
-                ..._,
-                path: `/${organization.slug}/${project.slug}/${_.slug}`,
+              const targets = projectResult.createProject.ok!.createdTargets.map(target => ({
+                ...target,
+                path: `/${organization.slug}/${project.slug}/${target.slug}`,
               }));
               const target = targets[0];
 
