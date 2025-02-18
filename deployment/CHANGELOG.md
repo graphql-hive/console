@@ -1,5 +1,14 @@
 # hive
 
+## 5.1.2
+
+### Patch Changes
+
+- [#6518](https://github.com/graphql-hive/console/pull/6518)
+  [`a8a2da5`](https://github.com/graphql-hive/console/commit/a8a2da5d65c09885dd3aa6d9bbe017cf4b9efebf)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Ensure response body is read before
+  timeout to avoid abort errors in S3 client (CDN)
+
 ## 5.1.1
 
 ### Patch Changes
