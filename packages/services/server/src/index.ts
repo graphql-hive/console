@@ -6,6 +6,7 @@ import {
   errorHandler as supertokensErrorHandler,
   plugin as supertokensFastifyPlugin,
 } from 'supertokens-node/framework/fastify/index.js';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
@@ -61,6 +62,9 @@ import { createContext, internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
+import { identity } from './identity';
+import { GithubProvider } from './identity/provider/github';
+import { MemoryStorage } from './identity/storage/memory';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
@@ -163,6 +167,8 @@ export async function main() {
       callback(null, {});
     };
   });
+
+  server.register(cookie);
 
   const storage = await createPostgreSQLStorage(
     createConnectionString(env.postgres),
@@ -647,6 +653,25 @@ export async function main() {
       });
     }
 
+    identity({
+      server,
+      prefix: 'identity',
+      issuer: env.graphql.origin + '/identity',
+      providers: {
+        github: GithubProvider({
+          clientID: 'Ov23li6CridvsNaXqzDI',
+          clientSecret: 'd07d9f3a1e352a14e5d0801b3f3384aa489dc432',
+          scopes: ['profile', 'email'],
+        }),
+      },
+      storage: MemoryStorage(),
+      async success(response, input, req) {
+        await response.subject({
+          id: '123',
+        });
+      },
+    });
+
     if (env.prometheus) {
       await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
     }
@@ -655,6 +680,8 @@ export async function main() {
       port: env.http.port,
       host: '::',
     });
+
+    console.log(server.printRoutes());
   } catch (error) {
     server.log.fatal(error);
     captureException(error, {
