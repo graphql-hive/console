@@ -224,9 +224,18 @@ module.exports = {
         },
         tailwindcss: {
           callees: tailwindCallees,
-          whitelist: ['light', 'hive-focus', 'hive-focus-within'],
+          whitelist: [
+            'light',
+            'hive-focus',
+            'hive-focus-within',
+            'nextra-scrollbar',
+            'no-scrollbar', // from Nextra
+          ],
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
+      },
+      rules: {
+        'import/extensions': 'off',
       },
     },
     {
@@ -234,6 +243,19 @@ module.exports = {
       extends: 'plugin:cypress/recommended',
       rules: {
         'cypress/no-unnecessary-waiting': 'off',
+        'cypress/unsafe-to-chain-command': 'off',
+      },
+    },
+    {
+      files: [
+        // environment should be parsed to avoid global dependencies and sacred .env files
+        'packages/**/environment.ts',
+        // - environment is inlined and must be "registered" in next.config.js
+        // - `import.meta.env` is not supported in Next.js yet
+        'packages/web/docs/**',
+      ],
+      rules: {
+        'no-process-env': 'off',
       },
     },
   ],

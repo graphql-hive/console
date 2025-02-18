@@ -13,7 +13,7 @@
     "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@sentry/node": "7.120.2",
-    "@sinclair/typebox": "0.34.13",
+    "@sinclair/typebox": "0.34.15",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "ajv": "8.17.1",
@@ -21,8 +21,9 @@
     "got": "14.4.5",
     "graphql": "16.9.0",
     "kafkajs": "2.2.4",
+    "lru-cache": "11.0.2",
+    "p-limit": "6.2.0",
     "pino-pretty": "11.3.0",
-    "tiny-lru": "8.0.2",
     "zod": "3.24.1"
   }
 }

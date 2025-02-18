@@ -18,7 +18,7 @@ export const OperationsStats: OperationsStatsResolvers = {
         operations: operationsFilter,
         clients,
       }),
-      operationsManager.readDetailedDurationPercentiles({
+      operationsManager.readDetailedDurationMetrics({
         organizationId: organization,
         projectId: project,
         targetId: target,

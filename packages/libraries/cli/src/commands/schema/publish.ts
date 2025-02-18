@@ -1,13 +1,27 @@
-import { existsSync, readFileSync } from 'fs';
 import { GraphQLError, print } from 'graphql';
 import { transformCommentsToDescriptions } from '@graphql-tools/utils';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { DocumentType, graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  GithubAuthorRequiredError,
+  GithubCommitRequiredError,
+  InvalidSDLError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingEnvironmentError,
+  MissingRegistryTokenError,
+  SchemaPublishFailedError,
+  SchemaPublishMissingServiceError,
+  SchemaPublishMissingUrlError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { gitInfo } from '../../helpers/git';
 import { loadSchema, minifySchema, renderChanges, renderErrors } from '../../helpers/schema';
+import * as TargetInput from '../../helpers/target-input';
 import { invariant } from '../../helpers/validation';
 
 const schemaPublishMutation = graphql(/* GraphQL */ `
@@ -132,6 +146,12 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       default: [],
       multiple: true,
     }),
+    target: Flags.string({
+      description:
+        'The target to which to publish to (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -143,7 +163,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }),
   };
 
-  resolveMetadata(metadata: string | undefined): string | undefined {
+  resolveMetadata = (metadata: string | undefined): string | undefined => {
     if (!metadata) {
       return;
     }
@@ -155,26 +175,9 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       return metadata;
     } catch (e) {
       // If we can't parse it, we can try to load it from FS
-      const exists = existsSync(metadata);
-
-      if (!exists) {
-        throw new Error(
-          `Failed to load metadata from "${metadata}": Please specify a path to an existing file, or a string with valid JSON.`,
-        );
-      }
-
-      try {
-        const fileContent = readFileSync(metadata, 'utf-8');
-        JSON.parse(fileContent);
-
-        return fileContent;
-      } catch (e) {
-        throw new Error(
-          `Failed to load metadata from file "${metadata}": Please make sure the file is readable and contains a valid JSON`,
-        );
-      }
+      return this.readJSON(metadata);
     }
-  }
+  };
 
   async run() {
     try {
@@ -182,20 +185,30 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       await this.require(flags);
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
-      });
+      let endpoint: string, accessToken: string;
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: SchemaPublish.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: SchemaPublish.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
       const service = flags.service;
       const url = flags.url;
       const file = args.file;
@@ -235,23 +248,35 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       }
 
       if (!author) {
-        throw new Errors.CLIError(`Missing "author"`);
+        throw new GithubAuthorRequiredError();
       }
 
       if (!commit) {
-        throw new Errors.CLIError(`Missing "commit"`);
+        throw new GithubCommitRequiredError();
       }
 
       if (usesGitHubApp) {
         // eslint-disable-next-line no-process-env
         const repository = process.env['GITHUB_REPOSITORY'] ?? null;
         if (!repository) {
-          throw new Errors.CLIError(`Missing "GITHUB_REPOSITORY" environment variable.`);
+          throw new MissingEnvironmentError([
+            'GITHUB_REPOSITORY',
+            'Github repository full name, e.g. graphql-hive/console',
+          ]);
         }
         gitHub = {
           repository,
           commit,
         };
+      }
+
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
       }
 
       let sdl: string;
@@ -262,11 +287,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
         sdl = minifySchema(transformedSDL);
       } catch (err) {
         if (err instanceof GraphQLError) {
-          const location = err.locations?.[0];
-          const locationString = location
-            ? ` at line ${location.line}, column ${location.column}`
-            : '';
-          throw new Error(`The SDL is not valid${locationString}:\n ${err.message}`);
+          throw new InvalidSDLError(err);
         }
         throw err;
       }
@@ -288,6 +309,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
               metadata,
               gitHub,
               supportsRetry: true,
+              target,
             },
             usesGitHubApp: !!gitHub,
           },
@@ -299,70 +321,65 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           const changes = result.schemaPublish.changes;
 
           if (result.schemaPublish.initial) {
-            this.success('Published initial schema.');
+            this.logSuccess('Published initial schema.');
           } else if (result.schemaPublish.successMessage) {
-            this.success(result.schemaPublish.successMessage);
+            this.logSuccess(result.schemaPublish.successMessage);
           } else if (changes && changes.total === 0) {
-            this.success('No changes. Skipping.');
+            this.logSuccess('No changes. Skipping.');
           } else {
             if (changes) {
-              renderChanges.call(this, changes);
+              this.log(renderChanges(changes));
             }
-            this.success('Schema published');
+            this.logSuccess('Schema published');
           }
 
           if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
+            this.logInfo(`Available at ${result.schemaPublish.linkToWebsite}`);
           }
         } else if (result.schemaPublish.__typename === 'SchemaPublishRetry') {
           this.log(result.schemaPublish.reason);
           this.log('Waiting for other schema publishes to complete...');
           result = null;
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingServiceError') {
-          this.fail(
-            `${result.schemaPublish.missingServiceError} Please use the '--service <name>' parameter.`,
-          );
-          this.exit(1);
+          throw new SchemaPublishMissingServiceError(result.schemaPublish.missingServiceError);
         } else if (result.schemaPublish.__typename === 'SchemaPublishMissingUrlError') {
-          this.fail(
-            `${result.schemaPublish.missingUrlError} Please use the '--url <url>' parameter.`,
-          );
-          this.exit(1);
+          throw new SchemaPublishMissingUrlError(result.schemaPublish.missingUrlError);
         } else if (result.schemaPublish.__typename === 'SchemaPublishError') {
           const changes = result.schemaPublish.changes;
           const errors = result.schemaPublish.errors;
-          renderErrors.call(this, errors);
+          this.log(renderErrors(errors));
 
           if (changes && changes.total) {
             this.log('');
-            renderChanges.call(this, changes);
+            this.log(renderChanges(changes));
           }
           this.log('');
 
           if (!force) {
-            this.fail('Failed to publish schema');
-            this.exit(1);
+            throw new SchemaPublishFailedError();
           } else {
-            this.success('Schema published (forced)');
+            this.logSuccess('Schema published (forced)');
           }
 
           if (result.schemaPublish.linkToWebsite) {
-            this.info(`Available at ${result.schemaPublish.linkToWebsite}`);
+            this.logInfo(`Available at ${result.schemaPublish.linkToWebsite}`);
           }
         } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
-          this.success(result.schemaPublish.message);
+          this.logSuccess(result.schemaPublish.message);
         } else {
-          this.error(
-            'message' in result.schemaPublish ? result.schemaPublish.message : 'Unknown error',
+          throw new APIError(
+            'message' in result.schemaPublish
+              ? result.schemaPublish.message
+              : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
           );
         }
       } while (result === null);
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
-        this.fail('Failed to publish schema');
-        this.handleFetchError(error);
+        this.logFailure('Failed to publish schema');
+        throw new UnexpectedError(error instanceof Error ? error.message : JSON.stringify(error));
       }
     }
   }

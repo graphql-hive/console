@@ -1,0 +1,454 @@
+import { Cards } from 'nextra/components'
+import { Tabs } from '@theguild/components'
+
+# Hive Client
+
+**Hive Client** is a set of libraries and utilities for interacting with Hive, for both
+[Schema Registry](/docs/schema-registry) and
+[Usage Reporting](../schema-registry/usage-reporting.mdx).
+
+## Available Clients
+
+### JavaScript / NodeJS Clients
+
+Here's a list of official libraries for JavaScript and NodeJS:
+
+- `@graphql-hive/yoga` ([npm](https://npmjs.com/package/@graphql-hive/yoga),
+  [guide](/docs/other-integrations/graphql-yoga)) - Integration with GraphQL Yoga.
+- `@graphql-hive/apollo` ([npm](https://npmjs.com/package/@graphql-hive/apollo),
+  [guide](/docs/other-integrations/apollo-server)) - Integration with Apollo Server.
+- `@graphql-hive/envelop` ([npm](https://npmjs.com/package/@graphql-hive/envelop),
+  [guide](/docs/other-integrations/envelop)) - Integration with Envelop.
+- `@graphql-hive/core` ([npm](https://npmjs.com/package/@graphql-hive/core)) - core library for
+  interacting with Hive's **Schema Registry** and **Usage Reporting**.
+
+You can refer to the following guides for getting started within your project, then revisit this
+page for configuring the client to your needs.
+
+<Cards>
+  <Cards.Card arrow title="Hive Gateway" href="/docs/gateway" />
+  <Cards.Card arrow title="GraphQL Yoga" href="/docs/other-integrations/graphql-yoga" />
+  <Cards.Card arrow title="Envelop" href="/docs/other-integrations/envelop" />
+  <Cards.Card
+    arrow
+    title="Schema-Stitching Gateway"
+    href="/docs/other-integrations/schema-stitching"
+  />
+  <Cards.Card arrow title="Apollo-Server" href="/docs/other-integrations/apollo-server" />
+  <Cards.Card arrow title="Apollo Gateway" href="/docs/other-integrations/apollo-gateway" />
+</Cards>
+
+#### Configuration
+
+Refer to the
+[`HivePluginOptions` interface](https://github.com/graphql-hive/platform/blob/main/packages/libraries/core/src/client/types.ts)
+for complete list of options and configurations you can pass to the Hive JavaScript Client of
+choice.
+
+#### Client Information
+
+By default, the client information is retrieved by looking up the `x-graphql-client-name` and
+`x-graphql-client-version` headers in the HTTP request. For operations executed via the
+`GraphQL over WebSocket` protocol, the client information is retrieved by looking for the `client`
+key within the `connectionParams`.
+
+You can fully customize how to retrieve the client information by passing a custom `clientInfo`
+implementation.
+
+You can pass a custom `clientInfo` callback to have full control on how you detect a client's
+information.
+
+```ts
+useHive({
+  usage: {
+    clientInfo(context /* Your GraphQL execution context */) {
+      const name = context?.headers?.['x-graphql-client-name']
+      const version = context?.headers?.['x-graphql-client-version']
+
+      if (name && version && typeof name === 'string' && typeof version === 'string') {
+        return { name, version }
+      }
+
+      return null
+    }
+  }
+})
+```
+
+The context object is the context object as used within the GraphQL execution. Depending on your
+server framework and GraphQL protocol, the context object may contain different properties.
+
+We recommend to always try to safely decode the context.
+
+#### Excluding Operations
+
+You can pass a custom `exclude` array to the `HivePluginOptions` to ignore specific operations from
+being reported to Hive.
+
+```ts
+useHive({
+  usage: {
+    exclude: ['unwantedOperationName', 'anotherOperationName']
+  }
+})
+```
+
+#### Sampling
+
+##### Basic sampling
+
+With `sampleRate` option, you're able to control the sampling rate of the usage reporting. Setting
+it to `0.5` will result in 50% of the operations being sent to Hive. There is no guarantee that
+every operation will be reported at least once (see `atLeastOnceSampler`).
+
+Default: `1` (100%)
+
+```typescript
+useHive({
+  /* ... other options ... */,
+  usage: {
+    sampleRate: 0.6 // 60% of the operations will be sent to Hive
+  }
+})
+```
+
+##### Dynamic sampling
+
+GraphQL Hive client accepts a function that returns a number between 0 and 1. This allows you to
+implement dynamic sampling based on the operation's context.
+
+If `sampler` is defined, `sampleRate` is ignored.
+
+A sample rate between 0 and 1.
+
+- `0.0` = 0% chance of being sent
+- `1.0` = 100% chance of being sent.
+- `true` = 100%
+- `false` = 0%
+
+The `samplingContext` object contains the following properties:
+
+- `operationName` - The name of the operation.
+- `document` - The operation AST.
+- `contextValue` - The context value passed to the GraphQL execution.
+
+```typescript
+useHive({
+  /* ... other options ... */,
+  usage: {
+  sampler(samplingContext) {
+      if (samplingContext.operationName === 'GetUser') {
+        return 0.5 // 50% of GetUser operations will be sent to Hive
+      }
+
+      return 0.7; // 70% of the other operations will be sent to Hive
+    }
+  }
+})
+```
+
+##### At-least-once sampling
+
+If you want to make sure that every operation is reported at least once, you can use the
+`atLeastOnceSampler`. Every operation is reported at least once, but every next occurrence is
+decided by the sampler.
+
+Both `keyFn` and `sampler` are required and receive the same `samplingContext` object.
+
+The `samplingContext` object contains the following properties:
+
+- `operationName` - The name of the operation.
+- `document` - The operation AST.
+- `contextValue` - The context value passed to the GraphQL execution.
+
+<Tabs items={['Custom', 'GraphQL Yoga', 'Apollo Server', 'Envelop']}>
+
+<Tabs.Tab>
+
+```typescript
+import { createHive, atLeastOnceSampler} from '@graphql-hive/core';
+
+const hive = createHive({
+  /* ... other options ... */,
+  usage: {
+    sampler: atLeastOnceSampler({
+      // Produces a unique key for a given GraphQL request.
+      // This key is used to determine the uniqueness of a GraphQL operation.
+      keyFn(samplingContext) {
+        // Operation name is a good candidate for a key, but not perfect,
+        // as not all operations have names
+        // and some operations may have the same name but different body.
+        return samplingContext.operationName;
+      },
+      sampler(samplingContext) {
+        // Use the context to decide if the operation should be sent to Hive.
+        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+          return 1; // 100% of the operations from WebApp will be sent to Hive
+        }
+
+        const hour = new Date().getHours();
+
+        if (hour >= 9 && hour <= 17) {
+          return 0.3;
+        }
+
+        return 0.8;
+      }
+    })
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```typescript
+import { useHive, atLeastOnceSampler} from '@graphql-hive/yoga';
+
+useHive({
+  /* ... other options ... */,
+  usage: {
+    sampler: atLeastOnceSampler({
+      // Produces a unique key for a given GraphQL request.
+      // This key is used to determine the uniqueness of a GraphQL operation.
+      keyFn(samplingContext) {
+        // Operation name is a good candidate for a key, but not perfect,
+        // as not all operations have names
+        // and some operations may have the same name but different body.
+        return samplingContext.operationName;
+      },
+      sampler(samplingContext) {
+        // Use the context to decide if the operation should be sent to Hive.
+        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+          return 1; // 100% of the operations from WebApp will be sent to Hive
+        }
+
+        const hour = new Date().getHours();
+
+        if (hour >= 9 && hour <= 17) {
+          return 0.3;
+        }
+
+        return 0.8;
+      }
+    })
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```typescript
+import { useHive, atLeastOnceSampler} from '@graphql-hive/apollo';
+
+useHive({
+  /* ... other options ... */,
+  usage: {
+    sampler: atLeastOnceSampler({
+      // Produces a unique key for a given GraphQL request.
+      // This key is used to determine the uniqueness of a GraphQL operation.
+      keyFn(samplingContext) {
+        // Operation name is a good candidate for a key, but not perfect,
+        // as not all operations have names
+        // and some operations may have the same name but different body.
+        return samplingContext.operationName;
+      },
+      sampler(samplingContext) {
+        // Use the context to decide if the operation should be sent to Hive.
+        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+          return 1; // 100% of the operations from WebApp will be sent to Hive
+        }
+
+        const hour = new Date().getHours();
+
+        if (hour >= 9 && hour <= 17) {
+          return 0.3;
+        }
+
+        return 0.8;
+      }
+    })
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```typescript
+import { useHive, atLeastOnceSampler} from '@graphql-hive/envelop';
+
+useHive({
+  /* ... other options ... */,
+  usage: {
+    sampler: atLeastOnceSampler({
+      // Produces a unique key for a given GraphQL request.
+      // This key is used to determine the uniqueness of a GraphQL operation.
+      keyFn(samplingContext) {
+        // Operation name is a good candidate for a key, but not perfect,
+        // as not all operations have names
+        // and some operations may have the same name but different body.
+        return samplingContext.operationName;
+      },
+      sampler(samplingContext) {
+        // Use the context to decide if the operation should be sent to Hive.
+        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+          return 1; // 100% of the operations from WebApp will be sent to Hive
+        }
+
+        const hour = new Date().getHours();
+
+        if (hour >= 9 && hour <= 17) {
+          return 0.3;
+        }
+
+        return 0.8;
+      }
+    })
+  }
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### Persisted Documents
+
+Hive client supports resolving persisted documents. For getting started please refer to our
+[App Deployments (Persisted Documents) documentation](/docs/schema-registry/app-deployments).
+
+##### Basic Configuration
+
+For enabling you need to provide the `experimental__persistedDocuments` as follows.
+
+```ts filename="Hive Persisted Documents Basic Configuration"
+useHive({
+  experimental__persistedDocuments: {
+    cdn: {
+      // replace <target_id> and <cdn_access_token> with your values
+      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      accessToken: '<cdn_access_token>'
+    }
+  }
+})
+```
+
+##### Allow arbitrary documents
+
+By default, Hive client plugins will only allow executing documents that are registered in the
+Schema Registry. If you want to allow arbitrary documents to be executed, you can set the
+`allowArbitraryDocuments` option to `true`.
+
+```typescript filename="Hive Persisted Documents Allow Arbitrary Documents" {8}
+useHive({
+  experimental__persistedDocuments: {
+    cdn: {
+      // replace <target_id> and <cdn_access_token> with your values
+      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      accessToken: '<cdn_access_token>'
+    },
+    allowArbitraryDocuments: true
+  }
+})
+```
+
+Furthermore, you can also allow arbitraty documents based on the incoming HTTP request.
+
+```typescript filename="Hive Persisted Documents Allow Arbitrary Documents Based on Request" {8-9}
+useHive({
+  experimental__persistedDocuments: {
+    cdn: {
+      // replace <target_id> and <cdn_access_token> with your values
+      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      accessToken: '<cdn_access_token>'
+    },
+    allowArbitraryDocuments: context =>
+      context.headers.get('x-arbitrary-documents') === '<my-secret-key>'
+  }
+})
+```
+
+##### Cache size
+
+By default, the client will cache up to 10.000 documents loaded from the CDN in memory to avoid
+redundant lookups and speedup reoccuring document executions. You can change this value by setting
+the `cache` option.
+
+```typescript filename="Hive Persisted Documents Cache Size" {8-9}
+useHive({
+  experimental__persistedDocuments: {
+    cdn: {
+      // replace <target_id> and <cdn_access_token> with your values
+      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      accessToken: '<cdn_access_token>'
+    },
+    // Cache up to 50.000 documents
+    cache: 50_000
+  }
+})
+```
+
+#### Custom Integration
+
+If your GraphQL server is not listed above, you can implement a custom integration. Start by
+importing and creating a Hive instance using the `createHive` function.
+
+```ts
+import { createHive } from '@graphql-hive/core'
+
+const hive = createHive({
+  enabled: true,
+  debug: true, // or, false
+  token: 'YOUR-TOKEN'
+})
+```
+
+Call `collectUsage` as soon as a GraphQL operation execution starts, and use the return value
+callback when the operation ends. You may also wrap and replace the `execute` function with the
+following:
+
+```ts
+export async function executeWithHive(args: ExecutionArgs): Promise<ExecutionResult> {
+  // args is ExecutionArgs of graphql-js
+  const finish = hive.collectUsage(args)
+  // result is ExecutionResult of graphql-js
+  const result = await execute(args)
+  // Use this callback to finish measuring times, and save the operation report
+  finish(result)
+
+  return result
+}
+```
+
+### Ruby Client
+
+The [`graphql-hive` gem](https://github.com/charlypoly/graphql-ruby-hive) allows
+[GraphQL-Ruby](https://graphql-ruby.org/) users to use Hive for usage reporting.
+
+Refer to the following guides for integration with your project:
+
+<Cards>
+  <Cards.Card arrow title="GraphQL-Ruby" href="/docs/other-integrations/graphql-ruby" />
+</Cards>
+
+### PHP Client
+
+The [Lighthouse Hive](https://github.com/stayallive/lighthouse-graphql-hive) is third-party
+integration can be used to measure and collect data against all your GraphQL operations.
+
+<Cards>
+  <Cards.Card arrow title="Lighthouse (Laravel)" href="/docs/other-integrations/lighthouse" />
+</Cards>
+
+### Rust Client
+
+Refer to the following guides for integration with your Rust project:
+
+<Cards>
+  <Cards.Card arrow title="Apollo Router" href="/docs/other-integrations/apollo-router" />
+</Cards>

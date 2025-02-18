@@ -905,12 +905,8 @@ async function prepare(targetPick: TargetOption) {
 async function prepareProject(projectType: ProjectType) {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { organization, createProject } = await createOrg();
-  const { project, createTargetAccessToken, createCdnAccess, targets } = await createProject(
-    projectType,
-    {
-      useLegacyRegistryModels: false,
-    },
-  );
+  const { project, createTargetAccessToken, createCdnAccess, targets } =
+    await createProject(projectType);
 
   if (targets.length < 2) {
     throw new Error('Expected at least two targets');

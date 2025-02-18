@@ -5,7 +5,6 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { ExternalCompositionSettings } from '@/components/project/settings/external-composition';
-import { ModelMigrationSettings } from '@/components/project/settings/model-migration';
 import { NativeCompositionSettings } from '@/components/project/settings/native-composition';
 import { Button } from '@/components/ui/button';
 import {
@@ -313,10 +312,6 @@ const ProjectSettingsPage_OrganizationFragment = graphql(`
   fragment ProjectSettingsPage_OrganizationFragment on Organization {
     id
     slug
-    me {
-      id
-      ...CanAccessProject_MemberFragment
-    }
     ...ExternalCompositionSettings_OrganizationFragment
     ...NativeCompositionSettings_OrganizationFragment
   }
@@ -329,7 +324,6 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     isProjectNameInGitHubCheckEnabled
     viewerCanDelete
     viewerCanModifySettings
-    ...ModelMigrationSettings_ProjectFragment
     ...ExternalCompositionSettings_ProjectFragment
     ...NativeCompositionSettings_ProjectFragment
   }
@@ -405,7 +399,6 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
       <div className="flex flex-col gap-y-4">
         {project && organization ? (
           <>
-            <ModelMigrationSettings project={project} organizationSlug={organization.slug} />
             <ProjectSettingsPage_SlugForm
               organizationSlug={props.organizationSlug}
               projectSlug={props.projectSlug}

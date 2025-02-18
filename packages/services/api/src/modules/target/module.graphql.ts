@@ -104,12 +104,28 @@ export default gql`
     targetSlug: String!
   }
 
+  """
+  Reference to a target.
+  """
+  input TargetReferenceInput @oneOf {
+    """
+    Reference to a target using it's ID (see "Target.id" field).
+    """
+    byId: ID
+    """
+    Reference to a target using it's slug parts (see "Organization.slug", "Project.slug", "Target.slug").
+    """
+    bySelector: TargetSelectorInput
+  }
+
   input UpdateTargetValidationSettingsInput {
     organizationSlug: String!
     projectSlug: String!
     targetSlug: String!
     period: Int!
     percentage: Float!
+    requestCount: Int! = 1
+    breakingChangeFormula: BreakingChangeFormula! = PERCENTAGE
     targetIds: [ID!]!
     excludedClients: [String!]
   }
@@ -122,6 +138,7 @@ export default gql`
   type UpdateTargetValidationSettingsInputErrors {
     percentage: String
     period: String
+    requestCount: String
   }
 
   type UpdateTargetValidationSettingsError implements Error {
@@ -178,9 +195,33 @@ export default gql`
   type TargetValidationSettings {
     enabled: Boolean!
     period: Int!
+
+    """
+    If TargetValidationSettings.breakingChangeFormula is PERCENTAGE, then this
+    is the percent of the total operations over the TargetValidationSettings.period
+    required for a change to be considered breaking.
+    """
     percentage: Float!
+
+    """
+    If TargetValidationSettings.breakingChangeFormula is REQUEST_COUNT, then this
+    is the total number of operations over the TargetValidationSettings.period
+    required for a change to be considered breaking.
+    """
+    requestCount: Int!
+
+    """
+    Determines which formula is used to determine if a change is considered breaking
+    or not. Only one formula can be used at a time.
+    """
+    breakingChangeFormula: BreakingChangeFormula!
     targets: [Target!]!
     excludedClients: [String!]!
+  }
+
+  enum BreakingChangeFormula {
+    REQUEST_COUNT
+    PERCENTAGE
   }
 
   input CreateTargetInput {

@@ -1,16 +1,18 @@
 import { withGuildDocs } from '@theguild/components/next.config';
 
 export default withGuildDocs({
-  nextraConfig: /** @satisfies import("nextra").NextraConfig*/ ({
-    themeConfig: './src/theme.config.tsx',
-    autoImportThemeStyle: false,
-  }),
   output: 'export',
-  basePath: process.env.NEXT_BASE_PATH,
   eslint: {
     ignoreDuringBuilds: true,
   },
-
+  experimental: {
+    turbo: {
+      treeShaking: true,
+    },
+  },
+  nextraConfig: {
+    contentDirBasePath: '/docs',
+  },
   redirects: async () => [
     {
       source: '/docs/get-started/organizations',
@@ -245,7 +247,10 @@ export default withGuildDocs({
       permanent: true,
     },
   ],
-  swcMinify: true,
+  env: {
+    SITE_URL: 'https://the-guild.dev/graphql/hive',
+    NEXT_BASE_PATH: process.env.NEXT_BASE_PATH,
+  },
   webpack: (config, { webpack }) => {
     config.externals['node:fs'] = 'commonjs node:fs';
     config.externals['node:path'] = 'commonjs node:path';

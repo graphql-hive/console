@@ -2,6 +2,7 @@ import nock from 'nock';
 import { describe, expect, test } from 'vitest';
 import { createSupergraphSDLFetcher } from '../src/index.js';
 import { version } from '../src/version';
+import { maskRequestId } from './test-utils.js';
 
 describe('supergraph SDL fetcher', async () => {
   test('createSupergraphSDLFetcher without ETag', async () => {
@@ -131,9 +132,9 @@ describe('supergraph SDL fetcher', async () => {
 
     try {
       await fetcher();
-    } catch (err) {
-      expect(err).toMatchInlineSnapshot(
-        `[Error: GET http://localhost/supergraph failed with status 500.]`,
+    } catch (err: any) {
+      expect(maskRequestId(err.message)).toMatchInlineSnapshot(
+        `GET http://localhost/supergraph (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500.`,
       );
     }
   });

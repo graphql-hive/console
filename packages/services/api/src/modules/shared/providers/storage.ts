@@ -11,7 +11,7 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import type { SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -24,7 +24,6 @@ import type {
   Organization,
   OrganizationBilling,
   OrganizationInvitation,
-  OrganizationMemberRole,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
   Project,
@@ -95,8 +94,6 @@ export interface Storage {
   createOrganization(
     _: Pick<Organization, 'slug'> & {
       userId: string;
-      adminScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-      viewerScopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
       reservedSlugs: string[];
     },
   ): Promise<
@@ -198,57 +195,7 @@ export interface Storage {
 
   deleteOrganizationMember(_: OrganizationSelector & { userId: string }): Promise<void>;
 
-  updateOrganizationMemberAccess(
-    _: OrganizationSelector & {
-      userId: string;
-      scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-    },
-  ): Promise<void>;
-
-  hasOrganizationMemberRoleName(_: {
-    organizationId: string;
-    roleName: string;
-    excludeRoleId?: string;
-  }): Promise<boolean>;
-  getOrganizationMemberRoles(_: {
-    organizationId: string;
-  }): Promise<ReadonlyArray<OrganizationMemberRole>>;
-  getViewerOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getAdminOrganizationMemberRole(_: { organizationId: string }): Promise<OrganizationMemberRole>;
-  getOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<
-    | (OrganizationMemberRole & {
-        membersCount: number;
-      })
-    | null
-  >;
-  createOrganizationMemberRole(_: {
-    organizationId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
-  updateOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    name: string;
-    description: string;
-    scopes: ReadonlyArray<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
-  }): Promise<OrganizationMemberRole>;
-  assignOrganizationMemberRole(_: {
-    organizationId: string;
-    roleId: string;
-    userId: string;
-  }): Promise<void>;
-  /**
-   * Remove it after all users have been migrated to the new role system.
-   */
-  assignOrganizationMemberRoleToMany(_: {
-    organizationId: string;
-    roleId: string;
-    userIds: readonly string[];
-  }): Promise<void>;
   deleteOrganizationMemberRole(_: { organizationId: string; roleId: string }): Promise<void>;
-  getMembersWithoutRole(_: { organizationId: string }): Promise<readonly Member[]>;
 
   getProject(_: ProjectSelector): Promise<Project | never>;
 
@@ -257,6 +204,8 @@ export interface Storage {
   getProjectBySlug(_: { slug: string } & OrganizationSelector): Promise<Project | null>;
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
+
+  findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
 
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
     | {
@@ -303,12 +252,6 @@ export interface Storage {
   disableExternalSchemaComposition(_: ProjectSelector): Promise<Project>;
 
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
-
-  updateProjectRegistryModel(
-    _: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ): Promise<Project>;
 
   getTargetId(_: {
     organizationSlug: string;
@@ -360,6 +303,11 @@ export interface Storage {
   getTarget(_: TargetSelector): Promise<Target | never>;
 
   getTargets(_: ProjectSelector): Promise<readonly Target[]>;
+
+  findTargetsByIds(args: {
+    organizationId: string;
+    targetIds: Array<string>;
+  }): Promise<Map<string, Target>>;
 
   getTargetIdsOfOrganization(_: OrganizationSelector): Promise<readonly string[]>;
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
@@ -521,23 +469,7 @@ export interface Storage {
    */
   getSchemaChangesForVersion(_: { versionId: string }): Promise<null | Array<SchemaChangeType>>;
 
-  updateVersionStatus(
-    _: {
-      valid: boolean;
-      versionId: string;
-    } & TargetSelector,
-  ): Promise<SchemaVersion | never>;
-
   getSchemaLog(_: { commit: string; targetId: string }): Promise<SchemaLog>;
-
-  createActivity(
-    _: {
-      userId: string;
-      type: string;
-      meta: object;
-    } & OrganizationSelector &
-      Partial<Pick<TargetSelector, 'projectId' | 'targetId'>>,
-  ): Promise<void>;
 
   addSlackIntegration(_: OrganizationSelector & { token: string }): Promise<void>;
 
@@ -665,6 +597,11 @@ export interface Storage {
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
     oidcUserAccessOnly: boolean;
+  }): Promise<OIDCIntegration>;
+
+  updateOIDCDefaultMemberRole(_: {
+    oidcIntegrationId: string;
+    roleId: string;
   }): Promise<OIDCIntegration>;
 
   createCDNAccessToken(_: {
@@ -844,6 +781,8 @@ export interface Storage {
     targetId: string;
     contextId: string;
   }): Promise<Map<string, SchemaChangeType>>;
+
+  getTargetById(targetId: string): Promise<Target | null>;
 
   getTargetBreadcrumbForTargetId(_: { targetId: string }): Promise<TargetBreadcrumb | null>;
 

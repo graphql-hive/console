@@ -1,14 +1,16 @@
-import { ReactElement, useCallback, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cx } from 'class-variance-authority';
 import clsx from 'clsx';
 import { GraphiQL } from 'graphiql';
 import { buildSchema } from 'graphql';
+import { ChevronDownIcon, EraserIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
 import {
   DropdownMenu,
@@ -34,10 +36,13 @@ import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import {
-  preflightScriptPlugin,
-  PreflightScriptProvider,
-  usePreflightScript,
-} from '@/lib/preflight-sandbox/graphiql-plugin';
+  LogLine,
+  LogRecord,
+  preflightPlugin,
+  PreflightProvider,
+  PreflightResultData,
+  usePreflight,
+} from '@/lib/preflight/graphiql-plugin';
 import { cn } from '@/lib/utils';
 import { explorerPlugin } from '@graphiql/plugin-explorer';
 import {
@@ -54,11 +59,12 @@ import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { useRedirect } from '@/lib/access/common';
+import { Kit } from '@/lib/kit';
 
 const explorer = explorerPlugin();
 
 // Declare outside components, otherwise while clicking on field in explorer operationCollectionsPlugin will be open
-const plugins = [explorer, operationCollectionsPlugin, preflightScriptPlugin];
+const plugins = [explorer, operationCollectionsPlugin, preflightPlugin];
 
 function Share(): ReactElement | null {
   const label = 'Share query';
@@ -164,6 +170,7 @@ function Save(props: {
       <GraphiQLTooltip label={label}>
         <DropdownMenuTrigger asChild>
           <GraphiQLButton
+            data-cy="save-operation"
             className={cn(
               'graphiql-toolbar-button',
               currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
@@ -226,6 +233,7 @@ function Save(props: {
           Save
         </DropdownMenuItem>
         <DropdownMenuItem
+          data-cy="save-operation-as"
           onClick={async () => {
             if (!collections.length) {
               notify('Please create a collection first.', 'error');
@@ -249,17 +257,17 @@ function Save(props: {
   );
 }
 
-function substituteVariablesInHeader(
+function substituteVariablesInHeaders(
   headers: Record<string, string>,
-  environmentVariables: Record<string, unknown>,
+  environmentVariables: Record<string, Kit.Json.Primitive>,
 ) {
   return Object.fromEntries(
     Object.entries(headers).map(([key, value]) => {
       if (typeof value === 'string') {
         // Replace all occurrences of `{{keyName}}` strings only if key exists in `environmentVariables`
-        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey) => {
+        value = value.replaceAll(/{{(?<keyName>.*?)}}/g, (originalString, envKey: string) => {
           return Object.hasOwn(environmentVariables, envKey)
-            ? (environmentVariables[envKey] as string)
+            ? String(environmentVariables[envKey])
             : originalString;
         });
       }
@@ -307,28 +315,26 @@ function LaboratoryPageContent(props: {
   const mockEndpoint = `${location.origin}/api/lab/${props.organizationSlug}/${props.projectSlug}/${props.targetSlug}`;
   const target = query.data?.target;
 
-  const preflightScript = usePreflightScript({ target: target ?? null });
+  const preflight = usePreflight({ target: target ?? null });
 
   const fetcher = useMemo<Fetcher>(() => {
     return async (params, opts) => {
-      let headers = opts?.headers;
       const url =
         (actualSelectedApiEndpoint === 'linkedApi' ? target?.graphqlEndpointUrl : undefined) ??
         mockEndpoint;
 
       return new Repeater(async (push, stop) => {
-        let hasFinishedPreflightScript = false;
+        let isPreflightExecutionDone = false;
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         stop.then(() => {
-          if (!hasFinishedPreflightScript) {
-            preflightScript.abort();
+          if (!isPreflightExecutionDone) {
+            preflight.abortExecution();
           }
         });
+
+        let preflightResultData: PreflightResultData;
         try {
-          const result = await preflightScript.execute();
-          if (result && headers) {
-            headers = substituteVariablesInHeader(headers, result);
-          }
+          preflightResultData = await preflight.execute();
         } catch (err: unknown) {
           if (err instanceof Error === false) {
             throw err;
@@ -341,14 +347,26 @@ function LaboratoryPageContent(props: {
             null,
             2,
           );
-          const error = new Error(`Error during preflight script execution:\n\n${formatError}`);
+          const error = new Error(`Error during preflight execution:\n\n${formatError}`);
           // We only want to expose the error message, not the whole stack trace.
           delete error.stack;
           stop(error);
           return;
         } finally {
-          hasFinishedPreflightScript = true;
+          isPreflightExecutionDone = true;
         }
+
+        const headers = {
+          // We want to prevent users from interpolating environment variables into
+          // their preflight headers. So, apply substitution BEFORE merging
+          // in preflight headers.
+          //
+          ...substituteVariablesInHeaders(
+            opts?.headers ?? {},
+            preflightResultData.environmentVariables,
+          ),
+          ...Object.fromEntries(preflightResultData.request.headers),
+        };
 
         const graphiqlFetcher = createGraphiQLFetcher({ url, fetch });
         const result = await graphiqlFetcher(params, {
@@ -381,8 +399,8 @@ function LaboratoryPageContent(props: {
   }, [
     target?.graphqlEndpointUrl,
     actualSelectedApiEndpoint,
-    preflightScript.execute,
-    preflightScript.isPreflightScriptEnabled,
+    preflight.execute,
+    preflight.isEnabled,
   ]);
 
   const FullScreenIcon = isFullScreen ? ExitFullScreenIcon : EnterFullScreenIcon;
@@ -435,7 +453,7 @@ function LaboratoryPageContent(props: {
 
   return (
     <>
-      {preflightScript.iframeElement}
+      {preflight.iframeElement}
       <div className="flex py-6">
         <div className="flex-1">
           <Title>Laboratory</Title>
@@ -516,7 +534,7 @@ function LaboratoryPageContent(props: {
           .graphiql-dialog a {
             --color-primary: 40, 89%, 60% !important;
           }
-          
+
           .graphiql-container {
             overflow: unset; /* remove default overflow */
           }
@@ -527,19 +545,19 @@ function LaboratoryPageContent(props: {
             line-height: 1.75rem !important;
             color: white;
           }
-          
+
           .graphiql-container,
           .graphiql-dialog,
           .CodeMirror-info {
             --color-base: 223, 70%, 3.9% !important;
           }
-          
+
           .graphiql-tooltip,
           .graphiql-dropdown-content,
           .CodeMirror-lint-tooltip {
             background: #030711;
           }
-          
+
           .graphiql-tab {
             white-space: nowrap;
           }
@@ -547,10 +565,34 @@ function LaboratoryPageContent(props: {
           .graphiql-sidebar > button.active {
             background-color: hsla(var(--color-neutral),var(--alpha-background-light))
           }
+
+          .graphiql-container .graphiql-footer {
+            border: 0;
+            margin-top: 15px;
+          }
+
+          #preflight-logs {
+            background-color: hsl(var(--color-base));
+            border-radius: var(--border-radius-12);
+            box-shadow: var(--popover-box-shadow);
+            color: hsla(var(--color-neutral), var(--alpha-tertiary));
+          }
+
+          #preflight-logs h2 {
+            color: hsla(var(--color-neutral), var(--alpha-secondary));
+          }
+
+          #preflight-logs button[data-state="open"] > h2 {
+            color: hsl(var(--color-neutral));
+          }
+
+          #preflight-logs > div {
+            border-color: hsl(var(--border));
+          }
         `}</style>
       </Helmet>
       {!query.fetching && !query.stale && (
-        <PreflightScriptProvider value={preflightScript}>
+        <PreflightProvider value={preflight}>
           <GraphiQL
             fetcher={fetcher}
             shouldPersistHeaders
@@ -590,8 +632,15 @@ function LaboratoryPageContent(props: {
                 </>
               )}
             </GraphiQL.Toolbar>
+            <GraphiQL.Footer>
+              <div>
+                {preflight.isEnabled ? (
+                  <PreflightLogs logs={preflight.logs} onClear={preflight.clearLogs} />
+                ) : null}
+              </div>
+            </GraphiQL.Footer>
           </GraphiQL>
-        </PreflightScriptProvider>
+        </PreflightProvider>
       )}
       <ConnectLabModal
         endpoint={mockEndpoint}
@@ -652,4 +701,81 @@ function useApiTabValueState(graphqlEndpointUrl: string | null) {
       [setState],
     ),
   ] as const;
+}
+
+function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const consoleRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const consoleEl = consoleRef.current;
+    consoleEl?.scroll({ top: consoleEl.scrollHeight, behavior: 'smooth' });
+  }, [props.logs, isOpen]);
+
+  return (
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className={cn('flex max-h-[200px] w-full flex-col overflow-hidden bg-[#030711]')}
+      id="preflight-logs"
+    >
+      <div
+        className={cn(
+          'flex shrink-0 items-center justify-between px-4 py-3',
+          isOpen ? 'border-b' : 'border-b-0',
+        )}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex h-auto items-center gap-2 p-0 hover:bg-transparent"
+            data-cy="trigger"
+          >
+            <ChevronDownIcon
+              className={`size-4 text-gray-500 transition-transform ${
+                isOpen ? 'rotate-0' : '-rotate-90'
+              }`}
+            />
+            <h2 className="text-[15px] font-normal">Preflight Script Logs</h2>
+          </Button>
+        </CollapsibleTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            data-cy="erase-logs"
+            className={cn(
+              'size-8 text-gray-500 hover:text-white',
+              isOpen ? 'visible' : 'invisible',
+            )}
+            onClick={props.onClear}
+          >
+            <EraserIcon className="size-4" />
+            <span className="sr-only">Clear logs</span>
+          </Button>
+        </div>
+      </div>
+      <CollapsibleContent
+        className="grow overflow-auto p-4 font-mono text-xs/[18px]"
+        ref={consoleRef}
+        data-cy="logs"
+      >
+        {props.logs.length === 0 ? (
+          <div
+            data-cy="empty-state"
+            className="flex flex-col items-center justify-center text-gray-400"
+          >
+            <p>No logs available</p>
+            <p>Execute a query to see logs</p>
+          </div>
+        ) : (
+          <>
+            {props.logs.map((log, index) => (
+              <LogLine key={index} log={log} />
+            ))}
+          </>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }

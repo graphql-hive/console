@@ -19,7 +19,7 @@
     "@graphql-hive/core": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@types/bcryptjs": "2.4.6",
-    "@types/node": "22.10.2",
+    "@types/node": "22.10.5",
     "@types/pg": "8.11.10",
     "@whatwg-node/fetch": "0.10.1",
     "bcryptjs": "2.4.3",
@@ -33,7 +33,7 @@
     "slonik": "30.4.4",
     "ts-node": "10.9.2",
     "tslib": "2.8.1",
-    "typescript": "5.7.2",
+    "typescript": "5.7.3",
     "zod": "3.24.1"
   },
   "buildOptions": {

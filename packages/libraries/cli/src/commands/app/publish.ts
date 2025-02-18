@@ -1,8 +1,15 @@
 import { Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+} from '../../helpers/errors';
+import * as TargetInput from '../../helpers/target-input';
 
 export default class AppPublish extends Command<typeof AppPublish> {
   static description = 'publish an app deployment';
@@ -21,28 +28,55 @@ export default class AppPublish extends Command<typeof AppPublish> {
       description: 'app version',
       required: true,
     }),
+    target: Flags.string({
+      description:
+        'The target in which the app deployment will be published (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   async run() {
     const { flags } = await this.parse(AppPublish);
 
-    const endpoint = this.ensure({
-      key: 'registry.endpoint',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
-    });
-    const accessToken = this.ensure({
-      key: 'registry.accessToken',
-      args: flags,
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let endpoint: string, accessToken: string;
+    try {
+      endpoint = this.ensure({
+        key: 'registry.endpoint',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: AppPublish.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+
+    try {
+      accessToken = this.ensure({
+        key: 'registry.accessToken',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: AppPublish.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
+
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
 
     const result = await this.registryApi(endpoint, accessToken).request({
       operation: ActivateAppDeploymentMutation,
       variables: {
         input: {
+          target,
           appName: flags['name'],
           appVersion: flags['version'],
         },
@@ -50,7 +84,7 @@ export default class AppPublish extends Command<typeof AppPublish> {
     });
 
     if (result.activateAppDeployment.error) {
-      throw new Error(result.activateAppDeployment.error.message);
+      throw new APIError(result.activateAppDeployment.error.message);
     }
 
     if (result.activateAppDeployment.ok) {

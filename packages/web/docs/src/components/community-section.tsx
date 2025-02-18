@@ -1,7 +1,13 @@
 import Image, { StaticImageData } from 'next/image';
 import { GlobeIcon } from '@radix-ui/react-icons';
-import { CallToAction, DiscordIcon, GitHubIcon, Heading, TwitterIcon } from '@theguild/components';
-import { cn } from '../lib';
+import {
+  CallToAction,
+  cn,
+  DiscordIcon,
+  GitHubIcon,
+  Heading,
+  TwitterIcon,
+} from '@theguild/components';
 import { MaskingScrollview } from './masking-scrollview';
 import Achrafash from './community-section/achrafash_.png';
 import ChimameRt from './community-section/chimame_rt.png';
@@ -77,7 +83,7 @@ export function CommunitySection({ className }: { className?: string }) {
       </div>
       <MaskingScrollview
         outerClassName="max-sm:-mx-4 max-sm:px-4 "
-        className="relative -m-4 flex flex-row gap-6 p-4 max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
+        className="nextra-scrollbar relative -m-4 flex flex-row gap-6 p-4 [scrollbar-width:auto] max-sm:overflow-x-auto sm:grid sm:h-[600px] sm:grid-cols-2 sm:overflow-y-auto lg:grid-cols-4"
         fade="y"
       >
         {Array.from({ length: 4 }).map((_, i) => (

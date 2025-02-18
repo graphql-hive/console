@@ -1,10 +1,5 @@
 import { metrics } from '@hive/service-common';
 
-export const tokenCacheHits = new metrics.Counter({
-  name: 'usage_tokens_cache_hits',
-  help: 'Number of cache hits',
-});
-
 export const tokenRequests = new metrics.Counter({
   name: 'usage_tokens_requests',
   help: 'Number of requests to Tokens service',
@@ -14,11 +9,31 @@ export const tokensDuration = new metrics.Histogram({
   name: 'usage_tokens_duration_seconds',
   help: 'Duration of an HTTP Request to Tokens service in seconds',
   labelNames: ['status'],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 7, 10],
+});
+
+export const rateLimitDuration = new metrics.Histogram({
+  name: 'usage_rate_limit_duration_seconds',
+  help: 'Duration of an HTTP Request to Rate Limit service in seconds',
+  labelNames: ['type'],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 7, 10],
 });
 
 export const httpRequests = new metrics.Counter({
   name: 'usage_http_requests',
   help: 'Number of http requests',
+});
+
+export const httpRequestDuration = new metrics.Histogram({
+  name: 'usage_http_request_duration_seconds',
+  help: 'Duration of an HTTP Request in seconds',
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 7, 10],
+});
+
+export const httpRequestHandlerDuration = new metrics.Histogram({
+  name: 'usage_http_request_handler_duration_seconds',
+  help: 'Duration of an HTTP Request handler in seconds',
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 4, 5, 7, 10],
 });
 
 export const httpRequestsWithoutToken = new metrics.Counter({
@@ -107,5 +122,11 @@ export const estimationError = new metrics.Summary({
 export const usedAPIVersion = new metrics.Counter({
   name: 'used_api_version',
   help: 'The used API version (x-api-version header)',
+  labelNames: ['version'],
+});
+
+export const parseReportDuration = new metrics.Histogram({
+  name: 'usage_parse_duration_seconds',
+  help: 'Duration of parsing a report in seconds',
   labelNames: ['version'],
 });

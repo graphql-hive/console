@@ -8,10 +8,10 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 const productUpdatesDirectory = path.join(
   __dirname,
-  '../packages/web/docs/src/pages/product-updates',
+  '../packages/web/docs/src/app/product-updates',
 );
 
-const files = fs.readdirSync(productUpdatesDirectory);
+const files = fs.globSync('**/*.mdx', { cwd: productUpdatesDirectory });
 const changelogRecords = [];
 
 for (const file of files) {
@@ -24,13 +24,18 @@ for (const file of files) {
   const { data } = matter(content);
 
   if (data.title && data.date) {
+    const pathname = file
+      .replace('.mdx', '')
+      .replace('(posts)/', '')
+      .replace(/\/page$/, '');
+
     changelogRecords.push({
       date: new Date(data.date).toLocaleDateString(undefined, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       }),
-      href: `https://the-guild.dev/graphql/hive/product-updates/${file.replace('.mdx', '')}`,
+      href: `https://the-guild.dev/graphql/hive/product-updates/${pathname}`,
       title: data.title,
       description: data.description || '',
     });

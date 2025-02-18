@@ -363,6 +363,54 @@ export class OIDCIntegrationsProvider {
     } as const;
   }
 
+  async updateOIDCDefaultMemberRole(args: { oidcIntegrationId: string; roleId: string }) {
+    if (this.isEnabled() === false) {
+      return {
+        type: 'error',
+        message: 'OIDC integrations are disabled.',
+      } as const;
+    }
+
+    const oidcIntegration = await this.storage.getOIDCIntegrationById({
+      oidcIntegrationId: args.oidcIntegrationId,
+    });
+
+    if (oidcIntegration === null) {
+      return {
+        type: 'error',
+        message: 'Integration not found.',
+      } as const;
+    }
+
+    if (
+      !(await this.session.canPerformAction({
+        action: 'member:modify',
+        organizationId: oidcIntegration.linkedOrganizationId,
+        params: {
+          organizationId: oidcIntegration.linkedOrganizationId,
+        },
+      }))
+    ) {
+      return {
+        type: 'error',
+        message: 'You do not have permission to update the default member role.',
+      } as const;
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: oidcIntegration.linkedOrganizationId,
+      action: 'oidc:modify',
+      params: {
+        organizationId: oidcIntegration.linkedOrganizationId,
+      },
+    });
+
+    return {
+      type: 'ok',
+      oidcIntegration: await this.storage.updateOIDCDefaultMemberRole(args),
+    } as const;
+  }
+
   async getOIDCIntegrationById(args: { oidcIntegrationId: string }) {
     if (this.isEnabled() === false) {
       return {

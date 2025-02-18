@@ -1,16 +1,13 @@
-import { createHash } from 'node:crypto';
 import { Session } from '../../auth/lib/authz';
-import {
-  isOrganizationScope,
-  OrganizationAccessScope,
-} from '../../auth/providers/organization-access';
-import { isProjectScope, ProjectAccessScope } from '../../auth/providers/project-access';
-import { isTargetScope, TargetAccessScope } from '../../auth/providers/target-access';
+import { allPermissionGroups } from '../lib/organization-member-permissions';
 import { OrganizationManager } from '../providers/organization-manager';
+import { OrganizationMemberRoles } from '../providers/organization-member-roles';
+import { OrganizationMembers } from '../providers/organization-members';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'availableMemberPermissionGroups'
   | 'cleanId'
   | 'getStarted'
   | 'id'
@@ -21,14 +18,12 @@ export const Organization: Pick<
   | 'name'
   | 'owner'
   | 'slug'
-  | 'unassignedMembersToMigrate'
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
   | 'viewerCanExportAuditLogs'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
-  | 'viewerCanMigrateLegacyMemberRoles'
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
   | 'viewerCanTransferOwnership'
@@ -37,23 +32,30 @@ export const Organization: Pick<
   __isTypeOf: organization => {
     return !!organization.id;
   },
-  owner: (organization, _, { injector }) => {
-    return injector
-      .get(OrganizationManager)
-      .getOrganizationOwner({ organizationId: organization.id });
+  owner: async (organization, _, { injector }) => {
+    const owner = await injector.get(OrganizationMembers).findOrganizationOwner(organization);
+    if (!owner) {
+      throw new Error('Not found.');
+    }
+
+    return owner;
   },
   me: async (organization, _, { injector }) => {
     const me = await injector.get(Session).getViewer();
-    const members = await injector
-      .get(OrganizationManager)
-      .getOrganizationMembers({ organizationId: organization.id });
 
-    return members.find(m => m.id === me.id)!;
+    const member = await injector.get(OrganizationMembers).findOrganizationMembership({
+      organization,
+      userId: me.id,
+    });
+
+    if (!member) {
+      throw new Error('Could not find member.');
+    }
+
+    return member;
   },
   members: (organization, _, { injector }) => {
-    return injector
-      .get(OrganizationManager)
-      .getOrganizationMembers({ organizationId: organization.id });
+    return injector.get(OrganizationMembers).findOrganizationMembersForOrganization(organization);
   },
   invitations: async (organization, _, { injector }) => {
     const invitations = await injector.get(OrganizationManager).getInvitations({
@@ -66,57 +68,7 @@ export const Organization: Pick<
     };
   },
   memberRoles: (organization, _, { injector }) => {
-    return injector.get(OrganizationManager).getMemberRoles({
-      organizationId: organization.id,
-    });
-  },
-  unassignedMembersToMigrate: async (organization, _, { injector }) => {
-    const members = await injector.get(OrganizationManager).getMembersWithoutRole({
-      organizationId: organization.id,
-    });
-
-    if (members.length === 0) {
-      return [];
-    }
-
-    const groupedByAccessScope: {
-      [accessHash: string]: {
-        organizationScopes: OrganizationAccessScope[];
-        projectScopes: ProjectAccessScope[];
-        targetScopes: TargetAccessScope[];
-        members: Array<(typeof members)[number]>;
-      };
-    } = {};
-
-    for (const member of members) {
-      const hasher = createHash('md5');
-      hasher.update([...member.scopes].sort().join(','));
-      const accessHash = hasher.digest('hex');
-
-      if (!groupedByAccessScope[accessHash]) {
-        groupedByAccessScope[accessHash] = {
-          organizationScopes: member.scopes.filter(isOrganizationScope),
-          projectScopes: member.scopes.filter(isProjectScope),
-          targetScopes: member.scopes.filter(isTargetScope),
-          members: [],
-        };
-      }
-
-      groupedByAccessScope[accessHash].members.push(member);
-    }
-
-    return (
-      Object.entries(groupedByAccessScope)
-        .map(([accessHash, group]) => ({
-          id: accessHash,
-          organizationScopes: group.organizationScopes,
-          projectScopes: group.projectScopes,
-          targetScopes: group.targetScopes,
-          members: group.members,
-        }))
-        // Sort by the number of members in the group in descending order
-        .sort((a, b) => b.members.length - a.members.length)
-    );
+    return injector.get(OrganizationMemberRoles).getMemberRolesForOrganizationId(organization.id);
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {
@@ -196,7 +148,7 @@ export const Organization: Pick<
 
   viewerCanManageInvitations: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:manageInvites',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
@@ -205,7 +157,7 @@ export const Organization: Pick<
   },
   viewerCanAssignUserRoles: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:assignRole',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
@@ -214,19 +166,12 @@ export const Organization: Pick<
   },
   viewerCanManageRoles: (organization, _arg, { session }) => {
     return session.canPerformAction({
-      action: 'member:modifyRole',
+      action: 'member:modify',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
       },
     });
-  },
-  viewerCanMigrateLegacyMemberRoles: async (organization, _arg, { injector, session }) => {
-    const owner = await injector
-      .get(OrganizationManager)
-      .getOrganizationOwner({ organizationId: organization.id });
-    const viewer = await session.getViewer();
-    return viewer.id === owner.id;
   },
   viewerCanExportAuditLogs: async (organization, _arg, { session }) => {
     return session.canPerformAction({
@@ -236,5 +181,8 @@ export const Organization: Pick<
         organizationId: organization.id,
       },
     });
+  },
+  availableMemberPermissionGroups: () => {
+    return allPermissionGroups;
   },
 };

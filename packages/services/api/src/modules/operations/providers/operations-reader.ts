@@ -32,28 +32,21 @@ function toUnixTimestamp(utcDate: string): any {
   return new UTCDate(iso).getTime();
 }
 
-export interface Percentiles {
+export interface DurationMetrics {
+  avg: number;
   p75: number;
   p90: number;
   p95: number;
   p99: number;
 }
 
-function toPercentiles(item: Percentiles | number[]) {
-  if (Array.isArray(item)) {
-    return {
-      p75: item[0],
-      p90: item[1],
-      p95: item[2],
-      p99: item[3],
-    };
-  }
-
+function toDurationMetrics(percentiles: [number, number, number, number], avg: number) {
   return {
-    p75: item.p75,
-    p90: item.p90,
-    p95: item.p95,
-    p99: item.p99,
+    avg,
+    p75: percentiles[0],
+    p90: percentiles[1],
+    p95: percentiles[2],
+    p99: percentiles[3],
   };
 }
 
@@ -188,25 +181,48 @@ export class OperationsReader {
     }).then(r => r[this.makeId({ type, field, argument })]);
   }
 
-  private async countFields({
-    fields,
-    target,
+  countCoordinate = batchBy<
+    {
+      schemaCoordinate: string;
+      targetIds: readonly string[];
+      period: DateRange;
+      operations?: readonly string[];
+      excludedClients?: readonly string[] | null;
+    },
+    Record<string, number>
+  >(
+    item =>
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+    async items => {
+      const schemaCoordinates = items.map(item => item.schemaCoordinate);
+      return await this.countCoordinates({
+        targetIds: items[0].targetIds,
+        excludedClients: items[0].excludedClients,
+        period: items[0].period,
+        operations: items[0].operations,
+        schemaCoordinates,
+      }).then(result =>
+        items.map(item =>
+          Promise.resolve({ [item.schemaCoordinate]: result[item.schemaCoordinate] }),
+        ),
+      );
+    },
+  );
+
+  public async countCoordinates({
+    schemaCoordinates,
+    targetIds,
     period,
     operations,
     excludedClients,
   }: {
-    fields: ReadonlyArray<{
-      type: string;
-      field?: string | null;
-      argument?: string | null;
-    }>;
-    target: string | readonly string[];
+    schemaCoordinates: readonly string[];
+    targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
-  }): Promise<Record<string, number>> {
-    const coordinates = fields.map(selector => this.makeId(selector));
-    const conditions = [sql`(coordinate IN (${sql.array(coordinates, 'String')}))`];
+  }) {
+    const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
     if (Array.isArray(excludedClients) && excludedClients.length > 0) {
       // Eliminate coordinates fetched by excluded clients.
@@ -223,7 +239,7 @@ export class OperationsReader {
                 'String',
               )})) as non_excluded_clients_total
             FROM clients_daily ${this.createFilter({
-              target,
+              target: targetIds,
               period,
             })}
             GROUP BY hash
@@ -242,7 +258,7 @@ export class OperationsReader {
               sum(total) as total
             FROM coordinates_daily
             ${this.createFilter({
-              target,
+              target: targetIds,
               period,
               operations,
               extra: conditions,
@@ -258,15 +274,40 @@ export class OperationsReader {
       stats[row.coordinate] = ensureNumber(row.total);
     }
 
-    for (const selector of fields) {
-      const key = this.makeId(selector);
-
-      if (typeof stats[key] !== 'number') {
-        stats[key] = 0;
+    for (const coordinate of schemaCoordinates) {
+      if (typeof stats[coordinate] !== 'number') {
+        stats[coordinate] = 0;
       }
     }
 
     return stats;
+  }
+
+  private async countFields({
+    fields,
+    target,
+    period,
+    operations,
+    excludedClients,
+  }: {
+    fields: ReadonlyArray<{
+      type: string;
+      field?: string | null;
+      argument?: string | null;
+    }>;
+    target: string | readonly string[];
+    period: DateRange;
+    operations?: readonly string[];
+    excludedClients?: readonly string[] | null;
+  }): Promise<Record<string, number>> {
+    const schemaCoordinates = fields.map(selector => this.makeId(selector));
+    return this.countCoordinates({
+      schemaCoordinates,
+      targetIds: target,
+      period,
+      operations,
+      excludedClients,
+    });
   }
 
   async hasCollectedOperations({
@@ -575,7 +616,7 @@ export class OperationsReader {
         operation_kind: string;
       }>({
         query: sql`
-          SELECT 
+          SELECT
             name,
             hash,
             operation_kind
@@ -651,7 +692,7 @@ export class OperationsReader {
       type: 'query' | 'mutation' | 'subscription';
     }>({
       query: sql`
-        SELECT 
+        SELECT
           "operation_collection_details"."hash" AS "hash",
           "operation_collection_details"."operation_kind" AS "type",
           "operation_collection_details"."name" AS "name",
@@ -697,7 +738,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
             coordinate
           FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
@@ -747,7 +788,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_name,
                 client_version
@@ -844,7 +885,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 sum(total) as total,
                 client_version
               FROM ${aggregationTableName('clients')}
@@ -892,7 +933,7 @@ export class OperationsReader {
           SELECT
             SUM("result"."total") AS "amountOfRequests"
           FROM (
-            SELECT 
+            SELECT
               SUM("operations_daily"."total") AS "total"
             FROM
               "operations_daily"
@@ -904,7 +945,7 @@ export class OperationsReader {
 
             UNION ALL
 
-            SELECT 
+            SELECT
               SUM("subscription_operations_daily"."total") AS "total"
             FROM
               "subscription_operations_daily"
@@ -926,7 +967,6 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     schemaCoordinates: string[];
-    requestCountThreshold: number;
   }) {
     const RecordArrayType = z.array(
       z.object({
@@ -987,7 +1027,6 @@ export class OperationsReader {
               AND "coordinates_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
               AND "coordinates_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
               AND "coordinates_daily"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
-            HAVING "total" >= ${String(args.requestCountThreshold)}
             ORDER BY
               "total" DESC,
               "coordinates_daily"."hash" DESC
@@ -1056,7 +1095,6 @@ export class OperationsReader {
       excludedClients: null | readonly string[];
       period: DateRange;
       schemaCoordinate: string;
-      requestCountThreshold: number;
     },
     Array<{
       hash: string;
@@ -1065,14 +1103,13 @@ export class OperationsReader {
     }> | null
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${item.requestCountThreshold}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this._getTopOperationsForSchemaCoordinates({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
-        requestCountThreshold: items[0].requestCountThreshold,
         schemaCoordinates,
       }).then(result => result.map(result => Promise.resolve(result)));
     },
@@ -1262,7 +1299,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 count(distinct client_version) as total
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
@@ -1470,7 +1507,7 @@ export class OperationsReader {
       client_name: string;
     }>({
       query: sql`
-        SELECT 
+        SELECT
           sum(total) as count,
           client_name
         FROM clients_daily
@@ -1573,7 +1610,7 @@ export class OperationsReader {
           }>(
             this.pickAggregationByPeriod({
               query: aggregationTableName => sql`
-                SELECT 
+                SELECT
                   toDateTime(
                       intDiv(
                         toUnixTimestamp(timestamp),
@@ -1723,7 +1760,7 @@ export class OperationsReader {
   }): Promise<
     Array<{
       date: any;
-      duration: Percentiles;
+      duration: DurationMetrics;
     }>
   > {
     return this.getDurationAndCountOverTime({
@@ -1745,13 +1782,15 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-  }): Promise<Percentiles> {
+  }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
+      average: number;
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-          SELECT 
+          SELECT
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
             ${this.createFilter({ target, period, operations, clients })}
@@ -1762,10 +1801,10 @@ export class OperationsReader {
       }),
     );
 
-    return toPercentiles(result.data[0].percentiles);
+    return toDurationMetrics(result.data[0].percentiles, result.data[0].average);
   }
 
-  async durationPercentiles({
+  async durationMetrics({
     target,
     period,
     operations,
@@ -1780,12 +1819,14 @@ export class OperationsReader {
   }) {
     const result = await this.clickHouse.query<{
       hash: string;
+      average: number;
       percentiles: [number, number, number, number];
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-              SELECT 
+              SELECT
                 hash,
+                avgMerge(duration_avg) as average,
                 quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
@@ -1813,10 +1854,10 @@ export class OperationsReader {
       }),
     );
 
-    const collection = new Map<string, Percentiles>();
+    const collection = new Map<string, DurationMetrics>();
 
     result.data.forEach(row => {
-      collection.set(row.hash, toPercentiles(row.percentiles));
+      collection.set(row.hash, toDurationMetrics(row.percentiles, row.average));
     });
 
     return collection;
@@ -1881,6 +1922,7 @@ export class OperationsReader {
         return sql`
         SELECT
           date,
+          average,
           percentiles,
           total,
           totalOk
@@ -1892,6 +1934,7 @@ export class OperationsReader {
                 toUInt32(${String(interval.seconds)})
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
+            avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
@@ -1929,6 +1972,7 @@ export class OperationsReader {
       date: string;
       total: number;
       totalOk: number;
+      average: number;
       percentiles: [number, number, number, number];
     }>(query);
 
@@ -1937,7 +1981,7 @@ export class OperationsReader {
         date: toUnixTimestamp(row.date),
         total: ensureNumber(row.total),
         totalOk: ensureNumber(row.totalOk),
-        duration: toPercentiles(row.percentiles),
+        duration: toDurationMetrics(row.percentiles, row.average),
       };
     });
   }
@@ -2148,7 +2192,7 @@ export class OperationsReader {
     }>(
       this.pickAggregationByPeriod({
         query: aggregationTableName => sql`
-        SELECT 
+        SELECT
           toDateTime(
             intDiv(
               toUnixTimestamp(timestamp),

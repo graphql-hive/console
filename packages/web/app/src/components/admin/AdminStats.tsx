@@ -42,7 +42,6 @@ import { Button } from '../ui/button';
 
 interface Organization {
   name: ReactElement;
-  members: string;
   users: number;
   projects: number;
   targets: number;
@@ -172,15 +171,6 @@ const AdminStatsQuery = graphql(`
                 email
               }
             }
-            members {
-              nodes {
-                id
-                user {
-                  id
-                  email
-                }
-              }
-            }
           }
           versions
           users
@@ -232,9 +222,6 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Organization',
     enableSorting: false,
-  }),
-  columnHelper.accessor('members', {
-    header: 'Members',
   }),
   columnHelper.accessor('users', {
     header: 'Users',
@@ -411,7 +398,6 @@ export function AdminStats({
               <pre title="owner">{node.organization.owner.user.email}</pre>
             </div>
           ),
-          members: (node.organization.members?.nodes || []).map(v => v.user.email).join(', '),
           users: node.users,
           projects: node.projects,
           targets: node.targets,

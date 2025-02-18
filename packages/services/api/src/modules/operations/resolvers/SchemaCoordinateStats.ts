@@ -40,7 +40,7 @@ export const SchemaCoordinateStats: SchemaCoordinateStatsResolvers = {
         period,
         schemaCoordinate,
       }),
-      operationsManager.readDetailedDurationPercentiles({
+      operationsManager.readDetailedDurationMetrics({
         organizationId: organization,
         projectId: project,
         targetId: target,

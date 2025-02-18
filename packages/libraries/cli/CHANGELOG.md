@@ -1,5 +1,153 @@
 # @graphql-hive/cli
 
+## 0.48.3
+
+### Patch Changes
+
+- [#6508](https://github.com/graphql-hive/console/pull/6508)
+  [`716868b`](https://github.com/graphql-hive/console/commit/716868bae607f8ee0a800ade060010b2c9e144aa)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - No changes in this version
+
+## 0.48.2
+
+### Patch Changes
+
+- [#6502](https://github.com/graphql-hive/console/pull/6502)
+  [`cef7fd8`](https://github.com/graphql-hive/console/commit/cef7fd88e4929942bcaf07aaf3bc226c5d9a38cd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - **hive dev**
+
+  Update @theguild/federation-composition to 0.14.4:
+
+  - Fix a child data type field not being accessible via interfaceObject
+  - Respect inaccessible enum values while creating the public schema from the supergraph AST
+
+## 0.48.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`ae2d16d`](https://github.com/graphql-hive/console/commit/ae2d16d553e264c813ac65d78eacab3d7a2efeae)]:
+  - @graphql-hive/core@0.9.1
+
+## 0.48.0
+
+### Minor Changes
+
+- [#6488](https://github.com/graphql-hive/console/pull/6488)
+  [`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Include and log a `x-request-id` header for all
+  requests sent to the Hive API. This helps users to share more context with Hive staff when
+  encountering errors.
+
+### Patch Changes
+
+- [#6483](https://github.com/graphql-hive/console/pull/6483)
+  [`39eac03`](https://github.com/graphql-hive/console/commit/39eac0315c8ecb4fb55364d62c300f34dd5fdcab)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error message when attempting a schema
+  check on a federation project without the `--service` paramater.
+- Updated dependencies
+  [[`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)]:
+  - @graphql-hive/core@0.9.0
+
+## 0.47.0
+
+### Minor Changes
+
+- [#6449](https://github.com/graphql-hive/console/pull/6449)
+  [`0504530`](https://github.com/graphql-hive/console/commit/05045306b789e97ec39cbd2c8ee2b4f1b721dc9e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `--target` flag for commands `app:create`,
+  `app:publish`, `operations:check`, `schema:check`, `schema:delete`, `schema:fetch`,
+  `schema:publish` and `dev`.
+
+  The `--target` flag can be used to specify the target on which the operation should be performed.
+  Either a slug or ID of the target can be provided.
+
+  A provided slug must follow the format `$organizationSlug/$projectSlug/$targetSlug` (e.g.
+  `the-guild/graphql-hive/staging`).
+
+  **Example using target slug**
+
+  ```bash
+  hive schema:publish --target the-guild/graphql-hive/production ./my-schema.graphql
+  ```
+
+  A target id, must be a valid target UUID.
+
+  **Example using target id**
+
+  ```bash
+  hive schema:publish --target a0f4c605-6541-4350-8cfe-b31f21a4bf80 ./my-schema.graphql
+  ```
+
+  **Note:** We encourage starting to use the `--target` flag today. In the future the flag will
+  become mandatory as we are moving to a more flexible approach of access tokens that can be granted
+  access to multiple targets.
+
+## 0.46.1
+
+### Patch Changes
+
+- [#6380](https://github.com/graphql-hive/console/pull/6380)
+  [`40213fb`](https://github.com/graphql-hive/console/commit/40213fb7dc39cfb2688e6127e8fe2658f7fceb7f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to
+  [v0.14.3](https://github.com/the-guild-org/federation/releases/tag/v0.14.3)
+
+- Updated dependencies
+  [[`ec356a7`](https://github.com/graphql-hive/console/commit/ec356a7784d1f59722f80a69f501f1f250b2f6b2)]:
+  - @graphql-hive/core@0.8.4
+
+## 0.46.0
+
+### Minor Changes
+
+- [#6357](https://github.com/graphql-hive/console/pull/6357)
+  [`e10cc2d`](https://github.com/graphql-hive/console/commit/e10cc2db4297dafabbbf4996d501384dd0884c4a)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - Add experimental json file flag to command
+  `schema:check`.
+
+  On the `schema:check` command, you can now use the flag
+  `--experimental-json-file ./path/to/schema-check-result.json` to output a JSON file containing the
+  command's result.
+
+  This experimental feature is designed to help you with scripting, typically in CI/CD pipelines.
+
+  Please note that this is an experimental feature, and therefore is:
+
+  1. likely to change or be removed in a future version
+  2. not covered by semantic versioning.
+
+- [#6338](https://github.com/graphql-hive/console/pull/6338)
+  [`f6565fc`](https://github.com/graphql-hive/console/commit/f6565fc8996922bfd657e83a8b53b8b473858154)
+  Thanks [@jdolle](https://github.com/jdolle)! - cli schema:fetch targets latest if actionId
+  argument is missing
+
+- [#6333](https://github.com/graphql-hive/console/pull/6333)
+  [`0a84187`](https://github.com/graphql-hive/console/commit/0a84187051ae121f06bacc6b99da96d81e775dcd)
+  Thanks [@jasonkuhrt](https://github.com/jasonkuhrt)! - BREAKING: Remove config commands
+
+  This prepares for the addition of JSON format output in other commands.
+
+## 0.45.0
+
+### Minor Changes
+
+- [#6255](https://github.com/graphql-hive/console/pull/6255)
+  [`29c45df`](https://github.com/graphql-hive/console/commit/29c45dfbfc8ab87e9e84fec9c8def41ba01c3fe8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added subgraph type to schema:fetch cmd to print
+  subgraph details
+
+### Patch Changes
+
+- [#6252](https://github.com/graphql-hive/console/pull/6252)
+  [`5a6e565`](https://github.com/graphql-hive/console/commit/5a6e565be464983a5651a1349470415d3d93ba46)
+  Thanks [@jdolle](https://github.com/jdolle)! - Print a detailed error when a command is executed
+  without a hive access token
+
+- Updated dependencies
+  [[`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)]:
+  - @graphql-hive/core@0.8.3
+
 ## 0.44.5
 
 ### Patch Changes

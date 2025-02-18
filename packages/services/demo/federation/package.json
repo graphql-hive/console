@@ -11,6 +11,6 @@
     "graphql-yoga": "5.10.8"
   },
   "devDependencies": {
-    "wrangler": "3.99.0"
+    "wrangler": "3.107.2"
   }
 }

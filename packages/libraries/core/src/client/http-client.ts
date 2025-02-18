@@ -1,5 +1,5 @@
 import asyncRetry from 'async-retry';
-import { fetch, URL } from '@whatwg-node/fetch';
+import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { Logger } from './types.js';
 
 interface SharedConfig {
@@ -96,8 +96,10 @@ export async function makeFetchCall(
 
   return await asyncRetry(
     async (bail, attempt) => {
+      const requestId = crypto.randomUUID();
+
       logger?.info(
-        `${config.method} ${endpoint}` +
+        `${config.method} ${endpoint} (x-request-id=${requestId})` +
           (retries > 0 ? ' ' + getAttemptMessagePart(attempt, retries + 1) : ''),
       );
 
@@ -107,12 +109,16 @@ export async function makeFetchCall(
       const response = await (config.fetchImplementation ?? fetch)(endpoint, {
         method: config.method,
         body: config.body,
-        headers: config.headers,
+        headers: {
+          'x-request-id': requestId,
+          ...config.headers,
+        },
         signal,
       }).catch((error: unknown) => {
         const logErrorMessage = () =>
           logger?.error(
-            `${config.method} ${endpoint} failed ${getDuration()}. ` + getErrorMessage(error),
+            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
+              getErrorMessage(error),
           );
 
         if (isAggregateError(error)) {
@@ -121,34 +127,34 @@ export async function makeFetchCall(
           }
 
           logErrorMessage();
-          throw new Error('Unexpected HTTP error.', { cause: error });
+          throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
         }
 
         logger?.error(error);
         logErrorMessage();
-        throw new Error('Unexpected HTTP error.', { cause: error });
+        throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
 
       if (isRequestOk(response)) {
         logger?.info(
-          `${config.method} ${endpoint} succeeded with status ${response.status} ${getDuration()}.`,
+          `${config.method} ${endpoint} (x-request-id=${requestId}) succeeded with status ${response.status} ${getDuration()}.`,
         );
 
         return response;
       }
 
       logger?.error(
-        `${config.method} ${endpoint} failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
+        `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
       );
 
       if (retries > 0 && attempt > retries) {
         logger?.error(
-          `${config.method} ${endpoint} retry limit exceeded after ${attempt} attempts.`,
+          `${config.method} ${endpoint} (x-request-id=${requestId}) retry limit exceeded after ${attempt} attempts.`,
         );
       }
 
       const error = new Error(
-        `${config.method} ${endpoint} failed with status ${response.status}.`,
+        `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status}.`,
       );
 
       if (response.status >= 400 && response.status < 500) {

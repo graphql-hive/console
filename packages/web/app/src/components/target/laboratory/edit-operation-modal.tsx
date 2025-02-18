@@ -167,7 +167,10 @@ export const EditOperationModalContent = (props: {
         props.form.reset();
       }}
     >
-      <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+      <DialogContent
+        className="container w-4/5 max-w-[600px] md:w-3/5"
+        data-cy="edit-operation-modal"
+      >
         {!props.fetching && (
           <Form {...props.form}>
             <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>

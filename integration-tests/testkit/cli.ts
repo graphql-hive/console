@@ -19,12 +19,13 @@ async function generateTmpFile(content: string, extension: string) {
   return filepath;
 }
 
-async function exec(cmd: string) {
+async function exec(cmd: string, env?: Record<string, string>) {
   const outout = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,
     env: {
       OCLIF_CLI_CUSTOM_PATH: cliDir,
       NODE_OPTIONS: '--no-deprecation',
+      ...env,
     },
   });
 
@@ -44,11 +45,12 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
-export async function schemaCheck(args: string[]) {
+export async function schemaCheck(args: string[], env?: Record<string, string>) {
   const registryAddress = await getServiceHost('server', 8082);
 
   return await exec(
     ['schema:check', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+    env,
   );
 }
 
@@ -296,8 +298,14 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     ]);
   }
 
-  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId: string }) {
-    const cmd = schemaFetch(['--token', tokens.readwrite, '--type', input.type, input.actionId]);
+  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId?: string }) {
+    const cmd = schemaFetch([
+      '--token',
+      tokens.readwrite,
+      '--type',
+      input.type,
+      ...(input.actionId ? [input.actionId] : []),
+    ]);
 
     return cmd;
   }

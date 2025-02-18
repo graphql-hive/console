@@ -3,7 +3,6 @@ import { useQuery } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
 import { OrganizationMembers } from '@/components/organization/members/list';
-import { OrganizationMemberRolesMigration } from '@/components/organization/members/migration';
 import { OrganizationMemberRoles } from '@/components/organization/members/roles';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
@@ -18,10 +17,9 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
-    ...OrganizationMemberRolesMigration_OrganizationFragment
+    ...SelectedPermissionOverview_OrganizationFragment
     viewerCanManageInvitations
     viewerCanManageRoles
-    viewerCanMigrateLegacyMemberRoles
   }
 `);
 
@@ -37,10 +35,6 @@ const subPages = [
   {
     key: 'invitations',
     title: 'Invitations',
-  },
-  {
-    key: 'migration',
-    title: 'Migration',
   },
 ] as const;
 
@@ -65,16 +59,9 @@ function PageContent(props: {
       if (!organization.viewerCanManageRoles && page.key === 'roles') {
         return false;
       }
-      if (!organization.viewerCanMigrateLegacyMemberRoles && page.key === 'migration') {
-        return false;
-      }
       return true;
     });
-  }, [
-    organization.viewerCanManageInvitations,
-    organization.viewerCanManageRoles,
-    organization.viewerCanMigrateLegacyMemberRoles,
-  ]);
+  }, [organization.viewerCanManageInvitations, organization.viewerCanManageRoles]);
 
   if (!organization) {
     return null;
@@ -113,9 +100,6 @@ function PageContent(props: {
             refetchInvitations={props.refetchQuery}
             organization={organization}
           />
-        ) : null}
-        {props.page === 'migration' && organization.viewerCanMigrateLegacyMemberRoles ? (
-          <OrganizationMemberRolesMigration organization={organization} />
         ) : null}
       </PageLayoutContent>
     </PageLayout>

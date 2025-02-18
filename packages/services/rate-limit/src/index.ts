@@ -24,8 +24,11 @@ async function main() {
     tracing = configureTracing({
       collectorEndpoint: env.tracing.collectorEndpoint,
       serviceName: 'rate-limit',
-      sampler(ctx, traceId, spanName, spanKind, attributes) {
-        if (attributes['requesting.service'] === 'usage') {
+      sampler: (ctx, traceId, spanName, spanKind, attributes) => {
+        if (
+          attributes['requesting.service'] === 'usage' &&
+          !env.tracing.traceRequestsFromUsageService
+        ) {
           return {
             decision: SamplingDecision.NOT_RECORD,
           };
@@ -116,7 +119,7 @@ async function main() {
     });
 
     if (env.prometheus) {
-      await startMetrics(env.prometheus.labels.instance);
+      await startMetrics(env.prometheus.labels.instance, env.prometheus.port);
     }
     await server.listen({
       port: env.http.port,

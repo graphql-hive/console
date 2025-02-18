@@ -1,14 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { ServiceLogger } from '@hive/service-common';
 
-export class BufferTooBigError extends Error {
+class BufferTooBigError extends Error {
   constructor(public bytes: number) {
     super(`Buffer too big: ${bytes}`);
   }
-}
-
-export function isBufferTooBigError(error: unknown): error is BufferTooBigError {
-  return error instanceof BufferTooBigError;
 }
 
 /**
@@ -131,6 +127,7 @@ export function createKVBuffer<T>(config: {
   calculateReportSize(report: T): number;
   split(report: T, numOfChunks: number): readonly T[];
   onRetry(reports: readonly T[]): void;
+  isTooLargePayloadError(error: unknown): boolean;
   sender(
     reports: readonly T[],
     estimatedSizeInBytes: number,
@@ -141,6 +138,7 @@ export function createKVBuffer<T>(config: {
   const { logger } = config;
   let buffer: T[] = [];
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
   const estimator = createEstimator({
     logger,
     defaultBytesPerUnit: config.limitInBytes / config.size,
@@ -171,11 +169,10 @@ export function createKVBuffer<T>(config: {
     reports: readonly T[],
     size: number,
     batchId: string,
-    isRetry = false,
+    isChunkedBuffer = false,
   ) {
     logger.info(`Flushing (reports=%s, bufferSize=%s, id=%s)`, reports.length, size, batchId);
     const estimatedSizeInBytes = estimator.estimate(size);
-    buffer = [];
     await config
       .sender(reports, estimatedSizeInBytes, batchId, function validateSize(bytes) {
         if (!config.useEstimator) {
@@ -202,7 +199,11 @@ export function createKVBuffer<T>(config: {
         }
       })
       .catch(error => {
-        if (!isRetry && isBufferTooBigError(error)) {
+        if (isChunkedBuffer) {
+          return Promise.reject(error);
+        }
+
+        if (error instanceof BufferTooBigError) {
           config.onRetry(reports);
           logger.info(`Retrying (reports=%s, bufferSize=%s, id=%s)`, reports.length, size, batchId);
 
@@ -240,10 +241,8 @@ export function createKVBuffer<T>(config: {
       });
   }
 
-  async function send(shouldSchedule = true): Promise<void> {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
+  async function send(options: { scheduleNextSend: boolean }): Promise<void> {
+    const { scheduleNextSend } = options;
 
     if (buffer.length !== 0) {
       const reports = buffer.slice();
@@ -251,21 +250,35 @@ export function createKVBuffer<T>(config: {
       const batchId = randomUUID();
 
       try {
+        buffer = [];
         await flushBuffer(reports, size, batchId);
       } catch (error) {
         logger.error(error);
-        // the payload size was most likely too big
-        estimator.overflowed(batchId);
+        if (config.isTooLargePayloadError(error)) {
+          // the payload size was most likely too big
+          estimator.overflowed(batchId);
+        }
       }
     }
 
-    if (shouldSchedule) {
+    if (scheduleNextSend) {
       schedule();
     }
   }
 
   function schedule() {
-    timeoutId = setTimeout(() => send(true), config.interval);
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+
+    timeoutId = setTimeout(
+      () =>
+        void send({
+          scheduleNextSend: true,
+        }),
+      config.interval,
+    );
   }
 
   function add(report: T) {
@@ -275,7 +288,9 @@ export function createKVBuffer<T>(config: {
       const estimatedBufferSize = currentBufferSize + estimatedReportSize;
 
       if (currentBufferSize >= config.limitInBytes || estimatedBufferSize >= config.limitInBytes) {
-        void send(true);
+        void send({
+          scheduleNextSend: true,
+        });
       }
 
       if (estimatedReportSize > config.limitInBytes) {
@@ -290,7 +305,9 @@ export function createKVBuffer<T>(config: {
     } else {
       buffer.push(report);
       if (sumOfOperationsSizeInBuffer() >= config.size) {
-        void send(true);
+        void send({
+          scheduleNextSend: true,
+        });
       }
     }
   }
@@ -306,7 +323,9 @@ export function createKVBuffer<T>(config: {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      await send(false);
+      await send({
+        scheduleNextSend: false,
+      });
     },
   };
 }

@@ -46,6 +46,7 @@ export function connectSlack(server: FastifyInstance) {
     const queryResult = CallBackQuery.safeParse(req.query);
 
     if (!queryResult.success) {
+      req.log.error('Received invalid data from Slack API.');
       void res.status(400).send(queryResult.error.flatten().fieldErrors);
       return;
     }
@@ -84,7 +85,7 @@ export function connectSlack(server: FastifyInstance) {
 
     const token = slackResponseResult.data.access_token;
 
-    await graphqlRequest({
+    const result = await graphqlRequest({
       url: env.graphqlPublicEndpoint,
       headers: {
         ...req.headers,
@@ -92,7 +93,7 @@ export function connectSlack(server: FastifyInstance) {
         'graphql-client-name': 'Hive App',
         'graphql-client-version': env.release,
       },
-      operationName: 'addSlackIntegration',
+      operationName: 'SlackIntegration_addSlackIntegration',
       document: SlackIntegration_addSlackIntegration,
       variables: {
         input: {
@@ -101,6 +102,15 @@ export function connectSlack(server: FastifyInstance) {
         },
       },
     });
+
+    if (result.errors) {
+      req.log.error('Failed setting slack token (orgId=%s)', organizationSlug);
+      for (const error of result.errors) {
+        req.log.error(error);
+      }
+      throw new Error('Failed setting slack token.');
+    }
+
     void res.redirect(`/${organizationSlug}/view/settings`);
   });
 

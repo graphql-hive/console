@@ -3,7 +3,7 @@ import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
-import { traceFn } from '@hive/service-common';
+import { trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -11,7 +11,8 @@ import type {
   SchemaCompositionError,
 } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
-import { RegistryModel, SchemaChecksFilter } from '../../../__generated__/types';
+import { SchemaChecksFilter } from '../../../__generated__/types';
+import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
   NativeFederationCompatibilityStatus,
@@ -23,11 +24,13 @@ import {
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { Session } from '../../auth/lib/authz';
+import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
   OrganizationSelector,
@@ -82,6 +85,7 @@ export class SchemaManager {
     private schemaHelper: SchemaHelper,
     private contracts: Contracts,
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
+    private idTranslator: IdTranslator,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -98,46 +102,60 @@ export class SchemaManager {
 
   @traceFn('SchemaManager.compose', {
     initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
       'input.only.composable': input.onlyComposable,
       'input.services.count': input.services.length,
     }),
   })
-  async compose(
-    input: TargetSelector & {
-      onlyComposable: boolean;
-      services: ReadonlyArray<{
-        sdl: string;
-        url?: string | null;
-        name: string;
-      }>;
-    },
-  ) {
+  async compose(input: {
+    onlyComposable: boolean;
+    services: ReadonlyArray<{
+      sdl: string;
+      url?: string | null;
+      name: string;
+    }>;
+    target: GraphQLSchema.TargetReferenceInput | null;
+  }) {
     this.logger.debug('Composing schemas (input=%o)', lodash.omit(input, 'services'));
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schema:compose');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
     await this.session.canPerformAction({
       action: 'schema:compose',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const [organization, project, latestSchemas] = await Promise.all([
       this.storage.getOrganization({
-        organizationId: input.organizationId,
+        organizationId: selector.organizationId,
       }),
       this.storage.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
       }),
       this.storage.getLatestSchemas({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         onlyComposable: input.onlyComposable,
       }),
     ]);
@@ -175,7 +193,7 @@ export class SchemaManager {
       native: this.checkProjectNativeFederationSupport({
         project,
         organization,
-        targetId: input.targetId,
+        targetId: selector.targetId,
       }),
       contracts: null,
     });
@@ -322,46 +340,6 @@ export class SchemaManager {
         },
       })),
     };
-  }
-
-  @traceFn('SchemaManager.updateSchemaVersionStatus', {
-    initAttributes: input => ({
-      'hive.target.id': input.targetId,
-      'hive.organization.id': input.organizationId,
-      'hive.project.id': input.projectId,
-      'hive.version.id': input.versionId,
-      'hive.input.valid': input.valid,
-    }),
-  })
-  async updateSchemaVersionStatus(
-    input: TargetSelector & { versionId: string; valid: boolean },
-  ): Promise<SchemaVersion> {
-    this.logger.debug('Updating schema version status (input=%o)', input);
-    await this.session.assertPerformAction({
-      action: 'schemaVersion:approve',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      },
-    });
-
-    const project = await this.storage.getProject({
-      organizationId: input.organizationId,
-      projectId: input.projectId,
-    });
-
-    if (project.legacyRegistryModel) {
-      return {
-        ...(await this.storage.updateVersionStatus(input)),
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      };
-    }
-
-    throw new HiveError(`Updating the status is supported only by legacy projects`);
   }
 
   async getSchemaLog(selector: { commit: string } & TargetSelector) {
@@ -698,24 +676,6 @@ export class SchemaManager {
     });
   }
 
-  async updateRegistryModel(
-    input: ProjectSelector & {
-      model: RegistryModel;
-    },
-  ) {
-    this.logger.debug('Updating registry model (input=%o)', input);
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-
-    return this.storage.updateProjectRegistryModel(input);
-  }
-
   async getPaginatedSchemaChecksForTarget<TransformedSchemaCheck extends SchemaCheck>(
     target: Target,
     args: {
@@ -742,6 +702,16 @@ export class SchemaManager {
       target.id,
       schemaCheckId,
     );
+
+    if (isUUID(schemaCheckId) === false) {
+      this.logger.debug(
+        'Invalid ID provided (targetId=%s, schemaCheckId=%s)',
+        target.id,
+        schemaCheckId,
+      );
+
+      return null;
+    }
 
     const schemaCheck = await this.storage.findSchemaCheck({
       targetId: target.id,
@@ -1019,28 +989,36 @@ export class SchemaManager {
     });
   }
 
-  async getSchemaVersionByActionId(args: { actionId: string }) {
-    const target = await this.targetManager.getTargetFromToken();
+  async getSchemaVersionByActionId(args: {
+    actionId: string;
+    target: GraphQLSchema.TargetReferenceInput | null;
+  }) {
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
+      onError() {
+        throw new InsufficientPermissionError('schema:loadFromRegistry');
+      },
+    });
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
-      projectId: target.projectId,
-      targetId: target.id,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       actionId: args.actionId,
     });
 
     await this.session.assertPerformAction({
       action: 'schema:loadFromRegistry',
-      organizationId: target.orgId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const record = await this.storage.getSchemaVersionByActionId({
-      projectId: target.projectId,
-      targetId: target.id,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       actionId: args.actionId,
     });
 
@@ -1050,9 +1028,9 @@ export class SchemaManager {
 
     return {
       ...record,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+      organizationId: selector.organizationId,
     };
   }
 
@@ -1122,19 +1100,10 @@ export class SchemaManager {
 
   checkProjectNativeFederationSupport(input: {
     targetId: string | null;
-    project: Pick<Project, 'id' | 'legacyRegistryModel' | 'nativeFederation'>;
+    project: Pick<Project, 'id' | 'nativeFederation'>;
     organization: Pick<Organization, 'id' | 'featureFlags'>;
   }) {
     if (input.project.nativeFederation === false) {
-      return false;
-    }
-
-    if (input.project.legacyRegistryModel === true) {
-      this.logger.warn(
-        'Project is using legacy registry model, ignoring native Federation support (organization=%s, project=%s)',
-        input.organization.id,
-        input.project.id,
-      );
       return false;
     }
 

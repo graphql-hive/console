@@ -1,0 +1,47 @@
+## Frequently Asked Questions
+
+- What do I need to do migrating from another Federation gateway?
+
+  Hive Gateway is a drop-in replacement for gateways alike! Start the gateway using your existing
+  `supergraph.graphql` and you're off.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway/supergraph-proxy-source#supergraph)
+
+- Can I run Hive Gateway on the edge?
+
+  Yes! Hive Gateway is implemented with JavaScript in mind and can be run natively in serverless
+  runtimes like Cloudflare Workers, AWS Lambda, Google Cloud Platform and Azure Functions.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway/deployment/serverless)
+
+- Does Hive Gateway support subscriptions?
+
+  Of course! Hive Gateway fully supports federated subscriptions and behaves just like Federation
+  GraphQL subscriptions in Apollo Router.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway/subscriptions)
+
+- How does Hive Gateway integrate with tracing tools?
+
+  Hive Gateway has extensive monitoring and tracing capabilities allowing you deep insights into its
+  inner workings. Use OpenTelemetry, Prometheus, StatsD and Sentry with simple to use plugins.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway/monitoring-tracing)
+
+- Is customising the supergraph possible?
+
+  Changing the supergraph and adjusting it to your needs, either to accommodate extra fields or
+  allow for gradual migration from non-federated systems, is easily achievable using
+  [GraphQL Mesh](https://the-guild.dev/graphql/mesh). It is a first-class citizen in Hive Gateway
+  and its outputs are directly usable.
+
+- Can I optimize Hive Gateway's performance for large-scale applications?
+
+  The gateway is designed from ground up with performance in mind, capable of handling even the
+  largest of application loads. Using techniques like request caching and deduplication, query
+  batching, HTTP compression and more - you're able to tune Hive Gateway exactly to your needs.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance)
+
+- Are all Hive Gateway features open source?
+
+  Yes, Hive Gateway, and all of its features, are fully open-source and free to use. Including all
+  the enterprise-grade features offered by other vendors, without licensing restrictions; features
+  like: subscriptions, persisted queries, JWT authentication, query batching, rate-limiting and high
+  security, observability and tracing, advanced caching, deployments everywhere, and much more.
+  [Read more.](https://the-guild.dev/graphql/hive/docs/gateway)

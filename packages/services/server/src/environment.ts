@@ -76,7 +76,7 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const ClickHouseModel = zod.object({
@@ -257,7 +257,6 @@ const LogModel = zod.object({
   ),
 });
 
-// eslint-disable-next-line no-process-env
 const processEnv = process.env;
 
 const configs = {

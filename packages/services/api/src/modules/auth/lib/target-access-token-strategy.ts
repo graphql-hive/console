@@ -1,9 +1,4 @@
-import {
-  maskToken,
-  type FastifyReply,
-  type FastifyRequest,
-  type ServiceLogger,
-} from '@hive/service-common';
+import { maskToken, type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import { Logger } from '../../shared/providers/logger';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { TokensConfig } from '../../token/providers/tokens';
@@ -59,10 +54,10 @@ export class TargetAccessTokenSession extends Session {
 }
 
 export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSession> {
-  private logger: ServiceLogger;
+  private logger: Logger;
   private tokensConfig: TokensConfig;
 
-  constructor(deps: { logger: ServiceLogger; tokensConfig: TokensConfig }) {
+  constructor(deps: { logger: Logger; tokensConfig: TokensConfig }) {
     super();
     this.logger = deps.logger.child({ module: 'TargetAccessTokenStrategy' });
     this.tokensConfig = deps.tokensConfig;
@@ -166,7 +161,7 @@ function transformAccessTokenLegacyScopes(args: {
           },
           {
             effect: 'allow',
-            action: ['organization:describe', 'project:describe'],
+            action: ['organization:describe', 'project:describe', 'laboratory:describe'],
             resource: [`hrn:${args.organizationId}:organization/${args.organizationId}`],
           },
         );
@@ -177,7 +172,6 @@ function transformAccessTokenLegacyScopes(args: {
           {
             effect: 'allow',
             action: [
-              'appDeployment:describe',
               'appDeployment:create',
               'appDeployment:publish',
               'appDeployment:retire',

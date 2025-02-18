@@ -1,3 +1,4 @@
+import { OrganizationMemberRoles } from '../providers/organization-member-roles';
 import type { OrganizationInvitationResolvers } from './../../../__generated__/types';
 
 export const OrganizationInvitation: OrganizationInvitationResolvers = {
@@ -11,5 +12,12 @@ export const OrganizationInvitation: OrganizationInvitationResolvers = {
   },
   expiresAt: invitation => {
     return invitation.expires_at;
+  },
+  role: async (invitation, _arg, { injector }) => {
+    const role = await injector.get(OrganizationMemberRoles).findMemberRoleById(invitation.roleId);
+    if (!role) {
+      throw new Error('Not found.');
+    }
+    return role;
   },
 };

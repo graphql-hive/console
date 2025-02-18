@@ -1,5 +1,4 @@
-import { CallToAction, DecorationIsolation, Heading } from '@theguild/components';
-import { cn } from '../lib';
+import { cn, ContactButton, DecorationIsolation, Heading } from '@theguild/components';
 
 export function GotAnIdeaSection({ className }: { className?: string }) {
   return (
@@ -113,22 +112,12 @@ export function GotAnIdeaSection({ className }: { className?: string }) {
       <Heading as="h2" size="md" className="text-white">
         Got an idea for a new library?
       </Heading>
-      <p className="mt-4 text-white/80">
+      <p className="mb-8 mt-4 text-white/80">
         Join our community to chat with us and let's build something together!
       </p>
-      <CallToAction
-        href="https://the-guild.dev/contact"
-        variant="primary-inverted"
-        className="mt-8"
-        onClick={event => {
-          if (window.$crisp) {
-            event.preventDefault();
-            window.$crisp?.push(['do', 'chat:open']);
-          }
-        }}
-      >
+      <ContactButton variant="primary-inverted" className="mt-8">
         Get in touch
-      </CallToAction>
+      </ContactButton>
     </div>
   );
 }

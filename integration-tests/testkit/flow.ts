@@ -23,13 +23,11 @@ import type {
   SchemaCheckInput,
   SchemaDeleteInput,
   SchemaPublishInput,
-  SchemaVersionUpdateInput,
   SetTargetValidationInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
   UpdateOrganizationSlugInput,
-  UpdateProjectRegistryModelInput,
   UpdateProjectSlugInput,
   UpdateTargetSlugInput,
   UpdateTargetValidationSettingsInput,
@@ -52,9 +50,10 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                 slug
                 owner {
                   id
-                  organizationAccessScopes
-                  projectAccessScopes
-                  targetAccessScopes
+                  role {
+                    id
+                    permissions
+                  }
                 }
                 memberRoles {
                   id
@@ -180,9 +179,11 @@ export function joinOrganization(code: string, authToken: string) {
                 user {
                   id
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                role {
+                  id
+                  name
+                  permissions
+                }
               }
             }
           }
@@ -215,10 +216,8 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
                 role {
                   id
                   name
+                  permissions
                 }
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
               }
             }
           }
@@ -368,28 +367,6 @@ export function updateProjectSlug(input: UpdateProjectSlugInput, authToken: stri
               name
               slug
             }
-          }
-          error {
-            message
-          }
-        }
-      }
-    `),
-    authToken,
-    variables: {
-      input,
-    },
-  });
-}
-
-export function updateRegistryModel(input: UpdateProjectRegistryModelInput, authToken: string) {
-  return execute({
-    document: graphql(`
-      mutation updateRegistryModel($input: UpdateProjectRegistryModelInput!) {
-        updateProjectRegistryModel(input: $input) {
-          ok {
-            id
-            slug
           }
           error {
             message
@@ -688,9 +665,7 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
                 name
                 description
                 locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                permissions
               }
             }
           }
@@ -748,9 +723,7 @@ export function deleteMemberRole(input: DeleteMemberRoleInput, authToken: string
                 name
                 description
                 locked
-                organizationAccessScopes
-                projectAccessScopes
-                targetAccessScopes
+                permissions
               }
             }
           }
@@ -778,9 +751,7 @@ export function updateMemberRole(input: UpdateMemberRoleInput, authToken: string
               name
               description
               locked
-              organizationAccessScopes
-              projectAccessScopes
-              targetAccessScopes
+              permissions
             }
           }
           error {
@@ -1375,35 +1346,6 @@ export function compareToPreviousVersion(
     token,
     variables: {
       ...selector,
-    },
-  });
-}
-
-export function updateSchemaVersionStatus(input: SchemaVersionUpdateInput, token: string) {
-  return execute({
-    document: graphql(`
-      mutation updateSchemaVersionStatus($input: SchemaVersionUpdateInput!) {
-        updateSchemaVersionStatus(input: $input) {
-          id
-          date
-          valid
-          log {
-            ... on PushedSchemaLog {
-              __typename
-              commit
-              service
-            }
-            ... on DeletedSchemaLog {
-              __typename
-              deletedService
-            }
-          }
-        }
-      }
-    `),
-    token,
-    variables: {
-      input,
     },
   });
 }

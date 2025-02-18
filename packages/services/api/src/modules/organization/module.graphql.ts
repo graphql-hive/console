@@ -25,7 +25,6 @@ export default gql`
       input: DeleteOrganizationInvitationInput!
     ): DeleteOrganizationInvitationResult!
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
-    updateOrganizationMemberAccess(input: OrganizationMemberAccessInput!): OrganizationPayload!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
     ): RequestOrganizationTransferResult!
@@ -36,10 +35,6 @@ export default gql`
     updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
     deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
     assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
-    """
-    Remove this mutation after migration is complete.
-    """
-    migrateUnassignedMembers(input: MigrateUnassignedMembersInput!): MigrateUnassignedMembersResult!
   }
 
   type UpdateOrganizationSlugResult {
@@ -149,14 +144,6 @@ export default gql`
     userId: ID!
   }
 
-  input OrganizationMemberAccessInput {
-    organizationSlug: String!
-    userId: ID!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-  }
-
   input RequestOrganizationTransferInput {
     organizationSlug: String!
     userId: ID!
@@ -218,11 +205,6 @@ export default gql`
     getStarted: OrganizationGetStarted!
     memberRoles: [MemberRole!]
     """
-    Only available to members with the Admin role.
-    Returns a list of members that are not assigned to any role.
-    """
-    unassignedMembersToMigrate: [MemberRoleMigrationGroup!]!
-    """
     Whether the viewer should be able to access the settings page within the app
     """
     viewerCanAccessSettings: Boolean!
@@ -255,13 +237,13 @@ export default gql`
     """
     viewerCanManageRoles: Boolean!
     """
-    Whether the viewer can migrate the legacy member roles
-    """
-    viewerCanMigrateLegacyMemberRoles: Boolean!
-    """
     The organization's audit logs. This field is only available to members with the Admin role.
     """
     viewerCanExportAuditLogs: Boolean!
+    """
+    List of available permission groups that can be assigned to users.
+    """
+    availableMemberPermissionGroups: [PermissionGroup!]!
   }
 
   type OrganizationConnection {
@@ -322,16 +304,6 @@ export default gql`
     message: String!
   }
 
-  extend type Member {
-    canLeaveOrganization: Boolean!
-    role: MemberRole
-    isAdmin: Boolean!
-    """
-    Whether the viewer can remove this member from the organization.
-    """
-    viewerCanRemove: Boolean!
-  }
-
   type MemberRole {
     id: ID!
     name: String!
@@ -340,9 +312,6 @@ export default gql`
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
     locked: Boolean!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -355,16 +324,21 @@ export default gql`
     Whether the role can be used to invite new members (based on current user's permissions)
     """
     canInvite: Boolean!
+    """
+    Amount of users within the organization that have this role assigned.
+    """
     membersCount: Int!
+    """
+    List of permissions attached to this member role.
+    """
+    permissions: [String!]!
   }
 
   input CreateMemberRoleInput {
     organizationSlug: String!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type CreateMemberRoleOk {
@@ -397,9 +371,7 @@ export default gql`
     roleId: ID!
     name: String!
     description: String!
-    organizationAccessScopes: [OrganizationAccessScope!]!
-    projectAccessScopes: [ProjectAccessScope!]!
-    targetAccessScopes: [TargetAccessScope!]!
+    selectedPermissions: [String!]!
   }
 
   type UpdateMemberRoleOk {
@@ -452,6 +424,7 @@ export default gql`
     organizationSlug: String!
     userId: ID!
     roleId: ID!
+    resources: ResourceAssignmentInput!
   }
 
   type AssignMemberRoleOk {
@@ -471,48 +444,122 @@ export default gql`
     error: AssignMemberRoleError
   }
 
-  type MemberRoleMigrationGroup {
+  type Member {
     id: ID!
-    members: [Member!]!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
+    user: User!
+    isOwner: Boolean!
+    canLeaveOrganization: Boolean!
+    role: MemberRole!
+    resourceAssignment: ResourceAssignment!
+    """
+    Whether the viewer can remove this member from the organization.
+    """
+    viewerCanRemove: Boolean!
   }
 
-  """
-  @oneOf
-  """
-  input MigrateUnassignedMembersInput {
-    assignRole: AssignMemberRoleMigrationInput
-    createRole: CreateMemberRoleMigrationInput
+  enum ResourceAssignmentMode {
+    all
+    granular
   }
 
-  input AssignMemberRoleMigrationInput {
-    organizationSlug: String!
-    roleId: ID!
-    userIds: [ID!]!
+  type MemberConnection {
+    nodes: [Member!]!
+    total: Int!
   }
 
-  input CreateMemberRoleMigrationInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    organizationScopes: [OrganizationAccessScope!]!
-    projectScopes: [ProjectAccessScope!]!
-    targetScopes: [TargetAccessScope!]!
-    userIds: [ID!]!
+  input AppDeploymentResourceAssignmentInput {
+    appDeployment: String!
   }
 
-  type MigrateUnassignedMembersResult {
-    ok: MigrateUnassignedMembersOk
-    error: MigrateUnassignedMembersError
+  input TargetAppDeploymentsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all app deployments within the target.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific app deployments within the target for which the permissions should be applied.
+    """
+    appDeployments: [AppDeploymentResourceAssignmentInput!]
   }
 
-  type MigrateUnassignedMembersOk {
-    updatedOrganization: Organization!
+  input ServiceResourceAssignmentInput {
+    serviceName: String!
   }
 
-  type MigrateUnassignedMembersError implements Error {
-    message: String!
+  input TargetServicesResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all services within the target or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific services within the target for which the permissions should be applied.
+    """
+    services: [ServiceResourceAssignmentInput!]
+  }
+
+  input TargetResourceAssignmentInput {
+    targetId: ID!
+    services: TargetServicesResourceAssignmentInput!
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput!
+  }
+
+  input ProjectTargetsResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all targets within the project or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific targets within the projects for which the permissions should be applied.
+    """
+    targets: [TargetResourceAssignmentInput!]
+  }
+
+  input ProjectResourceAssignmentInput {
+    projectId: ID!
+    targets: ProjectTargetsResourceAssignmentInput!
+  }
+
+  input ResourceAssignmentInput {
+    """
+    Whether the permissions should apply for all projects within the organization or only selected ones.
+    """
+    mode: ResourceAssignmentMode!
+    """
+    Specific projects within the organization for which the permissions should be applied.
+    """
+    projects: [ProjectResourceAssignmentInput!]
+  }
+
+  type TargetServicesResourceAssignment {
+    mode: ResourceAssignmentMode!
+    services: [String!]
+  }
+
+  type TargetAppDeploymentsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    appDeployments: [String!]
+  }
+
+  type TargetResouceAssignment {
+    targetId: ID!
+    target: Target!
+    services: TargetServicesResourceAssignment!
+    appDeployments: TargetAppDeploymentsResourceAssignment!
+  }
+
+  type ProjectTargetsResourceAssignment {
+    mode: ResourceAssignmentMode!
+    targets: [TargetResouceAssignment!]
+  }
+
+  type ProjectResourceAssignment {
+    projectId: ID!
+    project: Project!
+    targets: ProjectTargetsResourceAssignment!
+  }
+
+  type ResourceAssignment {
+    mode: ResourceAssignmentMode!
+    projects: [ProjectResourceAssignment!]
   }
 `;

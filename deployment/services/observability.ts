@@ -3,6 +3,9 @@ import { serviceLocalHost } from '../utils/local-endpoint';
 import { Observability as ObservabilityInstance } from '../utils/observability';
 import { deployGrafana } from './grafana';
 
+// Change this to control OTEL tracing for usage service
+const enableTracingForUsageService = true;
+
 export function deployObservability(config: {
   envName: string;
   /**
@@ -57,6 +60,7 @@ export function deployObservability(config: {
     observability: observabilityInstance,
     grafana: useLocal ? undefined : deployGrafana(config.envName, config.tableSuffix),
     enabled: true,
+    enabledForUsageService: enableTracingForUsageService,
   };
 }
 

@@ -3,8 +3,16 @@ import { Args, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
 import { AppDeploymentStatus } from '../../gql/graphql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  APIError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  PersistedOperationsMalformedError,
+} from '../../helpers/errors';
+import * as TargetInput from '../../helpers/target-input';
 
 export default class AppCreate extends Command<typeof AppCreate> {
   static description = 'create an app deployment';
@@ -23,6 +31,12 @@ export default class AppCreate extends Command<typeof AppCreate> {
       description: 'app version',
       required: true,
     }),
+    target: Flags.string({
+      description:
+        'The target in which the app deployment will be created.' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -37,28 +51,46 @@ export default class AppCreate extends Command<typeof AppCreate> {
   async run() {
     const { flags, args } = await this.parse(AppCreate);
 
-    const endpoint = this.ensure({
-      key: 'registry.endpoint',
-      args: flags,
-      defaultValue: graphqlEndpoint,
-      env: 'HIVE_REGISTRY',
-    });
-    const accessToken = this.ensure({
-      key: 'registry.accessToken',
-      args: flags,
-      env: 'HIVE_TOKEN',
-      message: ACCESS_TOKEN_MISSING,
-    });
+    let endpoint: string, accessToken: string;
+    try {
+      endpoint = this.ensure({
+        key: 'registry.endpoint',
+        args: flags,
+        defaultValue: graphqlEndpoint,
+        env: 'HIVE_REGISTRY',
+        description: AppCreate.flags['registry.endpoint'].description!,
+      });
+    } catch (e) {
+      throw new MissingEndpointError();
+    }
+
+    try {
+      accessToken = this.ensure({
+        key: 'registry.accessToken',
+        args: flags,
+        env: 'HIVE_TOKEN',
+        description: AppCreate.flags['registry.accessToken'].description!,
+      });
+    } catch (e) {
+      throw new MissingRegistryTokenError();
+    }
+
+    let target: GraphQLSchema.TargetReferenceInput | null = null;
+    if (flags.target) {
+      const result = TargetInput.parse(flags.target);
+      if (result.type === 'error') {
+        throw new InvalidTargetError();
+      }
+      target = result.data;
+    }
 
     const file: string = args.file;
-    const fs = await import('fs/promises');
-    const contents = await fs.readFile(file, 'utf-8');
+    const contents = this.readJSON(file);
     const operations: unknown = JSON.parse(contents);
     const validationResult = ManifestModel.safeParse(operations);
 
     if (validationResult.success === false) {
-      // TODO: better error message :)
-      throw new Error('Invalid manifest');
+      throw new PersistedOperationsMalformedError(file);
     }
 
     const result = await this.registryApi(endpoint, accessToken).request({
@@ -67,17 +99,17 @@ export default class AppCreate extends Command<typeof AppCreate> {
         input: {
           appName: flags['name'],
           appVersion: flags['version'],
+          target,
         },
       },
     });
 
     if (result.createAppDeployment.error) {
-      // TODO: better error message formatting :)
-      throw new Error(result.createAppDeployment.error.message);
+      throw new APIError(result.createAppDeployment.error.message);
     }
 
     if (!result.createAppDeployment.ok) {
-      throw new Error('Unknown error');
+      throw new APIError(`Create App failed without providing a reason.`);
     }
 
     if (result.createAppDeployment.ok.createdAppDeployment.status !== AppDeploymentStatus.Pending) {
@@ -95,6 +127,7 @@ export default class AppCreate extends Command<typeof AppCreate> {
           operation: AddDocumentsToAppDeploymentMutation,
           variables: {
             input: {
+              target,
               appName: flags['name'],
               appVersion: flags['version'],
               documents: buffer,
@@ -116,14 +149,14 @@ export default class AppCreate extends Command<typeof AppCreate> {
                   ? affectedOperation.body.substring(0, maxCharacters) + '...'
                   : affectedOperation.body
               ).replace(/\n/g, '\\n');
-              this.infoWarning(
+              this.logWarning(
                 `Failed uploading document: ${result.addDocumentsToAppDeployment.error.details.message}` +
                   `\nOperation hash: ${affectedOperation?.hash}` +
                   `\nOperation body: ${truncatedBody}`,
               );
             }
           }
-          this.error(result.addDocumentsToAppDeployment.error.message);
+          throw new APIError(result.addDocumentsToAppDeployment.error.message);
         }
         buffer = [];
       }

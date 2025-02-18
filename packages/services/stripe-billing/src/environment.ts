@@ -39,7 +39,7 @@ const SentryModel = zod.union([
 const PostgresModel = zod.object({
   POSTGRES_HOST: zod.string(),
   POSTGRES_PORT: NumberFromString,
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
   POSTGRES_USER: zod.string(),
   POSTGRES_DB: zod.string(),
   POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
@@ -75,19 +75,18 @@ const LogModel = zod.object({
 });
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   sentry: SentryModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   postgres: PostgresModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   stripe: StripeModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   prometheus: PrometheusModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   log: LogModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
 };
 

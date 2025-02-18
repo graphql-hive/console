@@ -1,15 +1,25 @@
-import { buildSchema, GraphQLError, Source } from 'graphql';
-import { InvalidDocument, validate } from '@graphql-inspector/core';
-import { Args, Errors, Flags, ux } from '@oclif/core';
+import { buildSchema, Source } from 'graphql';
+import { validate } from '@graphql-inspector/core';
+import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
 import { graphql } from '../../gql';
+import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
-import { ACCESS_TOKEN_MISSING } from '../../helpers/errors';
+import {
+  InvalidDocumentsError,
+  InvalidTargetError,
+  MissingEndpointError,
+  MissingRegistryTokenError,
+  SchemaNotFoundError,
+  UnexpectedError,
+} from '../../helpers/errors';
 import { loadOperations } from '../../helpers/operations';
+import * as TargetInput from '../../helpers/target-input';
+import { Texture } from '../../helpers/texture/texture';
 
 const fetchLatestVersionQuery = graphql(/* GraphQL */ `
-  query fetchLatestVersion {
-    latestValidVersion {
+  query fetchLatestVersion($target: TargetReferenceInput) {
+    latestValidVersion(target: $target) {
       sdl
     }
   }
@@ -67,6 +77,12 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       description: 'Supports Apollo Client specific directives',
       default: false,
     }),
+    target: Flags.string({
+      description:
+        'The target to which to check agains (slug or ID).' +
+        ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+        ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
   };
 
   static args = {
@@ -83,21 +99,42 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       const { flags, args } = await this.parse(OperationsCheck);
 
       await this.require(flags);
+      let accessToken: string, endpoint: string;
 
-      const endpoint = this.ensure({
-        key: 'registry.endpoint',
-        args: flags,
-        legacyFlagName: 'registry',
-        defaultValue: graphqlEndpoint,
-        env: 'HIVE_REGISTRY',
-      });
-      const accessToken = this.ensure({
-        key: 'registry.accessToken',
-        args: flags,
-        legacyFlagName: 'token',
-        env: 'HIVE_TOKEN',
-        message: ACCESS_TOKEN_MISSING,
-      });
+      try {
+        endpoint = this.ensure({
+          key: 'registry.endpoint',
+          args: flags,
+          legacyFlagName: 'registry',
+          defaultValue: graphqlEndpoint,
+          env: 'HIVE_REGISTRY',
+          description: OperationsCheck.flags['registry.endpoint'].description!,
+        });
+      } catch (e) {
+        throw new MissingEndpointError();
+      }
+
+      try {
+        accessToken = this.ensure({
+          key: 'registry.accessToken',
+          args: flags,
+          legacyFlagName: 'token',
+          env: 'HIVE_TOKEN',
+          description: OperationsCheck.flags['registry.accessToken'].description!,
+        });
+      } catch (e) {
+        throw new MissingRegistryTokenError();
+      }
+
+      let target: GraphQLSchema.TargetReferenceInput | null = null;
+      if (flags.target) {
+        const result = TargetInput.parse(flags.target);
+        if (result.type === 'error') {
+          throw new InvalidTargetError();
+        }
+        target = result.data;
+      }
+
       const graphqlTag = flags.graphqlTag;
       const globalGraphqlTag = flags.globalGraphqlTag;
 
@@ -116,19 +153,20 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       });
 
       if (operations.length === 0) {
-        this.info('No operations found');
+        this.logInfo('No operations found');
         this.exit(0);
         return;
       }
 
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: fetchLatestVersionQuery,
+        variables: { target },
       });
 
       const sdl = result.latestValidVersion?.sdl;
 
       if (!sdl) {
-        this.error('Could not find a published schema. Please publish a valid schema first.');
+        throw new SchemaNotFoundError();
       }
 
       const schema = buildSchema(sdl, {
@@ -159,12 +197,12 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
       const operationsWithErrors = invalidOperations.filter(o => o.errors.length > 0);
 
       if (operationsWithErrors.length === 0) {
-        this.success(`All operations are valid (${operations.length})`);
+        this.logSuccess(`All operations are valid (${operations.length})`);
         this.exit(0);
         return;
       }
 
-      ux.styledHeader('Summary');
+      this.log(Texture.header('Summary'));
       this.log(
         [
           `Total: ${operations.length}`,
@@ -175,31 +213,16 @@ export default class OperationsCheck extends Command<typeof OperationsCheck> {
         ].join('\n'),
       );
 
-      ux.styledHeader('Details');
+      this.log(Texture.header('Details'));
 
-      this.printInvalidDocuments(operationsWithErrors);
-      this.exit(1);
+      throw new InvalidDocumentsError(operationsWithErrors);
     } catch (error) {
-      if (error instanceof Errors.ExitError) {
+      if (error instanceof Errors.CLIError) {
         throw error;
       } else {
-        this.fail('Failed to validate operations');
-        this.handleFetchError(error);
+        this.logFailure('Failed to validate operations');
+        throw new UnexpectedError(error);
       }
     }
-  }
-
-  private printInvalidDocuments(invalidDocuments: InvalidDocument[]): void {
-    invalidDocuments.forEach(doc => {
-      this.renderErrors(doc.source.name, doc.errors);
-    });
-  }
-
-  private renderErrors(sourceName: string, errors: GraphQLError[]) {
-    this.fail(sourceName);
-    errors.forEach(e => {
-      this.log(` - ${this.bolderize(e.message)}`);
-    });
-    this.log('');
   }
 }

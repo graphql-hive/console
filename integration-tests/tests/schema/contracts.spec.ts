@@ -268,7 +268,6 @@ test('federation schema contains list of tags', async () => {
       },
     ],
   });
-
   expect(result.tags).toMatchInlineSnapshot(`
     [
       toyota,

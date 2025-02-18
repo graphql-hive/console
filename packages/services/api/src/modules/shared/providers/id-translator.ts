@@ -1,5 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { cache } from '../../../shared/helpers';
+import { isUUID } from '../../../shared/is-uuid';
+import { Session } from '../../auth/lib/authz';
 import { Logger } from './logger';
 import { Storage } from './storage';
 
@@ -11,7 +14,7 @@ interface ProjectSelectorInput extends OrganizationSelectorInput {
   projectSlug: string;
 }
 
-interface TargetSelectorInput extends ProjectSelectorInput {
+export interface TargetSelectorInput extends ProjectSelectorInput {
   targetSlug: string;
 }
 
@@ -22,6 +25,7 @@ export class IdTranslator {
   private logger: Logger;
   constructor(
     private storage: Storage,
+    private session: Session,
     logger: Logger,
   ) {
     this.logger = logger.child({ service: 'IdTranslator' });
@@ -83,6 +87,74 @@ export class IdTranslator {
       projectSlug: selector.projectSlug,
       targetSlug: selector.targetSlug,
     });
+  }
+
+  /** Resolve a GraphQLSchema.TargetReferenceInput */
+  async resolveTargetReference(args: {
+    reference: GraphQLSchema.TargetReferenceInput | null;
+    onError: () => never;
+  }): Promise<{ organizationId: string; projectId: string; targetId: string }> {
+    this.logger.debug('Resolve target reference. (reference=%o)', args.reference);
+
+    let selector: {
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+    };
+
+    if (args.reference?.bySelector) {
+      const [organizationId, projectId, targetId] = await Promise.all([
+        this.translateOrganizationId(args.reference.bySelector),
+        this.translateProjectId(args.reference.bySelector),
+        this.translateTargetId(args.reference.bySelector),
+      ]).catch(error => {
+        this.logger.debug(error);
+        this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
+        args.onError();
+      });
+
+      this.logger.debug(
+        'Target selector resolved. (organization=%s, project=%s, target=%s)',
+        organizationId,
+        projectId,
+        targetId,
+      );
+
+      selector = {
+        organizationId,
+        projectId,
+        targetId,
+      };
+    } else if (args.reference?.byId) {
+      if (!isUUID(args.reference.byId)) {
+        this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
+        args.onError();
+      }
+
+      const target = await this.storage.getTargetById(args.reference.byId);
+      if (!target) {
+        this.logger.debug('Target not found. (targetId=%s)', args.reference.byId);
+        args.onError();
+      }
+
+      selector = {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      };
+    } else {
+      this.logger.debug('Attempt resolving target selector from access token.');
+      selector = this.session.getLegacySelector();
+    }
+
+    this.logger.debug(
+      'Target selector resolved. (organization=%s, project=%s, target=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
+    );
+
+    return selector;
   }
 }
 

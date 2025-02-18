@@ -167,8 +167,8 @@ test('should send data to Hive', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Disposing
     [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
     [INF] [hive][usage] Report sent!
   `);
 
@@ -277,8 +277,8 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Disposing
     [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
     [INF] [hive][usage] Report sent!
   `);
 
@@ -333,7 +333,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(operation.execution.ok).toBe(true);
 });
 
-test('should not leak the exception', { retry: 3 }, async () => {
+test('should not leak the exception', async () => {
   const logger = createHiveTestingLogger();
 
   const hive = createHive({
@@ -366,15 +366,15 @@ test('should not leak the exception', { retry: 3 }, async () => {
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://404.localhost.noop Attempt (1/2)
+    [INF] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [ERR] [hive][usage] Error: getaddrinfo ENOTFOUND 404.localhost.noop
     [ERR] [hive][usage]     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:666:666)
-    [ERR] [hive][usage] POST http://404.localhost.noop failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
+    [ERR] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
     [INF] [hive][usage] Disposing
   `);
 });
 
-test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
+test('sendImmediately should not stop the schedule', async () => {
   const logger = createHiveTestingLogger();
 
   const token = 'Token';
@@ -431,36 +431,20 @@ test('sendImmediately should not stop the schedule', { retry: 3 }, async () => {
   // since we sent only 1 element, the buffer was not full,
   // so we should not see "Sending immediately"
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  expect(logger.getLogs()).not.toMatch('Sending immediately');
   logger.clear();
 
   // Now we will hit the maxSize
   // We run collect two times
   await Promise.all([collect(args, {}), collect(args, {})]);
   await waitFor(1);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending immediately
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-  `);
+  expect(logger.getLogs()).toMatch('Sending immediately');
+  expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
-  await waitFor(100);
   // Let's check if the scheduled send task is still running
   await collect(args, {});
-  await waitFor(40);
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
-  `);
+  await waitFor(60);
+  expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
   await hive.dispose();
   http.done();
@@ -554,8 +538,8 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Disposing
     [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
     [INF] [hive][usage] Report sent!
   `);
 
@@ -658,8 +642,8 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Disposing
     [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200
-    [INF] [hive][usage] POST http://localhost/200 succeeded with status 200 (666ms).
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
     [INF] [hive][usage] Report sent!
   `);
 
@@ -758,8 +742,8 @@ test('retry on non-200', async () => {
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 Attempt (1/2)
-    [ERR] [hive][usage] POST http://localhost/200 failed with status 500 (666ms): No no no
+    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [ERR] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
     [INF] [hive][usage] Disposing
   `);
 });

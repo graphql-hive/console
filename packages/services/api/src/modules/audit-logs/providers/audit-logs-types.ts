@@ -340,7 +340,7 @@ const AuditLogClickhouseObjectModel = z.object({
   eventAction: z.enum(auditLogEventTypes as [string, ...string[]]),
   userId: z.string(),
   userEmail: z.string(),
-  metadata: z.string().transform(x => JSON.parse(x)),
+  metadata: z.string(),
 });
 
 export type AuditLogType = z.infer<typeof AuditLogClickhouseObjectModel>;

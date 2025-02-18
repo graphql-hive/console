@@ -1,7 +1,9 @@
 import stringify from 'fast-json-stable-stringify';
+import { z } from 'zod';
 import { FastifyReply, FastifyRequest } from '@hive/service-common';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
+import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Logger } from '../../shared/providers/logger';
 
@@ -139,7 +141,12 @@ export abstract class Session {
   }): Promise<void> {
     const permissions = await this._loadPolicyStatementsForOrganization(args.organizationId);
 
+    this.logger.debug('Resolved permission statements for viewer. (permissions=%o)', permissions);
+
     const resourceIdsForAction = actionDefinitions[args.action](args.params as any);
+
+    this.logger.debug('Resolved action resource IDs. (resourceIds=%o)', resourceIdsForAction);
+
     let isAllowed = false;
 
     for (const permission of permissions) {
@@ -178,7 +185,7 @@ export abstract class Session {
               args.organizationId,
               args.params,
             );
-            throw new AccessError(`Missing permission for performing '${args.action}' on resource`);
+            throw new InsufficientPermissionError(args.action);
           } else {
             isAllowed = true;
           }
@@ -194,7 +201,7 @@ export abstract class Session {
         args.params,
       );
 
-      throw new AccessError(`Missing permission for performing '${args.action}' on resource`);
+      throw new InsufficientPermissionError(args.action);
     }
   }
 
@@ -222,6 +229,12 @@ export abstract class Session {
     this.logger.debug('Reset cache.');
     this.performActionCache.clear();
     this.policyStatementCache.clear();
+  }
+}
+
+export class InsufficientPermissionError extends AccessError {
+  constructor(actionName: keyof typeof actionDefinitions) {
+    super(`Missing permission for performing '${actionName}' on resource`);
   }
 }
 
@@ -315,59 +328,151 @@ function schemaCheckOrPublishIdentity(
 
 /**
  * Object map containing all possible actions
- * and resource identifier builder functions required for checking whether an action can be performed.
  *
  * Used within the `Session.assertPerformAction` function for a fully type-safe experience.
  * If you are adding new permissions to the existing system.
  * This is the place to do so.
  */
-const actionDefinitions = {
-  'organization:describe': defaultOrgIdentity,
-  'organization:modifySlug': defaultOrgIdentity,
-  'organization:delete': defaultOrgIdentity,
-  'gitHubIntegration:modify': defaultOrgIdentity,
-  'slackIntegration:modify': defaultOrgIdentity,
-  'oidc:modify': defaultOrgIdentity,
-  'support:manageTickets': defaultOrgIdentity,
-  'billing:describe': defaultOrgIdentity,
-  'billing:update': defaultOrgIdentity,
-  'targetAccessToken:modify': defaultTargetIdentity,
-  'cdnAccessToken:modify': defaultTargetIdentity,
-  'member:describe': defaultOrgIdentity,
-  'member:assignRole': defaultOrgIdentity,
-  'member:modifyRole': defaultOrgIdentity,
-  'member:removeMember': defaultOrgIdentity,
-  'member:manageInvites': defaultOrgIdentity,
-  'project:create': defaultOrgIdentity,
-  'project:describe': defaultProjectIdentity,
-  'project:delete': defaultProjectIdentity,
-  'project:modifySettings': defaultProjectIdentity,
-  'alert:modify': defaultProjectIdentity,
-  'schemaLinting:modifyOrganizationRules': defaultOrgIdentity,
-  'schemaLinting:modifyProjectRules': defaultProjectIdentity,
-  'target:create': defaultProjectIdentity,
-  'target:delete': defaultTargetIdentity,
-  'target:modifySettings': defaultTargetIdentity,
-  'laboratory:describe': defaultTargetIdentity,
-  'laboratory:modify': defaultTargetIdentity,
-  'laboratory:modifyPreflightScript': defaultTargetIdentity,
-  'appDeployment:describe': defaultTargetIdentity,
-  'appDeployment:create': defaultAppDeploymentIdentity,
-  'appDeployment:publish': defaultAppDeploymentIdentity,
-  'appDeployment:retire': defaultAppDeploymentIdentity,
-  'schemaCheck:create': schemaCheckOrPublishIdentity,
-  'schemaCheck:approve': schemaCheckOrPublishIdentity,
-  'schemaVersion:publish': schemaCheckOrPublishIdentity,
-  'schemaVersion:approve': defaultTargetIdentity,
-  'schemaVersion:deleteService': schemaCheckOrPublishIdentity,
-  'schema:loadFromRegistry': defaultTargetIdentity,
-  'schema:compose': defaultTargetIdentity,
-  'auditLog:export': defaultOrgIdentity,
-} satisfies ActionDefinitionMap;
+const permissionsByLevel = {
+  organization: [
+    z.literal('organization:describe'),
+    z.literal('organization:modifySlug'),
+    z.literal('organization:delete'),
+    z.literal('gitHubIntegration:modify'),
+    z.literal('slackIntegration:modify'),
+    z.literal('oidc:modify'),
+    z.literal('support:manageTickets'),
+    z.literal('billing:describe'),
+    z.literal('billing:update'),
+    z.literal('member:describe'),
+    z.literal('member:modify'),
+    z.literal('project:create'),
+    z.literal('schemaLinting:modifyOrganizationRules'),
+    z.literal('auditLog:export'),
+  ],
+  project: [
+    z.literal('project:describe'),
+    z.literal('project:delete'),
+    z.literal('project:modifySettings'),
+    z.literal('alert:modify'),
+    z.literal('schemaLinting:modifyProjectRules'),
+    z.literal('target:create'),
+  ],
+  target: [
+    z.literal('targetAccessToken:modify'),
+    z.literal('cdnAccessToken:modify'),
+    z.literal('target:delete'),
+    z.literal('target:modifySettings'),
+    z.literal('laboratory:describe'),
+    z.literal('laboratory:modify'),
+    z.literal('laboratory:modifyPreflightScript'),
+    z.literal('schema:loadFromRegistry'),
+    z.literal('schema:compose'),
+  ],
+  service: [
+    z.literal('schemaCheck:create'),
+    z.literal('schemaCheck:approve'),
+    z.literal('schemaVersion:publish'),
+    z.literal('schemaVersion:deleteService'),
+  ],
+  appDeployment: [
+    z.literal('appDeployment:create'),
+    z.literal('appDeployment:publish'),
+    z.literal('appDeployment:retire'),
+  ],
+} as const;
+
+export const allPermissions = [
+  ...permissionsByLevel.organization.map(v => v.value),
+  ...permissionsByLevel.project.map(v => v.value),
+  ...permissionsByLevel.target.map(v => v.value),
+  ...permissionsByLevel.service.map(v => v.value),
+  ...permissionsByLevel.appDeployment.map(v => v.value),
+] as const;
+
+export const PermissionsPerResourceLevelAssignmentModel = z.object({
+  organization: z.set(z.union(permissionsByLevel.organization)),
+  project: z.set(z.union(permissionsByLevel.project)),
+  target: z.set(z.union(permissionsByLevel.target)),
+  service: z.set(z.union(permissionsByLevel.service)),
+  appDeployment: z.set(z.union(permissionsByLevel.appDeployment)),
+});
+
+export type PermissionsPerResourceLevelAssignment = z.TypeOf<
+  typeof PermissionsPerResourceLevelAssignmentModel
+>;
+
+export type ResourceLevel = keyof PermissionsPerResourceLevelAssignment;
+
+export const PermissionsModel = z.union([
+  ...permissionsByLevel.organization,
+  ...permissionsByLevel.project,
+  ...permissionsByLevel.target,
+  ...permissionsByLevel.service,
+  ...permissionsByLevel.appDeployment,
+]);
+
+export type Permission = z.TypeOf<typeof PermissionsModel>;
+
+const permissionResourceLevelLookupMap = new Map<
+  z.TypeOf<typeof PermissionsModel>,
+  ResourceLevel
+>();
+
+for (const [key, permissions] of objectEntries(permissionsByLevel)) {
+  for (const permission of permissions) {
+    permissionResourceLevelLookupMap.set(permission.value, key);
+  }
+}
+
+/** Get the permission group for a specific permissions */
+export function getPermissionGroup(permission: Permission): ResourceLevel {
+  const group = permissionResourceLevelLookupMap.get(permission);
+
+  if (group === undefined) {
+    throw new Error(`Could not find group for permission '${permission}'.`);
+  }
+
+  return group;
+}
+
+/**
+ * Transforms a flat permission array into an object that groups the permissions per resource level.
+ */
+export function permissionsToPermissionsPerResourceLevelAssignment(
+  permissions: Array<Permission>,
+): PermissionsPerResourceLevelAssignment {
+  const assignment: PermissionsPerResourceLevelAssignment = {
+    organization: new Set(),
+    project: new Set(),
+    target: new Set(),
+    service: new Set(),
+    appDeployment: new Set(),
+  };
+
+  for (const permission of permissions) {
+    const group = getPermissionGroup(permission);
+    (assignment[group] as Set<Permission>).add(permission);
+  }
+
+  return assignment;
+}
 
 type ActionDefinitionMap = {
   [key: `${string}:${string}`]: (args: any) => Array<string>;
 };
+
+const actionDefinitions = {
+  ...objectFromEntries(permissionsByLevel['organization'].map(t => [t.value, defaultOrgIdentity])),
+  ...objectFromEntries(permissionsByLevel['project'].map(t => [t.value, defaultProjectIdentity])),
+  ...objectFromEntries(permissionsByLevel['target'].map(t => [t.value, defaultTargetIdentity])),
+  ...objectFromEntries(
+    permissionsByLevel['service'].map(t => [t.value, schemaCheckOrPublishIdentity]),
+  ),
+  ...objectFromEntries(
+    permissionsByLevel['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity]),
+  ),
+} satisfies ActionDefinitionMap;
 
 type Actions = keyof typeof actionDefinitions;
 
@@ -401,11 +506,11 @@ export abstract class AuthNStrategy<TSession extends Session> {
 
 /** Helper class to Authenticate an incoming request. */
 export class AuthN {
-  private strategies: Array<AuthNStrategy<Session>>;
+  private strategies: Array<AuthNStrategy<Session> | ((logger: Logger) => AuthNStrategy<Session>)>;
 
   constructor(deps: {
     /** List of strategies for authentication a user */
-    strategies: Array<AuthNStrategy<Session>>;
+    strategies: Array<AuthNStrategy<Session> | ((logger: Logger) => AuthNStrategy<Session>)>;
   }) {
     this.strategies = deps.strategies;
   }
@@ -415,7 +520,10 @@ export class AuthN {
    * If no authentication strategy succeeds a `UnauthenticatedSession` is returned instead.
    */
   async authenticate(args: { req: FastifyRequest; reply: FastifyReply }): Promise<Session> {
-    for (const strategy of this.strategies) {
+    for (let strategy of this.strategies) {
+      if (strategy instanceof AuthNStrategy === false) {
+        strategy = strategy(args.req.log as Logger);
+      }
       const session = await strategy.parse(args);
       if (session) {
         return session;

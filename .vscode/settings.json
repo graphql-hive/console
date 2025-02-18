@@ -2,7 +2,10 @@
   "search.exclude": {
     "**/dist": true,
     "**/pnpm-lock.yaml": true,
-    "**/*.tsbuildinfo": true
+    "**/*.tsbuildinfo": true,
+    "**/*.next": true,
+    "**/*.turbo": true,
+    "**/web/docs/out": true
   },
   "commands.commands": [
     {

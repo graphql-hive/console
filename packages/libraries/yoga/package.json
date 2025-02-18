@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/yoga",
-  "version": "0.39.1",
+  "version": "0.40.1",
   "type": "module",
   "description": "GraphQL Hive + GraphQL Yoga",
   "repository": {
@@ -59,8 +59,8 @@
     "@whatwg-node/fetch": "0.10.1",
     "graphql-ws": "5.16.1",
     "graphql-yoga": "5.10.8",
-    "nock": "14.0.0-beta.19",
-    "vitest": "2.0.5",
+    "nock": "14.0.0",
+    "vitest": "3.0.5",
     "ws": "8.18.0"
   },
   "publishConfig": {

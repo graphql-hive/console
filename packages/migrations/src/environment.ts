@@ -1,7 +1,6 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
 
-// eslint-disable-next-line no-process-env
 if (!process.env.RELEASE) {
   dotenv({
     debug: true,
@@ -43,7 +42,7 @@ const PostgresModel = zod.object({
   POSTGRES_PORT: NumberFromString,
   POSTGRES_DB: zod.string(),
   POSTGRES_USER: zod.string(),
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
 const ClickHouseModel = zod.union([
@@ -58,11 +57,10 @@ const ClickHouseModel = zod.union([
 ]);
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   clickhouse: ClickHouseModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   postgres: PostgresModel.safeParse(process.env),
 };
 

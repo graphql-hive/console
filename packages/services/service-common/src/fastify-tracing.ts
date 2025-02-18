@@ -48,7 +48,7 @@ export type IgnoreRouteFn = (path: string, method: string) => boolean;
 
 declare module 'fastify' {
   interface FastifyRequest {
-    openTelemetry: () => ReqInstance;
+    openTelemetry?: () => ReqInstance;
   }
 }
 

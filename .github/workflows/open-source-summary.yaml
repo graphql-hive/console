@@ -1,0 +1,25 @@
+name: License Summary
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          codegen: false
+
+      - name: generate license summary
+        run: |
+          LICENSE_SUMMARY=$(npx license-checker --summary)
+          LICENSE_LIST=$(npx license-checker --list)
+          echo "\`\`\`\n$LICENSE_SUMMARY\n\n$LICENSE_LIST\n\`\`\`" >> $GITHUB_STEP_SUMMARY

@@ -1,5 +1,50 @@
 # @graphql-hive/envelop
 
+## 0.34.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`ae2d16d`](https://github.com/graphql-hive/console/commit/ae2d16d553e264c813ac65d78eacab3d7a2efeae)]:
+  - @graphql-hive/core@0.9.1
+
+## 0.34.0
+
+### Minor Changes
+
+- [#6488](https://github.com/graphql-hive/console/pull/6488)
+  [`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Include and log a `x-request-id` header for all
+  requests sent to the Hive API. This helps users to share more context with Hive staff when
+  encountering errors.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`f7d65fe`](https://github.com/graphql-hive/console/commit/f7d65feb5aaf4f4f86dfc0fe5df3ea4c3df1d7a8)]:
+  - @graphql-hive/core@0.9.0
+
+## 0.33.13
+
+### Patch Changes
+
+- [#6383](https://github.com/graphql-hive/console/pull/6383)
+  [`ec356a7`](https://github.com/graphql-hive/console/commit/ec356a7784d1f59722f80a69f501f1f250b2f6b2)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Collect custom scalars from arguments
+  and input object fields
+
+- Updated dependencies
+  [[`ec356a7`](https://github.com/graphql-hive/console/commit/ec356a7784d1f59722f80a69f501f1f250b2f6b2)]:
+  - @graphql-hive/core@0.8.4
+
+## 0.33.12
+
+### Patch Changes
+
+- Updated dependencies
+  [[`039c66b`](https://github.com/graphql-hive/console/commit/039c66bd24d4339e56b4e1e1fc7f8fa68de7e954)]:
+  - @graphql-hive/core@0.8.3
+
 ## 0.33.11
 
 ### Patch Changes

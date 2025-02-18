@@ -192,6 +192,7 @@ export interface Organization {
     appDeployments: boolean;
   };
   zendeskId: string | null;
+  /** ID of the user that owns the organization */
   ownerId: string;
 }
 
@@ -201,7 +202,7 @@ export interface OrganizationInvitation {
   email: string;
   created_at: string;
   expires_at: string;
-  role: OrganizationMemberRole;
+  roleId: string;
 }
 
 export interface OrganizationBilling {
@@ -219,6 +220,7 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
+  defaultMemberRoleId: string | null;
 }
 
 export interface CDNAccessToken {
@@ -301,7 +303,6 @@ export interface Project {
    * TODO: All code referencing this field should be removed at some point.
    */
   gitRepository?: `${string}/${string}` | null;
-  legacyRegistryModel: boolean;
   useProjectNameInGithubCheck: boolean;
   externalComposition: {
     enabled: boolean;
@@ -358,7 +359,7 @@ export interface Member {
     scopes: Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope>;
     organizationId: string;
     membersCount: number | undefined;
-  } | null;
+  };
   oidcIntegrationId: string | null;
   connectedToZendesk: boolean;
 }
@@ -368,6 +369,8 @@ export interface TargetSettings {
     enabled: boolean;
     period: number;
     percentage: number;
+    requestCount: number;
+    breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
   };
@@ -441,26 +444,3 @@ export type SchemaPolicy = {
 };
 
 export type SchemaPolicyAvailableRuleObject = AvailableRulesResponse[0];
-
-export const OrganizationMemberRoleModel = z
-  .object({
-    id: z.string(),
-    organization_id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    locked: z.boolean(),
-    scopes: z.array(z.string()),
-    members_count: z.number().optional(),
-  })
-  .transform(role => ({
-    id: role.id,
-    // Why? When using organizationId alias for a column, the column name is converted to organizationid
-    organizationId: role.organization_id,
-    membersCount: role.members_count,
-    name: role.name,
-    description: role.description,
-    locked: role.locked,
-    // Cast string to an array of enum
-    scopes: role.scopes as (OrganizationAccessScope | ProjectAccessScope | TargetAccessScope)[],
-  }));
-export type OrganizationMemberRole = z.infer<typeof OrganizationMemberRoleModel>;

@@ -2,27 +2,11 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
-    """
-    Requires API Token
-    """
     schemaPublish(input: SchemaPublishInput!): SchemaPublishPayload!
-    """
-    Requires API Token
-    """
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
-    """
-    Requires API Token
-    """
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
-    """
-    Requires API Token
-
-    Publish a schema of a single or multiple services and compose a supergraph schema,
-    including the rest of the services in the project.
-    """
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
-    updateSchemaVersionStatus(input: SchemaVersionUpdateInput!): SchemaVersion!
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
     updateNativeFederation(input: UpdateNativeFederationInput!): UpdateNativeFederationResult!
     enableExternalSchemaComposition(
@@ -31,9 +15,6 @@ export default gql`
     disableExternalSchemaComposition(
       input: DisableExternalSchemaCompositionInput!
     ): DisableExternalSchemaCompositionResult!
-    updateProjectRegistryModel(
-      input: UpdateProjectRegistryModelInput!
-    ): UpdateProjectRegistryModelResult!
     """
     Approve a failed schema check with breaking changes.
     """
@@ -49,18 +30,12 @@ export default gql`
   }
 
   extend type Query {
-    """
-    Requires API Token
-    """
-    schemaVersionForActionId(actionId: ID!): SchemaVersion
+    schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+    latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token
     """
     latestVersion: SchemaVersion
-    """
-    Requires API Token
-    """
-    latestValidVersion: SchemaVersion
     testExternalSchemaComposition(
       selector: TestExternalSchemaCompositionInput!
     ): TestExternalSchemaCompositionResult!
@@ -133,32 +108,8 @@ export default gql`
     message: String!
   }
 
-  input UpdateProjectRegistryModelInput {
-    organizationSlug: String!
-    projectSlug: String!
-    model: RegistryModel!
-  }
-
-  enum RegistryModel {
-    LEGACY
-    MODERN
-  }
-
-  """
-  @oneOf
-  """
-  type UpdateProjectRegistryModelResult {
-    ok: Project
-    error: UpdateProjectRegistryModelError
-  }
-
-  type UpdateProjectRegistryModelError implements Error {
-    message: String!
-  }
-
   extend type Project {
     externalSchemaComposition: ExternalSchemaComposition
-    registryModel: RegistryModel!
     schemaVersionsCount(period: DateRangeInput): Int!
     isNativeFederationEnabled: Boolean!
     nativeFederationCompatibility: NativeFederationCompatibilityStatus!
@@ -315,6 +266,7 @@ export default gql`
   }
 
   input SchemaPublishInput {
+    target: TargetReferenceInput
     service: ID
     url: String
     sdl: String!
@@ -342,6 +294,7 @@ export default gql`
   }
 
   input SchemaComposeInput {
+    target: TargetReferenceInput
     services: [SchemaComposeServiceInput!]!
     """
     Whether to use the latest composable version or just latest schema version for the composition.
@@ -625,6 +578,7 @@ export default gql`
   }
 
   input SchemaCheckInput {
+    target: TargetReferenceInput
     service: ID
     sdl: String!
     github: GitHubSchemaCheckInput
@@ -637,6 +591,7 @@ export default gql`
   }
 
   input SchemaDeleteInput {
+    target: TargetReferenceInput
     serviceName: ID!
     dryRun: Boolean
   }

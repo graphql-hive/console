@@ -2,8 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv';
 import { parse } from 'graphql';
-import LRU from 'tiny-lru';
-import type { ServiceLogger as Logger } from '@hive/service-common';
+import { LRUCache } from 'lru-cache';
+import { traceInlineSync, type ServiceLogger as Logger } from '@hive/service-common';
 import { RawReport } from '@hive/usage-common';
 import {
   invalidRawOperations,
@@ -19,116 +19,131 @@ const DAY_IN_MS = 86_400_000;
 /**
  * Process Usage for API Version 1
  */
-export function usageProcessorV1(
-  logger: Logger,
-  incomingReport: IncomingReport | IncomingLegacyReport,
-  token: TokensResponse,
-  targetRetentionInDays: number | null,
-): {
-  report: RawReport;
-  operations: {
-    rejected: number;
-    accepted: number;
-  };
-} {
-  const now = Date.now();
-
-  const incoming = ensureReportFormat(incomingReport);
-  ensureIncomingMessageValidity(incoming);
-
-  const size = incoming.operations.length;
-  totalReports.inc();
-  totalOperations.inc(size);
-  rawOperationsSize.observe(size);
-
-  const report: RawReport = {
-    id: randomUUID(),
-    target: token.target,
-    organization: token.organization,
-    size: 0,
-    map: {},
-    operations: [],
-  };
-
-  const oldNewKeyMapping = new Map<string, string>();
-
-  for (const rawKey in incoming.map) {
-    const record = incoming.map[rawKey];
-    const validationResult = validateOperationMapRecord(record);
-
-    if (validationResult.valid) {
-      // The key is used for lru cache (usage-ingestor) so we need to make sure, the record is unique per target, operation body, name and the list of fields
-      const key = createHash('md5')
-        .update(report.target)
-        .update(record.operation)
-        .update(record.operationName ?? '')
-        .update(JSON.stringify(record.fields.sort()))
-        .digest('hex');
-
-      oldNewKeyMapping.set(rawKey, key);
-
-      report.map[key] = {
-        key,
-        operation: record.operation,
-        operationName: record.operationName,
-        fields: record.fields,
-      };
-    }
-  }
-
-  for (const operation of incoming.operations) {
-    // The validateOperation function drops the operation if the operationMapKey does not exist, we can safely pass the old key in case the new key is missing.
-    operation.operationMapKey =
-      oldNewKeyMapping.get(operation.operationMapKey) ?? operation.operationMapKey;
-    const validationResult = validateOperation(operation, report.map);
-
-    if (validationResult.valid) {
-      // Increase size
-      report.size += 1;
-
-      // Add operation
-      const ts = operation.timestamp ?? now;
-      report.operations.push({
-        operationMapKey: operation.operationMapKey,
-        timestamp: ts,
-        expiresAt: targetRetentionInDays ? ts + targetRetentionInDays * DAY_IN_MS : undefined,
-        execution: {
-          ok: operation.execution.ok,
-          duration: operation.execution.duration,
-          errorsTotal: operation.execution.errorsTotal,
-        },
-        metadata: {
-          client: {
-            name: operation.metadata?.client?.name,
-            version: operation.metadata?.client?.version,
-          },
-        },
-      });
-    } else {
-      logger.warn(
-        `Detected invalid operation (target=%s): %o`,
-        token.target,
-        validationResult.errors,
-      );
-      invalidRawOperations
-        .labels({
-          reason:
-            'reason' in validationResult && validationResult.reason
-              ? validationResult.reason
-              : 'unknown',
-        })
-        .inc(1);
-    }
-  }
-
-  return {
-    report: report,
+export const usageProcessorV1 = traceInlineSync(
+  'usageProcessorV1',
+  {
+    initAttributes: (_logger, _incomingReport, token) => ({
+      'hive.input.target': token.target,
+      'hive.input.project': token.project,
+      'hive.input.organization': token.organization,
+    }),
+    resultAttributes: result => ({
+      'hive.result.reportId': result.report.id,
+      'hive.result.operations.accepted': result.operations.accepted,
+      'hive.result.operations.rejected': result.operations.rejected,
+    }),
+  },
+  (
+    logger: Logger,
+    incomingReport: IncomingReport | IncomingLegacyReport,
+    token: TokensResponse,
+    targetRetentionInDays: number | null,
+  ): {
+    report: RawReport;
     operations: {
-      accepted: size - report.size,
-      rejected: report.size,
-    },
-  };
-}
+      rejected: number;
+      accepted: number;
+    };
+  } => {
+    const now = Date.now();
+
+    const incoming = ensureReportFormat(incomingReport);
+    ensureIncomingMessageValidity(incoming);
+
+    const size = incoming.operations.length;
+    totalReports.inc();
+    totalOperations.inc(size);
+    rawOperationsSize.observe(size);
+
+    const report: RawReport = {
+      id: randomUUID(),
+      target: token.target,
+      organization: token.organization,
+      size: 0,
+      map: {},
+      operations: [],
+    };
+
+    const oldNewKeyMapping = new Map<string, string>();
+
+    for (const rawKey in incoming.map) {
+      const record = incoming.map[rawKey];
+      const validationResult = validateOperationMapRecord(record);
+
+      if (validationResult.valid) {
+        // The key is used for lru cache (usage-ingestor) so we need to make sure, the record is unique per target, operation body, name and the list of fields
+        const key = createHash('md5')
+          .update(report.target)
+          .update(record.operation)
+          .update(record.operationName ?? '')
+          .update(JSON.stringify(record.fields.sort()))
+          .digest('hex');
+
+        oldNewKeyMapping.set(rawKey, key);
+
+        report.map[key] = {
+          key,
+          operation: record.operation,
+          operationName: record.operationName,
+          fields: record.fields,
+        };
+      }
+    }
+
+    for (const operation of incoming.operations) {
+      // The validateOperation function drops the operation if the operationMapKey does not exist, we can safely pass the old key in case the new key is missing.
+      operation.operationMapKey =
+        oldNewKeyMapping.get(operation.operationMapKey) ?? operation.operationMapKey;
+      const validationResult = validateOperation(operation, report.map);
+
+      if (validationResult.valid) {
+        // Increase size
+        report.size += 1;
+
+        // Add operation
+        const ts = operation.timestamp ?? now;
+        report.operations.push({
+          operationMapKey: operation.operationMapKey,
+          timestamp: ts,
+          expiresAt: targetRetentionInDays ? ts + targetRetentionInDays * DAY_IN_MS : undefined,
+          execution: {
+            ok: operation.execution.ok,
+            duration: operation.execution.duration,
+            errorsTotal: operation.execution.errorsTotal,
+          },
+          metadata: {
+            client: {
+              name: operation.metadata?.client?.name,
+              version: operation.metadata?.client?.version,
+            },
+          },
+        });
+      } else {
+        logger.warn(
+          `Detected invalid operation (target=%s): %o`,
+          token.target,
+          validationResult.errors,
+        );
+        invalidRawOperations
+          .labels({
+            reason:
+              'reason' in validationResult && validationResult.reason
+                ? validationResult.reason
+                : 'unknown',
+          })
+          .inc(1);
+      }
+    }
+
+    return {
+      report: report,
+      operations: {
+        accepted: report.size,
+        rejected: size - report.size,
+      },
+    };
+  },
+);
 
 function ensureIncomingMessageValidity(incoming: Partial<IncomingReport>) {
   if (!incoming || !incoming.operations || !Array.isArray(incoming.operations)) {
@@ -199,16 +214,32 @@ function isUnixTimestamp(x: number) {
   return unixTimestampRegex.test(String(x));
 }
 
+// This is a custom format for positive integers (0 is allowed, decimals are not)
+// Maximum value is 18_446_744_073_709_551_615, but we stick to Math.pow(2, 63).
+// Using 2^64 in JS is problematic and 2^63 is more than enough.
+// https://clickhouse.com/docs/en/sql-reference/data-types/int-uint
+const maxUint64 = Math.pow(2, 63);
+const maxUInt16 = Math.pow(2, 16) - 1;
 const ajv = new Ajv({
   formats: {
     unix_timestamp_in_ms: {
       type: 'number',
       validate: isUnixTimestamp,
     },
+    uint64: {
+      type: 'number',
+      validate: (x: number) => Number.isInteger(x) && x >= 0 && x <= maxUint64,
+    },
+    uint16: {
+      type: 'number',
+      validate: (x: number) => Number.isInteger(x) && x >= 0 && x <= maxUInt16,
+    },
   },
 });
 
-const validOperationBodyCache = LRU<boolean>(5000, 300_000 /* 5 minutes */);
+const validOperationBodyCache = new LRUCache<string, boolean>({
+  max: 20_000,
+});
 
 const operationMapRecordSchema: JSONSchemaType<OperationMapRecord> = {
   type: 'object',
@@ -231,8 +262,8 @@ const operationSchema: JSONSchemaType<IncomingOperation> = {
       required: ['ok', 'duration', 'errorsTotal'],
       properties: {
         ok: { type: 'boolean' },
-        duration: { type: 'number' },
-        errorsTotal: { type: 'number' },
+        duration: { type: 'number', format: 'uint64' },
+        errorsTotal: { type: 'number', format: 'uint16' },
       },
     },
     metadata: {
@@ -270,7 +301,8 @@ export function validateOperationMapRecord(record: OperationMapRecord) {
 }
 
 export function isValidOperationBody(operation: string) {
-  const cached = validOperationBodyCache.get(operation);
+  const operationHash = createHash('sha256').update(operation).digest('hex');
+  const cached = validOperationBodyCache.get(operationHash);
 
   if (typeof cached === 'boolean') {
     return cached;
@@ -280,10 +312,10 @@ export function isValidOperationBody(operation: string) {
     parse(operation, {
       noLocation: true,
     });
-    validOperationBodyCache.set(operation, true);
+    validOperationBodyCache.set(operationHash, true);
     return true;
   } catch (error) {
-    validOperationBodyCache.set(operation, false);
+    validOperationBodyCache.set(operationHash, false);
     return false;
   }
 }

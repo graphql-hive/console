@@ -1,9 +1,10 @@
+'use client';
+
 import React, { Fragment, useRef } from 'react';
 import Head from 'next/head';
 import Image, { StaticImageData } from 'next/image';
 import * as Tabs from '@radix-ui/react-tabs';
-import { CallToAction, Heading } from '@theguild/components';
-import { cn } from '../../lib';
+import { CallToAction, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../arrow-icon';
 import {
   KarrotLogo,
@@ -64,9 +65,9 @@ const testimonials: Testimonial[] = [
   },
   {
     company: 'Prodigy',
-    logo: props => (
-      <div className="flex h-8 items-center justify-center">
-        <ProdigyLogo {...props} height={37} />
+    logo: ({ className, ...props }) => (
+      <div className={cn('flex h-8 w-min items-center justify-center', className)}>
+        <ProdigyLogo {...props} className="" height={37} />
       </div>
     ),
     text: (
@@ -121,13 +122,17 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
         </Heading>
         <Tabs.Root
           defaultValue={testimonials[0].company}
-          className="flex flex-col"
+          className="flex flex-col overflow-hidden"
+          // we need scrolling for mobile, so this can't be changed to a state-driven opacity transition
           onValueChange={value => {
             const id = getTestimonialId(value);
-            const element = document.getElementById(id);
-            if (element) {
-              element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
-            }
+            const element = document.getElementById(id)?.parentElement;
+            const scrollview = scrollviewRef.current;
+
+            if (!scrollview || !element) return;
+
+            // we don't use scrollIntoView because it will also scroll vertically
+            scrollview.scrollTo({ left: element.offsetLeft, behavior: 'instant' });
           }}
         >
           <Tabs.List
@@ -140,14 +145,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                 <Tabs.Trigger
                   key={testimonial.company}
                   value={testimonial.company}
-                  className={
-                    'hive-focus flex-grow-0 [&[data-state="active"]>:first-child]:bg-blue-400' +
-                    ' lg:rdx-state-active:bg-white lg:flex-grow lg:bg-transparent' +
-                    ' justify-center p-0.5 lg:p-4' +
-                    ' rdx-state-active:text-green-1000 lg:rdx-state-active:border-beige-600' +
-                    ' border-transparent font-medium leading-6 text-green-800 lg:border' +
-                    ' flex flex-1 items-center justify-center rounded-[15px]'
-                  }
+                  className='hive-focus lg:rdx-state-active:bg-white rdx-state-active:text-green-1000 lg:rdx-state-active:border-beige-600 flex flex-1 grow-0 items-center justify-center rounded-[15px] border-transparent p-0.5 font-medium leading-6 text-green-800 lg:grow lg:border lg:bg-transparent lg:p-4 [&[data-state="active"]>:first-child]:bg-blue-400'
                 >
                   <div className="size-2 rounded-full bg-blue-200 transition-colors lg:hidden" />
                   <Logo title={testimonial.company} height={32} className="max-lg:sr-only" />
@@ -158,7 +156,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
           <div
             /* mobile scrollview */
             ref={scrollviewRef}
-            className="-m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
+            className="no-scrollbar -m-2 -mb-10 flex snap-x snap-mandatory gap-4 overflow-auto p-2 lg:pb-10"
             onScroll={updateDotsOnScroll.current}
           >
             {testimonials.map(
@@ -169,9 +167,9 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     value={company}
                     tabIndex={-1}
                     className={cn(
-                      'relative flex w-full shrink-0 snap-center flex-col' +
-                        ' gap-6 md:flex-row lg:gap-12' +
-                        ' lg:data-[state="inactive"]:hidden',
+                      'relative flex w-full shrink-0 snap-center flex-col',
+                      'gap-6 md:flex-row lg:gap-12',
+                      'lg:data-[state="inactive"]:hidden',
                       caseStudyHref
                         ? 'data-[state="active"]:pb-[72px] lg:data-[state="active"]:pb-0'
                         : 'max-lg:pb-8',
@@ -193,7 +191,12 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     )}
                     <article className="max-lg:mt-6 lg:relative" id={getTestimonialId(company)}>
                       <Logo title={company} height={32} className="text-blue-1000 mb-6 lg:hidden" />
-                      <blockquote className="sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]">
+                      <blockquote
+                        className={cn(
+                          'sm:blockquote-beige-500 lg:text-xl xl:text-2xl xl:leading-[32px] [&_code]:font-mono [&_code]:text-[0.9em]',
+                          data && 'lg:text-lg',
+                        )}
+                      >
                         {text}
                       </blockquote>
                       {person && <TestimonialPerson className="mt-6" person={person} />}
@@ -215,12 +218,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                           {data.map(({ numbers, description }, i) => (
                             <Fragment key={i}>
                               <li>
-                                <span
-                                  className={
-                                    'block text-[40px] leading-[1.2] tracking-[-0.2px]' +
-                                    ' md:text-6xl md:leading-[1.1875] md:tracking-[-0.64px]'
-                                  }
-                                >
+                                <span className="block text-[40px] leading-[1.2] tracking-[-0.2px] md:text-6xl md:leading-[1.1875] md:tracking-[-0.64px]">
                                   {numbers}
                                 </span>
                                 <span className="mt-2">{description}</span>

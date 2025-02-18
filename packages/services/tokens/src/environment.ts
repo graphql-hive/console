@@ -38,7 +38,7 @@ const SentryModel = zod.union([
 const PostgresModel = zod.object({
   POSTGRES_HOST: zod.string(),
   POSTGRES_PORT: NumberFromString,
-  POSTGRES_PASSWORD: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
   POSTGRES_USER: zod.string(),
   POSTGRES_DB: zod.string(),
   POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
@@ -77,20 +77,24 @@ const LogModel = zod.object({
 });
 
 const configs = {
-  // eslint-disable-next-line no-process-env
   base: EnvironmentModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   sentry: SentryModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   postgres: PostgresModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   redis: RedisModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   prometheus: PrometheusModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
+
   log: LogModel.safeParse(process.env),
-  // eslint-disable-next-line no-process-env
-  tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  tracing: zod
+    .object({
+      ...OpenTelemetryConfigurationModel.shape,
+      OPENTELEMETRY_TRACE_USAGE_REQUESTS: emptyString(zod.literal('1').optional()),
+    })
+
+    .safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -131,6 +135,7 @@ export const env = {
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
+    traceRequestsFromUsageService: tracing.OPENTELEMETRY_TRACE_USAGE_REQUESTS === '1',
   },
   postgres: {
     host: postgres.POSTGRES_HOST,
