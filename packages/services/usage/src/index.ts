@@ -182,14 +182,14 @@ async function main() {
         if (!token) {
           httpRequestsWithoutToken.inc();
           activeSpan?.recordException('Missing token in request');
-          res.status(401).send('Missing token');
+          await res.status(401).send('Missing token');
           return;
         }
 
         if (token.length !== 32) {
           activeSpan?.recordException('Invalid token');
           httpRequestsWithoutToken.inc();
-          res.status(401).send('Invalid token');
+          await res.status(401).send('Invalid token');
           return;
         }
 
@@ -205,7 +205,7 @@ async function main() {
           httpRequestsWithNonExistingToken.inc();
           req.log.info('Token not found (token=%s)', maskedToken);
           activeSpan?.recordException('Token not found');
-          res.status(401).send('Missing token');
+          await res.status(401).send('Missing token');
           return;
         }
 
@@ -217,7 +217,7 @@ async function main() {
           httpRequestsWithNoAccess.inc();
           req.log.info('No access (token=%s)', maskedToken);
           activeSpan?.recordException('No access');
-          res.status(403).send('No access');
+          await res.status(403).send('No access');
           return;
         }
 
@@ -265,7 +265,7 @@ async function main() {
             tokenInfo.target,
             tokenInfo.organization,
           );
-          res.status(429).send();
+          await res.status(429).send();
 
           return;
         }
@@ -297,7 +297,7 @@ async function main() {
             // 503 - Service Unavailable
             // The server is currently unable to handle the request due being not ready.
             // This tells the gateway to retry the request and not to drop it.
-            res.status(503).send();
+            await res.status(503).send();
             return;
           }
 
@@ -311,11 +311,14 @@ async function main() {
             stopTimer({
               status: 'success',
             });
-            res.status(200).send({
+            await res.status(200).send({
               id: result.report.id,
               operations: result.operations,
             });
-          } else if (apiVersion === '2') {
+            return;
+          }
+
+          if (apiVersion === '2') {
             activeSpan?.addEvent('using v2');
             const result = measureParsing(
               () => usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo),
@@ -336,7 +339,7 @@ async function main() {
                 activeSpan?.recordException(error.path + ': ' + error.message),
               );
 
-              res.status(400).send({
+              await res.status(400).send({
                 errors: result.errors,
               });
 
@@ -347,20 +350,20 @@ async function main() {
             stopTimer({
               status: 'success',
             });
-            res.status(200).send({
+            await res.status(200).send({
               id: result.report.id,
               operations: result.operations,
             });
             return;
-          } else {
-            authenticatedRequestLogger.debug("Invalid 'x-api-version' header value.");
-            stopTimer({
-              status: 'error',
-            });
-            activeSpan?.recordException("Invalid 'x-api-version' header value.");
-            res.status(401).send("Invalid 'x-api-version' header value.");
-            return;
           }
+
+          authenticatedRequestLogger.debug("Invalid 'x-api-version' header value.");
+          stopTimer({
+            status: 'error',
+          });
+          activeSpan?.recordException("Invalid 'x-api-version' header value.");
+          await res.status(401).send("Invalid 'x-api-version' header value.");
+          return;
         } catch (error) {
           stopTimer({
             status: 'error',
@@ -371,7 +374,7 @@ async function main() {
             level: 'error',
           });
           activeSpan?.recordException(error as Error);
-          res.status(500).send();
+          await res.status(500).send();
         }
       }),
     });
@@ -379,18 +382,18 @@ async function main() {
     server.route({
       method: ['GET', 'HEAD'],
       url: '/_health',
-      handler(_, res) {
-        res.status(200).send();
+      async handler(_, res) {
+        await res.status(200).send();
       },
     });
 
     server.route({
       method: ['GET', 'HEAD'],
       url: '/_readiness',
-      handler(_, res) {
+      async handler(_, res) {
         const isReady = readiness();
         reportReadiness(isReady);
-        res.status(isReady ? 200 : 400).send();
+        await res.status(isReady ? 200 : 400).send();
       },
     });
 
