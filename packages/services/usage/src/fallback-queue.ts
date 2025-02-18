@@ -27,8 +27,10 @@ export function createFallbackQueue(config: {
       }
 
       config.logger.error(
-        'Failed to flush message, adding back to fallback queue (error=%s)',
-        error,
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'Failed to flush message, adding back to fallback queue',
       );
       queue.push(msg);
     }
@@ -61,7 +63,12 @@ export function createFallbackQueue(config: {
         queue.map(msgValue =>
           limit(() =>
             config.send(msgValue[0], msgValue[1]).catch(error => {
-              config.logger.error('Failed to flush message before stopping (error=%s)', error);
+              config.logger.error(
+                {
+                  error: error instanceof Error ? error.message : String(error),
+                },
+                'Failed to flush message before stopping',
+              );
             }),
           ),
         ),
