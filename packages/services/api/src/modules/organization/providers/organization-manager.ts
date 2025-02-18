@@ -20,6 +20,7 @@ import { createOrUpdateMemberRoleInputSchema } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
+import { ResourceAssignments } from './resource-assignments';
 
 /**
  * Responsible for auth checks.
@@ -44,6 +45,7 @@ export class OrganizationManager {
     private emails: Emails,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
+    private resourceAssignments: ResourceAssignments,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -1002,8 +1004,8 @@ export class OrganizationManager {
     }
 
     const resourceAssignmentGroup =
-      await this.organizationMembers.transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
-        organization,
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organization.id,
         input.resources,
       );
 
