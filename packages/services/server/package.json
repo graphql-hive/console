@@ -11,7 +11,7 @@
   "devDependencies": {
     "@envelop/core": "5.0.2",
     "@envelop/graphql-jit": "8.0.3",
-    "@envelop/graphql-modules": "6.0.0",
+    "@envelop/graphql-modules": "7.0.1",
     "@envelop/opentelemetry": "6.3.1",
     "@envelop/sentry": "7.1.1",
     "@envelop/types": "5.0.0",

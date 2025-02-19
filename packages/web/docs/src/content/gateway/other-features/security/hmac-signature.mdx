@@ -59,7 +59,7 @@ the subgraphs validating the HMAC signature.
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
-  hmacUpstreamSignature: {
+  hmacSignature: {
     secret: myHMACSecret // see step 1 for the secret key
   }
   // ...
@@ -195,10 +195,9 @@ Here's an example of an incoming subgraph request with the HMAC signature:
 
 ## Configuration
 
-### `hmacUpstreamSignature`
+### `hmacSignature`
 
-The `hmacUpstreamSignature` flag allows you to customize the HMAC signing behavior in the Hive
-Gateway:
+The `hmacSignature` flag allows you to customize the HMAC signing behavior in the Hive Gateway:
 
 - `secret`: The secret key used for HMAC signing and verification. It should be a random, opaque
   string shared between the Hive Gateway and the subgraph services.

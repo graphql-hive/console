@@ -24,13 +24,18 @@ for (const file of files) {
   const { data } = matter(content);
 
   if (data.title && data.date) {
+    const pathname = file
+      .replace('.mdx', '')
+      .replace('(posts)/', '')
+      .replace(/\/page$/, '');
+
     changelogRecords.push({
       date: new Date(data.date).toLocaleDateString(undefined, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       }),
-      href: `https://the-guild.dev/graphql/hive/product-updates/${file.replace('.mdx', '')}`,
+      href: `https://the-guild.dev/graphql/hive/product-updates/${pathname}`,
       title: data.title,
       description: data.description || '',
     });

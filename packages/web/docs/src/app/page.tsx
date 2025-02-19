@@ -9,6 +9,7 @@ import {
   GetYourAPIGameRightSection,
   Heading,
   HighlightDecoration,
+  InfoCard,
   LargeHiveIconDecoration,
   ToolsAndLibrariesCards,
 } from '@theguild/components';
@@ -18,7 +19,6 @@ import { CompanyTestimonialsSection } from '../components/company-testimonials';
 import { EcosystemManagementSection } from '../components/ecosystem-management';
 import { FrequentlyAskedQuestions } from '../components/frequently-asked-questions';
 import { Hero, HeroFeatures, HeroLinks } from '../components/hero';
-import { InfoCard } from '../components/info-card';
 import { LandingPageContainer } from '../components/landing-page-container';
 import { LandingPageFeatureTabs } from '../components/landing-page-feature-tabs';
 import { StatsItem, StatsList } from '../components/stats';

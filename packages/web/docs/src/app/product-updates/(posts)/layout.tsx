@@ -5,7 +5,7 @@ import { ProductUpdateHeader } from './product-update-header';
 
 export const metadata = {
   // TODO: Remove this when Components have a fix for OG Images with basePath
-  openGraph: rootMetadata.openGraph,
+  openGraph: rootMetadata!.openGraph,
 };
 
 const Layout = ({ children }: { children: ReactNode }): ReactElement => {
