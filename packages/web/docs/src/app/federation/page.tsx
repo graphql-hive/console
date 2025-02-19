@@ -1,10 +1,9 @@
 import { ReactElement, ReactNode } from 'react';
 import Image from 'next/image';
-import { Anchor, CallToAction, cn, ContactButton, Heading } from '@theguild/components';
+import { Anchor, CallToAction, cn, ContactButton, Heading, InfoCard } from '@theguild/components';
 import { ArrowIcon } from '../../components/arrow-icon';
 import { FrequentlyAskedFederationQuestions } from '../../components/frequently-asked-questions';
 import { Hero, HeroLinks } from '../../components/hero';
-import { InfoCard } from '../../components/info-card';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import federationDiagram from '../../../public/federation-diagram.png';
@@ -19,7 +18,8 @@ export const metadata = {
   description:
     'Discover what GraphQL Federation is, how it unifies multiple APIs into a Supergraph, its core benefits, and the building blocks like subgraphs, schema composition and gateway.',
   openGraph: {
-    ...rootMetadata.openGraph,
+    ...rootMetadata!.openGraph,
+    url: '/federation',
     /**
      * We currently have `metadataBase` which includes `basePath`,
      * so the opengraph-image.png file convention results in a
@@ -31,7 +31,7 @@ export const metadata = {
     images: [
       new URL('./opengraph-image.png', import.meta.url)
         .toString()
-        // eslint-disable-next-line no-process-env
+
         .replace(process.env.NEXT_BASE_PATH || '', ''),
     ],
   },

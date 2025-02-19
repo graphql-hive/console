@@ -1,5 +1,17 @@
 # hive
 
+## 5.1.1
+
+### Patch Changes
+
+- [#6502](https://github.com/graphql-hive/console/pull/6502)
+  [`cef7fd8`](https://github.com/graphql-hive/console/commit/cef7fd88e4929942bcaf07aaf3bc226c5d9a38cd)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update @theguild/federation-composition
+  to 0.14.4
+
+  - Fix a child data type field not being accessible via interfaceObject
+  - Respect inaccessible enum values while creating the public schema from the supergraph AST
+
 ## 5.1.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import NextLink from 'next/link';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
@@ -20,6 +20,10 @@ export interface FeatureTabsProps<T extends string> {
   highlights: Record<T, Highlight[]>;
   icons: React.ReactNode[];
   children: React.ReactNode;
+  /**
+   * On very narrow screens, we shorten the tab names.
+   */
+  tabTexts?: Partial<Record<T, ReactNode>>;
 }
 
 export function FeatureTabs<T extends string>({
@@ -27,6 +31,7 @@ export function FeatureTabs<T extends string>({
   highlights,
   icons,
   children,
+  tabTexts = {},
 }: FeatureTabsProps<T>) {
   const tabs = Object.keys(highlights) as T[];
   const [currentTab, setCurrentTab] = useState<T>(tabs[0]);
@@ -64,7 +69,7 @@ export function FeatureTabs<T extends string>({
                   className='hive-focus rdx-state-active:text-green-1000 rdx-state-active:border-[--tab-bg-dark] rdx-state-active:bg-white max-sm:rdx-state-inactive:hidden group-focus-within:rdx-state-inactive:flex max-sm:rdx-state-inactive:rounded-none max-sm:group-focus-within:rdx-state-inactive:border-y-[--tab-bg] max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:rounded-none max-sm:group-focus-within:[&:nth-child(2)]:rdx-state-active:border-y-[--tab-bg] max-sm:group-focus-within:first:rdx-state-active:border-b-[--tab-bg] max-sm:group-focus-within:first:rdx-state-active:rounded-b-none max-sm:rdx-state-inactive:pointer-events-none max-sm:rdx-state-inactive:group-focus-within:pointer-events-auto z-10 flex flex-1 items-center justify-center gap-2.5 rounded-lg border-transparent p-4 text-base font-medium leading-6 text-green-800 max-sm:border max-sm:border-[--tab-bg-dark] max-sm:bg-[--tab-bg] max-sm:group-focus-within:aria-selected:z-20 max-sm:group-focus-within:aria-selected:ring-4 sm:rounded-[15px] sm:border sm:text-xs sm:max-lg:p-3 sm:max-[721px]:p-2 md:text-sm lg:text-base max-sm:group-focus-within:[&:last-child]:border-t-[--tab-bg] max-sm:group-focus-within:[&:nth-child(3)]:rounded-t-none [&>svg]:shrink-0 max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:rounded-t-lg max-sm:group-focus-within:[&[data-state="inactive"]:first-child]:border-t-[--tab-bg-dark] [&[data-state="inactive"]>:last-child]:invisible max-sm:group-focus-within:[[data-state="active"]+&:last-child]:rounded-b-lg max-sm:group-focus-within:[[data-state="active"]+&:last-child]:border-b-[--tab-bg-dark] max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:rounded-b-lg max-sm:group-focus-within:[[data-state="inactive"]+&:last-child[data-state="inactive"]]:border-b-[--tab-bg-dark]'
                 >
                   {icons[i]}
-                  {tab}
+                  {tabTexts[tab] || tab}
                   <ChevronDownIcon className="ml-auto size-6 text-green-800 transition group-focus-within:rotate-90 sm:hidden" />
                 </Tabs.Trigger>
               );

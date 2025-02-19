@@ -18,7 +18,7 @@ export const metadata = {
   description:
     'Accelerate GraphQL Federation adoption with the Hive Partner Network. Access enterprise-grade tools and expertise to build scalable, unified APIs across distributed systems. Join our network of federation experts.',
   openGraph: {
-    ...rootMetadata.openGraph,
+    ...rootMetadata!.openGraph,
     /**
      * We currently have `metadataBase` which includes `basePath`,
      * so the opengraph-image.png file convention results in a
@@ -30,7 +30,6 @@ export const metadata = {
     images: [
       new URL('./opengraph-image.png', import.meta.url)
         .toString()
-        // eslint-disable-next-line no-process-env
         .replace(process.env.NEXT_BASE_PATH || '', ''),
     ],
   },
