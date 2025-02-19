@@ -39,7 +39,7 @@ export const action: Action = async (exec, query) => {
       `ALTER TABLE ".inner_id.${uuid}" ADD INDEX idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
     );
     const indexes = await query(`
-      SELECT name FROM system.data_skipping_indices WHERE table = ${'.inner_id.' + uuid} AND name = 'idx_typename'
+      SELECT name FROM system.data_skipping_indices WHERE table = '${'.inner_id.' + uuid}' AND name = 'idx_typename'
     `).then(async r => DataSkippingIndicesModel.parse(r.data));
 
     if (indexes.some(i => i.name)) {
