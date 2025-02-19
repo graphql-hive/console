@@ -790,8 +790,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       graphql-modules:
-        specifier: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83
-        version: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0)
+        specifier: 3.0.0
+        version: 3.0.0(graphql@16.9.0)
       graphql-parse-resolve-info:
         specifier: 4.13.0
         version: 4.13.0(graphql@16.9.0)
@@ -1184,8 +1184,8 @@ importers:
         specifier: 8.0.3
         version: 8.0.3(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/graphql-modules':
-        specifier: 6.0.0
-        version: 6.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0))(graphql@16.9.0)
+        specifier: 7.0.1
+        version: 7.0.1(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)
       '@envelop/opentelemetry':
         specifier: 6.3.1
         version: 6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)
@@ -3200,13 +3200,13 @@ packages:
       '@envelop/core': ^5.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/graphql-modules@6.0.0':
-    resolution: {integrity: sha512-U6LoSMFd/eVt/vcI+6cj3OWciPnCTCIz+7Frc+oJ3Bg2utDIba3ngepzQPYb9t2da+AjCw+O2NmBwoUHWH0mAQ==}
+  '@envelop/graphql-modules@7.0.1':
+    resolution: {integrity: sha512-l5RRREZrzibgZCuInE4+fyBLnZWn1w/oKbB5EGlSeE1CWa59lrI9SLgBMIZqHwF7JT3X2oCAYur5TJUYEVJdJg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.0
+      '@envelop/core': ^5.1.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
-      graphql-modules: ^1 || ^2.0.0
+      graphql-modules: ^1 || ^2.0.0 || ^3.0.0
 
   '@envelop/on-resolve@4.1.0':
     resolution: {integrity: sha512-2AXxf8jbBIepBUiY0KQtyCO6gnT7LKBEYdaARZBJ7ujy1+iQHQPORKvAwl51kIdD6v5x38eldZnm7A19jFimOg==}
@@ -10585,8 +10585,8 @@ packages:
     peerDependencies:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0-alpha.2
 
-  graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83:
-    resolution: {integrity: sha512-rFyr9ICW2qj6Fi1dg9Z/YqlVVBvcIqctF9OE8qrN0WqBLYRGcps0TidKM+uImqh78t+LuUvKV1i4OHT6s20oQA==}
+  graphql-modules@3.0.0:
+    resolution: {integrity: sha512-ADQRySHp7SMqLHsv/NMkEBqOcyAC5bT6bTYuQemjmvSsF+gj1iQbzNF1pjy1lsE6UWxvRRzZN+sovp85Z6c3Vw==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
@@ -16238,8 +16238,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16346,11 +16346,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16389,6 +16389,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -16522,11 +16523,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16565,7 +16566,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -16679,7 +16679,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16798,7 +16798,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -16973,7 +16973,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -17842,11 +17842,11 @@ snapshots:
       tslib: 2.8.1
       value-or-promise: 1.0.12
 
-  '@envelop/graphql-modules@6.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0))(graphql@16.9.0)':
+  '@envelop/graphql-modules@7.0.1(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       graphql: 16.9.0
-      graphql-modules: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0)
+      graphql-modules: 3.0.0(graphql@16.9.0)
       tslib: 2.8.1
 
   '@envelop/on-resolve@4.1.0(@envelop/core@5.0.2)(graphql@16.9.0)':
@@ -27562,7 +27562,7 @@ snapshots:
       nullthrows: 1.1.1
       vscode-languageserver-types: 3.17.5
 
-  graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0):
+  graphql-modules@3.0.0(graphql@16.9.0):
     dependencies:
       '@graphql-tools/schema': 10.0.16(graphql@16.9.0)
       '@graphql-tools/wrap': 10.0.27(graphql@16.9.0)
