@@ -94,7 +94,7 @@ await describe('migration: schema-cleanup-tracker', async () => {
             tags,
             has_contract_composition_errors,
             conditional_breaking_change_metadata,
-            schemaMetadata,
+            schema_metadata
           )
           VALUES
           (
