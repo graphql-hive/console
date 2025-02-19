@@ -790,8 +790,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       graphql-modules:
-        specifier: 2.4.0
-        version: 2.4.0(graphql@16.9.0)
+        specifier: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83
+        version: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0)
       graphql-parse-resolve-info:
         specifier: 4.13.0
         version: 4.13.0(graphql@16.9.0)
@@ -1185,7 +1185,7 @@ importers:
         version: 8.0.3(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/graphql-modules':
         specifier: 6.0.0
-        version: 6.0.0(@envelop/core@5.0.2)(graphql-modules@2.4.0(graphql@16.9.0))(graphql@16.9.0)
+        version: 6.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0))(graphql@16.9.0)
       '@envelop/opentelemetry':
         specifier: 6.3.1
         version: 6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)
@@ -10585,8 +10585,8 @@ packages:
     peerDependencies:
       graphql: ^15.5.0 || ^16.0.0 || ^17.0.0-alpha.2
 
-  graphql-modules@2.4.0:
-    resolution: {integrity: sha512-2KgsHC/ivsdiEWX97MA3V0eAo6TE8BhPW9BZgYzhivNDfz+3UUTCxZ0/GpSXXScolfoGyo0m3lVlXXg0zQk5ew==}
+  graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83:
+    resolution: {integrity: sha512-rFyr9ICW2qj6Fi1dg9Z/YqlVVBvcIqctF9OE8qrN0WqBLYRGcps0TidKM+uImqh78t+LuUvKV1i4OHT6s20oQA==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
@@ -13602,8 +13602,8 @@ packages:
   railroad-diagrams@1.0.0:
     resolution: {integrity: sha512-cz93DjNeLY0idrCNOH6PviZGRN9GJhsdm9hpn1YCS879fj4W+x5IFJhhkRZcwVgMmFF7R82UA/7Oh+R8lLZg6A==}
 
-  ramda@0.29.0:
-    resolution: {integrity: sha512-BBea6L67bYLtdbOqfp8f58fPMqEwx0doL+pAi8TZyp2YWz8R9G8z9x75CZI8W+ftqhFHCpEX2cRnUUXK130iKA==}
+  ramda@0.30.1:
+    resolution: {integrity: sha512-tEF5I22zJnuclswcZMc8bDIrwRHRzf+NqVEmqg50ShAZMP7MWeR/RGDthfM/p+BlqvF2fXAzpn8i+SJcYD3alw==}
 
   randexp@0.4.6:
     resolution: {integrity: sha512-80WNmd9DA0tmZrw9qQa62GPPWfuXJknrmVmLcxvq4uZBdYqb1wYoKTmnlGUchvVWe0XiLupYkBoXVOxz3C8DYQ==}
@@ -17842,11 +17842,11 @@ snapshots:
       tslib: 2.8.1
       value-or-promise: 1.0.12
 
-  '@envelop/graphql-modules@6.0.0(@envelop/core@5.0.2)(graphql-modules@2.4.0(graphql@16.9.0))(graphql@16.9.0)':
+  '@envelop/graphql-modules@6.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       graphql: 16.9.0
-      graphql-modules: 2.4.0(graphql@16.9.0)
+      graphql-modules: 3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0)
       tslib: 2.8.1
 
   '@envelop/on-resolve@4.1.0(@envelop/core@5.0.2)(graphql@16.9.0)':
@@ -27562,13 +27562,13 @@ snapshots:
       nullthrows: 1.1.1
       vscode-languageserver-types: 3.17.5
 
-  graphql-modules@2.4.0(graphql@16.9.0):
+  graphql-modules@3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83(graphql@16.9.0):
     dependencies:
       '@graphql-tools/schema': 10.0.16(graphql@16.9.0)
-      '@graphql-tools/wrap': 10.0.16(graphql@16.9.0)
+      '@graphql-tools/wrap': 10.0.27(graphql@16.9.0)
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.9.0)
       graphql: 16.9.0
-      ramda: 0.29.0
+      ramda: 0.30.1
 
   graphql-parse-resolve-info@4.13.0(graphql@16.9.0):
     dependencies:
@@ -31221,7 +31221,7 @@ snapshots:
 
   railroad-diagrams@1.0.0: {}
 
-  ramda@0.29.0: {}
+  ramda@0.30.1: {}
 
   randexp@0.4.6:
     dependencies:

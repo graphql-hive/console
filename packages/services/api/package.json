@@ -50,7 +50,7 @@
     "fast-json-stable-stringify": "2.1.0",
     "got": "14.4.5",
     "graphql": "16.9.0",
-    "graphql-modules": "2.4.0",
+    "graphql-modules": "3.0.0-alpha-20250219090434-d6cc8940d97c7ef3dba3f59c56376d7cbab77c83",
     "graphql-parse-resolve-info": "4.13.0",
     "graphql-scalars": "1.24.0",
     "graphql-yoga": "5.10.8",
