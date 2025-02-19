@@ -15,51 +15,62 @@ const client = createTRPCProxyClient<SchemaBuilderApi>({
   ],
 });
 
-describe('schema service can process metadata', () => {
-  test('multiple', async () => {
-    const result = await client.composeAndValidate.mutate({
-      type: 'federation',
-      native: true,
-      schemas: [
-        {
-          raw: /* GraphQL */ `
-            extend schema
-              @link(url: "https://specs.apollo.dev/link/v1.0")
-              @link(url: "https://specs.apollo.dev/federation/v2.3")
-              @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-              @federation__composeDirective(name: "@meta")
-              @meta(name: "owner", content: "hive-team")
+describe('schema service can process metadata', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.3")
+            @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+            @meta(name: "schema", content: "user")
 
-            directive @meta(
-              name: String!
-              content: String!
-            ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+          directive @meta(
+            name: String!
+            content: String!
+          ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
-            type Query {
-              hello: String
-            }
-          `,
-          source: 'foo.graphql',
-          url: null,
-        },
-        {
-          raw: /* GraphQL */ `
-            extend schema
-              @link(url: "https://specs.apollo.dev/link/v1.0")
-              @link(url: "https://specs.apollo.dev/federation/v2.0")
+          type Query {
+            user: User @meta(name: "field", content: "user")
+          }
 
-            type Query {
-              bar: String
-            }
-          `,
-          source: 'bar.graphql',
-          url: null,
-        },
-      ],
-      external: null,
-      contracts: null,
-    });
+          type User @meta(name: "type", content: "user") {
+            id: ID!
+            name: String @meta(name: "field", content: "User.name")
+          }
+        `,
+        source: 'user.graphql',
+        url: null,
+      },
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.1")
+            @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+            @meta(name: "schema", content: "foo")
 
+          directive @meta(
+            name: String!
+            content: String!
+          ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+          type Query {
+            foo: String
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: null,
+  });
+
+  test('@meta does not need to be in supergraph', () => {
     expect(result.supergraph).toMatchInlineSnapshot(`
       schema
         @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -137,15 +148,65 @@ describe('schema service can process metadata', () => {
 
 
       enum join__Graph {
-        BAR_GRAPHQL @join__graph(name: "bar.graphql", url: "") 
         FOO_GRAPHQL @join__graph(name: "foo.graphql", url: "") 
+        USER_GRAPHQL @join__graph(name: "user.graphql", url: "") 
       }
 
-      directive @meta(name: String!, content: String!)  repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+      type Query @join__type(graph: FOO_GRAPHQL)  @join__type(graph: USER_GRAPHQL)  {
+        foo: String @join__field(graph: FOO_GRAPHQL) 
+        user: User @join__field(graph: USER_GRAPHQL) 
+      }
 
-      type Query @join__type(graph: BAR_GRAPHQL)  @join__type(graph: FOO_GRAPHQL)  {
-        bar: String @join__field(graph: BAR_GRAPHQL) 
-        hello: String @meta(name: "owner", content: "hive-team")  @join__field(graph: FOO_GRAPHQL) 
+      type User @join__type(graph: USER_GRAPHQL)  {
+        id: ID!
+        name: String
+      }
+    `);
+  })
+
+  test('metadata is a union from schema, type, and field @meta', () => {
+    expect(result.schemaMetadata).toMatchInlineSnapshot(`
+      {
+        Query.foo: [
+          {
+            content: foo,
+            name: schema,
+          },
+        ],
+        Query.user: [
+          {
+            content: user,
+            name: field,
+          },
+          {
+            content: user,
+            name: schema,
+          },
+        ],
+        User.id: [
+          {
+            content: user,
+            name: type,
+          },
+          {
+            content: user,
+            name: schema,
+          },
+        ],
+        User.name: [
+          {
+            content: User.name,
+            name: field,
+          },
+          {
+            content: user,
+            name: type,
+          },
+          {
+            content: user,
+            name: schema,
+          },
+        ],
       }
     `);
   });
