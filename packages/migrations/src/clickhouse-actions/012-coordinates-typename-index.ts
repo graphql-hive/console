@@ -8,9 +8,11 @@ const SystemTablesModel = z.array(
   }),
 );
 
-const DataSkippingIndicesModel = z.array(
+const StateTableModel = z.array(
   z.object({
-    name: z.string(),
+    table: z.string(),
+    idx_created: z.boolean(),
+    idx_materialized: z.boolean(),
   }),
 );
 
@@ -21,6 +23,15 @@ const DataSkippingIndicesModel = z.array(
 // by laveraging the idx_typename index.
 // We filter rows by the first part of the `coordinate` field (substringIndex(coordinate, '.', 1)).
 export const action: Action = async (exec, query) => {
+  // Create a table to store the state of the migration
+  await exec(`
+    CREATE TABLE IF NOT EXISTS default.migration_coordinates_typename_index (
+      table String,
+      idx_created Bool DEFAULT false,
+      idx_materialized Bool DEFAULT false
+    ) ENGINE = MergeTree()
+  `);
+
   const tables = await query(`
     SELECT uuid, name FROM system.tables WHERE name IN (
       'coordinates_daily',
@@ -33,20 +44,49 @@ export const action: Action = async (exec, query) => {
     throw new Error('Expected 3 tables');
   }
 
-  for (const { uuid, name } of tables) {
-    console.log(`Creating idx_typename for table ${name}`);
-    await exec(
-      `ALTER TABLE ".inner_id.${uuid}" ADD INDEX idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
-    );
-    const indexes = await query(`
-      SELECT name FROM system.data_skipping_indices WHERE table = '${'.inner_id.' + uuid}' AND name = 'idx_typename'
-    `).then(async r => DataSkippingIndicesModel.parse(r.data));
+  const tableStates = await query(`
+    SELECT table, idx_created, idx_materialized FROM default.migration_coordinates_typename_index
+  `).then(async r => StateTableModel.parse(r.data));
 
-    if (indexes.some(i => i.name)) {
-      console.log(`Materializing the idx_typename for table ${name}`);
-      await exec(`ALTER TABLE ".inner_id.${uuid}" MATERIALIZE INDEX idx_typename`);
+  for (const { uuid, name } of tables) {
+    let state = tableStates.find(s => s.table === name);
+
+    if (!state) {
+      console.log(`Creating state for table ${name}`);
+      await exec(`
+        INSERT INTO default.migration_coordinates_typename_index (table) VALUES ('${name}')
+      `);
+
+      state = { table: name, idx_created: false, idx_materialized: false };
+    }
+
+    const innerTable = `.inner_id.${uuid}`;
+
+    if (state.idx_created) {
+      console.log(`Skipping idx_typename for table ${name}`);
     } else {
-      console.error(`Failed to find idx_typename for table ${name}`);
+      console.log(`Creating idx_typename for table ${name}`);
+      await exec(
+        `ALTER TABLE "${innerTable}" ADD INDEX idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
+      );
+      await exec(
+        `UPDATE default.migration_coordinates_typename_index SET idx_created = true WHERE table = '${name}'`,
+      );
+    }
+
+    if (state.idx_materialized) {
+      console.log(`Skipping materializing idx_typename for table ${name}`);
+    } else {
+      console.log(`Materializing idx_typename for table ${name}`);
+      await exec(`ALTER TABLE "${innerTable}" MATERIALIZE INDEX idx_typename`);
+      await exec(
+        `UPDATE default.migration_coordinates_typename_index SET idx_materialized = true WHERE table = '${name}'`,
+      );
     }
   }
+
+  // Drop the state table
+  await exec(`
+    DROP TABLE default.migration_coordinates_typename_index
+  `);
 };
