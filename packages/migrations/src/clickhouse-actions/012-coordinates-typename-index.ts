@@ -20,7 +20,7 @@ const DataSkippingIndicesModel = z.array(
 // For example, when looking for `Member.*` coordinates we elimiate the need to scan the whole table,
 // by laveraging the idx_typename index.
 // We filter rows by the first part of the `coordinate` field (substringIndex(coordinate, '.', 1)).
-export const action: Action = async (exec, query, hiveCloudEnvironment) => {
+export const action: Action = async (exec, query) => {
   const tables = await query(`
     SELECT uuid, name FROM system.tables WHERE name IN (
       'coordinates_daily',
