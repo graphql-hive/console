@@ -5,7 +5,7 @@ export type PermissionRecord = {
   title: string;
   description: string;
   dependsOn?: Permission;
-  isReadyOnly?: true;
+  isReadOnly?: true;
   warning?: string;
 };
 

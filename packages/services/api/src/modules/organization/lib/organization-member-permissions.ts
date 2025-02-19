@@ -10,7 +10,7 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'organization:describe',
         title: 'View organization',
         description: 'Member can see the organization. Permission can not be modified.',
-        isReadyOnly: true,
+        isReadOnly: true,
       },
       {
         id: 'support:manageTickets',
@@ -277,7 +277,7 @@ export const permissions = (() => {
   const readOnly = new Set<Permission>();
   for (const group of permissionGroups) {
     for (const permission of group.permissions) {
-      if (permission.isReadyOnly === true) {
+      if (permission.isReadOnly === true) {
         readOnly.add(permission.id);
         continue;
       }
