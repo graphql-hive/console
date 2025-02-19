@@ -162,7 +162,7 @@ describe('schema service can process metadata', async () => {
         name: String
       }
     `);
-  })
+  });
 
   test('metadata is a union from schema, type, and field @meta', () => {
     expect(result.schemaMetadata).toMatchInlineSnapshot(`
