@@ -20,10 +20,10 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import { assignablePermissions } from '../lib/organization-access-token-permissions';
+import { ResourceAssignmentModel } from '../lib/resource-assignment-model';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import {
   resolveResourceAssignment,
-  ResourceAssignmentModel,
   ResourceAssignments,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';

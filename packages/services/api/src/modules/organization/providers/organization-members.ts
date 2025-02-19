@@ -6,11 +6,13 @@ import { batchBy } from '../../../shared/helpers';
 import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
+import {
+  ResourceAssignmentModel,
+  type ResourceAssignmentGroup,
+} from '../lib/resource-assignment-model';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import {
   resolveResourceAssignment,
-  ResourceAssignmentGroup,
-  ResourceAssignmentModel,
   translateResolvedResourcesToAuthorizationPolicyStatements,
 } from './resource-assignments';
 
