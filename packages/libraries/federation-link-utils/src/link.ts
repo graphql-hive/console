@@ -138,7 +138,6 @@ export class FederatedLink {
    * Otherwise, setting the import argument as: import: ["foo"] would incorrectly return `foo` for `@foo`, when it should be `{namespace}__foo`.
    *
    * @name string The element name in the linked schema. If this is the name of the link (e.g. "example" when linking "https://foo.graphql-hive.com/example"), then this returns the default link import.
-   * @throws if both importName is null and the url has no name.
    * @returns The name of the element as it has been imported.
    */
   resolveImportName(elementName: string): string {

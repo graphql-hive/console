@@ -278,14 +278,8 @@ const createFederation: (
 
         if (composed.type === 'success') {
           // merge all metadata from every subgraph by coordinate
-          let metadata: Record<string, Array<{ name: string; content: string }>> | null = null;
-          try {
-            const subgraphMetadatas = subgraphs.map(({ typeDefs }) => extractMetadata(typeDefs));
-            metadata = mergeMetadata(...subgraphMetadatas);
-          } catch (e: unknown) {
-            // warn and proceed because metadata isn't considered critical
-            logger.warn(`Cannot extract metadata from subgraphs because ${e}`);
-          }
+          const subgraphMetadatas = subgraphs.map(({ typeDefs }) => extractMetadata(typeDefs));
+          const metadata = mergeMetadata(...subgraphMetadatas);
 
           const supergraphSDL = parse(composed.result.supergraph);
           const { resolveImportName } = extractLinkImplementations(supergraphSDL);
