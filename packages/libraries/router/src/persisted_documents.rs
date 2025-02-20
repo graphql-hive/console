@@ -7,12 +7,18 @@ use apollo_router::services::router;
 use apollo_router::services::router::Body;
 use apollo_router::Context;
 use core::ops::Drop;
-use std::env;
 use futures::FutureExt;
 use http::StatusCode;
+use http_body_util::combinators::UnsyncBoxBody;
+use http_body_util::BodyExt;
+use http_body_util::Full;
+use hyper::body::Bytes;
 use lru::LruCache;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::num::NonZeroUsize;
 use std::ops::ControlFlow;
 use std::sync::Arc;
@@ -20,8 +26,6 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tower::{BoxError, ServiceBuilder, ServiceExt};
 use tracing::{debug, info, warn};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 
 pub struct PersistedDocumentsPlugin {
     persisted_documents_manager: Arc<PersistedDocumentsManager>,
@@ -103,14 +107,15 @@ impl Plugin for PersistedDocumentsPlugin {
 
         if enabled {
             ServiceBuilder::new()
-                .oneshot_checkpoint_async(move |req: router::Request| {
+                .checkpoint_async(move |req: router::Request| {
                     let mgr = mgr_ref.clone();
-
                     async move {
                         let (parts, body) = req.router_request.into_parts();
-                        let bytes: hyper::body::Bytes = hyper::body::to_bytes(body)
+                        let bytes: hyper::body::Bytes = body
+                            .collect()
                             .await
-                            .map_err(PersistedDocumentsError::FailedToReadBody)?;
+                            .map_err(PersistedDocumentsError::FailedToReadBody)?
+                            .to_bytes();
 
                         let payload = PersistedDocumentsManager::extract_document_id(&bytes);
 
@@ -124,7 +129,10 @@ impl Plugin for PersistedDocumentsPlugin {
                         if payload.original_req.query.is_some() {
                             if allow_arbitrary_documents {
                                 let roll_req: router::Request = (
-                                    http::Request::<Body>::from_parts(parts, bytes.into()),
+                                    http::Request::<Body>::from_parts(
+                                        parts,
+                                        body_from_bytes(bytes),
+                                    ),
                                     req.context,
                                 )
                                     .into();
@@ -163,14 +171,14 @@ impl Plugin for PersistedDocumentsPlugin {
                                     {
                                         warn!("failed to extend router context with persisted document hash key");
                                     }
-                                    
+
                                     payload.original_req.query = Some(document);
 
                                     let mut bytes: Vec<u8> = Vec::new();
                                     serde_json::to_writer(&mut bytes, &payload).unwrap();
 
                                     let roll_req: router::Request = (
-                                        http::Request::<Body>::from_parts(parts, bytes.into()),
+                                        http::Request::<Body>::from_parts(parts, body_from_bytes(bytes)),
                                         req.context,
                                     )
                                         .into();
@@ -187,12 +195,19 @@ impl Plugin for PersistedDocumentsPlugin {
                     }
                     .boxed()
                 })
+                .buffered()
                 .service(service)
                 .boxed()
         } else {
             service
         }
     }
+}
+
+fn body_from_bytes<T: Into<Bytes>>(chunk: T) -> UnsyncBoxBody<Bytes, axum_core::Error> {
+    Full::new(chunk.into())
+        .map_err(|never| match never {})
+        .boxed_unsync()
 }
 
 impl Drop for PersistedDocumentsPlugin {
@@ -211,7 +226,7 @@ struct PersistedDocumentsManager {
 #[derive(Debug, thiserror::Error)]
 pub enum PersistedDocumentsError {
     #[error("Failed to read body: {0}")]
-    FailedToReadBody(hyper::Error),
+    FailedToReadBody(axum_core::Error),
     #[error("Failed to parse body: {0}")]
     FailedToParseBody(serde_json::Error),
     #[error("Persisted document not found.")]
@@ -238,7 +253,9 @@ impl PersistedDocumentsError {
             PersistedDocumentsError::DocumentNotFound => "PERSISTED_DOCUMENT_NOT_FOUND".into(),
             PersistedDocumentsError::KeyNotFound => "PERSISTED_DOCUMENT_KEY_NOT_FOUND".into(),
             PersistedDocumentsError::FailedToFetchFromCDN(_) => "FAILED_TO_FETCH_FROM_CDN".into(),
-            PersistedDocumentsError::FailedToReadCDNResponse(_) => "FAILED_TO_READ_CDN_RESPONSE".into(),
+            PersistedDocumentsError::FailedToReadCDNResponse(_) => {
+                "FAILED_TO_READ_CDN_RESPONSE".into()
+            }
             PersistedDocumentsError::PersistedDocumentRequired => {
                 "PERSISTED_DOCUMENT_REQUIRED".into()
             }
@@ -262,13 +279,17 @@ impl PersistedDocumentsError {
 
 impl PersistedDocumentsManager {
     fn new(config: &Config) -> Self {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(config.retry_count.unwrap_or(3));
+        let retry_policy =
+            ExponentialBackoff::builder().build_with_max_retries(config.retry_count.unwrap_or(3));
 
         let reqwest_agent = reqwest::Client::builder()
-        .danger_accept_invalid_certs(config.accept_invalid_certs.unwrap_or(false))
-        .connect_timeout(Duration::from_secs(config.connect_timeout.unwrap_or(5)))
-        .timeout(Duration::from_secs(config.request_timeout.unwrap_or(15))).build().expect("Failed to create reqwest client");
-        let agent = ClientBuilder::new(reqwest_agent).with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .danger_accept_invalid_certs(config.accept_invalid_certs.unwrap_or(false))
+            .connect_timeout(Duration::from_secs(config.connect_timeout.unwrap_or(5)))
+            .timeout(Duration::from_secs(config.request_timeout.unwrap_or(15)))
+            .build()
+            .expect("Failed to create reqwest client");
+        let agent = ClientBuilder::new(reqwest_agent)
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
 
         let cache_size = config.cache_size.unwrap_or(1000);
@@ -285,7 +306,7 @@ impl PersistedDocumentsManager {
 
     /// Extracts the document id from the request body.
     /// In case of a parsing error, it returns the error.
-    /// This will also try to parse other GraphQL-related (see `original_req`) fields in order to 
+    /// This will also try to parse other GraphQL-related (see `original_req`) fields in order to
     /// pass it to the next layer.
     fn extract_document_id(
         body: &hyper::body::Bytes,
@@ -310,7 +331,11 @@ impl PersistedDocumentsManager {
                     document_id
                 );
                 let cdn_document_id = str::replace(document_id, "~", "/");
-                let cdn_artifact_url = format!("{}/apps/{}", self.config.endpoint.as_ref().unwrap(), cdn_document_id);
+                let cdn_artifact_url = format!(
+                    "{}/apps/{}",
+                    self.config.endpoint.as_ref().unwrap(),
+                    cdn_document_id
+                );
                 info!(
                     "Fetching document {} from CDN: {}",
                     document_id, cdn_artifact_url
@@ -325,7 +350,10 @@ impl PersistedDocumentsManager {
                 match cdn_response {
                     Ok(response) => {
                         if response.status().is_success() {
-                            let document = response.text().await.map_err(PersistedDocumentsError::FailedToReadCDNResponse)?;
+                            let document = response
+                                .text()
+                                .await
+                                .map_err(PersistedDocumentsError::FailedToReadCDNResponse)?;
                             debug!(
                                 "Document fetched from CDN: {}, storing in local cache",
                                 document
@@ -341,7 +369,10 @@ impl PersistedDocumentsManager {
                         warn!(
                             "Document fetch from CDN failed: HTTP {}, Body: {:?}",
                             response.status(),
-                            response.text().await.unwrap_or_else(|_| "Unavailable".to_string())
+                            response
+                                .text()
+                                .await
+                                .unwrap_or_else(|_| "Unavailable".to_string())
                         );
 
                         return Err(PersistedDocumentsError::DocumentNotFound);
@@ -382,6 +413,7 @@ mod hive_persisted_documents_tests {
     use futures::executor::block_on;
     use http::Method;
     use httpmock::{Method::GET, Mock, MockServer};
+    use hyper::body::Bytes;
     use serde_json::json;
 
     use super::*;
@@ -395,7 +427,7 @@ mod hive_persisted_documents_tests {
 
         router::Request::fake_builder()
             .method(Method::POST)
-            .body(Body::from(serde_json::to_string(&r).unwrap()))
+            .body(serde_json::to_string(&r).unwrap())
             .header("content-type", "application/json")
             .build()
             .unwrap()
@@ -432,7 +464,6 @@ mod hive_persisted_documents_tests {
             .unwrap()
     }
 
-
     struct PersistedDocumentsCDNMock {
         server: MockServer,
     }
@@ -465,13 +496,13 @@ mod hive_persisted_documents_tests {
 
     async fn get_body(router_req: router::Request) -> String {
         let (_parts, body) = router_req.router_request.into_parts();
-        let body = hyper::body::to_bytes(body).await.unwrap();
+        let body = body.collect().await.unwrap().to_bytes();
         String::from_utf8(body.to_vec()).unwrap()
     }
 
     /// Creates a mocked router service that reflects the incoming body
     /// back to the client.
-    /// We are using this mocked router in order to make sure that the Persisted Documents layer 
+    /// We are using this mocked router in order to make sure that the Persisted Documents layer
     /// is able to resolve, fetch and pass the document to the next layer.
     fn create_reflecting_mocked_router() -> MockRouterService {
         let mut mocked_execution: MockRouterService = MockRouterService::new();
@@ -678,7 +709,7 @@ mod hive_persisted_documents_tests {
         let service_stack = PersistedDocumentsPlugin::new(Config {
             enabled: Some(true),
             endpoint: Some(cdn_mock.endpoint()),
-            key: Some("123".into()),           
+            key: Some("123".into()),
             allow_arbitrary_documents: Some(false),
             ..Default::default()
         })
@@ -709,14 +740,14 @@ mod hive_persisted_documents_tests {
         let service_stack = PersistedDocumentsPlugin::new(Config {
             enabled: Some(true),
             endpoint: Some(cdn_mock.endpoint()),
-            key: Some("123".into()),           
+            key: Some("123".into()),
             allow_arbitrary_documents: Some(false),
             ..Default::default()
         })
         .router_service(upstream.boxed());
 
         let request = create_persisted_request(
-            "my-app~cacb95c69ba4684aec972777a38cd106740c6453~04bfa72dfb83b297dd8a5b6fed9bafac2b395a0f", 
+            "my-app~cacb95c69ba4684aec972777a38cd106740c6453~04bfa72dfb83b297dd8a5b6fed9bafac2b395a0f",
             Some(json!({"var": "value"}))
         );
         let mut response = service_stack.oneshot(request).await.unwrap();
@@ -737,7 +768,8 @@ mod hive_persisted_documents_tests {
         let p = PersistedDocumentsPlugin::new(Config {
             enabled: Some(true),
             endpoint: Some(cdn_mock.endpoint()),
-            key: Some("123".into()),            allow_arbitrary_documents: Some(false),
+            key: Some("123".into()),
+            allow_arbitrary_documents: Some(false),
             ..Default::default()
         });
         let s1 = p.router_service(create_dummy_mocked_router().boxed());
