@@ -15,7 +15,7 @@ export const Permission: PermissionResolvers = {
     return permission.dependsOn ?? null;
   },
   isReadOnly: (permission, _arg, _ctx) => {
-    return permission.isReadyOnly ?? false;
+    return permission.isReadOnly ?? false;
   },
   level: async (permission, _arg, _ctx) => {
     return getPermissionGroup(permission.id);

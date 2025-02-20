@@ -55,8 +55,11 @@ import {
 } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
+import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
 import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
+import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
+import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { createContext, internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
@@ -402,6 +405,7 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      prometheus: env.prometheus,
     });
 
     const authN = new AuthN({
@@ -413,8 +417,15 @@ export async function main() {
             organizationMembers: new OrganizationMembers(
               storage.pool,
               new OrganizationMemberRoles(storage.pool, logger),
-              storage,
               logger,
+            ),
+          }),
+        (logger: Logger) =>
+          new OrganizationAccessTokenStrategy({
+            logger,
+            organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
+            organizationAccessTokenValidationCache: registry.injector.get(
+              OrganizationAccessTokenValidationCache,
             ),
           }),
         (logger: Logger) =>

@@ -54,6 +54,7 @@ import { IdTranslator } from './modules/shared/providers/id-translator';
 import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
 import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
+import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
@@ -119,6 +120,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  prometheus,
 }: {
   logger: Logger;
   storage: Storage;
@@ -164,6 +166,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  prometheus: null | Record<string, unknown>;
 }) {
   const s3Config: S3Config = [
     {
@@ -322,6 +325,12 @@ export function createRegistry({
       },
       scope: Scope.Operation,
       deps: [CONTEXT],
+    },
+    {
+      provide: PrometheusConfig,
+      useFactory() {
+        return new PrometheusConfig(!!prometheus);
+      },
     },
   ];
 
