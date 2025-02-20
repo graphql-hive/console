@@ -147,3 +147,5 @@ export function createUsageRateLimit(
     },
   };
 }
+
+export type UsageRateLimit = ReturnType<typeof createUsageRateLimit>;
