@@ -6,6 +6,7 @@ import type {
   AssignMemberRoleInput,
   ClientStatsInput,
   CreateMemberRoleInput,
+  CreateOrganizationAccessTokenInput,
   CreateOrganizationInput,
   CreateProjectInput,
   CreateTargetInput,
@@ -1489,5 +1490,40 @@ export async function updateTargetSchemaComposition(
       input,
     },
     token,
+  });
+}
+
+export function createOrganizationAccessToken(
+  input: CreateOrganizationAccessTokenInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation CreateOrganizationAccessToken($input: CreateOrganizationAccessTokenInput!) {
+        createOrganizationAccessToken(input: $input) {
+          ok {
+            privateAccessKey
+            createdOrganizationAccessToken {
+              id
+              title
+              description
+              permissions
+              createdAt
+            }
+          }
+          error {
+            message
+            details {
+              title
+              description
+            }
+          }
+        }
+      }
+    `),
+    authToken,
+    variables: {
+      input,
+    },
   });
 }
