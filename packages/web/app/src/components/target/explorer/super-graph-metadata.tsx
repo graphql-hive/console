@@ -3,7 +3,6 @@ import { PackageIcon } from '@/components/ui/icon';
 import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { LayersIcon as MetadataIcon } from '@radix-ui/react-icons';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { Link } from '@tanstack/react-router';
 
 function stringToHslColor(str: string, s = 30, l = 80) {
@@ -191,36 +190,34 @@ export function SupergraphMetadataList(props: {
   const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <TooltipProvider delayDuration={100}>
-      <div className="flex w-full justify-end">
-        {meta}
-        {previewItems}{' '}
-        {allItems ? (
-          <Tooltip
-            content={
-              <>
-                <div className="mb-2 font-bold">All Subgraphs</div>
-                <div className="relative size-[250px]">
-                  <div className="absolute inset-0 size-[250px] overflow-y-scroll py-2">
-                    {allItems}
-                  </div>
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      boxShadow: `inset 0px 11px 8px -10px ${tooltipColor}, inset 0px -11px 8px -10px ${tooltipColor}`,
-                    }}
-                  />
+    <div className="flex w-full justify-end">
+      {meta}
+      {previewItems}{' '}
+      {allItems ? (
+        <Tooltip
+          content={
+            <>
+              <div className="mb-2 font-bold">All Subgraphs</div>
+              <div className="relative size-[250px]">
+                <div className="absolute inset-0 size-[250px] overflow-y-scroll py-2">
+                  {allItems}
                 </div>
-              </>
-            }
-            contentProps={{ className: 'z-10' }}
-          >
-            <span className="flex cursor-pointer items-center pl-1 text-xs font-bold text-white">
-              + {allItems.length - previewItems.length} more
-            </span>
-          </Tooltip>
-        ) : null}
-      </div>
-    </TooltipProvider>
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    boxShadow: `inset 0px 11px 8px -10px ${tooltipColor}, inset 0px -11px 8px -10px ${tooltipColor}`,
+                  }}
+                />
+              </div>
+            </>
+          }
+          contentProps={{ className: 'z-10' }}
+        >
+          <span className="flex cursor-pointer items-center pl-1 text-xs font-bold text-white">
+            + {allItems.length - previewItems.length} more
+          </span>
+        </Tooltip>
+      ) : null}
+    </div>
   );
 }
