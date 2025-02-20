@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Autocomplete } from '@/components/v2';
+import type { SelectOption } from '@/components/v2/radix-select';
 import { graphql } from '@/gql';
 import {
   Link,
@@ -16,7 +17,6 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { useArgumentListToggle, usePeriodSelector } from './provider';
-import type { SelectOption } from '@/components/v2/radix-select';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
