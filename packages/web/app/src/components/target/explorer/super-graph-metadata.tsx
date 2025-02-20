@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { PackageIcon } from '@/components/ui/icon';
 import { Tooltip } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -74,10 +74,10 @@ function SubgraphChip(props: {
         <>
           <span className="font-bold">{props.text}</span> subgraph
           {props.metadata?.map((m, index) => (
-            <React.Fragment key={`${m.name}-${index}`}>
+            <Fragment key={`${index}`}>
               <br />
               <span className="font-bold">{m.content}</span> {m.name}
-            </React.Fragment>
+            </Fragment>
           )) ?? null}
         </>
       }
