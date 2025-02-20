@@ -67,10 +67,13 @@ export const action: Action = async (exec, query) => {
     } else {
       console.log(`Creating idx_typename for table ${name}`);
       await exec(
-        `ALTER TABLE "${innerTable}" ADD INDEX idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
+        `ALTER TABLE "${innerTable}" ADD INDEX IF NOT EXISTS idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
       );
       await exec(
-        `UPDATE default.migration_coordinates_typename_index SET idx_created = true WHERE table = '${name}'`,
+        `ALTER TABLE default.migration_coordinates_typename_index UPDATE idx_created = true WHERE table = '${name}'`,
+        {
+          mutations_sync: '2',
+        },
       );
     }
 
@@ -80,12 +83,15 @@ export const action: Action = async (exec, query) => {
       console.log(`Materializing idx_typename for table ${name}`);
       await exec(`ALTER TABLE "${innerTable}" MATERIALIZE INDEX idx_typename`);
       await exec(
-        `UPDATE default.migration_coordinates_typename_index SET idx_materialized = true WHERE table = '${name}'`,
+        `ALTER TABLE default.migration_coordinates_typename_index UPDATE idx_materialized = true WHERE table = '${name}'`,
+        {
+          mutations_sync: '2',
+        },
       );
     }
   }
 
-  // Drop the state table
+  console.log('Dropping migration state table');
   await exec(`
     DROP TABLE default.migration_coordinates_typename_index
   `);
