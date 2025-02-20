@@ -106,6 +106,7 @@ export function TypeFilter(props: {
       options={types}
       onChange={(option: SelectOption | null) => {
         void router.navigate({
+          search: router.latestLocation.search,
           to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
           params: {
             organizationSlug: props.organizationSlug,
