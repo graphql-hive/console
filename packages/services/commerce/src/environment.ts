@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import zod from 'zod';
 import { OpenTelemetryConfigurationModel } from '@hive/service-common';
 
@@ -9,10 +8,12 @@ const numberFromNumberOrNumberString = (input: unknown): number | undefined => {
   if (isNumberString(input)) return Number(input);
 };
 
-const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.number().min(1));
+export const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.number().min(1));
 
-// treat an empty string (`''`) as undefined
-const emptyString = <T extends zod.ZodType>(input: T) => {
+/**
+ * treat an empty string (`''`) as undefined
+ */
+export const emptyString = <T extends zod.ZodType>(input: T) => {
   return zod.preprocess((value: unknown) => {
     if (value === '') return undefined;
     return value;
@@ -21,9 +22,6 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
-  TOKENS_ENDPOINT: zod.string().url(),
-  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
-  RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
 });
@@ -35,33 +33,6 @@ const SentryModel = zod.union([
   zod.object({
     SENTRY: zod.literal('1'),
     SENTRY_DSN: zod.string(),
-  }),
-]);
-
-const KafkaBaseModel = zod.object({
-  KAFKA_BROKER: zod.string(),
-  KAFKA_TOPIC: zod.string(),
-  KAFKA_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  KAFKA_SSL_CA_PATH: zod.string().optional(),
-  KAFKA_SSL_CERT_PATH: zod.string().optional(),
-  KAFKA_SSL_KEY_PATH: zod.string().optional(),
-  KAFKA_BUFFER_SIZE: NumberFromString,
-  KAFKA_BUFFER_INTERVAL: NumberFromString,
-  KAFKA_BUFFER_DYNAMIC: zod.union([zod.literal('1'), zod.literal('0')]),
-});
-
-const KafkaModel = zod.union([
-  KafkaBaseModel.extend({
-    KAFKA_SASL_MECHANISM: zod.void().optional(),
-  }),
-  KafkaBaseModel.extend({
-    KAFKA_SASL_MECHANISM: zod.union([
-      zod.literal('plain'),
-      zod.literal('scram-sha-256'),
-      zod.literal('scram-sha-512'),
-    ]),
-    KAFKA_SASL_USERNAME: zod.string(),
-    KAFKA_SASL_PASSWORD: zod.string(),
   }),
 ]);
 
@@ -90,18 +61,48 @@ const LogModel = zod.object({
   ),
 });
 
+const ClickHouseModel = zod.object({
+  CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
+  CLICKHOUSE_HOST: zod.string(),
+  CLICKHOUSE_PORT: NumberFromString,
+  CLICKHOUSE_USERNAME: zod.string(),
+  CLICKHOUSE_PASSWORD: zod.string(),
+});
+
+const PostgresModel = zod.object({
+  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+  POSTGRES_HOST: zod.string(),
+  POSTGRES_PORT: NumberFromString,
+  POSTGRES_DB: zod.string(),
+  POSTGRES_USER: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
+});
+
+const HiveServicesModel = zod.object({
+  EMAILS_ENDPOINT: emptyString(zod.string().url().optional()),
+  WEB_APP_URL: emptyString(zod.string().url().optional()),
+});
+
+const RateLimitModel = zod.object({
+  LIMIT_CACHE_UPDATE_INTERVAL_MS: emptyString(NumberFromString.optional()),
+});
+
+const StripeModel = zod.object({
+  STRIPE_SECRET_KEY: zod.string(),
+  STRIPE_SYNC_INTERVAL_MS: emptyString(NumberFromString.optional()),
+});
+
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
-
   sentry: SentryModel.safeParse(process.env),
-
-  kafka: KafkaModel.safeParse(process.env),
-
+  clickhouse: ClickHouseModel.safeParse(process.env),
+  postgres: PostgresModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
-
   log: LogModel.safeParse(process.env),
-
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  hiveServices: HiveServicesModel.safeParse(process.env),
+  rateLimit: RateLimitModel.safeParse(process.env),
+  stripe: StripeModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -126,78 +127,66 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 }
 
 const base = extractConfig(configs.base);
+const clickhouse = extractConfig(configs.clickhouse);
+const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
-const kafka = extractConfig(configs.kafka);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
+const hiveServices = extractConfig(configs.hiveServices);
+const rateLimit = extractConfig(configs.rateLimit);
+const stripe = extractConfig(configs.stripe);
 
 export const env = {
   environment: base.ENVIRONMENT,
   release: base.RELEASE ?? 'local',
   http: {
-    port: base.PORT ?? 5000,
+    port: base.PORT ?? 4012,
   },
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
-  hive: {
-    tokens: {
-      endpoint: base.TOKENS_ENDPOINT,
-    },
-    commerce: base.COMMERCE_ENDPOINT
-      ? {
-          endpoint: base.COMMERCE_ENDPOINT,
-          ttl: base.RATE_LIMIT_TTL,
-        }
-      : null,
+  clickhouse: {
+    protocol: clickhouse.CLICKHOUSE_PROTOCOL,
+    host: clickhouse.CLICKHOUSE_HOST,
+    port: clickhouse.CLICKHOUSE_PORT,
+    username: clickhouse.CLICKHOUSE_USERNAME,
+    password: clickhouse.CLICKHOUSE_PASSWORD,
   },
-  kafka: {
-    topic: kafka.KAFKA_TOPIC,
-    connection: {
-      broker: kafka.KAFKA_BROKER,
-      ssl:
-        kafka.KAFKA_SSL === '1'
-          ? kafka.KAFKA_SSL_CA_PATH != null &&
-            kafka.KAFKA_SSL_CERT_PATH != null &&
-            kafka.KAFKA_SSL_KEY_PATH != null
-            ? {
-                ca: fs.readFileSync(kafka.KAFKA_SSL_CA_PATH),
-                cert: fs.readFileSync(kafka.KAFKA_SSL_CERT_PATH),
-                key: fs.readFileSync(kafka.KAFKA_SSL_KEY_PATH),
-              }
-            : true
-          : false,
-      sasl:
-        kafka.KAFKA_SASL_MECHANISM != null
-          ? {
-              mechanism: kafka.KAFKA_SASL_MECHANISM,
-              username: kafka.KAFKA_SASL_USERNAME,
-              password: kafka.KAFKA_SASL_PASSWORD,
-            }
-          : null,
-    },
-    buffer: {
-      size: kafka.KAFKA_BUFFER_SIZE,
-      interval: kafka.KAFKA_BUFFER_INTERVAL,
-      dynamic: kafka.KAFKA_BUFFER_DYNAMIC === '1',
-    },
+  postgres: {
+    host: postgres.POSTGRES_HOST,
+    port: postgres.POSTGRES_PORT,
+    db: postgres.POSTGRES_DB,
+    user: postgres.POSTGRES_USER,
+    password: postgres.POSTGRES_PASSWORD,
+    ssl: postgres.POSTGRES_SSL === '1',
   },
+  sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
     requests: log.REQUEST_LOGGING === '1',
   },
-  sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   prometheus:
     prometheus.PROMETHEUS_METRICS === '1'
       ? {
           labels: {
-            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'usage-service',
+            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'rate-limit',
           },
           port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
+  hiveServices: {
+    emails: {
+      endpoint: hiveServices.EMAILS_ENDPOINT,
+    },
+    webAppUrl: hiveServices.WEB_APP_URL,
+  },
+  rateLimit: {
+    limitCacheUpdateIntervalMs: rateLimit.LIMIT_CACHE_UPDATE_INTERVAL_MS ?? 60_000,
+  },
+  stripe: {
+    secretKey: stripe.STRIPE_SECRET_KEY,
+    syncIntervalMs: stripe.STRIPE_SYNC_INTERVAL_MS ?? 10 * 60_000,
+  },
 } as const;
-
-export type KafkaEnvironment = typeof env.kafka;

@@ -111,30 +111,8 @@ services:
       LOG_LEVEL: debug
       SECRET: '${EXTERNAL_COMPOSITION_SECRET}'
 
-  usage-estimator:
-    image: '${DOCKER_REGISTRY}usage-estimator${DOCKER_TAG}'
-    networks:
-      - 'stack'
-    ports:
-      - 3008:3008
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
-    environment:
-      NODE_ENV: production
-      LOG_LEVEL: debug
-      CLICKHOUSE_PROTOCOL: 'http'
-      CLICKHOUSE_HOST: 'clickhouse'
-      CLICKHOUSE_PORT: '8123'
-      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
-      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
-      PORT: 3008
-      FF_CLICKHOUSE_V2_TABLES: ${FF_CLICKHOUSE_V2_TABLES:-}
-
-  rate-limit:
-    image: '${DOCKER_REGISTRY}rate-limit${DOCKER_TAG}'
+  commerce:
+    image: '${DOCKER_REGISTRY}commerce${DOCKER_TAG}'
     networks:
       - 'stack'
     ports:
@@ -144,8 +122,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      usage-estimator:
-        condition: service_healthy
       emails:
         condition: service_healthy
     environment:
@@ -157,8 +133,13 @@ services:
       POSTGRES_DB: '${POSTGRES_DB}'
       POSTGRES_USER: '${POSTGRES_USER}'
       POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      USAGE_ESTIMATOR_ENDPOINT: http://usage-estimator:3008
+      CLICKHOUSE_PROTOCOL: 'http'
+      CLICKHOUSE_HOST: 'clickhouse'
+      CLICKHOUSE_PORT: '8123'
+      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
+      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
       EMAILS_ENDPOINT: http://emails:3011
+      STRIPE_SECRET_KEY: empty
       PORT: 3009
 
   # Overrides only to `docker-compose.community.yaml` from now on:
@@ -180,8 +161,7 @@ services:
       GITHUB_APP_PRIVATE_KEY: 5f938d51a065476c4dc1b04aeba13afb
       FEEDBACK_SLACK_TOKEN: ''
       FEEDBACK_SLACK_CHANNEL: '#hive'
-      USAGE_ESTIMATOR_ENDPOINT: '${USAGE_ESTIMATOR_ENDPOINT}'
-      RATE_LIMIT_ENDPOINT: '${RATE_LIMIT_ENDPOINT}'
+      COMMERCE_ENDPOINT: '${COMMERCE_ENDPOINT}'
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
       LOG_LEVEL: debug
       # Auth
@@ -239,7 +219,7 @@ services:
 
   usage:
     environment:
-      RATE_LIMIT_ENDPOINT: '${RATE_LIMIT_ENDPOINT}'
+      COMMERCE_ENDPOINT: '${COMMERCE_ENDPOINT}'
       RATE_LIMIT_TTL: 1000
       LOG_LEVEL: debug
     depends_on:

@@ -1,12 +1,12 @@
 import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceDeployment } from '../utils/service-deployment';
+import { CommerceService } from './commerce';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Kafka } from './kafka';
 import { Observability } from './observability';
-import { RateLimitService } from './rate-limit';
 import { Sentry } from './sentry';
 import { Tokens } from './tokens';
 
@@ -17,7 +17,7 @@ export function deployUsage({
   tokens,
   kafka,
   dbMigrations,
-  rateLimit,
+  commerce,
   image,
   docker,
   observability,
@@ -29,7 +29,7 @@ export function deployUsage({
   tokens: Tokens;
   kafka: Kafka;
   dbMigrations: DbMigrations;
-  rateLimit: RateLimitService;
+  commerce: CommerceService;
   docker: Docker;
   sentry: Sentry;
 }) {
@@ -66,7 +66,7 @@ export function deployUsage({
         KAFKA_BUFFER_DYNAMIC: kafkaBufferDynamic,
         KAFKA_TOPIC: kafka.config.topic,
         TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
-        RATE_LIMIT_ENDPOINT: serviceLocalEndpoint(rateLimit.service),
+        COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled &&
           observability.enabledForUsageService &&
@@ -85,13 +85,9 @@ export function deployUsage({
         maxReplicas,
       },
     },
-    [
-      dbMigrations,
-      tokens.deployment,
-      tokens.service,
-      rateLimit.deployment,
-      rateLimit.service,
-    ].filter(Boolean),
+    [dbMigrations, tokens.deployment, tokens.service, commerce.deployment, commerce.service].filter(
+      Boolean,
+    ),
   )
     .withSecret('KAFKA_SASL_USERNAME', kafka.secret, 'saslUsername')
     .withSecret('KAFKA_SASL_PASSWORD', kafka.secret, 'saslPassword')

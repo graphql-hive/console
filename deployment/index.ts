@@ -1,10 +1,10 @@
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
-import { deployStripeBilling } from './services/billing';
 import { deployCFBroker } from './services/cf-broker';
 import { deployCFCDN } from './services/cf-cdn';
 import { deployClickhouse } from './services/clickhouse';
 import { deployCloudFlareSecurityTransform } from './services/cloudflare-security';
+import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
@@ -17,7 +17,6 @@ import { deployObservability } from './services/observability';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
-import { deployRateLimit } from './services/rate-limit';
 import { deployRedis } from './services/redis';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
@@ -27,7 +26,6 @@ import { configureSlackApp } from './services/slack-app';
 import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
-import { deployUsageEstimation } from './services/usage-estimation';
 import { deployUsageIngestor } from './services/usage-ingestor';
 import { deployWebhooks } from './services/webhooks';
 import { configureZendesk } from './services/zendesk';
@@ -148,37 +146,16 @@ const emails = deployEmails({
   observability,
 });
 
-const usageEstimator = deployUsageEstimation({
-  image: docker.factory.getImageId('usage-estimator', imagesTag),
+const commerce = deployCommerce({
+  image: docker.factory.getImageId('commerce', imagesTag),
   docker,
   environment,
   clickhouse,
   dbMigrations,
   sentry,
   observability,
-});
-
-const billing = deployStripeBilling({
-  image: docker.factory.getImageId('stripe-billing', imagesTag),
-  docker,
-  postgres,
-  environment,
-  dbMigrations,
-  usageEstimator,
-  sentry,
-  observability,
-});
-
-const rateLimit = deployRateLimit({
-  image: docker.factory.getImageId('rate-limit', imagesTag),
-  docker,
-  environment,
-  dbMigrations,
-  usageEstimator,
   emails,
   postgres,
-  sentry,
-  observability,
 });
 
 const usage = deployUsage({
@@ -188,7 +165,7 @@ const usage = deployUsage({
   tokens,
   kafka,
   dbMigrations,
-  rateLimit,
+  commerce,
   sentry,
   observability,
 });
@@ -241,9 +218,7 @@ const graphql = deployGraphQL({
   redis,
   usage,
   cdn,
-  usageEstimator,
-  rateLimit,
-  billing,
+  commerce,
   emails,
   supertokens,
   s3,
@@ -302,7 +277,7 @@ const app = deployApp({
   image: docker.factory.getImageId('app', imagesTag),
   docker,
   zendesk,
-  billing,
+  commerce,
   github: githubApp,
   slackApp,
   sentry,

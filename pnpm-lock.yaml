@@ -295,9 +295,9 @@ importers:
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.9.0)
-      '@hive/rate-limit':
+      '@hive/commerce':
         specifier: workspace:*
-        version: link:../packages/services/rate-limit
+        version: link:../packages/services/commerce
       '@hive/schema':
         specifier: workspace:*
         version: link:../packages/services/schema
@@ -831,6 +831,9 @@ importers:
       slonik:
         specifier: 30.4.4
         version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
+      stripe:
+        specifier: 17.5.0
+        version: 17.5.0
       supertokens-node:
         specifier: 16.7.5
         version: 16.7.5(encoding@0.1.13)
@@ -921,6 +924,51 @@ importers:
       undici:
         specifier: 6.21.1
         version: 6.21.1
+      zod:
+        specifier: 3.24.1
+        version: 3.24.1
+
+  packages/services/commerce:
+    devDependencies:
+      '@hive/api':
+        specifier: workspace:*
+        version: link:../api
+      '@hive/emails':
+        specifier: workspace:*
+        version: link:../emails
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../service-common
+      '@hive/storage':
+        specifier: workspace:*
+        version: link:../storage
+      '@sentry/node':
+        specifier: 7.120.2
+        version: 7.120.2
+      '@trpc/client':
+        specifier: 10.45.2
+        version: 10.45.2(@trpc/server@10.45.2)
+      '@trpc/server':
+        specifier: 10.45.2
+        version: 10.45.2
+      date-fns:
+        specifier: 4.1.0
+        version: 4.1.0
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
+      fastify:
+        specifier: 4.29.0
+        version: 4.29.0
+      pino-pretty:
+        specifier: 11.3.0
+        version: 11.3.0
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      stripe:
+        specifier: 17.5.0
+        version: 17.5.0
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -1066,48 +1114,6 @@ importers:
       zod-validation-error:
         specifier: 3.4.0
         version: 3.4.0(zod@3.24.1)
-
-  packages/services/rate-limit:
-    devDependencies:
-      '@hive/emails':
-        specifier: workspace:*
-        version: link:../emails
-      '@hive/service-common':
-        specifier: workspace:*
-        version: link:../service-common
-      '@hive/storage':
-        specifier: workspace:*
-        version: link:../storage
-      '@sentry/node':
-        specifier: 7.120.2
-        version: 7.120.2
-      '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
-      '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
-      date-fns:
-        specifier: 4.1.0
-        version: 4.1.0
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
-      pino-pretty:
-        specifier: 11.3.0
-        version: 11.3.0
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      tslib:
-        specifier: 2.8.1
-        version: 2.8.1
-      zod:
-        specifier: 3.24.1
-        version: 3.24.1
 
   packages/services/schema:
     devDependencies:
@@ -1422,45 +1428,6 @@ importers:
         specifier: 3.24.1
         version: 3.24.1
 
-  packages/services/stripe-billing:
-    devDependencies:
-      '@hive/service-common':
-        specifier: workspace:*
-        version: link:../service-common
-      '@hive/storage':
-        specifier: workspace:*
-        version: link:../storage
-      '@sentry/node':
-        specifier: 7.120.2
-        version: 7.120.2
-      '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
-      '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
-      date-fns:
-        specifier: 4.1.0
-        version: 4.1.0
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
-      pino-pretty:
-        specifier: 11.3.0
-        version: 11.3.0
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      stripe:
-        specifier: 17.5.0
-        version: 17.5.0
-      zod:
-        specifier: 3.24.1
-        version: 3.24.1
-
   packages/services/tokens:
     devDependencies:
       '@hive/service-common':
@@ -1568,39 +1535,6 @@ importers:
       graphql:
         specifier: 16.9.0
         version: 16.9.0
-
-  packages/services/usage-estimator:
-    devDependencies:
-      '@hive/api':
-        specifier: workspace:*
-        version: link:../api
-      '@hive/service-common':
-        specifier: workspace:*
-        version: link:../service-common
-      '@sentry/node':
-        specifier: 7.120.2
-        version: 7.120.2
-      '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
-      pino-pretty:
-        specifier: 11.3.0
-        version: 11.3.0
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      tslib:
-        specifier: 2.8.1
-        version: 2.8.1
-      zod:
-        specifier: 3.24.1
-        version: 3.24.1
 
   packages/services/usage-ingestor:
     devDependencies:
@@ -26913,7 +26847,7 @@ snapshots:
       proxy-addr: 2.0.7
       rfdc: 1.4.1
       secure-json-parse: 2.7.0
-      semver: 7.6.2
+      semver: 7.6.3
       toad-cache: 3.7.0
 
   fastq@1.17.1:
