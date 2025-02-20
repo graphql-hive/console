@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Autocomplete } from '@/components/v2';
+import type { SelectOption } from '@/components/v2/radix-select';
 import { graphql } from '@/gql';
 import {
   Link,
@@ -103,14 +104,15 @@ export function TypeFilter(props: {
       placeholder="Search for a type"
       defaultValue={props.typename ? { value: props.typename, label: props.typename } : null}
       options={types}
-      onChange={option => {
+      onChange={(option: SelectOption | null) => {
         void router.navigate({
+          search: router.latestLocation.search,
           to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
           params: {
             organizationSlug: props.organizationSlug,
             projectSlug: props.projectSlug,
             targetSlug: props.targetSlug,
-            typename: option.value,
+            typename: option?.value ?? '',
           },
         });
       }}

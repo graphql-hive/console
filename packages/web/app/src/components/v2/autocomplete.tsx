@@ -122,6 +122,7 @@ export function Autocomplete(props: {
       defaultValue={props.defaultValue}
       styles={styles}
       isSearchable
+      isClearable
       closeMenuOnSelect
       onChange={option => props.onChange(option as SelectOption)}
       isDisabled={props.disabled}
