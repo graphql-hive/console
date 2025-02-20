@@ -10,12 +10,15 @@ import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recor
 import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
 import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
-import { billingModule } from './modules/billing';
-import { BILLING_CONFIG, BillingConfig } from './modules/billing/providers/tokens';
 import { cdnModule } from './modules/cdn';
 import { AwsClient } from './modules/cdn/providers/aws';
 import { CDN_CONFIG, CDNConfig } from './modules/cdn/providers/tokens';
 import { collectionModule } from './modules/collection';
+import { commerceModule } from './modules/commerce';
+import {
+  CommerceConfig,
+  provideCommerceConfig,
+} from './modules/commerce/providers/commerce-client';
 import { integrationsModule } from './modules/integrations';
 import {
   GITHUB_APP_CONFIG,
@@ -33,11 +36,6 @@ import {
   SchemaPolicyServiceConfig,
 } from './modules/policy/providers/tokens';
 import { projectModule } from './modules/project';
-import { rateLimitModule } from './modules/rate-limit';
-import {
-  RATE_LIMIT_SERVICE_CONFIG,
-  RateLimitServiceConfig,
-} from './modules/rate-limit/providers/tokens';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -51,6 +49,10 @@ import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { Emails, EMAILS_ENDPOINT } from './modules/shared/providers/emails';
 import { HttpClient } from './modules/shared/providers/http-client';
 import { IdTranslator } from './modules/shared/providers/id-translator';
+import {
+  InMemoryRateLimiter,
+  InMemoryRateLimitStore,
+} from './modules/shared/providers/in-memory-rate-limiter';
 import { Logger } from './modules/shared/providers/logger';
 import { Mutex } from './modules/shared/providers/mutex';
 import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
@@ -64,11 +66,6 @@ import { provideSupportConfig, SupportConfig } from './modules/support/providers
 import { targetModule } from './modules/target';
 import { tokenModule } from './modules/token';
 import { TOKENS_CONFIG, TokensConfig } from './modules/token/providers/tokens';
-import { usageEstimationModule } from './modules/usage-estimation';
-import {
-  USAGE_ESTIMATION_SERVICE_CONFIG,
-  UsageEstimationServiceConfig,
-} from './modules/usage-estimation/providers/tokens';
 
 const modules = [
   sharedModule,
@@ -84,9 +81,7 @@ const modules = [
   alertsModule,
   cdnModule,
   adminModule,
-  usageEstimationModule,
-  rateLimitModule,
-  billingModule,
+  commerceModule,
   oidcIntegrationsModule,
   schemaPolicyModule,
   collectionModule,
@@ -96,11 +91,10 @@ const modules = [
 
 export function createRegistry({
   app,
+  commerce,
   tokens,
   webhooks,
   schemaService,
-  usageEstimationService,
-  rateLimitService,
   schemaPolicyService,
   logger,
   storage,
@@ -112,7 +106,6 @@ export function createRegistry({
   s3Mirror,
   s3AuditLogs,
   encryptionSecret,
-  billing,
   schemaConfig,
   supportConfig,
   emailsEndpoint,
@@ -124,11 +117,10 @@ export function createRegistry({
   storage: Storage;
   clickHouse: ClickHouseConfig;
   redis: Redis;
+  commerce: CommerceConfig;
   tokens: TokensConfig;
   webhooks: WebhooksConfig;
   schemaService: SchemaServiceConfig;
-  usageEstimationService: UsageEstimationServiceConfig;
-  rateLimitService: RateLimitServiceConfig;
   schemaPolicyService: SchemaPolicyServiceConfig;
   githubApp: GitHubApplicationConfig | null;
   cdn: CDNConfig | null;
@@ -157,7 +149,6 @@ export function createRegistry({
   app: {
     baseUrl: string;
   } | null;
-  billing: BillingConfig;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
   emailsEndpoint?: string;
@@ -214,6 +205,8 @@ export function createRegistry({
     DistributedCache,
     CryptoProvider,
     Emails,
+    InMemoryRateLimitStore,
+    InMemoryRateLimiter,
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,
@@ -242,11 +235,7 @@ export function createRegistry({
       useValue: tokens,
       scope: Scope.Singleton,
     },
-    {
-      provide: BILLING_CONFIG,
-      useValue: billing,
-      scope: Scope.Singleton,
-    },
+
     {
       provide: WEBHOOKS_CONFIG,
       useValue: webhooks,
@@ -255,16 +244,6 @@ export function createRegistry({
     {
       provide: SCHEMA_SERVICE_CONFIG,
       useValue: schemaService,
-      scope: Scope.Singleton,
-    },
-    {
-      provide: USAGE_ESTIMATION_SERVICE_CONFIG,
-      useValue: usageEstimationService,
-      scope: Scope.Singleton,
-    },
-    {
-      provide: RATE_LIMIT_SERVICE_CONFIG,
-      useValue: rateLimitService,
       scope: Scope.Singleton,
     },
     {
@@ -315,6 +294,7 @@ export function createRegistry({
     { provide: PUB_SUB_CONFIG, scope: Scope.Singleton, useValue: pubSub },
     encryptionSecretProvider(encryptionSecret),
     provideSchemaModuleConfig(schemaConfig),
+    provideCommerceConfig(commerce),
     {
       provide: Session,
       useFactory(context: { session: Session }) {

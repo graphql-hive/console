@@ -123,27 +123,6 @@ target "emails" {
   ]
 }
 
-target "rate-limit" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/rate-limit/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/rate-limit"
-    IMAGE_TITLE = "graphql-hive/rate-limit"
-    IMAGE_DESCRIPTION = "The rate limit service of the GraphQL Hive project."
-    PORT = "3009"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("rate-limit"),
-    stable_image_tag("rate-limit"),
-    image_tag("rate-limit", COMMIT_SHA),
-    image_tag("rate-limit", BRANCH_NAME)
-  ]
-}
-
 target "schema" {
   inherits = ["service-base", get_target()]
   contexts = {
@@ -225,24 +204,24 @@ target "storage" {
   ]
 }
 
-target "stripe-billing" {
+target "commerce" {
   inherits = ["service-base", get_target()]
   contexts = {
-    dist = "${PWD}/packages/services/stripe-billing/dist"
+    dist = "${PWD}/packages/services/commerce/dist"
     shared = "${PWD}/docker/shared"
   }
   args = {
-    SERVICE_DIR_NAME = "@hive/stripe-billing"
-    IMAGE_TITLE = "graphql-hive/stripe-billing"
-    IMAGE_DESCRIPTION = "The stripe billing service of the GraphQL Hive project."
+    SERVICE_DIR_NAME = "@hive/commerce"
+    IMAGE_TITLE = "graphql-hive/commerce"
+    IMAGE_DESCRIPTION = "The commerce service of the GraphQL Hive project."
     PORT = "3010"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
-    local_image_tag("stripe-billing"),
-    stable_image_tag("stripe-billing"),
-    image_tag("stripe-billing", COMMIT_SHA),
-    image_tag("stripe-billing", BRANCH_NAME)
+    local_image_tag("commerce"),
+    stable_image_tag("commerce"),
+    image_tag("commerce", COMMIT_SHA),
+    image_tag("commerce", BRANCH_NAME)
   ]
 }
 
@@ -264,27 +243,6 @@ target "tokens" {
     stable_image_tag("tokens"),
     image_tag("tokens", COMMIT_SHA),
     image_tag("tokens", BRANCH_NAME)
-  ]
-}
-
-target "usage-estimator" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/usage-estimator/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/usage-estimator"
-    IMAGE_TITLE = "graphql-hive/usage-estimator"
-    IMAGE_DESCRIPTION = "The usage estimator service of the GraphQL Hive project."
-    PORT = "3008"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("usage-estimator"),
-    stable_image_tag("usage-estimator"),
-    image_tag("usage-estimator", COMMIT_SHA),
-    image_tag("usage-estimator", BRANCH_NAME)
   ]
 }
 
@@ -432,17 +390,15 @@ target "cli" {
 group "build" {
   targets = [
     "emails",
-    "rate-limit",
     "schema",
     "policy",
     "storage",
     "tokens",
-    "usage-estimator",
     "usage-ingestor",
     "usage",
     "webhooks",
     "server",
-    "stripe-billing",
+    "commerce",
     "composition-federation-2",
     "app"
   ]
@@ -450,13 +406,12 @@ group "build" {
 
 group "integration-tests" {
   targets = [
+    "commerce",
     "emails",
-    "rate-limit",
     "schema",
     "policy",
     "storage",
     "tokens",
-    "usage-estimator",
     "usage-ingestor",
     "usage",
     "webhooks",
