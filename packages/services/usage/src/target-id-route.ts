@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { AuthN } from '@hive/api/modules/auth/lib/authz';
-import { TargetsCache } from '@hive/api/modules/target/providers/targets-cache';
+import type { TargetsCache } from '@hive/api/modules/target/providers/targets-cache';
 import { maskToken, SpanStatusCode } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { measureHandler, measureParsing } from './metric-helper';
@@ -15,7 +15,7 @@ import {
   usedAPIVersion,
 } from './metrics';
 import type { UsageRateLimit } from './rate-limit';
-import { Usage } from './usage';
+import type { Usage } from './usage';
 import { usageProcessorV2 } from './usage-processor-2';
 
 const ParamsModel = z.object({
