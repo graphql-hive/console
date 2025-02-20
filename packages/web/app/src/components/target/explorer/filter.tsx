@@ -16,6 +16,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { useArgumentListToggle, usePeriodSelector } from './provider';
+import type { SelectOption } from '@/components/v2/radix-select';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -103,14 +104,14 @@ export function TypeFilter(props: {
       placeholder="Search for a type"
       defaultValue={props.typename ? { value: props.typename, label: props.typename } : null}
       options={types}
-      onChange={option => {
+      onChange={(option: SelectOption | null) => {
         void router.navigate({
           to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
           params: {
             organizationSlug: props.organizationSlug,
             projectSlug: props.projectSlug,
             targetSlug: props.targetSlug,
-            typename: option.value,
+            typename: option?.value ?? '',
           },
         });
       }}
