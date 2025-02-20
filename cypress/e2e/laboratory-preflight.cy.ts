@@ -17,15 +17,15 @@ const selectors = {
   },
 };
 
-const data: { slug: string } = {
-  slug: '',
+const ctx = {
+  targetSlug: '',
 };
 
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
       cy.setCookie('sRefreshToken', refreshToken);
-      data.slug = slug;
+      ctx.targetSlug = slug;
       cy.visit(`/${slug}/laboratory`);
       cy.get(selectors.buttonGraphiQLPreflight).click();
     });
@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 
 /** Helper function for setting the text within a monaco editor as typing manually results in flaky tests */
-function setMonacoEditorContents(editorCyName: string, text: string) {
+export function setMonacoEditorContents(editorCyName: string, text: string) {
   // wait for textarea appearing which indicates monaco is loaded
   cy.dataCy(editorCyName).find('textarea');
   cy.window().then(win => {
@@ -59,7 +59,7 @@ describe('Laboratory > Preflight Script', () => {
   // https://github.com/graphql-hive/console/pull/6450
   it('regression: loads even if local storage is set to {}', () => {
     window.localStorage.setItem('hive:laboratory:environment', '{}');
-    cy.visit(`/${data.slug}/laboratory`);
+    cy.visit(`/${ctx.targetSlug}/laboratory`);
     cy.get(selectors.buttonGraphiQLPreflight).click();
   });
   it('mini script editor is read only', () => {
