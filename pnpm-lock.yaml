@@ -1493,9 +1493,15 @@ importers:
 
   packages/services/usage:
     devDependencies:
+      '@hive/api':
+        specifier: workspace:*
+        version: link:../api
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
+      '@hive/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@hive/tokens':
         specifier: workspace:*
         version: link:../tokens
@@ -1526,6 +1532,9 @@ importers:
       graphql:
         specifier: 16.9.0
         version: 16.9.0
+      ioredis:
+        specifier: 5.4.2
+        version: 5.4.2
       kafkajs:
         specifier: 2.2.4
         version: 2.2.4
@@ -1538,6 +1547,9 @@ importers:
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
+      reflect-metadata:
+        specifier: ^0.2.0
+        version: 0.2.2
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -28207,7 +28219,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.2.0
       cluster-key-slot: 1.1.1
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0(supports-color@8.1.1)
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0

@@ -24,6 +24,17 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'targets',
+    title: 'Targets',
+    permissions: [
+      {
+        id: 'usage:report',
+        title: 'Report usage data',
+        description: 'Grant access to report usage data.',
+      },
+    ],
+  },
+  {
     id: 'services',
     title: 'Schema Registry',
     permissions: [

@@ -5150,6 +5150,33 @@ const targetSQLFields = sql`
   "graphql_endpoint_url" as "graphqlEndpointUrl"
 `;
 
+export function findTargetById(deps: { pool: DatabasePool }) {
+  return async function findByIdImplementation(id: string): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTarget */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+        FROM (
+          SELECT
+            ${targetSQLFields}
+          FROM
+            "targets"
+          WHERE
+            "id" = ${id}
+        ) AS "t"
+        INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
 const TargetModel = zod.object({
   id: zod.string(),
   slug: zod.string(),

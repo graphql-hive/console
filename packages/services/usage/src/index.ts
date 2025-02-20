@@ -1,5 +1,9 @@
 #!/usr/bin/env node
+import 'reflect-metadata';
 import { hostname } from 'os';
+import Redis from 'ioredis';
+import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
+import { TargetsCache } from '@hive/api/modules/target/providers/targets-cache';
 import {
   configureTracing,
   createServer,
@@ -10,22 +14,25 @@ import {
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
+import { createConnectionString } from '@hive/storage';
+import { getPool } from '@hive/storage/db/pool';
 import * as Sentry from '@sentry/node';
+import { createAuthN } from './authn';
 import { env } from './environment';
+import { measureHandler, measureParsing } from './metric-helper';
 import {
   collectDuration,
   droppedReports,
   httpRequestDuration,
-  httpRequestHandlerDuration,
   httpRequests,
   httpRequestsWithNoAccess,
   httpRequestsWithNonExistingToken,
   httpRequestsWithoutToken,
-  parseReportDuration,
   tokensDuration,
   usedAPIVersion,
 } from './metrics';
 import { createUsageRateLimit } from './rate-limit';
+import { registerTargetIdRoute } from './target-id-route';
 import { createTokens } from './tokens';
 import { createUsage } from './usage';
 import { usageProcessorV1 } from './usage-processor-1';
@@ -62,6 +69,16 @@ async function main() {
     });
   }
 
+  const redis = new Redis({
+    host: env.redis.host,
+    port: env.redis.port,
+    password: env.redis.password,
+    maxRetriesPerRequest: 20,
+    db: 0,
+    enableReadyCheck: false,
+    tls: env.redis.tlsEnabled ? {} : undefined,
+  });
+
   const server = await createServer({
     name: 'usage',
     sentryErrorHandler: true,
@@ -71,12 +88,51 @@ async function main() {
     },
   });
 
+  const pgPool = await getPool(
+    createConnectionString(env.postgres),
+    5,
+    tracing ? [tracing.instrumentSlonik()] : [],
+  );
+
+  const authN = createAuthN({
+    pgPool,
+    redis,
+    isPrometheusEnabled: !!tracing,
+  });
+
+  const targetsCache = new TargetsCache(redis, pgPool, new PrometheusConfig(!!tracing));
+
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
   }
 
   try {
-    const { collect, readiness, start, stop } = createUsage({
+    redis.on('error', err => {
+      server.log.error(err, 'Redis connection error');
+    });
+
+    redis.on('connect', () => {
+      server.log.info('Redis connection established');
+    });
+
+    redis.on('ready', () => {
+      server.log.info('Redis connection ready... ');
+    });
+
+    redis.on('close', () => {
+      server.log.info('Redis connection closed');
+    });
+
+    redis.on('reconnecting', (timeToReconnect?: number) => {
+      server.log.info('Redis reconnecting in %s', timeToReconnect);
+    });
+
+    redis.on('end', async () => {
+      server.log.info('Redis ended - no more reconnections will be made');
+      await shutdown();
+    });
+
+    const usage = createUsage({
       logger: server.log,
       kafka: {
         topic: env.kafka.topic,
@@ -87,6 +143,8 @@ async function main() {
         return shutdown(reason);
       },
     });
+
+    const { collect, readiness, start, stop } = usage;
 
     const shutdown = registerShutdown({
       logger: server.log,
@@ -115,6 +173,14 @@ async function main() {
             logger: server.log,
           },
     );
+
+    registerTargetIdRoute({
+      server,
+      authN,
+      usageRateLimit: rateLimit,
+      usage,
+      targetsCache,
+    });
 
     server.route<
       {
@@ -321,7 +387,17 @@ async function main() {
           if (apiVersion === '2') {
             activeSpan?.addEvent('using v2');
             const result = measureParsing(
-              () => usageProcessorV2(server.log, req.body, tokenInfo, retentionInfo),
+              () =>
+                usageProcessorV2(
+                  server.log,
+                  req.body,
+                  {
+                    targetId: tokenInfo.target,
+                    projectId: tokenInfo.project,
+                    organizationId: tokenInfo.organization,
+                  },
+                  retentionInfo,
+                ),
               'v2',
             );
 
@@ -421,29 +497,3 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
-
-function measureParsing<T>(fn: () => T, version: 'v1' | 'v2'): T {
-  const stop = parseReportDuration.startTimer({ version });
-  try {
-    const result = fn();
-
-    return result;
-  } catch (error) {
-    Sentry.captureException(error);
-    throw error;
-  } finally {
-    stop();
-  }
-}
-
-function measureHandler<$Req, $Res>(fn: (_req: $Req, _res: $Res) => Promise<void>) {
-  return async function (req: $Req, res: $Res) {
-    const stop = httpRequestHandlerDuration.startTimer();
-
-    try {
-      await fn(req, res);
-    } finally {
-      stop();
-    }
-  };
-}
