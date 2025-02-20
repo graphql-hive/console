@@ -5177,6 +5177,42 @@ export function findTargetById(deps: { pool: DatabasePool }) {
   };
 }
 
+export function findTargetBySlug(deps: { pool: DatabasePool }) {
+  return async function findTargetsBySlugImplementation(args: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  }): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTargetBySlug */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+          FROM (
+            SELECT
+              ${targetSQLFields}
+            FROM
+              "targets"
+            where
+              "clean_id" = ${args.targetSlug}
+            ) AS "t"
+          INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          INNER JOIN "organizations" "o" on "p"."org_id" = "o"."id"
+        WHERE "p"."clean_id" = ${args.projectSlug}
+         and "o"."clean_id" = ${args.organizationSlug}
+      `,
+    );
+
+    console.log('lolol', JSON.stringify(data, null, 2));
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
 const TargetModel = zod.object({
   id: zod.string(),
   slug: zod.string(),

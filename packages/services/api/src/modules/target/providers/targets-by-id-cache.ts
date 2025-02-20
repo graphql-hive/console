@@ -19,7 +19,7 @@ import { REDIS_INSTANCE } from '../../shared/providers/redis';
   scope: Scope.Singleton,
   global: true,
 })
-export class TargetsCache {
+export class TargetsByIdCache {
   private cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
@@ -28,23 +28,23 @@ export class TargetsCache {
     prometheusConfig: PrometheusConfig,
   ) {
     this.cache = new BentoCache({
-      default: 'targets',
+      default: 'targetsById',
       plugins: prometheusConfig.isEnabled
         ? [
             prometheusPlugin({
-              prefix: 'bentocache_targets',
+              prefix: 'bentocache_targetsById',
             }),
           ]
         : undefined,
       stores: {
-        targets: bentostore()
+        targetsById: bentostore()
           .useL1Layer(
             memoryDriver({
               maxItems: 10_000,
-              prefix: 'bentocache:targets',
+              prefix: 'bentocache:targetsById',
             }),
           )
-          .useL2Layer(redisDriver({ connection: redis, prefix: 'bentocache:targets' })),
+          .useL2Layer(redisDriver({ connection: redis, prefix: 'bentocache:targetsById' })),
       },
     });
   }

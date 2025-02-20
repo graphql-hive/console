@@ -3,7 +3,8 @@ import 'reflect-metadata';
 import { hostname } from 'os';
 import Redis from 'ioredis';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
-import { TargetsCache } from '@hive/api/modules/target/providers/targets-cache';
+import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import {
   configureTracing,
   createServer,
@@ -100,7 +101,9 @@ async function main() {
     isPrometheusEnabled: !!tracing,
   });
 
-  const targetsCache = new TargetsCache(redis, pgPool, new PrometheusConfig(!!tracing));
+  const prometheusConfig = new PrometheusConfig(!!tracing);
+  const targetsByIdCache = new TargetsByIdCache(redis, pgPool, prometheusConfig);
+  const targetsBySlugCache = new TargetsBySlugCache(redis, pgPool, prometheusConfig);
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
@@ -179,7 +182,8 @@ async function main() {
       authN,
       usageRateLimit: rateLimit,
       usage,
-      targetsCache,
+      targetsByIdCache,
+      targetsBySlugCache,
     });
 
     server.route<
