@@ -29,7 +29,7 @@ export const action: Action = async (exec, query) => {
       table String,
       idx_created Bool DEFAULT false,
       idx_materialized Bool DEFAULT false
-    ) ENGINE = MergeTree()
+    ) ENGINE = MergeTree() ORDER BY tuple()
   `);
 
   const tables = await query(`
