@@ -4711,6 +4711,7 @@ const SchemaVersionRecordVersionModel = SchemaVersionRecordVersion_2024_01_10_Mo
 const SchemaMetadataModel = zod.object({
   name: zod.string(),
   content: zod.string(),
+  source: zod.nullable(zod.string()).default(null),
 });
 
 const SchemaVersionModel = zod.intersection(
@@ -4874,7 +4875,7 @@ async function insertSchemaVersion(
     supergraphSDL: string | null;
     schemaCompositionErrors: Array<SchemaCompositionError> | null;
     tags: Array<string> | null;
-    schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
+    schemaMetadata: Record<string, Array<{ name: string; content: string; source: string }>> | null;
     hasContractCompositionErrors: boolean;
     github: null | {
       sha: string;

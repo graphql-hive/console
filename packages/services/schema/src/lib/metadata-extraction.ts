@@ -9,13 +9,17 @@ import {
 } from 'graphql';
 import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 
-export const extractMetadata = (
-  documentAst: DocumentNode,
-): Record<string, Array<{ name: string; content: string }>> => {
-  const schemaCoordinateMetadataMappings: Record<
-    string,
-    Array<{ name: string; content: string }>
-  > = {};
+export type SubgraphMetadata = Map<
+  string,
+  Array<{ name: string; content: string; source: string }>
+>;
+
+/**
+ * Pulls metadata out of a Graphql AST. @meta can be imported via @link using the Federation spec.
+ * I.e. extend schema @link(url: "https://specs.graphql-hive.com/hive", import: ["@meta"])
+ */
+export const extractMetadata = (documentAst: DocumentNode, source: string): SubgraphMetadata => {
+  const schemaCoordinateMetadataMappings: SubgraphMetadata = new Map();
   const { resolveImportName } = extractLinkImplementations(documentAst);
   const metaDirectiveName = resolveImportName('https://specs.graphql-hive.com/hive', '@meta');
 
@@ -51,14 +55,15 @@ export const extractMetadata = (
               acc.push({
                 name: (metaNameArg.value as StringValueNode).value,
                 content: (metaContentArg.value as StringValueNode).value,
+                source,
               });
             }
             return acc;
           },
-          [] as Array<{ name: string; content: string }>,
+          [] as Array<{ name: string; content: string; source: string }>,
         );
       if (metadata) {
-        schemaCoordinateMetadataMappings[schemaCoordinate] = metadata;
+        schemaCoordinateMetadataMappings.set(schemaCoordinate, metadata);
       }
     }
   };
@@ -74,14 +79,14 @@ export const extractMetadata = (
   return schemaCoordinateMetadataMappings;
 };
 
-export const mergeMetadata = (
-  ...subgraphs: Record<string, Array<{ name: string; content: string }>>[]
-) => {
-  const combined: Record<string, Array<{ name: string; content: string }>> = {};
+export const mergeMetadata = (...subgraphs: SubgraphMetadata[]): SubgraphMetadata => {
+  const combined: SubgraphMetadata = new Map();
   for (const subgraph of subgraphs) {
-    for (const [coordinate, metadata] of Object.entries(subgraph)) {
-      const existing = combined[coordinate];
-      combined[coordinate] = existing === undefined ? metadata : [...existing, ...metadata];
+    for (const [coordinate, metadata] of subgraph) {
+      if (!combined.has(coordinate)) {
+        combined.set(coordinate, []);
+      }
+      combined.get(coordinate)!.push(...metadata);
     }
   }
   return combined;

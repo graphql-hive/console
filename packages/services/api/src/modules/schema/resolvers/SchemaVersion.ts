@@ -106,6 +106,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
       },
       supergraph: {
+        // THIS NEEDS INVERTED
         schemaCoordinateMetadataMappings: version.schemaMetadata
           ? new Map(Object.entries(version.schemaMetadata))
           : null,

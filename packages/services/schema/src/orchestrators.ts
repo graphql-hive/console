@@ -39,6 +39,7 @@ import type {
   ComposeAndValidateInput,
   ComposeAndValidateOutput,
   ExternalComposition,
+  Metadata,
   SchemaType,
 } from './types';
 
@@ -164,7 +165,7 @@ const createFederation: (
       includesNetworkError: boolean;
       includesException?: boolean;
       tags: Array<string> | null;
-      schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
+      schemaMetadata: Record<string, Metadata[]> | null;
     }
   >(
     'federation',
@@ -267,7 +268,8 @@ const createFederation: (
       let result: CompositionResult & {
         includesNetworkError: boolean;
         tags: Array<string> | null;
-        schemaMetadata: Record<string, Array<{ name: string; content: string }>> | null;
+        /** Metadata stored by coordinate and then by subgraph */
+        schemaMetadata: Record<string, Metadata[]> | null;
       };
 
       {
@@ -278,9 +280,9 @@ const createFederation: (
 
         if (composed.type === 'success') {
           // merge all metadata from every subgraph by coordinate
-          const subgraphMetadatas = subgraphs.map(({ typeDefs }) => extractMetadata(typeDefs));
-          const metadata = mergeMetadata(...subgraphMetadatas);
-
+          const subgraphsMetadata = subgraphs.map(({ name, typeDefs }) =>
+            extractMetadata(typeDefs, name),
+          );
           const supergraphSDL = parse(composed.result.supergraph);
           const { resolveImportName } = extractLinkImplementations(supergraphSDL);
           const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
@@ -289,7 +291,7 @@ const createFederation: (
           result = {
             ...composed,
             tags,
-            schemaMetadata: metadata,
+            schemaMetadata: Object.fromEntries(mergeMetadata(...subgraphsMetadata)),
           };
         } else {
           result = {

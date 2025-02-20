@@ -19,7 +19,7 @@ export const GraphQLField: GraphQlFieldResolvers = {
   supergraphMetadata: f =>
     f.supergraph
       ? {
-          metadata: f.supergraph.metadata,
+          metadata: f.supergraph.schemaMetadata,
           ownedByServiceNames: f.supergraph.ownedByServiceNames,
         }
       : null,

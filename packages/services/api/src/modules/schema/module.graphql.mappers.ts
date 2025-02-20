@@ -130,7 +130,7 @@ export type GraphQLFieldMapper = WithSchemaCoordinatesUsage<
     };
     supergraph: null | {
       ownedByServiceNames: Array<string> | null;
-      metadata: Array<SchemaMetadataMapper> | null;
+      schemaMetadata: Array<SchemaMetadataMapper> | null;
     };
   }>
 >;
@@ -300,4 +300,5 @@ export type BreakingChangeMetadataTargetMapper = {
 export type SchemaMetadataMapper = {
   name: string;
   content: string;
+  source: string;
 };

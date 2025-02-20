@@ -769,8 +769,18 @@ export default gql`
   }
 
   type SchemaMetadata {
+    """
+    The name or key of the metadata. This may not be unique.
+    """
     name: String!
+    """
+    The value of the metadata
+    """
     content: String!
+    """
+    The schema or subgraph name where this metadata originated from.
+    """
+    source: String
   }
 
   union GraphQLNamedType =

@@ -16,7 +16,7 @@ export const GraphQLObjectType: GraphQlObjectTypeResolvers = {
       supergraph: t.supergraph
         ? {
             ownedByServiceNames: t.supergraph.getFieldOwnedByServices(f.name),
-            metadata: t.supergraph.getFieldMetadata(f.name),
+            schemaMetadata: t.supergraph.getFieldMetadata(f.name),
           }
         : null,
     })),

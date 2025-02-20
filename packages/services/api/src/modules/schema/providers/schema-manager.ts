@@ -404,7 +404,10 @@ export class SchemaManager {
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: Array<string> | null;
-            schemaMetadata: null | Record<string, Array<{ name: string; content: string }>>;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string }>
+            >;
           }
       ),
   ) {

@@ -43,6 +43,7 @@ function SubgraphChip(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  metadata?: Array<{ name: string; content: string }>;
 }): React.ReactElement {
   const inner = (
     <Link
@@ -59,6 +60,7 @@ function SubgraphChip(props: {
     >
       {props.text}
       <PackageIcon size={10} className="ml-1 inline-block" />
+      {props.metadata?.length ? <span className="inline-block text-[8px] font-bold">*</span> : null}
     </Link>
   );
 
@@ -71,6 +73,12 @@ function SubgraphChip(props: {
       content={
         <>
           <span className="font-bold">{props.text}</span> subgraph
+          {props.metadata?.map(m => (
+            <>
+              <br />
+              <span className="font-bold">{m.content}</span> {m.name}
+            </>
+          )) ?? null}
         </>
       }
     >
@@ -85,6 +93,7 @@ const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
     metadata {
       name
       content
+      source
     }
   }
 `);
@@ -103,11 +112,17 @@ export function SupergraphMetadataList(props: {
     props.supergraphMetadata,
   );
 
+  /**
+   * For non-federated graphs, there are no subgraphs and so the UI has to adjust.
+   * In this case, any metadata not associated with a subgraph will be placed in
+   * a separate icon.
+   */
   const meta = useMemo(() => {
-    if (!supergraphMetadata.metadata?.length) {
+    const nonSubgraphMeta = supergraphMetadata.metadata?.filter(m => !m.source);
+    if (!nonSubgraphMeta?.length) {
       return null;
     }
-    return <Metadata supergraphMetadata={supergraphMetadata.metadata} />;
+    return <Metadata supergraphMetadata={nonSubgraphMeta} />;
   }, [supergraphMetadata.metadata]);
 
   const items = useMemo(() => {
@@ -117,16 +132,20 @@ export function SupergraphMetadataList(props: {
 
     if (supergraphMetadata.ownedByServiceNames.length <= previewThreshold) {
       return [
-        supergraphMetadata.ownedByServiceNames.map((serviceName, index) => (
-          <SubgraphChip
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            key={`${serviceName}-${index}`}
-            text={serviceName}
-            tooltip
-          />
-        )),
+        supergraphMetadata.ownedByServiceNames.map((serviceName, index) => {
+          const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
+          return (
+            <SubgraphChip
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+              key={`${serviceName}-${index}`}
+              text={serviceName}
+              tooltip
+              metadata={meta}
+            />
+          );
+        }),
         null,
       ] as const;
     }
@@ -134,26 +153,34 @@ export function SupergraphMetadataList(props: {
     return [
       supergraphMetadata.ownedByServiceNames
         .slice(0, previewThreshold)
-        .map((serviceName, index) => (
+        .map((serviceName, index) => {
+          const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
+          return (
+            <SubgraphChip
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+              key={`${serviceName}-${index}`}
+              text={serviceName}
+              tooltip
+              metadata={meta}
+            />
+          );
+        }),
+      supergraphMetadata.ownedByServiceNames.map((serviceName, index) => {
+        const meta = supergraphMetadata.metadata?.filter(({ source }) => source === serviceName);
+        return (
           <SubgraphChip
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}
             targetSlug={props.targetSlug}
             key={`${serviceName}-${index}`}
             text={serviceName}
-            tooltip
+            tooltip={false}
+            metadata={meta}
           />
-        )),
-      supergraphMetadata.ownedByServiceNames.map((serviceName, index) => (
-        <SubgraphChip
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-          key={`${serviceName}-${index}`}
-          text={serviceName}
-          tooltip={false}
-        />
-      )),
+        );
+      }),
     ] as const;
   }, [supergraphMetadata.ownedByServiceNames]);
 

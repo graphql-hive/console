@@ -171,40 +171,48 @@ describe('schema service can process metadata', async () => {
           {
             content: foo,
             name: schema,
+            source: foo.graphql,
           },
         ],
         Query.user: [
           {
             content: user,
             name: field,
+            source: user.graphql,
           },
           {
             content: user,
             name: schema,
+            source: user.graphql,
           },
         ],
         User.id: [
           {
             content: user,
             name: type,
+            source: user.graphql,
           },
           {
             content: user,
             name: schema,
+            source: user.graphql,
           },
         ],
         User.name: [
           {
             content: User.name,
             name: field,
+            source: user.graphql,
           },
           {
             content: user,
             name: type,
+            source: user.graphql,
           },
           {
             content: user,
             name: schema,
+            source: user.graphql,
           },
         ],
       }
