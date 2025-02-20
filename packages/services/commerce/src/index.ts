@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'reflect-metadata';
 import { hostname } from 'os';
 import {
   configureTracing,

@@ -69,10 +69,6 @@ export function createRateLimiter(config: {
 
   const fetchAndCalculateUsageInformation = traceInline('Calculate Rate Limit', {}, async () => {
     const now = new Date();
-    const window = {
-      startTime: startOfMonth(now),
-      endTime: endOfMonth(now),
-    };
     const timeWindow = {
       startTime: startOfMonth(now),
       endTime: endOfMonth(now),
@@ -149,8 +145,8 @@ export function createRateLimiter(config: {
             email: orgRecord.orgEmail,
           },
           period: {
-            start: window.startTime.getTime(),
-            end: window.endTime.getTime(),
+            start: timeWindow.startTime.getTime(),
+            end: timeWindow.endTime.getTime(),
           },
           usage: {
             quota: orgRecord.operations.quota,
@@ -166,8 +162,8 @@ export function createRateLimiter(config: {
             email: orgRecord.orgEmail,
           },
           period: {
-            start: window.startTime.getTime(),
-            end: window.endTime.getTime(),
+            start: timeWindow.startTime.getTime(),
+            end: timeWindow.endTime.getTime(),
           },
           usage: {
             quota: orgRecord.operations.quota,

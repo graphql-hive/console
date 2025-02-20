@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { ClickHouse, HttpClient, OperationsReader, sql } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
