@@ -116,9 +116,9 @@ export function registerTargetIdRoute(args: {
         organizationId: target.orgId,
         action: 'usage:report',
         params: {
-          targetId: target.id,
-          projectId: target.projectId,
           organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
         },
       });
 
