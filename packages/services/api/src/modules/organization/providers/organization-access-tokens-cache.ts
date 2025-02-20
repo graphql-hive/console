@@ -4,8 +4,10 @@ import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import Redis from 'ioredis';
 import type { DatabasePool } from 'slonik';
+import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
+import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE } from '../../shared/providers/redis';
 import { findById, type OrganizationAccessToken } from './organization-access-tokens';
 
@@ -24,10 +26,18 @@ export class OrganizationAccessTokensCache {
     @Inject(REDIS_INSTANCE) redis: Redis,
     @Inject(PG_POOL_CONFIG) pool: DatabasePool,
     logger: Logger,
+    prometheusConfig: PrometheusConfig,
   ) {
     this.findById = findById({ pool, logger });
     this.cache = new BentoCache({
       default: 'organizationAccessTokens',
+      plugins: prometheusConfig.isEnabled
+        ? [
+            prometheusPlugin({
+              prefix: 'bentocache_organization_access_tokens',
+            }),
+          ]
+        : undefined,
       stores: {
         organizationAccessTokens: bentostore()
           .useL1Layer(

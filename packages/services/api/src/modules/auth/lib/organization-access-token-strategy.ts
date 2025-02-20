@@ -1,22 +1,10 @@
 import * as crypto from 'node:crypto';
-import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import * as OrganizationAccessKey from '../../organization/lib/organization-access-key';
 import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
+import { OrganizationAccessTokenValidationCache } from '../providers/organization-access-token-validation-cache';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
-
-const cache = new BentoCache({
-  default: 'organizationAccessTokenValidation',
-  stores: {
-    organizationAccessTokenValidation: bentostore().useL1Layer(
-      memoryDriver({
-        maxItems: 10_000,
-      }),
-    ),
-  },
-});
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -50,12 +38,18 @@ export class OrganizationAccessTokenSession extends Session {
 export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationAccessTokenSession> {
   private logger: Logger;
 
-  private cache: OrganizationAccessTokensCache;
+  private organizationAccessTokenCache: OrganizationAccessTokensCache;
+  private organizationAccessTokenValidationCache: OrganizationAccessTokenValidationCache;
 
-  constructor(deps: { logger: Logger; cache: OrganizationAccessTokensCache }) {
+  constructor(deps: {
+    logger: Logger;
+    organizationAccessTokensCache: OrganizationAccessTokensCache;
+    organizationAccessTokenValidationCache: OrganizationAccessTokenValidationCache;
+  }) {
     super();
     this.logger = deps.logger.child({ module: 'OrganizationAccessTokenStrategy' });
-    this.cache = deps.cache;
+    this.organizationAccessTokenCache = deps.organizationAccessTokensCache;
+    this.organizationAccessTokenValidationCache = deps.organizationAccessTokenValidationCache;
   }
 
   async parse(args: {
@@ -89,14 +83,16 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
       return null;
     }
 
-    const organizationAccessToken = await this.cache.get(result.accessKey.id);
+    const organizationAccessToken = await this.organizationAccessTokenCache.get(
+      result.accessKey.id,
+    );
     if (!organizationAccessToken) {
       return null;
     }
 
     // let's hash it so we do not store the plain private key in memory
     const key = hashToken(accessToken);
-    const isHashMatch = await cache.getOrSetForever({
+    const isHashMatch = await this.organizationAccessTokenValidationCache.getOrSetForever({
       factory: () =>
         OrganizationAccessKey.verify(result.accessKey.privateKey, organizationAccessToken.hash),
       key,
