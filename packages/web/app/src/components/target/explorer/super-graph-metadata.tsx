@@ -73,11 +73,11 @@ function SubgraphChip(props: {
       content={
         <>
           <span className="font-bold">{props.text}</span> subgraph
-          {props.metadata?.map(m => (
-            <>
+          {props.metadata?.map((m, index) => (
+            <React.Fragment key={`${m.name}-${index}`}>
               <br />
               <span className="font-bold">{m.content}</span> {m.name}
-            </>
+            </React.Fragment>
           )) ?? null}
         </>
       }
