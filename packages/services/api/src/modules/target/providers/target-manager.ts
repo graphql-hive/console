@@ -9,7 +9,7 @@ import { Logger } from '../../shared/providers/logger';
 import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { HiveError } from './../../../shared/errors';
-import { TargetsCache } from './targets-cache';
+import { TargetsByIdCache } from './targets-by-id-cache';
 
 const reservedSlugs = ['view', 'new'];
 
@@ -31,7 +31,7 @@ export class TargetManager {
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
-    private targetsCache: TargetsCache,
+    private targetsCache: TargetsByIdCache,
   ) {
     this.logger = logger.child({ source: 'TargetManager' });
   }
