@@ -406,7 +406,7 @@ export class SchemaManager {
             tags: Array<string> | null;
             schemaMetadata: null | Record<
               string,
-              Array<{ name: string; content: string; source: string }>
+              Array<{ name: string; content: string; source: string | null }>
             >;
           }
       ),

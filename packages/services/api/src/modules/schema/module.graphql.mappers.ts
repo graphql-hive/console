@@ -300,5 +300,5 @@ export type BreakingChangeMetadataTargetMapper = {
 export type SchemaMetadataMapper = {
   name: string;
   content: string;
-  source: string;
+  source: string | null;
 };

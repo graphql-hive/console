@@ -422,7 +422,7 @@ export interface Storage {
             tags: null | Array<string>;
             schemaMetadata: null | Record<
               string,
-              Array<{ name: string; content: string; source: string }>
+              Array<{ name: string; content: string; source: string | null }>
             >;
           }
       ),
@@ -466,7 +466,7 @@ export interface Storage {
             tags: null | Array<string>;
             schemaMetadata: null | Record<
               string,
-              Array<{ name: string; content: string; source: string }>
+              Array<{ name: string; content: string; source: string | null }>
             >;
           }
       ),

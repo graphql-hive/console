@@ -19,7 +19,7 @@ export type SuperGraphInformation = {
   /** Metadata mapped by field name */
   schemaCoordinateMetadataMappings: Map<
     string,
-    Array<{ name: string; content: string; source: string }>
+    Array<{ name: string; content: string; source: string | null }>
   > | null;
 };
 
