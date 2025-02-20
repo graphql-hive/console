@@ -1,5 +1,4 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import LRU from 'lru-cache';
 import { OrganizationBilling } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
