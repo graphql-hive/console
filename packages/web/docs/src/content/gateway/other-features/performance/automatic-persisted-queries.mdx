@@ -150,3 +150,39 @@ useAPQ({
   }
 })
 ```
+
+## APQ between subgraphs and the gateway
+
+The examples above describe the usage of APQ between the gateway and the client, but you can also
+benefit from APQ between the gateway and the subgraphs. If you have configured APQ in your
+subgraphs, the gateway can handle it automatically with the following configuration;
+
+```ts filename="Automatic Persisted Operations with a custom store"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  transportEntries: {
+    MY_APQ_SUBGRAPH: {
+      // The name of the subgraph
+      options: {
+        apq: true
+      }
+    },
+    // or you can use wildcard `*` to enable APQ for all subgraphs
+    '*': {
+      options: {
+        apq: true
+      }
+    }
+  }
+})
+```
+
+<Callout>
+
+Learn how to configure APQ in your subgraph servers using the following resources:
+
+- [APQ with GraphQL Yoga subgraph](https://the-guild.dev/graphql/yoga-server/docs/features/automatic-persisted-queries)
+- [APQ with Apollo Server subgraph](https://www.apollographql.com/docs/apollo-server/v2/performance/apq)
+
+</Callout>
