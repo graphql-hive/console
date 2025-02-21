@@ -8,6 +8,7 @@ import { EmailInputShape } from './shapes';
 import { renderAuditLogsReportEmail } from './templates/audit-logs-report';
 import { renderEmailVerificationEmail } from './templates/email-verification';
 import { renderOrganizationInvitation } from './templates/organization-invitation';
+import { renderOrganizationOwnershipTransferEmail } from './templates/organization-ownership-transfer';
 import { renderPasswordResetEmail } from './templates/password-reset';
 
 const t = initTRPC.context<Context>().create();
@@ -35,6 +36,34 @@ export const emailsApiRouter = t.router({
             organizationName: input.organizationName,
             formattedStartDate: input.formattedStartDate,
             formattedEndDate: input.formattedEndDate,
+          }),
+        });
+
+        return { job: job.id ?? 'unknown' };
+      } catch (error) {
+        ctx.errorHandler('Failed to schedule an email', error as Error);
+        throw error;
+      }
+    }),
+  sendOrganizationOwnershipTransferEmail: procedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        organizationName: z.string(),
+        authorName: z.string(),
+        email: z.string(),
+        link: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const job = await ctx.schedule({
+          email: input.email,
+          subject: `Organization transfer from ${input.authorName} (${input.organizationName})`,
+          body: renderOrganizationOwnershipTransferEmail({
+            link: input.link,
+            organizationName: input.organizationName,
+            authorName: input.authorName,
           }),
         });
 
