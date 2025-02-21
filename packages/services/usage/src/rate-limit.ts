@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache';
-import type { RateLimitApi } from '@hive/rate-limit';
+import type { CommerceRouter } from '@hive/commerce';
 import { ServiceLogger } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { rateLimitDuration } from './metrics';
@@ -69,7 +69,7 @@ export function createUsageRateLimit(
     };
   }
   const endpoint = config.endpoint.replace(/\/$/, '');
-  const rateLimit = createTRPCProxyClient<RateLimitApi>({
+  const commerceClient = createTRPCProxyClient<CommerceRouter>({
     links: [
       httpLink({
         url: `${endpoint}/trpc`,
@@ -98,7 +98,7 @@ export function createUsageRateLimit(
     async fetchMethod(input) {
       const { targetId, token } = rateLimitCacheKey.decodeCacheKey(input);
       const timer = rateLimitDuration.startTimer();
-      const result = await rateLimit.checkRateLimit
+      const result = await commerceClient.rateLimit.checkRateLimit
         .query({
           id: targetId,
           type: 'operations-reporting',
@@ -130,7 +130,7 @@ export function createUsageRateLimit(
     // even if multiple requests are waiting for it.
     fetchMethod(targetId) {
       const timer = rateLimitDuration.startTimer();
-      return rateLimit.getRetention.query({ targetId }).finally(() => {
+      return commerceClient.rateLimit.getRetention.query({ targetId }).finally(() => {
         timer({
           type: 'retention',
         });

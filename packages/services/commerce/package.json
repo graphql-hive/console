@@ -1,0 +1,32 @@
+{
+  "name": "@hive/commerce",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsx ../../../scripts/runify.ts",
+    "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@hive/api": "workspace:*",
+    "@hive/emails": "workspace:*",
+    "@hive/service-common": "workspace:*",
+    "@hive/storage": "workspace:*",
+    "@sentry/node": "7.120.2",
+    "@trpc/client": "10.45.2",
+    "@trpc/server": "10.45.2",
+    "date-fns": "4.1.0",
+    "dotenv": "16.4.7",
+    "fastify": "4.29.0",
+    "pino-pretty": "11.3.0",
+    "reflect-metadata": "0.2.2",
+    "stripe": "17.5.0",
+    "zod": "3.24.1"
+  },
+  "buildOptions": {
+    "external": [
+      "pg-native"
+    ]
+  }
+}

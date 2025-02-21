@@ -10,7 +10,6 @@ The GraphQL API for GraphQL Hive.
 | `ENCRYPTION_SECRET`                                  | **Yes**                                            | Secret for encrypting stuff.                                                                  | `8ebe95cg21c1fee355e9fa32c8c33141`                        |
 | `WEB_APP_URL`                                        | **Yes**                                            | The url of the web app.                                                                       | `http://127.0.0.1:3000`                                   |
 | `GRAPHQL_PUBLIC_ORIGIN`                              | **Yes**                                            | The origin of the GraphQL server.                                                             | `http://127.0.0.1:4013`                                   |
-| `RATE_LIMIT_ENDPOINT`                                | **Yes**                                            | The endpoint of the rate limiting service.                                                    | `http://127.0.0.1:4012`                                   |
 | `EMAILS_ENDPOINT`                                    | **Yes**                                            | The endpoint of the GraphQL Hive Email service.                                               | `http://127.0.0.1:6260`                                   |
 | `TOKENS_ENDPOINT`                                    | **Yes**                                            | The endpoint of the tokens service.                                                           | `http://127.0.0.1:6001`                                   |
 | `WEBHOOKS_ENDPOINT`                                  | **Yes**                                            | The endpoint of the webhooks service.                                                         | `http://127.0.0.1:6250`                                   |
@@ -95,15 +94,14 @@ The GraphQL API for GraphQL Hive.
 If you are self-hosting GraphQL Hive, you can ignore this section. It is only required for the Cloud
 version.
 
-| Name                       | Required                      | Description                                  | Example Value                   |
-| -------------------------- | ----------------------------- | -------------------------------------------- | ------------------------------- |
-| `BILLING_ENDPOINT`         | **Yes**                       | The endpoint of the Hive Billing service.    | `http://127.0.0.1:4013`         |
-| `USAGE_ESTIMATOR_ENDPOINT` | No                            | The endpoint of the usage estimator service. | `4011`                          |
-| `CDN_CF`                   | No                            | Whether the CDN is enabled.                  | `1` (enabled) or `0` (disabled) |
-| `CDN_CF_BASE_URL`          | No (**Yes** if `CDN` is `1`)  | The base URL of the cdn.                     | `https://cdn.graphql-hive.com`  |
-| `HIVE`                     | No                            | The internal endpoint key.                   | `iliketurtles`                  |
-| `HIVE_API_TOKEN`           | No (**Yes** if `HIVE` is set) | The internal endpoint key.                   | `iliketurtles`                  |
-| `HIVE_USAGE`               | No                            | The internal endpoint key.                   | `1` (enabled) or `0` (disabled) |
-| `HIVE_USAGE_ENDPOINT`      | No                            | The endpoint used for usage reporting.       | `http://127.0.0.1:4001`         |
-| `HIVE_REPORTING`           | No                            | The internal endpoint key.                   | `iliketurtles`                  |
-| `HIVE_REPORTING_ENDPOINT`  | No                            | The internal endpoint key.                   | `http://127.0.0.1:4000/graphql` |
+| Name                      | Required                      | Description                            | Example Value                   |
+| ------------------------- | ----------------------------- | -------------------------------------- | ------------------------------- |
+| `COMMERCE_ENDPOINT`       | **Yes**                       | The endpoint of the commerce service.  | `http://127.0.0.1:4012`         |
+| `CDN_CF`                  | No                            | Whether the CDN is enabled.            | `1` (enabled) or `0` (disabled) |
+| `CDN_CF_BASE_URL`         | No (**Yes** if `CDN` is `1`)  | The base URL of the cdn.               | `https://cdn.graphql-hive.com`  |
+| `HIVE`                    | No                            | The internal endpoint key.             | `iliketurtles`                  |
+| `HIVE_API_TOKEN`          | No (**Yes** if `HIVE` is set) | The internal endpoint key.             | `iliketurtles`                  |
+| `HIVE_USAGE`              | No                            | The internal endpoint key.             | `1` (enabled) or `0` (disabled) |
+| `HIVE_USAGE_ENDPOINT`     | No                            | The endpoint used for usage reporting. | `http://127.0.0.1:4001`         |
+| `HIVE_REPORTING`          | No                            | The internal endpoint key.             | `iliketurtles`                  |
+| `HIVE_REPORTING_ENDPOINT` | No                            | The internal endpoint key.             | `http://127.0.0.1:4000/graphql` |
