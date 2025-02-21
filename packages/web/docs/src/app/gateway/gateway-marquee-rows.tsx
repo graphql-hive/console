@@ -40,7 +40,7 @@ const terms = new Map<string[], string /* href */>([
   [['Rate Limiting'], '/docs/gateway/other-features/security/rate-limiting'],
   [['Cost Limit'], '/docs/gateway/other-features/security/cost-limit'],
   [['Security'], '/docs/gateway/other-features/security'],
-  [['maskedErrors'], '/docs/gateway/other-features/security/error-masking'],
+  [['maskedErrors'], '/docs/gateway/logging-and-error-handling'],
 ]);
 
 export function GatewayMarqueeRows({

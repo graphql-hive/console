@@ -7,6 +7,7 @@ export default {
   'monitoring-tracing': 'Monitoring / Tracing',
   'defer-stream': 'Incremental Delivery (Defer & Stream)',
   subscriptions: 'Subscriptions',
+  'logging-and-error-handling': 'Logging & Error Handling',
   'other-features': 'Other Features',
   deployment: 'Deployment',
 };
