@@ -4,7 +4,6 @@ import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Context } from './context';
-import { EmailInputShape } from './shapes';
 import { renderAuditLogsReportEmail } from './templates/audit-logs-report';
 import { renderEmailVerificationEmail } from './templates/email-verification';
 import { renderOrganizationInvitation } from './templates/organization-invitation';
