@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
@@ -9,7 +8,7 @@ import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
-import { Emails, mjml } from '../../shared/providers/emails';
+import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import type { OrganizationSelector } from '../../shared/providers/storage';
@@ -648,30 +647,12 @@ export class OrganizationManager {
       userId: member.user.id,
     });
 
-    await this.emails.schedule({
+    await this.emails.api?.sendOrganizationOwnershipTransferEmail.mutate({
       email: member.user.email,
-      subject: `Organization transfer from ${currentUser.displayName} (${organization.name})`,
-      body: mjml`
-        <mjml>
-          <mj-body>
-            <mj-section>
-              <mj-column>
-                <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-                <mj-divider border-color="#ca8a04"></mj-divider>
-                <mj-text>
-                  ${member.user.displayName} wants to transfer the ownership of the <strong>${organization.name}</strong> organization.
-                </mj-text>
-                <mj-button href="${mjml.raw(this.appBaseUrl)}/action/transfer/${organization.slug}/${code}">
-                  Accept the transfer
-                </mj-button>
-                <mj-text align="center">
-                  This link will expire in a day.
-                </mj-text>
-              </mj-column>
-            </mj-section>
-          </mj-body>
-        </mjml>
-      `,
+      organizationId: organization.id,
+      organizationName: organization.name,
+      authorName: currentUser.displayName,
+      link: `${this.appBaseUrl}/action/transfer/${organization.slug}/${code}`,
     });
 
     await this.auditLog.record({

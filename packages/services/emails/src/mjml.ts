@@ -57,7 +57,7 @@ function escapeHtml(input: string): string {
     return input;
   }
 
-  let escape;
+  let escapeSequence;
   let html = '';
   let index = 0;
   let lastIndex = 0;
@@ -65,17 +65,16 @@ function escapeHtml(input: string): string {
   for (index = match.index; index < input.length; index++) {
     switch (input.charCodeAt(index)) {
       case 34: // "
-        escape = '&quot;';
-        break;
+        escapeSequence = '&quot;';
         break;
       case 39: // '
-        escape = '&#39;';
+        escapeSequence = '&#39;';
         break;
       case 60: // <
-        escape = '&lt;';
+        escapeSequence = '&lt;';
         break;
       case 62: // >
-        escape = '&gt;';
+        escapeSequence = '&gt;';
         break;
       default:
         continue;
@@ -86,7 +85,7 @@ function escapeHtml(input: string): string {
     }
 
     lastIndex = index + 1;
-    html += escape;
+    html += escapeSequence;
   }
 
   return lastIndex !== index ? html + input.substring(lastIndex, index) : html;
