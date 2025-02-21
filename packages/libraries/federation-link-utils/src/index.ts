@@ -4,7 +4,6 @@
  */
 
 import type { DocumentNode } from 'graphql';
-import { FederatedLinkUrl } from './link-url.js';
 import { FederatedLink } from './link.js';
 
 export const FEDERATION_V1 = Symbol('Federation_V1');
@@ -42,27 +41,21 @@ export function extractLinkImplementations(typeDefs: DocumentNode): {
   // although according to federation docs, schemas require linking specifically
   // the federation 2.x spec. The reason for not being so picky is that supergraphs also
   // use @link, but do not necessarily link to the federation 2.x spec.
+
+  // Check if any @link or @core features are used.
   const supportsFederationV2 = Object.keys(linkByIdentity).length > 0;
 
   return {
     resolveImportName: (identity, name) => {
-      if (!supportsFederationV2) {
-        // Identities dont matter for Federation v1. There are no links to reference.
-        // So return the name without the identity's namespace
-        return name.startsWith('@') ? name.substring(1) : name;
-      }
-
       const matchingLink = linkByIdentity[identity];
       if (!matchingLink) {
-        const defaultLink = new FederatedLink(FederatedLinkUrl.fromUrl(identity), null, []);
-        // The identity was not imported, but return we still will return what is assumed to be the name
-        // of the import based off the identity. `matchesImplementation` should be used for cases where
-        // it matters whether or not a specific url was linked.
-        return defaultLink.resolveImportName(name);
+        return name.startsWith('@') ? name.substring(1) : name;
       }
       return matchingLink.resolveImportName(name);
     },
     matchesImplementation: (identity, version) => {
+      // Assume Federation 1 means there is no link or identity and so it
+      // always matches _if_ the typedefs dont use link or core.
       if (version === FEDERATION_V1) {
         return !supportsFederationV2;
       }

@@ -4082,6 +4082,7 @@ test.concurrent(
       tags: null,
       targetId: target.id,
       url: null,
+      schemaMetadata: null,
     });
     await storage.destroy();
 

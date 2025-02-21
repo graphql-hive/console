@@ -413,12 +413,17 @@ export interface Storage {
             supergraphSDL: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
+            schemaMetadata: null;
           }
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string | null }>
+            >;
           }
       ),
   ): Promise<DeletedCompositeSchema & { versionId: string }>;
@@ -452,12 +457,17 @@ export interface Storage {
             supergraphSDL: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
+            schemaMetadata: null;
           }
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: null | Array<string>;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string | null }>
+            >;
           }
       ),
   ): Promise<SchemaVersion | never>;
