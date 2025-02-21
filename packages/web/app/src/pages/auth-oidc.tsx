@@ -2,7 +2,7 @@ import { AuthCard, AuthCardContent, AuthCardHeader } from '@/components/auth';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
-import { startAuthFlowForOIDCProvider } from '@/lib/supertokens/third-party-email-password-react-oidc-provider';
+import { authClient, AuthError, createCallbackURL } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 
 function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
@@ -14,7 +14,18 @@ function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
       if (!env.auth.oidc) {
         throw new Error('OIDC provider is not configured');
       }
-      await startAuthFlowForOIDCProvider(props.oidcId);
+      // KAMIL: no way to pick OIDC provider by id, only by domain (and slug - when used with the organizations feature)
+      //        https://github.com/better-auth/better-auth/pull/1533
+
+      const res = await authClient.signIn.sso({
+        providerId: props.oidcId,
+        callbackURL: createCallbackURL(props.redirectToPath),
+      });
+
+      if (res.error) {
+        throw new AuthError(res.error);
+      }
+
       // we need to return something, otherwise react-query will throw an error
       return true;
     },

@@ -2,8 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaRegUserCircle } from 'react-icons/fa';
 import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import {
   AuthCard,
@@ -25,12 +23,18 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  authClient,
+  AuthError,
+  createCallbackURL,
+  enabledProviders,
+  isProviderEnabled,
+} from '@/lib/auth';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
-import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
-import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { cn, exhaustiveGuard } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Slot } from '@radix-ui/react-slot';
+import { captureException } from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
@@ -77,53 +81,22 @@ const SignInFormSchema = z.object({
 type SignInFormValues = z.infer<typeof SignInFormSchema>;
 
 export function AuthSignInPage(props: { redirectToPath: string }) {
-  const session = useSessionContext();
+  const session = authClient.useSession();
   const [lastAuthMethod, setLastAuthMethod] = useLastAuthMethod();
   const router = useRouter();
   const { toast } = useToast();
 
   const emailPasswordSignIn = useMutation({
-    mutationFn: superEmailPasswordSignIn,
-    onSuccess(data) {
-      const status = data.status;
-
-      switch (status) {
-        case 'OK': {
-          setLastAuthMethod('email');
-          void router.navigate({
-            to: props.redirectToPath,
-          });
-          break;
-        }
-        case 'WRONG_CREDENTIALS_ERROR': {
-          toast({
-            title: 'Invalid email or password',
-            description: 'Please check your email and password and try again.',
-            variant: 'destructive',
-          });
-          break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            form.setError(field.id as keyof SignInFormValues, {
-              type: 'manual',
-              message: field.error,
-            });
-          }
-          break;
-        }
-        case 'SIGN_IN_NOT_ALLOWED': {
-          toast({
-            title: 'Sign in not allowed',
-            description: 'Please contact support for assistance.',
-            variant: 'destructive',
-          });
-          break;
-        }
-        default: {
-          exhaustiveGuard(status);
-        }
+    mutationFn(input: Parameters<typeof authClient.signIn.email>[0]) {
+      return authClient.signIn.email(input);
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new Error(getErrorMessage(res.error));
       }
+
+      console.log('done?');
+      setLastAuthMethod('email');
     },
     onError(error) {
       console.error(error);
@@ -137,10 +110,26 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
 
   const thirdPartySignIn = useMutation({
     async mutationFn(provider: 'github' | 'google' | 'okta') {
-      await startAuthFlowForProvider(provider, props.redirectToPath);
+      if (provider === 'okta') {
+        // KAMIL: handle okta here, or remove completely
+        throw new Error('Okta is not yet supported');
+      }
+      return authClient.signIn.social({
+        provider,
+        callbackURL: createCallbackURL(props.redirectToPath),
+      });
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
+      }
     },
     onError(error) {
-      console.error(error);
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -171,27 +160,20 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
     (data: SignInFormValues) => {
       emailPasswordSignIn.reset();
       emailPasswordSignIn.mutate({
-        formFields: [
-          {
-            id: 'email',
-            value: data.email,
-          },
-          {
-            id: 'password',
-            value: data.password,
-          },
-        ],
+        email: data.email,
+        password: data.password,
+        callbackURL: createCallbackURL(props.redirectToPath),
       });
     },
     [emailPasswordSignIn.mutate],
   );
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  if (session.doesSessionExist) {
+  if (!!session.data) {
     // Redirect to the home page if the user is already signed in
     return <Navigate to="/" />;
   }
@@ -251,7 +233,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                   />
                   <SignInButton previousSignIn={lastAuthMethod === 'email'}>
                     <Button type="submit" className="w-full" disabled={isPending}>
-                      {emailPasswordSignIn.data?.status === 'OK'
+                      {emailPasswordSignIn.isSuccess
                         ? 'Redirecting...'
                         : emailPasswordSignIn.isPending
                           ? 'Signing in...'

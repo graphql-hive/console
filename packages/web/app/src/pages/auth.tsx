@@ -1,8 +1,8 @@
 import { BookIcon } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
+import { authClient } from '@/lib/auth';
 import { Link, Outlet } from '@tanstack/react-router';
 
 function ExternalLink(props: { href: string; children: React.ReactNode }) {
@@ -18,14 +18,19 @@ function ExternalLink(props: { href: string; children: React.ReactNode }) {
 }
 
 export function AuthPage() {
-  const session = useSessionContext();
+  const session = authClient.useSession();
+
+  if (session.error) {
+    // KAMIL: render error correctly
+    return <div>{session.error.message}</div>;
+  }
 
   return (
     <>
       <Meta title="Welcome" />
       <div className="size-full">
         <>
-          {session.loading ? (
+          {session.isPending ? (
             <div className="flex min-h-[100vh] items-center justify-center">
               <HiveLogo animated={false} className="size-8 animate-pulse" />
             </div>

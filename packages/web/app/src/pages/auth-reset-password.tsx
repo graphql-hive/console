@@ -1,10 +1,5 @@
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import {
-  sendPasswordResetEmail,
-  submitNewPassword,
-} from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
@@ -19,10 +14,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
-import { exhaustiveGuard } from '@/lib/utils';
+import { env } from '@/env/frontend';
+import { authClient, AuthError } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { captureException } from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
-import { Link, Navigate } from '@tanstack/react-router';
+import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
 const ResetPasswordFormSchema = z.object({
   email: z
@@ -36,40 +33,15 @@ type ResetPasswordFormValues = z.infer<typeof ResetPasswordFormSchema>;
 
 function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: string }) {
   const initialEmail = props.email ?? '';
+  const router = useRouter();
 
   const resetEmail = useMutation({
-    mutationFn: sendPasswordResetEmail,
-    onSuccess(data) {
-      const status = data.status;
-
-      switch (status) {
-        case 'OK': {
-          toast({
-            title: 'Email sent',
-            description: 'Please check your email to reset your password.',
-          });
-          break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            form.setError(field.id as keyof ResetPasswordFormValues, {
-              type: 'manual',
-              message: field.error,
-            });
-          }
-          break;
-        }
-        case 'PASSWORD_RESET_NOT_ALLOWED': {
-          toast({
-            title: 'Password reset not allowed',
-            description: 'Please contact support for assistance.',
-            variant: 'destructive',
-          });
-          break;
-        }
-        default: {
-          exhaustiveGuard(status);
-        }
+    mutationFn(input: Parameters<typeof authClient.forgetPassword>[0]) {
+      return authClient.forgetPassword(input);
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new Error(getErrorMessage(res.error));
       }
     },
     onError(error) {
@@ -95,30 +67,26 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
     (data: ResetPasswordFormValues) => {
       resetEmail.reset();
       resetEmail.mutate({
-        formFields: [
-          {
-            id: 'email',
-            value: data.email,
-          },
-        ],
+        email: data.email,
+        redirectTo: env.appBaseUrl + '/auth/reset-password',
       });
     },
     [resetEmail.mutate],
   );
 
-  const session = useSessionContext();
+  const session = authClient.useSession();
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  if (session.doesSessionExist) {
+  if (!!session.data) {
     // Redirect to the home page if the user is already signed in
-    return <Navigate to="/" />;
+    return <Navigate to={props.redirectToPath} />;
   }
 
-  const isSent = resetEmail.isSuccess && resetEmail.data.status === 'OK';
+  const isSent = resetEmail.isSuccess;
 
   if (isSent) {
     return (
@@ -167,11 +135,7 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
               )}
             />
             <Button type="submit" className="w-full" disabled={resetEmail.isPending}>
-              {resetEmail.data?.status === 'OK'
-                ? 'Redirecting...'
-                : resetEmail.isPending
-                  ? '...'
-                  : 'Email me'}
+              {resetEmail.isSuccess ? 'Redirecting...' : resetEmail.isPending ? '...' : 'Email me'}
             </Button>
           </form>
         </Form>
@@ -201,50 +165,30 @@ type NewPasswordFormValues = z.infer<typeof NewPasswordFormSchema>;
 
 function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
   const changePassword = useMutation({
-    mutationFn: submitNewPassword,
-    onSuccess(data) {
-      const status = data.status;
-
-      switch (status) {
-        case 'OK': {
-          toast({
-            title: 'Password changed',
-            description: 'You can now sign in with your new password.',
-          });
-          break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            if (field.id === 'password') {
-              form.setError('newPassword', {
-                type: 'manual',
-                message: field.error,
-              });
-            } else {
-              toast({
-                title: 'Field error',
-                description: field.error,
-                variant: 'destructive',
-              });
-            }
-          }
-          break;
-        }
-        case 'RESET_PASSWORD_INVALID_TOKEN_ERROR': {
-          toast({
-            title: 'Link expired',
-            description: 'Please request a new password reset link.',
-            variant: 'destructive',
-          });
-          break;
-        }
-        default: {
-          exhaustiveGuard(status);
-        }
+    mutationFn(input: { token: string; newPassword: string }) {
+      return authClient.resetPassword({
+        newPassword: input.newPassword,
+        token: input.token,
+      });
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
       }
+
+      void router.navigate({
+        to: '/auth/sign-in',
+        search: {
+          redirectToPath: props.redirectToPath,
+        },
+      });
     },
     onError(error) {
-      console.error(error);
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -267,25 +211,21 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
       console.log('onSubmit');
       changePassword.reset();
       changePassword.mutate({
-        formFields: [
-          {
-            id: 'password',
-            value: data.newPassword,
-          },
-        ],
+        newPassword: data.newPassword,
+        token: props.token,
       });
     },
     [changePassword.mutate],
   );
 
-  const session = useSessionContext();
+  const session = authClient.useSession();
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  const isSent = changePassword.isSuccess && changePassword.data.status === 'OK';
+  const isSent = changePassword.isSuccess;
 
   if (isSent) {
     return <Navigate to="/auth/sign-in" search={{ redirectToPath: props.redirectToPath }} />;
@@ -311,7 +251,7 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
               )}
             />
             <Button type="submit" className="w-full" disabled={changePassword.isPending}>
-              {changePassword.data?.status === 'OK'
+              {changePassword.isSuccess
                 ? 'Redirecting...'
                 : changePassword.isPending
                   ? '...'

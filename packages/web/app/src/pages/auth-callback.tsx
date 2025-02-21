@@ -1,7 +1,8 @@
-import { thirdPartySignInAndUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
+// import { thirdPartySignInAndUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import { AuthCard, AuthCardHeader } from '@/components/auth';
 import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
+import { authClient, getErrorMessage } from '@/lib/auth';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 
@@ -49,7 +50,12 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
         throw new Error(`Provider for ${provider} is not configured`);
       }
 
-      return thirdPartySignInAndUp();
+      // KAMIL: not sure if a callback is needed here. I think it's server-side callback.
+      //        Make sure people won't have to migrate their OIDC configurations.
+      //        If they need to, try to do this redirect to server-side callback here, from browser,
+      //        or add a special server redirect for this case that overrides this page.
+
+      // return thirdPartySignInAndUp();
     },
   });
   const providerDetails = providerDetailsMap[props.provider];

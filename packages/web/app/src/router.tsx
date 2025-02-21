@@ -1,13 +1,11 @@
 import { lazy, useCallback, useEffect } from 'react';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
-import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
-import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Toaster } from '@/components/ui/toaster';
-import { frontendConfig } from '@/config/supertokens/frontend';
+// import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import * as gtag from '@/lib/gtag';
 import { urqlClient } from '@/lib/urql';
@@ -70,7 +68,7 @@ import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
-SuperTokens.init(frontendConfig());
+// SuperTokens.init(frontendConfig());
 if (env.sentry) {
   init({
     dsn: env.sentry.dsn,
@@ -97,13 +95,13 @@ function identifyOnSentry(userId: string, email: string): void {
 
 function RootComponent() {
   useEffect(() => {
-    void Session.doesSessionExist().then(async doesExist => {
-      if (!doesExist) {
-        return;
-      }
-      const payload = await Session.getAccessTokenPayloadSecurely();
-      identifyOnSentry(payload.superTokensUserId, payload.email);
-    });
+    // void Session.doesSessionExist().then(async doesExist => {
+    //   if (!doesExist) {
+    //     return;
+    //   }
+    //   const payload = await Session.getAccessTokenPayloadSecurely();
+    //   identifyOnSentry(payload.superTokensUserId, payload.email);
+    // });
   }, []);
 
   return (
@@ -127,14 +125,14 @@ function RootComponent() {
         </Helmet>
       )}
       <Toaster />
-      <SuperTokensWrapper>
-        <QueryClientProvider client={queryClient}>
-          <UrqlProvider value={urqlClient}>
-            <LoadingAPIIndicator />
-            <Outlet />
-          </UrqlProvider>
-        </QueryClientProvider>
-      </SuperTokensWrapper>
+      {/* <SuperTokensWrapper> */}
+      <QueryClientProvider client={queryClient}>
+        <UrqlProvider value={urqlClient}>
+          <LoadingAPIIndicator />
+          <Outlet />
+        </UrqlProvider>
+      </QueryClientProvider>
+      {/* </SuperTokensWrapper> */}
       <ToastContainer hideProgressBar />
       {/* eslint-disable-next-line no-process-env */}
       {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
@@ -273,10 +271,19 @@ const authSignUpRoute = createRoute({
   component: AuthSignUpPage,
 });
 
+const AuthVerifyEmailRouteSearch = z.object({
+  token: z.string().optional(),
+});
 const authVerifyEmailRoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'verify-email',
-  component: AuthVerifyEmailPage,
+  validateSearch(search) {
+    return AuthVerifyEmailRouteSearch.parse(search);
+  },
+  component() {
+    const { token } = authVerifyEmailRoute.useSearch();
+    return AuthVerifyEmailPage({ token });
+  },
 });
 
 const indexRoute = createRoute({

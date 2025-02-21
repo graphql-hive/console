@@ -2,9 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaRegUserCircle } from 'react-icons/fa';
 import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
-import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverification';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import {
   AuthCard,
@@ -27,11 +24,16 @@ import { Meta } from '@/components/ui/meta';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
+import {
+  authClient,
+  AuthError,
+  createCallbackURL,
+  enabledProviders,
+  isProviderEnabled,
+} from '@/lib/auth';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
-import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
-import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { captureException } from '@sentry/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 import { SignInButton } from './auth-sign-in';
@@ -56,11 +58,16 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 export function AuthSignUpPage(props: { redirectToPath: string }) {
   const [lastAuthMethod] = useLastAuthMethod();
   const router = useRouter();
-  const session = useSessionContext();
+  const session = authClient.useSession();
 
   const sendVerificationEmailMutation = useMutation({
-    mutationFn: () => sendVerificationEmail(),
-    onSuccess() {
+    mutationFn(input: Parameters<typeof authClient.sendVerificationEmail>[0]) {
+      return authClient.sendVerificationEmail(input);
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
+      }
       void router.navigate({
         to: '/auth/verify-email',
       });
@@ -77,44 +84,30 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
   });
 
   const signUp = useMutation({
-    mutationFn: emailPasswordSignUp,
-    onSuccess(data) {
-      const status = data.status;
+    mutationFn(input: Parameters<typeof authClient.signUp.email>[0]) {
+      return authClient.signUp.email(input);
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
+      }
 
-      switch (status) {
-        case 'OK': {
-          if (env.auth.requireEmailVerification) {
-            sendVerificationEmailMutation.mutate();
-          } else {
-            void router.navigate({
-              to: props.redirectToPath,
-            });
-          }
-          break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            form.setError(field.id as keyof SignUpFormValues, {
-              type: 'manual',
-              message: field.error,
-            });
-          }
-          break;
-        }
-        case 'SIGN_UP_NOT_ALLOWED': {
-          toast({
-            title: 'Sign up not allowed',
-            description: 'Please contact support for assistance.',
-            variant: 'destructive',
-          });
-          break;
-        }
-        default: {
-          exhaustiveGuard(status);
-        }
+      if (env.auth.requireEmailVerification) {
+        sendVerificationEmailMutation.mutate({
+          email: res.data.user.email,
+        });
+      } else {
+        void router.navigate({
+          to: props.redirectToPath,
+        });
       }
     },
     onError(error) {
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -125,10 +118,27 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
 
   const thirdPartySignIn = useMutation({
     async mutationFn(provider: 'github' | 'google' | 'okta') {
-      await startAuthFlowForProvider(provider, props.redirectToPath);
+      // KAMIL: support okta here, or even make it a breaking change (with instructions)
+      if (provider === 'okta') {
+        throw new Error('Okta is not supported');
+      }
+
+      return authClient.signIn.social({
+        provider,
+        callbackURL: createCallbackURL(props.redirectToPath),
+      });
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
+      }
     },
     onError(error) {
-      console.error(error);
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -161,37 +171,27 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
     (data: SignUpFormValues) => {
       signUp.reset();
       signUp.mutate({
-        formFields: [
-          {
-            id: 'email',
-            value: data.email,
-          },
-          {
-            id: 'password',
-            value: data.password,
-          },
-          {
-            id: 'firstName',
-            value: data.firstName,
-          },
-          {
-            id: 'lastName',
-            value: data.lastName,
-          },
-        ],
+        email: data.email,
+        name: data.firstName + ' ' + data.lastName,
+        password: data.password,
       });
     },
     [signUp.mutate],
   );
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  if (session.doesSessionExist) {
+  if (!!session.data) {
     // Redirect to the home page if the user is already signed in
     return <Navigate to="/" />;
+  }
+
+  if (session.error) {
+    // KAMIL: proper error page
+    return <div>{session.error.message}</div>;
   }
 
   const isVerificationSettled = env.auth.requireEmailVerification
@@ -270,7 +270,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={isPending}>
-                    {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
+                    {signUp.isSuccess && !!signUp.data.error && isVerificationSettled
                       ? 'Redirecting...'
                       : signUp.isPending
                         ? 'Creating account...'

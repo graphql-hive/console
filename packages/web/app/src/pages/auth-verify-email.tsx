@@ -1,38 +1,68 @@
-import {
-  getEmailVerificationTokenFromURL,
-  sendVerificationEmail,
-  verifyEmail,
-} from 'supertokens-auth-react/recipe/emailverification';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
+import { authClient, AuthError } from '@/lib/auth';
+import { captureException } from '@sentry/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 
-function AuthVerifyEmail() {
-  const token = getEmailVerificationTokenFromURL();
+async function verifyEmail(input: { token: string }) {
+  const res = await authClient.verifyEmail({
+    query: {
+      token: input.token,
+    },
+  });
+
+  if (res.error) {
+    throw new AuthError(res.error);
+  }
+
+  return true;
+}
+
+function AuthVerifyEmail(props: { token?: string }) {
+  const token = props.token;
   const enabled = typeof token === 'string' && token.length > 0;
   const { toast } = useToast();
 
   const sendVerificationEmailMutation = useMutation({
-    mutationFn: () => sendVerificationEmail(),
-    onSuccess(data) {
-      if (data.status === 'OK') {
-        toast({
-          title: 'Verification email sent',
-          description: 'Please check your email inbox.',
-        });
-      } else if (data.status === 'EMAIL_ALREADY_VERIFIED_ERROR') {
-        toast({
-          title: 'Email already verified',
-          description: 'Your email address has already been verified.',
-        });
+    async mutationFn(input: { email: string }) {
+      return authClient.sendVerificationEmail({
+        email: input.email,
+      });
+    },
+    onSuccess(res) {
+      if (res.error) {
+        throw new AuthError(res.error);
       }
+
+      toast({
+        title: 'Verification email sent',
+        description: 'Please check your email inbox.',
+      });
+    },
+    onError(error) {
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
+      toast({
+        title: 'An error occurred',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
   const emailVerification = useQuery({
-    queryFn: () => verifyEmail(),
+    queryFn: verifyEmail,
+    onError(error) {
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+    },
     enabled,
     queryKey: ['email-verification', token],
   });
@@ -91,7 +121,11 @@ function AuthVerifyEmail() {
             <Button
               className="w-full"
               disabled={sendVerificationEmailMutation.isPending}
-              onClick={() => sendVerificationEmailMutation.mutate()}
+              onClick={() =>
+                sendVerificationEmailMutation.mutate({
+                  email: emailVerification.data?.email,
+                })
+              }
             >
               Resend verification email
             </Button>
@@ -168,11 +202,11 @@ function AuthVerifyEmail() {
   );
 }
 
-export function AuthVerifyEmailPage() {
+export function AuthVerifyEmailPage(props: { token?: string }) {
   return (
     <>
       <Meta title="Email verification" />
-      <AuthVerifyEmail />
+      <AuthVerifyEmail token={props.token} />
     </>
   );
 }

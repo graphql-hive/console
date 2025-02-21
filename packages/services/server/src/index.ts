@@ -1,14 +1,16 @@
 #!/usr/bin/env node
+import { toNodeHandler } from 'better-auth/node';
 import got from 'got';
 import { GraphQLError, stripIgnoredCharacters } from 'graphql';
-import supertokens from 'supertokens-node';
-import {
-  errorHandler as supertokensErrorHandler,
-  plugin as supertokensFastifyPlugin,
-} from 'supertokens-node/framework/fastify/index.js';
+// import supertokens from 'supertokens-node';
+// import {
+//   errorHandler as supertokensErrorHandler,
+//   plugin as supertokensFastifyPlugin,
+// } from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
+import { auth } from './auth/index';
 import 'reflect-metadata';
 import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
@@ -62,7 +64,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
-import { initSupertokens, oidcIdLookup } from './supertokens';
+import { /*initSupertokens,*/ oidcIdLookup } from './supertokens';
 
 export async function main() {
   let tracing: TracingInstance | undefined;
@@ -139,7 +141,7 @@ export async function main() {
     },
   );
 
-  server.setErrorHandler(supertokensErrorHandler());
+  // server.setErrorHandler(supertokensErrorHandler());
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
       if (req.headers.origin?.startsWith(env.hiveServices.webApp.url)) {
@@ -154,14 +156,79 @@ export async function main() {
             'graphql-client-version',
             'graphql-client-name',
             'x-request-id',
-            ...supertokens.getAllCORSHeaders(),
+            // Better Auth headers
+            'rid',
+            'fdi-version',
+            'st-auth-mode',
+            'Authorization',
           ],
+          exposedHeaders: ['x-request-id', 'Content-Length'],
         });
         return;
       }
 
       callback(null, {});
     };
+  });
+
+  const oidcIdLookupSchema = z.object({
+    slug: z.string({
+      required_error: 'Slug is required',
+    }),
+  });
+
+  server.post('/auth-api/oidc-id-lookup', async (req, res) => {
+    const inputResult = oidcIdLookupSchema.safeParse(req.body);
+
+    if (!inputResult.success) {
+      captureException(inputResult.error, {
+        extra: {
+          path: '/auth-api/oidc-id-lookup',
+          body: req.body,
+        },
+      });
+      void res.status(400).send({
+        ok: false,
+        title: 'Invalid input',
+        description: 'Failed to resolve SSO information due to invalid input.',
+        status: 400,
+      } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
+      return;
+    }
+
+    const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
+
+    if (result.ok) {
+      void res.status(200).send(result);
+      return;
+    }
+
+    void res.status(result.status).send(result);
+    return;
+  });
+
+  await server.register((instance, _, done) => {
+    const authNodeHandler = toNodeHandler(auth);
+
+    instance.addContentTypeParser('application/json', (_request, _payload, done) => {
+      done(null, null);
+    });
+
+    instance.all('/auth-api/*', async (request, reply) => {
+      const entries = Object.entries(reply.getHeaders());
+      const newHeaders: Map<string, number | string | readonly string[]> = new Map();
+      for (const [headerKey, headerValue] of entries) {
+        if (headerValue != null) {
+          newHeaders.set(headerKey, headerValue);
+        }
+      }
+      reply.raw.setHeaders(newHeaders);
+      console.log('started', request.url, request.method);
+      await authNodeHandler(request.raw, reply.raw);
+      console.log('ended', request.url, request.method);
+    });
+
+    done();
   });
 
   const storage = await createPostgreSQLStorage(
@@ -468,20 +535,20 @@ export async function main() {
 
     const crypto = new CryptoProvider(env.encryptionSecret);
 
-    initSupertokens({
-      storage,
-      crypto,
-      logger: server.log,
-      broadcastLog(id, message) {
-        pubSub.publish('oidcIntegrationLogs', id, {
-          timestamp: new Date().toISOString(),
-          message,
-        });
-      },
-    });
+    // KAMIL: broadcast logs from oidc
+    // initSupertokens({
+    //   storage,
+    //   crypto,
+    //   logger: server.log,
+    //   broadcastLog(id, message) {
+    //     pubSub.publish('oidcIntegrationLogs', id, {
+    //       timestamp: new Date().toISOString(),
+    //       message,
+    //     });
+    //   },
+    // });
 
     await server.register(formDataPlugin);
-    await server.register(supertokensFastifyPlugin);
 
     await registerTRPC(server, {
       router: internalApiRouter,
@@ -532,41 +599,6 @@ export async function main() {
         reportReadiness(false);
         res.status(400).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
       },
-    });
-
-    const oidcIdLookupSchema = z.object({
-      slug: z.string({
-        required_error: 'Slug is required',
-      }),
-    });
-    server.post('/auth-api/oidc-id-lookup', async (req, res) => {
-      const inputResult = oidcIdLookupSchema.safeParse(req.body);
-
-      if (!inputResult.success) {
-        captureException(inputResult.error, {
-          extra: {
-            path: '/auth-api/oidc-id-lookup',
-            body: req.body,
-          },
-        });
-        void res.status(400).send({
-          ok: false,
-          title: 'Invalid input',
-          description: 'Failed to resolve SSO information due to invalid input.',
-          status: 400,
-        } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
-        return;
-      }
-
-      const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
-
-      if (result.ok) {
-        void res.status(200).send(result);
-        return;
-      }
-
-      void res.status(result.status).send(result);
-      return;
     });
 
     if (env.cdn.providers.api !== null) {
