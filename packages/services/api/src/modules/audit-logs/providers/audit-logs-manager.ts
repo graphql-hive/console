@@ -6,7 +6,7 @@ import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
-import { Emails, mjml } from '../../shared/providers/emails';
+import { Emails } from '../../shared/providers/emails';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
@@ -65,7 +65,7 @@ export class AuditLogManager {
         , "metadata"
       FROM
         "audit_logs"
-      WHERE 
+      WHERE
         "organization_id" = ${organizationId}
         AND "timestamp" >= ${formatToClickhouseDateTime(startOfDay(filter.startDate))}
         AND "timestamp" <= ${formatToClickhouseDateTime(endOfDay(filter.endDate))}
@@ -210,28 +210,13 @@ export class AuditLogManager {
       const organization = await this.storage.getOrganization({
         organizationId,
       });
-      const title = `Audit Logs for your organization ${organization.name} from ${cleanStartDate} to ${cleanEndDate}`;
-      await this.emailProvider.schedule({
+      await this.emailProvider.api?.sendAuditLogsReportEmail.mutate({
         email: email,
-        subject: 'Hive - Audit Log Report',
-        body: mjml`
-            <mjml>
-              <mj-body>
-                <mj-section>
-                  <mj-column>
-                    <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-                    <mj-divider border-color="#ca8a04"></mj-divider>
-                    <mj-text>
-                      ${title}
-                    </mj-text>.
-                    <mj-button href="${getPresignedUrl.url}" background-color="#ca8a04">
-                      Download Audit Logs CSV
-                    </mj-button>
-                  </mj-column>
-                </mj-section>
-              </mj-body>
-            </mjml>
-          `,
+        organizationName: organization.name,
+        organizationId: organization.id,
+        formattedStartDate: cleanStartDate,
+        formattedEndDate: cleanEndDate,
+        url: getPresignedUrl.url,
       });
 
       return {
