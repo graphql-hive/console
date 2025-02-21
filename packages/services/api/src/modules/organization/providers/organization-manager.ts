@@ -9,7 +9,7 @@ import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../billing/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
-import { Emails, mjml } from '../../shared/providers/emails';
+import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import type { OrganizationSelector } from '../../shared/providers/storage';
