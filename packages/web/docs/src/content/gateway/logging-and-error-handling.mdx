@@ -127,7 +127,7 @@ class CustomLogger implements Logger {
     public name: string,
     public meta: Record<string, string>,
     public isDebugEnabled: boolean
-    ) {}
+  ) {}
 
   log(...args: any[]): void {
     console.log(this.name, this.meta, ...args)
@@ -147,7 +147,11 @@ class CustomLogger implements Logger {
 
   debug(...lazyMessageArgs: (() => any | any)[]): void {
     if (this.isDebugEnabled) {
-      console.debug(this.name, this.meta, ...lazyMessageArgs.map(arg => typeof arg === 'function' ? arg() : arg))
+      console.debug(
+        this.name,
+        this.meta,
+        ...lazyMessageArgs.map(arg => (typeof arg === 'function' ? arg() : arg))
+      )
     }
   }
 
@@ -161,10 +165,7 @@ class CustomLogger implements Logger {
       newName = this.name
       newMeta = { ...this.meta, ...nameOrMeta }
     }
-    return new CustomLogger(
-      newName,
-      newMeta
-    )
+    return new CustomLogger(newName, newMeta)
   }
 }
 ```
