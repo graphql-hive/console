@@ -1,0 +1,295 @@
+# Logging & Error Handling
+
+Hive Gateway provides a built-in logger that allows you to log information about the Gateway's
+lifecycle, errors, and other events. The default logger uses JavaScript's
+[`console`](https://developer.mozilla.org/en-US/docs/Web/API/console) API, but you can also provide
+a custom logger implementation. By default, Hive Gateway logs the critical masked errors so that the
+sensitive information is not exposed to the client.
+
+## Logging
+
+Hive Gateway provides a built-in logging system that allows you to log information about the
+Gateway's lifecycle, errors, and other events. The default logger uses JavaScript's
+[`console`](https://developer.mozilla.org/en-US/docs/Web/API/console) API, but you can also provide
+a custom logger implementation.
+
+### Logging in JSON format
+
+By default without any production environment variable, Hive Gateway prints the logs in human
+readable format. However, in production (when `NODE_ENV` is `production`) Hive Gateway prints the
+logs in JSON format, but if you want to enable it in regular mode, you can pass `LOG_LEVEL=json` as
+an environment variable.
+
+### Log Levels
+
+Hive Gateway uses 4 log levels `debug`, `info`, `warn` and `error`. By default, Hive Gateway will
+only log info, warn and error messages.
+
+#### `error`
+
+- Only log unexpected errors including masked errors
+
+#### `warn`
+
+- All prior log levels
+- Deprecation notices
+- Potential issues that could lead to errors
+
+#### `info`
+
+- All prior log levels
+- Information about the current state of the system
+
+#### `debug`
+
+- All prior log levels
+- Processing of GraphQL parameters
+- Parsing of GraphQL parameters
+- Execution or subscription start
+- Received GraphQL operation variables
+- Execution or subscription end
+- Health checks
+- Subgraph requests
+- All HTTP requests and responses
+- Supergraph fetching
+- Any caching operations
+
+<Callout>
+  If you want to learn more about the life-cycle of the Gateway, you can enable debug logs. Setting
+  the `DEBUG=1` environment variable or passing `debug` to `logging` parameter will enable debug
+  logs that include all operations done to the upstream services, query plans etc.
+</Callout>
+
+### Integration with Winston (only Node.js)
+
+By default, Hive Gateway uses the built-in `console` logger. However, you can also integrate Hive
+Gateway with [Winston](https://github.com/winstonjs/winston) on Node.js environments.
+
+You need to install `winston` and `@graphql-hive/winston` packages to use Winston with Hive Gateway.
+
+```sh npm2yarn
+npm i winston @graphql-hive/winston
+```
+
+```ts
+import { createLogger, format, transports } from 'winston'
+import { createLoggerFromWinston } from '@graphql-hive/winston'
+
+// Create a Winston logger
+const winstonLogger = createLogger({
+  level: 'info',
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new transports.Console()]
+})
+
+export const gatewayConfig = defineConfig({
+  // Create an adapter for Winston
+  logging: createLoggerFromWinston(winstonLogger)
+})
+```
+
+### Custom Logger
+
+If you want to implement your own logger, you can use the interface `Logger` from
+`@graphql-hive/gateway`. The logger should implement the following methods:
+
+- `log(...args: any[]): void`
+- `error(...args: any[]): void`
+- `warn(...args: any[]): void`
+- `info(...args: any[]): void`
+- `debug(lazyMessageArgs: ...(() => any | any)[]): void`
+- `child(nameOrMeta: string | Record<string, string>): Logger`
+
+Keep on mind that, all methods can receive `any` type of variables, and serializing them for the
+output is up to the logger implementation. `JSON.stringify` might not be the best option for all
+cases.
+
+Also please notice that `debug` can receive functions that will be invoked only if the log level is
+enabled.
+
+Here is an example of a custom logger implementation, that logs to the console. But keep in mind
+that this is a very basic example and you shouldn't use it in production directly!
+
+```ts
+import { Logger } from '@graphql-hive/gateway'
+
+class CustomLogger implements Logger {
+  constructor(
+    public name: string,
+    public meta: Record<string, string>,
+    public isDebugEnabled: boolean
+    ) {}
+
+  log(...args: any[]): void {
+    console.log(this.name, this.meta, ...args)
+  }
+
+  error(...args: any[]): void {
+    console.error(this.name, this.meta, ...args)
+  }
+
+  warn(...args: any[]): void {
+    console.warn(this.name, this.meta, ...args)
+  }
+
+  info(...args: any[]): void {
+    console.info(this.name, this.meta, ...args)
+  }
+
+  debug(...lazyMessageArgs: ...(() => any | any)[]): void {
+    if (this.isDebugEnabled) {
+      console.debug(this.name, this.meta, ...lazyMessageArgs.map(arg => typeof arg === 'function' ? arg() : arg))
+    }
+  }
+
+  child(nameOrMeta: string | Record<string, string>): Logger {
+    let newName: string
+    let newMeta: Record<string, string>
+    if (typeof nameOrMeta === 'string') {
+      newName = `${this.name}.${nameOrMeta}`
+      newMeta = this.meta
+    } else {
+      newName = this.name
+      newMeta = { ...this.meta, ...nameOrMeta }
+    }
+    return new CustomLogger(
+      newName,
+      newMeta
+    )
+  }
+}
+```
+
+## Error Handling
+
+### Error Codes
+
+In order to help debugging, and ease of understanding the errors on the consumer end, Hive Gateway
+uses error codes for the following specific types of errors:
+
+| Code                      | Description                                                                                                                                                                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| GRAPHQL_PARSE_FAILED      | Sent GraphQL Operation cannot be parsed                                                                                                                                                                                                                                                                  |
+| GRAPHQL_VALIDATION_FAILED | Sent GraphQL Operation is not validated against the schema                                                                                                                                                                                                                                               |
+| BAD_USER_INPUT            | Variable or argument values are not valid in the GraphQL parameters                                                                                                                                                                                                                                      |
+| TIMEOUT_ERROR             | Indicates a timeout in the subgraph execution<br/>Keep on mind that this timeout is not always an HTTP timeout, or a timeout specified by you.<br/>It might be the subgraph server that timed out.<br/>Learn more about upstream reliability in order to configure timeout based on your needs.          |
+| SCHEMA_RELOAD             | When Hive Gateway updates the schema by polling or any other way,<br/>all ongoing requests are terminated including subscriptions and long-running defer/stream operations.<br/>In this case, this error is sent to the client that indicates a schema change. Usually a retry is expected in this case. |
+| SHUTTING_DOWN             | When Hive Gateway is shutting down or restarting,<br/>as `SCHEMA_RELOAD` , it aborts all the requests, and notifies the client with this error code. After a certain amount, a retry can be sent.                                                                                                        |     |
+| UNAUTHENTICATED           | The given auth credentials are not valid.<br/>Check the logs, and documentation of the used auth plugin to learn more                                                                                                                                                                                    |
+| PERSISTED_QUERY_NOT_FOUND | Indicates that persisted operation information is not found in the store.<br/>Check the related persisted operation plugin docs to learn more about this error                                                                                                                                           |
+| INTERNAL_SERVER_ERROR     | Indicates that the error is unexpected/unspecified and masked by the gateway.<br/>It is probably caused by an unexpected network, connection or any other runtime error.<br/>You can see the details of this error in the logs.                                                                          |
+| DOWNSTREAM_SERVICE_ERROR  | Indicates the error is subgraph related, and generated by the subgraph not the gateway                                                                                                                                                                                                                   |
+
+### Error Masking
+
+Hive Gateway masks internal server errors by default to prevent leaking sensitive information to the
+client. But without any codes all errors in the result are considered safe from the subgraph.
+
+In order to build secure applications, it is crucial to understand this concept.
+
+So any HTTP errors, network errors, or any other errors that are not related to the subgraph are
+masked by default. But any errors sent by the subgraph are not masked by default.
+
+All masked errors are replaced with a generic error message and the original error is not exposed to
+the client.
+
+```json
+{
+  "errors": [
+    {
+      "message": "Unexpected error.",
+      "code": "INTERNAL_SERVER_ERROR",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": ["greeting"]
+    }
+  ],
+  "data": null
+}
+```
+
+But if the subgraph sends an error in the result, it is forwarded with `DOWNSTREAM_SERVICE_ERROR` if
+`INTERNAL_SERVER_ERROR` code isn't passed.
+
+```json
+{
+  "errors": [
+    {
+      "message": "This error is from subgraph",
+      "code": "DOWNSTREAM_SERVICE_ERROR",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": ["greeting"]
+    }
+  ],
+  "data": null
+}
+```
+
+<Callout>
+  When `INTERNAL_SERVER_ERROR` is passed from the subgraph, it is masked by the gateway and sent to
+  the client as `INTERNAL_SERVER_ERROR`. But the gateway will still log the original error.
+</Callout>
+
+#### Disable for development
+
+For development purpose, exposing errors to the client can be needed depending on your architecture.
+
+Error masking can be disabled using the `maskedErrors` option:
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  maskedErrors: false
+})
+```
+
+#### Receive original error in development
+
+When developing locally seeing the original error within your Chrome Dev Tools might be handy for
+debugging. You might be tempted to disable the masked errors via the `maskedErrors` config option,
+however, **we do not recommend that at all**.
+
+Having development and production behavior as close as possible is very important for not having any
+surprises in production. Instead, we recommend enabling the Yoga development mode.
+
+To do this you need to start Yoga with the `NODE_ENV` environment variable set to `"development"`.
+
+On unix and windows systems the environment variable can be set when starting the server.
+
+```sh
+NODE_ENV=development hive-gateway supergraph MY_SUPERGRAPH
+```
+
+```json filename="GraphQL Error Response with original error extensions"
+{
+  "errors": [
+    {
+      "message": "Unexpected error.",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": ["greeting"],
+      "extensions": {
+        "originalError": {
+          "message": "request to http://localhost:9876/greeting failed, reason: connect ECONNREFUSED 127.0.0.1:9876",
+          "stack": "FetchError: request to http://localhost:9876/greeting failed, reason: connect ECONNREFUSED 127.0.0.1:9876\n    at ClientRequest.<anonymous> (C:\\Users\\XXXX\\Projects\\graphql-yoga\\node_modules\\node-fetch\\lib\\index.js:1483:11)\n    at ClientRequest.emit (events.js:376:20)\n    at Socket.socketErrorListener (_http_client.js:475:9)\n    at Socket.emit (events.js:376:20)\n    at emitErrorNT (internal/streams/destroy.js:106:8)\n    at emitErrorCloseNT (internal/streams/destroy.js:74:3)\n    at processTicksAndRejections (internal/process/task_queues.js:82:21)"
+        }
+      }
+    }
+  ],
+  "data": null
+}
+```
