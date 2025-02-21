@@ -174,8 +174,8 @@ class CustomLogger implements Logger {
 
 ### Error Codes
 
-In order to help debugging, and ease of understanding the errors on the consumer end, Hive Gateway
-uses error codes for the following specific types of errors:
+To help with debugging and improve error understanding for consumers, Hive Gateway uses error codes
+for the following specific types of errors:
 
 | Code                      | Description                                                                                                                                                                                                                                                                                              |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
@@ -195,7 +195,7 @@ uses error codes for the following specific types of errors:
 Hive Gateway masks internal server errors by default to prevent leaking sensitive information to the
 client. But without any codes all errors in the result are considered safe from the subgraph.
 
-In order to build secure applications, it is crucial to understand this concept.
+Understanding this concept is crucial for building secure applications.
 
 So any HTTP errors, network errors, or any other errors that are not related to the subgraph are
 masked by default. But any errors sent by the subgraph are not masked by default.
@@ -269,7 +269,7 @@ When developing locally seeing the original error within your Chrome Dev Tools m
 debugging. You might be tempted to disable the masked errors via the `maskedErrors` config option,
 however, **we do not recommend that at all**.
 
-Having development and production behavior as close as possible is very important for not having any
+Maintaining consistent behavior between development and production is crucial for not having any
 surprises in production. Instead, we recommend enabling the Yoga development mode.
 
 To do this you need to start Yoga with the `NODE_ENV` environment variable set to `"development"`.
