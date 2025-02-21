@@ -1,37 +1,3 @@
-import { Inject, Injectable, InjectionToken, Optional } from 'graphql-modules';
-import type { EmailsApi } from '@hive/emails';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
-
-export const EMAILS_ENDPOINT = new InjectionToken<string>('EMAILS_ENDPOINT');
-
-@Injectable()
-export class Emails {
-  public api;
-
-  constructor(@Optional() @Inject(EMAILS_ENDPOINT) endpoint?: string) {
-    this.api = endpoint
-      ? createTRPCProxyClient<EmailsApi>({
-          links: [
-            httpLink({
-              url: `${endpoint}/trpc`,
-              fetch,
-            }),
-          ],
-        })
-      : null;
-  }
-
-  schedule(input: { id?: string; email: string; subject: string; body: MJMLValue }) {
-    if (!this.api) {
-      return Promise.resolve();
-    }
-
-    return this.api.schedule.mutate({
-      ...input,
-      body: input.body.content,
-    });
-  }
-}
 export type MJMLValue = {
   readonly kind: 'mjml';
   readonly content: string;
@@ -43,14 +9,6 @@ type RawValue = {
 };
 type SpecialValues = RawValue;
 type ValueExpression = string | SpecialValues;
-
-function isOfKind<T extends SpecialValues>(value: unknown, kind: T['kind']): value is T {
-  return !!value && typeof value === 'object' && 'kind' in value && value.kind === kind;
-}
-
-function isRawValue(value: unknown): value is RawValue {
-  return isOfKind<RawValue>(value, 'raw');
-}
 
 export function mjml(parts: TemplateStringsArray, ...values: ValueExpression[]): MJMLValue {
   let content = '';
@@ -132,4 +90,12 @@ function escapeHtml(input: string): string {
   }
 
   return lastIndex !== index ? html + input.substring(lastIndex, index) : html;
+}
+
+function isOfKind<T extends SpecialValues>(value: unknown, kind: T['kind']): value is T {
+  return !!value && typeof value === 'object' && 'kind' in value && value.kind === kind;
+}
+
+function isRawValue(value: unknown): value is RawValue {
+  return isOfKind<RawValue>(value, 'raw');
 }

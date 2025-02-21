@@ -528,33 +528,12 @@ export class OrganizationManager {
         step: 'invitingMembers',
       }),
       // schedule an email
-      this.emails.schedule({
-        id: JSON.stringify({
-          id: 'org-invitation',
-          organization: invitation.organization_id,
-          code: createHash('sha256').update(invitation.code).digest('hex'),
-          email: createHash('sha256').update(invitation.email).digest('hex'),
-        }),
+      this.emails.api?.sendOrganizationInviteEmail.mutate({
+        organizationId: invitation.organization_id,
+        organizationName: organization.name,
         email,
-        body: mjml`
-          <mjml>
-            <mj-body>
-              <mj-section>
-                <mj-column>
-                  <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-                  <mj-divider border-color="#ca8a04"></mj-divider>
-                  <mj-text>
-                    Someone from <strong>${organization.name}</strong> invited you to join GraphQL Hive.
-                  </mj-text>.
-                  <mj-button href="${mjml.raw(this.appBaseUrl)}/join/${invitation.code}">
-                    Accept the invitation
-                  </mj-button>
-                </mj-column>
-              </mj-section>
-            </mj-body>
-          </mjml>
-        `,
-        subject: `You have been invited to join ${organization.name}`,
+        code: invitation.code,
+        link: `${this.appBaseUrl}/join/${invitation.code}`,
       }),
     ]);
 
