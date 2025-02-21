@@ -145,7 +145,7 @@ class CustomLogger implements Logger {
     console.info(this.name, this.meta, ...args)
   }
 
-  debug(...lazyMessageArgs: ...(() => any | any)[]): void {
+  debug(...lazyMessageArgs: (() => any | any)[]): void {
     if (this.isDebugEnabled) {
       console.debug(this.name, this.meta, ...lazyMessageArgs.map(arg => typeof arg === 'function' ? arg() : arg))
     }
