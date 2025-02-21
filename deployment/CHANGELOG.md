@@ -1,5 +1,22 @@
 # hive
 
+## 5.1.2
+
+### Patch Changes
+
+- [#6518](https://github.com/graphql-hive/console/pull/6518)
+  [`a8a2da5`](https://github.com/graphql-hive/console/commit/a8a2da5d65c09885dd3aa6d9bbe017cf4b9efebf)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Ensure response body is read before
+  timeout to avoid abort errors in S3 client (CDN)
+
+- [#6536](https://github.com/graphql-hive/console/pull/6536)
+  [`6cdcef1`](https://github.com/graphql-hive/console/commit/6cdcef1b2a1f75da372f22ddeefe3951a85fd02c)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds an index to
+  coordinates\_(daily,hourly,minutely) tables to speedup the get_top_operations_for_types ClickHoue
+  query.
+
+  Reading of type and fields usage statisticts should be noticeably faster now on big datasets.
+
 ## 5.1.1
 
 ### Patch Changes
