@@ -5,6 +5,7 @@ import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Context } from './context';
 import { EmailInputShape } from './shapes';
+import { renderAuditLogsReportEmail } from './templates/audit-logs-report';
 import { renderEmailVerificationEmail } from './templates/email-verification';
 import { renderOrganizationInvitation } from './templates/organization-invitation';
 import { renderPasswordResetEmail } from './templates/password-reset';
@@ -13,6 +14,36 @@ const t = initTRPC.context<Context>().create();
 const procedure = t.procedure.use(handleTRPCError);
 
 export const emailsApiRouter = t.router({
+  sendAuditLogsReportEmail: procedure
+    .input(
+      z.object({
+        organizationId: z.string(),
+        organizationName: z.string(),
+        formattedStartDate: z.string(),
+        formattedEndDate: z.string(),
+        url: z.string(),
+        email: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const job = await ctx.schedule({
+          email: input.email,
+          subject: 'Hive - Audit Log Report',
+          body: renderAuditLogsReportEmail({
+            url: input.url,
+            organizationName: input.organizationName,
+            formattedStartDate: input.formattedStartDate,
+            formattedEndDate: input.formattedEndDate,
+          }),
+        });
+
+        return { job: job.id ?? 'unknown' };
+      } catch (error) {
+        ctx.errorHandler('Failed to schedule an email', error as Error);
+        throw error;
+      }
+    }),
   sendOrganizationInviteEmail: procedure
     .input(
       z.object({
