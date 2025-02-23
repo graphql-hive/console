@@ -44,13 +44,13 @@ graphql-parser = { version = "0.5.0", package = "graphql-parser-hive-fork" }
 graphql-tools = { version = "0.4.0", features = [
     "graphql_parser_fork",
 ], default-features = false }
-lru = "^0.12.1"
+lru = "^0.13.0"
 md5 = "0.7.0"
-rand = "0.8.5"
+rand = "0.9.0"
 
 [dev-dependencies]
 httpmock = "0.7.0"
-jsonschema = { version = "0.26.1", default-features = false, features = [
+jsonschema = { version = "0.29.0", default-features = false, features = [
     "resolve-file",
 ] }
 lazy_static = "1.5.0"
