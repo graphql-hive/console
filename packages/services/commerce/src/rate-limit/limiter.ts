@@ -4,7 +4,6 @@ import type { ServiceLogger } from '@hive/service-common';
 import { traceInline } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { UsageEstimator } from '../usage-estimator/estimator';
-// import type { RateLimitInput } from './api';
 import { createEmailScheduler } from './emails';
 import { rateLimitOperationsEventOrg } from './metrics';
 
