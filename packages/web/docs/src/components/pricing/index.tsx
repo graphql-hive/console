@@ -77,7 +77,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
   return (
     <section className={cn('py-12 sm:py-20', className)}>
       <div className="mx-auto box-border w-full max-w-[1200px]">
-        <Heading size="md" as="h3" className="max-sm:text-[32px]/10 max-sm:tracking-[-.16px]">
+        <Heading size="md" as="h3" className="max-md:text-[32px]/10 max-sm:tracking-[-.16px]">
           Operations: learn more about usage-based pricing
         </Heading>
         <p className="mt-6 text-green-800">

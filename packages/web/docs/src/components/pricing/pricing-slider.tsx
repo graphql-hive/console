@@ -10,10 +10,10 @@ export function PricingSlider({ className, ...rest }: { className?: string }) {
 
   return (
     <label
-      className={cn('relative block rounded-3xl border border-green-400 p-4 lg:p-8', className)}
+      className={cn('relative block rounded-3xl border border-green-400 p-4 md:p-8', className)}
       {...rest}
     >
-      <div className="text-green-1000 items-center text-2xl font-medium lg:flex lg:h-12">
+      <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
         How many operations per month do you need?
       </div>
       <div className="text-green-1000 flex items-center gap-5 pt-12 text-sm">
@@ -36,7 +36,7 @@ export function PricingSlider({ className, ...rest }: { className?: string }) {
       <CallToAction
         href="#todo-faq-operations-question"
         variant="tertiary"
-        className="mt-6 lg:absolute lg:right-8 lg:top-8 lg:mt-0"
+        className="mt-6 md:absolute md:right-8 md:top-8 md:mt-0"
       >
         <BookIcon /> Learn about operations
       </CallToAction>
