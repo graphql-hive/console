@@ -10,6 +10,7 @@ import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recor
 import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
 import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
+import { provideAuthInstance, type AuthInstance } from './modules/auth/providers/auth-instance';
 import { billingModule } from './modules/billing';
 import { BILLING_CONFIG, BillingConfig } from './modules/billing/providers/tokens';
 import { cdnModule } from './modules/cdn';
@@ -119,6 +120,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  authInstance,
 }: {
   logger: Logger;
   storage: Storage;
@@ -164,6 +166,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  authInstance: AuthInstance;
 }) {
   const s3Config: S3Config = [
     {
@@ -315,6 +318,7 @@ export function createRegistry({
     { provide: PUB_SUB_CONFIG, scope: Scope.Singleton, useValue: pubSub },
     encryptionSecretProvider(encryptionSecret),
     provideSchemaModuleConfig(schemaConfig),
+    provideAuthInstance(authInstance),
     {
       provide: Session,
       useFactory(context: { session: Session }) {

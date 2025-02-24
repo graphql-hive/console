@@ -1,4 +1,3 @@
-import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import type { User } from '../../../shared/entities';
@@ -11,6 +10,7 @@ import {
 } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
+import type { AuthInstance } from '../providers/auth-instance';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
 
 export class BetterAuthCookieBasedSession extends Session {
@@ -214,52 +214,44 @@ export class BetterAuthUserAuthNStrategy extends AuthNStrategy<BetterAuthCookieB
   private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  private auth: AuthInstance;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
+    auth: AuthInstance;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'BetterAuthUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+    this.auth = deps.auth;
   }
 
   private async verifyBetterAuthSession(args: { req: FastifyRequest; reply: FastifyReply }) {
     this.logger.debug('Attempt verifying BetterAuth session');
-    let session: SessionNode.SessionContainer | undefined;
+
+    const headers = new Headers();
+
+    for (const [key, value] of Object.entries(args.req.headers)) {
+      if (!value) {
+        continue;
+      }
+
+      const headerValue = Array.isArray(value) ? value[value.length - 1] : value;
+      headers.set(key, headerValue);
+    }
+
+    let session: Awaited<ReturnType<typeof this.auth.api.getSession>>;
 
     try {
-      session = await SessionNode.getSession(args.req, args.reply, {
-        sessionRequired: false,
-        antiCsrfCheck: false,
-        checkDatabase: true,
+      session = await this.auth.api.getSession({
+        headers,
       });
       this.logger.debug('Session resolution ended successfully');
     } catch (error) {
       this.logger.debug('Session resolution failed');
-      if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        // Check whether the email is already verified.
-        // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-        if (error.type === SessionNode.Error.INVALID_CLAIMS) {
-          throw new HiveError('Your account is not verified. Please verify your email address.', {
-            extensions: {
-              code: 'VERIFY_EMAIL',
-            },
-          });
-        } else if (
-          error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
-          error.type === SessionNode.Error.UNAUTHORISED
-        ) {
-          throw new HiveError('Invalid session', {
-            extensions: {
-              code: 'NEEDS_REFRESH',
-            },
-          });
-        }
-      }
-
       this.logger.error('Error while resolving user');
       console.log(error);
       captureException(error);
@@ -272,27 +264,40 @@ export class BetterAuthUserAuthNStrategy extends AuthNStrategy<BetterAuthCookieB
       return null;
     }
 
-    const payload = session.getAccessTokenPayload();
-
-    if (!payload) {
-      this.logger.error('No access token payload found');
-      return null;
+    if (
+      this.auth.options.emailAndPassword.requireEmailVerification &&
+      !session.user.emailVerified
+    ) {
+      throw new HiveError('Your account is not verified. Please verify your email address.', {
+        extensions: {
+          code: 'VERIFY_EMAIL',
+        },
+      });
     }
 
-    const result = SuperTokenAccessTokenModel.safeParse(payload);
+    if (session.session.expiresAt.getTime() <= Date.now()) {
+      throw new HiveError('Invalid session', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
 
-    if (result.success === false) {
-      this.logger.error('SuperTokens session payload is invalid');
-      this.logger.debug('SuperTokens session payload: %s', JSON.stringify(payload));
-      this.logger.debug(
-        'SuperTokens session parsing errors: %s',
-        JSON.stringify(result.error.flatten().fieldErrors),
-      );
+    const userId = session.user.id;
+    const email = session.user.email;
+
+    if (!userId || !email) {
+      this.logger.error('Session payload is invalid');
+      this.logger.debug('Session payload: %s', JSON.stringify(session.user));
+      this.logger.debug('Email or ID is missing in the session payload');
       throw new HiveError(`Invalid access token provided`);
     }
 
-    this.logger.debug('SuperTokens session resolved.');
-    return result.data;
+    this.logger.debug('BetterAuth session resolved.');
+    return {
+      betterAuthUserId: userId,
+      email,
+    };
   }
 
   async parse(args: {
@@ -308,7 +313,7 @@ export class BetterAuthUserAuthNStrategy extends AuthNStrategy<BetterAuthCookieB
 
     return new BetterAuthCookieBasedSession(
       {
-        betterAuthUserId: session.superTokensUserId,
+        betterAuthUserId: session.betterAuthUserId,
         email: session.email,
       },
       {
@@ -319,12 +324,6 @@ export class BetterAuthUserAuthNStrategy extends AuthNStrategy<BetterAuthCookieB
     );
   }
 }
-
-const SuperTokenAccessTokenModel = zod.object({
-  version: zod.literal('1'),
-  superTokensUserId: zod.string(),
-  email: zod.string(),
-});
 
 function casesExhausted(_value: never): never {
   throw new Error('Not all cases were handled.');

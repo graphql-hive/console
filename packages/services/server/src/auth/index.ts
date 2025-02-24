@@ -3,9 +3,9 @@ import { betterAuth } from 'better-auth';
 import { getMigrations } from 'better-auth/db';
 import { genericOAuth } from 'better-auth/plugins';
 import pg from 'pg';
+import { ServiceLogger } from '@hive/service-common';
 import { env } from '../environment';
 import { sso } from './sso';
-import { ServiceLogger } from '@hive/service-common';
 
 const { Pool } = pg;
 
@@ -19,11 +19,11 @@ const pool = new Pool({
   max: 5,
 });
 
-export function createAuth(options: {
-  logger: ServiceLogger;
-}) {
+export type AuthInstance = ReturnType<typeof createAuth>;
+
+export function createAuth(options: { logger: ServiceLogger }) {
   const logger = options.logger;
-  
+
   const auth = betterAuth({
     baseUrl: env.graphql.origin,
     basePath: '/auth-api',
