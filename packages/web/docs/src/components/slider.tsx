@@ -3,7 +3,7 @@
 import { InputHTMLAttributes } from 'react';
 import { cn } from '@theguild/components';
 
-const svgHref = new URL('./code-icon-green.svg', import.meta.url).toString();
+const svgHref = new URL('./code-icon-white.svg', import.meta.url).toString();
 
 export interface SliderProps extends InputHTMLAttributes<HTMLInputElement> {
   counter: string;
