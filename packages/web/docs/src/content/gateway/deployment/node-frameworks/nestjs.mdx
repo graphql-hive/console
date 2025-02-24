@@ -12,26 +12,22 @@ import { Callout } from '@theguild/components'
 reliable and scalable server-side applications.
 
 Hive Gateway provides its own Nest GraphQL Driver that support building
-[GraphQL Federation](https://the-guild.dev/graphql/hive/federation) gateways including subscription
-support.
-
-By default, Nest Federation drivers do not have Subscription support by any means. But Hive Gateway
-driver allows you to benefit [subscriptions](/docs/gateway/subscriptions) within a Federation
-gateway.
+[GraphQL Federation](https://the-guild.dev/graphql/hive/federation) gateways including
+[subscription support](/docs/gateway/subscriptions) that do not exist in the default Nest Federation
+drivers.
 
 <Callout>
   For the setup of a new Nest project, please make sure to read the [Nest GraphQL
   documentation](https://docs.nestjs.com/graphql/quick-start).
 </Callout>
 
-
-### Install
+## Install
 
 ```sh npm2yarn
 npm i @nestjs/graphql @graphql-hive/nestjs graphql
 ```
 
-### Create Application Module
+## Create Application Module
 
 ```typescript
 import { HiveGatewayDriver, HiveGatewayDriverConfig } from '@graphql-hive/nestjs'
@@ -60,7 +56,7 @@ export class AppModule {}
   Learn more about subscriptions in Hive Gateway [here](/docs/gateway/subscriptions).
 </Callout>
 
-### Further development
+## Further development
 
 Hive Gateway offers just a gateway driver; meaning, everything else works as
 [showcased in NestJS federation documentation](https://docs.nestjs.com/graphql/federation).
