@@ -9,7 +9,7 @@ export function renderOrganizationOwnershipTransferEmail(input: {
     title: 'Organization Ownership Transfer Initiated',
     body: mjml`
       ${paragraph(
-        `${input.authorName} wants to transfer the ownership of the <strong>${input.organizationName}</strong> organization.`,
+        mjml`${input.authorName} wants to transfer the ownership of the <strong>${input.organizationName}</strong> organization.`,
       )}
       ${button({ url: input.link, text: 'Accept the transfer' })}
       ${paragraph(`This link will expire in a day.`)}

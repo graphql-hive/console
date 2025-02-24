@@ -12,7 +12,7 @@ export function renderRateLimitWarningEmail(input: {
     title: 'Approaching Rate Limit',
     body: mjml`
       ${paragraph(
-        `Your Hive organization <strong>${
+        mjml`Your Hive organization <strong>${
           input.organizationName
         }</strong> is approaching its operations limit quota. Used ${numberFormatter.format(input.currentUsage)} of ${numberFormatter.format(
           input.limit,

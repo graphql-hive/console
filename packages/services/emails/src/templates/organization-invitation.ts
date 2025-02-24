@@ -4,7 +4,7 @@ export function renderOrganizationInvitation(input: { organizationName: string; 
   return email({
     title: `Join ${input.organizationName}`,
     body: mjml`
-      ${paragraph(`You've been invited to join ${input.organizationName} on GraphQL Hive.`)}
+      ${paragraph(mjml`You've been invited to join ${input.organizationName} on GraphQL Hive.`)}
       ${button({ url: input.link, text: 'Accept the invitation' })}
     `,
   });

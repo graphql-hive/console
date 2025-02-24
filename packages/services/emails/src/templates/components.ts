@@ -2,7 +2,7 @@ import { mjml, type MJMLValue } from '../mjml';
 
 export { mjml };
 
-export function paragraph(content: string) {
+export function paragraph(content: string | MJMLValue) {
   return mjml`
     <mj-text padding-bottom="10px" line-height="1.6" font-size="16px">
       ${content}
@@ -18,7 +18,7 @@ export function button(input: { url: string; text: string }) {
   `;
 }
 
-export function email(input: { title: string; body: MJMLValue }) {
+export function email(input: { title: string | MJMLValue; body: MJMLValue }) {
   return mjml`
     <mjml>
       <mj-body>
@@ -35,7 +35,7 @@ export function email(input: { title: string; body: MJMLValue }) {
             <mj-text color="#245850" font-size="24px" font-weight="300" padding-bottom="20px">
               ${input.title}
             </mj-text>
-            ${mjml(input.body)}
+            ${input.body}
           </mj-column>
         </mj-section>
         <mj-section>

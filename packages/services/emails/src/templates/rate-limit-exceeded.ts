@@ -12,7 +12,7 @@ export function renderRateLimitExceededEmail(input: {
     title: 'Rate Limit Reached',
     body: mjml`
       ${paragraph(
-        `Your Hive organization <strong>${
+        mjml`Your Hive organization <strong>${
           input.organizationName
         }</strong> has reached over 100% of the operations limit quota.. Used ${numberFormatter.format(input.currentUsage)} of ${numberFormatter.format(
           input.limit,
