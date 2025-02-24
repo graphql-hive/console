@@ -14,6 +14,10 @@ import { betterFetch, BetterFetchError } from '@better-fetch/fetch';
 import type { ServiceLogger } from '@hive/service-common';
 import { createRequestLogger } from './logger';
 
+// We can't use the original sso plugin, as the creation of the OIDC provider is linked to a user.
+// We need to create the OIDC provider for an organization.
+// Adjusting the existing plugin to make it work the way we need it to, would be a lot of work,
+// that most likely would be rejected by the maintainers of the plugin.
 export const sso = (options: { tableName: string; logger: ServiceLogger }) => {
   const tableName = options.tableName;
 
