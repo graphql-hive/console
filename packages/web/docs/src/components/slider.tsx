@@ -33,7 +33,7 @@ export function Slider({ counter, className, style, ...rest }: SliderProps) {
       />
 
       <div // fill
-        className="pointer-events-none absolute top-[calc(50%-4px)] h-2 w-full rounded-lg bg-green-100 [clip-path:inset(0_0_0_0_round_8px)] after:absolute after:inset-0 after:left-[-120%] after:w-[120%] after:translate-x-[calc(var(--val)*1cqi)] after:bg-green-300"
+        className="bg-beige-300 pointer-events-none absolute top-[calc(50%-4px)] h-2 w-full rounded-lg [clip-path:inset(0_0_0_0_round_8px)] after:absolute after:inset-0 after:left-[-120%] after:w-[120%] after:translate-x-[calc(var(--val)*1cqi)] after:bg-blue-600"
       />
 
       <div // indicator
@@ -44,7 +44,7 @@ export function Slider({ counter, className, style, ...rest }: SliderProps) {
           transform: 'translateX(calc(var(--val) * (100cqi - 100%) / 100))',
         }}
         className={cn(
-          'after:text-green-1000 pointer-events-none absolute left-0 top-0 flex size-10 select-none items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-700 text-center after:pointer-events-auto after:absolute after:top-[calc(-100%+3px)] after:whitespace-nowrap after:rounded-full after:bg-green-200 after:px-3 after:py-1 after:font-medium',
+          'after:text-green-1000 pointer-events-none absolute left-0 top-0 flex size-10 select-none items-center justify-center rounded-full bg-blue-600 text-center after:pointer-events-auto after:absolute after:top-[calc(-100%+3px)] after:whitespace-nowrap after:rounded-full after:bg-blue-200 after:px-3 after:py-1 after:font-medium',
           counter,
         )}
       >
@@ -54,7 +54,7 @@ export function Slider({ counter, className, style, ...rest }: SliderProps) {
           height="16"
           viewBox="0 0 12 16"
           fill="currentColor"
-          className="absolute -top-full translate-y-[23px] text-green-200"
+          className="absolute -top-full translate-y-[23px] text-blue-200"
         >
           <path d="M0 8L6 0L12 8L6 16L0 8Z" />
         </svg>
