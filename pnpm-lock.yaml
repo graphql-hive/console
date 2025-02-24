@@ -1282,6 +1282,9 @@ importers:
       ioredis:
         specifier: 5.4.2
         version: 5.4.2
+      jose:
+        specifier: 5.10.0
+        version: 5.10.0
       pg:
         specifier: 8.13.3
         version: 8.13.3

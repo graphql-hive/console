@@ -44,6 +44,7 @@
     "graphql-yoga": "5.10.8",
     "hyperid": "3.3.0",
     "ioredis": "5.4.2",
+    "jose": "5.10.0",
     "pg": "8.13.3",
     "pino-pretty": "11.3.0",
     "prom-client": "15.1.3",

@@ -1,5 +1,7 @@
-import { genericOAuthClient, ssoClient } from 'better-auth/client/plugins';
+import { genericOAuthClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
+import type { BetterAuthClientPlugin } from 'better-auth/types';
+import type { sso } from 'packages/services/server/src/auth/sso';
 import { env } from '@/env/frontend';
 import { captureException } from '@sentry/react';
 
@@ -17,6 +19,13 @@ export function isProviderEnabled(provider: ProviderId) {
 export function createCallbackURL(path: string) {
   return env.appBaseUrl + (path.startsWith('/') ? path : '/' + path);
 }
+
+const ssoClient = () => {
+  return {
+    id: 'sso-client',
+    $InferServerPlugin: {} as ReturnType<typeof sso>,
+  } satisfies BetterAuthClientPlugin;
+};
 
 export const authClient = createAuthClient({
   baseURL: env.graphqlPublicOrigin + '/auth-api',

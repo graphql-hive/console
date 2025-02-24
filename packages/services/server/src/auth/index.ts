@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs';
 import { betterAuth } from 'better-auth';
-// import { getMigrations } from 'better-auth/db';
+import { getMigrations } from 'better-auth/db';
 import { genericOAuth } from 'better-auth/plugins';
-import { sso } from 'better-auth/plugins/sso';
 import pg from 'pg';
 import { env } from '../environment';
+import { sso } from './sso';
+import { ServiceLogger } from '@hive/service-common';
 
 const { Pool } = pg;
 
@@ -18,110 +19,122 @@ const pool = new Pool({
   max: 5,
 });
 
-export const auth = betterAuth({
-  baseUrl: env.graphql.origin,
-  basePath: '/auth-api',
-  trustedOrigins: [env.hiveServices.webApp.url],
-  database: pool,
-  user: {
-    modelName: 'auth_users',
-  },
-  session: {
-    modelName: 'auth_sessions',
-  },
-  account: {
-    modelName: 'auth_accounts',
-  },
-  verification: {
-    modelName: 'auth_verifications',
-  },
-  emailAndPassword: {
-    enabled: true,
-    minPasswordLength: 8,
-    maxPasswordLength: 128,
-    requireEmailVerification: env.auth.requireEmailVerification,
-    sendResetPassword: async ({ user, url, token }, request) => {
-      console.log({
-        to: user.email,
-        subject: 'Reset your password',
-        text: `Click the link to reset your password: ${url}`,
-      });
+export function createAuth(options: {
+  logger: ServiceLogger;
+}) {
+  const logger = options.logger;
+  
+  const auth = betterAuth({
+    baseUrl: env.graphql.origin,
+    basePath: '/auth-api',
+    trustedOrigins: [env.hiveServices.webApp.url],
+    database: pool,
+    user: {
+      modelName: 'auth_users',
     },
-    password: {
-      async hash(password) {
-        return hashPassword(password);
-      },
-      async verify(input) {
-        return verifyPassword(input.password, input.hash);
-      },
+    session: {
+      modelName: 'auth_sessions',
     },
-  },
-  emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }, request) => {
-      console.log({
-        to: user.email,
-        subject: 'Verify your email address',
-        text: `Click the link to verify your email: ${url}`,
-      });
+    account: {
+      modelName: 'auth_accounts',
     },
-  },
-  socialProviders: {
-    google: env.auth.google
-      ? {
-          clientId: env.auth.google.clientId,
-          clientSecret: env.auth.google.clientSecret,
-          scope: [
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'openid',
-          ],
-        }
-      : undefined,
-    github: env.auth.github
-      ? {
-          clientId: env.auth.github.clientId,
-          clientSecret: env.auth.github.clientSecret,
-          scope: ['read:user', 'user:email'],
-        }
-      : undefined,
-  },
-  // KAMIL: creates `ssoProvider` table and there's no way to change it
-  plugins: [
-    env.organizationOIDC ? sso() : undefined,
-    env.auth.okta
-      ? genericOAuth({
-          config: [
-            {
-              providerId: 'okta',
-              clientId: env.auth.okta.clientId,
-              clientSecret: env.auth.okta.clientSecret,
-              scopes: ['openid', 'email', 'profile', 'okta.users.read.self'],
-              authorizationUrl: `${env.auth.okta.endpoint}/oauth2/v1/authorize`,
-              tokenUrl: `${env.auth.okta.endpoint}/oauth2/v1/token`,
-            },
-          ],
-        })
-      : undefined,
-  ].filter((plugin): plugin is ReturnType<typeof sso | typeof genericOAuth> => !!plugin),
-  rateLimit: {
-    window: 60, // time window in seconds
-    max: 100, // max requests in the window
-    // KAMIL: create custom rate limits for forget-password and other critical endpoints
-  },
-  advanced: {
-    cookiePrefix: 'hive-auth',
-  },
-  caching: {
-    cookieCache: {
+    verification: {
+      modelName: 'auth_verifications',
+    },
+    emailAndPassword: {
       enabled: true,
-      maxAge: 5 * 60, // Cache duration in seconds
+      minPasswordLength: 8,
+      maxPasswordLength: 128,
+      requireEmailVerification: env.auth.requireEmailVerification,
+      sendResetPassword: async ({ user, url, token }, request) => {
+        console.log({
+          to: user.email,
+          subject: 'Reset your password',
+          text: `Click the link to reset your password: ${url}`,
+        });
+      },
+      password: {
+        async hash(password) {
+          return hashPassword(password);
+        },
+        async verify(input) {
+          return verifyPassword(input.password, input.hash);
+        },
+      },
     },
-  },
-});
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url, token }, request) => {
+        console.log({
+          to: user.email,
+          subject: 'Verify your email address',
+          text: `Click the link to verify your email: ${url}`,
+        });
+      },
+    },
+    socialProviders: {
+      google: env.auth.google
+        ? {
+            clientId: env.auth.google.clientId,
+            clientSecret: env.auth.google.clientSecret,
+            scope: [
+              'https://www.googleapis.com/auth/userinfo.email',
+              'https://www.googleapis.com/auth/userinfo.profile',
+              'openid',
+            ],
+          }
+        : undefined,
+      github: env.auth.github
+        ? {
+            clientId: env.auth.github.clientId,
+            clientSecret: env.auth.github.clientSecret,
+            scope: ['read:user', 'user:email'],
+          }
+        : undefined,
+    },
+    plugins: [
+      env.organizationOIDC
+        ? sso({
+            tableName: 'auth_sso',
+            logger,
+          })
+        : undefined,
+      env.auth.okta
+        ? genericOAuth({
+            config: [
+              {
+                providerId: 'okta',
+                clientId: env.auth.okta.clientId,
+                clientSecret: env.auth.okta.clientSecret,
+                scopes: ['openid', 'email', 'profile', 'okta.users.read.self'],
+                authorizationUrl: `${env.auth.okta.endpoint}/oauth2/v1/authorize`,
+                tokenUrl: `${env.auth.okta.endpoint}/oauth2/v1/token`,
+              },
+            ],
+          })
+        : undefined,
+    ].filter((plugin): plugin is ReturnType<typeof sso | typeof genericOAuth> => !!plugin),
+    rateLimit: {
+      window: 60, // time window in seconds
+      max: 100, // max requests in the window
+      // KAMIL: create custom rate limits for forget-password and other critical endpoints
+    },
+    advanced: {
+      cookiePrefix: 'hive-auth',
+    },
+    caching: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60, // Cache duration in seconds
+      },
+    },
+  });
 
-// KAMIL: that is what needed to perform migrations
-// const { runMigrations } = await getMigrations(auth.options);
-// await runMigrations();
+  // // KAMIL: that is what needed to perform migrations
+  // const { runMigrations } = await getMigrations(auth.options);
+  // await runMigrations();
+
+  return auth;
+}
 
 /**
  * Hashes a plaintext password using bcrypt.

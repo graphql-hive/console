@@ -10,7 +10,7 @@ import { GraphQLError, stripIgnoredCharacters } from 'graphql';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import { auth } from './auth/index';
+import { createAuth } from './auth/index';
 import 'reflect-metadata';
 import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
@@ -122,6 +122,10 @@ export async function main() {
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
   }
+
+  const auth = createAuth({
+    logger: server.log,
+  });
 
   server.addContentTypeParser(
     'application/graphql+json',
