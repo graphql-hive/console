@@ -70,7 +70,7 @@
     "@manypkg/get-packages": "2.2.2",
     "@next/eslint-plugin-next": "14.2.23",
     "@parcel/watcher": "2.5.0",
-    "@sentry/cli": "2.40.0",
+    "@sentry/cli": "2.41.1",
     "@swc/core": "1.10.6",
     "@theguild/eslint-config": "0.12.1",
     "@theguild/prettier-config": "2.0.7",
@@ -133,6 +133,9 @@
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
       "@fastify/vite": "patches/@fastify__vite.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@sentry/cli"
+    ]
   }
 }
