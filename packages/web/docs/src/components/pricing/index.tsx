@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, ReactElement, ReactNode } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, cn } from '@theguild/components';
+import { CallToAction, cn, Heading } from '@theguild/components';
 import { PricingSlider } from './pricing-slider';
 
 function Tooltip({ content, children }: { content: string; children: ReactNode }) {
@@ -73,26 +73,27 @@ function PlanFeaturesListItem(props: HTMLAttributes<HTMLLIElement>) {
 const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are stored on Hive';
 const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
 
-export function Pricing({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}): ReactElement {
+export function Pricing({ className }: { className?: string }): ReactElement {
   return (
     <section className={cn('py-12 sm:py-20', className)}>
       <div className="mx-auto box-border w-full max-w-[1200px]">
-        {children}
+        <Heading size="md" as="h3" className="max-sm:text-[32px]/10 max-sm:tracking-[-.16px]">
+          Operations: learn more about usage-based pricing
+        </Heading>
+        <p className="mt-6 text-green-800">
+          Hive Console is completely free to use. We charge only for operations collected and
+          processed.
+        </p>
+
+        <PricingSlider className="mt-6 lg:mt-12" />
 
         <div
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="-mx-2 overflow-auto px-2"
+          className="-mx-2 mt-6 overflow-auto px-2 lg:mt-12"
         >
           <div
             className={cn(
               'flex min-w-[1000px] flex-row items-stretch gap-8 px-6 lg:gap-10 xl:gap-12 xl:px-0',
-              children && 'mt-16 lg:mt-24',
             )}
           >
             <Plan
@@ -147,7 +148,6 @@ export function Pricing({
                       $10 per additional 1M operations
                     </Tooltip>
                   </PlanFeaturesListItem>
-                  <PricingSlider className="pt-4" />
                 </>
               }
             />
