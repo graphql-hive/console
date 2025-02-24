@@ -31,9 +31,12 @@ const ResetPasswordFormSchema = z.object({
 
 type ResetPasswordFormValues = z.infer<typeof ResetPasswordFormSchema>;
 
-function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: string }) {
+function AuthResetPasswordEmail(props: {
+  email: string | null;
+  error: string | null;
+  redirectToPath: string;
+}) {
   const initialEmail = props.email ?? '';
-  const router = useRouter();
 
   const resetEmail = useMutation({
     mutationFn(input: Parameters<typeof authClient.forgetPassword>[0]) {
@@ -41,11 +44,15 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
     },
     onSuccess(res) {
       if (res.error) {
-        throw new Error(getErrorMessage(res.error));
+        throw new AuthError(res.error);
       }
     },
     onError(error) {
-      console.error(error);
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -65,10 +72,14 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
 
   const onSubmit = useCallback(
     (data: ResetPasswordFormValues) => {
+      const redirectUrl = new URL(env.appBaseUrl + '/auth/reset-password');
+      if (props.redirectToPath) {
+        redirectUrl.searchParams.set('redirectToPath', props.redirectToPath);
+      }
       resetEmail.reset();
       resetEmail.mutate({
         email: data.email,
-        redirectTo: env.appBaseUrl + '/auth/reset-password',
+        redirectTo: redirectUrl.toString(),
       });
     },
     [resetEmail.mutate],
@@ -164,6 +175,7 @@ const NewPasswordFormSchema = z.object({
 type NewPasswordFormValues = z.infer<typeof NewPasswordFormSchema>;
 
 function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
+  const router = useRouter();
   const changePassword = useMutation({
     mutationFn(input: { token: string; newPassword: string }) {
       return authClient.resetPassword({
@@ -279,6 +291,7 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
 
 export function AuthResetPasswordPage(props: {
   email: string | null;
+  error: string | null;
   token: string | null;
   redirectToPath: string;
 }) {
@@ -288,7 +301,11 @@ export function AuthResetPasswordPage(props: {
       {props.token ? (
         <AuthPasswordNew redirectToPath={props.redirectToPath} token={props.token} />
       ) : (
-        <AuthResetPasswordEmail email={props.email} redirectToPath={props.redirectToPath} />
+        <AuthResetPasswordEmail
+          email={props.email}
+          redirectToPath={props.redirectToPath}
+          error={props.error}
+        />
       )}
     </>
   );

@@ -92,14 +92,18 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
     },
     onSuccess(res) {
       if (res.error) {
-        throw new Error(getErrorMessage(res.error));
+        throw new AuthError(res.error);
       }
 
       console.log('done?');
       setLastAuthMethod('email');
     },
     onError(error) {
-      console.error(error);
+      if (!(error instanceof AuthError)) {
+        console.error(error);
+        captureException(error);
+      }
+
       toast({
         title: 'An error occurred',
         description: error.message,
@@ -111,8 +115,10 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
   const thirdPartySignIn = useMutation({
     async mutationFn(provider: 'github' | 'google' | 'okta') {
       if (provider === 'okta') {
-        // KAMIL: handle okta here, or remove completely
-        throw new Error('Okta is not yet supported');
+        return authClient.signIn.oauth2({
+          providerId: 'okta',
+          callbackURL: createCallbackURL(props.redirectToPath),
+        });
       }
       return authClient.signIn.social({
         provider,

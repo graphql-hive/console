@@ -35,6 +35,7 @@
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@whatwg-node/server": "0.9.65",
+    "bcryptjs": "3.0.2",
     "better-auth": "1.1.19",
     "dotenv": "16.4.7",
     "fastify": "4.29.0",

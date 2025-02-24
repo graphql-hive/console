@@ -21,7 +21,7 @@ async function verifyEmail(input: { token: string }) {
   return true;
 }
 
-function AuthVerifyEmail(props: { token?: string }) {
+function AuthVerifyEmail(props: { token?: string; redirectToPath: string }) {
   const token = props.token;
   const enabled = typeof token === 'string' && token.length > 0;
   const { toast } = useToast();
@@ -167,7 +167,7 @@ function AuthVerifyEmail(props: { token?: string }) {
           <AuthCardStack>
             <p>The email verification link has expired.</p>
             <Button asChild className="w-full">
-              <Link to="/auth" search={{ redirectToPath: '/' }}>
+              <Link to="/auth" search={{ redirectToPath: props.redirectToPath }}>
                 Continue
               </Link>
             </Button>
@@ -202,11 +202,11 @@ function AuthVerifyEmail(props: { token?: string }) {
   );
 }
 
-export function AuthVerifyEmailPage(props: { token?: string }) {
+export function AuthVerifyEmailPage(props: { token?: string; redirectToPath: string }) {
   return (
     <>
       <Meta title="Email verification" />
-      <AuthVerifyEmail token={props.token} />
+      <AuthVerifyEmail token={props.token} redirectToPath={props.redirectToPath} />
     </>
   );
 }

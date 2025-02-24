@@ -118,9 +118,11 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
 
   const thirdPartySignIn = useMutation({
     async mutationFn(provider: 'github' | 'google' | 'okta') {
-      // KAMIL: support okta here, or even make it a breaking change (with instructions)
       if (provider === 'okta') {
-        throw new Error('Okta is not supported');
+        return authClient.signIn.oauth2({
+          providerId: 'okta',
+          callbackURL: createCallbackURL(props.redirectToPath),
+        });
       }
 
       return authClient.signIn.social({

@@ -1,7 +1,7 @@
-import { captureException } from '@sentry/react';
+import { genericOAuthClient, ssoClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
-import { ssoClient } from 'better-auth/client/plugins';
 import { env } from '@/env/frontend';
+import { captureException } from '@sentry/react';
 
 type ProviderId = 'google' | 'okta' | 'github' | 'oidc';
 const providers: ProviderId[] = ['google', 'okta', 'github', 'oidc'];
@@ -20,7 +20,7 @@ export function createCallbackURL(path: string) {
 
 export const authClient = createAuthClient({
   baseURL: env.graphqlPublicOrigin + '/auth-api',
-  plugins: [ssoClient()]
+  plugins: [ssoClient(), genericOAuthClient()],
 });
 
 type ErrorTypes = Record<keyof typeof authClient.$ERROR_CODES, string>;
@@ -56,7 +56,7 @@ type BetterAuthApiError = {
   message?: string | undefined;
   status: number;
   statusText: string;
-}
+};
 
 export class AuthError extends Error {
   code?: string;

@@ -1,5 +1,7 @@
+import bcrypt from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 // import { getMigrations } from 'better-auth/db';
+import { genericOAuth } from 'better-auth/plugins';
 import { sso } from 'better-auth/plugins/sso';
 import pg from 'pg';
 import { env } from '../environment';
@@ -35,42 +37,106 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
     requireEmailVerification: env.auth.requireEmailVerification,
-    sendResetPassword: async ({user, url, token}, request) => {
-          console.log({
-            to: user.email,
-            subject: "Reset your password",
-            text: `Click the link to reset your password: ${url}`,
-          });
-        },
-  },
-  emailVerification: {
-      sendVerificationEmail: async ( { user, url, token }, request) => {
-        console.log({
-          to: user.email,
-          subject: "Verify your email address",
-          text: `Click the link to verify your email: ${url}`,
-        });
+    sendResetPassword: async ({ user, url, token }, request) => {
+      console.log({
+        to: user.email,
+        subject: 'Reset your password',
+        text: `Click the link to reset your password: ${url}`,
+      });
+    },
+    password: {
+      async hash(password) {
+        return hashPassword(password);
+      },
+      async verify(input) {
+        return verifyPassword(input.password, input.hash);
       },
     },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url, token }, request) => {
+      console.log({
+        to: user.email,
+        subject: 'Verify your email address',
+        text: `Click the link to verify your email: ${url}`,
+      });
+    },
+  },
   socialProviders: {
     google: env.auth.google
       ? {
           clientId: env.auth.google.clientId,
           clientSecret: env.auth.google.clientSecret,
+          scope: [
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'openid',
+          ],
         }
       : undefined,
     github: env.auth.github
       ? {
           clientId: env.auth.github.clientId,
           clientSecret: env.auth.github.clientSecret,
+          scope: ['read:user', 'user:email'],
         }
       : undefined,
   },
   // KAMIL: creates `ssoProvider` table and there's no way to change it
-  plugins: [sso()],
+  plugins: [
+    env.organizationOIDC ? sso() : undefined,
+    env.auth.okta
+      ? genericOAuth({
+          config: [
+            {
+              providerId: 'okta',
+              clientId: env.auth.okta.clientId,
+              clientSecret: env.auth.okta.clientSecret,
+              scopes: ['openid', 'email', 'profile', 'okta.users.read.self'],
+              authorizationUrl: `${env.auth.okta.endpoint}/oauth2/v1/authorize`,
+              tokenUrl: `${env.auth.okta.endpoint}/oauth2/v1/token`,
+            },
+          ],
+        })
+      : undefined,
+  ].filter((plugin): plugin is ReturnType<typeof sso | typeof genericOAuth> => !!plugin),
+  rateLimit: {
+    window: 60, // time window in seconds
+    max: 100, // max requests in the window
+    // KAMIL: create custom rate limits for forget-password and other critical endpoints
+  },
+  advanced: {
+    cookiePrefix: 'hive-auth',
+  },
+  caching: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // Cache duration in seconds
+    },
+  },
 });
 
 // KAMIL: that is what needed to perform migrations
 // const { runMigrations } = await getMigrations(auth.options);
 // await runMigrations();
+
+/**
+ * Hashes a plaintext password using bcrypt.
+ * This matches SuperTokens' default password hashing behavior.
+ * It has to stay consistent with the hashing function used by SuperTokens,
+ * so that users migrated from SuperTokens can log in without changing their password.
+ */
+async function hashPassword(password: string) {
+  return await bcrypt.hash(password, 10);
+}
+
+/**
+ * Verifies a plaintext password against a stored bcrypt hash.
+ * This allows users migrated from SuperTokens to log in without changing their password.
+ */
+async function verifyPassword(password: string, hashedPassword: string) {
+  return await bcrypt.compare(password, hashedPassword);
+}

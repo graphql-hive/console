@@ -187,6 +187,7 @@ const authIndexRoute = createRoute({
 const AuthResetPasswordRouteSearch = AuthSharedSearch.extend({
   email: z.string().optional(),
   token: z.string().optional(),
+  error: z.string().optional(),
 });
 
 const authResetPasswordRoute = createRoute({
@@ -194,11 +195,12 @@ const authResetPasswordRoute = createRoute({
   path: 'reset-password',
   validateSearch: AuthResetPasswordRouteSearch.parse,
   component: function AuthResetPasswordRoute() {
-    const { email, token, redirectToPath } = authResetPasswordRoute.useSearch();
+    const { email, token, error, redirectToPath } = authResetPasswordRoute.useSearch();
     return (
       <AuthResetPasswordPage
         email={email ?? null}
         token={token ?? null}
+        error={error ?? null}
         redirectToPath={redirectToPath}
       />
     );
@@ -268,10 +270,16 @@ const authCallbackRoute = createRoute({
 const authSignUpRoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'sign-up',
-  component: AuthSignUpPage,
+  validateSearch(search) {
+    return AuthSharedSearch.parse(search);
+  },
+  component() {
+    const { redirectToPath } = authCallbackRoute.useSearch();
+    return AuthSignUpPage({ redirectToPath });
+  },
 });
 
-const AuthVerifyEmailRouteSearch = z.object({
+const AuthVerifyEmailRouteSearch = AuthSharedSearch.extend({
   token: z.string().optional(),
 });
 const authVerifyEmailRoute = createRoute({
@@ -281,8 +289,8 @@ const authVerifyEmailRoute = createRoute({
     return AuthVerifyEmailRouteSearch.parse(search);
   },
   component() {
-    const { token } = authVerifyEmailRoute.useSearch();
-    return AuthVerifyEmailPage({ token });
+    const { token, redirectToPath } = authVerifyEmailRoute.useSearch();
+    return AuthVerifyEmailPage({ token, redirectToPath });
   },
 });
 
