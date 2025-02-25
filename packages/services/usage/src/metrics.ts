@@ -121,7 +121,7 @@ export const estimationError = new metrics.Summary({
 
 export const usedAPIVersion = new metrics.Counter({
   name: 'used_api_version',
-  help: 'The used API version (x-api-version header)',
+  help: 'The used API version (x-usage-api-version header)',
   labelNames: ['version'],
 });
 

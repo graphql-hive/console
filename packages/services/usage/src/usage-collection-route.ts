@@ -64,7 +64,7 @@ export function registerUsageCollectionRoute(args: {
       activeSpan?.setAttribute('hive.usage.api_version', apiVersion ?? '');
       activeSpan?.setStatus({
         code: SpanStatusCode.ERROR,
-        message: "Invalid 'x-api-version' header value.",
+        message: "Invalid 'x-usage-api-version' header value.",
       });
       usedAPIVersion.labels({ version: 'invalid' }).inc();
 

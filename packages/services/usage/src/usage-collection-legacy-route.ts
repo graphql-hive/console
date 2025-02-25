@@ -69,7 +69,7 @@ export function registerUsageCollectionLegacyRoute(args: {
           activeSpan?.setAttribute('hive.usage.api_version', apiVersion);
           activeSpan?.setStatus({
             code: SpanStatusCode.ERROR,
-            message: "Invalid 'x-api-version' header value.",
+            message: "Invalid 'x-usage-api-version' header value.",
           });
 
           usedAPIVersion.labels({ version: 'invalid' }).inc();
@@ -278,12 +278,12 @@ export function registerUsageCollectionLegacyRoute(args: {
           return;
         }
 
-        authenticatedRequestLogger.debug("Invalid 'x-api-version' header value.");
+        authenticatedRequestLogger.debug("Invalid 'x-usage-api-version' header value.");
         stopTimer({
           status: 'error',
         });
-        activeSpan?.recordException("Invalid 'x-api-version' header value.");
-        await res.status(401).send("Invalid 'x-api-version' header value.");
+        activeSpan?.recordException("Invalid 'x-usage-api-version' header value.");
+        await res.status(401).send("Invalid 'x-usage-api-version' header value.");
         return;
       } catch (error) {
         stopTimer({
