@@ -19,6 +19,7 @@ export function PricingSlider({ className, ...rest }: { className?: string }) {
       <div className="text-green-1000 flex items-center gap-5 pt-12 text-sm">
         <span className="font-medium">{min}M</span>
         <Slider
+          deadZone="16px"
           min={min}
           max={max}
           step={1}

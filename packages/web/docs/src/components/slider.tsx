@@ -7,9 +7,10 @@ const svgHref = new URL('./code-icon-white.svg', import.meta.url).toString();
 
 export interface SliderProps extends InputHTMLAttributes<HTMLInputElement> {
   counter: string;
+  deadZone?: string;
 }
-export function Slider({ counter, className, style, ...rest }: SliderProps) {
-  return (
+export function Slider({ counter, className, style, deadZone, ...rest }: SliderProps) {
+  const sliderProper = (
     <div
       ref={ref => {
         if (ref) polyfillSlider(ref, '--val');
@@ -44,7 +45,7 @@ export function Slider({ counter, className, style, ...rest }: SliderProps) {
           transform: 'translateX(calc(var(--val) * (100cqi - 100%) / 100))',
         }}
         className={cn(
-          'after:text-green-1000 pointer-events-none absolute left-0 top-0 flex size-10 select-none items-center justify-center rounded-full bg-blue-600 text-center after:pointer-events-auto after:absolute after:top-[calc(-100%+3px)] after:whitespace-nowrap after:rounded-full after:bg-blue-200 after:px-3 after:py-1 after:font-medium',
+          'after:text-green-1000 pointer-events-none absolute left-0 top-0 z-20 flex size-10 select-none items-center justify-center rounded-full bg-blue-600 text-center after:pointer-events-auto after:absolute after:top-[calc(-100%+3px)] after:whitespace-nowrap after:rounded-full after:bg-blue-200 after:px-3 after:py-1 after:font-medium',
           counter,
         )}
       >
@@ -95,6 +96,17 @@ export function Slider({ counter, className, style, ...rest }: SliderProps) {
           }
         }
       `}</style>
+    </div>
+  );
+
+  return !deadZone ? (
+    sliderProper
+  ) : (
+    <div className="flex w-full">
+      <div className="z-10 mt-4" style={{ width: deadZone }}>
+        <div className="h-2 w-[calc(100%+4px)] rounded-l-lg bg-blue-600" />
+      </div>
+      {sliderProper}
     </div>
   );
 }
