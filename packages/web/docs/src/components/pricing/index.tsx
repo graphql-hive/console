@@ -2,7 +2,8 @@
 
 import { HTMLAttributes, ReactElement, ReactNode, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, cn, Heading } from '@theguild/components';
+import { cn, Heading } from '@theguild/components';
+import { PlanCard } from './plan-card';
 import { PricingSlider } from './pricing-slider';
 
 function Tooltip({ content, children }: { content: string; children: ReactNode }) {
@@ -22,50 +23,6 @@ function Tooltip({ content, children }: { content: string; children: ReactNode }
   );
 }
 
-function Plan(props: {
-  name: string;
-  description: string;
-  price: ReactNode | string;
-  features: ReactNode;
-  linkText: string;
-  linkOnClick?: () => void;
-  adjustable: boolean;
-}): ReactElement {
-  return (
-    <article className="rounded-3xl border border-green-400 p-4 sm:p-8">
-      <header className="text-green-800">
-        <div className="flex flex-row items-center gap-2">
-          <h2 className="text-2xl font-medium">{props.name}</h2>
-          {props.adjustable && (
-            <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium leading-5">
-              Adjust your plan at any time
-            </span>
-          )}
-        </div>
-        <p className="mt-2">{props.description}</p>
-      </header>
-      <div className="mt-4 text-5xl leading-[56px] tracking-[-0.48px]">{props.price}</div>
-      <div className="mt-4">
-        <CallToAction
-          variant="primary"
-          {...(props.linkOnClick
-            ? {
-                href: '#',
-                onClick: event => {
-                  event.preventDefault();
-                  props.linkOnClick?.();
-                },
-              }
-            : { href: 'https://app.graphql-hive.com' })}
-        >
-          {props.linkText}
-        </CallToAction>
-      </div>
-      <ul className="mt-4 text-green-800">{props.features}</ul>
-    </article>
-  );
-}
-
 function PlanFeaturesListItem(props: HTMLAttributes<HTMLLIElement>) {
   return <li className="border-beige-200 py-2 [&:not(:last-child)]:border-b" {...props} />;
 }
@@ -76,7 +33,7 @@ const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
 export function Pricing({ className }: { className?: string }): ReactElement {
   type PlanType = 'Hobby' | 'Pro' | 'Enterprise';
 
-  const [plan, setPlan] = useState<PlanType>('Hobby');
+  const [highlightedPlan, setHighlightedPlan] = useState<PlanType>('Hobby');
 
   return (
     <section className={cn('py-12 sm:py-20', className)}>
@@ -93,16 +50,17 @@ export function Pricing({ className }: { className?: string }): ReactElement {
 
         <div
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="nextra-scrollbar -mx-2 -mb-8 mt-6 overflow-auto px-2 pb-8 lg:mt-12"
+          className="nextra-scrollbar -mx-2 -mb-6 overflow-auto px-2 py-6 lg:mt-6"
         >
           <div
             className={cn(
               'flex min-w-[1208px] flex-col items-stretch gap-8 sm:grid sm:grid-cols-3 lg:gap-10 xl:gap-12',
             )}
           >
-            <Plan
+            <PlanCard
               name="Hobby"
               description="For personal or small projects"
+              highlighted={highlightedPlan === 'Hobby'}
               adjustable={false}
               price="Free forever"
               linkText="Start for free"
@@ -129,9 +87,10 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                 </>
               }
             />
-            <Plan
+            <PlanCard
               name="Pro"
               description="For scaling API and teams"
+              highlighted={highlightedPlan === 'Pro'}
               adjustable
               price={
                 <Tooltip content="Base price charged monthly">
@@ -155,9 +114,10 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                 </>
               }
             />
-            <Plan
+            <PlanCard
               name="Enterprise"
               description="Custom plan for large companies"
+              highlighted={highlightedPlan === 'Enterprise'}
               adjustable
               price={
                 <span
