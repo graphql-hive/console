@@ -77,3 +77,5 @@ export function createTokens(config: { endpoint: string; logger: ServiceLogger }
     },
   };
 }
+
+export type Tokens = ReturnType<typeof createTokens>;
