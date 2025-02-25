@@ -16,17 +16,10 @@ export function PlanCard(props: PlanCardProps): ReactElement {
   return (
     <article
       className={cn(
-        'rounded-3xl border-4 border-transparent bg-white p-4 sm:p-8',
-        !props.highlighted && 'shadow-[0_0_0_1px_theme(colors.green.400)]',
+        'relative isolate rounded-3xl bg-white p-4 shadow-[inset_0_0_0_1px_theme(colors.green.400)] sm:p-8',
+        'before:absolute before:inset-0 before:-z-10 before:rounded-3xl before:bg-[linear-gradient(#fff,#fff),linear-gradient(to_bottom,#E1FF00,#DEDACF,#68A8B6)] before:p-[4px] before:opacity-0 before:transition-[opacity] before:duration-500 before:content-[""] before:[background-clip:content-box,padding-box]',
+        props.highlighted && 'before:opacity-100',
       )}
-      // todo: move to pseudo element and animate opacity
-      style={{
-        backgroundImage: props.highlighted
-          ? 'linear-gradient(white, white), linear-gradient(to bottom, #E1FF00, #DEDACF, #68A8B6)'
-          : 'none',
-        backgroundOrigin: 'padding-box, border-box',
-        backgroundClip: 'padding-box, border-box',
-      }}
     >
       <header className="text-green-800">
         <div className="flex flex-row items-center gap-2">
