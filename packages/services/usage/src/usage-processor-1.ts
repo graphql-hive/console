@@ -45,6 +45,7 @@ export const usageProcessorV1 = traceInlineSync(
       accepted: number;
     };
   } => {
+    logger = logger.child({ source: 'usageProcessorV1' });
     const now = Date.now();
 
     const incoming = ensureReportFormat(incomingReport);

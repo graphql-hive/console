@@ -32,10 +32,10 @@ const ParamsModel = z.union([
 
 /**
  * Register Fastify route handlers for reporting usage based on
- * 1. "/:targetId"
- * 2. "/:organizationSlug/:projectSlug/:targetSlug"
+ * 1. POST "/:targetId"
+ * 2. POST "/:organizationSlug/:projectSlug/:targetSlug"
  */
-export function registerTargetIdRoute(args: {
+export function registerUsageCollectionRoute(args: {
   server: FastifyInstance;
   authN: AuthN;
   usageRateLimit: UsageRateLimit;
@@ -68,7 +68,7 @@ export function registerTargetIdRoute(args: {
       });
       usedAPIVersion.labels({ version: 'invalid' }).inc();
 
-      reply.log.debug("Invalid 'x-usage-api-version' header value.");
+      req.log.debug("Invalid 'x-usage-api-version' header value.");
       activeSpan?.recordException("Invalid 'x-usage-api-version' header value.");
       await reply.status(401).send("Invalid 'x-usage-api-version' header value.");
       return;
@@ -190,7 +190,7 @@ export function registerTargetIdRoute(args: {
       const result = measureParsing(
         () =>
           usageProcessorV2(
-            reply.log,
+            req.log,
             req.body,
             {
               organizationId: target.orgId,

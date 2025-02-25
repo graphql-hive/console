@@ -31,7 +31,7 @@ export const usageProcessorV2 = traceInlineSync(
   (
     logger: Logger,
     incomingReport: unknown,
-    token: {
+    targetSelector: {
       targetId: string;
       projectId: string;
       organizationId: string;
@@ -47,6 +47,7 @@ export const usageProcessorV2 = traceInlineSync(
           accepted: number;
         };
       } => {
+    logger = logger.child({ source: 'usageProcessorV2' });
     const reportResult = decodeReport(incomingReport);
 
     if (reportResult.success === false) {
@@ -85,8 +86,8 @@ export const usageProcessorV2 = traceInlineSync(
 
     const report: RawReport = {
       id: randomUUID(),
-      target: token.targetId,
-      organization: token.organizationId,
+      target: targetSelector.targetId,
+      organization: targetSelector.organizationId,
       size: 0,
       map: {},
       operations: rawOperations,
@@ -101,7 +102,7 @@ export const usageProcessorV2 = traceInlineSync(
       if (!operationMapRecord) {
         logger.warn(
           `Detected invalid operation. Operation map key could not be found. (target=%s): %s`,
-          token.targetId,
+          targetSelector.targetId,
           operationMapKey,
         );
         invalidRawOperations
@@ -115,7 +116,11 @@ export const usageProcessorV2 = traceInlineSync(
       let newOperationMapKey = newKeyMappings.get(operationMapRecord);
 
       if (!isValidOperationBody(operationMapRecord.operation)) {
-        logger.warn(`Detected invalid operation (target=%s): %s`, token.targetId, operationMapKey);
+        logger.warn(
+          `Detected invalid operation (target=%s): %s`,
+          targetSelector.targetId,
+          operationMapKey,
+        );
         invalidRawOperations
           .labels({
             reason: 'invalid_operation_body',
@@ -127,7 +132,7 @@ export const usageProcessorV2 = traceInlineSync(
       if (newOperationMapKey === undefined) {
         const sortedFields = operationMapRecord.fields.sort();
         newOperationMapKey = createHash('md5')
-          .update(token.targetId)
+          .update(targetSelector.targetId)
           .update(operationMapRecord.operation)
           .update(operationMapRecord.operationName ?? '')
           .update(JSON.stringify(sortedFields))
