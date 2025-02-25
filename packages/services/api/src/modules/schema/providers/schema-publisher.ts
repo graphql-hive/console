@@ -1318,6 +1318,7 @@ export class SchemaPublisher {
                     schemaCompositionErrors: null,
                     tags: deleteResult.state.tags,
                     schemaMetadata: deleteResult.state.schemaMetadata,
+                    metadataAttributes: deleteResult.state.metadataAttributes,
                   }
                 : {
                     compositeSchemaSDL: null,
@@ -1325,6 +1326,7 @@ export class SchemaPublisher {
                     schemaCompositionErrors: deleteResult.state.compositionErrors ?? [],
                     tags: null,
                     schemaMetadata: null,
+                    metadataAttributes: null,
                   }),
               actionFn: async () => {
                 if (deleteResult.state.composable) {
@@ -1877,6 +1879,7 @@ export class SchemaPublisher {
             schemaCompositionErrors: null,
             tags: publishResult.state?.tags ?? null,
             schemaMetadata: publishResult.state?.schemaMetadata ?? null,
+            metadataAttributes: publishResult.state?.metadataAttributes ?? null,
           }
         : {
             compositeSchemaSDL: null,
@@ -1887,6 +1890,7 @@ export class SchemaPublisher {
             ),
             tags: null,
             schemaMetadata: null,
+            metadataAttributes: null,
           }),
     });
 

@@ -21,6 +21,7 @@ export type SuperGraphInformation = {
     string,
     Array<{ name: string; content: string; source: string | null }>
   > | null;
+  metadataAttributes: Array<{ name: string; values: string[] }> | null;
 };
 
 /**

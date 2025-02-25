@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { Period, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
 import { useLocalStorageJson } from '@/lib/hooks';
+import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { UTCDate } from '@date-fns/utc';
 
 type SchemaExplorerContextType = {
@@ -26,6 +27,12 @@ type SchemaExplorerContextType = {
   resolvedPeriod: { from: string; to: string };
   /** refresh the resolved period (aka trigger refetch) */
   refreshResolvedPeriod(): void;
+  setMetadataFilter(name: string, value: string): void;
+  bulkSetMetadataFilter(filters: Array<{ name: string, values: string[] }>): void;
+  unsetMetadataFilter(name: string, value: string): void;
+  hasMetadataFilter(name: string, value: string): boolean;
+  clearMetadataFilter(): void;
+  metadata: string[];
 };
 
 const defaultPeriod: Period = {
@@ -43,7 +50,17 @@ const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
   setPeriod: () => {},
   setDataRetentionInDays: () => {},
   refreshResolvedPeriod: () => {},
+  setMetadataFilter: () => {},
+  bulkSetMetadataFilter: () => {},
+  unsetMetadataFilter: () => {},
+  hasMetadataFilter: () => false,
+  clearMetadataFilter: () => {},
+  metadata: [],
 });
+
+function filterUnique(array: string[]) {
+  return array.filter((value, index, self) => self.indexOf(value) === index);
+}
 
 export function SchemaExplorerProvider({ children }: { children: ReactNode }): ReactElement {
   const [dataRetentionInDays, setDataRetentionInDays] = useState(
@@ -64,6 +81,7 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
     Period.default(defaultPeriod),
   );
   const [resolvedPeriod, setResolvedPeriod] = useState<Period>(() => resolveRange(period));
+  const [metadata, setMetadataFilter] = useSearchParamsFilter('meta', [] as string[]);
 
   return (
     <SchemaExplorerContext.Provider
@@ -82,6 +100,27 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
         refreshResolvedPeriod() {
           setResolvedPeriod(resolveRange(period));
         },
+        setMetadataFilter(name, value) {
+          setMetadataFilter(filterUnique([...metadata, `${name}:${value}`]));
+        },
+        bulkSetMetadataFilter(filters) {
+          setMetadataFilter(filters.flatMap(f => f.values.map(v => `${f.name}:${v}`)));
+        },
+        unsetMetadataFilter(name, value) {
+          const data = [...metadata];
+          const index = data.indexOf(`${name}:${value}`);
+          if (index >= 0) {
+            data.splice(index, 1);
+            setMetadataFilter(data);
+          }
+        },
+        clearMetadataFilter() {
+          setMetadataFilter([]);
+        },
+        hasMetadataFilter(name, value) {
+          return metadata.includes(`${name}:${value}`);
+        },
+        metadata,
       }}
     >
       {children}

@@ -1,6 +1,20 @@
 import { useMemo } from 'react';
+import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -15,7 +29,7 @@ import {
   ToPathOption,
   useRouter,
 } from '@tanstack/react-router';
-import { useArgumentListToggle, usePeriodSelector } from './provider';
+import { useArgumentListToggle, usePeriodSelector, useSchemaExplorerContext } from './provider';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -251,5 +265,78 @@ export function SchemaVariantFilter(props: {
         </TabsList>
       </Tabs>
     </TooltipProvider>
+  );
+}
+
+function preventTheDefault(e: { preventDefault(): void }) {
+  e.preventDefault();
+}
+
+export function MetadataFilter(props: { options: Array<{ name: string; values: string[] }> }) {
+  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter, clearMetadataFilter, bulkSetMetadataFilter, metadata } = useSchemaExplorerContext();
+
+  const numOptions = useMemo(
+    () =>
+      props.options?.reduce((sum, opt) => opt.values.length + sum, 0),
+    [props.options],
+  );
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="data-[state=open]:bg-muted">
+          <FilterIcon className="size-4" />&nbsp;Metadata
+          <span className="sr-only">Open menu to filter by metadata.</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[160px]">
+      <DropdownMenuCheckboxItem
+          onSelect={preventTheDefault}
+          className="w-full"
+          checked={metadata.length === numOptions}
+          onCheckedChange={isChecked => {
+            if (isChecked) {
+              bulkSetMetadataFilter(props.options);
+            } else {
+              clearMetadataFilter();
+            }
+          }}
+        >
+          Select All
+        </DropdownMenuCheckboxItem>
+        <Accordion defaultValue={[props.options[0]?.name]} type="multiple">
+          {props.options.map(({ name, values }) => (
+            <AccordionItem key={name} value={name}>
+              <AccordionTrigger className="w-full">{name}</AccordionTrigger>
+              <AccordionContent
+                onSelect={preventTheDefault}
+                className="ml-1 flex max-h-[100%] max-w-[300px] flex-wrap items-start overflow-x-hidden"
+              >
+                {values.map(v => {
+                  const id = `${name}:${v}`;
+                  return (
+                    <DropdownMenuCheckboxItem
+                      onSelect={preventTheDefault}
+                      key={id}
+                      className="w-full"
+                      checked={hasMetadataFilter(name, v)}
+                      onCheckedChange={isChecked => {
+                        if (isChecked) {
+                          setMetadataFilter(name, v);
+                        } else {
+                          unsetMetadataFilter(name, v);
+                        }
+                      }}
+                    >
+                      {v}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
