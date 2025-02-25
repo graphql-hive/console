@@ -99,7 +99,9 @@ const OrganizationMemberRoleEditor_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleEditor_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
   }
 `);
 
@@ -232,7 +234,7 @@ function OrganizationMemberRoleEditor(props: {
                 <div className="overflow-y-auto">
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    organization={organization}
+                    permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
                 </div>
@@ -345,7 +347,9 @@ const OrganizationMemberRoleCreator_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleCreator_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
     ...SelectedPermissionOverview_OrganizationFragment
   }
 `);
@@ -484,7 +488,7 @@ function OrganizationMemberRoleCreator(props: {
                   <div className="overflow-y-auto">
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
-                      organization={organization}
+                      permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
                   </div>

@@ -42,7 +42,10 @@ import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
 import { OrganizationPolicyPage } from './pages/organization-policy';
-import { OrganizationSettingsPage } from './pages/organization-settings';
+import {
+  OrganizationSettingsPage,
+  OrganizationSettingsPageEnum,
+} from './pages/organization-settings';
 import { OrganizationSubscriptionPage } from './pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from './pages/organization-subscription-manage';
 import { OrganizationSupportPage } from './pages/organization-support';
@@ -418,12 +421,20 @@ const organizationPolicyRoute = createRoute({
   },
 });
 
+const OrganizationSettingRouteSearch = z.object({
+  page: OrganizationSettingsPageEnum.default('general').optional(),
+});
+
 const organizationSettingsRoute = createRoute({
   getParentRoute: () => organizationRoute,
+  validateSearch(search) {
+    return OrganizationSettingRouteSearch.parse(search);
+  },
   path: 'view/settings',
   component: function OrganizationSettingsRoute() {
     const { organizationSlug } = organizationSettingsRoute.useParams();
-    return <OrganizationSettingsPage organizationSlug={organizationSlug} />;
+    const { page } = organizationSettingsRoute.useSearch();
+    return <OrganizationSettingsPage organizationSlug={organizationSlug} page={page} />;
   },
 });
 
