@@ -68,9 +68,9 @@ export function registerTargetIdRoute(args: {
       });
       usedAPIVersion.labels({ version: 'invalid' }).inc();
 
-      reply.log.debug("Invalid 'x-api-version' header value.");
-      activeSpan?.recordException("Invalid 'x-api-version' header value.");
-      await reply.status(401).send("Invalid 'x-api-version' header value.");
+      reply.log.debug("Invalid 'x-usage-api-version' header value.");
+      activeSpan?.recordException("Invalid 'x-usage-api-version' header value.");
+      await reply.status(401).send("Invalid 'x-usage-api-version' header value.");
       return;
     }
 
