@@ -683,10 +683,16 @@ export function ResourceSelector(props: {
                               onClick={() => serviceState.addService(serviceName)}
                             />
                           ))}
-                          <form
-                            onSubmit={ev => {
+                          <input
+                            placeholder="Add service by name"
+                            className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                            name="serviceName"
+                            onKeyPress={ev => {
+                              if (ev.key !== 'Enter') {
+                                return;
+                              }
                               ev.preventDefault();
-                              const input: HTMLInputElement = ev.currentTarget.serviceName;
+                              const input: HTMLInputElement = ev.currentTarget;
                               const serviceName = input.value.trim().toLowerCase();
 
                               if (!serviceName) {
@@ -696,13 +702,7 @@ export function ResourceSelector(props: {
                               serviceState.addService(serviceName);
                               input.value = '';
                             }}
-                          >
-                            <input
-                              placeholder="Add service by name"
-                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                              name="serviceName"
-                            />
-                          </form>
+                          />
                         </>
                       )}
                     </>

@@ -18,14 +18,14 @@ export const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'project:describe',
-        title: 'View project',
+        title: 'Describe project',
         description: 'Fetch information about the specified projects.',
       },
     ],
   },
   {
-    id: 'targets',
-    title: 'Targets',
+    id: 'usage-reporting',
+    title: 'Usage Reporting',
     permissions: [
       {
         id: 'usage:report',

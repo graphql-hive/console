@@ -19,40 +19,42 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
 
-export const PermissionSelector_OrganizationFragment = graphql(`
-  fragment PermissionSelector_OrganizationFragment on Organization {
+// PermissionSelector_OrganizationFragment
+
+export const PermissionSelector_PermissionGroupsFragment = graphql(`
+  fragment PermissionSelector_PermissionGroupsFragment on PermissionGroup {
     id
-    availableMemberPermissionGroups {
+    title
+    permissions {
       id
+      dependsOnId
+      description
+      level
       title
-      permissions {
-        id
-        dependsOnId
-        description
-        level
-        title
-        isReadOnly
-        warning
-      }
+      isReadOnly
+      warning
     }
   }
 `);
 
-type AvailableMembershipPermissions = ResultOf<
-  typeof PermissionSelector_OrganizationFragment
->['availableMemberPermissionGroups'];
+type AvailableMembershipPermissions = Array<
+  ResultOf<typeof PermissionSelector_PermissionGroupsFragment>
+>;
 
 type MembershipPermissionGroup = AvailableMembershipPermissions[number];
 
 export type PermissionSelectorProps = {
   isReadOnly?: boolean;
-  organization: FragmentType<typeof PermissionSelector_OrganizationFragment>;
+  permissionGroups: Array<FragmentType<typeof PermissionSelector_PermissionGroupsFragment>>;
   selectedPermissionIds: ReadonlySet<string>;
   onSelectedPermissionsChange: (selectedPermissionIds: ReadonlySet<string>) => void;
 };
 
 export function PermissionSelector(props: PermissionSelectorProps) {
-  const organization = useFragment(PermissionSelector_OrganizationFragment, props.organization);
+  const permissionGroups = useFragment(
+    PermissionSelector_PermissionGroupsFragment,
+    props.permissionGroups,
+  );
   const [groups, permissionToGroupTitleMapping, dependencyGraph] = useMemo(() => {
     const filteredGroups: Array<
       MembershipPermissionGroup & {
@@ -62,7 +64,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
     const permissionToGroupTitleMapping = new Map<string, string>();
     const dependencyGraph = new Map<string, Array<string>>();
 
-    for (const group of organization.availableMemberPermissionGroups) {
+    for (const group of permissionGroups) {
       let selectedPermissionCount = 0;
 
       for (const permission of group.permissions) {
@@ -88,7 +90,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
     }
 
     return [filteredGroups, permissionToGroupTitleMapping, dependencyGraph] as const;
-  }, [organization.availableMemberPermissionGroups]);
+  }, [permissionGroups]);
 
   const permissionRefs = useRef(new Map<string, HTMLElement>());
   const [focusedPermission, setFocusedPermission] = useState(null as string | null);

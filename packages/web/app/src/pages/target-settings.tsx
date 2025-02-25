@@ -1310,68 +1310,66 @@ function TargetSettingsContent(props: {
         })}
       </NavLayout>
       <PageLayoutContent>
-        {currentOrganization && currentProject && currentTarget ? (
-          <div className="space-y-12">
-            {resolvedPage.key === 'general' ? (
-              <>
-                <TargetSlug
-                  targetSlug={props.targetSlug}
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
-                />
-                <GraphQLEndpointUrl
+        <div className="space-y-12">
+          {resolvedPage.key === 'general' ? (
+            <>
+              <TargetSlug
+                targetSlug={props.targetSlug}
+                projectSlug={props.projectSlug}
+                organizationSlug={props.organizationSlug}
+              />
+              <GraphQLEndpointUrl
+                targetSlug={currentTarget.slug}
+                projectSlug={currentProject.slug}
+                organizationSlug={currentOrganization.slug}
+                graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
+              />
+              {currentTarget?.viewerCanDelete && (
+                <TargetDelete
                   targetSlug={currentTarget.slug}
                   projectSlug={currentProject.slug}
                   organizationSlug={currentOrganization.slug}
-                  graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
                 />
-                {currentTarget?.viewerCanDelete && (
-                  <TargetDelete
-                    targetSlug={currentTarget.slug}
-                    projectSlug={currentProject.slug}
-                    organizationSlug={currentOrganization.slug}
-                  />
-                )}
-              </>
-            ) : null}
-            {resolvedPage.key === 'cdn' ? (
-              <CDNAccessTokens
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'registry-token' ? (
-              <RegistryAccessTokens
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'breaking-changes' ? (
-              <ConditionalBreakingChanges
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'base-schema' ? (
-              <ExtendBaseSchema
-                baseSchema={currentTarget?.baseSchema ?? ''}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'schema-contracts' ? (
-              <SchemaContracts
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-          </div>
-        ) : null}
+              )}
+            </>
+          ) : null}
+          {resolvedPage.key === 'cdn' ? (
+            <CDNAccessTokens
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'registry-token' ? (
+            <RegistryAccessTokens
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'breaking-changes' ? (
+            <ConditionalBreakingChanges
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'base-schema' ? (
+            <ExtendBaseSchema
+              baseSchema={currentTarget?.baseSchema ?? ''}
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'schema-contracts' ? (
+            <SchemaContracts
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+        </div>
       </PageLayoutContent>
     </PageLayout>
   );

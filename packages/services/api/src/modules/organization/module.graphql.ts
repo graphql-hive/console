@@ -320,6 +320,10 @@ export default gql`
     """
     availableOrganizationPermissionGroups: [PermissionGroup!]!
     """
+    Whether the viewer can manage access tokens.
+    """
+    viewerCanManageAccessTokens: Boolean!
+    """
     Paginated organization access tokens.
     """
     accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
