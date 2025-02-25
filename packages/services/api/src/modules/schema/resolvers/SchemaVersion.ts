@@ -106,11 +106,13 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
       },
       supergraph: {
-        // THIS NEEDS INVERTED
         schemaCoordinateMetadataMappings: version.schemaMetadata
           ? new Map(Object.entries(version.schemaMetadata))
           : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
       },
     };
   },
@@ -147,6 +149,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
           ? new Map(Object.entries(version.schemaMetadata))
           : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
       },
     };
   },
@@ -175,6 +180,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
           ? new Map(Object.entries(version.schemaMetadata))
           : null,
         schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
       },
     };
   },

@@ -17,7 +17,8 @@ export function useSearchParamsFilter<TValue extends SearchParamsFilter>(
     void router.navigate({
       search: {
         ...searchParams,
-        [name]: serializeSearchValue(value),
+        [name]:
+          Array.isArray(value) && value.length === 0 ? undefined : serializeSearchValue(value),
       },
       replace: true,
     });

@@ -398,6 +398,7 @@ export class SchemaManager {
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
             schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
@@ -408,6 +409,7 @@ export class SchemaManager {
               string,
               Array<{ name: string; content: string; source: string | null }>
             >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ) {

@@ -35,6 +35,7 @@ import {
   Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
 import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
+import { SetMap } from './lib/setmap';
 import type {
   ComposeAndValidateInput,
   ComposeAndValidateOutput,
@@ -166,6 +167,7 @@ const createFederation: (
       includesException?: boolean;
       tags: Array<string> | null;
       schemaMetadata: Record<string, Metadata[]> | null;
+      metadataAttributes: Record<string, string[]> | null;
     }
   >(
     'federation',
@@ -270,6 +272,7 @@ const createFederation: (
         tags: Array<string> | null;
         /** Metadata stored by coordinate and then by subgraph */
         schemaMetadata: Record<string, Metadata[]> | null;
+        metadataAttributes: Record<string, string[]> | null;
       };
 
       {
@@ -288,16 +291,25 @@ const createFederation: (
           const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
           const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
           const tags = extractTagsFromDocument(supergraphSDL, tagStrategy);
+          const schemaMetadata = mergeMetadata(...subgraphsMetadata);
+          const metadataAttributes = new SetMap<string, string>();
+          for (const [_coord, attrs] of schemaMetadata) {
+            for (const attr of attrs) {
+              metadataAttributes.add(attr.name, attr.content);
+            }
+          }
           result = {
             ...composed,
             tags,
-            schemaMetadata: Object.fromEntries(mergeMetadata(...subgraphsMetadata)),
+            schemaMetadata: Object.fromEntries(schemaMetadata),
+            metadataAttributes: metadataAttributes.toObject(),
           };
         } else {
           result = {
             ...composed,
             tags: null,
             schemaMetadata: null,
+            metadataAttributes: null,
           };
         }
       }
@@ -386,6 +398,7 @@ const createFederation: (
           ...networkErrorContract.result,
           schemaMetadata: null,
           tags: null,
+          metadataAttributes: null,
         };
       }
 
@@ -425,6 +438,7 @@ const createFederation: (
             })) ?? null,
           tags: composed.tags ?? null,
           schemaMetadata: composed.schemaMetadata ?? null,
+          metadataAttributes: composed.metadataAttributes ?? null,
         };
       } catch (error) {
         if (cache.isTimeoutError(error)) {
@@ -441,6 +455,7 @@ const createFederation: (
             contracts: null,
             tags: null,
             schemaMetadata: null,
+            metadataAttributes: null,
           };
         }
 
@@ -491,6 +506,7 @@ function createSingle(): Orchestrator {
         contracts: null,
         tags: null,
         schemaMetadata: null,
+        metadataAttributes: null,
       };
     },
   };
@@ -529,6 +545,7 @@ const createStitching: (cache: Cache) => Orchestrator = cache => {
         contracts: null,
         tags: null,
         schemaMetadata: null,
+        metadataAttributes: null,
       };
     },
   };

@@ -414,6 +414,7 @@ export interface Storage {
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
             schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
@@ -424,6 +425,7 @@ export interface Storage {
               string,
               Array<{ name: string; content: string; source: string | null }>
             >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ): Promise<DeletedCompositeSchema & { versionId: string }>;
@@ -458,6 +460,7 @@ export interface Storage {
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
             schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
@@ -468,6 +471,7 @@ export interface Storage {
               string,
               Array<{ name: string; content: string; source: string | null }>
             >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ): Promise<SchemaVersion | never>;

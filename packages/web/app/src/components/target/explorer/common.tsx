@@ -9,8 +9,9 @@ import { formatNumber, toDecimal } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
-import { useArgumentListToggle } from './provider';
+import { useArgumentListToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
+import { SupergraphMetadataList_SupergraphMetadataFragmentFragment } from '@/gql/graphql';
 
 const noop = () => {};
 
@@ -477,17 +478,29 @@ export function GraphQLFields(props: {
   warnAboutDeprecatedArguments: boolean;
   styleDeprecated: boolean;
 }) {
-  const { totalRequests, filterValue } = props;
+  const { totalRequests, filterValue, /** filterMeta */ } = props;
   const fieldsFromFragment = useFragment(GraphQLFields_FieldFragment, props.fields);
+  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+
   const sortedAndFilteredFields = useMemo(
     () =>
       fieldsFromFragment
-        .filter(field => (filterValue ? field.name.includes(filterValue) : true))
+        .filter(field => {
+          let matchesFilter = true;
+          if (filterValue) {
+            matchesFilter &&= field.name.includes(filterValue)
+          }
+          if (filterMeta.length) {
+            const matchesMeta = field.supergraphMetadata && (field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment).metadata?.some(m => hasMetadataFilter(m.name, m.content));
+            matchesFilter &&= !!matchesMeta;
+          }
+          return matchesFilter;
+        })
         .sort(
           // Sort by usage DESC, name ASC
           (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
         ),
-    [fieldsFromFragment, filterValue],
+    [fieldsFromFragment, filterValue, filterMeta],
   );
   const [fields, collapsed, expand] = useCollapsibleList(
     sortedAndFilteredFields,

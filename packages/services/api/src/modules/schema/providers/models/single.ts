@@ -328,6 +328,7 @@ export class SingleModel {
         tags: compositionCheck.result?.tags ?? null,
         contracts: null,
         schemaMetadata: compositionCheck.result?.schemaMetadata ?? null,
+        metadataAttributes: compositionCheck.result?.metadataAttributes ?? null,
       },
     };
   }

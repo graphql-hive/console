@@ -2397,6 +2397,7 @@ export async function createStorage(
           github: null,
           tags: args.tags,
           schemaMetadata: args.schemaMetadata,
+          metadataAttributes: args.metadataAttributes,
           hasContractCompositionErrors:
             args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
@@ -2509,6 +2510,7 @@ export async function createStorage(
           github: input.github,
           tags: input.tags,
           schemaMetadata: input.schemaMetadata,
+          metadataAttributes: input.metadataAttributes,
           hasContractCompositionErrors:
             input.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: input.conditionalBreakingChangeMetadata,
@@ -4730,6 +4732,7 @@ const SchemaVersionModel = zod.intersection(
     recordVersion: zod.nullable(SchemaVersionRecordVersionModel),
     tags: zod.nullable(zod.array(zod.string())),
     schemaMetadata: zod.nullable(zod.record(zod.string(), zod.array(SchemaMetadataModel))),
+    metadataAttributes: zod.nullable(zod.record(zod.string(), zod.array(zod.string()))),
     hasContractCompositionErrors: zod
       .boolean()
       .nullable()
@@ -4879,6 +4882,7 @@ async function insertSchemaVersion(
       string,
       Array<{ name: string; content: string; source: string | null }>
     > | null;
+    metadataAttributes: Record<string, string[]> | null;
     hasContractCompositionErrors: boolean;
     github: null | {
       sha: string;
@@ -4906,7 +4910,8 @@ async function insertSchemaVersion(
         tags,
         has_contract_composition_errors,
         conditional_breaking_change_metadata,
-        schema_metadata
+        schema_metadata,
+        metadata_attributes
       )
     VALUES
       (
@@ -4926,7 +4931,8 @@ async function insertSchemaVersion(
         ${Array.isArray(args.tags) ? sql.array(args.tags, 'text') : null},
         ${args.hasContractCompositionErrors},
         ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))},
-        ${jsonify(args.schemaMetadata)}
+        ${jsonify(args.schemaMetadata)},
+        ${jsonify(args.metadataAttributes)}
       )
     RETURNING
       ${schemaVersionSQLFields()}
@@ -5133,6 +5139,7 @@ const schemaVersionSQLFields = (t = sql``) => sql`
   , ${t}"has_contract_composition_errors" as "hasContractCompositionErrors"
   , ${t}"conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
   , ${t}"schema_metadata" as "schemaMetadata"
+  , ${t}"metadata_attributes" as "metadataAttributes"
 `;
 
 const targetSQLFields = sql`

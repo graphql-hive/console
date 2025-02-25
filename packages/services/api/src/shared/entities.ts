@@ -391,6 +391,7 @@ export interface ComposeAndValidateResult {
     string,
     Array<{ name: string; content: string; source: string | null }>
   > | null;
+  metadataAttributes: null | Record<string, string[]>;
 }
 
 export interface Orchestrator {
