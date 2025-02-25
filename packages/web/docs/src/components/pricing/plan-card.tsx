@@ -16,9 +16,16 @@ export function PlanCard(props: PlanCardProps): ReactElement {
   return (
     <article
       className={cn(
-        'rounded-3xl p-4 shadow-[inset_0_0_0_1px] shadow-green-400 sm:p-8',
-        props.highlighted && 'shadow-primary shadow-[inset_0_0_0_4px]',
+        'rounded-3xl bg-white p-4 sm:p-8',
+        'border-green-400 bg-no-repeat',
+        props.highlighted ? 'border-4 border-transparent' : 'border',
       )}
+      style={{
+        backgroundImage:
+          'linear-gradient(white, white), linear-gradient(to bottom, #E1FF00, #DEDACF, #68A8B6)',
+        backgroundOrigin: 'padding-box, border-box',
+        backgroundClip: 'padding-box, border-box',
+      }}
     >
       <header className="text-green-800">
         <div className="flex flex-row items-center gap-2">
