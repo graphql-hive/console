@@ -22,7 +22,7 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   TOKENS_ENDPOINT: zod.string().url(),
-  RATE_LIMIT_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
@@ -146,9 +146,9 @@ export const env = {
     tokens: {
       endpoint: base.TOKENS_ENDPOINT,
     },
-    rateLimit: base.RATE_LIMIT_ENDPOINT
+    commerce: base.COMMERCE_ENDPOINT
       ? {
-          endpoint: base.RATE_LIMIT_ENDPOINT,
+          endpoint: base.COMMERCE_ENDPOINT,
           ttl: base.RATE_LIMIT_TTL,
         }
       : null,

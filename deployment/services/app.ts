@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceDeployment } from '../utils/service-deployment';
-import { StripeBilling } from './billing';
+import { CommerceService } from './commerce';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Environment } from './environment';
@@ -23,7 +23,7 @@ export function deployApp({
   zendesk,
   github,
   slackApp,
-  billing,
+  commerce,
   sentry,
   environment,
 }: {
@@ -35,7 +35,7 @@ export function deployApp({
   zendesk: Zendesk;
   github: GitHubApp;
   slackApp: SlackApp;
-  billing: StripeBilling;
+  commerce: CommerceService;
   sentry: Sentry;
   publishAppDeploymentCommand: pulumi.Resource | undefined;
 }) {
@@ -79,7 +79,7 @@ export function deployApp({
   )
     .withSecret('INTEGRATION_SLACK_CLIENT_ID', slackApp.secret, 'clientId')
     .withSecret('INTEGRATION_SLACK_CLIENT_SECRET', slackApp.secret, 'clientSecret')
-    .withSecret('STRIPE_PUBLIC_KEY', billing.secret, 'stripePublicKey')
+    .withSecret('STRIPE_PUBLIC_KEY', commerce.stripeSecret, 'stripePublicKey')
     .withConditionalSecret(sentry.enabled, 'SENTRY_DSN', sentry.secret, 'dsn')
     .deploy();
 }

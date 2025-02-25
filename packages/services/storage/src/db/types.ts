@@ -156,6 +156,18 @@ export interface oidc_integrations {
   userinfo_endpoint: string | null;
 }
 
+export interface organization_access_tokens {
+  assigned_resources: any | null;
+  created_at: Date;
+  description: string;
+  first_characters: string;
+  hash: string;
+  id: string;
+  organization_id: string;
+  permissions: Array<string>;
+  title: string;
+}
+
 export interface organization_invitations {
   code: string;
   created_at: Date;
@@ -423,6 +435,7 @@ export interface DBTables {
   document_preflight_scripts: document_preflight_scripts;
   migration: migration;
   oidc_integrations: oidc_integrations;
+  organization_access_tokens: organization_access_tokens;
   organization_invitations: organization_invitations;
   organization_member: organization_member;
   organization_member_roles: organization_member_roles;

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
@@ -7,9 +6,9 @@ import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
-import { BillingProvider } from '../../billing/providers/billing.provider';
+import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
-import { Emails, mjml } from '../../shared/providers/emails';
+import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import type { OrganizationSelector } from '../../shared/providers/storage';
@@ -20,6 +19,7 @@ import { createOrUpdateMemberRoleInputSchema } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
+import { ResourceAssignments } from './resource-assignments';
 
 /**
  * Responsible for auth checks.
@@ -44,6 +44,7 @@ export class OrganizationManager {
     private emails: Emails,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
+    private resourceAssignments: ResourceAssignments,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -528,33 +529,12 @@ export class OrganizationManager {
         step: 'invitingMembers',
       }),
       // schedule an email
-      this.emails.schedule({
-        id: JSON.stringify({
-          id: 'org-invitation',
-          organization: invitation.organization_id,
-          code: createHash('sha256').update(invitation.code).digest('hex'),
-          email: createHash('sha256').update(invitation.email).digest('hex'),
-        }),
+      this.emails.api?.sendOrganizationInviteEmail.mutate({
+        organizationId: invitation.organization_id,
+        organizationName: organization.name,
         email,
-        body: mjml`
-          <mjml>
-            <mj-body>
-              <mj-section>
-                <mj-column>
-                  <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-                  <mj-divider border-color="#ca8a04"></mj-divider>
-                  <mj-text>
-                    Someone from <strong>${organization.name}</strong> invited you to join GraphQL Hive.
-                  </mj-text>.
-                  <mj-button href="${mjml.raw(this.appBaseUrl)}/join/${invitation.code}">
-                    Accept the invitation
-                  </mj-button>
-                </mj-column>
-              </mj-section>
-            </mj-body>
-          </mjml>
-        `,
-        subject: `You have been invited to join ${organization.name}`,
+        code: invitation.code,
+        link: `${this.appBaseUrl}/join/${invitation.code}`,
       }),
     ]);
 
@@ -669,30 +649,12 @@ export class OrganizationManager {
       userId: member.user.id,
     });
 
-    await this.emails.schedule({
+    await this.emails.api?.sendOrganizationOwnershipTransferEmail.mutate({
       email: member.user.email,
-      subject: `Organization transfer from ${currentUser.displayName} (${organization.name})`,
-      body: mjml`
-        <mjml>
-          <mj-body>
-            <mj-section>
-              <mj-column>
-                <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-                <mj-divider border-color="#ca8a04"></mj-divider>
-                <mj-text>
-                  ${member.user.displayName} wants to transfer the ownership of the <strong>${organization.name}</strong> organization.
-                </mj-text>
-                <mj-button href="${mjml.raw(this.appBaseUrl)}/action/transfer/${organization.slug}/${code}">
-                  Accept the transfer
-                </mj-button>
-                <mj-text align="center">
-                  This link will expire in a day.
-                </mj-text>
-              </mj-column>
-            </mj-section>
-          </mj-body>
-        </mjml>
-      `,
+      organizationId: organization.id,
+      organizationName: organization.name,
+      authorName: currentUser.displayName,
+      link: `${this.appBaseUrl}/action/transfer/${organization.slug}/${code}`,
     });
 
     await this.auditLog.record({
@@ -1002,8 +964,8 @@ export class OrganizationManager {
     }
 
     const resourceAssignmentGroup =
-      await this.organizationMembers.transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
-        organization,
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organization.id,
         input.resources,
       );
 

@@ -2,23 +2,12 @@ import { CryptoProvider } from 'packages/services/api/src/modules/shared/provide
 import { z } from 'zod';
 import type { Storage } from '@hive/api';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@hive/api';
-import type { inferAsyncReturnType } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 
-export async function createContext({
-  storage,
-  crypto,
-}: {
+export type Context = {
   storage: Storage;
   crypto: CryptoProvider;
-}) {
-  return {
-    storage,
-    crypto,
-  };
-}
-
-export type Context = inferAsyncReturnType<typeof createContext>;
+};
 
 const oidcDefaultScopes = [
   OrganizationAccessScope.READ,

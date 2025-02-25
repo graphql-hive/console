@@ -136,8 +136,8 @@ impl UsagePlugin {
             .into_iter()
             .collect();
 
-        let mut rng = rand::thread_rng();
-        let sampled = rng.gen::<f64>() < config.sample_rate;
+        let mut rng = rand::rng();
+        let sampled = rng.random::<f64>() < config.sample_rate;
         let mut dropped = !sampled;
 
         if !dropped {

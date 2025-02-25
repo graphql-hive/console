@@ -1001,7 +1001,7 @@ export class SchemaManager {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
       onError() {
-        throw new InsufficientPermissionError('schema:loadFromRegistry');
+        throw new InsufficientPermissionError('project:describe');
       },
     });
 
@@ -1012,12 +1012,11 @@ export class SchemaManager {
     });
 
     await this.session.assertPerformAction({
-      action: 'schema:loadFromRegistry',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
-        targetId: selector.targetId,
       },
     });
 
