@@ -46,7 +46,13 @@ export function Pricing({ className }: { className?: string }): ReactElement {
           processed.
         </p>
 
-        <PricingSlider className="mt-6 lg:mt-12" onChange={value => console.log(value)} />
+        <PricingSlider
+          className="mt-6 lg:mt-12"
+          onChange={value => {
+            const newPlan = value === 1 ? 'Hobby' : value < 280 ? 'Pro' : 'Enterprise';
+            if (newPlan !== highlightedPlan) setHighlightedPlan(newPlan);
+          }}
+        />
 
         <div
           // the padding is here so `overflow-auto` doesn't cut button hover states

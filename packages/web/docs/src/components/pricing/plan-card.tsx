@@ -16,13 +16,14 @@ export function PlanCard(props: PlanCardProps): ReactElement {
   return (
     <article
       className={cn(
-        'rounded-3xl bg-white p-4 sm:p-8',
-        'border-green-400 bg-no-repeat',
-        props.highlighted ? 'border-4 border-transparent' : 'border',
+        'rounded-3xl border-4 border-transparent bg-white p-4 sm:p-8',
+        !props.highlighted && 'shadow-[0_0_0_1px_theme(colors.green.400)]',
       )}
+      // todo: move to pseudo element and animate opacity
       style={{
-        backgroundImage:
-          'linear-gradient(white, white), linear-gradient(to bottom, #E1FF00, #DEDACF, #68A8B6)',
+        backgroundImage: props.highlighted
+          ? 'linear-gradient(white, white), linear-gradient(to bottom, #E1FF00, #DEDACF, #68A8B6)'
+          : 'none',
         backgroundOrigin: 'padding-box, border-box',
         backgroundClip: 'padding-box, border-box',
       }}
