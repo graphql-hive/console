@@ -690,6 +690,9 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../../libraries/core/dist
+      '@graphql-hive/federation-link-utils':
+        specifier: workspace:*
+        version: link:../../libraries/federation-link-utils/dist
       '@graphql-inspector/core':
         specifier: 5.1.0-alpha-20231208113249-34700c8a
         version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.9.0)

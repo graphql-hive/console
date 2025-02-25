@@ -1,6 +1,20 @@
-import { ConstArgumentNode, DocumentNode, Kind } from 'graphql';
+import { ConstArgumentNode, DocumentNode, Kind, StringValueNode } from 'graphql';
 import { FederatedLinkImport } from './link-import.js';
 import { FederatedLinkUrl } from './link-url.js';
+
+/**
+ * Supports federation 1
+ */
+function linkFromCoreArgs(args: readonly ConstArgumentNode[]): FederatedLink | undefined {
+  const feature = args.find(
+    ({ name, value }) => name.value === 'feature' && value.kind === Kind.STRING,
+  );
+  if (feature) {
+    const url = FederatedLinkUrl.fromUrl((feature.value as StringValueNode).value);
+    return new FederatedLink(url, null, []);
+  }
+  return;
+}
 
 function linkFromArgs(args: readonly ConstArgumentNode[]): FederatedLink | undefined {
   let url: FederatedLinkUrl | undefined,
@@ -67,6 +81,16 @@ export class FederatedLink {
         const parsedLinks =
           defLinks?.map(l => linkFromArgs(l.arguments ?? [])).filter(l => l !== undefined) ?? [];
         links = links.concat(parsedLinks);
+
+        // Federation 1 support... Federation 1 uses "@core" instead of "@link", but behavior is similar enough that
+        //  it can be translated.
+        const defCores = definition.directives?.filter(({ name }) => name.value === 'core');
+        const coreLinks = defCores
+          ?.map(c => linkFromCoreArgs(c.arguments ?? []))
+          .filter(l => l !== undefined);
+        if (coreLinks) {
+          links = links.concat(...coreLinks);
+        }
       }
     }
     return links;
@@ -114,7 +138,6 @@ export class FederatedLink {
    * Otherwise, setting the import argument as: import: ["foo"] would incorrectly return `foo` for `@foo`, when it should be `{namespace}__foo`.
    *
    * @name string The element name in the linked schema. If this is the name of the link (e.g. "example" when linking "https://foo.graphql-hive.com/example"), then this returns the default link import.
-   * @throws if both importName is null and the url has no name.
    * @returns The name of the element as it has been imported.
    */
   resolveImportName(elementName: string): string {
