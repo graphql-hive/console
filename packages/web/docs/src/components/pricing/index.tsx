@@ -1,6 +1,6 @@
 'use client';
 
-import { HTMLAttributes, ReactElement, ReactNode } from 'react';
+import { HTMLAttributes, ReactElement, ReactNode, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
 import { CallToAction, cn, Heading } from '@theguild/components';
 import { PricingSlider } from './pricing-slider';
@@ -32,7 +32,7 @@ function Plan(props: {
   adjustable: boolean;
 }): ReactElement {
   return (
-    <article className="w-1/3">
+    <article className="rounded-3xl border border-green-400 p-4 sm:p-8">
       <header className="text-green-800">
         <div className="flex flex-row items-center gap-2">
           <h2 className="text-2xl font-medium">{props.name}</h2>
@@ -74,6 +74,10 @@ const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are sto
 const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
 
 export function Pricing({ className }: { className?: string }): ReactElement {
+  type PlanType = 'Hobby' | 'Pro' | 'Enterprise';
+
+  const [plan, setPlan] = useState<PlanType>('Hobby');
+
   return (
     <section className={cn('py-12 sm:py-20', className)}>
       <div className="mx-auto box-border w-full max-w-[1200px]">
@@ -85,15 +89,15 @@ export function Pricing({ className }: { className?: string }): ReactElement {
           processed.
         </p>
 
-        <PricingSlider className="mt-6 lg:mt-12" />
+        <PricingSlider className="mt-6 lg:mt-12" onChange={value => console.log(value)} />
 
         <div
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="-mx-2 mt-6 overflow-auto px-2 lg:mt-12"
+          className="nextra-scrollbar -mx-2 -mb-8 mt-6 overflow-auto px-2 pb-8 lg:mt-12"
         >
           <div
             className={cn(
-              'flex min-w-[1000px] flex-row items-stretch gap-8 px-6 lg:gap-10 xl:gap-12 xl:px-0',
+              'flex min-w-[1208px] flex-col items-stretch gap-8 sm:grid sm:grid-cols-3 lg:gap-10 xl:gap-12',
             )}
           >
             <Plan

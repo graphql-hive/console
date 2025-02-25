@@ -1,16 +1,24 @@
-'use client';
-
 import { CallToAction, cn } from '@theguild/components';
 import { BookIcon } from '../book-icon';
 import { Slider } from '../slider';
 
-export function PricingSlider({ className, ...rest }: { className?: string }) {
+export function PricingSlider({
+  className,
+  onChange,
+  ...rest
+}: {
+  className?: string;
+  onChange: (value: number) => void;
+}) {
   const min = 1;
   const max = 300;
 
   return (
     <label
-      className={cn('relative block rounded-3xl border border-green-400 p-4 md:p-8', className)}
+      className={cn(
+        'relative isolate block rounded-3xl border border-green-400 p-4 sm:p-8',
+        className,
+      )}
       {...rest}
     >
       <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
@@ -30,6 +38,7 @@ export function PricingSlider({ className, ...rest }: { className?: string }) {
           onChange={event => {
             const value = event.currentTarget.valueAsNumber;
             event.currentTarget.parentElement!.style.setProperty('--ops', `${value}`);
+            onChange(value);
           }}
         />
         <span className="font-medium">{max}M</span>

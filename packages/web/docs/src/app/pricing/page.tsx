@@ -28,7 +28,6 @@ export default function PricingPage() {
 
       <CompanyTestimonialsSection className="mx-4 mt-6 md:mx-6" />
 
-      {/* TODO: Pricing specific questions in the future? */}
       <FrequentlyAskedQuestions className="mx-4 md:mx-6" />
 
       <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />
