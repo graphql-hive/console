@@ -1,15 +1,14 @@
 import { ReactElement, ReactNode } from 'react';
-import { CallToAction, cn } from '@theguild/components';
+import { cn } from '@theguild/components';
 
 export interface PlanCardProps {
   name: string;
   description: string;
   price: ReactNode | string;
   features: ReactNode;
-  linkText: string;
-  linkOnClick?: () => void;
   adjustable: boolean;
   highlighted: boolean;
+  callToAction: ReactNode;
 }
 
 export function PlanCard(props: PlanCardProps): ReactElement {
@@ -32,23 +31,10 @@ export function PlanCard(props: PlanCardProps): ReactElement {
         </div>
         <p className="mt-2">{props.description}</p>
       </header>
-      <div className="mt-4 text-5xl leading-[56px] tracking-[-0.48px]">{props.price}</div>
-      <div className="mt-4">
-        <CallToAction
-          variant="primary"
-          {...(props.linkOnClick
-            ? {
-                href: '#',
-                onClick: event => {
-                  event.preventDefault();
-                  props.linkOnClick?.();
-                },
-              }
-            : { href: 'https://app.graphql-hive.com' })}
-        >
-          {props.linkText}
-        </CallToAction>
+      <div className="mt-4 text-5xl font-medium leading-[56px] tracking-[-0.48px]">
+        {props.price}
       </div>
+      <div className="mt-4 flex *:grow">{props.callToAction}</div>
       <ul className="mt-4 text-green-800">{props.features}</ul>
     </article>
   );

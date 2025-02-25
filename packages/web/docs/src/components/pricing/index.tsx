@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, ReactElement, ReactNode, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { cn, Heading } from '@theguild/components';
+import { CallToAction, cn, ContactButton, ContactTextLink, Heading } from '@theguild/components';
 import { PlanCard } from './plan-card';
 import { PricingSlider } from './pricing-slider';
 
@@ -69,7 +69,11 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               highlighted={highlightedPlan === 'Hobby'}
               adjustable={false}
               price="Free forever"
-              linkText="Start for free"
+              callToAction={
+                <CallToAction variant="tertiary" href="https://app.graphql-hive.com">
+                  Get started for free
+                </CallToAction>
+              }
               features={
                 <>
                   <PlanFeaturesListItem>
@@ -103,7 +107,11 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                   $20<span className="text-base leading-normal text-green-800"> / month</span>
                 </Tooltip>
               }
-              linkText="🎉 Try free for 30 days"
+              callToAction={
+                <CallToAction variant="primary" href="https://app.graphql-hive.com">
+                  Try free for 30 days
+                </CallToAction>
+              }
               features={
                 <>
                   <PlanFeaturesListItem>
@@ -126,19 +134,15 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               highlighted={highlightedPlan === 'Enterprise'}
               adjustable
               price={
-                <span
-                  className="cursor-pointer"
-                  onClick={() => {
-                    (window as any).$crisp?.push(['do', 'chat:open']);
-                  }}
-                >
+                <ContactTextLink className="hover:text-current hover:no-underline">
                   Contact us
-                </span>
+                </ContactTextLink>
               }
-              linkText="Shape a custom plan for your business"
-              linkOnClick={() => {
-                (window as any).$crisp?.push(['do', 'chat:open']);
-              }}
+              callToAction={
+                <ContactButton variant="primary">
+                  Shape a custom plan for your business
+                </ContactButton>
+              }
               features={
                 <>
                   <PlanFeaturesListItem>
