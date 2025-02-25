@@ -5,7 +5,10 @@ import { experimental_standaloneMiddleware, type AnyRouter } from '@trpc/server'
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
-export function registerTRPC<TRouter extends AnyRouter, TContext>(
+export function registerTRPC<
+  TRouter extends AnyRouter,
+  TContext extends TRouter['_def']['_config']['$types']['ctx'],
+>(
   server: FastifyInstance,
   {
     router,

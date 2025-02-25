@@ -5,7 +5,7 @@ repository = "https://github.com/graphql-hive/console/"
 edition = "2021"
 license = "MIT"
 publish = true
-version = "1.1.1"
+version = "2.0.0"
 description = "Apollo-Router Plugin for Hive"
 
 [[bin]]
@@ -17,38 +17,40 @@ name = "hive_apollo_router_plugin"
 path = "src/lib.rs"
 
 [dependencies]
-apollo-router = { version = "^1.13.0" }
-thiserror = "1.0.62"
+apollo-router = { version = "^2.0.0" }
+axum-core = "0.5"
+thiserror = "2.0.11"
 reqwest = { version = "0.12.0", default-features = false, features = [
-  "rustls-tls",
-  "blocking",
-  "json",
+    "rustls-tls",
+    "blocking",
+    "json",
 ] }
 reqwest-retry = "0.7.0"
 reqwest-middleware = "0.4.0"
 sha2 = { version = "0.10.8", features = ["std"] }
 anyhow = "1"
 tracing = "0.1"
-hyper = { version = "0.14.28", features = ["server", "client", "stream"] }
+hyper = { version = "1", features = ["server", "client"] }
 async-trait = "0.1.77"
 futures = { version = "0.3.30", features = ["thread-pool"] }
 schemars = { version = "0.8", features = ["url"] }
 serde = "1"
 serde_json = "1"
 tokio = { version = "1.36.0", features = ["full"] }
-tower = { version = "0.4.13", features = ["full"] }
-http = "0.2"
+tower = { version = "0.5", features = ["full"] }
+http = "1"
+http-body-util = "0.1"
 graphql-parser = { version = "0.5.0", package = "graphql-parser-hive-fork" }
 graphql-tools = { version = "0.4.0", features = [
-  "graphql_parser_fork",
+    "graphql_parser_fork",
 ], default-features = false }
-lru = "^0.12.1"
+lru = "^0.13.0"
 md5 = "0.7.0"
-rand = "0.8.5"
+rand = "0.9.0"
 
 [dev-dependencies]
 httpmock = "0.7.0"
-jsonschema = { version = "0.26.1", default-features = false, features = [
-  "resolve-file",
+jsonschema = { version = "0.29.0", default-features = false, features = [
+    "resolve-file",
 ] }
 lazy_static = "1.5.0"

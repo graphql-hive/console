@@ -60,7 +60,7 @@ import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/sup
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
-import { createContext, internalApiRouter } from './api';
+import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
@@ -188,11 +188,11 @@ export async function main() {
 
   let dbPurgeTaskRunner: null | ReturnType<typeof createTaskRunner> = null;
 
-  if (!env.hiveServices.usageEstimator) {
-    server.log.debug('Usage estimation is disabled. Skip scheduling purge tasks.');
+  if (!env.hiveServices.commerce) {
+    server.log.debug('Commerce service is disabled. Skip scheduling purge tasks.');
   } else {
     server.log.debug(
-      `Usage estimation is enabled. Start scheduling purge tasks every ${env.hiveServices.usageEstimator.dateRetentionPurgeIntervalMinutes} minutes.`,
+      `Commerce service is enabled. Start scheduling purge tasks every ${env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes} minutes.`,
     );
     dbPurgeTaskRunner = createTaskRunner({
       run: traceInline(
@@ -223,7 +223,7 @@ export async function main() {
           }
         },
       ),
-      interval: env.hiveServices.usageEstimator.dateRetentionPurgeIntervalMinutes * 60 * 1000,
+      interval: env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes * 60 * 1000,
       logger: server.log,
     });
 
@@ -320,8 +320,8 @@ export async function main() {
       tokens: {
         endpoint: env.hiveServices.tokens.endpoint,
       },
-      billing: {
-        endpoint: env.hiveServices.billing ? env.hiveServices.billing.endpoint : null,
+      commerce: {
+        endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
       },
       emailsEndpoint: env.hiveServices.emails ? env.hiveServices.emails.endpoint : undefined,
       webhooks: {
@@ -329,12 +329,6 @@ export async function main() {
       },
       schemaService: {
         endpoint: env.hiveServices.schema.endpoint,
-      },
-      usageEstimationService: {
-        endpoint: env.hiveServices.usageEstimator ? env.hiveServices.usageEstimator.endpoint : null,
-      },
-      rateLimitService: {
-        endpoint: env.hiveServices.rateLimit ? env.hiveServices.rateLimit.endpoint : null,
       },
       schemaPolicyService: {
         endpoint: env.hiveServices.schemaPolicy ? env.hiveServices.schemaPolicy.endpoint : null,
@@ -497,7 +491,10 @@ export async function main() {
     await registerTRPC(server, {
       router: internalApiRouter,
       createContext() {
-        return createContext({ storage, crypto });
+        return {
+          storage,
+          crypto,
+        };
       },
     });
 

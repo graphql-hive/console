@@ -105,10 +105,10 @@ async function main() {
     });
 
     const rateLimit = createUsageRateLimit(
-      env.hive.rateLimit
+      env.hive.commerce
         ? {
-            endpoint: env.hive.rateLimit.endpoint,
-            ttlMs: env.hive.rateLimit.ttl,
+            endpoint: env.hive.commerce.endpoint,
+            ttlMs: env.hive.commerce.ttl,
             logger: server.log,
           }
         : {

@@ -258,7 +258,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                                 Value::List(_) => {
                                     // handled by enter_list_value
                                 }
-                                Value::Object(a) => {
+                                Value::Object(_a) => {
                                     // handled by enter_object_field
                                 }
                                 Value::Variable(_) => {
@@ -278,7 +278,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         &mut self,
         info: &mut OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
-        object_field: &(String, graphql_tools::static_graphql::query::Value),
+        _object_field: &(String, graphql_tools::static_graphql::query::Value),
     ) {
         if let Some(input_type) = info.current_input_type() {
             match input_type {

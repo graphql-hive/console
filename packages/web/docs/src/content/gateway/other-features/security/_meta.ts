@@ -1,6 +1,5 @@
 export default {
   index: 'Overview',
-  'error-masking': 'Error Masking',
   cors: 'CORS',
   'csrf-prevention': 'CSRF Prevention',
   'rate-limiting': 'Rate Limiting',
