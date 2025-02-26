@@ -103,9 +103,20 @@ export function Slider({ counter, className, style, deadZone, ...rest }: SliderP
     sliderProper
   ) : (
     <div className="flex w-full">
-      <div className="z-10 mt-4" style={{ width: deadZone }}>
+      <button
+        className="z-10"
+        style={{ width: deadZone }}
+        onClick={event => {
+          const input = event.currentTarget.parentElement!.querySelector(
+            'input',
+          ) as HTMLInputElement;
+
+          input.value = '0';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }}
+      >
         <div className="h-2 w-[calc(100%+4px)] rounded-l-lg bg-blue-600" />
-      </div>
+      </button>
       {sliderProper}
     </div>
   );
