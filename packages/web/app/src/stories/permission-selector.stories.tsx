@@ -3,7 +3,7 @@ import { makeFragmentData } from '@/gql';
 import { Meta, StoryObj } from '@storybook/react';
 import {
   PermissionSelector,
-  PermissionSelector_OrganizationFragment,
+  PermissionSelector_PermissionGroupsFragment,
   PermissionSelectorProps,
 } from '../components/organization/members/permission-selector';
 import { availableMemberPermissionGroups } from './utils';
@@ -21,13 +21,8 @@ const defaultProps: Omit<
   PermissionSelectorProps,
   'selectedPermissionIds' | 'onSelectedPermissionsChange'
 > = {
-  organization: makeFragmentData(
-    {
-      __typename: 'Organization',
-      id: 'foo',
-      availableMemberPermissionGroups: availableMemberPermissionGroups as any,
-    },
-    PermissionSelector_OrganizationFragment,
+  permissionGroups: availableMemberPermissionGroups.map(value =>
+    makeFragmentData(value as any, PermissionSelector_PermissionGroupsFragment),
   ),
   isReadOnly: false,
 };
