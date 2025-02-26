@@ -28,7 +28,7 @@ type SchemaExplorerContextType = {
   /** refresh the resolved period (aka trigger refetch) */
   refreshResolvedPeriod(): void;
   setMetadataFilter(name: string, value: string): void;
-  bulkSetMetadataFilter(filters: Array<{ name: string, values: string[] }>): void;
+  bulkSetMetadataFilter(filters: Array<{ name: string; values: string[] }>): void;
   unsetMetadataFilter(name: string, value: string): void;
   hasMetadataFilter(name: string, value: string): boolean;
   clearMetadataFilter(): void;

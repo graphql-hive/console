@@ -236,7 +236,7 @@ export function SchemaVariantFilter(props: {
   targetSlug: string;
   variant: 'all' | 'unused' | 'deprecated';
 }) {
-  const { search } = useLocation()
+  const { search } = useLocation();
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
@@ -278,11 +278,17 @@ function preventTheDefault(e: { preventDefault(): void }) {
 }
 
 export function MetadataFilter(props: { options: Array<{ name: string; values: string[] }> }) {
-  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter, clearMetadataFilter, bulkSetMetadataFilter, metadata } = useSchemaExplorerContext();
+  const {
+    setMetadataFilter,
+    unsetMetadataFilter,
+    hasMetadataFilter,
+    clearMetadataFilter,
+    bulkSetMetadataFilter,
+    metadata,
+  } = useSchemaExplorerContext();
 
   const numOptions = useMemo(
-    () =>
-      props.options?.reduce((sum, opt) => opt.values.length + sum, 0),
+    () => props.options?.reduce((sum, opt) => opt.values.length + sum, 0),
     [props.options],
   );
 
@@ -290,12 +296,13 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" className="data-[state=open]:bg-muted">
-          <FilterIcon className="size-4" />&nbsp;Metadata
+          <FilterIcon className="size-4" />
+          &nbsp;Metadata
           <span className="sr-only">Open menu to filter by metadata.</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-      <DropdownMenuCheckboxItem
+        <DropdownMenuCheckboxItem
           onSelect={preventTheDefault}
           className="w-full"
           checked={metadata.length === numOptions}

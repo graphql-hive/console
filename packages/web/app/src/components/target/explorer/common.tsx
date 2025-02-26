@@ -5,13 +5,13 @@ import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/compone
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { SupergraphMetadataList_SupergraphMetadataFragmentFragment } from '@/gql/graphql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
 import { useArgumentListToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
-import { SupergraphMetadataList_SupergraphMetadataFragmentFragment } from '@/gql/graphql';
 
 const noop = () => {};
 
@@ -484,30 +484,32 @@ export function GraphQLFields(props: {
   warnAboutDeprecatedArguments: boolean;
   styleDeprecated: boolean;
 }) {
-  const { totalRequests, filterValue, /** filterMeta */ } = props;
+  const { totalRequests, filterValue /** filterMeta */ } = props;
   const fieldsFromFragment = useFragment(GraphQLFields_FieldFragment, props.fields);
   const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
 
-  const sortedAndFilteredFields = useMemo(
-    () => {
-      return fieldsFromFragment
-        .filter(field => {
-          let matchesFilter = true;
-          if (filterValue) {
-            matchesFilter &&= field.name.toLowerCase().includes(filterValue)
-          }
-          if (filterMeta.length) {
-            const matchesMeta = field.supergraphMetadata && (field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment).metadata?.some(m => hasMetadataFilter(m.name, m.content));
-            matchesFilter &&= !!matchesMeta;
-          }
-          return matchesFilter;
-        })
-        .sort(
-          // Sort by usage DESC, name ASC
-          (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
-        )
-    }, [fieldsFromFragment, filterValue, filterMeta],
-  );
+  const sortedAndFilteredFields = useMemo(() => {
+    return fieldsFromFragment
+      .filter(field => {
+        let matchesFilter = true;
+        if (filterValue) {
+          matchesFilter &&= field.name.toLowerCase().includes(filterValue);
+        }
+        if (filterMeta.length) {
+          const matchesMeta =
+            field.supergraphMetadata &&
+            (
+              field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment
+            ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
+          matchesFilter &&= !!matchesMeta;
+        }
+        return matchesFilter;
+      })
+      .sort(
+        // Sort by usage DESC, name ASC
+        (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
+      );
+  }, [fieldsFromFragment, filterValue, filterMeta]);
   const [fields, collapsed, expand] = useCollapsibleList(
     sortedAndFilteredFields,
     5,
@@ -634,26 +636,28 @@ export function GraphQLInputFields(props: {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
   const { filterValue } = props;
   const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
-  const sortedAndFilteredFields = useMemo(
-    () => {
-      return fields
-        .filter(field => {
-          let matchesFilter = true;
-          if (filterValue) {
-            matchesFilter &&= field.name.toLowerCase().includes(filterValue)
-          }
-          if (filterMeta.length) {
-            const matchesMeta = field.supergraphMetadata && (field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment).metadata?.some(m => hasMetadataFilter(m.name, m.content));
-            matchesFilter &&= !!matchesMeta;
-          }
-          return matchesFilter;
-        })
-        .sort(
-          // Sort by usage DESC, name ASC
-          (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
-        )
-    }, [fields, filterValue, filterMeta],
-  );
+  const sortedAndFilteredFields = useMemo(() => {
+    return fields
+      .filter(field => {
+        let matchesFilter = true;
+        if (filterValue) {
+          matchesFilter &&= field.name.toLowerCase().includes(filterValue);
+        }
+        if (filterMeta.length) {
+          const matchesMeta =
+            field.supergraphMetadata &&
+            (
+              field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment
+            ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
+          matchesFilter &&= !!matchesMeta;
+        }
+        return matchesFilter;
+      })
+      .sort(
+        // Sort by usage DESC, name ASC
+        (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
+      );
+  }, [fields, filterValue, filterMeta]);
 
   return (
     <div className="flex flex-col">

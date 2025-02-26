@@ -3,6 +3,7 @@ import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -16,8 +17,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
-import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
-import { useRouter } from '@tanstack/react-router';
 
 const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
   fragment DeprecatedSchemaView_DeprecatedSchemaExplorerFragment on DeprecatedSchemaExplorer {
@@ -82,11 +81,6 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
       setSelectedLetter(letters[0]);
     }
   }, [selectedLetter, setSelectedLetter]);
-
-  const router = useRouter();
-  const searchObj = router.latestLocation.search;
-  const search =
-    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search : undefined;
 
   if (types.length === 0) {
     return (

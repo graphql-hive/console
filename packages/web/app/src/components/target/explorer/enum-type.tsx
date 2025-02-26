@@ -1,4 +1,5 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
   GraphQLTypeCard,
@@ -6,9 +7,8 @@ import {
   LinkToCoordinatePage,
   SchemaExplorerUsageStats,
 } from './common';
-import { SupergraphMetadataList } from './super-graph-metadata';
-import { useRouter } from '@tanstack/react-router';
 import { useSchemaExplorerContext } from './provider';
+import { SupergraphMetadataList } from './super-graph-metadata';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -54,16 +54,20 @@ export function GraphQLEnumTypeComponent(props: {
   const router = useRouter();
   const searchObj = router.latestLocation.search;
   const search =
-    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search.toLowerCase() : undefined;
+    'search' in searchObj && typeof searchObj.search === 'string'
+      ? searchObj.search.toLowerCase()
+      : undefined;
   const ttype = useFragment(GraphQLEnumTypeComponent_TypeFragment, props.type);
   const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
   const values = ttype.values.filter(value => {
     let matchesFilter = true;
     if (search) {
-      matchesFilter &&= value.name.toLowerCase().includes(search)
+      matchesFilter &&= value.name.toLowerCase().includes(search);
     }
     if (filterMeta.length) {
-      const matchesMeta = value.supergraphMetadata?.metadata?.some(m => hasMetadataFilter(m.name, m.content));
+      const matchesMeta = value.supergraphMetadata?.metadata?.some(m =>
+        hasMetadataFilter(m.name, m.content),
+      );
       matchesFilter &&= !!matchesMeta;
     }
     return matchesFilter;
