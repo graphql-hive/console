@@ -90,7 +90,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
     }
 
     return [filteredGroups, permissionToGroupTitleMapping, dependencyGraph] as const;
-  }, [permissionGroups]);
+  }, [permissionGroups, props.selectedPermissionIds]);
 
   const permissionRefs = useRef(new Map<string, HTMLElement>());
   const [focusedPermission, setFocusedPermission] = useState(null as string | null);

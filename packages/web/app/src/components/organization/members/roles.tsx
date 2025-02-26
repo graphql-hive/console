@@ -264,7 +264,9 @@ function OrganizationMemberRoleEditor(props: {
 const OrganizationMemberRoleView_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleView_OrganizationFragment on Organization {
     id
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -293,7 +295,7 @@ function OrganizationMemberRoleView(props: {
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
-              organization={organization}
+              permissionsGroups={organization.availableMemberPermissionGroups}
             />
           </div>
         </div>
@@ -350,7 +352,9 @@ const OrganizationMemberRoleCreator_OrganizationFragment = graphql(`
     availableMemberPermissionGroups {
       ...PermissionSelector_PermissionGroupsFragment
     }
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -499,7 +503,7 @@ function OrganizationMemberRoleCreator(props: {
             <div className="h-[400px] overflow-scroll">
               <SelectedPermissionOverview
                 activePermissionIds={Array.from(selectedPermissions)}
-                organization={organization}
+                permissionsGroups={organization.availableMemberPermissionGroups}
                 showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               />
             </div>

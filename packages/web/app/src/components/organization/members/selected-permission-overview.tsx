@@ -5,50 +5,48 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { CheckIcon, XIcon } from '@/components/ui/icon';
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevel } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
 
-export const SelectedPermissionOverview_OrganizationFragment = graphql(`
-  fragment SelectedPermissionOverview_OrganizationFragment on Organization {
-    availableMemberPermissionGroups {
+export const SelectedPermissionOverview_PermissionGroupFragment = graphql(`
+  fragment SelectedPermissionOverview_PermissionGroupFragment on PermissionGroup {
+    id
+    title
+    permissions {
       id
+      dependsOnId
+      description
+      level
       title
-      permissions {
-        id
-        dependsOnId
-        description
-        level
-        title
-        isReadOnly
-        warning
-      }
+      isReadOnly
+      warning
     }
   }
 `);
 
 export type SelectedPermissionOverviewProps = {
-  organization: FragmentType<typeof SelectedPermissionOverview_OrganizationFragment>;
+  permissionsGroups: Array<FragmentType<typeof SelectedPermissionOverview_PermissionGroupFragment>>;
   activePermissionIds: Array<string>;
   showOnlyAllowedPermissions: boolean;
   /** default: true */
   isExpanded?: boolean;
+  /** option for injecting additional content within a permission group. */
+  additionalGroupContent?: (group: { level: PermissionLevel }) => React.ReactNode;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
-  const organization = useFragment(
-    SelectedPermissionOverview_OrganizationFragment,
-    props.organization,
+  const permissionGroups = useFragment(
+    SelectedPermissionOverview_PermissionGroupFragment,
+    props.permissionsGroups,
   );
   const activePermissionIds = useMemo<ReadonlySet<string>>(
     () => new Set(props.activePermissionIds),
     [props.activePermissionIds],
   );
 
-  // TODO: maybe these should also be sent from the API, so it is the full source of truth
   return [
     {
       level: PermissionLevel.Organization,
@@ -66,22 +64,27 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
       level: PermissionLevel.Service,
       title: 'Service',
     },
+    {
+      level: PermissionLevel.AppDeployment,
+      title: 'App Deployment',
+    },
   ].map(group => (
     <PermissionLevelGroup
       key={group.level}
       permissionLevel={group.level}
       title={group.title}
       activePermissionIds={activePermissionIds}
-      memberPermissionGroups={organization.availableMemberPermissionGroups}
+      memberPermissionGroups={permissionGroups}
       showOnlyAllowedPermissions={props.showOnlyAllowedPermissions}
       isExpanded={props.isExpanded ?? true}
+      additionalContent={props.additionalGroupContent?.(group) ?? null}
     />
   ));
 }
 
-type AvailableMembershipPermissions = ResultOf<
-  typeof SelectedPermissionOverview_OrganizationFragment
->['availableMemberPermissionGroups'];
+type AvailableMembershipPermissions = Array<
+  ResultOf<typeof SelectedPermissionOverview_PermissionGroupFragment>
+>;
 
 type MembershipPermissionGroup = AvailableMembershipPermissions[number];
 
@@ -93,6 +96,7 @@ function PermissionLevelGroup(props: {
   /** whether only allowed permissions should be shown */
   showOnlyAllowedPermissions: boolean;
   isExpanded: boolean;
+  additionalContent: React.ReactNode | null;
 }) {
   const [filteredGroups, totalAllowedCount] = useMemo(() => {
     let totalAllowedCount = 0;
@@ -161,37 +165,23 @@ function PermissionLevelGroup(props: {
                     props.activePermissionIds.has(permission.id) === false &&
                     !permission.isReadOnly ? null : (
                       <tr key={permission.id}>
-                        <td
-                          className={cn(
-                            permission.warning &&
-                              props.activePermissionIds.has(permission.id) &&
-                              'text-yellow-700',
-                          )}
-                        >
-                          {permission.title}
-                        </td>
+                        <td>{permission.title}</td>
                         <td className="ml-2 text-right">
                           {props.activePermissionIds.has(permission.id) || permission.isReadOnly ? (
                             permission.warning ? (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <span className="text-yellow-700">
-                                      <CheckIcon className="inline size-4" /> Allowed
-                                    </span>
+                                    <Badge variant="warning">Allowed</Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>{permission.warning}</TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             ) : (
-                              <span className="text-green-500">
-                                <CheckIcon className="inline size-4" /> Allowed
-                              </span>
+                              <Badge variant="success">Allowed</Badge>
                             )
                           ) : (
-                            <span>
-                              <XIcon className="inline size-4" /> Deny
-                            </span>
+                            <Badge variant="failure">Denied</Badge>
                           )}
                         </td>
                       </tr>
@@ -201,6 +191,7 @@ function PermissionLevelGroup(props: {
               </div>
             ),
           )}
+          {props.additionalContent}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

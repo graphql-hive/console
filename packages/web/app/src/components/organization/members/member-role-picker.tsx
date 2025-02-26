@@ -7,7 +7,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { MemberRoleSelector } from './member-role-selector';
-import { ResourceSelector } from './resource-selector';
+import {
+  ResourceSelection,
+  ResourceSelector,
+  resourceSlectionToGraphQLSchemaResourceAssignmentInput,
+} from './resource-selector';
 import { SelectedPermissionOverview } from './selected-permission-overview';
 
 const MemberRolePicker_OrganizationFragment = graphql(`
@@ -20,7 +24,9 @@ const MemberRolePicker_OrganizationFragment = graphql(`
     }
     ...ResourceSelector_OrganizationFragment
     ...MemberRoleSelector_OrganizationFragment
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -102,37 +108,35 @@ export function MemberRolePicker(props: {
   const organization = useFragment(MemberRolePicker_OrganizationFragment, props.organization);
   const member = useFragment(MemberRolePicker_MemberFragment, props.member);
   const [selectedRoleId, setSelectedRoleId] = useState(member.role.id);
-  const [selection, setSelection] = useState<GraphQLSchema.ResourceAssignmentInput>(() => ({
+  const [selection, setSelection] = useState<ResourceSelection>(() => ({
     mode: member.resourceAssignment.mode,
-    projects: (member.resourceAssignment.projects ?? []).map(
-      (record): GraphQLSchema.ProjectResourceAssignmentInput => ({
-        projectId: record.project.id,
-        targets: {
-          mode: record.targets.mode,
-          targets: (record.targets.targets ?? []).map(
-            (target): GraphQLSchema.TargetResourceAssignmentInput => ({
-              targetId: target.target.id,
-              services: {
-                mode: target.services.mode,
-                services: target.services.services?.map(
-                  (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
-                    serviceName: service,
-                  }),
-                ),
-              },
-              appDeployments: {
-                mode: target.appDeployments.mode,
-                appDeployments: target.appDeployments.appDeployments?.map(
-                  (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
-                    appDeployment: appDeploymentName,
-                  }),
-                ),
-              },
-            }),
-          ),
-        },
-      }),
-    ),
+    projects: (member.resourceAssignment.projects ?? []).map(record => ({
+      projectId: record.project.id,
+      projectSlug: record.project.slug,
+      targets: {
+        mode: record.targets.mode,
+        targets: (record.targets.targets ?? []).map(target => ({
+          targetId: target.target.id,
+          targetSlug: target.target.slug,
+          services: {
+            mode: target.services.mode,
+            services: target.services.services?.map(
+              (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
+                serviceName: service,
+              }),
+            ),
+          },
+          appDeployments: {
+            mode: target.appDeployments.mode,
+            appDeployments: target.appDeployments.appDeployments?.map(
+              (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
+                appDeployment: appDeploymentName,
+              }),
+            ),
+          },
+        })),
+      },
+    })),
   }));
 
   const [assignRoleState, assignRole] = useMutation(MemberRolePicker_AssignRoleMutation);
@@ -167,7 +171,7 @@ export function MemberRolePicker(props: {
         {selectedRole && (
           <SelectedPermissionOverview
             showOnlyAllowedPermissions
-            organization={organization}
+            permissionsGroups={organization.availableMemberPermissionGroups}
             activePermissionIds={selectedRole.permissions}
             isExpanded={false}
           />
@@ -199,7 +203,7 @@ export function MemberRolePicker(props: {
                   organizationSlug: organization.slug,
                   roleId: selectedRoleId,
                   userId: member.user.id,
-                  resources: selection,
+                  resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
                 },
               });
               if (result.error) {
