@@ -17,7 +17,7 @@
     "@graphql-hive/apollo": "workspace:*",
     "@graphql-hive/core": "workspace:*",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@hive/rate-limit": "workspace:*",
+    "@hive/commerce": "workspace:*",
     "@hive/schema": "workspace:*",
     "@hive/server": "workspace:*",
     "@hive/storage": "workspace:*",

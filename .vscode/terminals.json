@@ -52,17 +52,10 @@
       "command": "pnpm dev"
     },
     {
-      "name": "usage-estimator:dev",
-      "description": "Run Usage Estimator Service",
+      "name": "commerce:dev",
+      "description": "Run Commerce Service",
       "open": true,
-      "cwd": "packages/services/usage-estimator",
-      "command": "pnpm dev"
-    },
-    {
-      "name": "rate-limit:dev",
-      "description": "Run Rate Limiter Service",
-      "open": true,
-      "cwd": "packages/services/rate-limit",
+      "cwd": "packages/services/commerce",
       "command": "pnpm dev"
     },
     {

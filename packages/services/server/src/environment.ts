@@ -30,12 +30,8 @@ const EnvironmentModel = zod.object({
         'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)',
     })
     .url(),
-  RATE_LIMIT_ENDPOINT: emptyString(zod.string().url().optional()),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
   TOKENS_ENDPOINT: zod.string().url(),
-  USAGE_ESTIMATOR_ENDPOINT: emptyString(zod.string().url().optional()),
-  USAGE_ESTIMATOR_RETENTION_PURGE_INTERVAL_MINUTES: emptyString(NumberFromString.optional()),
-  BILLING_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAILS_ENDPOINT: emptyString(zod.string().url().optional()),
   WEBHOOKS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
@@ -46,6 +42,10 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+});
+
+const CommerceModel = zod.object({
+  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
 });
 
 const SentryModel = zod.union([
@@ -261,6 +261,7 @@ const processEnv = process.env;
 
 const configs = {
   base: EnvironmentModel.safeParse(processEnv),
+  commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
   postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
@@ -306,6 +307,7 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 }
 
 const base = extractConfig(configs.base);
+const commerce = extractConfig(configs.commerce);
 const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
@@ -370,9 +372,10 @@ export const env = {
     tokens: {
       endpoint: base.TOKENS_ENDPOINT,
     },
-    rateLimit: base.RATE_LIMIT_ENDPOINT
+    commerce: commerce.COMMERCE_ENDPOINT
       ? {
-          endpoint: base.RATE_LIMIT_ENDPOINT,
+          endpoint: commerce.COMMERCE_ENDPOINT,
+          dateRetentionPurgeIntervalMinutes: 5,
         }
       : null,
     schemaPolicy: base.SCHEMA_POLICY_ENDPOINT
@@ -380,13 +383,6 @@ export const env = {
           endpoint: base.SCHEMA_POLICY_ENDPOINT,
         }
       : null,
-    usageEstimator: base.USAGE_ESTIMATOR_ENDPOINT
-      ? {
-          endpoint: base.USAGE_ESTIMATOR_ENDPOINT,
-          dateRetentionPurgeIntervalMinutes: 5,
-        }
-      : null,
-    billing: base.BILLING_ENDPOINT ? { endpoint: base.BILLING_ENDPOINT } : null,
     emails: base.EMAILS_ENDPOINT ? { endpoint: base.EMAILS_ENDPOINT } : null,
     webhooks: { endpoint: base.WEBHOOKS_ENDPOINT },
     schema: { endpoint: base.SCHEMA_ENDPOINT },
