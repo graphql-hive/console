@@ -168,7 +168,10 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               </ContactTextLink>
             }
             callToAction={
-              <ContactButton variant="primary">Shape a custom plan for your business</ContactButton>
+              <ContactButton variant="primary">
+                Shape a custom plan
+                <span className="hidden sm:inline">for your business</span>
+              </ContactButton>
             }
             features={
               <>

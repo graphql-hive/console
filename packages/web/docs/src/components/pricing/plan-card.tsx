@@ -37,7 +37,7 @@ export function PlanCard({
           <h2 className="text-2xl font-medium">{name}</h2>
           {adjustable && (
             <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium leading-5">
-              Adjust your plan at any time
+              Adjust <span className="hidden sm:inline">your plan</span> at any time
             </span>
           )}
         </div>
