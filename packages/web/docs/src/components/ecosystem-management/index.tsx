@@ -16,7 +16,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
     <section
       className={cn(
         'bg-green-1000 relative isolate overflow-hidden rounded-3xl text-white',
-        'p-8 pb-[160px] sm:pb-[112px] md:p-[72px] md:pb-[112px] lg:pb-[72px]',
+        'p-8 pb-[180px] sm:pb-[128px] md:p-[72px] md:pb-[128px] lg:pb-[72px]',
         className,
       )}
     >
@@ -86,7 +86,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
               </li>
             ))}
           </ul>
-          <div className="bottom-0 flex w-full flex-col gap-x-4 gap-y-2 max-lg:absolute max-lg:translate-y-[calc(100%+24px)]">
+          <div className="bottom-0 flex w-full gap-x-4 gap-y-2 max-lg:absolute max-lg:translate-y-[calc(100%+40px)] max-sm:flex-col lg:flex-col">
             <CallToAction
               href="/federation"
               variant="primary-inverted"
