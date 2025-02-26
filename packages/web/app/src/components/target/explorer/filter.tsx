@@ -292,6 +292,8 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
     [props.options],
   );
 
+  const accordionDefault = useMemo(() => [props.options[0]?.name], [props.options]);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -316,7 +318,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
         >
           Select All
         </DropdownMenuCheckboxItem>
-        <Accordion defaultValue={[props.options[0]?.name]} type="multiple">
+        <Accordion defaultValue={accordionDefault} type="multiple">
           {props.options.map(({ name, values }) => (
             <AccordionItem key={name} value={name}>
               <AccordionTrigger className="w-full">{name}</AccordionTrigger>

@@ -220,6 +220,20 @@ describe('schema service can process metadata', async () => {
   });
 
   test('metadataAttributes includes all used metadata names and content', () => {
-    expect(result.metadataAttributes).toMatchInlineSnapshot();
+    expect(result.metadataAttributes).toMatchInlineSnapshot(`
+      {
+        field: [
+          user,
+          User.name,
+        ],
+        schema: [
+          user,
+          foo,
+        ],
+        type: [
+          user,
+        ],
+      }
+    `);
   });
 });
