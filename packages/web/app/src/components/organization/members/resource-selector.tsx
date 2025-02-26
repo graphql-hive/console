@@ -79,10 +79,52 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
   }
 `);
 
+/**
+ * This is the `GraphQLSchema.ResourceAssignmentInput` type, but with the slug values for projects and targets included.
+ */
+export type ResourceSelection = Omit<GraphQLSchema.ResourceAssignmentInput, 'projects'> & {
+  projects: Array<
+    Omit<GraphQLSchema.ProjectResourceAssignmentInput, 'targets'> & {
+      projectSlug: string;
+      targets: Omit<GraphQLSchema.ProjectTargetsResourceAssignmentInput, 'targets'> & {
+        targets: Array<
+          GraphQLSchema.TargetResourceAssignmentInput & {
+            targetSlug: string;
+          }
+        >;
+      };
+    }
+  >;
+};
+
+/**
+ * Converts `ResourceSelection` to `GraphQLSchema.ResourceAssignmentInput` for sending to the GraphQL API.
+ * `ResourceSelection` contains fields such as `projectSlug` and `targetSlug`, which are not within the `GraphQLSchema.ResourceAssignmentInput`
+ * type, but TypeScript does not catch sending these properties to the API...
+ */
+export function resourceSlectionToGraphQLSchemaResourceAssignmentInput(
+  input: ResourceSelection,
+): GraphQLSchema.ResourceAssignmentInput {
+  return {
+    mode: input.mode,
+    projects: input.projects.map(project => ({
+      projectId: project.projectId,
+      targets: {
+        mode: project.targets.mode,
+        targets: project.targets.targets.map(target => ({
+          targetId: target.targetId,
+          services: target.services,
+          appDeployments: target.appDeployments,
+        })),
+      },
+    })),
+  };
+}
+
 export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
-  selection: GraphQLSchema.ResourceAssignmentInput;
-  onSelectionChange: (selection: GraphQLSchema.ResourceAssignmentInput) => void;
+  selection: ResourceSelection;
+  onSelectionChange: (selection: ResourceSelection) => void;
 }) {
   const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
   const [breadcrumb, setBreadcrumb] = useState(
@@ -136,6 +178,7 @@ export function ResourceSelector(props: {
           produce(props.selection, state => {
             state.projects?.push({
               projectId: item.id,
+              projectSlug: item.slug,
               targets: {
                 mode: GraphQLSchema.ResourceAssignmentMode.Granular,
                 targets: [],
@@ -252,10 +295,11 @@ export function ResourceSelector(props: {
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            const project = state.projects?.find(project => project.projectId === projectId);
+            const project = state.projects.find(project => project.projectId === projectId);
             if (!project) return;
-            project.targets.targets?.push({
+            project.targets.targets.push({
               targetId: item.id,
+              targetSlug: item.slug,
               appDeployments: {
                 mode: GraphQLSchema.ResourceAssignmentMode.Granular,
                 appDeployments: [],

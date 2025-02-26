@@ -35,6 +35,7 @@ type DefineStepperProps<Steps extends Stepperize.Step[]> = Omit<
     props: React.ComponentProps<'button'> & {
       of: Stepperize.Get.Id<Steps>;
       icon?: React.ReactNode;
+      clickable?: boolean;
     },
   ) => React.ReactElement;
   StepperTitle: (props: React.ComponentProps<'h4'> & { asChild?: boolean }) => React.ReactElement;
@@ -124,7 +125,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
         </nav>
       );
     },
-    StepperStep: ({ children, className, icon, ...props }) => {
+    StepperStep: ({ children, className, icon, clickable, ...props }) => {
       const { variant, labelOrientation } = useStepperProvider();
       const { current } = useStepper();
 
@@ -182,7 +183,10 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               type="button"
               role="tab"
               tabIndex={dataState !== 'inactive' ? 0 : -1}
-              className="stepper-step-indicator rounded-full"
+              className={cn(
+                'stepper-step-indicator rounded-full',
+                clickable === false && 'cursor-default',
+              )}
               variant={dataState !== 'inactive' ? 'default' : 'secondary'}
               size="icon"
               aria-controls={`step-panel-${props.of}`}

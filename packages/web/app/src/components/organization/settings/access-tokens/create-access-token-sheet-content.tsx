@@ -1,21 +1,55 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useMutation } from 'urql';
+import { z } from 'zod';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as Form from '@/components/ui/form';
+import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { PermissionSelector } from '../../members/permission-selector';
-import { ResourceSelector } from '../../members/resource-selector';
+import {
+  ResourceSelector,
+  resourceSlectionToGraphQLSchemaResourceAssignmentInput,
+  type ResourceSelection,
+} from '../../members/resource-selector';
+import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
+
+/** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
+const TitleInputModel = z
+  .string()
+  .trim()
+  .regex(/^[ a-zA-Z0-9_-]+$/, `Can only contain letters, numbers, " ", '_', and '-'.`)
+  .min(2, 'Minimum length is 2 characters.')
+  .max(100, 'Maximum length is 100 characters.');
+
+/** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
+const DescriptionInputModel = z
+  .string()
+  .trim()
+  .max(248, 'Maximum length is 248 characters.')
+  .nullable();
+
+const CreateAccessTokenFormModel = z.object({
+  name: TitleInputModel,
+  description: DescriptionInputModel,
+  selectedPermissions: z.array(z.string()),
+  assignedResources: z.any(),
+});
 
 const CreateAccessTokenSheetContent_OrganizationFragment = graphql(`
   fragment CreateAccessTokenSheetContent_OrganizationFragment on Organization {
     id
+    slug
     availableOrganizationPermissionGroups {
       ...PermissionSelector_PermissionGroupsFragment
+      ...SelectedPermissionOverview_PermissionGroupFragment
     }
     ...ResourceSelector_OrganizationFragment
   }
@@ -25,6 +59,28 @@ type CreateAccessTokenSheetContentProps = {
   onSuccess: () => void;
   organization: FragmentType<typeof CreateAccessTokenSheetContent_OrganizationFragment>;
 };
+
+const CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation = graphql(`
+  mutation CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation(
+    $input: CreateOrganizationAccessTokenInput!
+  ) {
+    createOrganizationAccessToken(input: $input) {
+      ok {
+        privateAccessKey
+        createdOrganizationAccessToken {
+          id
+        }
+      }
+      error {
+        message
+        details {
+          title
+          description
+        }
+      }
+    }
+  }
+`);
 
 export function CreateAccessTokenSheetContent(
   props: CreateAccessTokenSheetContentProps,
@@ -53,22 +109,68 @@ export function CreateAccessTokenSheetContent(
     CreateAccessTokenSheetContent_OrganizationFragment,
     props.organization,
   );
-  const [resourceSelection, setResourceSelection] = useState<GraphQLSchema.ResourceAssignmentInput>(
-    () => ({
-      mode: GraphQLSchema.ResourceAssignmentMode.All,
-      projects: [],
-    }),
+  const [resourceSelection, setResourceSelection] = useState<ResourceSelection>(() => ({
+    mode: GraphQLSchema.ResourceAssignmentMode.All,
+    projects: [],
+  }));
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
   );
 
   const form = useForm({
-    mode: 'onChange',
+    mode: 'all',
+    resolver: zodResolver(CreateAccessTokenFormModel),
     defaultValues: {
       name: '',
       description: '',
-      selectedPermissions: [],
-      assignedResources: {} as GraphQLSchema.ResourceAssignmentInput,
+      selectedPermissions: new Set<string>() as ReadonlySet<string>,
+      assignedResources: {
+        mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+        projects: [],
+      } as ResourceSelection,
+    },
+    values: {
+      selectedPermissions: selectedPermissionIds,
+      assignedResources: resourceSelection,
     },
   });
+
+  const [createOrganizationAccessTokenState, createOrganizationAccessToken] = useMutation(
+    CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation,
+  );
+
+  const resolvedResources = useMemo(
+    () => resolveResources(organization.slug, resourceSelection),
+    [resourceSelection],
+  );
+
+  async function createAccessToken() {
+    const formValues = form.getValues();
+    const result = await createOrganizationAccessToken({
+      input: {
+        organization: {
+          byId: organization.id,
+        },
+        title: formValues.name ?? '',
+        description: formValues.description ?? '',
+        permissions: Array.from(formValues.selectedPermissions),
+        resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(
+          formValues.assignedResources,
+        ),
+      },
+    });
+
+    if (result.data?.createOrganizationAccessToken.error) {
+      const { error } = result.data.createOrganizationAccessToken;
+      if (error.details?.title) {
+        form.setError('name', { message: error.details.title });
+      }
+      if (error.details?.description) {
+        form.setError('description', { message: error.details.description });
+      }
+      return;
+    }
+  }
 
   return (
     <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
@@ -82,15 +184,11 @@ export function CreateAccessTokenSheetContent(
         {({ stepper }) => (
           <>
             <Form.Form {...form}>
-              <form className="space-y-4" onSubmit={form.handleSubmit(() => {})}>
+              <form onSubmit={form.handleSubmit(() => {})}>
                 <>
-                  <Stepper.StepperNavigation>
+                  <Stepper.StepperNavigation className="pb-4">
                     {stepper.all.map(step => (
-                      <Stepper.StepperStep
-                        key={step.id}
-                        of={step.id}
-                        onClick={() => stepper.goTo(step.id)}
-                      >
+                      <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                         <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
                       </Stepper.StepperStep>
                     ))}
@@ -106,7 +204,7 @@ export function CreateAccessTokenSheetContent(
                               <Form.FormItem>
                                 <Form.FormLabel>Name</Form.FormLabel>
                                 <Form.FormControl>
-                                  <Input placeholder="shadcn" {...field} />
+                                  <Input type="text" placeholder="My access token" {...field} />
                                 </Form.FormControl>
                                 <Form.FormDescription>
                                   Name of the access token.
@@ -117,7 +215,7 @@ export function CreateAccessTokenSheetContent(
                           />
                         </div>
 
-                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <div className="mt-6 grid w-full max-w-sm items-center gap-1.5">
                           <Form.FormField
                             control={form.control}
                             name="description"
@@ -148,11 +246,13 @@ export function CreateAccessTokenSheetContent(
                                 <Form.FormLabel>Permissions</Form.FormLabel>
                                 <Form.FormControl>
                                   <PermissionSelector
-                                    selectedPermissionIds={new Set()}
-                                    onSelectedPermissionsChange={() => {}}
                                     permissionGroups={
                                       organization.availableOrganizationPermissionGroups
                                     }
+                                    selectedPermissionIds={selectedPermissionIds}
+                                    onSelectedPermissionsChange={selectedPermissionIds => {
+                                      setSelectedPermissionIds(new Set(selectedPermissionIds));
+                                    }}
                                   />
                                 </Form.FormControl>
                                 <Form.FormMessage />
@@ -167,7 +267,7 @@ export function CreateAccessTokenSheetContent(
                         <div className="grid w-full items-center gap-1.5">
                           <Form.FormField
                             control={form.control}
-                            name="selectedPermissions"
+                            name="assignedResources"
                             render={() => (
                               <Form.FormItem>
                                 <Form.FormLabel>Resource Access</Form.FormLabel>
@@ -185,21 +285,74 @@ export function CreateAccessTokenSheetContent(
                         </div>
                       </>
                     ),
-                    'step-4-confirmation': () => <>TBD</>,
+                    'step-4-confirmation': () => (
+                      <>
+                        <Heading>Confirm and create access token</Heading>
+                        <p className="text-muted-foreground text-sm">
+                          Please please review the selected permissions and resources to ensure they
+                          align with your intended access needs.
+                        </p>
+                        {selectedPermissionIds.size === 0 ? (
+                          <p className="mt-3">No permissions are selected.</p>
+                        ) : (
+                          <SelectedPermissionOverview
+                            activePermissionIds={Array.from(selectedPermissionIds)}
+                            permissionsGroups={organization.availableOrganizationPermissionGroups}
+                            showOnlyAllowedPermissions
+                            isExpanded
+                            additionalGroupContent={group =>
+                              resolvedResources === null ? (
+                                <>Granted on all ${permissionLevelToResourceName(group.level)}</>
+                              ) : (
+                                <div className="w-full space-y-1">
+                                  <p className="text-gray-400">
+                                    Granted on {permissionLevelToResourceName(group.level)}:
+                                  </p>
+                                  <ul className="flex list-none flex-wrap gap-1">
+                                    {resolvedResources[group.level].map(id => (
+                                      <li key={id}>
+                                        <Badge
+                                          className="px-3 py-1 font-mono text-xs text-gray-300"
+                                          variant="outline"
+                                        >
+                                          {id}
+                                        </Badge>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )
+                            }
+                          />
+                        )}
+                      </>
+                    ),
                   })}
                 </>
               </form>
             </Form.Form>
             <Sheet.SheetFooter className="mb-0 mt-auto">
               <Stepper.StepperControls>
-                {!stepper.isLast && (
-                  <Button variant="secondary" onClick={stepper.prev} disabled={stepper.isFirst}>
-                    Previous
-                  </Button>
-                )}
-                <Button onClick={stepper.isLast ? stepper.reset : stepper.next}>
-                  {stepper.isLast ? 'Reset' : 'Next'}
+                <Button
+                  variant="secondary"
+                  onClick={stepper.prev}
+                  disabled={stepper.isFirst || createOrganizationAccessTokenState.fetching}
+                >
+                  Go back
                 </Button>
+                {stepper.isLast ? (
+                  <Button
+                    onClick={
+                      createOrganizationAccessTokenState.fetching ? undefined : createAccessToken
+                    }
+                  >
+                    {createOrganizationAccessTokenState.fetching
+                      ? 'Creating...'
+                      : 'Create Access Token'}
+                  </Button>
+                ) : (
+                  <Button onClick={stepper.next}>Next</Button>
+                )}
               </Stepper.StepperControls>
             </Sheet.SheetFooter>
           </>
@@ -207,4 +360,88 @@ export function CreateAccessTokenSheetContent(
       </Stepper.StepperProvider>
     </Sheet.SheetContent>
   );
+}
+
+function resolveResources(
+  organizationSlug: string,
+  resources: ResourceSelection,
+): null | Record<GraphQLSchema.PermissionLevel, Array<string>> {
+  if (resources.mode === GraphQLSchema.ResourceAssignmentMode.All || !resources.projects) {
+    return null;
+  }
+
+  const resolvedResources: Record<GraphQLSchema.PermissionLevel, Array<string>> = {
+    [GraphQLSchema.PermissionLevel.Organization]: [organizationSlug],
+    [GraphQLSchema.PermissionLevel.Project]: [],
+    [GraphQLSchema.PermissionLevel.Target]: [],
+    [GraphQLSchema.PermissionLevel.AppDeployment]: [],
+    [GraphQLSchema.PermissionLevel.Service]: [],
+  };
+
+  for (const project of resources.projects) {
+    resolvedResources[GraphQLSchema.PermissionLevel.Project].push(
+      `${organizationSlug}/${project.projectSlug}`,
+    );
+    if (project.targets.mode === GraphQLSchema.ResourceAssignmentMode.All) {
+      resolvedResources[GraphQLSchema.PermissionLevel.Target].push(
+        `${organizationSlug}/${project.projectSlug}/*`,
+      );
+      resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+        `${organizationSlug}/${project.projectSlug}/*/service/*`,
+      );
+      resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+        `${organizationSlug}/${project.projectSlug}/*/appDeployment/*`,
+      );
+      continue;
+    }
+    for (const target of project.targets.targets) {
+      resolvedResources[GraphQLSchema.PermissionLevel.Target].push(
+        `${organizationSlug}/${project.projectSlug}/${target.targetSlug}`,
+      );
+      if (target.services.mode === GraphQLSchema.ResourceAssignmentMode.All) {
+        resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+          `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/service/*`,
+        );
+      } else if (target.services.services) {
+        for (const service of target.services.services) {
+          resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+            `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/service/${service.serviceName}`,
+          );
+        }
+      }
+      if (target.appDeployments.mode === GraphQLSchema.ResourceAssignmentMode.All) {
+        resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+          `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/appDeployment/*`,
+        );
+      } else if (target.appDeployments.appDeployments) {
+        for (const appDeployment of target.appDeployments.appDeployments) {
+          resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+            `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/appDeployment/${appDeployment.appDeployment}`,
+          );
+        }
+      }
+    }
+  }
+
+  return resolvedResources;
+}
+
+function permissionLevelToResourceName(level: GraphQLSchema.PermissionLevel) {
+  switch (level) {
+    case GraphQLSchema.PermissionLevel.Organization: {
+      return 'organizations';
+    }
+    case GraphQLSchema.PermissionLevel.Project: {
+      return 'projects';
+    }
+    case GraphQLSchema.PermissionLevel.Target: {
+      return 'targets';
+    }
+    case GraphQLSchema.PermissionLevel.Service: {
+      return 'services';
+    }
+    case GraphQLSchema.PermissionLevel.AppDeployment: {
+      return 'app deployments';
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
+import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -22,13 +23,24 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
   }
 `);
 
+const enum CreateAccessTokenState {
+  closed,
+  open,
+  /** show confirmation dialog to ditch draft state of new access token */
+  closing,
+}
+
 export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.ReactNode {
-  const [data] = useQuery({
+  const [query] = useQuery({
     query: AccessTokensSubPage_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
     },
   });
+
+  const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
+    CreateAccessTokenState.closed,
+  );
 
   return (
     <SubPageLayout>
@@ -52,15 +64,26 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
           </>
         }
       />
-      <div className="my-3.5 flex justify-between" data-cy="target-settings-registry-token">
-        <Sheet.Sheet>
+      <div className="my-3.5 flex justify-between" data-cy="organization-settings-access-tokens">
+        <Sheet.Sheet
+          open={createAccessTokenState !== CreateAccessTokenState.closed}
+          onOpenChange={isOpen => {
+            if (isOpen === false) {
+              setCreateAccessTokenState(CreateAccessTokenState.closing);
+              return;
+            }
+            setCreateAccessTokenState(CreateAccessTokenState.open);
+          }}
+        >
           <Sheet.SheetTrigger asChild>
-            <Button data-cy="new-button">Create new access token</Button>
+            <Button data-cy="organization-settings-access-tokens-create-new">
+              Create new access token
+            </Button>
           </Sheet.SheetTrigger>
-          {data.data?.organization && (
+          {createAccessTokenState !== CreateAccessTokenState.closed && query.data?.organization && (
             <>
               <CreateAccessTokenSheetContent
-                organization={data.data?.organization}
+                organization={query.data.organization}
                 onSuccess={() => {
                   alert('YAY');
                 }}
@@ -68,6 +91,32 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             </>
           )}
         </Sheet.Sheet>
+        {createAccessTokenState === CreateAccessTokenState.closing && (
+          <AlertDialog.AlertDialog open>
+            <AlertDialog.AlertDialogContent>
+              <AlertDialog.AlertDialogHeader>
+                <AlertDialog.AlertDialogTitle>
+                  Do you want to discard the access token?
+                </AlertDialog.AlertDialogTitle>
+                <AlertDialog.AlertDialogDescription>
+                  If you cancel now, any draft information will be lost.
+                </AlertDialog.AlertDialogDescription>
+              </AlertDialog.AlertDialogHeader>
+              <AlertDialog.AlertDialogFooter>
+                <AlertDialog.AlertDialogCancel
+                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+                >
+                  Cancel
+                </AlertDialog.AlertDialogCancel>
+                <AlertDialog.AlertDialogAction
+                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+                >
+                  Continue
+                </AlertDialog.AlertDialogAction>
+              </AlertDialog.AlertDialogFooter>
+            </AlertDialog.AlertDialogContent>
+          </AlertDialog.AlertDialog>
+        )}
       </div>
     </SubPageLayout>
   );
