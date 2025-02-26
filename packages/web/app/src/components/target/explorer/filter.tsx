@@ -129,7 +129,6 @@ export function TypeFilter(props: {
             targetSlug: props.targetSlug,
             typename: option?.value ?? '',
           },
-          search: router.latestLocation.search,
         });
       }}
       loading={query.fetching}
