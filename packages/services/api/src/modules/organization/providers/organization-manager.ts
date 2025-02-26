@@ -679,7 +679,9 @@ export class OrganizationManager {
           <mj-body>
             <mj-section>
               <mj-column>
-                <mj-image width="200px" src="https://the-guild.dev/graphql/hive/github-org-image.png"></mj-image>
+                <mj-text
+           font-size="16"
+           font-weight="500">Hive</mj-text>
                 <mj-divider border-color="#ca8a04"></mj-divider>
                 <mj-text>
                   ${member.user.displayName} wants to transfer the ownership of the <strong>${organization.name}</strong> organization.
