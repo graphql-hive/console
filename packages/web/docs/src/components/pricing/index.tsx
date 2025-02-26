@@ -130,6 +130,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
             description="For scaling API and teams"
             highlighted={highlightedPlan === 'Pro'}
             adjustable
+            startingFrom
             price={
               <Tooltip content="Base price charged monthly">
                 $20<span className="text-base leading-normal text-green-800"> / month</span>

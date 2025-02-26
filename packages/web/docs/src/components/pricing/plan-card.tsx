@@ -5,6 +5,7 @@ export interface PlanCardProps extends React.HTMLAttributes<HTMLDivElement> {
   name: string;
   description: string;
   price: ReactNode | string;
+  startingFrom?: boolean;
   features: ReactNode;
   adjustable: boolean;
   highlighted: boolean;
@@ -15,6 +16,7 @@ export function PlanCard({
   name,
   description,
   price,
+  startingFrom,
   features,
   adjustable,
   highlighted,
@@ -43,7 +45,8 @@ export function PlanCard({
         </div>
         <p className="mt-2">{description}</p>
       </header>
-      <div className="mt-4 text-5xl font-medium leading-[56px] tracking-[-0.48px]">{price}</div>
+      <div className="mt-4 h-6 text-[#4F6C6A]">{startingFrom && 'Starting from'}</div>
+      <div className="text-5xl font-medium leading-[56px] tracking-[-0.48px]">{price}</div>
       <div className="mt-4 flex *:grow">{callToAction}</div>
       <ul className="mt-4 text-green-800">{features}</ul>
     </article>
