@@ -59,22 +59,14 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               ) as HTMLElement;
               if (!card) return;
 
-              const isLeftSideInView = card.offsetLeft > scrollviewRef.current.scrollLeft;
-              const isRightSideInView =
-                card.offsetLeft + card.offsetWidth <
-                scrollviewRef.current.scrollLeft + scrollviewRef.current.offsetWidth;
+              const { left, right } = card.getBoundingClientRect();
+              const { left: scrollviewLeft, right: scrollviewRight } =
+                scrollviewRef.current.getBoundingClientRect();
 
-              console.log({
-                isLeftSideInView,
-                isRightSideInView,
-                offsetLeft: card.offsetLeft,
-                offsetWidth: card.offsetWidth,
-                scrollviewWidth: scrollviewRef.current.offsetWidth,
-              });
+              const isLeftSideInView = left > scrollviewLeft && left < scrollviewRight;
+              const isRightSideInView = right > scrollviewLeft && right < scrollviewRight;
 
               if (isLeftSideInView && isRightSideInView) return;
-
-              // todo: scroll to center card better
 
               scrollviewRef.current.scrollTo({
                 left: card.offsetLeft,
