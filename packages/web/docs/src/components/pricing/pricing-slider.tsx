@@ -44,7 +44,7 @@ export function PricingSlider({
         <span className="font-medium">{max}M</span>
       </div>
       <CallToAction
-        href="#todo-faq-operations-question"
+        href="#faq--what-counts-as-a-graphql-operation"
         variant="tertiary"
         className="mt-6 md:absolute md:right-8 md:top-8 md:mt-0"
       >
