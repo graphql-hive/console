@@ -27,6 +27,7 @@ import {
   RegisteredRouter,
   RoutePaths,
   ToPathOption,
+  useLocation,
   useRouter,
 } from '@tanstack/react-router';
 import { useArgumentListToggle, usePeriodSelector, useSchemaExplorerContext } from './provider';
@@ -126,6 +127,7 @@ export function TypeFilter(props: {
             targetSlug: props.targetSlug,
             typename: option.value,
           },
+          search: router.latestLocation.search,
         });
       }}
       loading={query.fetching}
@@ -143,6 +145,7 @@ export function FieldByNameFilter() {
       onChange={e => {
         void router.navigate({
           search: {
+            ...router.latestLocation.search,
             search: e.target.value === '' ? undefined : e.target.value,
           },
         });
@@ -233,6 +236,7 @@ export function SchemaVariantFilter(props: {
   targetSlug: string;
   variant: 'all' | 'unused' | 'deprecated';
 }) {
+  const { search } = useLocation()
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
@@ -253,6 +257,7 @@ export function SchemaVariantFilter(props: {
                         projectSlug: props.projectSlug,
                         targetSlug: props.targetSlug,
                       }}
+                      search={search}
                     >
                       {variant.label}
                     </Link>

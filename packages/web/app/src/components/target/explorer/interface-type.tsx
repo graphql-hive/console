@@ -1,5 +1,6 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { GraphQLFields, GraphQLTypeCard } from './common';
+import { useRouter } from '@tanstack/react-router';
 
 const GraphQLInterfaceTypeComponent_TypeFragment = graphql(`
   fragment GraphQLInterfaceTypeComponent_TypeFragment on GraphQLInterfaceType {
@@ -28,6 +29,10 @@ export function GraphQLInterfaceTypeComponent(props: {
   warnAboutDeprecatedArguments: boolean;
   styleDeprecated: boolean;
 }) {
+  const router = useRouter();
+  const searchObj = router.latestLocation.search;
+  const search =
+    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search.toLowerCase() : undefined;
   const ttype = useFragment(GraphQLInterfaceTypeComponent_TypeFragment, props.type);
   return (
     <GraphQLTypeCard
@@ -43,6 +48,7 @@ export function GraphQLInterfaceTypeComponent(props: {
       <GraphQLFields
         typeName={ttype.name}
         fields={ttype.fields}
+        filterValue={search}
         totalRequests={props.totalRequests}
         targetSlug={props.targetSlug}
         projectSlug={props.projectSlug}

@@ -2,7 +2,7 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -16,6 +16,8 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
+import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
+import { useRouter } from '@tanstack/react-router';
 
 const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
   fragment DeprecatedSchemaView_DeprecatedSchemaExplorerFragment on DeprecatedSchemaExplorer {
@@ -80,6 +82,11 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
       setSelectedLetter(letters[0]);
     }
   }, [selectedLetter, setSelectedLetter]);
+
+  const router = useRouter();
+  const searchObj = router.latestLocation.search;
+  const search =
+    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search : undefined;
 
   if (types.length === 0) {
     return (
@@ -173,6 +180,12 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
         __typename
         id
         valid
+        explorer {
+          metadataAttributes {
+            name
+            values
+          }
+        }
         deprecatedSchema(usage: { period: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
@@ -252,6 +265,9 @@ function DeprecatedSchemaExplorer(props: {
             targetSlug={props.targetSlug}
             variant="deprecated"
           />
+          {latestValidSchemaVersion?.explorer?.metadataAttributes ? (
+            <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
+          ) : null}
         </div>
       </div>
       {!query.fetching && (
@@ -374,14 +390,16 @@ export function TargetExplorerDeprecatedPage(props: {
   return (
     <>
       <Meta title="Deprecated Schema Explorer" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Explorer}
-      >
-        <ExplorerDeprecatedSchemaPageContent {...props} />
-      </TargetLayout>
+      <SchemaExplorerProvider>
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <ExplorerDeprecatedSchemaPageContent {...props} />
+        </TargetLayout>
+      </SchemaExplorerProvider>
     </>
   );
 }

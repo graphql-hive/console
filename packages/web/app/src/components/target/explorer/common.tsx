@@ -231,6 +231,12 @@ const GraphQLInputFields_InputFieldFragment = graphql(`
     type
     isDeprecated
     deprecationReason
+    supergraphMetadata {
+      metadata {
+        name
+        content
+      }
+    }
     usage {
       total
       ...SchemaExplorerUsageStats_UsageFragment
@@ -483,12 +489,12 @@ export function GraphQLFields(props: {
   const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
 
   const sortedAndFilteredFields = useMemo(
-    () =>
-      fieldsFromFragment
+    () => {
+      return fieldsFromFragment
         .filter(field => {
           let matchesFilter = true;
           if (filterValue) {
-            matchesFilter &&= field.name.includes(filterValue)
+            matchesFilter &&= field.name.toLowerCase().includes(filterValue)
           }
           if (filterMeta.length) {
             const matchesMeta = field.supergraphMetadata && (field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment).metadata?.some(m => hasMetadataFilter(m.name, m.content));
@@ -499,8 +505,8 @@ export function GraphQLFields(props: {
         .sort(
           // Sort by usage DESC, name ASC
           (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
-        ),
-    [fieldsFromFragment, filterValue, filterMeta],
+        )
+    }, [fieldsFromFragment, filterValue, filterMeta],
   );
   const [fields, collapsed, expand] = useCollapsibleList(
     sortedAndFilteredFields,
@@ -623,12 +629,35 @@ export function GraphQLInputFields(props: {
   projectSlug: string;
   organizationSlug: string;
   styleDeprecated: boolean;
+  filterValue?: string;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
+  const { filterValue } = props;
+  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+  const sortedAndFilteredFields = useMemo(
+    () => {
+      return fields
+        .filter(field => {
+          let matchesFilter = true;
+          if (filterValue) {
+            matchesFilter &&= field.name.toLowerCase().includes(filterValue)
+          }
+          if (filterMeta.length) {
+            const matchesMeta = field.supergraphMetadata && (field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment).metadata?.some(m => hasMetadataFilter(m.name, m.content));
+            matchesFilter &&= !!matchesMeta;
+          }
+          return matchesFilter;
+        })
+        .sort(
+          // Sort by usage DESC, name ASC
+          (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
+        )
+    }, [fields, filterValue, filterMeta],
+  );
 
   return (
     <div className="flex flex-col">
-      {fields.map((field, i) => {
+      {sortedAndFilteredFields.map((field, i) => {
         const coordinate = `${props.typeName}.${field.name}`;
         return (
           <GraphQLTypeCardListItem key={field.name} index={i}>

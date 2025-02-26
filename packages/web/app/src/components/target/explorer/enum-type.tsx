@@ -7,6 +7,8 @@ import {
   SchemaExplorerUsageStats,
 } from './common';
 import { SupergraphMetadataList } from './super-graph-metadata';
+import { useRouter } from '@tanstack/react-router';
+import { useSchemaExplorerContext } from './provider';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -24,10 +26,18 @@ const GraphQLEnumTypeComponent_TypeFragment = graphql(`
         ...SchemaExplorerUsageStats_UsageFragment
       }
       supergraphMetadata {
+        metadata {
+          name
+          content
+        }
         ...SupergraphMetadataList_SupergraphMetadataFragment
       }
     }
     supergraphMetadata {
+      metadata {
+        name
+        content
+      }
       ...GraphQLTypeCard_SupergraphMetadataFragment
     }
   }
@@ -41,7 +51,24 @@ export function GraphQLEnumTypeComponent(props: {
   targetSlug: string;
   styleDeprecated: boolean;
 }) {
+  const router = useRouter();
+  const searchObj = router.latestLocation.search;
+  const search =
+    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search.toLowerCase() : undefined;
   const ttype = useFragment(GraphQLEnumTypeComponent_TypeFragment, props.type);
+  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+  const values = ttype.values.filter(value => {
+    let matchesFilter = true;
+    if (search) {
+      matchesFilter &&= value.name.toLowerCase().includes(search)
+    }
+    if (filterMeta.length) {
+      const matchesMeta = value.supergraphMetadata?.metadata?.some(m => hasMetadataFilter(m.name, m.content));
+      matchesFilter &&= !!matchesMeta;
+    }
+    return matchesFilter;
+  });
+
   return (
     <GraphQLTypeCard
       name={ttype.name}
@@ -53,7 +80,7 @@ export function GraphQLEnumTypeComponent(props: {
       organizationSlug={props.organizationSlug}
     >
       <div className="flex flex-col">
-        {ttype.values.map((value, i) => (
+        {values.map((value, i) => (
           <GraphQLTypeCardListItem key={value.name} index={i}>
             <div>
               <DeprecationNote

@@ -72,6 +72,7 @@ export const urqlClient = createClient({
         SupergraphMetadata: noKey,
         MetadataAttribute: noKey,
         RateLimit: noKey,
+        DeprecatedSchemaExplorer: noKey,
       },
       globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
     }),
