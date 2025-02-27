@@ -3,6 +3,7 @@
 import { HTMLAttributes, ReactElement, ReactNode, useRef, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
 import { CallToAction, cn, ContactButton, ContactTextLink, Heading } from '@theguild/components';
+import { CheckIcon } from '../check-icon';
 import { PlanCard } from './plan-card';
 import { PricingSlider } from './pricing-slider';
 
@@ -23,8 +24,42 @@ function Tooltip({ content, children }: { content: string; children: ReactNode }
   );
 }
 
-function PlanFeaturesListItem(props: HTMLAttributes<HTMLLIElement>) {
-  return <li className="border-beige-200 py-2 [&:not(:last-child)]:border-b" {...props} />;
+interface PlanFeaturesListItemProps extends HTMLAttributes<HTMLLIElement> {
+  icon: ReactNode;
+  category: string;
+  features: string[];
+  tooltip?: string;
+}
+
+function PlanFeaturesListItem({
+  icon,
+  category,
+  features,
+  tooltip,
+  ...rest
+}: PlanFeaturesListItemProps) {
+  const content = (
+    <>
+      <strong className="flex items-center gap-2 font-bold text-green-800 [&>svg]:mr-3">
+        {icon}
+        {category}
+      </strong>
+      {features.map(feature => (
+        <span key={feature}>
+          <CheckIcon className="mr-3" />
+          {feature}
+        </span>
+      ))}
+    </>
+  );
+  return (
+    <li
+      className="border-beige-200 flex flex-col gap-2 py-2 text-green-800 [&:not(:last-child)]:border-b"
+      {...rest}
+    >
+      {tooltip ? <Tooltip content={tooltip}>{content}</Tooltip> : content}
+    </li>
+  );
 }
 
 const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are stored on Hive';
@@ -111,7 +146,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
             }
             features={
               <>
-                <PlanFeaturesListItem>
+                {/* <PlanFeaturesListItem>
                   <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
                     <strong>7 days</strong> of usage data retention
                   </Tooltip>
@@ -128,7 +163,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                   <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
                     1M operations per month
                   </Tooltip>
-                </PlanFeaturesListItem>
+                </PlanFeaturesListItem> */}
               </>
             }
           />
