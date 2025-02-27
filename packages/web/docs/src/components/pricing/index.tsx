@@ -149,7 +149,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
         <div
           ref={scrollviewRef}
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="nextra-scrollbar -mx-4 -mb-6 flex flex-col items-stretch gap-6 overflow-auto px-4 py-6 *:snap-center sm:flex-row sm:*:min-w-[380px] md:-mx-6 md:px-6 lg:mt-6"
+          className="nextra-scrollbar -mx-4 -mb-6 flex flex-col items-stretch gap-6 px-4 py-6 sm:flex-row sm:overflow-auto sm:*:min-w-[380px] md:-mx-6 md:px-6 lg:mt-6"
         >
           <PlanCard
             data-plan="Hobby"

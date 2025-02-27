@@ -140,6 +140,9 @@ export function PlanCard({
     };
   }, [collapsed]);
 
+  console.log('collapsed', collapsed);
+  console.log('transitioning', transitioning);
+
   return (
     <>
       <div
@@ -204,21 +207,21 @@ export function PlanCard({
           </ul>
 
           <button
-            onClick={() => {
-              console.log('clicked');
-              collapse(false);
-            }}
-            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 pt-4 text-center font-bold transition duration-100 aria-expanded:border-t sm:mt-6 sm:hidden sm:border-t [[data-open='true']+&]:pointer-events-none [[data-open='true']+&]:h-0 [[data-open='true']+&]:pt-0 [[data-open='true']+&]:opacity-0"
+            onClick={() => collapse(!collapsed)}
+            aria-expanded={!collapsed}
+            className={cn(
+              "border-beige-200 text-green-1000 relative h-12 w-full gap-2 pt-4 text-center font-bold transition-opacity aria-expanded:border-t sm:hidden sm:border-t [[data-open='true']+footer>&]:pointer-events-none",
+              // transitioning && 'opacity-0',
+            )}
           >
-            Show key features
-            <ChevronDownIcon className="size-6" />
-          </button>
-          <button
-            onClick={() => collapse(true)}
-            className="border-beige-200 text-green-1000 pointer-events-none flex w-full items-center justify-center gap-2 border-t pt-4 text-center font-bold opacity-0 transition duration-100 sm:mt-6 sm:hidden sm:border-t [[data-open='false']~&]:h-0 [[data-open='false']~&]:pt-0 [[data-open='true']~&]:pointer-events-auto [[data-open='true']~&]:opacity-100 [[data-open='true']~&]:delay-700"
-          >
-            Hide key features
-            <ChevronDownIcon className="size-6 rotate-180" />
+            <span className="absolute inset-0 flex items-center justify-center transition-opacity duration-100 [[aria-expanded=false]>&]:delay-700 [[aria-expanded=true]>&]:opacity-0">
+              Show key features
+              <ChevronDownIcon className="size-6" />
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center transition-opacity duration-100 [[aria-expanded=false]>&]:opacity-0 [[aria-expanded=true]>&]:delay-1000">
+              Hide key features
+              <ChevronDownIcon className="size-6 rotate-180" />
+            </span>
           </button>
         </div>
       </article>
