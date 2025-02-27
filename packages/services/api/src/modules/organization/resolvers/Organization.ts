@@ -66,6 +66,10 @@ export const Organization: Pick<
       organizationId: organization.id,
     });
 
+    if (invitations === null) {
+      return null;
+    }
+
     return {
       total: invitations.length,
       nodes: invitations,
