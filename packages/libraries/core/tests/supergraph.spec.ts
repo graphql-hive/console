@@ -138,4 +138,37 @@ describe('supergraph SDL fetcher', async () => {
       );
     }
   });
+
+  test('fetch override is invoked', async () => {
+    let fetcherImplementationCallArgs: Parameters<typeof fetch>;
+    const supergraphSdl = 'type SuperQuery { sdl: String }';
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost',
+      key: 'bubatz',
+      async fetchImplementation(...args): Promise<Response> {
+        fetcherImplementationCallArgs = args;
+        // console.log(...args);
+        return new Response(supergraphSdl, {
+          status: 200,
+        });
+      },
+    });
+
+    const result = await fetcher();
+    expect(result).toMatchInlineSnapshot(`
+      {
+        id: cHnQuh1kIZhekOeaPxXiLtvOGplY9Beu//gftP9ppYo=,
+        supergraphSdl: type SuperQuery { sdl: String },
+      }
+    `);
+
+    expect(fetcherImplementationCallArgs![0]).toEqual(`http://localhost/supergraph`);
+    expect(fetcherImplementationCallArgs![1]).toMatchObject({
+      method: 'GET',
+      headers: {
+        'X-Hive-CDN-Key': 'bubatz',
+      },
+    });
+  });
 });
