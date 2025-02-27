@@ -27,12 +27,28 @@ export function PlanCard({
 }: PlanCardProps): ReactElement {
   const [collapsed, setCollapsed] = useState(true);
 
-  // Prevent scrolling when modal is open
   useEffect(() => {
     document.body.classList.toggle('max-sm:overflow-hidden', !collapsed);
 
+    let onResize: (() => void) | null = null;
+    if (!collapsed) {
+      // rotating the phone closes the modal
+      const handleResize = () => {
+        if (window.innerWidth > 640) {
+          setCollapsed(true);
+          window.removeEventListener('resize', handleResize);
+        }
+      };
+
+      onResize = handleResize;
+      window.addEventListener('resize', handleResize);
+    }
+
     return () => {
       document.body.classList.remove('max-sm:overflow-hidden');
+      if (onResize) {
+        window.removeEventListener('resize', onResize);
+      }
     };
   }, [collapsed]);
 
