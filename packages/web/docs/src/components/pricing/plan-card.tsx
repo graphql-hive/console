@@ -29,6 +29,9 @@ export function PlanCard({
   const [transitioning, setTransitioning] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
+  const transitionAbortController = useRef<AbortController | null>(null);
+  transitionAbortController.current ||= new AbortController();
+
   const collapse = (newCollapsed: boolean) => {
     if (!cardRef.current) return;
 
@@ -90,6 +93,7 @@ export function PlanCard({
           ul.style.height = newCollapsed ? '0px' : `${targetHeight}px`;
           ul.style.opacity = newCollapsed ? '0' : '1';
           const onTransitionEnd = (e: TransitionEvent) => {
+            console.log('transitionend', e.target);
             if (e.target !== cardRef.current) return;
 
             if (!cardRef.current) return;
@@ -106,7 +110,9 @@ export function PlanCard({
             setTransitioning(false);
           };
 
-          cardRef.current.addEventListener('transitionend', onTransitionEnd);
+          cardRef.current.addEventListener('transitionend', onTransitionEnd, {
+            signal: transitionAbortController.current?.signal,
+          });
         });
       } else {
         // Clean up any inline styles if we're not on mobile
@@ -121,30 +127,40 @@ export function PlanCard({
   useEffect(() => {
     document.body.classList.toggle('max-sm:overflow-hidden', !collapsed);
 
-    let onResize: (() => void) | null = null;
+    const abortController = new AbortController();
+
     if (!collapsed) {
       // rotating the phone closes the modal
-      const handleResize = () => {
-        if (window.innerWidth > 640) {
-          collapse(true);
-          window.removeEventListener('resize', handleResize);
-        }
-      };
+      window.addEventListener(
+        'resize',
+        function onResize() {
+          if (window.innerWidth > 640) {
+            collapse(true);
+            window.removeEventListener('resize', onResize);
+          }
+        },
+        { signal: abortController.signal },
+      );
 
-      onResize = handleResize;
-      window.addEventListener('resize', handleResize);
+      window.addEventListener(
+        'keydown',
+        function onEscape(e) {
+          if (e.key === 'Escape') {
+            // in case somebody presses escape befoere the opening transition finishes
+            transitionAbortController.current?.abort();
+            collapse(true);
+            window.removeEventListener('keydown', onEscape);
+          }
+        },
+        { signal: abortController.signal },
+      );
     }
 
     return () => {
       document.body.classList.remove('max-sm:overflow-hidden');
-      if (onResize) {
-        window.removeEventListener('resize', onResize);
-      }
+      abortController.abort();
     };
   }, [collapsed]);
-
-  console.log('collapsed', collapsed);
-  console.log('transitioning', transitioning);
 
   return (
     <>
