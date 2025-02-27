@@ -148,7 +148,6 @@ describe('supergraph SDL fetcher', async () => {
       key: 'bubatz',
       async fetchImplementation(...args): Promise<Response> {
         fetcherImplementationCallArgs = args;
-        // console.log(...args);
         return new Response(supergraphSdl, {
           status: 200,
         });
