@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import rimraf from 'rimraf';
+import { sync as rimrafSync } from 'rimraf';
 
 const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -34,7 +34,7 @@ function main() {
 
   console.log('[turborepo-cleanup] Cleaning up the cache.');
 
-  rimraf.sync(path.resolve(cwd, cacheDir));
+  rimrafSync(path.resolve(cwd, cacheDir));
   fs.mkdirSync(path.resolve(cwd, cacheDir), { recursive: true });
   fs.writeFileSync(cleanupDateFile, Date.now().toString(), 'utf-8');
 }
