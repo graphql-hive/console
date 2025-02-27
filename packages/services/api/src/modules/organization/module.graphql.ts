@@ -88,6 +88,7 @@ export default gql`
     description: String
     permissions: [String!]!
     resources: ResourceAssignment!
+    firstCharacters: String!
     createdAt: DateTime!
   }
 

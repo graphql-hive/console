@@ -5,14 +5,16 @@ import { z } from 'zod';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import * as Form from '@/components/ui/form';
 import { Heading } from '@/components/ui/heading';
 import { Input } from '@/components/ui/input';
+import { InputCopy } from '@/components/ui/input-copy';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { InlineCode } from '@/components/v2/inline-code';
+import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -372,33 +374,62 @@ export function CreateAccessTokenSheetContent(
         )}
       </Stepper.StepperProvider>
       {createOrganizationAccessTokenState.data?.createOrganizationAccessToken.ok && (
-        <AlertDialog.AlertDialog open>
-          <AlertDialog.AlertDialogContent>
-            <AlertDialog.AlertDialogHeader>
-              <AlertDialog.AlertDialogTitle>
-                The Access Token was created successfully.
-              </AlertDialog.AlertDialogTitle>
-              <AlertDialog.AlertDialogDescription>
-                Please store this access token securely. You will not be able to see it again.
-              </AlertDialog.AlertDialogDescription>
-            </AlertDialog.AlertDialogHeader>
-            <div>
-              <InlineCode
-                content={
-                  createOrganizationAccessTokenState.data.createOrganizationAccessToken.ok
-                    .privateAccessKey
-                }
-              />
-            </div>
-            <AlertDialog.AlertDialogFooter>
-              <AlertDialog.AlertDialogAction onClick={() => props.onSuccess()}>
-                Close
-              </AlertDialog.AlertDialogAction>
-            </AlertDialog.AlertDialogFooter>
-          </AlertDialog.AlertDialogContent>
-        </AlertDialog.AlertDialog>
+        <AcessTokenCreatedConfirmationDialogue
+          onClose={props.onSuccess}
+          privateAccessKey={
+            createOrganizationAccessTokenState.data.createOrganizationAccessToken.ok
+              .privateAccessKey
+          }
+        />
       )}
     </Sheet.SheetContent>
+  );
+}
+
+function AcessTokenCreatedConfirmationDialogue(props: {
+  privateAccessKey: string;
+  onClose: () => void;
+}) {
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  return (
+    <AlertDialog.AlertDialog open>
+      <AlertDialog.AlertDialogContent>
+        <AlertDialog.AlertDialogHeader>
+          <AlertDialog.AlertDialogTitle>Access Token Created</AlertDialog.AlertDialogTitle>
+          <AlertDialog.AlertDialogDescription>
+            Your API access token has been generated successfully
+          </AlertDialog.AlertDialogDescription>
+        </AlertDialog.AlertDialogHeader>
+        <div>
+          <InputCopy value={props.privateAccessKey} />
+        </div>
+        <Tag color="green" className="text-sm">
+          This is your unique API key and it is non-recoverable. If you lose this key, you will need
+          to create a new one.
+        </Tag>
+        <AlertDialog.AlertDialogFooter>
+          <div className="ml-0 mr-auto flex items-center space-x-2 pr-2">
+            <Checkbox
+              id="AcessTokenCreatedConfirmationDialogue-isConfirmed"
+              checked={isConfirmed}
+              onCheckedChange={value => setIsConfirmed(!!value)}
+            />
+            <label
+              htmlFor="AcessTokenCreatedConfirmationDialogue-isConfirmed"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I stored the access token somewhere safe
+            </label>
+          </div>
+          <AlertDialog.AlertDialogAction
+            onClick={isConfirmed ? props.onClose : undefined}
+            disabled={!isConfirmed}
+          >
+            Confirm
+          </AlertDialog.AlertDialogAction>
+        </AlertDialog.AlertDialogFooter>
+      </AlertDialog.AlertDialogContent>
+    </AlertDialog.AlertDialog>
   );
 }
 
