@@ -143,9 +143,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           },
           async validationDidStart() {
             return function onErrors(errors) {
-              if (
-                errors === null || errors === void 0 ? void 0 : errors.length
-              ) {
+              if (errors === null || errors === void 0 ? void 0 : errors.length) {
                 didFailValidation = true;
               }
             };
