@@ -32,6 +32,7 @@ export function InputCopy(props: { value: string }) {
           value={props.value}
           readOnly
           className="bg-secondary truncate text-white"
+          onFocus={ev => ev.target.select()}
         />
       </div>
       <Button

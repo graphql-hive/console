@@ -39,6 +39,9 @@ export const urqlClient = createClient({
         AppDeployment: {
           documents: relayPagination(),
         },
+        Organization: {
+          accessTokens: relayPagination(),
+        },
       },
       keys: {
         RequestsOverTime: noKey,
