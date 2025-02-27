@@ -244,6 +244,7 @@ type SchemaPublishSuccess = {
       string,
       Array<{ name: string; content: string; source: string | null }>
     >;
+    metadataAttributes: null | Record<string, string[]>;
     contracts: null | Array<ContractResult>;
   };
 };
@@ -294,6 +295,7 @@ export type SchemaDeleteSuccess = {
       string,
       Array<{ name: string; content: string; source: string | null }>
     >;
+    metadataAttributes: null | Record<string, string[]>;
     contracts: null | Array<ContractResult>;
   } & (
     | {

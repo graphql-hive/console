@@ -18,6 +18,7 @@ export type ComposeAndValidateOutput = {
   tags: Array<string> | null;
   /** Metadata stored by subgraph (source), and by field (coordinate) */
   schemaMetadata: null | Record<string, Metadata[]>;
+  metadataAttributes: null | Record<string, string[]>;
   contracts: Array<{
     id: string;
     errors: Array<{

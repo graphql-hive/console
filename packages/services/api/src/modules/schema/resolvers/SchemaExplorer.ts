@@ -420,6 +420,9 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
         : null,
     };
   },
+  metadataAttributes: async ({ supergraph }, _arg, _ctx) => {
+    return supergraph?.metadataAttributes;
+  },
 };
 
 function transformGraphQLObjectType(entity: GraphQLObjectType): GraphQLObjectTypeMapper['entity'] {

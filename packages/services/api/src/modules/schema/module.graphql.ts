@@ -723,7 +723,13 @@ export default gql`
     period: DateRangeInput!
   }
 
+  type MetadataAttribute {
+    name: String!
+    values: [String!]!
+  }
+
   type SchemaExplorer {
+    metadataAttributes: [MetadataAttribute!]
     types: [GraphQLNamedType!]!
     type(name: String!): GraphQLNamedType
     query: GraphQLObjectType
