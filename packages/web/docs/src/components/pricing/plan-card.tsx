@@ -29,14 +29,11 @@ export function PlanCard({
   const [transitioning, setTransitioning] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
-  // FLIP animation handling
-  const handleCollapsedChange = (newCollapsed: boolean) => {
+  const collapse = (newCollapsed: boolean) => {
     if (!cardRef.current) return;
 
-    // Mark that we're transitioning
     setTransitioning(true);
 
-    // FIRST: Get the initial bounds
     const first = cardRef.current.getBoundingClientRect();
     const ul = cardRef.current.querySelector('ul');
 
@@ -46,42 +43,33 @@ export function PlanCard({
       return;
     }
 
-    // Store initial height for the animation
     const initialHeight = ul.offsetHeight;
 
-    // Set a fixed height before changing state to prevent jumps
     ul.style.height = `${initialHeight}px`;
     ul.style.overflow = 'hidden';
 
-    // Update state
     setCollapsed(newCollapsed);
 
-    // Need to wait for the DOM to update with the new layout
     requestAnimationFrame(() => {
       if (!cardRef.current || !ul) return;
 
       const last = cardRef.current.getBoundingClientRect();
 
       if (window.innerWidth <= 640) {
-        // INVERT: Calculate the translations needed for the card
         const deltaX = first.left - last.left;
         const deltaY = first.top - last.top;
 
-        // Apply the inverted translations (only position, not scale)
         cardRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
-        // Temporarily make height auto to measure the target height
         const prevHeight = ul.style.height;
         const prevOverflow = ul.style.overflow;
 
-        ul.style.position = 'absolute'; // Prevent layout changes during measurement
+        ul.style.position = 'absolute';
         ul.style.visibility = 'hidden';
         ul.style.height = 'auto';
 
-        // Measure the final height
-        const targetHeight = ul.scrollHeight + (newCollapsed ? 0 : 24); // Add padding if expanding
+        const targetHeight = ul.scrollHeight + (newCollapsed ? 0 : 24);
 
-        // Restore
         ul.style.position = '';
         ul.style.visibility = '';
         ul.style.height = prevHeight;
@@ -90,27 +78,22 @@ export function PlanCard({
         // Force reflow
         void ul.offsetHeight;
 
-        // PLAY: Animate to the new position and height
         cardRef.current.style.transition = 'transform 1000ms cubic-bezier(0.16, 1, 0.3, 1)';
         ul.style.transition = 'height 1500ms cubic-bezier(0.16, 1, 0.3, 1)';
 
         requestAnimationFrame(() => {
           if (!cardRef.current || !ul) return;
 
-          // Animate to target positions
           cardRef.current.style.transform = 'none';
           ul.style.height = newCollapsed ? '0px' : `${targetHeight}px`;
 
-          // Clean up after animation completes
           const onTransitionEnd = (e: TransitionEvent) => {
-            // Only handle the card's transition end
             if (e.target !== cardRef.current) return;
 
             if (!cardRef.current) return;
             cardRef.current.style.transition = '';
             cardRef.current.removeEventListener('transitionend', onTransitionEnd);
 
-            // Clean up styles and set height to auto when open
             if (!newCollapsed) {
               ul.style.height = 'auto';
               ul.style.overflow = '';
@@ -140,7 +123,7 @@ export function PlanCard({
       // rotating the phone closes the modal
       const handleResize = () => {
         if (window.innerWidth > 640) {
-          handleCollapsedChange(true);
+          collapse(true);
           window.removeEventListener('resize', handleResize);
         }
       };
@@ -161,10 +144,10 @@ export function PlanCard({
     <>
       <div
         className={cn(
-          'fixed inset-0 z-[5] bg-black/30 backdrop-blur-2xl transition-opacity duration-500 sm:hidden',
+          'fixed inset-0 z-40 bg-black/30 backdrop-blur-2xl transition-opacity duration-500 sm:hidden',
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100',
         )}
-        onClick={() => handleCollapsedChange(true)}
+        onClick={() => collapse(true)}
       />
       <article
         ref={cardRef}
@@ -175,7 +158,7 @@ export function PlanCard({
           'max-sm:transition-[width,height,border-radius] max-sm:duration-700 max-sm:ease-in-out',
           !collapsed &&
             'max-sm:fixed max-sm:inset-2 max-sm:z-50 max-sm:m-0 max-sm:h-[calc(100vh-16px)] max-sm:bg-white',
-          transitioning && 'z-10',
+          transitioning && 'z-50',
           className,
         )}
         {...rest}
@@ -188,18 +171,7 @@ export function PlanCard({
             transitioning && 'pointer-events-none',
           )}
         >
-          {!collapsed && (
-            <button
-              onClick={() => handleCollapsedChange(true)}
-              className="absolute right-4 top-5 text-green-800 transition-opacity duration-700 ease-in-out sm:hidden"
-              style={{ opacity: 1 }}
-              aria-label="Close"
-            >
-              <Cross2Icon className="size-5" />
-            </button>
-          )}
-
-          <header className="text-green-800">
+          <header className="relative text-green-800">
             <div className="flex flex-row items-center gap-2">
               <h2 className="text-2xl font-medium">{name}</h2>
               {adjustable && (
@@ -209,6 +181,16 @@ export function PlanCard({
               )}
             </div>
             <p className="mt-2">{description}</p>
+            {!collapsed && (
+              <button
+                onClick={() => collapse(true)}
+                className="absolute right-0 top-1 text-green-800 transition-opacity duration-700 ease-in-out sm:hidden"
+                style={{ opacity: 1 }}
+                aria-label="Close"
+              >
+                <Cross2Icon className="size-5" />
+              </button>
+            )}
           </header>
           <div className="mt-4 h-6 text-[#4F6C6A]">{startingFrom && 'Starting from'}</div>
           <div className="text-5xl font-medium leading-[56px] tracking-[-0.48px]">{price}</div>
@@ -226,15 +208,20 @@ export function PlanCard({
           </ul>
 
           <button
-            onClick={() => handleCollapsedChange(!collapsed)}
-            className="border-beige-200 text-green-1000 [aria-expanded=true]:border-t flex w-full items-center justify-center gap-2 pt-4 text-center font-bold sm:mt-6 sm:hidden sm:border-t"
-            aria-expanded={!collapsed}
+            onClick={() => collapse(false)}
+            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 pt-4 text-center font-bold transition duration-100 aria-expanded:border-t sm:mt-6 sm:hidden sm:border-t [[data-open='true']+&]:h-0 [[data-open='true']+&]:pt-0 [[data-open='true']+&]:opacity-0"
             disabled={transitioning}
           >
-            {collapsed ? 'Show' : 'Hide'} key features
-            <ChevronDownIcon
-              className={cn('size-6 transition-transform duration-700', !collapsed && 'rotate-180')}
-            />
+            Show key features
+            <ChevronDownIcon className="size-6" />
+          </button>
+          <button
+            onClick={() => collapse(true)}
+            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 border-t pt-4 text-center font-bold opacity-0 transition duration-100 sm:mt-6 sm:hidden sm:border-t [[data-open='false']~&]:h-0 [[data-open='false']~&]:pt-0 [[data-open='true']~&]:opacity-100 [[data-open='true']~&]:delay-500"
+            disabled={transitioning}
+          >
+            Hide key features
+            <ChevronDownIcon className="size-6 rotate-180" />
           </button>
         </div>
       </article>
