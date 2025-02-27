@@ -65,6 +65,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
+import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
 export async function main() {
@@ -576,6 +577,8 @@ export async function main() {
       void res.status(result.status).send(result);
       return;
     });
+
+    createOtelAuthEndpoint(server);
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

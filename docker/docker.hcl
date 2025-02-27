@@ -82,6 +82,13 @@ target "router-base" {
   }
 }
 
+target "otel-collector-base" {
+  dockerfile = "${PWD}/docker/otel-collector.dockerfile"
+  args = {
+    RELEASE = "${RELEASE}"
+  }
+}
+
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
@@ -370,6 +377,23 @@ target "apollo-router" {
   ]
 }
 
+target "otel-collector" {
+  inherits = ["otel-collector-base", get_target()]
+  contexts = {
+    config = "${PWD}/docker/configs/otel-collector"
+  }
+  args = {
+    IMAGE_TITLE = "graphql-hive/otel-collector"
+    IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
+  }
+  tags = [
+    local_image_tag("otel-collector"),
+    stable_image_tag("otel-collector"),
+    image_tag("otel-collector", COMMIT_SHA),
+    image_tag("otel-collector", BRANCH_NAME)
+  ]
+}
+
 target "cli" {
   inherits = ["cli-base", get_target()]
   context = "${PWD}/packages/libraries/cli"
@@ -423,6 +447,12 @@ group "integration-tests" {
 group "apollo-router-hive-build" {
   targets = [
     "apollo-router"
+  ]
+}
+
+group "otel-collector-hive-build" {
+  targets = [
+    "otel-collector"
   ]
 }
 
