@@ -9,6 +9,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'accessToken'
   | 'accessTokens'
   | 'availableMemberPermissionGroups'
   | 'availableOrganizationPermissionGroups'
@@ -214,6 +215,12 @@ export const Organization: Pick<
       params: {
         organizationId: organization.id,
       },
+    });
+  },
+  accessToken: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).get({
+      organizationId: organization.id,
+      id: args.id,
     });
   },
 };

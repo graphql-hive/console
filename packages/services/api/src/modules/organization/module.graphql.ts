@@ -328,6 +328,10 @@ export default gql`
     Paginated organization access tokens.
     """
     accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+    """
+    Get organization access token by id.
+    """
+    accessToken(id: ID!): OrganizationAccessToken
   }
 
   type OrganizationAccessTokenEdge {

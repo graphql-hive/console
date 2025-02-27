@@ -8,6 +8,7 @@ import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
+import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
 
@@ -58,6 +59,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [deleteAccessTokenId, setDeleteAccessTokenId] = useState<string | null>(null);
+  const [detailViewId, setDetailViewId] = useState<string | null>(null);
 
   if (accessTokens.edges.length === 0) {
     return null;
@@ -105,7 +107,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
       </Table.TableHeader>
       <Table.TableBody>
         {accessTokens.edges.map(edge => (
-          <Table.TableRow>
+          <Table.TableRow key={edge.cursor}>
             <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
@@ -120,7 +122,9 @@ export function AccessTokensTable(props: AccessTokensTable) {
                 </DropDownMenu.DropdownMenuTrigger>
                 <DropDownMenu.DropdownMenuContent>
                   <DropDownMenu.DropdownMenuLabel>Options</DropDownMenu.DropdownMenuLabel>
-                  <DropDownMenu.DropdownMenuItem>View Details</DropDownMenu.DropdownMenuItem>
+                  <DropDownMenu.DropdownMenuItem onClick={() => setDetailViewId(edge.node.id)}>
+                    View Details
+                  </DropDownMenu.DropdownMenuItem>
                   <DropDownMenu.DropdownMenuItem
                     onClick={() => setDeleteAccessTokenId(edge.node.id)}
                   >
@@ -142,6 +146,13 @@ export function AccessTokensTable(props: AccessTokensTable) {
           }}
         />
       )}
+      {detailViewId && (
+        <AccessTokenDetailViewSheet
+          organizationSlug={props.organizationSlug}
+          accessTokenId={detailViewId}
+          onClose={() => setDetailViewId(null)}
+        />
+      )}
     </Table.Table>
   );
 }
@@ -161,11 +172,13 @@ const DeleteAccessTokenConfirmationDialogue_DeleteOrganizationAccessToken = grap
   }
 `);
 
-function DeleteAccessTokenConfirmationDialogue(props: {
+type DeleteAccessTokenConfirmationDialogueProps = {
   accessTokenId: string;
   onConfirm: () => void;
   onCancel: () => void;
-}) {
+};
+
+function DeleteAccessTokenConfirmationDialogue(props: DeleteAccessTokenConfirmationDialogueProps) {
   const [mutationState, mutate] = useMutation(
     DeleteAccessTokenConfirmationDialogue_DeleteOrganizationAccessToken,
   );
