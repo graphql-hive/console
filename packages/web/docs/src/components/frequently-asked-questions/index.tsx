@@ -3,9 +3,11 @@ import * as RadixAccordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Anchor, cn, Heading } from '@theguild/components';
 import { AttachPageFAQSchema } from '../../lib';
+import { OpenAccordionItemWhenLinkedTo } from './open-accordion-item-when-linked-to';
 import FederationQuestions from './federation-questions.mdx';
 import HomeQuestions from './home-questions.mdx';
 import PartnersQuestions from './partners-questions.mdx';
+import { questionToId } from './question-to-id';
 
 const a = (props: ComponentPropsWithoutRef<'a'>) => (
   <Anchor
@@ -24,9 +26,12 @@ const h2 = (props: ComponentPropsWithoutRef<'h2'>) => (
 const UnwrapChild = (props: { children?: ReactNode }) => props.children as unknown as ReactElement;
 
 const Accordion = (props: ComponentPropsWithoutRef<'ul'>) => (
-  <RadixAccordion.Root asChild type="single" collapsible>
-    <ul className="divide-beige-400 basis-1/2 divide-y max-xl:grow" {...props} />
-  </RadixAccordion.Root>
+  <>
+    <RadixAccordion.Root asChild type="single" collapsible>
+      <ul className="divide-beige-400 basis-1/2 divide-y max-xl:grow" {...props} />
+    </RadixAccordion.Root>
+    <OpenAccordionItemWhenLinkedTo />
+  </>
 );
 
 const AccordionItem = (props: ComponentPropsWithoutRef<'li'>) => {
@@ -60,6 +65,7 @@ const AccordionItem = (props: ComponentPropsWithoutRef<'li'>) => {
       itemScope
       itemProp="mainEntity"
       itemType="https://schema.org/Question"
+      id={questionToId(question)}
     >
       <li>
         <RadixAccordion.Header>

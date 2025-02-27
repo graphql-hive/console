@@ -23,6 +23,7 @@ const config: Config = {
         ...baseConfig.theme.extend.colors,
         primary: baseConfig.theme.extend.colors['hive-yellow'],
         'nextra-primary': baseConfig.theme.extend.colors.primary,
+        'blueish-green': '#003834', // todo: move this to shared Tailwind config
       },
       keyframes: {
         'accordion-down': {
