@@ -60,16 +60,17 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               if (!card) return;
 
               const { left, right } = card.getBoundingClientRect();
-              const { left: scrollviewLeft, right: scrollviewRight } =
-                scrollviewRef.current.getBoundingClientRect();
+              const scrollLeft = scrollviewRef.current.scrollLeft;
 
-              const isLeftSideInView = left > scrollviewLeft && left < scrollviewRight;
-              const isRightSideInView = right > scrollviewLeft && right < scrollviewRight;
+              const isLeftSideInView = left > scrollLeft && left < window.innerWidth;
+              const isRightSideInView = right > scrollLeft && right < window.innerWidth;
 
               if (isLeftSideInView && isRightSideInView) return;
 
               scrollviewRef.current.scrollTo({
-                left: card.offsetLeft, // this needs improvement for 696px breakpoint
+                left:
+                  card.offsetLeft -
+                  parseInt(window.getComputedStyle(scrollviewRef.current).paddingLeft), // this needs improvement for 696px breakpoint
                 behavior: 'smooth',
               });
             }
@@ -79,7 +80,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
         <div
           ref={scrollviewRef}
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="nextra-scrollbar -mx-4 -mb-6 flex snap-x snap-proximity flex-col items-stretch gap-6 overflow-auto px-4 py-6 *:snap-center sm:flex-row sm:*:min-w-[380px] lg:mt-6"
+          className="nextra-scrollbar -mx-4 -mb-6 flex flex-col items-stretch gap-6 overflow-auto px-4 py-6 *:snap-center sm:flex-row sm:*:min-w-[380px] md:-mx-6 md:px-6 lg:mt-6"
         >
           <PlanCard
             data-plan="Hobby"
