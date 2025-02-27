@@ -27,25 +27,7 @@ export function PlanCard({
 }: PlanCardProps): ReactElement {
   const [collapsed, setCollapsed] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
-  const [showBackdrop, setShowBackdrop] = useState(false);
-  const [backdropVisible, setBackdropVisible] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
-
-  // Handle backdrop visibility with proper transitions
-  useEffect(() => {
-    if (!collapsed) {
-      // When opening: immediately show backdrop and fade it in
-      setShowBackdrop(true);
-      // Need a small delay to ensure transition works
-      setTimeout(() => setBackdropVisible(true), 10);
-    } else {
-      // When closing: first fade out, then remove from DOM
-      setBackdropVisible(false);
-      // Remove backdrop from DOM after transition completes
-      const timer = setTimeout(() => setShowBackdrop(false), 700);
-      return () => clearTimeout(timer);
-    }
-  }, [collapsed]);
 
   // FLIP animation handling
   const handleCollapsedChange = (newCollapsed: boolean) => {
@@ -56,47 +38,95 @@ export function PlanCard({
 
     // FIRST: Get the initial bounds
     const first = cardRef.current.getBoundingClientRect();
+    const ul = cardRef.current.querySelector('ul');
+
+    if (!ul) {
+      setCollapsed(newCollapsed);
+      setTransitioning(false);
+      return;
+    }
+
+    // Store initial height for the animation
+    const initialHeight = ul.offsetHeight;
+
+    // Set a fixed height before changing state to prevent jumps
+    ul.style.height = `${initialHeight}px`;
+    ul.style.overflow = 'hidden';
 
     // Update state
     setCollapsed(newCollapsed);
 
     // Need to wait for the DOM to update with the new layout
     requestAnimationFrame(() => {
-      if (!cardRef.current) return;
+      if (!cardRef.current || !ul) return;
 
-      // LAST: Get the final bounds after state change
       const last = cardRef.current.getBoundingClientRect();
 
-      // Only animate if on mobile
       if (window.innerWidth <= 640) {
-        // INVERT: Calculate the translations needed
+        // INVERT: Calculate the translations needed for the card
         const deltaX = first.left - last.left;
         const deltaY = first.top - last.top;
 
         // Apply the inverted translations (only position, not scale)
         cardRef.current.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
-        // Force reflow to ensure the transform is applied
-        const _ = cardRef.current.offsetHeight;
+        // Temporarily make height auto to measure the target height
+        const prevHeight = ul.style.height;
+        const prevOverflow = ul.style.overflow;
 
-        // PLAY: Animate back to normal position
+        ul.style.position = 'absolute'; // Prevent layout changes during measurement
+        ul.style.visibility = 'hidden';
+        ul.style.height = 'auto';
+
+        // Measure the final height
+        const targetHeight = ul.scrollHeight + (newCollapsed ? 0 : 24); // Add padding if expanding
+
+        // Restore
+        ul.style.position = '';
+        ul.style.visibility = '';
+        ul.style.height = prevHeight;
+        ul.style.overflow = prevOverflow;
+
+        // Force reflow
+        void ul.offsetHeight;
+
+        // PLAY: Animate to the new position and height
         cardRef.current.style.transition = 'transform 1000ms cubic-bezier(0.16, 1, 0.3, 1)';
+        ul.style.transition = 'height 1500ms cubic-bezier(0.16, 1, 0.3, 1)';
 
         requestAnimationFrame(() => {
-          if (!cardRef.current) return;
+          if (!cardRef.current || !ul) return;
+
+          // Animate to target positions
           cardRef.current.style.transform = 'none';
+          ul.style.height = newCollapsed ? '0px' : `${targetHeight}px`;
 
           // Clean up after animation completes
-          const onTransitionEnd = () => {
+          const onTransitionEnd = (e: TransitionEvent) => {
+            // Only handle the card's transition end
+            if (e.target !== cardRef.current) return;
+
             if (!cardRef.current) return;
             cardRef.current.style.transition = '';
             cardRef.current.removeEventListener('transitionend', onTransitionEnd);
+
+            // Clean up styles and set height to auto when open
+            if (!newCollapsed) {
+              ul.style.height = 'auto';
+              ul.style.overflow = '';
+            }
+
+            ul.style.transition = '';
+
             setTransitioning(false);
           };
 
           cardRef.current.addEventListener('transitionend', onTransitionEnd);
         });
       } else {
+        // Clean up any inline styles if we're not on mobile
+        ul.style.height = '';
+        ul.style.overflow = '';
         setTransitioning(false);
       }
     });
@@ -129,15 +159,13 @@ export function PlanCard({
 
   return (
     <>
-      {showBackdrop && (
-        <div
-          className={cn(
-            'fixed inset-0 z-40 bg-black/30 backdrop-blur-2xl transition-opacity duration-700 ease-in-out sm:hidden',
-            backdropVisible ? 'opacity-100' : 'opacity-0',
-          )}
-          onClick={() => handleCollapsedChange(true)}
-        />
-      )}
+      <div
+        className={cn(
+          'fixed inset-0 z-40 bg-black/30 backdrop-blur-2xl transition-opacity duration-500 sm:hidden',
+          collapsed ? 'pointer-events-none opacity-0' : 'opacity-100',
+        )}
+        onClick={() => handleCollapsedChange(true)}
+      />
       <article
         ref={cardRef}
         className={cn(
@@ -188,15 +216,10 @@ export function PlanCard({
 
           <ul
             className={cn(
-              'mt-6 text-green-800 transition-all sm:block',
-              'max-sm:transition-[max-height,padding] max-sm:duration-[1500ms]',
-              collapsed
-                ? 'max-sm:max-h-0 max-sm:overflow-hidden max-sm:pb-0 max-sm:ease-out'
-                : 'max-sm:max-h-[2000px] max-sm:pb-6 max-sm:ease-in',
+              'mt-6 text-green-800 sm:block',
+              collapsed && 'max-sm:overflow-hidden',
+              !collapsed && 'max-sm:pb-6',
             )}
-            style={{
-              transitionDelay: collapsed ? '0ms' : '100ms',
-            }}
             data-open={!collapsed}
           >
             {features}
