@@ -224,28 +224,20 @@ function AccessTokensTable(props: {
         </Table.TableRow>
       </Table.TableHeader>
       <Table.TableBody>
-        <AccessTokenTablePage accessTokens={props.accessTokens} />
+        {accessTokens.edges.map(edge => (
+          <Table.TableRow>
+            <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
+            <Table.TableCell className="font-mono">
+              {edge.node.firstCharacters + filler}
+            </Table.TableCell>
+            <Table.TableCell className="text-right">
+              created <TimeAgo date={edge.node.createdAt} />
+            </Table.TableCell>
+          </Table.TableRow>
+        ))}
       </Table.TableBody>
     </Table.Table>
   );
 }
 
 const filler = new Array(20).fill('•').join('');
-
-function AccessTokenTablePage(props: {
-  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
-}) {
-  const accessTokens = useFragment(
-    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
-    props.accessTokens,
-  );
-  return accessTokens.edges.map(edge => (
-    <Table.TableRow>
-      <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
-      <Table.TableCell className="font-mono">{edge.node.firstCharacters + filler}</Table.TableCell>
-      <Table.TableCell className="text-right">
-        created <TimeAgo date={edge.node.createdAt} />
-      </Table.TableCell>
-    </Table.TableRow>
-  ));
-}
