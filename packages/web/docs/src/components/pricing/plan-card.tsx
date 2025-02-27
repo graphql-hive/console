@@ -147,6 +147,7 @@ export function PlanCard({
           'max-sm:transition-[width,height,border-radius] max-sm:duration-700 max-sm:ease-in-out',
           !collapsed &&
             'max-sm:fixed max-sm:inset-2 max-sm:z-50 max-sm:m-0 max-sm:h-[calc(100vh-16px)] max-sm:bg-white',
+          transitioning && 'z-50',
           className,
         )}
         {...rest}
