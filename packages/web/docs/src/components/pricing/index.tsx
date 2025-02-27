@@ -60,17 +60,32 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               if (!card) return;
 
               const { left, right } = card.getBoundingClientRect();
+              const containerRect = scrollviewRef.current.getBoundingClientRect();
               const scrollLeft = scrollviewRef.current.scrollLeft;
+              const containerLeft = containerRect.left;
+              const padding = parseInt(window.getComputedStyle(scrollviewRef.current).paddingLeft);
 
-              const isLeftSideInView = left > scrollLeft && left < window.innerWidth;
-              const isRightSideInView = right > scrollLeft && right < window.innerWidth;
+              const cardLeftRelativeToContainer = left - containerLeft;
+              const cardRightRelativeToContainer = right - containerLeft;
 
-              if (isLeftSideInView && isRightSideInView) return;
+              if (
+                cardLeftRelativeToContainer >= padding &&
+                cardRightRelativeToContainer <= containerRect.width - padding
+              ) {
+                return;
+              }
+
+              let targetScrollLeft = scrollLeft;
+
+              if (cardLeftRelativeToContainer < padding) {
+                targetScrollLeft = scrollLeft - (padding - cardLeftRelativeToContainer);
+              } else if (cardRightRelativeToContainer > containerRect.width - padding) {
+                targetScrollLeft =
+                  scrollLeft + (cardRightRelativeToContainer - (containerRect.width - padding));
+              }
 
               scrollviewRef.current.scrollTo({
-                left:
-                  card.offsetLeft -
-                  parseInt(window.getComputedStyle(scrollviewRef.current).paddingLeft), // this needs improvement for 696px breakpoint
+                left: targetScrollLeft,
                 behavior: 'smooth',
               });
             }
