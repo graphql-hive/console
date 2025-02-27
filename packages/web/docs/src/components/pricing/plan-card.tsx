@@ -1,4 +1,5 @@
-import { ReactElement, ReactNode } from 'react';
+import { ReactElement, ReactNode, useState } from 'react';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { cn } from '@theguild/components';
 
 export interface PlanCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -24,6 +25,8 @@ export function PlanCard({
   className,
   ...rest
 }: PlanCardProps): ReactElement {
+  const [showFeatures, setShowFeatures] = useState(false);
+
   return (
     <article
       className={cn(
@@ -48,7 +51,23 @@ export function PlanCard({
       <div className="mt-4 h-6 text-[#4F6C6A]">{startingFrom && 'Starting from'}</div>
       <div className="text-5xl font-medium leading-[56px] tracking-[-0.48px]">{price}</div>
       <div className="mt-4 flex *:grow">{callToAction}</div>
-      <ul className="mt-4 text-green-800">{features}</ul>
+      <ul
+        className="mt-4 text-green-800 max-sm:data-[open=false]:hidden sm:block"
+        data-open={showFeatures}
+      >
+        {features}
+      </ul>
+
+      <button
+        onClick={() => setShowFeatures(!showFeatures)}
+        className="border-beige-200 text-green-1000 mt-6 flex w-full items-center justify-center gap-2 border-t pt-4 text-center font-bold sm:hidden"
+        aria-expanded={showFeatures}
+      >
+        {showFeatures ? 'Hide' : 'Show'} key features
+        <ChevronDownIcon
+          className={cn('size-6 transition-transform', showFeatures && 'rotate-180')}
+        />
+      </button>
     </article>
   );
 }
