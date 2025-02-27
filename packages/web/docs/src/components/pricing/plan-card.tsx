@@ -161,7 +161,7 @@ export function PlanCard({
     <>
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/30 backdrop-blur-2xl transition-opacity duration-500 sm:hidden',
+          'fixed inset-0 z-[5] bg-black/30 backdrop-blur-2xl transition-opacity duration-500 sm:hidden',
           collapsed ? 'pointer-events-none opacity-0' : 'opacity-100',
         )}
         onClick={() => handleCollapsedChange(true)}
@@ -175,7 +175,7 @@ export function PlanCard({
           'max-sm:transition-[width,height,border-radius] max-sm:duration-700 max-sm:ease-in-out',
           !collapsed &&
             'max-sm:fixed max-sm:inset-2 max-sm:z-50 max-sm:m-0 max-sm:h-[calc(100vh-16px)] max-sm:bg-white',
-          transitioning && 'z-50',
+          transitioning && 'z-10',
           className,
         )}
         {...rest}
@@ -217,8 +217,8 @@ export function PlanCard({
           <ul
             className={cn(
               'mt-6 text-green-800 sm:block',
-              collapsed && 'max-sm:overflow-hidden',
-              !collapsed && 'max-sm:pb-6',
+              'max-sm:transition-none', // Prevent any transitions on first load
+              collapsed ? 'max-sm:h-0 max-sm:overflow-hidden' : 'max-sm:pb-6',
             )}
             data-open={!collapsed}
           >
