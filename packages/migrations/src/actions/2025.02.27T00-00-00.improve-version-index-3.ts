@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2025.02.12T00-00-00.improve-version-index-3.ts',
+  name: '2025.02.27T00-00-00.improve-version-index-3.ts',
   noTransaction: true,
   run: ({ sql }) => [
     {
