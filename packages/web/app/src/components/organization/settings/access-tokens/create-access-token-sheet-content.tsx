@@ -128,15 +128,6 @@ export function CreateAccessTokenSheetContent(
     defaultValues: {
       title: '',
       description: '',
-      selectedPermissions: new Set<string>() as ReadonlySet<string>,
-      assignedResources: {
-        mode: GraphQLSchema.ResourceAssignmentMode.Granular,
-        projects: [],
-      } as ResourceSelection,
-    },
-    values: {
-      selectedPermissions: selectedPermissionIds,
-      assignedResources: resourceSelection,
     },
   });
 
@@ -159,10 +150,8 @@ export function CreateAccessTokenSheetContent(
         },
         title: formValues.title ?? '',
         description: formValues.description ?? '',
-        permissions: Array.from(formValues.selectedPermissions),
-        resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(
-          formValues.assignedResources,
-        ),
+        permissions: Array.from(selectedPermissionIds),
+        resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection),
       },
     });
 
@@ -251,50 +240,38 @@ export function CreateAccessTokenSheetContent(
                     'step-2-permissions': () => (
                       <>
                         <div className="grid w-full items-center gap-1.5">
-                          <Form.FormField
-                            control={form.control}
-                            name="selectedPermissions"
-                            render={() => (
-                              <Form.FormItem>
-                                <Form.FormLabel>Permissions</Form.FormLabel>
-                                <Form.FormControl>
-                                  <PermissionSelector
-                                    permissionGroups={
-                                      organization.availableOrganizationPermissionGroups
-                                    }
-                                    selectedPermissionIds={selectedPermissionIds}
-                                    onSelectedPermissionsChange={selectedPermissionIds => {
-                                      setSelectedPermissionIds(new Set(selectedPermissionIds));
-                                    }}
-                                  />
-                                </Form.FormControl>
-                                <Form.FormMessage />
-                              </Form.FormItem>
-                            )}
-                          />
+                          <Form.FormItem>
+                            <Form.FormLabel>Permissions</Form.FormLabel>
+                            <Form.FormControl>
+                              <PermissionSelector
+                                permissionGroups={
+                                  organization.availableOrganizationPermissionGroups
+                                }
+                                selectedPermissionIds={selectedPermissionIds}
+                                onSelectedPermissionsChange={selectedPermissionIds => {
+                                  setSelectedPermissionIds(new Set(selectedPermissionIds));
+                                }}
+                              />
+                            </Form.FormControl>
+                            <Form.FormMessage />
+                          </Form.FormItem>
                         </div>
                       </>
                     ),
                     'step-3-resources': () => (
                       <>
                         <div className="grid w-full items-center gap-1.5">
-                          <Form.FormField
-                            control={form.control}
-                            name="assignedResources"
-                            render={() => (
-                              <Form.FormItem>
-                                <Form.FormLabel>Resource Access</Form.FormLabel>
-                                <Form.FormControl>
-                                  <ResourceSelector
-                                    organization={organization}
-                                    selection={resourceSelection}
-                                    onSelectionChange={setResourceSelection}
-                                  />
-                                </Form.FormControl>
-                                <Form.FormMessage />
-                              </Form.FormItem>
-                            )}
-                          />
+                          <Form.FormItem>
+                            <Form.FormLabel>Resource Access</Form.FormLabel>
+                            <Form.FormControl>
+                              <ResourceSelector
+                                organization={organization}
+                                selection={resourceSelection}
+                                onSelectionChange={setResourceSelection}
+                              />
+                            </Form.FormControl>
+                            <Form.FormMessage />
+                          </Form.FormItem>
                         </div>
                       </>
                     ),
