@@ -18,15 +18,12 @@ export {
 } from '@graphql-hive/core';
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
-export function createSupergraphManager(
-  options: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions,
-) {
-  const pollIntervalInMs = options.pollIntervalInMs ?? 30_000;
-  const fetchSupergraph = createSupergraphSDLFetcher({
-    endpoint: options.endpoint,
-    key: options.key,
-    logger: options.logger,
-  });
+export function createSupergraphManager({
+  pollIntervalInMs,
+  ...superGraphFetcherOptions
+}: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions) {
+  pollIntervalInMs = pollIntervalInMs ?? 30_000;
+  const fetchSupergraph = createSupergraphSDLFetcher(superGraphFetcherOptions);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {
