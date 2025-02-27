@@ -71,6 +71,8 @@ import { TargetHistoryVersionPage } from './pages/target-history-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
+import { TargetInsightsNewPage } from './pages/target-insights-new';
+import { TargetInsightsNewTracePage } from './pages/target-insights-new-trace';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
@@ -646,6 +648,36 @@ const targetInsightsRoute = createRoute({
   },
 });
 
+const targetInsightsNewRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'insights-new',
+  component: function TargetInsightsNewRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetInsightsNewRoute.useParams();
+    return (
+      <TargetInsightsNewPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetInsightsNewTraceRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'insights-new/trace',
+  component: function TargetInsightsNewTraceRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetInsightsNewTraceRoute.useParams();
+    return (
+      <TargetInsightsNewTracePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
 const targetInsightsCoordinateRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/schema-coordinate/$coordinate',
@@ -876,6 +908,8 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetInsightsNewRoute,
+      targetInsightsNewTraceRoute,
       targetInsightsCoordinateRoute,
       targetInsightsClientRoute,
       targetInsightsOperationsRoute,

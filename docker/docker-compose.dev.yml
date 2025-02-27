@@ -16,6 +16,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: registry
       PGDATA: /var/lib/postgresql/data
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
     volumes:
       - ./.hive-dev/postgresql/db:/var/lib/postgresql/data
     ports:
@@ -173,6 +174,22 @@ services:
     volumes:
       - ./configs/oidc-server-mock/clients-config.json:/tmp/config/clients-config.json:ro
       - ./configs/oidc-server-mock/users-config.json:/tmp/config/users-config.json:ro
+    networks:
+      - 'stack'
+
+  otel-collector:
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    build:
+      context: ./configs/otel-collector
+      dockerfile: Dockerfile
+    volumes:
+      - ./configs/otel-collector/builder-config.yaml:/builder-config.yaml
+      - ./configs/otel-collector/config.yaml:/etc/otel-config.yaml
+    ports:
+      - '4317:4317'
+      - '4318:4318'
     networks:
       - 'stack'
 

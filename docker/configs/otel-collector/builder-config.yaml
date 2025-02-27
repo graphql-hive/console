@@ -1,0 +1,26 @@
+dist:
+  version: 0.122.0
+  name: otelcol-custom
+  description: Custom OTel Collector distribution
+  output_path: ./otelcol-custom
+
+receivers:
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.122.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.122.0
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor
+      v0.122.0
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.122.0
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.122.0
+
+extensions:
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
+      v0.122.0
+  - gomod:
+      github.com/graphql-hive/opentelemetry-collector-contrib/extension/hiveauthextension cd0c57cf22

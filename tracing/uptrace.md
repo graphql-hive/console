@@ -1,0 +1,17 @@
+```
+uptrace.ch_migration_locks
+uptrace.ch_migrations
+uptrace.datapoint_hours
+uptrace.datapoint_hours_mv
+uptrace.datapoint_minutes
+uptrace.datapoint_minutes_buffer
+uptrace.metrics_uptrace_service_graph_client_duration_mv
+uptrace.metrics_uptrace_service_graph_failed_requests_mv
+uptrace.metrics_uptrace_service_graph_server_duration_mv
+uptrace.service_graph_edges
+uptrace.service_graph_edges_buffer
+uptrace.spans_data
+uptrace.spans_data_buffer
+uptrace.spans_index
+uptrace.spans_index_buffer
+```
