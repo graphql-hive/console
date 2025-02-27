@@ -31,7 +31,7 @@ type SchemaExplorerContextType = {
   bulkSetMetadataFilter(filters: Array<{ name: string; values: string[] }>): void;
   unsetMetadataFilter(name: string, value: string): void;
   hasMetadataFilter(name: string, value: string): boolean;
-  clearMetadataFilter(): void;
+  clearMetadataFilter(name?: string): void;
   metadata: string[];
 };
 
@@ -103,8 +103,14 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
         setMetadataFilter(name, value) {
           setMetadataFilter(filterUnique([...metadata, `${name}:${value}`]));
         },
+        /** Adds to the metadata list */
         bulkSetMetadataFilter(filters) {
-          setMetadataFilter(filters.flatMap(f => f.values.map(v => `${f.name}:${v}`)));
+          setMetadataFilter(
+            filterUnique([
+              ...metadata,
+              ...filters.flatMap(f => f.values.map(v => `${f.name}:${v}`)),
+            ]),
+          );
         },
         unsetMetadataFilter(name, value) {
           const data = [...metadata];
@@ -114,8 +120,12 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
             setMetadataFilter(data);
           }
         },
-        clearMetadataFilter() {
-          setMetadataFilter([]);
+        clearMetadataFilter(name?: string) {
+          if (name) {
+            setMetadataFilter(metadata.filter(d => !d.startsWith(`${name}:`)));
+          } else {
+            setMetadataFilter([]);
+          }
         },
         hasMetadataFilter(name, value) {
           return metadata.includes(`${name}:${value}`);

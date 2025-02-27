@@ -1,18 +1,14 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -283,17 +279,9 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
     setMetadataFilter,
     unsetMetadataFilter,
     hasMetadataFilter,
-    clearMetadataFilter,
     bulkSetMetadataFilter,
-    metadata,
+    clearMetadataFilter,
   } = useSchemaExplorerContext();
-
-  const numOptions = useMemo(
-    () => props.options?.reduce((sum, opt) => opt.values.length + sum, 0),
-    [props.options],
-  );
-
-  const accordionDefault = useMemo(() => [props.options[0]?.name], [props.options]);
 
   return (
     <DropdownMenu>
@@ -304,53 +292,48 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
           <span className="sr-only">Open menu to filter by metadata.</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuCheckboxItem
-          onSelect={preventTheDefault}
-          className="w-full"
-          checked={metadata.length === numOptions}
-          onCheckedChange={isChecked => {
-            if (isChecked) {
-              bulkSetMetadataFilter(props.options);
-            } else {
-              clearMetadataFilter();
-            }
-          }}
-        >
-          Select All
-        </DropdownMenuCheckboxItem>
-        <Accordion defaultValue={accordionDefault} type="multiple">
-          {props.options.map(({ name, values }) => (
-            <AccordionItem key={name} value={name}>
-              <AccordionTrigger className="w-full">{name}</AccordionTrigger>
-              <AccordionContent
-                onSelect={preventTheDefault}
-                className="ml-1 flex max-h-[100%] max-w-[300px] flex-wrap items-start overflow-x-hidden"
-              >
-                {values.map(v => {
-                  const id = `${name}:${v}`;
-                  return (
-                    <DropdownMenuCheckboxItem
-                      onSelect={preventTheDefault}
-                      key={id}
-                      className="w-full"
-                      checked={hasMetadataFilter(name, v)}
-                      onCheckedChange={isChecked => {
-                        if (isChecked) {
-                          setMetadataFilter(name, v);
-                        } else {
-                          unsetMetadataFilter(name, v);
-                        }
-                      }}
-                    >
-                      {v}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+      <DropdownMenuContent
+        align="end"
+        className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
+      >
+        {props.options.map(({ name, values }, i) => (
+          <React.Fragment key={name}>
+            {i > 0 ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuGroup
+              className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
+              onClick={() => {
+                const isChecked = !values.every(value => hasMetadataFilter(name, value));
+                if (isChecked) {
+                  bulkSetMetadataFilter([props.options[i]]);
+                } else {
+                  clearMetadataFilter(name);
+                }
+              }}
+            >
+              {name}
+            </DropdownMenuGroup>
+            {values.map(v => {
+              const id = `${name}:${v}`;
+              return (
+                <DropdownMenuCheckboxItem
+                  onSelect={preventTheDefault}
+                  key={id}
+                  className="w-full"
+                  checked={hasMetadataFilter(name, v)}
+                  onCheckedChange={isChecked => {
+                    if (isChecked) {
+                      setMetadataFilter(name, v);
+                    } else {
+                      unsetMetadataFilter(name, v);
+                    }
+                  }}
+                >
+                  {v}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
