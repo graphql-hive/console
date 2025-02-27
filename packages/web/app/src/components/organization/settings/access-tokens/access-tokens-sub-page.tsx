@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { useQuery } from 'urql';
+import { LoaderCircleIcon } from 'lucide-react';
+import { useClient, useQuery } from 'urql';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
-import { graphql } from '@/gql';
+import * as Table from '@/components/ui/table';
+import { TimeAgo } from '@/components/v2';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
 
 type AccessTokensSubPageProps = {
@@ -17,6 +20,9 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
+      accessTokens(first: 10) {
+        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+      }
       ...CreateAccessTokenSheetContent_OrganizationFragment
       ...ResourceSelector_OrganizationFragment
     }
@@ -31,11 +37,12 @@ const enum CreateAccessTokenState {
 }
 
 export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.ReactNode {
-  const [query] = useQuery({
+  const [query, refetchQuery] = useQuery({
     query: AccessTokensSubPage_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
     },
+    requestPolicy: 'network-only',
   });
 
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
@@ -64,7 +71,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
           </>
         }
       />
-      <div className="my-3.5 flex justify-between" data-cy="organization-settings-access-tokens">
+      <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
         <Sheet.Sheet
           open={createAccessTokenState !== CreateAccessTokenState.closed}
           onOpenChange={isOpen => {
@@ -86,6 +93,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
                 organization={query.data.organization}
                 onSuccess={() => {
                   setCreateAccessTokenState(CreateAccessTokenState.closed);
+                  refetchQuery();
                 }}
               />
             </>
@@ -111,13 +119,133 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
                 <AlertDialog.AlertDialogAction
                   onClick={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
                 >
-                  Continue
+                  Close
                 </AlertDialog.AlertDialogAction>
               </AlertDialog.AlertDialogFooter>
             </AlertDialog.AlertDialogContent>
           </AlertDialog.AlertDialog>
         )}
+        {query.data?.organization && (
+          <AccessTokensTable
+            accessTokens={query.data.organization.accessTokens}
+            organizationSlug={props.organizationSlug}
+          />
+        )}
       </div>
     </SubPageLayout>
   );
+}
+
+const AccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
+  fragment AccessTokensTable_OrganizationAccessTokenConnectionFragment on OrganizationAccessTokenConnection {
+    edges {
+      cursor
+      node {
+        id
+        title
+        firstCharacters
+        createdAt
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+`);
+
+const AccessTokensTable_MoreAccessTokensQuery = graphql(`
+  query AccessTokensTable_MoreAccessTokensQuery($organizationSlug: String!, $after: String) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      accessTokens(first: 10, after: $after) {
+        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+        pageInfo {
+          endCursor
+        }
+      }
+    }
+  }
+`);
+
+function AccessTokensTable(props: {
+  organizationSlug: string;
+  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
+}) {
+  const accessTokens = useFragment(
+    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
+    props.accessTokens,
+  );
+
+  const client = useClient();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  if (accessTokens.edges.length === 0) {
+    return null;
+  }
+
+  return (
+    <Table.Table>
+      <Table.TableCaption>
+        <Button
+          size="sm"
+          variant="outline"
+          className="ml-auto mr-0 flex"
+          disabled={!accessTokens?.pageInfo?.hasNextPage || isLoadingMore}
+          onClick={() => {
+            if (accessTokens?.pageInfo?.endCursor && accessTokens?.pageInfo?.hasNextPage) {
+              setIsLoadingMore(true);
+              void client
+                .query(AccessTokensTable_MoreAccessTokensQuery, {
+                  organizationSlug: props.organizationSlug,
+                  after: accessTokens.pageInfo?.endCursor,
+                })
+                .toPromise()
+                .finally(() => {
+                  setIsLoadingMore(false);
+                });
+            }
+          }}
+        >
+          {isLoadingMore ? (
+            <>
+              <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
+            </>
+          ) : (
+            'Load more'
+          )}
+        </Button>
+      </Table.TableCaption>
+      <Table.TableHeader>
+        <Table.TableRow>
+          <Table.TableHead>Title</Table.TableHead>
+          <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
+          <Table.TableHead className="text-right">Created At</Table.TableHead>
+        </Table.TableRow>
+      </Table.TableHeader>
+      <Table.TableBody>
+        <AccessTokenTablePage accessTokens={props.accessTokens} />
+      </Table.TableBody>
+    </Table.Table>
+  );
+}
+
+const filler = new Array(20).fill('•').join('');
+
+function AccessTokenTablePage(props: {
+  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
+}) {
+  const accessTokens = useFragment(
+    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
+    props.accessTokens,
+  );
+  return accessTokens.edges.map(edge => (
+    <Table.TableRow>
+      <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
+      <Table.TableCell className="font-mono">{edge.node.firstCharacters + filler}</Table.TableCell>
+      <Table.TableCell className="text-right">
+        created <TimeAgo date={edge.node.createdAt} />
+      </Table.TableCell>
+    </Table.TableRow>
+  ));
 }
