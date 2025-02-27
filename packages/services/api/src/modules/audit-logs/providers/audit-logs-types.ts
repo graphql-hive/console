@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ResourceAssignmentModel } from '../../organization/lib/resource-assignment-model';
 
 export const AuditLogModel = z.union([
   z.object({
@@ -325,6 +326,20 @@ export const AuditLogModel = z.union([
     eventType: z.literal('PREFLIGHT_SCRIPT_CHANGED'),
     metadata: z.object({
       scriptContents: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_CREATED'),
+    metadata: z.object({
+      organizationAccessTokenId: z.string().uuid(),
+      permissions: z.array(z.string()),
+      assignedResources: ResourceAssignmentModel,
+    }),
+  }),
+  z.object({
+    eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_DELETED'),
+    metadata: z.object({
+      organizationAccessTokenId: z.string().uuid(),
     }),
   }),
 ]);

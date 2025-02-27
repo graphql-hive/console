@@ -2,9 +2,6 @@ import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
 import type { HiveClient, HivePluginOptions, Logger } from './types.js';
 
-export const isCloudflareWorker =
-  typeof caches !== 'undefined' && 'default' in caches && !!caches.default;
-
 async function digest(algo: 'SHA-256' | 'SHA-1', output: 'hex' | 'base64', data: string) {
   const buffer = await crypto.subtle.digest(algo, new TextEncoder().encode(data));
   if (output === 'hex') {

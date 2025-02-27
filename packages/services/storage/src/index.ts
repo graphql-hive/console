@@ -2396,6 +2396,8 @@ export async function createStorage(
           // Deleting a schema is done via CLI and not associated to a commit or a pull request.
           github: null,
           tags: args.tags,
+          schemaMetadata: args.schemaMetadata,
+          metadataAttributes: args.metadataAttributes,
           hasContractCompositionErrors:
             args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
@@ -2507,6 +2509,8 @@ export async function createStorage(
           schemaCompositionErrors: input.schemaCompositionErrors,
           github: input.github,
           tags: input.tags,
+          schemaMetadata: input.schemaMetadata,
+          metadataAttributes: input.metadataAttributes,
           hasContractCompositionErrors:
             input.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
           conditionalBreakingChangeMetadata: input.conditionalBreakingChangeMetadata,
@@ -4706,6 +4710,12 @@ const SchemaVersionRecordVersion_2024_01_10_Model = zod.literal('2024-01-10');
 
 const SchemaVersionRecordVersionModel = SchemaVersionRecordVersion_2024_01_10_Model;
 
+const SchemaMetadataModel = zod.object({
+  name: zod.string(),
+  content: zod.string(),
+  source: zod.nullable(zod.string()).default(null),
+});
+
 const SchemaVersionModel = zod.intersection(
   zod.object({
     id: zod.string(),
@@ -4721,6 +4731,8 @@ const SchemaVersionModel = zod.intersection(
     schemaCompositionErrors: zod.nullable(zod.array(SchemaCompositionErrorModel)),
     recordVersion: zod.nullable(SchemaVersionRecordVersionModel),
     tags: zod.nullable(zod.array(zod.string())),
+    schemaMetadata: zod.nullable(zod.record(zod.string(), zod.array(SchemaMetadataModel))),
+    metadataAttributes: zod.nullable(zod.record(zod.string(), zod.array(zod.string()))),
     hasContractCompositionErrors: zod
       .boolean()
       .nullable()
@@ -4866,6 +4878,11 @@ async function insertSchemaVersion(
     supergraphSDL: string | null;
     schemaCompositionErrors: Array<SchemaCompositionError> | null;
     tags: Array<string> | null;
+    schemaMetadata: Record<
+      string,
+      Array<{ name: string; content: string; source: string | null }>
+    > | null;
+    metadataAttributes: Record<string, string[]> | null;
     hasContractCompositionErrors: boolean;
     github: null | {
       sha: string;
@@ -4892,7 +4909,9 @@ async function insertSchemaVersion(
         github_sha,
         tags,
         has_contract_composition_errors,
-        conditional_breaking_change_metadata
+        conditional_breaking_change_metadata,
+        schema_metadata,
+        metadata_attributes
       )
     VALUES
       (
@@ -4906,16 +4925,14 @@ async function insertSchemaVersion(
         ${args.diffSchemaVersionId},
         ${args.compositeSchemaSDL},
         ${args.supergraphSDL},
-        ${
-          args.schemaCompositionErrors
-            ? sql`${JSON.stringify(args.schemaCompositionErrors)}::jsonb`
-            : sql`${null}`
-        },
+        ${jsonify(args.schemaCompositionErrors)},
         ${args.github?.repository ?? null},
         ${args.github?.sha ?? null},
         ${Array.isArray(args.tags) ? sql.array(args.tags, 'text') : null},
         ${args.hasContractCompositionErrors},
-        ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+        ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))},
+        ${jsonify(args.schemaMetadata)},
+        ${jsonify(args.metadataAttributes)}
       )
     RETURNING
       ${schemaVersionSQLFields()}
@@ -5121,6 +5138,8 @@ const schemaVersionSQLFields = (t = sql``) => sql`
   , ${t}"tags"
   , ${t}"has_contract_composition_errors" as "hasContractCompositionErrors"
   , ${t}"conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
+  , ${t}"schema_metadata" as "schemaMetadata"
+  , ${t}"metadata_attributes" as "metadataAttributes"
 `;
 
 const targetSQLFields = sql`

@@ -85,6 +85,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return version.baseSchema ?? null;
   },
   explorer: async (version, { usage }, { injector }) => {
+    // @todo use graphql resolve info to optimize this query
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -104,7 +105,15 @@ export const SchemaVersion: SchemaVersionResolvers = {
         projectId: version.projectId,
         targetId: version.targetId,
       },
-      supergraph,
+      supergraph: {
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
+        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
+      },
     };
   },
   unusedSchema: async (version, { usage }, { injector }) => {
@@ -135,7 +144,15 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
         usedCoordinates,
       },
-      supergraph,
+      supergraph: {
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
+        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
+      },
     };
   },
   deprecatedSchema: async (version, { usage }, { injector }) => {
@@ -158,7 +175,15 @@ export const SchemaVersion: SchemaVersionResolvers = {
         projectId: version.projectId,
         targetId: version.targetId,
       },
-      supergraph,
+      supergraph: {
+        schemaCoordinateMetadataMappings: version.schemaMetadata
+          ? new Map(Object.entries(version.schemaMetadata))
+          : null,
+        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
+        metadataAttributes: version.metadataAttributes
+          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+          : null,
+      },
     };
   },
   date: version => version.createdAt,

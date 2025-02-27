@@ -387,6 +387,11 @@ export interface ComposeAndValidateResult {
     supergraph: string | null;
   }> | null;
   tags: Array<string> | null;
+  schemaMetadata: Record<
+    string,
+    Array<{ name: string; content: string; source: string | null }>
+  > | null;
+  metadataAttributes: null | Record<string, string[]>;
 }
 
 export interface Orchestrator {

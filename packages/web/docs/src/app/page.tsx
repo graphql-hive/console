@@ -94,9 +94,9 @@ export default function IndexPage(): ReactElement {
       <TrustedBySection className="mx-auto my-8 md:my-16 lg:my-24" />
       <EcosystemManagementSection className="mx-4 md:mx-6" />
       <StatsList className="mt-6 md:mt-0">
-        <StatsItem label="GitHub commits" value={6.2} suffix="K" decimal />
-        <StatsItem label="Active developers" value={6.2} suffix="K" decimal />
-        <StatsItem label="Registered schemas" value={270} suffix="K" />
+        <StatsItem label="GitHub commits" value={7} suffix="K" decimal />
+        <StatsItem label="Active developers" value={9.6} suffix="K" decimal />
+        <StatsItem label="Registered schemas" value={730} suffix="K" />
         <StatsItem label="Collected operations" value={350} suffix="B" />
       </StatsList>
       <UltimatePerformanceCards />

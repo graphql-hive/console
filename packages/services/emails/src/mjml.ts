@@ -8,7 +8,7 @@ type RawValue = {
   readonly content: string;
 };
 type SpecialValues = RawValue;
-type ValueExpression = string | SpecialValues;
+type ValueExpression = string | SpecialValues | MJMLValue;
 
 export function mjml(parts: TemplateStringsArray, ...values: ValueExpression[]): MJMLValue {
   let content = '';
@@ -29,6 +29,8 @@ export function mjml(parts: TemplateStringsArray, ...values: ValueExpression[]):
       content += token.content;
     } else if (typeof token === 'string') {
       content += escapeHtml(token);
+    } else if (token.kind === 'mjml') {
+      content += token.content;
     } else {
       throw new TypeError('mjml: Unexpected value expression.');
     }

@@ -34,7 +34,9 @@ export function GraphQLObjectTypeComponent(props: {
   const router = useRouter();
   const searchObj = router.latestLocation.search;
   const search =
-    'search' in searchObj && typeof searchObj.search === 'string' ? searchObj.search : undefined;
+    'search' in searchObj && typeof searchObj.search === 'string'
+      ? searchObj.search.toLowerCase()
+      : undefined;
 
   return (
     <GraphQLTypeCard

@@ -92,7 +92,7 @@ export class IdTranslator {
   /** Resolve a GraphQLSchema.TargetReferenceInput */
   async resolveTargetReference(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
-    onError: () => never;
+    onError(): never;
   }): Promise<{ organizationId: string; projectId: string; targetId: string }> {
     this.logger.debug('Resolve target reference. (reference=%o)', args.reference);
 
@@ -153,6 +153,58 @@ export class IdTranslator {
       selector.projectId,
       selector.targetId,
     );
+
+    return selector;
+  }
+
+  /** Resolve a GraphQLSchema.OrganizationReferenceInput */
+  async resolveOrganizationReference(args: {
+    reference: GraphQLSchema.OrganizationReferenceInput;
+    onError(): never;
+  }): Promise<{ organizationId: string }> {
+    let selector: {
+      organizationId: string;
+    };
+
+    if (args.reference.bySelector) {
+      const organizationId = await this.translateOrganizationId(args.reference.bySelector).catch(
+        error => {
+          this.logger.debug(error);
+          this.logger.debug('Failed to resolve input slug to ids (reference=%o)', args.reference);
+          args.onError();
+        },
+      );
+
+      this.logger.debug('Organization selector resolved. (organizationId=%s)', organizationId);
+
+      selector = {
+        organizationId,
+      };
+    } else {
+      if (!isUUID(args.reference.byId)) {
+        this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
+        args.onError();
+      }
+
+      const organization = await this.storage
+        .getOrganization({
+          organizationId: args.reference.byId,
+        })
+        .catch(error => {
+          this.logger.debug(error);
+          this.logger.debug(
+            'Failed to resolve id to organization (reference=%o)',
+            args.reference.byId,
+          );
+          args.onError();
+        });
+
+      selector = {
+        organizationId: organization.id,
+      };
+    }
+
+    this.logger.debug('Target selector resolved. (organizationId=%s)', selector.organizationId);
 
     return selector;
   }

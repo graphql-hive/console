@@ -16,6 +16,9 @@ export type ComposeAndValidateOutput = {
   sdl: string | null;
   supergraph: string | null;
   tags: Array<string> | null;
+  /** Metadata stored by subgraph (source), and by field (coordinate) */
+  schemaMetadata: null | Record<string, Metadata[]>;
+  metadataAttributes: null | Record<string, string[]>;
   contracts: Array<{
     id: string;
     errors: Array<{
@@ -35,3 +38,12 @@ export type ExternalComposition = {
     signature: string;
   } | null;
 } | null;
+
+export type Metadata = {
+  /** Name of the metadata */
+  name: string;
+  /** The value of the metadata */
+  content: string;
+  /** The originating subgraph name */
+  source: string;
+};

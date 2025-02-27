@@ -1,6 +1,16 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -14,9 +24,10 @@ import {
   RegisteredRouter,
   RoutePaths,
   ToPathOption,
+  useLocation,
   useRouter,
 } from '@tanstack/react-router';
-import { useArgumentListToggle, usePeriodSelector } from './provider';
+import { useArgumentListToggle, usePeriodSelector, useSchemaExplorerContext } from './provider';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -131,6 +142,7 @@ export function FieldByNameFilter() {
       onChange={e => {
         void router.navigate({
           search: {
+            ...router.latestLocation.search,
             search: e.target.value === '' ? undefined : e.target.value,
           },
         });
@@ -221,6 +233,7 @@ export function SchemaVariantFilter(props: {
   targetSlug: string;
   variant: 'all' | 'unused' | 'deprecated';
 }) {
+  const { search } = useLocation();
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
@@ -241,6 +254,7 @@ export function SchemaVariantFilter(props: {
                         projectSlug: props.projectSlug,
                         targetSlug: props.targetSlug,
                       }}
+                      search={search}
                     >
                       {variant.label}
                     </Link>
@@ -253,5 +267,74 @@ export function SchemaVariantFilter(props: {
         </TabsList>
       </Tabs>
     </TooltipProvider>
+  );
+}
+
+function preventTheDefault(e: { preventDefault(): void }) {
+  e.preventDefault();
+}
+
+export function MetadataFilter(props: { options: Array<{ name: string; values: string[] }> }) {
+  const {
+    setMetadataFilter,
+    unsetMetadataFilter,
+    hasMetadataFilter,
+    bulkSetMetadataFilter,
+    clearMetadataFilter,
+  } = useSchemaExplorerContext();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="data-[state=open]:bg-muted">
+          <FilterIcon className="size-4" />
+          &nbsp;Metadata
+          <span className="sr-only">Open menu to filter by metadata.</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
+      >
+        {props.options.map(({ name, values }, i) => (
+          <React.Fragment key={name}>
+            {i > 0 ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuGroup
+              className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
+              onClick={() => {
+                const isChecked = !values.every(value => hasMetadataFilter(name, value));
+                if (isChecked) {
+                  bulkSetMetadataFilter([props.options[i]]);
+                } else {
+                  clearMetadataFilter(name);
+                }
+              }}
+            >
+              {name}
+            </DropdownMenuGroup>
+            {values.map(v => {
+              const id = `${name}:${v}`;
+              return (
+                <DropdownMenuCheckboxItem
+                  onSelect={preventTheDefault}
+                  key={id}
+                  className="w-full"
+                  checked={hasMetadataFilter(name, v)}
+                  onCheckedChange={isChecked => {
+                    if (isChecked) {
+                      setMetadataFilter(name, v);
+                    } else {
+                      unsetMetadataFilter(name, v);
+                    }
+                  }}
+                >
+                  {v}
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

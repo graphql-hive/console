@@ -6,6 +6,7 @@ import {
   ArgumentVisibilityFilter,
   DateRangeFilter,
   FieldByNameFilter,
+  MetadataFilter,
   SchemaVariantFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
@@ -127,6 +128,10 @@ const TargetExplorerPageQuery = graphql(`
         id
         valid
         explorer(usage: { period: $period }) {
+          metadataAttributes {
+            name
+            values
+          }
           ...ExplorerPage_SchemaExplorerFragment
         }
       }
@@ -216,6 +221,9 @@ function ExplorerPageContent(props: {
                 targetSlug={props.targetSlug}
                 variant="all"
               />
+              {latestValidSchemaVersion?.explorer?.metadataAttributes ? (
+                <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
+              ) : null}
             </>
           )}
         </div>

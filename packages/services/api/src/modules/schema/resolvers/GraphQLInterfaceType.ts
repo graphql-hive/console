@@ -14,7 +14,10 @@ export const GraphQLInterfaceType: GraphQlInterfaceTypeResolvers = {
       },
       usage: t.usage,
       supergraph: t.supergraph
-        ? { ownedByServiceNames: t.supergraph.getFieldOwnedByServices(f.name) }
+        ? {
+            schemaMetadata: t.supergraph.getFieldMetadata(f.name),
+            ownedByServiceNames: t.supergraph.getFieldOwnedByServices(f.name),
+          }
         : null,
     })),
   interfaces: t => t.entity.interfaces,

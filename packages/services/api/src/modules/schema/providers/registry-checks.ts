@@ -300,6 +300,8 @@ export class RegistryChecks {
         supergraph: result.supergraph,
         tags: result.tags ?? null,
         contracts: result.contracts?.map(mapContract) ?? null,
+        schemaMetadata: result.schemaMetadata ?? null,
+        metadataAttributes: result.metadataAttributes ?? null,
       },
     } satisfies CheckResult;
   }
