@@ -69,7 +69,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
               if (isLeftSideInView && isRightSideInView) return;
 
               scrollviewRef.current.scrollTo({
-                left: card.offsetLeft,
+                left: card.offsetLeft, // this needs improvement for 696px breakpoint
                 behavior: 'smooth',
               });
             }
@@ -79,7 +79,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
         <div
           ref={scrollviewRef}
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="nextra-scrollbar -mx-2 -mb-6 flex snap-x snap-proximity flex-col items-stretch gap-6 overflow-auto px-2 py-6 *:snap-center sm:flex-row sm:*:min-w-[380px] lg:mt-6"
+          className="nextra-scrollbar -mx-4 -mb-6 flex snap-x snap-proximity flex-col items-stretch gap-6 overflow-auto px-4 py-6 *:snap-center sm:flex-row sm:*:min-w-[380px] lg:mt-6"
         >
           <PlanCard
             data-plan="Hobby"
