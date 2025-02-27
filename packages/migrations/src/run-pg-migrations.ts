@@ -159,6 +159,5 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.01.20T00-00-00.legacy-registry-model-removal'),
       await import('./actions/2025.01.30T00-00-00.granular-member-role-permissions'),
       await import('./actions/2025.02.20T00-00-00.organization-access-tokens'),
-      await import('./actions/2025.02.27T00-00-00.improve-version-index-3'),
     ],
   });
