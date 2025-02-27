@@ -443,7 +443,7 @@ export async function main() {
         connectionUri: env.supertokens.connectionURI,
         apiKey: env.supertokens.apiKey,
       },
-      isProduction: env.environment === 'prod',
+      isProduction: env.environment !== 'development',
       release: env.release,
       hiveConfig: env.hive,
       hivePersistedDocumentsConfig: env.hivePersistedDocuments,
