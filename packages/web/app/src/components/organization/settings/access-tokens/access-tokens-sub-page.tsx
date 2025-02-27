@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { LoaderCircleIcon } from 'lucide-react';
-import { useClient, useQuery } from 'urql';
+import { useQuery } from 'urql';
 import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
-import * as Table from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
-import { FragmentType, graphql, useFragment } from '@/gql';
+import { graphql } from '@/gql';
+import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
 
 type AccessTokensSubPageProps = {
@@ -129,115 +127,10 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
           <AccessTokensTable
             accessTokens={query.data.organization.accessTokens}
             organizationSlug={props.organizationSlug}
+            refetch={refetchQuery}
           />
         )}
       </div>
     </SubPageLayout>
   );
 }
-
-const AccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
-  fragment AccessTokensTable_OrganizationAccessTokenConnectionFragment on OrganizationAccessTokenConnection {
-    edges {
-      cursor
-      node {
-        id
-        title
-        firstCharacters
-        createdAt
-      }
-    }
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-  }
-`);
-
-const AccessTokensTable_MoreAccessTokensQuery = graphql(`
-  query AccessTokensTable_MoreAccessTokensQuery($organizationSlug: String!, $after: String) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      accessTokens(first: 10, after: $after) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
-        pageInfo {
-          endCursor
-        }
-      }
-    }
-  }
-`);
-
-function AccessTokensTable(props: {
-  organizationSlug: string;
-  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
-}) {
-  const accessTokens = useFragment(
-    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
-    props.accessTokens,
-  );
-
-  const client = useClient();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  if (accessTokens.edges.length === 0) {
-    return null;
-  }
-
-  return (
-    <Table.Table>
-      <Table.TableCaption>
-        <Button
-          size="sm"
-          variant="outline"
-          className="ml-auto mr-0 flex"
-          disabled={!accessTokens?.pageInfo?.hasNextPage || isLoadingMore}
-          onClick={() => {
-            if (accessTokens?.pageInfo?.endCursor && accessTokens?.pageInfo?.hasNextPage) {
-              setIsLoadingMore(true);
-              void client
-                .query(AccessTokensTable_MoreAccessTokensQuery, {
-                  organizationSlug: props.organizationSlug,
-                  after: accessTokens.pageInfo?.endCursor,
-                })
-                .toPromise()
-                .finally(() => {
-                  setIsLoadingMore(false);
-                });
-            }
-          }}
-        >
-          {isLoadingMore ? (
-            <>
-              <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
-            </>
-          ) : (
-            'Load more'
-          )}
-        </Button>
-      </Table.TableCaption>
-      <Table.TableHeader>
-        <Table.TableRow>
-          <Table.TableHead>Title</Table.TableHead>
-          <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
-          <Table.TableHead className="text-right">Created At</Table.TableHead>
-        </Table.TableRow>
-      </Table.TableHeader>
-      <Table.TableBody>
-        {accessTokens.edges.map(edge => (
-          <Table.TableRow>
-            <Table.TableCell className="font-medium">{edge.node.title}</Table.TableCell>
-            <Table.TableCell className="font-mono">
-              {edge.node.firstCharacters + filler}
-            </Table.TableCell>
-            <Table.TableCell className="text-right">
-              created <TimeAgo date={edge.node.createdAt} />
-            </Table.TableCell>
-          </Table.TableRow>
-        ))}
-      </Table.TableBody>
-    </Table.Table>
-  );
-}
-
-const filler = new Array(20).fill('•').join('');
