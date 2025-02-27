@@ -112,6 +112,7 @@ export function PlanCard({
         // Clean up any inline styles if we're not on mobile
         ul.style.height = '';
         ul.style.overflow = '';
+        ul.style.opacity = '';
         setTransitioning(false);
       }
     });
@@ -202,7 +203,8 @@ export function PlanCard({
 
           <ul
             className={cn(
-              'text-green-800 sm:mt-6 sm:block',
+              // !important here is not super elegant, but it's cheaper than installing an animation library
+              'text-green-800 sm:mt-6 sm:block sm:!h-auto sm:!opacity-100',
               'max-sm:transition-none', // Prevent any transitions on first load
               collapsed ? 'max-sm:h-0 max-sm:overflow-hidden max-sm:opacity-0' : '',
             )}
