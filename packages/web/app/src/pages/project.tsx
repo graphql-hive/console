@@ -8,6 +8,7 @@ import { useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -16,13 +17,12 @@ import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Card } from '@/components/v2/card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { cn, pluralize } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useParams, useRouter } from '@tanstack/react-router';
 
 const TargetCard_TargetFragment = graphql(`
   fragment TargetCard_TargetFragment on Target {
@@ -37,8 +37,6 @@ const TargetCard = (props: {
   requestsOverTime: { date: string; value: number }[] | null;
   schemaVersionsCount: number | null;
   days: number;
-  organizationSlug: string;
-  projectSlug: string;
 }): ReactElement => {
   const target = useFragment(TargetCard_TargetFragment, props.target);
   const { highestNumberOfRequests } = props;
@@ -61,146 +59,155 @@ const TargetCard = (props: {
   const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
-  return (
-    <Card
-      asChild
-      className="h-full self-start bg-gray-900/50 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50"
-    >
-      <Link
-        to="/$organizationSlug/$projectSlug/$targetSlug"
-        params={{
-          organizationSlug: props.organizationSlug ?? 'unknown-yet',
-          projectSlug: props.projectSlug ?? 'unknown-yet',
-          targetSlug: target?.slug ?? 'unknown-yet',
-        }}
-      >
-        <TooltipProvider>
-          <div className="flex items-start gap-x-2">
-            <div className="grow">
-              <div>
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 90 }}
-                      option={{
-                        animation: !!target,
-                        color: ['#f4b740'],
-                        grid: {
-                          left: 0,
-                          top: 10,
-                          right: 0,
-                          bottom: 10,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                          axisPointer: {
-                            label: {
-                              formatter({ value }: { value: number }) {
-                                return new Date(value).toDateString();
-                              },
-                            },
+  const children = (
+    <TooltipProvider>
+      <div className="flex items-start gap-x-2">
+        <div className="grow">
+          <div>
+            <AutoSizer disableHeight>
+              {size => (
+                <ReactECharts
+                  style={{ width: size.width, height: 90 }}
+                  option={{
+                    animation: !!target,
+                    color: ['#f4b740'],
+                    grid: {
+                      left: 0,
+                      top: 10,
+                      right: 0,
+                      bottom: 10,
+                    },
+                    tooltip: {
+                      trigger: 'axis',
+                      axisPointer: {
+                        label: {
+                          formatter({ value }: { value: number }) {
+                            return new Date(value).toDateString();
                           },
                         },
-                        xAxis: [
-                          {
-                            show: false,
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            show: false,
-                            type: 'value',
-                            min: 0,
-                            max: highestNumberOfRequests,
-                          },
-                        ],
-                        series: [
-                          {
-                            name: 'Requests',
-                            type: 'line',
-                            smooth: false,
-                            lineStyle: {
-                              width: 2,
+                      },
+                    },
+                    xAxis: [
+                      {
+                        show: false,
+                        type: 'time',
+                        boundaryGap: false,
+                      },
+                    ],
+                    yAxis: [
+                      {
+                        show: false,
+                        type: 'value',
+                        min: 0,
+                        max: highestNumberOfRequests,
+                      },
+                    ],
+                    series: [
+                      {
+                        name: 'Requests',
+                        type: 'line',
+                        smooth: false,
+                        lineStyle: {
+                          width: 2,
+                        },
+                        showSymbol: false,
+                        areaStyle: {
+                          opacity: 0.8,
+                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {
+                              offset: 0,
+                              color: 'rgba(244, 184, 64, 0.20)',
                             },
-                            showSymbol: false,
-                            areaStyle: {
-                              opacity: 0.8,
-                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                {
-                                  offset: 0,
-                                  color: 'rgba(244, 184, 64, 0.20)',
-                                },
-                                {
-                                  offset: 1,
-                                  color: 'rgba(244, 184, 64, 0)',
-                                },
-                              ]),
+                            {
+                              offset: 1,
+                              color: 'rgba(244, 184, 64, 0)',
                             },
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            data: requests,
-                          },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </div>
-              <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
-                <div>
-                  {target ? (
-                    <h4 className="line-clamp-2 text-lg font-bold">{target.slug}</h4>
-                  ) : (
-                    <div className="h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
-                  )}
-                </div>
-                <div className="flex flex-col gap-y-2 py-1">
-                  {target ? (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="size-4 text-gray-500" />
-                            <div className="text-xs">
-                              {requestsInDateRange}{' '}
-                              {pluralize(totalNumberOfRequests, 'request', 'requests')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of GraphQL requests in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <History className="size-4 text-gray-500" />
-                            <div className="text-xs">
-                              {schemaVersionsInDateRange}{' '}
-                              {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of schemas pushed to this project in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <>
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                    </>
-                  )}
-                </div>
-              </div>
+                          ]),
+                        },
+                        emphasis: {
+                          focus: 'series',
+                        },
+                        data: requests,
+                      },
+                    ],
+                  }}
+                />
+              )}
+            </AutoSizer>
+          </div>
+          <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
+            <div>
+              {target ? (
+                <h4 className="line-clamp-2 text-lg font-bold">{target.slug}</h4>
+              ) : (
+                <div className="h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
+              )}
+            </div>
+            <div className="flex flex-col gap-y-2 py-1">
+              {target ? (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="flex flex-row items-center gap-x-2">
+                        <Globe className="size-4 text-gray-500" />
+                        <div className="text-xs">
+                          {requestsInDateRange}{' '}
+                          {pluralize(totalNumberOfRequests, 'request', 'requests')}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Number of GraphQL requests in the last {props.days} days.
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="flex flex-row items-center gap-x-2">
+                        <History className="size-4 text-gray-500" />
+                        <div className="text-xs">
+                          {schemaVersionsInDateRange}{' '}
+                          {pluralize(totalNumberOfVersions, 'commit', 'commits')}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Number of schemas pushed to this project in the last {props.days} days.
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              ) : (
+                <>
+                  <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                  <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                </>
+              )}
             </div>
           </div>
-        </TooltipProvider>
-      </Link>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+
+  const { organizationSlug, projectSlug } = useParams({
+    from: '/authenticated/$organizationSlug/$projectSlug',
+  });
+
+  return (
+    <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
+      {target ? (
+        <Link
+          to="/$organizationSlug/$projectSlug/$targetSlug"
+          params={{
+            organizationSlug,
+            projectSlug,
+            targetSlug: target.slug,
+          }}
+        >
+          {children}
+        </Link>
+      ) : (
+        children
+      )}
     </Card>
   );
 };
@@ -428,26 +435,20 @@ const ProjectsPageContent = (
                 highestNumberOfRequests={highestNumberOfRequests}
                 requestsOverTime={target.requestsOverTime}
                 schemaVersionsCount={target.schemaVersionsCount}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
               />
             ))
           )
         ) : (
-          <>
-            {Array.from({ length: 4 }).map((_, index) => (
-              <TargetCard
-                key={index}
-                target={null}
-                days={days}
-                highestNumberOfRequests={highestNumberOfRequests}
-                requestsOverTime={null}
-                schemaVersionsCount={null}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-              />
-            ))}
-          </>
+          Array.from({ length: 4 }).map((_, index) => (
+            <TargetCard
+              key={index}
+              target={null}
+              days={days}
+              highestNumberOfRequests={highestNumberOfRequests}
+              requestsOverTime={null}
+              schemaVersionsCount={null}
+            />
+          ))
         )}
       </div>
     </div>

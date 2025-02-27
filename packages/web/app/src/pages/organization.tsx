@@ -23,7 +23,7 @@ import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
 import { UTCDate } from '@date-fns/utc';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useParams, useRouter } from '@tanstack/react-router';
 
 export const OrganizationIndexRouteSearch = z.object({
   search: z.string().optional(),
@@ -49,7 +49,6 @@ const projectTypeFullNames = {
 
 const ProjectCard = (props: {
   project: FragmentType<typeof ProjectCard_ProjectFragment> | null;
-  cleanOrganizationId: string | null;
   highestNumberOfRequests: number;
   requestsOverTime: { date: string; value: number }[] | null;
   schemaVersionsCount: number | null;
@@ -79,146 +78,156 @@ const ProjectCard = (props: {
   const requestsInDateRange = useFormattedNumber(totalNumberOfRequests);
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
-  return (
-    <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
-      <Link
-        to="/$organizationSlug/$projectSlug"
-        params={{
-          organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
-          projectSlug: project?.slug ?? 'unknown-yet',
-        }}
-      >
-        <TooltipProvider>
-          <div className="flex items-start gap-x-2">
-            <div className="grow">
+  const children = (
+    <TooltipProvider>
+      <div className="flex items-start gap-x-2">
+        <div className="grow">
+          <div>
+            <AutoSizer disableHeight>
+              {size => (
+                <ReactECharts
+                  style={{ width: size.width, height: 90 }}
+                  option={{
+                    animation: !!project,
+                    color: ['#f4b740'],
+                    grid: {
+                      left: 0,
+                      top: 10,
+                      right: 0,
+                      bottom: 10,
+                    },
+                    tooltip: {
+                      trigger: 'axis',
+                      axisPointer: {
+                        label: {
+                          formatter({ value }: { value: number }) {
+                            return new Date(value).toDateString();
+                          },
+                        },
+                      },
+                    },
+                    xAxis: [
+                      {
+                        show: false,
+                        type: 'time',
+                        boundaryGap: false,
+                      },
+                    ],
+                    yAxis: [
+                      {
+                        show: false,
+                        type: 'value',
+                        min: 0,
+                        max: highestNumberOfRequests,
+                      },
+                    ],
+                    series: [
+                      {
+                        name: 'Requests',
+                        type: 'line',
+                        smooth: false,
+                        lineStyle: {
+                          width: 2,
+                        },
+                        showSymbol: false,
+                        areaStyle: {
+                          opacity: 0.8,
+                          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            {
+                              offset: 0,
+                              color: 'rgba(244, 184, 64, 0.20)',
+                            },
+                            {
+                              offset: 1,
+                              color: 'rgba(244, 184, 64, 0)',
+                            },
+                          ]),
+                        },
+                        emphasis: {
+                          focus: 'series',
+                        },
+                        data: requests,
+                      },
+                    ],
+                  }}
+                />
+              )}
+            </AutoSizer>
+          </div>
+          <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
+            {project ? (
               <div>
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 90 }}
-                      option={{
-                        animation: !!project,
-                        color: ['#f4b740'],
-                        grid: {
-                          left: 0,
-                          top: 10,
-                          right: 0,
-                          bottom: 10,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                          axisPointer: {
-                            label: {
-                              formatter({ value }: { value: number }) {
-                                return new Date(value).toDateString();
-                              },
-                            },
-                          },
-                        },
-                        xAxis: [
-                          {
-                            show: false,
-                            type: 'time',
-                            boundaryGap: false,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            show: false,
-                            type: 'value',
-                            min: 0,
-                            max: highestNumberOfRequests,
-                          },
-                        ],
-                        series: [
-                          {
-                            name: 'Requests',
-                            type: 'line',
-                            smooth: false,
-                            lineStyle: {
-                              width: 2,
-                            },
-                            showSymbol: false,
-                            areaStyle: {
-                              opacity: 0.8,
-                              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                {
-                                  offset: 0,
-                                  color: 'rgba(244, 184, 64, 0.20)',
-                                },
-                                {
-                                  offset: 1,
-                                  color: 'rgba(244, 184, 64, 0)',
-                                },
-                              ]),
-                            },
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            data: requests,
-                          },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
+                <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
+                <p className="text-xs text-gray-300">{projectTypeFullNames[project.type]}</p>
               </div>
-              <div className="flex flex-row items-center justify-between gap-y-3 px-4 pt-4">
-                {project ? (
-                  <div>
-                    <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-xs text-gray-300">{projectTypeFullNames[project.type]}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="mb-4 h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
-                    <div className="h-2 w-24 animate-pulse rounded-full bg-gray-800" />
-                  </div>
-                )}
-                <div className="flex flex-col gap-y-2 py-1">
-                  {project ? (
-                    <>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="size-4 text-gray-500" />
-                            <div className="text-xs">
-                              {requestsInDateRange}{' '}
-                              {pluralize(totalNumberOfRequests, 'request', 'requests')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of GraphQL requests in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <div className="flex flex-row items-center gap-x-2">
-                            <History className="size-4 text-gray-500" />
-                            <div className="text-xs">
-                              {schemaVersionsInDateRange}{' '}
-                              {pluralize(totalNumberOfVersions, 'commit', 'commits')}
-                            </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Number of schemas pushed to this project in the last {props.days} days.
-                        </TooltipContent>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <>
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                    </>
-                  )}
-                </div>
+            ) : (
+              <div>
+                <div className="mb-4 h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
+                <div className="h-2 w-24 animate-pulse rounded-full bg-gray-800" />
               </div>
+            )}
+            <div className="flex flex-col gap-y-2 py-1">
+              {project ? (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="flex flex-row items-center gap-x-2">
+                        <Globe className="size-4 text-gray-500" />
+                        <div className="text-xs">
+                          {requestsInDateRange}{' '}
+                          {pluralize(totalNumberOfRequests, 'request', 'requests')}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Number of GraphQL requests in the last {props.days} days.
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="flex flex-row items-center gap-x-2">
+                        <History className="size-4 text-gray-500" />
+                        <div className="text-xs">
+                          {schemaVersionsInDateRange}{' '}
+                          {pluralize(totalNumberOfVersions, 'commit', 'commits')}
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Number of schemas pushed to this project in the last {props.days} days.
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              ) : (
+                <>
+                  <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                  <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                </>
+              )}
             </div>
           </div>
-        </TooltipProvider>
-      </Link>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+
+  const { organizationSlug } = useParams({ from: '/authenticated/$organizationSlug' });
+
+  return (
+    <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
+      {project ? (
+        <Link
+          to="/$organizationSlug/$projectSlug"
+          params={{
+            organizationSlug,
+            projectSlug: project.slug,
+          }}
+        >
+          {children}
+        </Link>
+      ) : (
+        children
+      )}
     </Card>
   );
 };
@@ -461,7 +470,6 @@ function OrganizationPageContent(
                 {projects.map(project => (
                   <ProjectCard
                     key={project.id}
-                    cleanOrganizationId={currentOrganization.slug}
                     days={days}
                     highestNumberOfRequests={highestNumberOfRequests}
                     project={project}
@@ -479,7 +487,6 @@ function OrganizationPageContent(
                   days={days}
                   highestNumberOfRequests={highestNumberOfRequests}
                   project={null}
-                  cleanOrganizationId={null}
                   requestsOverTime={null}
                   schemaVersionsCount={null}
                 />
