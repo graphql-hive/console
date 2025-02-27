@@ -165,11 +165,7 @@ export function PlanCard({
       >
         <div
           /* scrollview for mobiles */
-          className={cn(
-            'p-4 sm:p-8',
-            !collapsed && 'nextra-scrollbar h-full max-sm:overflow-auto',
-            transitioning && 'pointer-events-none',
-          )}
+          className={cn('p-4 sm:p-8', !collapsed && 'nextra-scrollbar h-full max-sm:overflow-auto')}
         >
           <header className="relative text-green-800">
             <div className="flex flex-row items-center gap-2">
@@ -198,9 +194,9 @@ export function PlanCard({
 
           <ul
             className={cn(
-              'mt-6 text-green-800 sm:block',
+              'text-green-800 sm:mt-6 sm:block',
               'max-sm:transition-none', // Prevent any transitions on first load
-              collapsed ? 'max-sm:h-0 max-sm:overflow-hidden' : 'max-sm:pb-6',
+              collapsed ? 'max-sm:h-0 max-sm:overflow-hidden' : '',
             )}
             data-open={!collapsed}
           >
@@ -208,17 +204,18 @@ export function PlanCard({
           </ul>
 
           <button
-            onClick={() => collapse(false)}
-            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 pt-4 text-center font-bold transition duration-100 aria-expanded:border-t sm:mt-6 sm:hidden sm:border-t [[data-open='true']+&]:h-0 [[data-open='true']+&]:pt-0 [[data-open='true']+&]:opacity-0"
-            disabled={transitioning}
+            onClick={() => {
+              console.log('clicked');
+              collapse(false);
+            }}
+            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 pt-4 text-center font-bold transition duration-100 aria-expanded:border-t sm:mt-6 sm:hidden sm:border-t [[data-open='true']+&]:pointer-events-none [[data-open='true']+&]:h-0 [[data-open='true']+&]:pt-0 [[data-open='true']+&]:opacity-0"
           >
             Show key features
             <ChevronDownIcon className="size-6" />
           </button>
           <button
             onClick={() => collapse(true)}
-            className="border-beige-200 text-green-1000 flex w-full items-center justify-center gap-2 border-t pt-4 text-center font-bold opacity-0 transition duration-100 sm:mt-6 sm:hidden sm:border-t [[data-open='false']~&]:h-0 [[data-open='false']~&]:pt-0 [[data-open='true']~&]:opacity-100 [[data-open='true']~&]:delay-500"
-            disabled={transitioning}
+            className="border-beige-200 text-green-1000 pointer-events-none flex w-full items-center justify-center gap-2 border-t pt-4 text-center font-bold opacity-0 transition duration-100 sm:mt-6 sm:hidden sm:border-t [[data-open='false']~&]:h-0 [[data-open='false']~&]:pt-0 [[data-open='true']~&]:pointer-events-auto [[data-open='true']~&]:opacity-100 [[data-open='true']~&]:delay-700"
           >
             Hide key features
             <ChevronDownIcon className="size-6 rotate-180" />
