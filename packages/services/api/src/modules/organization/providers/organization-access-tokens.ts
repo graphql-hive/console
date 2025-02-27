@@ -305,6 +305,30 @@ export class OrganizationAccessTokens {
       },
     };
   }
+
+  async get(args: { organizationId: string; id: string }) {
+    await this.session.assertPerformAction({
+      organizationId: args.organizationId,
+      params: { organizationId: args.organizationId },
+      action: 'accessToken:modify',
+    });
+
+    const row = await this.pool.maybeOne<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+      SELECT
+        ${organizationAccessTokenFields}
+      FROM
+        "organization_access_tokens"
+      WHERE
+        "id" = ${args.id}
+        AND "organization_id" = ${args.organizationId}
+    `);
+
+    if (row === null) {
+      return null;
+    }
+
+    return OrganizationAccessTokenModel.parse(row);
+  }
 }
 
 /**
