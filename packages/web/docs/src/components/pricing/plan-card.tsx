@@ -67,6 +67,7 @@ export function PlanCard({
         ul.style.position = 'absolute';
         ul.style.visibility = 'hidden';
         ul.style.height = 'auto';
+        ul.style.opacity = newCollapsed ? '1' : '0';
 
         const targetHeight = ul.scrollHeight + (newCollapsed ? 0 : 24);
 
@@ -79,14 +80,15 @@ export function PlanCard({
         void ul.offsetHeight;
 
         cardRef.current.style.transition = 'transform 1s cubic-bezier(0.16, 1, 0.3, 1)';
-        ul.style.transition = 'height 1.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        ul.style.transition =
+          'height 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1)';
 
         requestAnimationFrame(() => {
           if (!cardRef.current || !ul) return;
 
           cardRef.current.style.transform = 'none';
           ul.style.height = newCollapsed ? '0px' : `${targetHeight}px`;
-
+          ul.style.opacity = newCollapsed ? '0' : '1';
           const onTransitionEnd = (e: TransitionEvent) => {
             if (e.target !== cardRef.current) return;
 
@@ -202,7 +204,7 @@ export function PlanCard({
             className={cn(
               'text-green-800 sm:mt-6 sm:block',
               'max-sm:transition-none', // Prevent any transitions on first load
-              collapsed ? 'max-sm:h-0 max-sm:overflow-hidden' : '',
+              collapsed ? 'max-sm:h-0 max-sm:overflow-hidden max-sm:opacity-0' : '',
             )}
             data-open={!collapsed}
           >
