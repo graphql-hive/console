@@ -2,4 +2,5 @@
 '@graphql-hive/apollo': patch
 ---
 
-fix: backport https://github.com/graphql-hive/console/pull/4958 also for the legacy v3 of apollo (related: https://github.com/graphql-hive/console/issues/4935)
+Prevent GraphQL document with selection set not satisfiable by the server to cause unhandled
+rejections for Apollo Server v3 (see https://github.com/graphql-hive/console/pull/4958 and https://github.com/graphql-hive/console/issues/4935).
