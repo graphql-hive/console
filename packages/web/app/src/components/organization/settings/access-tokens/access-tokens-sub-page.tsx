@@ -85,7 +85,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
               <CreateAccessTokenSheetContent
                 organization={query.data.organization}
                 onSuccess={() => {
-                  alert('YAY');
+                  setCreateAccessTokenState(CreateAccessTokenState.closed);
                 }}
               />
             </>
