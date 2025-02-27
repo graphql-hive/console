@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import * as AlertDialog from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as Form from '@/components/ui/form';
@@ -10,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { InlineCode } from '@/components/v2/inline-code';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,10 +37,10 @@ const DescriptionInputModel = z
   .string()
   .trim()
   .max(248, 'Maximum length is 248 characters.')
-  .nullable();
+  .optional();
 
 const CreateAccessTokenFormModel = z.object({
-  name: TitleInputModel,
+  title: TitleInputModel,
   description: DescriptionInputModel,
   selectedPermissions: z.array(z.string()),
   assignedResources: z.any(),
@@ -118,10 +121,10 @@ export function CreateAccessTokenSheetContent(
   );
 
   const form = useForm({
-    mode: 'all',
+    mode: 'onChange',
     resolver: zodResolver(CreateAccessTokenFormModel),
     defaultValues: {
-      name: '',
+      title: '',
       description: '',
       selectedPermissions: new Set<string>() as ReadonlySet<string>,
       assignedResources: {
@@ -144,6 +147,7 @@ export function CreateAccessTokenSheetContent(
     [resourceSelection],
   );
 
+  const { toast } = useToast();
   async function createAccessToken() {
     const formValues = form.getValues();
     const result = await createOrganizationAccessToken({
@@ -151,7 +155,7 @@ export function CreateAccessTokenSheetContent(
         organization: {
           byId: organization.id,
         },
-        title: formValues.name ?? '',
+        title: formValues.title ?? '',
         description: formValues.description ?? '',
         permissions: Array.from(formValues.selectedPermissions),
         resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(
@@ -163,10 +167,17 @@ export function CreateAccessTokenSheetContent(
     if (result.data?.createOrganizationAccessToken.error) {
       const { error } = result.data.createOrganizationAccessToken;
       if (error.details?.title) {
-        form.setError('name', { message: error.details.title });
+        form.setError('title', { message: error.details.title });
       }
       if (error.details?.description) {
         form.setError('description', { message: error.details.description });
+      }
+      if (error.message) {
+        toast({
+          variant: 'destructive',
+          title: 'An error occured',
+          description: error.message,
+        });
       }
       return;
     }
@@ -199,7 +210,7 @@ export function CreateAccessTokenSheetContent(
                         <div className="grid w-full max-w-sm items-center gap-1.5">
                           <Form.FormField
                             control={form.control}
-                            name="name"
+                            name="title"
                             render={({ field }) => (
                               <Form.FormItem>
                                 <Form.FormLabel>Name</Form.FormLabel>
@@ -300,29 +311,31 @@ export function CreateAccessTokenSheetContent(
                             permissionsGroups={organization.availableOrganizationPermissionGroups}
                             showOnlyAllowedPermissions
                             isExpanded
-                            additionalGroupContent={group =>
-                              resolvedResources === null ? (
-                                <>Granted on all ${permissionLevelToResourceName(group.level)}</>
-                              ) : (
-                                <div className="w-full space-y-1">
-                                  <p className="text-gray-400">
-                                    Granted on {permissionLevelToResourceName(group.level)}:
-                                  </p>
-                                  <ul className="flex list-none flex-wrap gap-1">
-                                    {resolvedResources[group.level].map(id => (
-                                      <li key={id}>
-                                        <Badge
-                                          className="px-3 py-1 font-mono text-xs text-gray-300"
-                                          variant="outline"
-                                        >
-                                          {id}
-                                        </Badge>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )
-                            }
+                            additionalGroupContent={group => (
+                              <div className="w-full space-y-1">
+                                {resolvedResources === null ? (
+                                  <>Granted on all {permissionLevelToResourceName(group.level)}</>
+                                ) : (
+                                  <>
+                                    <p className="text-gray-400">
+                                      Granted on {permissionLevelToResourceName(group.level)}:
+                                    </p>
+                                    <ul className="flex list-none flex-wrap gap-1">
+                                      {resolvedResources[group.level].map(id => (
+                                        <li key={id}>
+                                          <Badge
+                                            className="px-3 py-1 font-mono text-xs text-gray-300"
+                                            variant="outline"
+                                          >
+                                            {id}
+                                          </Badge>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           />
                         )}
                       </>
@@ -358,6 +371,33 @@ export function CreateAccessTokenSheetContent(
           </>
         )}
       </Stepper.StepperProvider>
+      {createOrganizationAccessTokenState.data?.createOrganizationAccessToken.ok && (
+        <AlertDialog.AlertDialog open>
+          <AlertDialog.AlertDialogContent>
+            <AlertDialog.AlertDialogHeader>
+              <AlertDialog.AlertDialogTitle>
+                The Access Token was created successfully.
+              </AlertDialog.AlertDialogTitle>
+              <AlertDialog.AlertDialogDescription>
+                Please store this access token securely. You will not be able to see it again.
+              </AlertDialog.AlertDialogDescription>
+            </AlertDialog.AlertDialogHeader>
+            <div>
+              <InlineCode
+                content={
+                  createOrganizationAccessTokenState.data.createOrganizationAccessToken.ok
+                    .privateAccessKey
+                }
+              />
+            </div>
+            <AlertDialog.AlertDialogFooter>
+              <AlertDialog.AlertDialogAction onClick={() => props.onSuccess()}>
+                Close
+              </AlertDialog.AlertDialogAction>
+            </AlertDialog.AlertDialogFooter>
+          </AlertDialog.AlertDialogContent>
+        </AlertDialog.AlertDialog>
+      )}
     </Sheet.SheetContent>
   );
 }
