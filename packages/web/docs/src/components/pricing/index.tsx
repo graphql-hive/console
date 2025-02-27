@@ -2,8 +2,27 @@
 
 import { HTMLAttributes, ReactElement, ReactNode, useRef, useState } from 'react';
 import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, cn, ContactButton, ContactTextLink, Heading } from '@theguild/components';
+import {
+  CallToAction,
+  cn,
+  ContactButton,
+  ContactTextLink,
+  Heading,
+  ShieldFlashIcon,
+  TextLink,
+} from '@theguild/components';
 import { CheckIcon } from '../check-icon';
+import {
+  AvailabilityIcon,
+  BillingIcon,
+  EnterpriseSupportIcon,
+  FeaturesIcon,
+  OperationsIcon,
+  RetentionIcon,
+  ShortCheckmarkIcon,
+  SSOIcon,
+  UsageIcon,
+} from './icons';
 import { PlanCard } from './plan-card';
 import { PricingSlider } from './pricing-slider';
 
@@ -18,7 +37,7 @@ function Tooltip({ content, children }: { content: string; children: ReactNode }
         className="bg-green-1000 z-20 rounded p-2 text-sm font-normal leading-4 text-white shadow"
       >
         {content}
-        <Arrow className="fill-green-1000" />
+        <Arrow className="fill-green-1000" width={9} />
       </Content>
     </Root>
   );
@@ -27,7 +46,7 @@ function Tooltip({ content, children }: { content: string; children: ReactNode }
 interface PlanFeaturesListItemProps extends HTMLAttributes<HTMLLIElement> {
   icon: ReactNode;
   category: string;
-  features: string[];
+  features: ReactNode[];
   tooltip?: string;
 }
 
@@ -40,13 +59,13 @@ function PlanFeaturesListItem({
 }: PlanFeaturesListItemProps) {
   const content = (
     <>
-      <strong className="flex items-center gap-2 font-bold text-green-800 [&>svg]:mr-3">
+      <strong className="flex h-6 items-center gap-2 font-bold [&>svg]:size-4 [&>svg]:text-green-600">
         {icon}
         {category}
       </strong>
-      {features.map(feature => (
-        <span key={feature}>
-          <CheckIcon className="mr-3" />
+      {features.map((feature, index) => (
+        <span key={index} className="mt-2 flex gap-2 leading-6">
+          <ShortCheckmarkIcon className="my-1 size-4 text-green-600" />
           {feature}
         </span>
       ))}
@@ -54,7 +73,7 @@ function PlanFeaturesListItem({
   );
   return (
     <li
-      className="border-beige-200 flex flex-col gap-2 py-2 text-green-800 [&:not(:last-child)]:border-b"
+      className="border-beige-200 flex flex-col px-1 py-2 text-sm text-[#4F6C6A] [&:not(:last-child)]:border-b"
       {...rest}
     >
       {tooltip ? <Tooltip content={tooltip}>{content}</Tooltip> : content}
@@ -146,24 +165,42 @@ export function Pricing({ className }: { className?: string }): ReactElement {
             }
             features={
               <>
-                {/* <PlanFeaturesListItem>
-                  <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                    <strong>7 days</strong> of usage data retention
-                  </Tooltip>
-                </PlanFeaturesListItem>
-                <li className="mb-2 mt-8">Includes:</li>
-                <PlanFeaturesListItem>
-                  Unlimited seats, projects and organizations
-                </PlanFeaturesListItem>
-                <PlanFeaturesListItem>Unlimited schema pushes & checks</PlanFeaturesListItem>
-                <PlanFeaturesListItem>
-                  Full access to all features (including&nbsp;SSO)
-                </PlanFeaturesListItem>
-                <PlanFeaturesListItem>
-                  <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                    1M operations per month
-                  </Tooltip>
-                </PlanFeaturesListItem> */}
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={['1M operations per month']}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['7 days']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Full access to everything!']}
+                />
+                <PlanFeaturesListItem
+                  icon={<UsageIcon />}
+                  category="Usage"
+                  features={[
+                    'Unlimited seats, projects and organizations',
+                    'GitHub issues and chat support',
+                    'Unlimited schema pushes and checks',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<ShieldFlashIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
               </>
             }
           />
@@ -186,17 +223,47 @@ export function Pricing({ className }: { className?: string }): ReactElement {
             }
             features={
               <>
-                <PlanFeaturesListItem>
-                  <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                    <strong>90 days</strong> of usage data retention
-                  </Tooltip>
-                </PlanFeaturesListItem>
-                <li className="mb-2 mt-8">Everything in Hobby, plus:</li>
-                <PlanFeaturesListItem>
-                  <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                    $10 per additional 1M operations
-                  </Tooltip>
-                </PlanFeaturesListItem>
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={[
+                    <span>
+                      1M operations per month
+                      <small className="block text-xs">Then $10 per million operations</small>
+                    </span>,
+                  ]}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['90 days']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Everything in Hobby, plus the ability to scale past 1M operations.']}
+                />
+                <PlanFeaturesListItem
+                  icon={<UsageIcon />}
+                  category="Usage"
+                  features={[
+                    'Unlimited seats, projects and organizations',
+                    'GitHub issues and chat support',
+                    'Unlimited schema pushes and checks',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<AvailabilityIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
               </>
             }
           />
@@ -219,28 +286,54 @@ export function Pricing({ className }: { className?: string }): ReactElement {
             }
             features={
               <>
-                <PlanFeaturesListItem>
-                  <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                    <strong>Custom</strong> data retention
-                  </Tooltip>
-                </PlanFeaturesListItem>
-                <li className="mb-2 mt-8">Everything in Pro, plus:</li>
-                <PlanFeaturesListItem>Dedicated Slack channel for support</PlanFeaturesListItem>
-                <PlanFeaturesListItem>White-glove onboarding</PlanFeaturesListItem>
-                <PlanFeaturesListItem>Bulk volume discount</PlanFeaturesListItem>
-                <PlanFeaturesListItem>
-                  <span>
-                    GraphQL / APIs support and guidance from{' '}
-                    <a
-                      href="https://the-guild.dev"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="hive-focus -mx-1 -my-0.5 rounded px-1 py-0.5 underline hover:text-blue-700"
-                    >
-                      The&nbsp;Guild
-                    </a>
-                  </span>
-                </PlanFeaturesListItem>
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={['Custom operations limit']}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['One year contract']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Everything in Pro, plus full enterprise support.']}
+                />
+                <PlanFeaturesListItem
+                  icon={<EnterpriseSupportIcon />}
+                  category="Enterprise support"
+                  features={[
+                    'Dedicated Slack channel for support',
+                    'White-glove onboarding',
+                    <span>
+                      GraphQL / APIs support and guidance from{' '}
+                      <TextLink href="https://theguild.dev">The&nbsp;Guild</TextLink>
+                    </span>,
+                    '365, 24/7 support, SLA tailored to your needs',
+                    'Custom Data Processing Agreements (DPA)',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<AvailabilityIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
+                <PlanFeaturesListItem
+                  icon={<BillingIcon />}
+                  category="Customized Billing"
+                  features={[
+                    'Flexible billing options tailored to enterprise procurement processes',
+                  ]}
+                />
               </>
             }
           />
