@@ -1,4 +1,4 @@
-import { resolveResourceAssignment } from './organization-members';
+import { resolveResourceAssignment } from './resource-assignments';
 
 describe('resolveResourceAssignment', () => {
   test('project wildcard: organization wide access to all resources', () => {

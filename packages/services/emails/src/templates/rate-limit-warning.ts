@@ -1,4 +1,4 @@
-import { mjml } from '../mjml';
+import { button, email, mjml, paragraph } from './components';
 
 const numberFormatter = new Intl.NumberFormat();
 
@@ -8,30 +8,18 @@ export function renderRateLimitWarningEmail(input: {
   currentUsage: number;
   subscriptionManagementLink: string;
 }) {
-  return mjml`
-    <mjml>
-      <mj-body>
-        <mj-section>
-          <mj-column>
-            <mj-image width="150px" src="https://graphql-hive.com/logo.png"></mj-image>
-            <mj-divider border-color="#ca8a04"></mj-divider>
-            <mj-text>
-              Your Hive organization <strong>${
-                input.organizationName
-              }</strong> is approaching its operations limit quota.
-              Used ${numberFormatter.format(input.currentUsage)} of ${numberFormatter.format(
-                input.limit,
-              )}.
-            </mj-text>.
-            <mj-text>
-              We recommend to increase the limit.
-            </mj-text>
-            <mj-button href="${mjml.raw(input.subscriptionManagementLink)}">
-              Manage your subscription
-            </mj-button>
-          </mj-column>
-        </mj-section>
-      </mj-body>
-    </mjml>
-  `.content;
+  return email({
+    title: 'Approaching Rate Limit',
+    body: mjml`
+      ${paragraph(
+        mjml`Your Hive organization <strong>${
+          input.organizationName
+        }</strong> is approaching its operations limit quota. Used ${numberFormatter.format(input.currentUsage)} of ${numberFormatter.format(
+          input.limit,
+        )}.`,
+      )}
+      ${paragraph(`We recommend to increase the limit.`)}
+      ${button({ url: input.subscriptionManagementLink, text: 'Manage your subscription' })}
+    `,
+  });
 }

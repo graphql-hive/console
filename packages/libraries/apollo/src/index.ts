@@ -18,15 +18,12 @@ export {
 } from '@graphql-hive/core';
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
-export function createSupergraphManager(
-  options: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions,
-) {
-  const pollIntervalInMs = options.pollIntervalInMs ?? 30_000;
-  const fetchSupergraph = createSupergraphSDLFetcher({
-    endpoint: options.endpoint,
-    key: options.key,
-    logger: options.logger,
-  });
+export function createSupergraphManager({
+  pollIntervalInMs,
+  ...superGraphFetcherOptions
+}: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions) {
+  pollIntervalInMs = pollIntervalInMs ?? 30_000;
+  const fetchSupergraph = createSupergraphSDLFetcher(superGraphFetcherOptions);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {
@@ -134,12 +131,29 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
         } as any;
       }
 
+      let didFailValidation = false;
+
       if (isLegacyV3) {
         return Promise.resolve({
           didResolveSource() {
             didResolveSource = true;
           },
+          async validationDidStart() {
+            return function onErrors(errors) {
+              if (errors === null || errors === void 0 ? void 0 : errors.length) {
+                didFailValidation = true;
+              }
+            };
+          },
           async willSendResponse(ctx) {
+            if (didFailValidation) {
+              void complete(args, {
+                action: 'abort',
+                reason: 'Validation failed',
+                logging: false,
+              });
+              return;
+            }
             if (!didResolveSource) {
               void complete(args, {
                 action: 'abort',
@@ -164,8 +178,6 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           },
         });
       }
-
-      let didFailValidation = false;
 
       return (async () => {
         let persistedDocumentError: GraphQLError | null = null;

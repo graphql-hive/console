@@ -19,6 +19,7 @@ import { createOrUpdateMemberRoleInputSchema } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
+import { ResourceAssignments } from './resource-assignments';
 
 /**
  * Responsible for auth checks.
@@ -43,6 +44,7 @@ export class OrganizationManager {
     private emails: Emails,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
+    private resourceAssignments: ResourceAssignments,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -237,7 +239,7 @@ export class OrganizationManager {
 
   @cache((selector: OrganizationSelector) => selector.organizationId)
   async getInvitations(selector: OrganizationSelector) {
-    await this.session.assertPerformAction({
+    const canAccessInvitations = await this.session.canPerformAction({
       action: 'member:modify',
       organizationId: selector.organizationId,
       params: {
@@ -245,7 +247,11 @@ export class OrganizationManager {
       },
     });
 
-    return this.storage.getOrganizationInvitations(selector);
+    if (!canAccessInvitations) {
+      return null;
+    }
+
+    return await this.storage.getOrganizationInvitations(selector);
   }
 
   async getOrganizationOwner(selector: OrganizationSelector) {
@@ -962,8 +968,8 @@ export class OrganizationManager {
     }
 
     const resourceAssignmentGroup =
-      await this.organizationMembers.transformGraphQLMemberResourceAssignmentInputToResourceAssignmentGroup(
-        organization,
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organization.id,
         input.resources,
       );
 

@@ -240,6 +240,11 @@ type SchemaPublishSuccess = {
     supergraph: string | null;
     fullSchemaSdl: string | null;
     tags: null | Array<string>;
+    schemaMetadata: null | Record<
+      string,
+      Array<{ name: string; content: string; source: string | null }>
+    >;
+    metadataAttributes: null | Record<string, string[]>;
     contracts: null | Array<ContractResult>;
   };
 };
@@ -286,6 +291,11 @@ export type SchemaDeleteSuccess = {
     coordinatesDiff: SchemaCoordinatesDiffResult | null;
     supergraph: string | null;
     tags: null | Array<string>;
+    schemaMetadata: null | Record<
+      string,
+      Array<{ name: string; content: string; source: string | null }>
+    >;
+    metadataAttributes: null | Record<string, string[]>;
     contracts: null | Array<ContractResult>;
   } & (
     | {

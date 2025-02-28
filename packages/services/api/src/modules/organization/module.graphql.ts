@@ -35,6 +35,77 @@ export default gql`
     updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
     deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
     assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
+    createOrganizationAccessToken(
+      input: CreateOrganizationAccessTokenInput!
+    ): CreateOrganizationAccessTokenResult!
+    deleteOrganizationAccessToken(
+      input: DeleteOrganizationAccessTokenInput!
+    ): DeleteOrganizationAccessTokenResult!
+  }
+
+  input OrganizationReferenceInput @oneOf {
+    bySelector: OrganizationSelectorInput
+    byId: ID
+  }
+
+  input CreateOrganizationAccessTokenInput {
+    organization: OrganizationReferenceInput!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignmentInput!
+  }
+
+  type CreateOrganizationAccessTokenResult {
+    ok: CreateOrganizationAccessTokenResultOk
+    error: CreateOrganizationAccessTokenResultError
+  }
+
+  type CreateOrganizationAccessTokenResultOk {
+    createdOrganizationAccessToken: OrganizationAccessToken!
+    privateAccessKey: String!
+  }
+
+  type CreateOrganizationAccessTokenResultError implements Error {
+    message: String!
+    details: CreateOrganizationAccessTokenResultErrorDetails
+  }
+
+  type CreateOrganizationAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
+  type OrganizationAccessToken {
+    id: ID!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignment!
+    createdAt: DateTime!
+  }
+
+  input DeleteOrganizationAccessTokenInput {
+    organizationAccessTokenId: ID!
+  }
+
+  type DeleteOrganizationAccessTokenResult {
+    ok: DeleteOrganizationAccessTokenResultOk
+    error: DeleteOrganizationAccessTokenResultError
+  }
+
+  type DeleteOrganizationAccessTokenResultOk {
+    deletedOrganizationAccessTokenId: ID!
+  }
+
+  type DeleteOrganizationAccessTokenResultError implements Error {
+    message: String!
   }
 
   type UpdateOrganizationSlugResult {
@@ -244,6 +315,24 @@ export default gql`
     List of available permission groups that can be assigned to users.
     """
     availableMemberPermissionGroups: [PermissionGroup!]!
+    """
+    List of available permission groups that can be assigned to organization access tokens.
+    """
+    availableOrganizationPermissionGroups: [PermissionGroup!]!
+    """
+    Paginated organization access tokens.
+    """
+    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+  }
+
+  type OrganizationAccessTokenEdge {
+    node: OrganizationAccessToken!
+    cursor: String!
+  }
+
+  type OrganizationAccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [OrganizationAccessTokenEdge!]!
   }
 
   type OrganizationConnection {

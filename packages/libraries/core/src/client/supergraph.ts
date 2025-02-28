@@ -7,6 +7,7 @@ export interface SupergraphSDLFetcherOptions {
   endpoint: string;
   key: string;
   logger?: Logger;
+  fetchImplementation?: typeof fetch;
 }
 
 export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions) {
@@ -41,6 +42,7 @@ export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions)
           minTimeout: 1,
         },
         logger: options.logger,
+        fetchImplementation: options.fetchImplementation,
       })
       .then(async response => {
         if (response.ok) {
