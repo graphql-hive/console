@@ -28,7 +28,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { useToast } from '@/components/ui/use-toast';

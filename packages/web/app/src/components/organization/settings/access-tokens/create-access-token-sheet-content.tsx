@@ -31,7 +31,7 @@ import { permissionLevelToResourceName, resolveResources } from './shared-helper
 const TitleInputModel = z
   .string()
   .trim()
-  .regex(/^[ a-zA-Z0-9_-]+$/, `Can only contain letters, numbers, " ", '_', and '-'.`)
+  .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
   .min(2, 'Minimum length is 2 characters.')
   .max(100, 'Maximum length is 100 characters.');
 
@@ -90,6 +90,7 @@ const CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation = grap
 export function CreateAccessTokenSheetContent(
   props: CreateAccessTokenSheetContentProps,
 ): React.ReactNode {
+  // eslint-disable-next-line react/hook-use-state
   const [Stepper] = useState(() =>
     defineStepper(
       {
@@ -359,7 +360,7 @@ export function CreateAccessTokenSheetContent(
                   <Button
                     onClick={ev => {
                       if (stepper.current.id === 'step-1-general') {
-                        Promise.all([form.trigger('title'), form.trigger('description')]).then(
+                        void Promise.all([form.trigger('title'), form.trigger('description')]).then(
                           ([title, description]) => {
                             if (!title) {
                               shakeElement(ev);
@@ -377,7 +378,7 @@ export function CreateAccessTokenSheetContent(
                       }
 
                       if (stepper.current.id === 'step-2-permissions') {
-                        form.trigger('permissions').then(permissions => {
+                        void form.trigger('permissions').then(permissions => {
                           if (!permissions) {
                             shakeElement(ev);
                             return;

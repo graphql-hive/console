@@ -117,8 +117,8 @@ export function AccessTokensTable(props: AccessTokensTable) {
             </Table.TableCell>
             <Table.TableCell className="text-right align-middle">
               <DropDownMenu.DropdownMenu>
-                <DropDownMenu.DropdownMenuTrigger className="mr-o ml-auto block">
-                  <EllipsisIcon className="h-4 w-4" />
+                <DropDownMenu.DropdownMenuTrigger className="ml-auto block">
+                  <EllipsisIcon className="size-4" />
                 </DropDownMenu.DropdownMenuTrigger>
                 <DropDownMenu.DropdownMenuContent>
                   <DropDownMenu.DropdownMenuLabel>Options</DropDownMenu.DropdownMenuLabel>

@@ -117,11 +117,12 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
       return (
         <nav
           aria-label={ariaLabel}
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role
           role="tablist"
-          className={cn('stepper-navigation', className)}
+          className={className}
           {...props}
         >
-          <ol className={listVariants({ variant: variant })}>{children}</ol>
+          <ol className={listVariants({ variant })}>{children}</ol>
         </nav>
       );
     },
@@ -150,12 +151,12 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
         return (
           <li
             className={cn(
-              'stepper-step flex shrink-0 items-center gap-4 rounded-md transition-colors',
+              'flex shrink-0 items-center gap-4 rounded-md transition-colors',
               className,
             )}
           >
             <CircleStepIndicator currentStep={stepIndex + 1} totalSteps={steps.length} />
-            <div className="stepper-step-content flex flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-1">
               {title}
               {description}
             </div>
@@ -167,7 +168,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
         <>
           <li
             className={cn([
-              'stepper-step group peer relative flex items-center gap-2',
+              'group peer relative flex items-center gap-2',
               'data-[variant=vertical]:flex-row',
               'data-[label-orientation=vertical]:w-full',
               'data-[label-orientation=vertical]:flex-col',
@@ -183,10 +184,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               type="button"
               role="tab"
               tabIndex={dataState !== 'inactive' ? 0 : -1}
-              className={cn(
-                'stepper-step-indicator rounded-full',
-                clickable === false && 'cursor-default',
-              )}
+              className={cn('rounded-full', clickable === false && 'cursor-default')}
               variant={dataState !== 'inactive' ? 'default' : 'secondary'}
               size="icon"
               aria-controls={`step-panel-${props.of}`}
@@ -208,7 +206,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 disabled={props.disabled}
               />
             )}
-            <div className="stepper-step-content flex flex-col items-start">
+            <div className="flex flex-col items-start">
               {title}
               {description}
             </div>
@@ -248,11 +246,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
       const { tracking } = useStepperProvider();
 
       return (
-        <Comp
-          className={cn('stepper-step-panel', className)}
-          ref={node => scrollIntoStepperPanel(node, tracking)}
-          {...props}
-        >
+        <Comp className={className} ref={node => scrollIntoStepperPanel(node, tracking)} {...props}>
           {children}
         </Comp>
       );
@@ -260,7 +254,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
     StepperControls: ({ children, className, asChild, ...props }) => {
       const Comp = asChild ? Slot : 'div';
       return (
-        <Comp className={cn('stepper-controls flex justify-end gap-4', className)} {...props}>
+        <Comp className={cn('flex justify-end gap-4', className)} {...props}>
           {children}
         </Comp>
       );
@@ -281,7 +275,7 @@ const StepperTitle = ({
   const Comp = asChild ? Slot : 'h4';
 
   return (
-    <Comp className={cn('stepper-step-title text-base font-medium', className)} {...props}>
+    <Comp className={cn('text-base font-medium', className)} {...props}>
       {children}
     </Comp>
   );
@@ -300,10 +294,7 @@ const StepperDescription = ({
   const Comp = asChild ? Slot : 'p';
 
   return (
-    <Comp
-      className={cn('stepper-step-description text-muted-foreground text-sm', className)}
-      {...props}
-    >
+    <Comp className={cn('text-muted-foreground text-sm', className)} {...props}>
       {children}
     </Comp>
   );
@@ -360,7 +351,7 @@ const CircleStepIndicator = ({
       aria-valuemin={1}
       aria-valuemax={totalSteps}
       tabIndex={-1}
-      className="stepper-step-indicator relative inline-flex items-center justify-center"
+      className="relative inline-flex items-center justify-center"
     >
       <svg width={size} height={size}>
         <title>Step Indicator</title>
@@ -399,7 +390,7 @@ const CircleStepIndicator = ({
 
 //#region Styles
 
-const listVariants = cva('stepper-navigation-list flex gap-2', {
+const listVariants = cva('flex gap-2', {
   variants: {
     variant: {
       horizontal: 'flex-row items-center justify-between',
