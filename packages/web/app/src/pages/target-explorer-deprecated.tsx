@@ -259,7 +259,7 @@ function DeprecatedSchemaExplorer(props: {
             targetSlug={props.targetSlug}
             variant="deprecated"
           />
-          {latestValidSchemaVersion?.explorer?.metadataAttributes ? (
+          {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
             <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
           ) : null}
         </div>
