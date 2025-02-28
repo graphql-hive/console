@@ -19,6 +19,7 @@ const ResourceSelector_OrganizationFragment = graphql(`
         type
       }
     }
+    isAppDeploymentsEnabled
   }
 `);
 
@@ -121,6 +122,11 @@ export function resourceSlectionToGraphQLSchemaResourceAssignmentInput(
   };
 }
 
+const enum ServicesAppsState {
+  service,
+  apps,
+}
+
 export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
   selection: ResourceSelection;
@@ -133,6 +139,8 @@ export function ResourceSelector(props: {
       | { projectId: string; targetId?: undefined }
       | { projectId: string; targetId: string },
   );
+  // whether we show the service or apps in the last tab
+  const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
   const projectState = useMemo(() => {
     if (props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All) {
@@ -370,7 +378,8 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationProjectTarget.data?.organization?.project
+      !organizationProjectTarget.data?.organization?.project ||
+      serviceAppsState !== ServicesAppsState.service
     ) {
       return null;
     }
@@ -476,7 +485,116 @@ export function ResourceSelector(props: {
         );
       },
     };
-  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject, props.selection]);
+  }, [
+    targetState?.activeTarget,
+    breadcrumb,
+    projectState?.activeProject,
+    props.selection,
+    serviceAppsState,
+  ]);
+
+  const appsState = useMemo(() => {
+    if (
+      !projectState?.activeProject ||
+      !targetState?.activeTarget ||
+      !breadcrumb?.targetId ||
+      serviceAppsState !== ServicesAppsState.apps ||
+      !organization.isAppDeploymentsEnabled
+    ) {
+      return null;
+    }
+
+    const projectId = projectState.activeProject.projectSelection.projectId;
+    const targetId = targetState.activeTarget.targetSelection.targetId;
+
+    if (
+      targetState.activeTarget.targetSelection.services.mode ===
+      GraphQLSchema.ResourceAssignmentMode.All
+    ) {
+      return {
+        selection: '*' as const,
+        setGranular() {
+          props.onSelectionChange(
+            produce(props.selection, state => {
+              const project = state.projects?.find(project => project.projectId === projectId);
+              if (!project) return;
+              const target = project.targets.targets?.find(target => target.targetId === targetId);
+              if (!target) return;
+              target.appDeployments.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+            }),
+          );
+        },
+      };
+    }
+
+    const selectedApps: GraphQLSchema.AppDeploymentResourceAssignmentInput[] = [
+      ...(targetState.activeTarget.targetSelection.appDeployments.appDeployments ?? []),
+    ];
+    // TODO: populate this with service state
+    const notSelectedApps: Array<string> = [];
+
+    return {
+      selection: {
+        selected: selectedApps,
+        notSelected: notSelectedApps,
+      },
+      setAll() {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+
+            if (!target) return;
+            target.appDeployments.mode = GraphQLSchema.ResourceAssignmentMode.All;
+          }),
+        );
+      },
+      addApp(appName: string) {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+            if (
+              !target ||
+              target.appDeployments.appDeployments?.find(
+                appDeployment => appDeployment.appDeployment === appName,
+              )
+            ) {
+              return;
+            }
+
+            target.appDeployments.appDeployments?.push({
+              appDeployment: appName,
+            });
+          }),
+        );
+      },
+      removeApp(appName: string) {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+            if (!target) {
+              return;
+            }
+            target.appDeployments.appDeployments = target.appDeployments.appDeployments?.filter(
+              appDeployment => appDeployment.appDeployment !== appName,
+            );
+          }),
+        );
+      },
+    };
+  }, [
+    serviceAppsState,
+    projectState?.activeProject,
+    targetState?.activeTarget,
+    breadcrumb?.targetId,
+    props.selection,
+    props.onSelectionChange,
+  ]);
 
   return (
     <Tabs
@@ -547,7 +665,32 @@ export function ResourceSelector(props: {
                   )}
                 </div>
                 <div className="flex flex-1 items-baseline rounded-tr-sm border-x border-t border-transparent border-x-inherit border-t-inherit px-2 py-1">
-                  <span className="font-bold">Services</span>
+                  <span className="font-bold">
+                    {organization.isAppDeploymentsEnabled ? (
+                      <>
+                        <button
+                          className={cn(
+                            serviceAppsState === ServicesAppsState.service && 'text-orange-500',
+                          )}
+                          onClick={() => setServiceAppsState(ServicesAppsState.service)}
+                        >
+                          Services
+                        </button>{' '}
+                        /{' '}
+                        <button
+                          className={cn(
+                            serviceAppsState === ServicesAppsState.apps && 'text-orange-500',
+                          )}
+                          onClick={() => setServiceAppsState(ServicesAppsState.apps)}
+                        >
+                          Apps
+                        </button>
+                      </>
+                    ) : (
+                      <>Services</>
+                    )}
+                  </span>
+                  {/** Service All / Granular Toggle */}
                   {serviceState && serviceState !== 'none' && (
                     <div className="ml-auto text-xs">
                       <button
@@ -565,9 +708,28 @@ export function ResourceSelector(props: {
                       </button>
                     </div>
                   )}
+                  {/** Apps All / Granular Toggle */}
+                  {appsState && (
+                    <div className="ml-auto text-xs">
+                      <button
+                        className={cn(appsState.selection !== '*' && 'text-orange-500')}
+                        onClick={appsState.setGranular}
+                      >
+                        Select
+                      </button>
+                      {' / '}
+                      <button
+                        className={cn('mr-1', appsState.selection === '*' && 'text-orange-500')}
+                        onClick={appsState.setAll}
+                      >
+                        All
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-0 flex min-h-[250px] flex-wrap rounded-sm">
+                {/** Projects Content */}
                 <div className="flex flex-1 flex-col border pt-2">
                   <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
                     access granted
@@ -610,6 +772,7 @@ export function ResourceSelector(props: {
                   )}
                 </div>
 
+                {/** Targets Content */}
                 <div className="flex flex-1 flex-col border-y border-r pt-2">
                   {targetState === null ? (
                     <div className="text-muted-foreground px-2 text-sm">
@@ -679,79 +842,160 @@ export function ResourceSelector(props: {
                     </>
                   )}
                 </div>
-                <div className="flex flex-1 flex-col border-y border-r pt-2">
-                  {projectState.activeProject?.projectSelection.targets.mode ===
-                  GraphQLSchema.ResourceAssignmentMode.All ? (
-                    <div className="text-muted-foreground px-2 text-xs">
-                      Access to all services of projects targets granted.
-                    </div>
-                  ) : serviceState === null ? (
-                    <div className="text-muted-foreground px-2 text-xs">
-                      Select a target for adjusting the service access.
-                    </div>
-                  ) : (
-                    <>
-                      {serviceState === 'none' ? (
-                        <div className="text-muted-foreground text-xs">
-                          Project is monolithic and has no services.
-                        </div>
-                      ) : serviceState.selection === '*' ? (
-                        <div className="text-muted-foreground px-2 text-xs">
-                          Access to all services in target granted.
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
-                            access granted
+
+                {/** Services Content */}
+                {serviceAppsState === ServicesAppsState.service && (
+                  <div className="flex flex-1 flex-col border-y border-r pt-2">
+                    {projectState.activeProject?.projectSelection.targets.mode ===
+                    GraphQLSchema.ResourceAssignmentMode.All ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Access to all services of projects targets granted.
+                      </div>
+                    ) : serviceState === null ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Select a target for adjusting the service access.
+                      </div>
+                    ) : (
+                      <>
+                        {serviceState === 'none' ? (
+                          <div className="text-muted-foreground text-xs">
+                            Project is monolithic and has no services.
                           </div>
-                          {serviceState.selection.selected.length ? (
-                            serviceState.selection.selected.map(service => (
+                        ) : serviceState.selection === '*' ? (
+                          <div className="text-muted-foreground px-2 text-xs">
+                            Access to all services in target granted.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                              access granted
+                            </div>
+                            {serviceState.selection.selected.length ? (
+                              serviceState.selection.selected.map(service => (
+                                <RowItem
+                                  key={service.serviceName}
+                                  title={service.serviceName}
+                                  isActive={false}
+                                  onDelete={() => serviceState.removeService(service.serviceName)}
+                                />
+                              ))
+                            ) : (
+                              <div className="px-2 text-xs">None</div>
+                            )}
+                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                              Not selected
+                            </div>
+                            {serviceState.selection.notSelected.map(serviceName => (
                               <RowItem
-                                key={service.serviceName}
-                                title={service.serviceName}
+                                key={serviceName}
+                                title={serviceName}
                                 isActive={false}
-                                onDelete={() => serviceState.removeService(service.serviceName)}
+                                onClick={() => serviceState.addService(serviceName)}
                               />
-                            ))
-                          ) : (
-                            <div className="px-2 text-xs">None</div>
-                          )}
-                          <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
-                            Not selected
-                          </div>
-                          {serviceState.selection.notSelected.map(serviceName => (
-                            <RowItem
-                              key={serviceName}
-                              title={serviceName}
-                              isActive={false}
-                              onClick={() => serviceState.addService(serviceName)}
+                            ))}
+                            <input
+                              placeholder="Add service by name"
+                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                              name="serviceName"
+                              onKeyPress={ev => {
+                                if (ev.key !== 'Enter') {
+                                  return;
+                                }
+                                ev.preventDefault();
+                                const input: HTMLInputElement = ev.currentTarget;
+                                const serviceName = input.value.trim().toLowerCase();
+
+                                if (!serviceName) {
+                                  return;
+                                }
+
+                                serviceState.addService(serviceName);
+                                input.value = '';
+                              }}
                             />
-                          ))}
-                          <input
-                            placeholder="Add service by name"
-                            className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                            name="serviceName"
-                            onKeyPress={ev => {
-                              if (ev.key !== 'Enter') {
-                                return;
-                              }
-                              ev.preventDefault();
-                              const input: HTMLInputElement = ev.currentTarget;
-                              const serviceName = input.value.trim().toLowerCase();
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
-                              if (!serviceName) {
-                                return;
-                              }
+                {/** Apps Content */}
+                {serviceAppsState === ServicesAppsState.apps && (
+                  <div className="flex flex-1 flex-col border-y border-r pt-2">
+                    {projectState.activeProject?.projectSelection.targets.mode ===
+                    GraphQLSchema.ResourceAssignmentMode.All ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Access to all apps of projects targets granted.
+                      </div>
+                    ) : appsState === null ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Select a target for adjusting the apps access.
+                      </div>
+                    ) : (
+                      <>
+                        {serviceState === 'none' ? (
+                          <div className="text-muted-foreground text-xs">
+                            Project is monolithic and has no services.
+                          </div>
+                        ) : appsState.selection === '*' ? (
+                          <div className="text-muted-foreground px-2 text-xs">
+                            Access to all services in target granted.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                              access granted
+                            </div>
+                            {appsState.selection.selected.length ? (
+                              appsState.selection.selected.map(app => (
+                                <RowItem
+                                  key={app.appDeployment}
+                                  title={app.appDeployment}
+                                  isActive={false}
+                                  onDelete={() => appsState.removeApp(app.appDeployment)}
+                                />
+                              ))
+                            ) : (
+                              <div className="px-2 text-xs">None</div>
+                            )}
+                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                              Not selected
+                            </div>
+                            {appsState.selection.notSelected.map(serviceName => (
+                              <RowItem
+                                key={serviceName}
+                                title={serviceName}
+                                isActive={false}
+                                onClick={() => appsState.addApp(serviceName)}
+                              />
+                            ))}
+                            <input
+                              placeholder="Add app by name"
+                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                              name="appName"
+                              onKeyPress={ev => {
+                                if (ev.key !== 'Enter') {
+                                  return;
+                                }
+                                ev.preventDefault();
+                                const input: HTMLInputElement = ev.currentTarget;
+                                const appName = input.value.trim().toLowerCase();
 
-                              serviceState.addService(serviceName);
-                              input.value = '';
-                            }}
-                          />
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
+                                if (!appName) {
+                                  return;
+                                }
+
+                                appsState.addApp(appName);
+                                input.value = '';
+                              }}
+                            />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex h-5 items-center text-sm">
