@@ -1,5 +1,16 @@
 # @graphql-hive/apollo
 
+## 0.37.2
+
+### Patch Changes
+
+- [#6539](https://github.com/graphql-hive/console/pull/6539)
+  [`a9fc409`](https://github.com/graphql-hive/console/commit/a9fc40920b50d13b8725bb4b424fc3c24d76b7af)
+  Thanks [@tmair](https://github.com/tmair)! - Prevent GraphQL document with selection set not
+  satisfiable by the server to cause unhandled rejections for Apollo Server v3 (see
+  https://github.com/graphql-hive/console/pull/4958 and
+  https://github.com/graphql-hive/console/issues/4935).
+
 ## 0.37.1
 
 ### Patch Changes
