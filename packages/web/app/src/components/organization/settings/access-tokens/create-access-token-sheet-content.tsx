@@ -45,8 +45,7 @@ const DescriptionInputModel = z
 const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
   description: DescriptionInputModel,
-  selectedPermissions: z.array(z.string()),
-  assignedResources: z.any(),
+  permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
 });
 
 const CreateAccessTokenSheetContent_OrganizationFragment = graphql(`
@@ -119,16 +118,14 @@ export function CreateAccessTokenSheetContent(
     mode: GraphQLSchema.ResourceAssignmentMode.All,
     projects: [],
   }));
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<ReadonlySet<string>>(
-    () => new Set<string>(),
-  );
 
-  const form = useForm({
+  const form = useForm<z.TypeOf<typeof CreateAccessTokenFormModel>>({
     mode: 'onChange',
     resolver: zodResolver(CreateAccessTokenFormModel),
     defaultValues: {
       title: '',
       description: '',
+      permissions: [],
     },
   });
 
@@ -151,7 +148,7 @@ export function CreateAccessTokenSheetContent(
         },
         title: formValues.title ?? '',
         description: formValues.description ?? '',
-        permissions: Array.from(selectedPermissionIds),
+        permissions: formValues.permissions,
         resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection),
       },
     });
@@ -199,6 +196,7 @@ export function CreateAccessTokenSheetContent(
                   {stepper.switch({
                     'step-1-general': () => (
                       <>
+                        <Heading>General</Heading>
                         <div className="grid w-full max-w-sm items-center gap-1.5">
                           <Form.FormField
                             control={form.control}
@@ -239,25 +237,39 @@ export function CreateAccessTokenSheetContent(
                       </>
                     ),
                     'step-2-permissions': () => (
-                      <>
-                        <div className="grid w-full items-center gap-1.5">
-                          <Form.FormItem>
-                            <Form.FormLabel>Permissions</Form.FormLabel>
-                            <Form.FormControl>
-                              <PermissionSelector
-                                permissionGroups={
-                                  organization.availableOrganizationPermissionGroups
-                                }
-                                selectedPermissionIds={selectedPermissionIds}
-                                onSelectedPermissionsChange={selectedPermissionIds => {
-                                  setSelectedPermissionIds(new Set(selectedPermissionIds));
-                                }}
-                              />
-                            </Form.FormControl>
-                            <Form.FormMessage />
-                          </Form.FormItem>
-                        </div>
-                      </>
+                      <Form.FormField
+                        control={form.control}
+                        name="permissions"
+                        render={() => (
+                          <div className="grid w-full items-center gap-1.5">
+                            <Form.FormItem>
+                              <Form.FormLabel>
+                                <Heading>Permissions</Heading>
+                              </Form.FormLabel>
+                              <Form.FormControl>
+                                <PermissionSelector
+                                  permissionGroups={
+                                    organization.availableOrganizationPermissionGroups
+                                  }
+                                  selectedPermissionIds={new Set(form.getValues()['permissions'])}
+                                  onSelectedPermissionsChange={selectedPermissionIds => {
+                                    form.setValue(
+                                      'permissions',
+                                      Array.from(selectedPermissionIds),
+                                      {
+                                        shouldValidate: true,
+                                        shouldTouch: true,
+                                        shouldDirty: true,
+                                      },
+                                    );
+                                  }}
+                                />
+                              </Form.FormControl>
+                              <Form.FormMessage />
+                            </Form.FormItem>
+                          </div>
+                        )}
+                      />
                     ),
                     'step-3-resources': () => (
                       <>
@@ -278,16 +290,16 @@ export function CreateAccessTokenSheetContent(
                     ),
                     'step-4-confirmation': () => (
                       <>
-                        <Heading>Confirm and create access token</Heading>
+                        <Heading>Confirm and create Access Token</Heading>
                         <p className="text-muted-foreground text-sm">
                           Please please review the selected permissions and resources to ensure they
                           align with your intended access needs.
                         </p>
-                        {selectedPermissionIds.size === 0 ? (
+                        {form.getValues().permissions.length === 0 ? (
                           <p className="mt-3">No permissions are selected.</p>
                         ) : (
                           <SelectedPermissionOverview
-                            activePermissionIds={Array.from(selectedPermissionIds)}
+                            activePermissionIds={form.getValues().permissions}
                             permissionsGroups={organization.availableOrganizationPermissionGroups}
                             showOnlyAllowedPermissions
                             isExpanded
@@ -344,7 +356,44 @@ export function CreateAccessTokenSheetContent(
                       : 'Create Access Token'}
                   </Button>
                 ) : (
-                  <Button onClick={stepper.next}>Next</Button>
+                  <Button
+                    onClick={ev => {
+                      if (stepper.current.id === 'step-1-general') {
+                        Promise.all([form.trigger('title'), form.trigger('description')]).then(
+                          ([title, description]) => {
+                            if (!title) {
+                              shakeElement(ev);
+                              form.setFocus('title');
+                              return;
+                            }
+                            if (!description) {
+                              shakeElement(ev);
+                              form.setFocus('description');
+                              return;
+                            }
+                            stepper.next();
+                          },
+                        );
+                      }
+
+                      if (stepper.current.id === 'step-2-permissions') {
+                        form.trigger('permissions').then(permissions => {
+                          if (!permissions) {
+                            shakeElement(ev);
+                            return;
+                          }
+
+                          stepper.next();
+                        });
+                      }
+
+                      if (stepper.current.id === 'step-3-resources') {
+                        stepper.next();
+                      }
+                    }}
+                  >
+                    Next
+                  </Button>
                 )}
               </Stepper.StepperControls>
             </Sheet.SheetFooter>
@@ -408,5 +457,17 @@ function AcessTokenCreatedConfirmationDialogue(props: {
         </AlertDialog.AlertDialogFooter>
       </AlertDialog.AlertDialogContent>
     </AlertDialog.AlertDialog>
+  );
+}
+
+function shakeElement(ev: React.MouseEvent<HTMLElement>) {
+  const el = ev.target as HTMLElement;
+  el.classList.add('animate-shake');
+  el.addEventListener(
+    'animationend',
+    () => {
+      el.classList.remove('animate-shake');
+    },
+    { once: true },
   );
 }
