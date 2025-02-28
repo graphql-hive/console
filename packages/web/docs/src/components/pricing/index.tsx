@@ -1,7 +1,7 @@
 'use client';
 
 import { HTMLAttributes, ReactElement, ReactNode, useRef, useState } from 'react';
-import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
+import { Content, Root, Trigger } from '@radix-ui/react-tooltip';
 import {
   CallToAction,
   cn,
@@ -11,7 +11,6 @@ import {
   ShieldFlashIcon,
   TextLink,
 } from '@theguild/components';
-import { CheckIcon } from '../check-icon';
 import {
   AvailabilityIcon,
   BillingIcon,

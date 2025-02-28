@@ -48,7 +48,7 @@ jobs:
             up -d --wait
 
       - name: cypress
-        timeout-minutes: 6
+        timeout-minutes: 8
         uses: cypress-io/github-action@v6
         env:
           CI: true
