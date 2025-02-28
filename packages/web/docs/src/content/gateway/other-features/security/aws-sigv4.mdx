@@ -1,0 +1,103 @@
+---
+searchable: false
+---
+
+# AWS Signature Version 4 (SigV4)
+
+Hive Gateway allows you to sign subgraph requests with AWS Signature Version 4 (SigV4) for secure
+communication between the Gateway and the subgraphs.
+
+## How to use?
+
+You can enable AWS SigV4 signing by setting the `awsSigV4` option to `true` in the Gateway
+configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: true
+})
+```
+
+## Credentials
+
+By default, Hive Gateway will use the standard environment variables to get the AWS credentials. But
+you can also provide the credentials directly in the configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+  }
+})
+```
+
+## Service and region configuration
+
+By default, the plugin extracts the service and region from the URL of the subgraph. But you can
+also provide the service and region directly in the configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+    service: 'lambda',
+    region: 'us-east-1'
+  }
+})
+```
+
+## Subgraph-specific configuration
+
+You can also configure the SigV4 signing for specific subgraphs by setting the `awsSigV4` option in
+the subgraph configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  // Allowing SigV4 signing for only the 'products' subgraph
+  awsSigV4: subgraph => subgraph === 'products'
+})
+```
+
+or you can provide the credentials directly per subgraph.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  // Providing AWS SigV4 credentials for the 'products' and 'users' subgraphs separately
+  // And do not allow SigV4 signing for any other subgraph
+  awsSigV4(subgraph) {
+    if (subgraph === 'products') {
+      return {
+        accessKeyId: process.env.PRODUCTS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.PRODUCTS_AWS_SECRET_ACCESS_KEY,
+        region: process.env.PRODUCTS_AWS_REGION,
+        service: 'lambda',
+        region: 'eu-west-1'
+      }
+    }
+    if (subgraph === 'users') {
+      return {
+        accessKeyId: process.env.USERS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.USERS_AWS_SECRET_ACCESS_KEY,
+        region: process.env.USERS_AWS_REGION,
+        service: 's3',
+        region: 'us-east-1'
+      }
+    }
+    return false
+  }
+})
+```
