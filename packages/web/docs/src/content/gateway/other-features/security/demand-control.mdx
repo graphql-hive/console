@@ -1,0 +1,367 @@
+---
+searchable: false
+---
+
+import { Callout } from '@theguild/components'
+
+# Demand Control / Cost Limit
+
+Demand Control a.k.a. Cost Limit is a feature that allows you to limit the cost of operations that
+are executed in your gateway against subgraphs. This is useful to prevent abuse of your gateway by
+limiting the cost of operations that are executed.
+
+Consumers of your gateway can send operations that are too expensive to execute, which can lead to
+performance issues or even a denial of service attack. By setting a cost limit, you can prevent
+these operations from being executed.
+
+This feature allows you to customize cost limiting on both gateway and subgraph levels by using
+`@cost` and `@listSize` directives specified by IBM.
+[Learn more about the specification](https://ibm.github.io/graphql-specs/cost-spec.html)
+
+## How to use?
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  // All of the values below are the default values
+  // You don't need to set them if you are happy with the defaults
+  demandControl: {
+    /**
+     * If you want to enforce the cost limit, set the maximum allowed cost.
+     */
+    maxCost: 10,
+    /**
+     * The assumed maximum size of a list for fields that return lists.
+     */
+    listSize: 0,
+    /**
+     * Cost based on the operation type.
+     * By default, mutations have a cost of 10, queries and subscriptions have a cost of 0.
+     */
+    operationCost: operationType => (operationType === 'mutation' ? 10 : 0),
+    /**
+     * Cost based on the field.
+     * It is called for each field in the operation, and overrides the `@cost` directive.
+     */
+    fieldCost: fieldNode => (fieldNode.name.value === 'expensiveField' ? 10 : 0),
+    /**
+     * Cost based on the type.
+     * It is called for return types of fields in the operation, and overrides the `@cost` directive.
+     */
+    typeCost: type => (isCompositeType(type) ? 1 : 0),
+    /**
+     * Include extension values that provide useful information, such as the estimated cost of the operation.
+     */
+    includeExtensionMetadata: process.env.NODE_ENV === 'development'
+  }
+})
+```
+
+## Calculation of cost
+
+When a query is planned by the gateway,
+
+- For each operation, the `operationCost` function is called with the operation type. (By default
+  only mutations have a cost `10`)
+- For each field in the operation, the `fieldCost` function is called with the field node. (By
+  default fields have a cost of `0`)
+- For each type in the operation, the `typeCost` function is called with the type. (By default
+  composite types have a cost of `1`)
+- The cost of the operation is the sum of the costs of the fields in the operation.
+
+### Basic Example without any customizations
+
+The following query with default will have a cost of `4`:
+
+```graphql
+query BookQuery {
+  # Query operation has cost of `0`
+  movie(id: 1) {
+    # Field `movie` returns a composite type `Movie` with cost of `1`
+    title # Field `title` is a leaf type with cost of `0`
+    author {
+      # Field `author` returns a composite type `Author` with cost of `1`
+      name # Field `name` is a leaf type with cost of `0`
+    }
+    publisher {
+      # Field `publisher` returns a composite type `Publisher` with cost of `1`
+      name # Field `name` is a leaf type with cost of `0`
+      address {
+        # Field `address` returns a composite type `Address` with cost of `1`
+        zipCode # Field `zipCode` is a leaf type with cost of `0`
+      }
+    }
+  }
+}
+```
+
+### Customization cost
+
+Even if you can set defaults and customize the cost calculation programmatically in the gateway, it
+can also be customized on the subgraph level by using `@cost` and `@listSize` directives.
+
+#### `@cost` directive on the subgraph level
+
+If you want to override the default cost calculations, you can use `@cost` directive on the subgraph
+level.
+
+```graphql
+directive @cost(
+  """
+  Assumes the cost of the annotated component
+  """
+  weight: Int!
+) on ARGUMENT_DEFINITION | ENUM | FIELD_DEFINITION | INPUT_FIELD_DEFINITION | OBJECT | SCALAR
+```
+
+Let's say we annotated the `Address` type with a cost of `5` like below;
+
+```graphql filename="subgraph.graphql" {21}
+type Query {
+  book(id: ID): Book
+}
+
+type Book {
+  title: String
+  author: Author
+  publisher: Publisher
+}
+
+type Author {
+  name: String
+}
+
+type Publisher {
+  name: String
+  address: Address
+}
+
+type Address @cost(weight: 5) {
+  zipCode: Int!
+}
+
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@cost"]) {
+  query: Query
+}
+```
+
+Then this will increase the `BookQuery`'s cost by `8`;
+
+```graphql
+query BookQuery {
+  # Query operation has cost of `0`
+  movie(id: 1) {
+    # Field `movie` returns a composite type `Movie` with cost of `1`
+    title # Field `title` is a leaf type with cost of `0`
+    author {
+      # Field `author` returns a composite type `Author` with cost of `1`
+      name # Field `name` is a leaf type with cost of `0`
+    }
+    publisher {
+      # Field `publisher` returns a composite type `Publisher` with cost of `1`
+      name # Field `name` is a leaf type with cost of `0`
+      address {
+        # Field `address` returns a composite type `Address` with cost of `5`
+        zipCode # Field `zipCode` is a leaf type with cost of `0`
+      }
+    }
+  }
+}
+```
+
+#### Handling list fields with `@listSize`
+
+While analyzing the cost of the operation, the gateway doesn't know about the size of the lists. It
+needs to be estimated by some means. You can use the `@listSize` directive to provide this
+information.
+
+```graphql
+directive @listSize(
+  """
+  Tells the gateway that the field returns a list with the specified size most of the time.
+  """
+  assumedSize: Int
+  """
+  Tells the gateway that the field returns a list with the size determined by the specified argument.
+  If multiple arguments are provided, the highest value will be used.
+  If `assumedSize` is also provided, this argument will take precedence.
+  """
+  slicingArguments: [String!]
+  """
+  In case of cursor-based pagination, this argument tells the gateway that these fields return lists with the calculated cost under each
+  """
+  sizedFields: [String!]
+  """
+  If `slicingArguments` is provided, this argument tells the gateway that at least one slicing argument is required.
+  If multiple arguments are provided, it causes an error because the gateway cannot determine the size of the list.
+  """
+  requireOneSlicingArgument: Boolean = true
+) on FIELD_DEFINITION
+```
+
+##### Assumed size with `@listSize(assumedSize:)`
+
+We tell the gateway that the `bestsellers` field returns a list of `Book` with an assumed size of
+`5`.
+
+```graphql filename="subgraph.graphql" {3}
+# The rest of the subgraph schema is the same with the example above
+type Query {
+  book(id: ID): Book
+  bestsellers: [Book] @listSize(assumedSize: 5)
+}
+
+# The rest of the subgraph schema is the same with the example above
+```
+
+Then the cost of the `bestsellers` field will be calculated as `5 * cost of Book` which is `40` in
+total.
+
+```graphql
+query BestsellersQuery {
+  bestsellers {
+    # Field `bestsellers` returns a list of `Book` with assumed size of `5`
+    title
+    author {
+      # Field `author` returns a composite type `Author` with cost of `1` but it is multiplied by `5`
+      name
+    }
+    publisher {
+      # Field `publisher` returns a composite type `Publisher` with cost of `1` but it is multiplied by `5`
+      name
+      address {
+        # Field `address` returns a composite type `Address` with cost of `5` but it is multiplied by `5` equals to `25`
+        zipCode
+      }
+    }
+  }
+}
+```
+
+##### Estimation with arguments with `@listSize(slicingArguments:)`
+
+If the size of the list is determined by the arguments of the field, you can use the
+`slicingArguments` option. It is useful when you have paginated fields.
+
+```graphql filename="subgraph.graphql" {4}
+# The rest of the subgraph schema is the same with the example above
+type Query {
+  book(id: ID): Book
+  bestsellers: [Book] @listSize(assumedSize: 5)
+  newestAdditions(after: ID, limit: Int!): [Book] @listSize(slicingArguments: ["limit"])
+}
+```
+
+Then the gateway will receive the number of `Book` objects that will be returned by the
+`newestAdditions` using the `limit` argument.
+
+```graphql
+query NewestAdditions {
+  # Query operation has cost of `0`
+  newestAdditions(limit: 3) {
+    # Field `newestAdditions` returns a list of `Book` with assumed size of `3`
+    title # Field `title` is a leaf type with cost of `0`
+    author {
+      # Field `author` returns a composite type `Author` with cost of `1` but it is multiplied by `3`
+      name # Field `name` is a leaf type with cost of `0`
+    }
+    publisher {
+      # Field `publisher` returns a composite type `Publisher` with cost of `1` but it is multiplied by `3`
+      name # Field `name` is a leaf type with cost of `0`
+      address {
+        # Field `address` returns a composite type `Address` with cost of `5` but it is multiplied by `3` equals to `15`
+        zipCode # Field `zipCode` is a leaf type with cost of `0`
+      }
+    }
+  }
+}
+```
+
+The total cost of the query above will be `3 * 1 + 3 * 1 + 3 * 5 = 24`.
+
+###### Multiple arguments with `@listSize(slicingArguments:, requireOneSlicingArgument:false)`
+
+If you have multiple pagination parameters, the length of the list can be calculated by multiple
+input values. You can pass multiple arguments to `slicingArguments` and the gateway will use the
+highest value. In this case `requireOneSlicingArgument` should be set to `false`.
+
+```graphql filename="subgraph.graphql" {4}
+# The rest of the subgraph schema is the same with the example above
+type Query {
+  book(id: ID): Book
+  bestsellers: [Book] @listSize(assumedSize: 5)
+  newestAdditions(first: ID, last: Int!): [Book]
+    @listSize(slicingArguments: ["first", "last"], requireOneSlicingArgument: false)
+}
+```
+
+Here you can see the calculation of the cost which is `40` in total;
+
+```graphql
+query NewestAdditions {
+  # Query operation has cost of `0`
+  newestAdditions(first: 3, last: 5) {
+    # Field `newestAdditions` returns a list of `Book` with assumed size of `5` because `5` is the highest value between `3` and `5`
+    title # Field `title` is a leaf type with cost of `0`
+    author {
+      # Field `author` returns a composite type `Author` with cost of `1` but it is multiplied by `5`
+      name # Field `name` is a leaf type with cost of `0`
+    }
+    publisher {
+      # Field `publisher` returns a composite type `Publisher` with cost of `1` but it is multiplied by `5`
+      name # Field `name` is a leaf type with cost of `0`
+      address {
+        # Field `address` returns a composite type `Address` with cost of `5` but it is multiplied by `5` equals to `25`
+        zipCode # Field `zipCode` is a leaf type with cost of `0`
+      }
+    }
+  }
+}
+```
+
+##### Cursor-based pagination with `@listSize(sizedFields:)`
+
+If you have cursor-based pagination, you can use the `sizedFields` option to provide the cost of the
+fields under each cursor.
+
+```graphql filename="subgraph.graphql" {2}
+# The rest of the subgraph schema is the same with the example above
+type Query {
+  newestAdditionsByCursor(after: ID, limit: Int!): Cursor!
+    @listSize(slicingArguments: ["limit"], sizedFields: ["page"])
+}
+
+type Cursor {
+  page: [Book!] # The cost of this field is calculated with `limit` argument of the parent `newestAdditionsByCursor`
+  nextPage: ID
+}
+```
+
+Here you can see the calculation of the cost which is `41` in total;
+
+```graphql
+query NewestAdditionsByCursor {
+  # Query operation has cost of `0`
+  newestAdditionsByCursor(limit: 5) {
+    # Field `newestAdditionsByCursor` returns a composite type `Cursor` with cost of `1`
+    page {
+      # Field `page` returns a list of `Book` with assumed size of `5`
+      title # Field `title` is a leaf type with cost of `0`
+      author {
+        # Field `author` returns a composite type `Author` with cost of `1` but it is multiplied by `5`
+        name # Field `name` is a leaf type with cost of `0`
+      }
+      publisher {
+        # Field `publisher` returns a composite type `Publisher` with cost of `1` but it is multiplied by `5`
+        name # Field `name` is a leaf type with cost of `0`
+        address {
+          # Field `address` returns a composite type `Address` with cost of `5` but it is multiplied by `5` equals to `25`
+          zipCode # Field `zipCode` is a leaf type with cost of `0`
+        }
+      }
+    }
+    nextPage
+  }
+}
+```
