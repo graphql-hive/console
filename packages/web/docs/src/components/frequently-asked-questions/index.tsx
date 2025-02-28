@@ -3,9 +3,9 @@ import * as RadixAccordion from '@radix-ui/react-accordion';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Anchor, cn, Heading } from '@theguild/components';
 import { AttachPageFAQSchema } from '../../lib';
-import { OpenAccordionItemWhenLinkedTo } from './open-accordion-item-when-linked-to';
 import FederationQuestions from './federation-questions.mdx';
 import HomeQuestions from './home-questions.mdx';
+import { OpenAccordionItemWhenLinkedTo } from './open-accordion-item-when-linked-to';
 import PartnersQuestions from './partners-questions.mdx';
 import { questionToId } from './question-to-id';
 
