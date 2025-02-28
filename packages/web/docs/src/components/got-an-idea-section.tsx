@@ -4,7 +4,7 @@ export function GotAnIdeaSection({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center rounded-3xl bg-[#003834] px-4 py-6 lg:px-8 lg:py-16 xl:p-24',
+        'bg-blueish-green relative flex flex-col items-center rounded-3xl px-4 py-6 lg:px-8 lg:py-16 xl:p-24',
         className,
       )}
     >

@@ -117,7 +117,7 @@ function GetStartedTodaySection({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-3xl bg-[#003834] p-12 text-center sm:p-24',
+        'bg-blueish-green relative overflow-hidden rounded-3xl p-12 text-center sm:p-24',
         className,
       )}
     >
@@ -224,7 +224,7 @@ function LearnGraphQLFederationSection(props: { className?: string }) {
   return (
     <section
       className={cn(
-        'to-green-1000 relative rounded-3xl bg-gradient-to-br from-[#003834] p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
+        'to-green-1000 from-blueish-green relative rounded-3xl bg-gradient-to-br p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
         props.className,
       )}
     >
