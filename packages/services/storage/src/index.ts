@@ -5203,12 +5203,11 @@ export function findTargetBySlug(deps: { pool: DatabasePool }) {
       `,
     );
 
-    console.log('lolol', JSON.stringify(data, null, 2));
-
     if (data === null) {
       return null;
     }
 
+    // Consider adding error handling similar to what was suggested for findTargetById.
     return TargetWithOrgIdModel.parse(data);
   };
 }
