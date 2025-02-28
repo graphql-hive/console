@@ -933,3 +933,54 @@ describe('restrictions', () => {
     },
   );
 });
+
+test.concurrent(
+  'Organization.oidcIntegration resolves to null without error if user does not have oidc:modify permission',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg, ownerToken } = await seed.createOwner();
+    const { organization, inviteAndJoinMember } = await createOrg();
+    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
+      await inviteAndJoinMember();
+
+    await execute({
+      document: CreateOIDCIntegrationMutation,
+      variables: {
+        input: {
+          organizationId: organization.id,
+          clientId: 'aaaa',
+          clientSecret: 'aaaaaaaaaaaa',
+          tokenEndpoint: 'http://localhost:8888/aaaa/token',
+          userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
+          authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const role = await createMemberRole([]);
+    await assignMemberRole({ roleId: role.id, userId: member.id });
+
+    let result = await execute({
+      document: OrganizationWithOIDCIntegration,
+      variables: {
+        organizationSlug: organization.slug,
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.organization!.organization.oidcIntegration).toEqual(null);
+
+    await updateMemberRole(role, ['oidc:modify']);
+
+    result = await execute({
+      document: OrganizationWithOIDCIntegration,
+      variables: {
+        organizationSlug: organization.slug,
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.organization!.organization.oidcIntegration).not.toEqual(null);
+  },
+);

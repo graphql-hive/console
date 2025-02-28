@@ -1,3 +1,5 @@
+import { graphql } from 'testkit/gql';
+import { execute } from 'testkit/graphql';
 import { history } from '../../../testkit/emails';
 import { initSeed } from '../../../testkit/seed';
 
@@ -139,5 +141,55 @@ test.concurrent(
       await joinMemberUsingCode(inviteCode, other_access_token)
     ).expectNoGraphQLErrors();
     expect(otherJoinResult.joinOrganization.__typename).toBe('OrganizationInvitationError');
+  },
+);
+
+const OrganizationInvitationsQuery = graphql(`
+  query OrganizationInvitationsQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      invitations {
+        total
+        nodes {
+          id
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'Organization.invitations resolves to null without error if user does not have member:modify permission',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { organization, inviteAndJoinMember } = await createOrg();
+    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
+      await inviteAndJoinMember();
+
+    const role = await createMemberRole([]);
+    await assignMemberRole({ roleId: role.id, userId: member.id });
+
+    let result = await execute({
+      document: OrganizationInvitationsQuery,
+      variables: {
+        organizationSlug: organization.slug,
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.organization!.invitations).toEqual(null);
+
+    await updateMemberRole(role, ['member:modify']);
+
+    result = await execute({
+      document: OrganizationInvitationsQuery,
+      variables: {
+        organizationSlug: organization.slug,
+      },
+      authToken: memberToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.organization!.invitations).not.toEqual(null);
   },
 );
