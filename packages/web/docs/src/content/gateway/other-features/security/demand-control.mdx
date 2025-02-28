@@ -96,12 +96,12 @@ query BookQuery {
 }
 ```
 
-### Customization cost
+## Customization cost
 
 Even if you can set defaults and customize the cost calculation programmatically in the gateway, it
 can also be customized on the subgraph level by using `@cost` and `@listSize` directives.
 
-#### `@cost` directive on the subgraph level
+### `@cost` directive on the subgraph level
 
 If you want to override the default cost calculations, you can use `@cost` directive on the subgraph
 level.
@@ -117,7 +117,7 @@ directive @cost(
 
 Let's say we annotated the `Address` type with a cost of `5` like below;
 
-```graphql filename="subgraph.graphql" {21}
+```graphql filename="subgraph.graphql" {20}
 type Query {
   book(id: ID): Book
 }
@@ -170,7 +170,7 @@ query BookQuery {
 }
 ```
 
-#### Handling list fields with `@listSize`
+### Handling list fields with `@listSize`
 
 While analyzing the cost of the operation, the gateway doesn't know about the size of the lists. It
 needs to be estimated by some means. You can use the `@listSize` directive to provide this
@@ -200,12 +200,12 @@ directive @listSize(
 ) on FIELD_DEFINITION
 ```
 
-##### Assumed size with `@listSize(assumedSize:)`
+#### Assumed size with `@listSize(assumedSize:)`
 
 We tell the gateway that the `bestsellers` field returns a list of `Book` with an assumed size of
 `5`.
 
-```graphql filename="subgraph.graphql" {3}
+```graphql filename="subgraph.graphql" {4}
 # The rest of the subgraph schema is the same with the example above
 type Query {
   book(id: ID): Book
@@ -239,12 +239,12 @@ query BestsellersQuery {
 }
 ```
 
-##### Estimation with arguments with `@listSize(slicingArguments:)`
+#### Estimation with arguments with `@listSize(slicingArguments:)`
 
 If the size of the list is determined by the arguments of the field, you can use the
 `slicingArguments` option. It is useful when you have paginated fields.
 
-```graphql filename="subgraph.graphql" {4}
+```graphql filename="subgraph.graphql" {5}
 # The rest of the subgraph schema is the same with the example above
 type Query {
   book(id: ID): Book
@@ -280,13 +280,13 @@ query NewestAdditions {
 
 The total cost of the query above will be `3 * 1 + 3 * 1 + 3 * 5 = 24`.
 
-###### Multiple arguments with `@listSize(slicingArguments:, requireOneSlicingArgument:false)`
+##### Multiple arguments with `@listSize(slicingArguments:, requireOneSlicingArgument:false)`
 
 If you have multiple pagination parameters, the length of the list can be calculated by multiple
 input values. You can pass multiple arguments to `slicingArguments` and the gateway will use the
 highest value. In this case `requireOneSlicingArgument` should be set to `false`.
 
-```graphql filename="subgraph.graphql" {4}
+```graphql filename="subgraph.graphql" {6}
 # The rest of the subgraph schema is the same with the example above
 type Query {
   book(id: ID): Book
@@ -320,12 +320,12 @@ query NewestAdditions {
 }
 ```
 
-##### Cursor-based pagination with `@listSize(sizedFields:)`
+#### Cursor-based pagination with `@listSize(sizedFields:)`
 
 If you have cursor-based pagination, you can use the `sizedFields` option to provide the cost of the
 fields under each cursor.
 
-```graphql filename="subgraph.graphql" {2}
+```graphql filename="subgraph.graphql" {4}
 # The rest of the subgraph schema is the same with the example above
 type Query {
   newestAdditionsByCursor(after: ID, limit: Int!): Cursor!
