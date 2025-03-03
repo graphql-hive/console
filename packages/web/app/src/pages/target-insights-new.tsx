@@ -8,14 +8,20 @@ import {
   useMemo,
   useState,
 } from 'react';
+import * as React from 'react';
 import { formatDate } from 'date-fns';
 import {
+  AlertTriangle,
   ArrowUpDown,
+  ArrowUpDownIcon,
   Check,
   ChevronDown,
   ChevronRight,
+  Clock,
+  ExternalLinkIcon,
   MoreHorizontal,
   SearchIcon,
+  X,
 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -41,6 +47,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   Sidebar,
   SidebarContent,
@@ -61,6 +77,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDuration, formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
@@ -79,116 +96,116 @@ import {
 } from '@tanstack/react-table';
 
 const chartData = [
-  { date: '2024-04-01', requests: 222, failures: 15 },
-  { date: '2024-04-02', requests: 97, failures: 18 },
-  { date: '2024-04-03', requests: 167, failures: 12 },
-  { date: '2024-04-04', requests: 242, failures: 26 },
-  { date: '2024-04-05', requests: 373, failures: 29 },
-  { date: '2024-04-06', requests: 301, failures: 34 },
-  { date: '2024-04-07', requests: 245, failures: 18 },
-  { date: '2024-04-08', requests: 409, failures: 32 },
-  { date: '2024-04-09', requests: 59, failures: 11 },
-  { date: '2024-04-10', requests: 261, failures: 19 },
-  { date: '2024-04-11', requests: 327, failures: 35 },
-  { date: '2024-04-12', requests: 292, failures: 21 },
-  { date: '2024-04-13', requests: 342, failures: 38 },
-  { date: '2024-04-14', requests: 137, failures: 22 },
-  { date: '2024-04-15', requests: 120, failures: 17 },
-  { date: '2024-04-16', requests: 138, failures: 19 },
-  { date: '2024-04-17', requests: 446, failures: 36 },
-  { date: '2024-04-18', requests: 364, failures: 41 },
-  { date: '2024-04-19', requests: 243, failures: 18 },
-  { date: '2024-04-20', requests: 89, failures: 15 },
-  { date: '2024-04-21', requests: 137, failures: 20 },
-  { date: '2024-04-22', requests: 224, failures: 17 },
-  { date: '2024-04-23', requests: 138, failures: 23 },
-  { date: '2024-04-24', requests: 387, failures: 29 },
-  { date: '2024-04-25', requests: 215, failures: 25 },
-  { date: '2024-04-26', requests: 75, failures: 13 },
-  { date: '2024-04-27', requests: 383, failures: 42 },
-  { date: '2024-04-28', requests: 122, failures: 18 },
-  { date: '2024-04-29', requests: 315, failures: 24 },
-  { date: '2024-04-30', requests: 454, failures: 38 },
-  { date: '2024-05-01', requests: 165, failures: 22 },
-  { date: '2024-05-02', requests: 293, failures: 31 },
-  { date: '2024-05-03', requests: 247, failures: 19 },
-  { date: '2024-05-04', requests: 385, failures: 42 },
-  { date: '2024-05-05', requests: 481, failures: 39 },
-  { date: '2024-05-06', requests: 498, failures: 52 },
-  { date: '2024-05-07', requests: 388, failures: 30 },
-  { date: '2024-05-08', requests: 149, failures: 21 },
-  { date: '2024-05-09', requests: 227, failures: 18 },
-  { date: '2024-05-10', requests: 293, failures: 33 },
-  { date: '2024-05-11', requests: 335, failures: 27 },
-  { date: '2024-05-12', requests: 197, failures: 24 },
-  { date: '2024-05-13', requests: 197, failures: 16 },
-  { date: '2024-05-14', requests: 448, failures: 49 },
-  { date: '2024-05-15', requests: 473, failures: 38 },
-  { date: '2024-05-16', requests: 338, failures: 40 },
-  { date: '2024-05-17', requests: 499, failures: 42 },
-  { date: '2024-05-18', requests: 315, failures: 35 },
-  { date: '2024-05-19', requests: 235, failures: 18 },
-  { date: '2024-05-20', requests: 177, failures: 23 },
-  { date: '2024-05-21', requests: 82, failures: 14 },
-  { date: '2024-05-22', requests: 81, failures: 12 },
-  { date: '2024-05-23', requests: 252, failures: 29 },
-  { date: '2024-05-24', requests: 294, failures: 22 },
-  { date: '2024-05-25', requests: 201, failures: 25 },
-  { date: '2024-05-26', requests: 213, failures: 17 },
-  { date: '2024-05-27', requests: 420, failures: 46 },
-  { date: '2024-05-28', requests: 233, failures: 19 },
-  { date: '2024-05-29', requests: 78, failures: 13 },
-  { date: '2024-05-30', requests: 340, failures: 28 },
-  { date: '2024-05-31', requests: 178, failures: 23 },
-  { date: '2024-06-01', requests: 178, failures: 20 },
-  { date: '2024-06-02', requests: 470, failures: 41 },
-  { date: '2024-06-03', requests: 103, failures: 16 },
-  { date: '2024-06-04', requests: 439, failures: 38 },
-  { date: '2024-06-05', requests: 88, failures: 14 },
-  { date: '2024-06-06', requests: 294, failures: 25 },
-  { date: '2024-06-07', requests: 323, failures: 37 },
-  { date: '2024-06-08', requests: 385, failures: 32 },
-  { date: '2024-06-09', requests: 438, failures: 48 },
-  { date: '2024-06-10', requests: 155, failures: 20 },
-  { date: '2024-06-11', requests: 92, failures: 15 },
-  { date: '2024-06-12', requests: 492, failures: 42 },
-  { date: '2024-06-13', requests: 81, failures: 13 },
-  { date: '2024-06-14', requests: 426, failures: 38 },
-  { date: '2024-06-15', requests: 307, failures: 35 },
-  { date: '2024-06-16', requests: 371, failures: 31 },
-  { date: '2024-06-17', requests: 475, failures: 52 },
-  { date: '2024-06-18', requests: 107, failures: 17 },
-  { date: '2024-06-19', requests: 341, failures: 29 },
-  { date: '2024-06-20', requests: 408, failures: 45 },
-  { date: '2024-06-21', requests: 169, failures: 21 },
-  { date: '2024-06-22', requests: 317, failures: 27 },
-  { date: '2024-06-23', requests: 480, failures: 53 },
-  { date: '2024-06-24', requests: 132, failures: 18 },
-  { date: '2024-06-25', requests: 141, failures: 19 },
-  { date: '2024-06-26', requests: 434, failures: 38 },
-  { date: '2024-06-27', requests: 448, failures: 49 },
-  { date: '2024-06-28', requests: 149, failures: 20 },
-  { date: '2024-06-29', requests: 103, failures: 16 },
-  { date: '2024-06-30', requests: 446, failures: 40 },
+  { date: '2024-04-01', traces: 222, exceptions: 15 },
+  { date: '2024-04-02', traces: 97, exceptions: 18 },
+  { date: '2024-04-03', traces: 167, exceptions: 12 },
+  { date: '2024-04-04', traces: 242, exceptions: 26 },
+  { date: '2024-04-05', traces: 373, exceptions: 29 },
+  { date: '2024-04-06', traces: 301, exceptions: 34 },
+  { date: '2024-04-07', traces: 245, exceptions: 18 },
+  { date: '2024-04-08', traces: 409, exceptions: 32 },
+  { date: '2024-04-09', traces: 59, exceptions: 11 },
+  { date: '2024-04-10', traces: 261, exceptions: 19 },
+  { date: '2024-04-11', traces: 327, exceptions: 35 },
+  { date: '2024-04-12', traces: 292, exceptions: 21 },
+  { date: '2024-04-13', traces: 342, exceptions: 38 },
+  { date: '2024-04-14', traces: 137, exceptions: 22 },
+  { date: '2024-04-15', traces: 120, exceptions: 17 },
+  { date: '2024-04-16', traces: 138, exceptions: 19 },
+  { date: '2024-04-17', traces: 446, exceptions: 36 },
+  { date: '2024-04-18', traces: 364, exceptions: 41 },
+  { date: '2024-04-19', traces: 243, exceptions: 18 },
+  { date: '2024-04-20', traces: 89, exceptions: 15 },
+  { date: '2024-04-21', traces: 137, exceptions: 20 },
+  { date: '2024-04-22', traces: 224, exceptions: 17 },
+  { date: '2024-04-23', traces: 138, exceptions: 23 },
+  { date: '2024-04-24', traces: 387, exceptions: 29 },
+  { date: '2024-04-25', traces: 215, exceptions: 25 },
+  { date: '2024-04-26', traces: 75, exceptions: 13 },
+  { date: '2024-04-27', traces: 383, exceptions: 42 },
+  { date: '2024-04-28', traces: 122, exceptions: 18 },
+  { date: '2024-04-29', traces: 315, exceptions: 24 },
+  { date: '2024-04-30', traces: 454, exceptions: 38 },
+  { date: '2024-05-01', traces: 165, exceptions: 22 },
+  { date: '2024-05-02', traces: 293, exceptions: 31 },
+  { date: '2024-05-03', traces: 247, exceptions: 19 },
+  { date: '2024-05-04', traces: 385, exceptions: 42 },
+  { date: '2024-05-05', traces: 481, exceptions: 39 },
+  { date: '2024-05-06', traces: 498, exceptions: 52 },
+  { date: '2024-05-07', traces: 388, exceptions: 30 },
+  { date: '2024-05-08', traces: 149, exceptions: 21 },
+  { date: '2024-05-09', traces: 227, exceptions: 18 },
+  { date: '2024-05-10', traces: 293, exceptions: 33 },
+  { date: '2024-05-11', traces: 335, exceptions: 27 },
+  { date: '2024-05-12', traces: 197, exceptions: 24 },
+  { date: '2024-05-13', traces: 197, exceptions: 16 },
+  { date: '2024-05-14', traces: 448, exceptions: 49 },
+  { date: '2024-05-15', traces: 473, exceptions: 38 },
+  { date: '2024-05-16', traces: 338, exceptions: 40 },
+  { date: '2024-05-17', traces: 499, exceptions: 42 },
+  { date: '2024-05-18', traces: 315, exceptions: 35 },
+  { date: '2024-05-19', traces: 235, exceptions: 18 },
+  { date: '2024-05-20', traces: 177, exceptions: 23 },
+  { date: '2024-05-21', traces: 82, exceptions: 14 },
+  { date: '2024-05-22', traces: 81, exceptions: 12 },
+  { date: '2024-05-23', traces: 252, exceptions: 29 },
+  { date: '2024-05-24', traces: 294, exceptions: 22 },
+  { date: '2024-05-25', traces: 201, exceptions: 25 },
+  { date: '2024-05-26', traces: 213, exceptions: 17 },
+  { date: '2024-05-27', traces: 420, exceptions: 46 },
+  { date: '2024-05-28', traces: 233, exceptions: 19 },
+  { date: '2024-05-29', traces: 78, exceptions: 13 },
+  { date: '2024-05-30', traces: 340, exceptions: 28 },
+  { date: '2024-05-31', traces: 178, exceptions: 23 },
+  { date: '2024-06-01', traces: 178, exceptions: 20 },
+  { date: '2024-06-02', traces: 470, exceptions: 41 },
+  { date: '2024-06-03', traces: 103, exceptions: 16 },
+  { date: '2024-06-04', traces: 439, exceptions: 38 },
+  { date: '2024-06-05', traces: 88, exceptions: 14 },
+  { date: '2024-06-06', traces: 294, exceptions: 25 },
+  { date: '2024-06-07', traces: 323, exceptions: 37 },
+  { date: '2024-06-08', traces: 385, exceptions: 32 },
+  { date: '2024-06-09', traces: 438, exceptions: 48 },
+  { date: '2024-06-10', traces: 155, exceptions: 20 },
+  { date: '2024-06-11', traces: 92, exceptions: 15 },
+  { date: '2024-06-12', traces: 492, exceptions: 42 },
+  { date: '2024-06-13', traces: 81, exceptions: 13 },
+  { date: '2024-06-14', traces: 426, exceptions: 38 },
+  { date: '2024-06-15', traces: 307, exceptions: 35 },
+  { date: '2024-06-16', traces: 371, exceptions: 31 },
+  { date: '2024-06-17', traces: 475, exceptions: 52 },
+  { date: '2024-06-18', traces: 107, exceptions: 17 },
+  { date: '2024-06-19', traces: 341, exceptions: 29 },
+  { date: '2024-06-20', traces: 408, exceptions: 45 },
+  { date: '2024-06-21', traces: 169, exceptions: 21 },
+  { date: '2024-06-22', traces: 317, exceptions: 27 },
+  { date: '2024-06-23', traces: 480, exceptions: 53 },
+  { date: '2024-06-24', traces: 132, exceptions: 18 },
+  { date: '2024-06-25', traces: 141, exceptions: 19 },
+  { date: '2024-06-26', traces: 434, exceptions: 38 },
+  { date: '2024-06-27', traces: 448, exceptions: 49 },
+  { date: '2024-06-28', traces: 149, exceptions: 20 },
+  { date: '2024-06-29', traces: 103, exceptions: 16 },
+  { date: '2024-06-30', traces: 446, exceptions: 40 },
 ];
 
 const chartConfig = {
-  requests: {
-    label: 'Requests',
+  traces: {
+    label: 'Traces',
     color: 'hsl(var(--chart-1))',
   },
-  failures: {
-    label: 'Errors',
+  exceptions: {
+    label: 'Exceptions',
     color: 'hsl(var(--chart-2))',
   },
 } satisfies ChartConfig;
 
 function Traffic() {
-  const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>('requests');
+  const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>('traces');
   const total = useMemo(
     () => ({
-      requests: chartData.reduce((acc, curr) => acc + curr.requests, 0),
-      failures: chartData.reduce((acc, curr) => acc + curr.failures, 0),
+      traces: chartData.reduce((acc, curr) => acc + curr.traces, 0),
+      exceptions: chartData.reduce((acc, curr) => acc + curr.exceptions, 0),
     }),
     [],
   );
@@ -196,11 +213,11 @@ function Traffic() {
     <Card>
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
-          <CardTitle>Requests</CardTitle>
-          <CardDescription>Traffic and request statistics for the selected time</CardDescription>
+          <CardTitle>Traces</CardTitle>
+          <CardDescription>Request traces for the selected time</CardDescription>
         </div>
         <div className="flex">
-          {['requests', 'failures'].map(key => {
+          {['traces', 'exceptions'].map(key => {
             const chart = key as keyof typeof chartConfig;
             return (
               <button
@@ -242,14 +259,6 @@ function Traffic() {
                   day: 'numeric',
                 });
               }}
-            />
-            <YAxis
-              dataKey={activeChart}
-              type="number"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={value => String(formatNumber(value))}
             />
             <ChartTooltip
               content={
@@ -459,7 +468,7 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="px-4 font-mono uppercase">
+      <div className="px-4 font-mono text-xs uppercase">
         {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
       </div>
     ),
@@ -481,7 +490,7 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="flex items-center gap-2 px-4">
+      <div className="flex items-center gap-2 px-4 text-xs">
         <span className="text-muted-foreground font-mono">
           {row.original.operationHash.substring(0, 4)}
         </span>
@@ -507,7 +516,7 @@ export const columns: ColumnDef<Trace>[] = [
     },
     cell: ({ row }) => {
       const duration = formatDuration(row.getValue('duration'), true);
-      return <div className="px-4 font-mono font-medium">{duration}</div>;
+      return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
     },
   },
   {
@@ -520,7 +529,7 @@ export const columns: ColumnDef<Trace>[] = [
         <Badge
           variant="outline"
           className={cn(
-            'rounded-sm border-0 px-1 font-medium uppercase',
+            'rounded-sm border-0 px-1 text-xs font-medium uppercase',
             status === 'ok' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
           )}
         >
@@ -556,7 +565,7 @@ export const columns: ColumnDef<Trace>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div className="text-center font-mono font-medium">
+        <div className="text-center font-mono text-xs font-medium">
           {row.getValue('subgraphNames').length}
         </div>
       );
@@ -566,22 +575,30 @@ export const columns: ColumnDef<Trace>[] = [
     accessorKey: 'httpMethod',
     header: () => <div className="text-center">HTTP Method</div>,
     cell: ({ row }) => {
-      return <div className="text-center font-mono font-medium">{row.getValue('httpMethod')}</div>;
+      return (
+        <div className="text-center font-mono text-xs font-medium">
+          {row.getValue('httpMethod')}
+        </div>
+      );
     },
   },
   {
     accessorKey: 'httpStatus',
     header: () => <div className="text-center">HTTP Status</div>,
     cell: ({ row }) => {
-      return <div className="text-center font-mono font-medium">{row.getValue('httpStatus')}</div>;
+      return (
+        <div className="text-center font-mono text-xs font-medium">
+          {row.getValue('httpStatus')}
+        </div>
+      );
     },
   },
   {
     accessorKey: 'actions',
     header: () => <div className="text-center">Actions</div>,
-    cell: ({ row }) => {
+    cell: () => {
       return (
-        <div className="text-center font-sans">
+        <div className="text-center font-sans text-xs">
           <Button asChild variant="link">
             <Link to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace">
               View Trace
@@ -598,6 +615,7 @@ function TracesList() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
 
   const table = useReactTable({
     data,
@@ -619,7 +637,15 @@ function TracesList() {
   });
 
   return (
-    <>
+    <Sheet
+      defaultOpen={false}
+      open={traceInSheet !== null}
+      onOpenChange={isOpen => {
+        if (!isOpen) {
+          setTraceInSheet(null);
+        }
+      }}
+    >
       <div className="rounded-lg border bg-gray-900/50 shadow-sm">
         <Table>
           <TableHeader>
@@ -640,14 +666,23 @@ function TracesList() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {/* <Link> */}
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={cn(
+                    'cursor-pointer',
+                    traceInSheet?.id === row.original.id ? 'bg-white/10' : '',
+                  )}
+                  onClick={ev => {
+                    ev.preventDefault();
+                    setTraceInSheet(row.original);
+                  }}
+                >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="font-mono [&:has([role=checkbox])]:pl-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
-                  {/* </Link> */}
                 </TableRow>
               ))
             ) : (
@@ -680,7 +715,8 @@ function TracesList() {
           </Button>
         </div>
       </div>
-    </>
+      <TraceSheet trace={traceInSheet} />
+    </Sheet>
   );
 }
 
@@ -929,6 +965,229 @@ function Filters() {
         ]}
       />
     </>
+  );
+}
+
+interface TraceAttribute {
+  name: string;
+  value: string | number | ReactNode;
+  category?: string;
+}
+
+function TraceSheet({ trace }: { trace: Trace | null }) {
+  const [activeView, setActiveView] = useState<'attributes' | 'events'>('attributes');
+
+  const toggleView = () => {
+    setActiveView(activeView === 'attributes' ? 'events' : 'attributes');
+  };
+
+  if (!trace) {
+    return null;
+  }
+
+  const attributes: Array<TraceAttribute> = [
+    {
+      name: 'graphql.operationKind',
+      value: trace.kind,
+      category: 'GraphQL',
+    },
+    {
+      name: 'graphql.subgraphs',
+      value: trace.subgraphNames.join(', '),
+      category: 'GraphQL',
+    },
+    {
+      name: 'http.method',
+      value: trace.httpMethod,
+      category: 'HTTP',
+    },
+    {
+      name: 'http.host',
+      value: trace.httpHost,
+      category: 'HTTP',
+    },
+    {
+      name: 'http.route',
+      value: trace.httpRoute,
+      category: 'HTTP',
+    },
+    {
+      name: 'http.url',
+      value: trace.httpUrl,
+      category: 'HTTP',
+    },
+    {
+      name: 'http.status',
+      value: trace.httpStatus,
+      category: 'HTTP',
+    },
+  ];
+
+  return (
+    <SheetContent
+      noOverlay
+      className="w-full border-l border-gray-800 bg-black p-0 text-white sm:max-w-xl"
+    >
+      <SheetHeader className="relative border-b border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <SheetTitle className="text-lg font-medium text-white">
+            {trace.operationName}
+            <span className="text-muted-foreground ml-2 font-mono font-normal">
+              {trace.operationHash.substring(0, 4)}
+            </span>
+          </SheetTitle>
+        </div>
+        <SheetDescription className="mt-1 text-xs text-gray-400">
+          Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
+        </SheetDescription>
+        <div className="mt-2 flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3 text-gray-400" />
+            <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
+          </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              'rounded-sm border-0 px-1 font-medium uppercase',
+              trace.status === 'ok'
+                ? 'bg-green-900/30 text-green-400'
+                : 'bg-red-900/30 text-red-400',
+            )}
+          >
+            {trace.status}
+          </Badge>
+          <span className="font-mono uppercase text-gray-300">
+            {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+          </span>
+        </div>
+        <Button variant="outline" size="sm" className="absolute bottom-4 right-4">
+          <ExternalLinkIcon className="mr-1 h-3 w-3" />
+          Full Trace
+        </Button>
+      </SheetHeader>
+
+      <ScrollArea className="h-[calc(100vh-120px)]">
+        <div>
+          <div className="border-b border-gray-800">
+            <button
+              onClick={toggleView}
+              className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-gray-900/50 hover:text-white"
+            >
+              <div>
+                <ArrowUpDownIcon className="mr-4 h-4 w-4 text-gray-500" />
+              </div>
+              <div>
+                <div className="font-medium">
+                  {activeView === 'attributes' ? 'Attributes' : 'Events'}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {activeView === 'attributes' ? `Events` : `Attributes`}
+                </div>
+              </div>
+            </button>
+          </div>
+          {activeView === 'attributes' ? (
+            // <div className="space-y-6 p-4">
+            <div>
+              {attributes.length > 0 ? (
+                // Object.entries(
+                //   attributes.reduce(
+                //     (acc, attr) => {
+                //       const category = attr.category || 'General';
+                //       if (!acc[category]) {
+                //         acc[category] = [];
+                //       }
+                //       acc[category].push(attr);
+                //       return acc;
+                //     },
+                //     {} as Record<string, TraceAttribute[]>,
+                //   ),
+                // ).map(([category, attrs]) => (
+                //   <div key={category}>
+                //     <h4 className="mb-1 text-xs font-medium text-gray-400">{category}</h4>
+                //     <div className="space-y-1">
+                //       {attrs.map(attr => (
+                //         <div
+                //           key={attr.name}
+                //           className="rounded bg-gray-900/50 p-2 text-xs transition-colors hover:bg-gray-800/50"
+                //         >
+                //           <div className="flex flex-col">
+                //             <span className="mb-0.5 font-medium text-gray-300">{attr.name}</span>
+                //             <span className="break-all font-mono text-gray-400">{attr.value}</span>
+                //           </div>
+                //         </div>
+                //       ))}
+                //     </div>
+                //   </div>
+                // ))
+                <div>
+                  {attributes.map((attr, index) => (
+                    <div
+                      key={index}
+                      className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
+                    >
+                      <div className="text-gray-400">{attr.name}</div>
+                      <div className="font-mono text-white">{attr.value}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 text-center">
+                  <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                  <p className="text-xs text-gray-500">No attributes found for this trace</p>
+                </div>
+              )}
+            </div>
+          ) : null}
+          {activeView === 'events' ? (
+            <div className="p-4">
+              <div className="space-y-2">
+                {[
+                  {
+                    code: 'DB_CONNECTION_ERROR',
+                    message: 'Connection to database timed out after 5 seconds',
+                    stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
+                  },
+                  {
+                    code: 'GRAPHQL_PARSE_FAILED',
+                    message: 'Sent GraphQL Operation cannot be parsed',
+                  },
+                  {
+                    code: 'TIMEOUT_ERROR',
+                    message: 'Operation timed out after 10 seconds',
+                  },
+                ].map((exception, index) => (
+                  <div
+                    key={index}
+                    className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
+                  >
+                    <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
+                      <span className="font-mono text-xs font-medium text-red-300">
+                        {exception.code}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="border-red-700 bg-red-950 text-[10px] text-red-300"
+                      >
+                        Exception
+                      </Badge>
+                    </div>
+                    <div className="p-3 text-xs">
+                      <p className="text-gray-300">{exception.message}</p>
+                      {exception.stacktrace && (
+                        <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+                          {exception.stacktrace}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </ScrollArea>
+    </SheetContent>
   );
 }
 
