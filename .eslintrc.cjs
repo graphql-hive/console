@@ -230,6 +230,7 @@ module.exports = {
             'hive-focus-within',
             'nextra-scrollbar',
             'no-scrollbar', // from Nextra
+            'hive-slider',
           ],
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
