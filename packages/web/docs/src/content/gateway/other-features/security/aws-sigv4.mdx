@@ -4,8 +4,9 @@ searchable: false
 
 # AWS Signature Version 4 (SigV4)
 
-Hive Gateway allows you to sign subgraph requests with AWS Signature Version 4 (SigV4) for secure
-communication between the Gateway and the subgraphs.
+Hive Gateway allows you to sign subgraph requests with
+[AWS Signature Version 4 (SigV4)](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html)
+for secure communication between the Gateway and the subgraphs.
 
 ## How to use?
 
@@ -33,6 +34,23 @@ export const gatewayConfig = defineConfig({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION
+  }
+})
+```
+
+### Assume Role (IAM)
+
+You can provide the `roleArn` and `roleSessionName` to assume a role using the provided credentials.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: {
+    region: process.env.AWS_REGION,
+    // By default it takes the credentials from the environment variables
+    roleArn: 'arn:aws:iam::123456789012:role/role-name', // process.env.AWS_ROLE_ARN
+    roleSessionName: 'session-name' // process.env.AWS_ROLE_SESSION_NAME
   }
 })
 ```
@@ -79,20 +97,20 @@ export const gatewayConfig = defineConfig({
   // Providing AWS SigV4 credentials for the 'products' and 'users' subgraphs separately
   // And do not allow SigV4 signing for any other subgraph
   awsSigV4(subgraph) {
+    // You can use hardcoded credentials for the 'products' subgraph
     if (subgraph === 'products') {
       return {
         accessKeyId: process.env.PRODUCTS_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.PRODUCTS_AWS_SECRET_ACCESS_KEY,
-        region: process.env.PRODUCTS_AWS_REGION,
         service: 'lambda',
         region: 'eu-west-1'
       }
     }
+    // You can use Assume Role for the 'users' subgraph
     if (subgraph === 'users') {
       return {
-        accessKeyId: process.env.USERS_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.USERS_AWS_SECRET_ACCESS_KEY,
-        region: process.env.USERS_AWS_REGION,
+        roleArn: 'arn:aws:iam::123456789012:role/role-name',
+        roleSessionName: 'session-name',
         service: 's3',
         region: 'us-east-1'
       }
