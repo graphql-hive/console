@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Content, Root, Trigger } from '@radix-ui/react-tooltip';
 import { CallToAction, cn } from '@theguild/components';
 import { BookIcon } from '../book-icon';
@@ -13,6 +14,8 @@ export function PricingSlider({
 }) {
   const min = 1;
   const max = 300;
+
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   return (
     <label
@@ -44,13 +47,19 @@ export function PricingSlider({
         />
         <span className="font-medium">{max}M</span>
       </div>
-      <Root delayDuration={0}>
+      <Root delayDuration={0} open={popoverOpen} onOpenChange={setPopoverOpen}>
         <Trigger asChild>
           <CallToAction
-            onClick={() => {}}
             variant="tertiary"
             className="mt-6 md:absolute md:right-8 md:top-8 md:mt-0"
             id="operations-button"
+            onClick={event => {
+              // Radix doesn't open Tooltips on touch devices by design
+              if (window.matchMedia('(hover: none)').matches) {
+                event.preventDefault();
+                setPopoverOpen(true);
+              }
+            }}
           >
             <BookIcon /> Learn about operations
           </CallToAction>
