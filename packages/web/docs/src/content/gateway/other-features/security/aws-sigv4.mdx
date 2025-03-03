@@ -8,6 +8,20 @@ Hive Gateway allows you to sign subgraph requests with
 [AWS Signature Version 4 (SigV4)](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html)
 for secure communication between the Gateway and the subgraphs.
 
+```mermaid
+flowchart TD
+    A[Consumer] -->|GraphQL Request| B(Hive Gateway)
+    B --> C[Execution Engine]
+    C -->|Subgraph request| D[AWS Sigv4 Plugin]
+    D --> |Get the credentials| E[Assume Role I AM]
+    E --> F[Sign the request]
+    F --> |HTTP Request| G[Products Subgraph]
+    C -->|Subgraph request| H[AWS Sigv4 Plugin]
+    H --> |Get the credentials| I[Hard-coded configuration]
+    I --> J[Sign the request]
+    J --> |HTTP Request| K[Users Subgraph]
+```
+
 ## How to use?
 
 You can enable AWS SigV4 signing by setting the `awsSigV4` option to `true` in the Gateway
