@@ -68,7 +68,7 @@ export const gatewayConfig = defineConfig({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION,
-    service: 'lambda',
+    serviceName: 'lambda',
     region: 'us-east-1'
   }
 })
@@ -102,7 +102,7 @@ export const gatewayConfig = defineConfig({
       return {
         accessKeyId: process.env.PRODUCTS_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.PRODUCTS_AWS_SECRET_ACCESS_KEY,
-        service: 'lambda',
+        serviceName: 'lambda',
         region: 'eu-west-1'
       }
     }
@@ -111,7 +111,7 @@ export const gatewayConfig = defineConfig({
       return {
         roleArn: 'arn:aws:iam::123456789012:role/role-name',
         roleSessionName: 'session-name',
-        service: 's3',
+        serviceName: 's3',
         region: 'us-east-1'
       }
     }
