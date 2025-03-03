@@ -1,3 +1,3 @@
 #!/bin/sh
 echo "Release: $RELEASE"
-node --heapsnapshot-signal=SIGUSR2 index.js
+node --heapsnapshot-signal=SIGRTMIN+1 index.js
