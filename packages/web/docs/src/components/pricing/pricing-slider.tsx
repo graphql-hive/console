@@ -44,12 +44,23 @@ export function PricingSlider({
         <span className="font-medium">{max}M</span>
       </div>
       <CallToAction
-        href="#faq--what-counts-as-a-graphql-operation"
+        onClick={() => {}}
         variant="tertiary"
-        className="mt-6 md:absolute md:right-8 md:top-8 md:mt-0"
+        className="mt-6 [anchor-name:--operations-button] md:absolute md:right-8 md:top-8 md:mt-0"
+        popoverTarget="operations-popover"
+        id="operations-button"
       >
         <BookIcon /> Learn about operations
       </CallToAction>
+      <div
+        popover="auto"
+        id="operations-popover"
+        className="border-beige-400 bg-beige-100 text-green-1000 fixed mb-2 overflow-visible rounded-2xl border px-4 py-3 shadow-md [max-inline-size:420px] [position-anchor:--operations-button] [position-area:top_span-all] [position-try-fallbacks:top_span-left,top_span-right,bottom_span-all,bottom_span-left,bottom_span-right] [position-visibility:no-overflow]"
+      >
+        Every GraphQL request that is processed by your GraphQL API and reported to GraphQL Hive. If
+        your server receives 1M GraphQL requests, all of them will be reported to Hive (assuming no
+        sampling).
+      </div>
     </label>
   );
 }
