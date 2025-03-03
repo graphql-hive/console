@@ -67,7 +67,7 @@ export function PricingSlider({
         <Content
           side="top"
           align="center"
-          className="border-beige-400 bg-beige-100 text-green-1000 z-50 m-2 max-w-[420px] overflow-visible rounded-2xl border px-4 py-3 shadow-md"
+          className="border-beige-400 bg-beige-100 text-green-1000 z-50 m-2 max-w-[328px] overflow-visible rounded-2xl border px-4 py-3 shadow-md sm:max-w-[420px]"
           avoidCollisions
         >
           Every GraphQL request that is processed by your GraphQL API and reported to GraphQL Hive.
