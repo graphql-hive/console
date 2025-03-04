@@ -30,21 +30,24 @@ export function PricingSlider({
       {...rest}
     >
       <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
-        <div className="w-0 max-w-fit grow-[calc(clamp(0,var(--ops)-1,1))] opacity-[calc(var(--ops)-1)] transition [transition-duration:calc(clamp(0,var(--ops)-1,1)*280ms)]">
-          <span
-            aria-hidden
-            className="rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums tracking-[-0.08em] before:content-[''_counter(ops)]"
-          >
-            M
-          </span>
-        </div>
-        <div className="w-[calc(clamp(0,2-var(--ops),1)*111px)] shrink grow-0 whitespace-pre opacity-[calc(2-var(--ops))] transition [transition-duration:calc(clamp(0,2-var(--ops),1)*280ms)]">
-          How many
+        <div className="relative max-w-[111px] shrink grow-[clamp(0,((2-var(--ops))),1)]">
+          <div className="min-w-fit opacity-[calc(var(--ops)-1)] transition-all [transition-duration:calc(clamp(0,var(--ops)-1,1)*280ms)]">
+            <span
+              aria-hidden
+              className="whitespace-pre rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums before:tracking-[-0.12em] before:content-[''_counter(ops)_'_']"
+            >
+              M
+            </span>
+          </div>
+          <div className="absolute left-0 top-0 whitespace-pre opacity-[calc(2-var(--ops))] transition-all [transition-duration:calc(clamp(0,2-var(--ops),1)*280ms)]">
+            How many
+          </div>
         </div>
         <div className="whitespace-pre"> operations per month </div>
         <div className="whitespace-pre opacity-[calc(2-var(--ops))] transition [transition-duration:280ms]">
           do you need?
         </div>
+        <div className="grow" />
       </div>
       <div className="text-green-1000 flex items-center gap-5 pt-12 text-sm">
         <span className="font-medium">{min}M</span>
