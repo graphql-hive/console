@@ -28,7 +28,7 @@ import {
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
-import { IdTranslator } from '../../shared/providers/id-translator';
+import { IdTranslator, TargetReferenceErrorCode } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import { Storage, type TargetSelector } from '../../shared/providers/storage';
@@ -278,10 +278,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaCheck:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1000,10 +1001,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1040,8 +1042,6 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestVersion(target),
     ]);
 
-    const legacySelector = this.session.getLegacySelector();
-
     const checksum = createHash('md5')
       .update(
         stringify({
@@ -1060,7 +1060,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(legacySelector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
@@ -1133,10 +1133,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:deleteService');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,

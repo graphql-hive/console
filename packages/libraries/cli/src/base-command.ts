@@ -14,6 +14,7 @@ import {
   InvalidRegistryTokenError,
   isAggregateError,
   MissingArgumentsError,
+  MissingTargetError,
   NetworkError,
 } from './helpers/errors';
 import { Texture } from './helpers/texture/texture';
@@ -262,6 +263,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
         }
 
         if (jsonData.errors && jsonData.errors.length > 0) {
+          if (jsonData.errors[0].extensions?.code === 'ERR_MISSING_TARGET') {
+            throw new MissingTargetError();
+          }
           if (jsonData.errors[0].message === 'Invalid token provided') {
             throw new InvalidRegistryTokenError();
           }

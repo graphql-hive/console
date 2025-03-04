@@ -35,3 +35,17 @@ export class AccessError extends HiveError {
     });
   }
 }
+
+/**
+ * This error indicates that the user forgot to provide a target reference input
+ * when using a organization access token.
+ */
+export class MissingTargetError extends HiveError {
+  constructor(reason = 'No target was provided.', code: string = 'ERR_MISSING_TARGET') {
+    super(reason, {
+      extensions: {
+        code,
+      },
+    });
+  }
+}
