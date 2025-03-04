@@ -14,17 +14,17 @@ export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion'
 
   if (!selector) {
     session.raise('project:describe');
-  }
-
-  await session.assertPerformAction({
-    action: 'project:describe',
-    organizationId: selector.organizationId,
-    params: {
+  } else {
+    await session.assertPerformAction({
+      action: 'project:describe',
       organizationId: selector.organizationId,
-      projectId: selector.projectId,
-    },
-  });
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
 
-  const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
-  return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+    const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
+    return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+  }
 };
