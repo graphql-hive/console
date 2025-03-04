@@ -1,5 +1,5 @@
 ---
-'@graphql-hive/core': minor
+'@graphql-hive/apollo': minor
 ---
 
 Add support for providing a target for usage reporting with organization access tokens.
@@ -7,9 +7,9 @@ This can either be a slug following the format "$organizationSlug/$projectSlug/$
 or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80")
 
 ```ts
-import { createHive } from '@graphql-hive/core';
+import { useHive } from '@graphql-hive/apollo'
 
-const hive = createHive({
+const hivePlugin = useHive({
   enabled: true,
   token: "ORGANIZATION_ACCESS_TOKEN",
   usage: {
