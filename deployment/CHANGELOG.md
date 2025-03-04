@@ -1,5 +1,24 @@
 # hive
 
+## 5.1.3
+
+### Patch Changes
+
+- [#6553](https://github.com/graphql-hive/console/pull/6553)
+  [`f0fe03c`](https://github.com/graphql-hive/console/commit/f0fe03c9464815b5f11b8e4715f0182959e8d363)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Standardize the design and content of
+  all email templates for consistency.
+
+- [#6571](https://github.com/graphql-hive/console/pull/6571)
+  [`bf06e94`](https://github.com/graphql-hive/console/commit/bf06e94f5f115770f229b0b6e9961a44f057fa4d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to all services to write a
+  heap dump to a disk when SIGUSR1 signal is received
+
+- [#6542](https://github.com/graphql-hive/console/pull/6542)
+  [`719e3e6`](https://github.com/graphql-hive/console/commit/719e3e68643c673c5539cc18b68772661e52a857)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Consolidates email templating logic
+  into the `emails` service.
+
 ## 5.1.2
 
 ### Patch Changes
