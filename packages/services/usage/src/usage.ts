@@ -319,3 +319,5 @@ export function createUsage(config: {
     stop,
   };
 }
+
+export type Usage = ReturnType<typeof createUsage>;

@@ -5,20 +5,21 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import type Redis from 'ioredis';
 import type { DatabasePool } from 'slonik';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
-import { Logger } from '../../shared/providers/logger';
+import { findTargetById } from '@hive/storage';
+import type { Target } from '../../../shared/entities';
+import { isUUID } from '../../../shared/is-uuid';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
 import { REDIS_INSTANCE } from '../../shared/providers/redis';
-import { findById, type OrganizationAccessToken } from './organization-access-tokens';
 
 /**
- * Cache for performant OrganizationAccessToken lookups.
+ * Cache for performant Target lookups.
  */
 @Injectable({
   scope: Scope.Singleton,
   global: true,
 })
-export class OrganizationAccessTokensCache {
+export class TargetsByIdCache {
   private cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
@@ -27,52 +28,41 @@ export class OrganizationAccessTokensCache {
     prometheusConfig: PrometheusConfig,
   ) {
     this.cache = new BentoCache({
-      default: 'organizationAccessTokens',
+      default: 'targetsById',
       plugins: prometheusConfig.isEnabled
         ? [
             prometheusPlugin({
-              prefix: 'bentocache_organization_access_tokens',
+              prefix: 'bentocache_targetsById',
             }),
           ]
         : undefined,
       stores: {
-        organizationAccessTokens: bentostore()
+        targetsById: bentostore()
           .useL1Layer(
             memoryDriver({
               maxItems: 10_000,
-              prefix: 'bentocache:organization-access-tokens',
+              prefix: 'bentocache:targetsById',
             }),
           )
-          .useL2Layer(
-            redisDriver({ connection: redis, prefix: 'bentocache:organization-access-tokens' }),
-          ),
+          .useL2Layer(redisDriver({ connection: redis, prefix: 'bentocache:targetsById' })),
       },
     });
   }
 
-  get(
-    id: string,
-    /** Request scoped logger so we associate the request-id with any logs occuring during the SQL lookup. */
-    logger: Logger,
-  ) {
+  get(id: string) {
+    if (isUUID(id) === false) {
+      return null;
+    }
+
     return this.cache.getOrSet({
       key: id,
-      factory: () => findById({ logger, pool: this.pool })(id),
+      factory: () => findTargetById({ pool: this.pool })(id),
       ttl: '5min',
       grace: '24h',
     });
   }
 
-  add(token: OrganizationAccessToken) {
-    return this.cache.set({
-      key: token.id,
-      value: token,
-      ttl: '5min',
-      grace: '24h',
-    });
-  }
-
-  purge(token: OrganizationAccessToken) {
+  purge(token: Target) {
     return this.cache.delete({
       key: token.id,
     });
