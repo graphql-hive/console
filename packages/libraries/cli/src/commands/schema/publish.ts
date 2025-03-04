@@ -341,38 +341,48 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
 
       do {
         if (service && url && !sdl) {
-          result = await this.publishUrl({
-            service,
-            url,
-            author,
-            commit,
-            // sdl,
-            // force,
-            // experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
-            // metadata,
-            // gitHub,
-            // supportsRetry: true,
-            target,
-          }, endpoint, accessToken);
+          result = await this.publishUrl(
+            {
+              service,
+              url,
+              author,
+              commit,
+              // sdl,
+              // force,
+              // experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
+              // metadata,
+              // gitHub,
+              // supportsRetry: true,
+              target,
+            },
+            endpoint,
+            accessToken,
+          );
         } else if (sdl) {
-          result = await this.publishSchema({
-            service,
-            url,
-            author,
-            commit,
-            sdl,
+          result = await this.publishSchema(
+            {
+              service,
+              url,
+              author,
+              commit,
+              sdl,
+              force,
+              experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
+              metadata,
+              gitHub,
+              supportsRetry: true,
+              target,
+            },
+            endpoint,
+            accessToken,
+            !!gitHub,
             force,
-            experimental_acceptBreakingChanges: experimental_acceptBreakingChanges === true,
-            metadata,
-            gitHub,
-            supportsRetry: true,
-            target,
-          }, endpoint, accessToken, !!gitHub, force);
+          );
         } else {
           // SDL is missing, but the service and url were not defined.
           const missingArgs: Array<[string, string]> = [
             ['service', SchemaPublish.flags.service.description!],
-            ['url', SchemaPublish.flags.url.description!]
+            ['url', SchemaPublish.flags.url.description!],
           ];
           throw new MissingArgumentsError(...missingArgs);
         }
@@ -387,7 +397,11 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     }
   }
 
-  private async publishUrl(input: GraphQLSchema.SchemaPublishUrlInput, endpoint: string, accessToken: string) {
+  private async publishUrl(
+    input: GraphQLSchema.SchemaPublishUrlInput,
+    endpoint: string,
+    accessToken: string,
+  ) {
     let result = await this.registryApi(endpoint, accessToken).request({
       operation: schemaPublishUrlMutation,
       variables: {
@@ -439,19 +453,25 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       if (result.schemaPublishUrl.linkToWebsite) {
         this.logInfo(`Available at ${result.schemaPublishUrl.linkToWebsite}`);
       }
-    // } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
-    //   this.logSuccess(result.schemaPublish.message);
-    // } else {
-    //   throw new APIError(
-    //     'message' in result.schemaPublishUrl
-    //       ? result.schemaPublishUrl.message
-    //       : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
-    //   );
+      // } else if (result.schemaPublish.__typename === 'GitHubSchemaPublishSuccess') {
+      //   this.logSuccess(result.schemaPublish.message);
+      // } else {
+      //   throw new APIError(
+      //     'message' in result.schemaPublishUrl
+      //       ? result.schemaPublishUrl.message
+      //       : `Received unhandled type "${(result.schemaPublish as any)?.__typename}" in response.`,
+      //   );
     }
     return result;
   }
 
-  private async publishSchema(input: GraphQLSchema.SchemaPublishInput, endpoint: string, accessToken: string, usesGitHubApp: boolean, force: boolean) {
+  private async publishSchema(
+    input: GraphQLSchema.SchemaPublishInput,
+    endpoint: string,
+    accessToken: string,
+    usesGitHubApp: boolean,
+    force: boolean,
+  ) {
     let result: DocumentType<typeof schemaPublishMutation> | null = null;
     result = await this.registryApi(endpoint, accessToken).request({
       operation: schemaPublishMutation,

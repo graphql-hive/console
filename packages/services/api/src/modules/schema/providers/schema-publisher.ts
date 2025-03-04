@@ -1058,10 +1058,11 @@ export class SchemaPublisher {
         changes: [],
         errors: [
           {
-            message: 'PublishUrl cannot be the first publish of a service and cannot be completed while the latest version is invalid.'
+            message:
+              'PublishUrl cannot be the first publish of a service and cannot be completed while the latest version is invalid.',
           },
         ],
-      }
+      };
     }
 
     const legacySelector = this.session.getLegacySelector();
