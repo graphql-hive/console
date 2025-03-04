@@ -402,7 +402,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     endpoint: string,
     accessToken: string,
   ) {
-    let result = await this.registryApi(endpoint, accessToken).request({
+    const result = await this.registryApi(endpoint, accessToken).request({
       operation: schemaPublishUrlMutation,
       variables: {
         input,
@@ -432,7 +432,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
     } else if (result.schemaPublishUrl.__typename === 'SchemaPublishRetry') {
       this.log(result.schemaPublishUrl.reason);
       this.log('Waiting for other schema publishes to complete...');
-      result = null;
+      return null;
     } else if (result.schemaPublishUrl.__typename === 'SchemaPublishUrlError') {
       const changes = result.schemaPublishUrl.changes;
       const errors = result.schemaPublishUrl.errors;
