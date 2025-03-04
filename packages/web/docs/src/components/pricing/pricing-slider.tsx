@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Content, Root, Trigger } from '@radix-ui/react-tooltip';
 import { CallToAction, cn } from '@theguild/components';
 import { BookIcon } from '../book-icon';
@@ -16,17 +16,35 @@ export function PricingSlider({
   const max = 300;
 
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const rootRef = useRef<HTMLLabelElement>(null);
 
   return (
     <label
+      ref={rootRef}
       className={cn(
-        'relative isolate block rounded-3xl border border-green-400 p-4 sm:p-8',
+        'relative isolate block select-none rounded-3xl border border-green-400 p-4 [counter-set:ops_calc(var(--ops))_price_calc(var(--price))] sm:p-8',
         className,
       )}
+      // 10$ base price + 10$ per 1M
+      style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
       {...rest}
     >
       <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
-        How many operations per month do you need?
+        <div className="w-0 max-w-fit grow-[calc(clamp(0,var(--ops)-1,1))] opacity-[calc(var(--ops)-1)] transition [transition-duration:calc(clamp(0,var(--ops)-1,1)*280ms)]">
+          <span
+            aria-hidden
+            className="rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums tracking-[-0.08em] before:content-[''_counter(ops)]"
+          >
+            M
+          </span>
+        </div>
+        <div className="w-[calc(clamp(0,2-var(--ops),1)*111px)] shrink grow-0 whitespace-pre opacity-[calc(2-var(--ops))] transition [transition-duration:calc(clamp(0,2-var(--ops),1)*280ms)]">
+          How many
+        </div>
+        <div className="whitespace-pre"> operations per month </div>
+        <div className="whitespace-pre opacity-[calc(2-var(--ops))] transition [transition-duration:280ms]">
+          do you need?
+        </div>
       </div>
       <div className="text-green-1000 flex items-center gap-5 pt-12 text-sm">
         <span className="font-medium">{min}M</span>
@@ -36,12 +54,10 @@ export function PricingSlider({
           max={max}
           step={1}
           defaultValue={min}
-          // 10$ base price + 10$ per 1M
-          style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
-          counter="after:content-[''_counter(ops)_'M_ops,_$'_counter(price)_'_/_month'] after:[counter-set:ops_calc(var(--ops))_price_calc(var(--price))]"
+          counter="after:content-['$'_counter(price)_'_/_month']"
           onChange={event => {
             const value = event.currentTarget.valueAsNumber;
-            event.currentTarget.parentElement!.style.setProperty('--ops', `${value}`);
+            rootRef.current!.style.setProperty('--ops', `${value}`);
             onChange(value);
           }}
         />

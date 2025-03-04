@@ -15,7 +15,10 @@ export function Slider({ counter, className, deadZone, style, ...rest }: SliderP
       ref={ref => {
         if (ref) polyfillSlider(ref, '--val');
       }}
-      className={cn('hive-slider relative h-10 flex-1 [container-type:inline-size]', className)}
+      className={cn(
+        'hive-slider relative h-10 flex-1 select-none [container-type:inline-size]',
+        className,
+      )}
       style={style}
     >
       <input
