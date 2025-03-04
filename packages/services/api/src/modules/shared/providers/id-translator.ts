@@ -132,7 +132,7 @@ export class IdTranslator {
           targetId,
         };
       } catch (error: unknown) {
-        this.logger.debug(error);
+        this.logger.debug(String(error));
         this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
         return null;
       }

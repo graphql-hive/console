@@ -1,4 +1,3 @@
-import { InsufficientPermissionError } from '../../../auth/lib/authz';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
@@ -9,24 +8,23 @@ export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion'
   args,
   { injector, session },
 ) => {
-  const { targetId, projectId, organizationId } = await injector
-    .get(IdTranslator)
-    .resolveTargetReference({
-      reference: args.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('project:describe');
-      },
-    });
+  const selector = await injector.get(IdTranslator).resolveTargetReference({
+    reference: args.target ?? null,
+  });
+
+  if (!selector) {
+    session.raise('project:describe');
+  }
 
   await session.assertPerformAction({
     action: 'project:describe',
-    organizationId,
+    organizationId: selector.organizationId,
     params: {
-      organizationId,
-      projectId,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
     },
   });
 
-  const target = await injector.get(TargetManager).getTargetById({ targetId });
+  const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
   return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
 };
