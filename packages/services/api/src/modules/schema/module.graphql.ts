@@ -6,6 +6,7 @@ export default gql`
     schemaCheck(input: SchemaCheckInput!): SchemaCheckPayload!
     schemaDelete(input: SchemaDeleteInput!): SchemaDeleteResult!
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
+    schemaPublishUrl(input: SchemaPublishUrlInput!): SchemaPublishUrlPayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
     updateNativeFederation(input: UpdateNativeFederationInput!): UpdateNativeFederationResult!
@@ -245,6 +246,24 @@ export default gql`
     metadata: String
   }
 
+  union SchemaPublishUrlPayload =
+    | SchemaPublishUrlSuccess
+    | SchemaPublishUrlError
+    | SchemaPublishRetry
+
+  type SchemaPublishUrlSuccess {
+    valid: Boolean!
+    linkToWebsite: String
+    message: String
+    changes: SchemaChangeConnection
+  }
+
+  type SchemaPublishUrlError {
+    linkToWebsite: String
+    changes: SchemaChangeConnection
+    errors: SchemaErrorConnection!
+  }
+
   union SchemaPublishPayload =
     | SchemaPublishSuccess
     | SchemaPublishRetry
@@ -262,6 +281,14 @@ export default gql`
     """
     The commit sha.
     """
+    commit: String!
+  }
+
+  input SchemaPublishUrlInput {
+    target: TargetReferenceInput
+    service: ID!
+    url: String!
+    author: String!
     commit: String!
   }
 

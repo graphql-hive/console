@@ -95,6 +95,8 @@ export type PublishInput = Types.SchemaPublishInput & {
   isSchemaPublishMissingUrlErrorSelected: boolean;
 };
 
+export type PublishUrlInput = Types.SchemaPublishUrlInput;
+
 type BreakPromise<T> = T extends Promise<infer U> ? U : never;
 
 type PublishResult =
@@ -103,6 +105,8 @@ type PublishResult =
       readonly __typename: 'SchemaPublishRetry';
       readonly reason: string;
     };
+
+type PublishUrlResult = PublishResult;
 
 function registryLockId(targetId: string) {
   return `registry-lock:${targetId}`;
@@ -982,6 +986,162 @@ export class SchemaPublisher {
 
       throw error;
     });
+  }
+
+  @traceFn('SchemaPublisher.publishUrl', {
+    initAttributes: (input, _) => ({
+      'hive.organization.slug': input.target?.bySelector?.organizationSlug,
+      'hive.project.slug': input.target?.bySelector?.projectSlug,
+      'hive.target.slug': input.target?.bySelector?.targetSlug,
+      'hive.target.id': input.target?.byId ?? undefined,
+    }),
+    resultAttributes: result => ({
+      'hive.publish.result': result.__typename,
+    }),
+  })
+  async publishUrl(input: PublishUrlInput, signal: AbortSignal): Promise<PublishUrlResult> {
+    this.logger.debug('Start schema url publication.');
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: input.target ?? null,
+      onError() {
+        throw new InsufficientPermissionError('schemaVersion:publish');
+      },
+    });
+
+    trace.getActiveSpan()?.setAttributes({
+      'hive.organization.id': selector.organizationId,
+      'hive.target.id': selector.targetId,
+      'hive.project.id': selector.projectId,
+    });
+
+    await this.session.assertPerformAction({
+      action: 'schemaVersion:publish',
+      organizationId: selector.organizationId,
+      params: {
+        targetId: selector.targetId,
+        projectId: selector.projectId,
+        organizationId: selector.organizationId,
+        serviceName: input.service ?? null,
+      },
+    });
+
+    this.logger.debug(
+      'Compute hash (organization=%s, project=%s, target=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
+    );
+
+    const target = await this.storage.getTarget({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+    });
+
+    const [contracts, latestVersion, latest] = await Promise.all([
+      this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
+      this.schemaManager.getMaybeLatestVersion(target),
+      this.storage.getLatestSchemas({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
+    ]);
+
+    const latestServiceSchema = latest?.schemas.find(s => s.id !== input.service);
+
+    if (!latestServiceSchema || !latestVersion?.isComposable) {
+      return {
+        __typename: 'SchemaPublishError',
+        valid: false,
+        changes: [],
+        errors: [
+          {
+            message: 'PublishUrl cannot be the first publish of a service and cannot be completed while the latest version is invalid.'
+          },
+        ],
+      }
+    }
+
+    const legacySelector = this.session.getLegacySelector();
+
+    const checksum = createHash('md5')
+      .update(
+        stringify({
+          ...input,
+          sdl: latestVersion?.compositeSchemaSDL,
+          organization: selector.organizationId,
+          project: selector.projectId,
+          target: selector.targetId,
+          service: input.service?.toLowerCase(),
+          contracts: contracts?.map(contract => ({
+            contractId: contract.id,
+            contractName: contract.contractName,
+          })),
+          // We include the latest version ID to avoid caching a schema publication that targets different versions.
+          // When deleting a schema, and publishing it again, the latest version ID will be different.
+          // If we don't include it, the cache will return the previous result.
+          latestVersionId: latestVersion?.id,
+        }),
+      )
+      .update(legacySelector.token)
+      .digest('base64');
+
+    this.logger.debug(
+      'Hash computation finished (organization=%s, project=%s, target=%s, hash=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.targetId,
+    );
+
+    return this.mutex
+      .perform(
+        registryLockId(selector.targetId),
+        {
+          /**
+           * The global request timeout is 60 seconds.
+           * We don't want to try acquiring the lock longer than 30 seconds.
+           * If it succeeds after 30 seconds,
+           * we have 30 seconds for actually running the business logic.
+           *
+           * If we would wait longer we risk the user facing 504 errors.
+           */
+          retries: 30,
+          retryDelay: 1_000,
+          signal,
+        },
+        async () => {
+          return await this.distributedCache.wrap({
+            key: `schema:publish:${checksum}`,
+            ttlSeconds: 15,
+            executor: () =>
+              this.internalPublish({
+                ...input,
+                isSchemaPublishMissingUrlErrorSelected: false,
+                sdl: latestServiceSchema.sdl,
+                checksum,
+                selector,
+              }),
+          });
+        },
+      )
+      .catch((error: unknown) => {
+        if (error instanceof MutexResourceLockedError) {
+          return {
+            __typename: 'SchemaPublishRetry',
+            reason: 'Another schema publish is currently in progress.',
+          } satisfies PublishResult;
+        }
+
+        if (error instanceof HiveError === false) {
+          schemaPublishUnexpectedErrorCount.inc({
+            errorName: (error instanceof Error && error.name) || 'unknown',
+          });
+        }
+
+        throw error;
+      });
   }
 
   @traceFn('SchemaPublisher.publish', {

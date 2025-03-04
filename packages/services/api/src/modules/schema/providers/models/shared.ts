@@ -12,6 +12,7 @@ import type {
   SchemaDiffSkip,
   SchemaDiffSuccess,
 } from '../registry-checks';
+import { SchemaPublishUrlError, SchemaPublishUrlSuccess } from 'packages/services/api/src/__generated__/types';
 
 export const SchemaPublishConclusion = {
   /**
@@ -263,6 +264,10 @@ export type SchemaPublishResult =
   | SchemaPublishSuccess
   | SchemaPublishFailure
   | SchemaPublishIgnored;
+
+export type SchemaPublishUrlResult =
+  | SchemaPublishUrlSuccess
+  | SchemaPublishUrlError
 
 export const DeleteFailureReasonCode = {
   MissingServiceName: 'MISSING_SERVICE_NAME',
