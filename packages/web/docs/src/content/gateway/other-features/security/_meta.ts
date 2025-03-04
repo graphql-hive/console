@@ -6,6 +6,7 @@ export default {
   'disable-introspection': 'Introspection',
   https: 'HTTPS',
   'hmac-signature': 'HMAC Signature',
+  'aws-sigv4': 'AWS Signature V4',
   'audit-documents': 'Audit Documents',
   'block-field-suggestions': 'Block Field Suggestions',
   'character-limit': 'Character Limit',
