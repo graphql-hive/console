@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import * as React from 'react';
 import { formatDate } from 'date-fns';
 import {
   AlertTriangle,
@@ -47,6 +46,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -78,6 +78,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDuration, formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
@@ -615,7 +616,7 @@ function TracesList() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
+  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(data[0]);
 
   const table = useReactTable({
     data,
@@ -977,10 +978,6 @@ interface TraceAttribute {
 function TraceSheet({ trace }: { trace: Trace | null }) {
   const [activeView, setActiveView] = useState<'attributes' | 'events'>('attributes');
 
-  const toggleView = () => {
-    setActiveView(activeView === 'attributes' ? 'events' : 'attributes');
-  };
-
   if (!trace) {
     return null;
   }
@@ -1024,169 +1021,253 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
   ];
 
   return (
-    <SheetContent
-      noOverlay
-      className="w-full border-l border-gray-800 bg-black p-0 text-white sm:max-w-xl"
-    >
-      <SheetHeader className="relative border-b border-gray-800 p-4">
-        <div className="flex items-center justify-between">
-          <SheetTitle className="text-lg font-medium text-white">
-            {trace.operationName}
-            <span className="text-muted-foreground ml-2 font-mono font-normal">
-              {trace.operationHash.substring(0, 4)}
-            </span>
-          </SheetTitle>
-        </div>
-        <SheetDescription className="mt-1 text-xs text-gray-400">
-          Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
-        </SheetDescription>
-        <div className="mt-2 flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-gray-400" />
-            <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
+    <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
+      <TooltipProvider>
+        <SheetHeader className="relative border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-lg font-medium text-white">
+              {trace.operationName}
+              <span className="text-muted-foreground ml-2 font-mono font-normal">
+                {trace.operationHash.substring(0, 4)}
+              </span>
+            </SheetTitle>
           </div>
-          <Badge
-            variant="outline"
-            className={cn(
-              'rounded-sm border-0 px-1 font-medium uppercase',
-              trace.status === 'ok'
-                ? 'bg-green-900/30 text-green-400'
-                : 'bg-red-900/30 text-red-400',
-            )}
-          >
-            {trace.status}
-          </Badge>
-          <span className="font-mono uppercase text-gray-300">
-            {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
-          </span>
-        </div>
-        <Button variant="outline" size="sm" className="absolute bottom-4 right-4">
-          <ExternalLinkIcon className="mr-1 h-3 w-3" />
-          Full Trace
-        </Button>
-      </SheetHeader>
-
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <div>
-          <div className="border-b border-gray-800">
-            <button
-              onClick={toggleView}
-              className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-gray-900/50 hover:text-white"
-            >
-              <div>
-                <ArrowUpDownIcon className="mr-4 h-4 w-4 text-gray-500" />
-              </div>
-              <div>
-                <div className="font-medium">
-                  {activeView === 'attributes' ? 'Attributes' : 'Events'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {activeView === 'attributes' ? `Events` : `Attributes`}
-                </div>
-              </div>
-            </button>
-          </div>
-          {activeView === 'attributes' ? (
-            // <div className="space-y-6 p-4">
-            <div>
-              {attributes.length > 0 ? (
-                // Object.entries(
-                //   attributes.reduce(
-                //     (acc, attr) => {
-                //       const category = attr.category || 'General';
-                //       if (!acc[category]) {
-                //         acc[category] = [];
-                //       }
-                //       acc[category].push(attr);
-                //       return acc;
-                //     },
-                //     {} as Record<string, TraceAttribute[]>,
-                //   ),
-                // ).map(([category, attrs]) => (
-                //   <div key={category}>
-                //     <h4 className="mb-1 text-xs font-medium text-gray-400">{category}</h4>
-                //     <div className="space-y-1">
-                //       {attrs.map(attr => (
-                //         <div
-                //           key={attr.name}
-                //           className="rounded bg-gray-900/50 p-2 text-xs transition-colors hover:bg-gray-800/50"
-                //         >
-                //           <div className="flex flex-col">
-                //             <span className="mb-0.5 font-medium text-gray-300">{attr.name}</span>
-                //             <span className="break-all font-mono text-gray-400">{attr.value}</span>
-                //           </div>
-                //         </div>
-                //       ))}
-                //     </div>
-                //   </div>
-                // ))
-                <div>
-                  {attributes.map((attr, index) => (
-                    <div
-                      key={index}
-                      className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
-                    >
-                      <div className="text-gray-400">{attr.name}</div>
-                      <div className="font-mono text-white">{attr.value}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-4 text-center">
-                  <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
-                  <p className="text-xs text-gray-500">No attributes found for this trace</p>
-                </div>
-              )}
+          <SheetDescription className="mt-1 text-xs text-gray-400">
+            Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
+          </SheetDescription>
+          <div className="mt-2 flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-gray-400" />
+              <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
             </div>
-          ) : null}
-          {activeView === 'events' ? (
-            <div className="p-4">
-              <div className="space-y-2">
-                {[
-                  {
-                    code: 'DB_CONNECTION_ERROR',
-                    message: 'Connection to database timed out after 5 seconds',
-                    stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
-                  },
-                  {
-                    code: 'GRAPHQL_PARSE_FAILED',
-                    message: 'Sent GraphQL Operation cannot be parsed',
-                  },
-                  {
-                    code: 'TIMEOUT_ERROR',
-                    message: 'Operation timed out after 10 seconds',
-                  },
-                ].map((exception, index) => (
-                  <div
-                    key={index}
-                    className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
-                  >
-                    <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
-                      <span className="font-mono text-xs font-medium text-red-300">
-                        {exception.code}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="border-red-700 bg-red-950 text-[10px] text-red-300"
-                      >
-                        Exception
-                      </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'rounded-sm border-0 px-1 font-medium uppercase',
+                trace.status === 'ok'
+                  ? 'bg-green-900/30 text-green-400'
+                  : 'bg-red-900/30 text-red-400',
+              )}
+            >
+              {trace.status}
+            </Badge>
+            <span className="font-mono uppercase text-gray-300">
+              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+            </span>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
+              className="absolute bottom-4 right-4"
+            >
+              <ExternalLinkIcon className="mr-1 h-3 w-3" />
+              Full Trace
+            </Link>
+          </Button>
+        </SheetHeader>
+        <div className="h-[calc(100vh-113px)]">
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={50} minSize={20} maxSize={80}>
+              <div className="flex h-full flex-col">
+                <div className="sticky top-0 z-10 border-b border-gray-800">
+                  <div className="flex w-full items-center text-xs text-white">
+                    <div className="h-12 w-1/3 shrink-0 py-2">
+                      <div className="pl-4">
+                        <div className="font-medium">Timeline</div>
+                        <div className="text-xs text-gray-500">Spans and details</div>
+                      </div>
                     </div>
-                    <div className="p-3 text-xs">
-                      <p className="text-gray-300">{exception.message}</p>
-                      {exception.stacktrace && (
-                        <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
-                          {exception.stacktrace}
-                        </pre>
-                      )}
+                    <div className="h-12 grow pr-8">
+                      <div className="relative h-full w-full">
+                        <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
+                          0ms
+                        </div>
+                        <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
+                        <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
+                          2.03ms
+                        </div>
+                        <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+                        <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
+                          4.06ms
+                        </div>
+                        <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+                        <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
+                          6.09ms
+                        </div>
+                        <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+                        <div className="absolute right-0 top-6 translate-x-1/2 text-center">
+                          8.12ms
+                        </div>
+                        <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+                <ScrollArea className="flex-grow">
+                  <div>
+                    <TraceTree />
+                    {/* <Span
+                      title="FetchProducts"
+                      description="gateway"
+                      topWidthPercentage={33.33}
+                      spanLeftPercentage={0}
+                      spanWidthPercentage={100}
+                      icon={<FirstSpanIcon />}
+                      duration={8.12}
+                      startedAt={0}
+                      endedAt={8.12}
+                      totalDutation={8.12}
+                      onClick={() => {}}
+                    />
+
+                    <Span
+                      title="subgraph"
+                      description="products"
+                      topWidthPercentage={33.33}
+                      spanLeftPercentage={20}
+                      spanWidthPercentage={60}
+                      icon={<SecondSpanIcon />}
+                      duration={4.06}
+                      startedAt={2.03}
+                      endedAt={6.09}
+                      totalDutation={8.12}
+                      onClick={() => {}}
+                    />
+                    <Span
+                      title="subgraph"
+                      description="prices"
+                      topWidthPercentage={33.33}
+                      spanLeftPercentage={50}
+                      spanWidthPercentage={25}
+                      icon={<ThirdSpanIcon />}
+                      duration={2.03}
+                      startedAt={4.06}
+                      endedAt={6.09}
+                      totalDutation={8.12}
+                      onClick={() => {}}
+                    /> */}
+                  </div>
+                </ScrollArea>
               </div>
-            </div>
-          ) : null}
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50} minSize={10} maxSize={80}>
+              <div className="flex h-full flex-col">
+                <div className="sticky top-0 z-10 border-b border-gray-800">
+                  <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
+                    <TabButton
+                      isActive={activeView === 'attributes'}
+                      onClick={() => setActiveView('attributes')}
+                    >
+                      <div className="flex items-center gap-x-2">
+                        <div>Attributes</div>
+                        <div>
+                          <Badge
+                            variant="secondary"
+                            className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          >
+                            7
+                          </Badge>
+                        </div>
+                      </div>
+                    </TabButton>
+                    <TabButton
+                      isActive={activeView === 'events'}
+                      onClick={() => setActiveView('events')}
+                    >
+                      <div className="flex items-center gap-x-2">
+                        <div>Events</div>
+                        <div>
+                          <Badge
+                            variant="secondary"
+                            className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                          >
+                            3
+                          </Badge>
+                        </div>
+                      </div>
+                    </TabButton>
+                  </div>
+                </div>
+                <ScrollArea className="flex-grow">
+                  <div>
+                    {activeView === 'attributes' ? (
+                      <div>
+                        {attributes.length > 0 ? (
+                          <div>
+                            {attributes.map((attr, index) => (
+                              <div
+                                key={index}
+                                className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
+                              >
+                                <div className="text-gray-400">{attr.name}</div>
+                                <div className="font-mono text-white">{attr.value}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-4 text-center">
+                            <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                            <p className="text-xs text-gray-500">
+                              No attributes found for this trace
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    {activeView === 'events' ? (
+                      <div className="p-4">
+                        <div className="space-y-2">
+                          {[
+                            {
+                              code: 'DB_CONNECTION_ERROR',
+                              message: 'Connection to database timed out after 5 seconds',
+                              stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
+                            },
+                            {
+                              code: 'GRAPHQL_PARSE_FAILED',
+                              message: 'Sent GraphQL Operation cannot be parsed',
+                            },
+                            {
+                              code: 'TIMEOUT_ERROR',
+                              message: 'Operation timed out after 10 seconds',
+                            },
+                          ].map((exception, index) => (
+                            <div
+                              key={index}
+                              className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
+                            >
+                              <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
+                                <span className="font-mono text-xs font-medium text-red-300">
+                                  {exception.code}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="border-red-700 bg-red-950 text-[10px] text-red-300"
+                                >
+                                  Exception
+                                </Badge>
+                              </div>
+                              <div className="p-3 text-xs">
+                                <p className="text-gray-300">{exception.message}</p>
+                                {exception.stacktrace && (
+                                  <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+                                    {exception.stacktrace}
+                                  </pre>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </ScrollArea>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
-      </ScrollArea>
+      </TooltipProvider>
     </SheetContent>
   );
 }
@@ -1238,4 +1319,321 @@ export function TargetInsightsNewPage(props: {
       </TargetLayout>
     </>
   );
+}
+
+function TreeIcon(props: {
+  level: number;
+  /**
+   * Decides whether or not to draw the └[]
+   */
+  hasParent: boolean;
+  /**
+   * Decides whether or not to draw
+   */
+  isLeaf: boolean;
+  /**
+   * Wheter or not to draw ├
+   */
+  isLastChild: boolean;
+  childrenCount: number;
+  isCollapsed: boolean;
+  lines: boolean[];
+  onClick?: () => void;
+}) {
+  const levelWidth = 16;
+  const base = 30;
+  const width = base + props.level * levelWidth;
+
+  const leftSideEdgeStart = (props.level - 1) * levelWidth + 12;
+  const leftSideEdgeEnd = leftSideEdgeStart + 15;
+
+  const rectLeft = 2 + props.level * levelWidth;
+
+  return (
+    <svg
+      width={width}
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
+      className="shrink"
+      onClick={props.onClick}
+    >
+      {/* left-side line */}
+      {props.hasParent ? (
+        <line x1={leftSideEdgeStart} y1="16" x2={leftSideEdgeEnd} y2="16" stroke="currentColor" />
+      ) : null}
+
+      {/* bottom line */}
+      {props.isLeaf || props.isCollapsed ? null : (
+        <line x1={rectLeft + 10} x2={rectLeft + 10} y1="16" y2="32" stroke="currentColor" />
+      )}
+
+      {/* leaf span */}
+      {props.isLeaf ? (
+        <circle cx={props.level * 16 + 12} cy="16" r="3" fill="currentColor"></circle>
+      ) : (
+        // number block
+        <>
+          <rect
+            x={rectLeft}
+            y="8"
+            width="20"
+            height="16"
+            rx="3px"
+            ry="3px"
+            fill={props.isCollapsed ? 'currentColor' : 'black'}
+            stroke="currentColor"
+          />
+          <text
+            x={rectLeft + 10}
+            y="20"
+            style={{ fontSize: 10 }}
+            textAnchor="middle"
+            fontWeight={props.isCollapsed ? 700 : 500}
+            fill={props.isCollapsed ? 'white' : 'currentColor'}
+          >
+            {props.childrenCount}
+          </text>
+        </>
+      )}
+
+      {/* this line is the vertical line (for each parent groups) */}
+      {props.lines.map((line, index) =>
+        line ? (
+          <line
+            x1={16 * (index + 1) - 4}
+            x2={16 * (index + 1) - 4}
+            y1="0"
+            y2={index === props.level - 1 && props.isLastChild ? 16 : 32}
+            stroke="currentColor"
+          />
+        ) : null,
+      )}
+    </svg>
+  );
+}
+
+function TabButton(props: { isActive: boolean; onClick(): void; children: ReactNode }) {
+  return (
+    <button
+      className={cn(
+        'border-b-2 px-2 py-2',
+        props.isActive ? 'border-[#2662d8]' : 'hover:border-border border-transparent',
+      )}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
+  );
+}
+
+//
+
+function TraceTree() {
+  const totalDuration = 8.12;
+  const leftPanelWidth = 251;
+  const rootSpan: SpanProps = {
+    id: 'root',
+    title: 'FetchProducts',
+    description: 'gateway',
+    duration: totalDuration,
+    totalDuration,
+    startedAt: 0,
+    children: [
+      {
+        id: '213hbsdgs',
+        title: 'subgraph',
+        description: 'products',
+        duration: 4.06,
+        totalDuration,
+        startedAt: 2.3,
+        children: [
+          {
+            id: '138sndhs',
+            title: 'parse',
+            duration: 0.1,
+            totalDuration,
+            startedAt: 2.4,
+            children: [],
+          },
+          {
+            id: '1n1bsxs1',
+            title: 'validate',
+            duration: 0.9,
+            totalDuration,
+            startedAt: 2.5,
+            children: [],
+          },
+        ],
+      },
+      {
+        id: '1n23sxs1',
+        title: 'subgraph',
+        description: 'prices',
+        duration: 2.03,
+        totalDuration,
+        startedAt: 4.06,
+        children: [
+          {
+            id: '19nxb23b',
+            title: 'parse',
+            duration: 0.1,
+            totalDuration,
+            startedAt: 4.1,
+            children: [],
+          },
+          {
+            id: '284bsdb1',
+            title: 'validate',
+            duration: 1.2,
+            totalDuration,
+            startedAt: 4.2,
+            children: [
+              {
+                id: '284bsdb1',
+                title: 'async validation',
+                description: 'backend validation of prices',
+                duration: 0.2,
+                totalDuration,
+                startedAt: 5.4,
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <div>
+      <Node
+        key={rootSpan.id}
+        level={0}
+        leftPanelWidth={leftPanelWidth}
+        span={rootSpan}
+        parentSpan={null}
+        groupLines={[]}
+      />
+    </div>
+  );
+}
+
+type SpanProps = {
+  id: string;
+  title: string;
+  description?: string;
+  duration: number;
+  totalDuration: number;
+  startedAt: number;
+  children: SpanProps[];
+};
+
+type NodeProps = {
+  level: number;
+  leftPanelWidth: number;
+  span: SpanProps;
+  parentSpan: SpanProps | null;
+  groupLines: boolean[];
+};
+
+function countChildren(spans: SpanProps[]): number {
+  return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
+}
+
+const colors = ['#2662d8', '#2eb88a', '#e88d30', '#af56db'];
+function Node(props: NodeProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const leftPositionPercentage = roundFloatToTwoDecimals(
+    (props.span.startedAt / props.span.totalDuration) * 100,
+  );
+  const widthPercentage = roundFloatToTwoDecimals(
+    (props.span.duration / props.span.totalDuration) * 100,
+  );
+
+  const isNearRightEdge = leftPositionPercentage + widthPercentage > 85;
+
+  const isLastChild =
+    props.parentSpan?.children[props.parentSpan.children.length - 1] === props.span;
+
+  const childrenCount = collapsed
+    ? countChildren(props.span.children) + 1
+    : props.span.children.length;
+  const canBeCollapsed = props.span.children.length > 0;
+  const color = colors[props.level % colors.length];
+
+  return (
+    <>
+      <div className="cursor-pointer pr-8 odd:bg-gray-800/20 hover:bg-gray-900">
+        <div className="relative flex h-8 w-full items-center overflow-hidden">
+          <div
+            className="relative flex h-8 shrink-0 items-center gap-x-2 overflow-hidden pl-1"
+            style={{ width: `${props.leftPanelWidth}px` }}
+          >
+            <div className="flex h-8 shrink-0 items-center overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500">
+              <TreeIcon
+                key={`tree-icon-${props.span.id}`}
+                isLeaf={props.span.children.length === 0}
+                isLastChild={isLastChild}
+                childrenCount={childrenCount}
+                hasParent={!!props.parentSpan}
+                level={props.level}
+                lines={props.groupLines}
+                isCollapsed={collapsed}
+                onClick={canBeCollapsed ? () => setCollapsed(collapsed => !collapsed) : undefined}
+              />
+            </div>
+            <div className="whitespace-nowrap text-xs text-white">{props.span.title}</div>
+            {props.span.description ? (
+              <div className="overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-gray-500">
+                {props.span.description}
+              </div>
+            ) : null}
+          </div>
+          <div className="relative flex h-full grow items-center overflow-hidden">
+            <div
+              className={cn('absolute block h-6 min-w-[1px] select-none rounded-sm')}
+              style={{
+                left: `min(${leftPositionPercentage}%, 100% - 1px)`,
+                width: `${widthPercentage}%`,
+                backgroundColor: color,
+              }}
+            >
+              <div
+                className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+                style={{
+                  fontSize: '11px',
+                  ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
+                }}
+              >
+                {props.span.duration}ms
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {collapsed
+        ? null
+        : props.span.children.length
+          ? props.span.children.map(span => (
+              <Node
+                leftPanelWidth={props.leftPanelWidth}
+                span={span}
+                level={props.level + 1}
+                key={span.id}
+                parentSpan={props.span}
+                groupLines={
+                  isLastChild
+                    ? // remove the last line if it's the last span from the group
+                      props.groupLines.slice(0, -1).concat(false, true)
+                    : props.groupLines.concat(true)
+                }
+              />
+            ))
+          : null}
+    </>
+  );
+}
+
+function roundFloatToTwoDecimals(num: number) {
+  return Math.round(num * 100) / 100;
 }
