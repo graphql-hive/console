@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { CallToAction, cn, Heading, ComparisonTable as Table } from '@theguild/components';
 import { BenchmarkTableBody } from './benchmark-table-body';
-import { functionalTones } from './functional-tones';
 import { CheckmarkIcon, XIcon } from './icons';
 
 export interface FederationCompatibleBenchmarksSectionProps
