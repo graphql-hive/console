@@ -72,10 +72,7 @@ const environment = prepareEnvironment({
   rootDns: new pulumi.Config('common').require('dnsZone'),
 });
 deploySentryEventsMonitor({ docker, environment, sentry });
-const observability = deployObservability({
-  envName,
-  tableSuffix: envName === 'prod' ? 'production' : envName,
-});
+const observability = deployObservability({ environment });
 const clickhouse = deployClickhouse();
 const postgres = deployPostgres();
 const redis = deployRedis({ environment });

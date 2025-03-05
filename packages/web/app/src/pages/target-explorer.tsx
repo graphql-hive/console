@@ -221,7 +221,7 @@ function ExplorerPageContent(props: {
                 targetSlug={props.targetSlug}
                 variant="all"
               />
-              {latestValidSchemaVersion?.explorer?.metadataAttributes ? (
+              {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
                 <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
               ) : null}
             </>

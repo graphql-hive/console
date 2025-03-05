@@ -139,10 +139,10 @@ function TeamAvatar({ data: [name, avatar, social] }: { data: TeamMember }) {
       rel="noreferrer"
     >
       <div className="relative aspect-square min-h-[var(--size)] w-auto min-w-[var(--size)] flex-1 overflow-hidden rounded-2xl mix-blend-multiply ring-blue-500/0 ring-offset-2 transition-all hover:ring-4 hover:ring-blue-500/15 group-focus:ring-blue-500/40 group-focus-visible:ring-4 xl:w-[var(--size)]">
-        <div className="absolute inset-0 size-full bg-blue-100" />
+        <div className="firefox:hidden absolute inset-0 size-full bg-blue-100" />
         <Image
           alt=""
-          className="rounded-2xl bg-black brightness-100 grayscale transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-110"
+          className="firefox:bg-blend-multiply firefox:![filter:grayscale(1)] rounded-2xl bg-black brightness-100 grayscale transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-110"
           {...(typeof avatar === 'string'
             ? { src: avatar }
             : { blurDataURL: avatar.blurDataURL, src: avatar.src })}
