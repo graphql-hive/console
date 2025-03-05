@@ -64,7 +64,7 @@ export function deployUsage({
         env: {
           ...environment.envVars,
           SENTRY: sentry.enabled ? '1' : '0',
-          REQUEST_LOGGING: '0',
+          REQUEST_LOGGING: '1',
           KAFKA_BUFFER_SIZE: kafka.config.bufferSize,
           KAFKA_SASL_MECHANISM: kafka.config.saslMechanism,
           KAFKA_CONCURRENCY: kafka.config.concurrency,
