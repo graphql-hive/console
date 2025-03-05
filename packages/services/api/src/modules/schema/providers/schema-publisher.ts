@@ -340,6 +340,24 @@ export class SchemaPublisher {
       });
     }
 
+    // if url is provided but this is not a distributed project
+    if (input.url != null && !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)) {
+      this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
+      increaseSchemaCheckCountMetric('rejected');
+
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message: 'url is only supported by distributed projects',
+          },
+        ],
+      } as const;
+    }
+
     if (
       (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
       input.service == null
@@ -547,6 +565,7 @@ export class SchemaPublisher {
           input: {
             sdl,
             serviceName: input.service,
+            url: input.url ?? null,
           },
           selector,
           latest: latestVersion

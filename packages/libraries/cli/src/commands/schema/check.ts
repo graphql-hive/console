@@ -161,6 +161,9 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
         ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
+    url: Flags.string({
+      description: 'If checking a service, then you can optionally provide the service URL to see the difference in the supergraph during the check.'
+    })
   };
 
   static args = {
@@ -273,6 +276,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                 : null,
             contextId: flags.contextId ?? undefined,
             target,
+            url: flags.url,
           },
         },
       });
