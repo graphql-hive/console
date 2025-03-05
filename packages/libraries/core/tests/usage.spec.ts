@@ -747,3 +747,49 @@ test('retry on non-200', async () => {
     [INF] [hive][usage] Disposing
   `);
 });
+
+test('constructs URL with usage.target', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'Token';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  hive.dispose();
+});
