@@ -341,7 +341,10 @@ export class SchemaPublisher {
     }
 
     // if url is provided but this is not a distributed project
-    if (input.url != null && !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)) {
+    if (
+      input.url != null &&
+      !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)
+    ) {
       this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
       increaseSchemaCheckCountMetric('rejected');
 

@@ -146,8 +146,10 @@ export class CompositeModel {
       date: Date.now(),
       sdl: input.sdl,
       service_name: input.serviceName,
-      service_url: input.url ??
-        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ?? 'temp',
+      service_url:
+        input.url ??
+        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ??
+        'temp',
       action: 'PUSH',
       metadata: null,
     };

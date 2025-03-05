@@ -354,73 +354,75 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
       },
     );
 
-    test.skipIf(projectType !== ProjectType.Single)('schema:check rejects a `--url` argument in single projects', async ({
-      expect,
-    }) => {
-      const { createOrg } = await initSeed().createOwner();
-      const { inviteAndJoinMember, createProject } = await createOrg();
-      await inviteAndJoinMember();
-      const { createTargetAccessToken } = await createProject(projectType);
-      const { secret } = await createTargetAccessToken({});
-    
-      await expect(
-        schemaCheck(
-          [
-            '--registry.accessToken',
-            secret,
-            '--service',
-            'example',
-            '--url',
-            'https://example.graphql-hive.com/graphql',
-            '--author',
-            'Kamil',
-            'fixtures/init-schema.graphql',
-          ],
-          {
-            // set these environment variables to "emulate" a GitHub actions environment
-            // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
-            // consistent snapshot output behaviour.
-            GITHUB_ACTIONS: '1',
-            GITHUB_REPOSITORY: 'foo/foo',
-            GITHUB_EVENT_PATH: '',
-          },
-        ),
-      ).rejects.toMatchSnapshot();
-    });
+    test.skipIf(projectType !== ProjectType.Single)(
+      'schema:check rejects a `--url` argument in single projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
 
-    test.skipIf(projectType === ProjectType.Single)('schema:check accepts a `--url` argument in distributed projects', async ({
-      expect,
-    }) => {
-      const { createOrg } = await initSeed().createOwner();
-      const { inviteAndJoinMember, createProject } = await createOrg();
-      await inviteAndJoinMember();
-      const { createTargetAccessToken } = await createProject(projectType);
-      const { secret } = await createTargetAccessToken({});
-    
-      await expect(
-        schemaCheck(
-          [
-            '--registry.accessToken',
-            secret,
-            '--service',
-            'example',
-            '--url',
-            'https://example.graphql-hive.com/graphql',
-            '--author',
-            'Kamil',
-            'fixtures/init-schema.graphql',
-          ],
-          {
-            // set these environment variables to "emulate" a GitHub actions environment
-            // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
-            // consistent snapshot output behaviour.
-            GITHUB_ACTIONS: '1',
-            GITHUB_REPOSITORY: 'foo/foo',
-            GITHUB_EVENT_PATH: '',
-          },
-        ),
-      ).resolves.toMatchSnapshot();
-    });
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).rejects.toMatchSnapshot();
+      },
+    );
+
+    test.skipIf(projectType === ProjectType.Single)(
+      'schema:check accepts a `--url` argument in distributed projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).resolves.toMatchSnapshot();
+      },
+    );
   },
 );
 
