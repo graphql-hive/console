@@ -27,7 +27,7 @@ export default function PricingPage() {
 
       <PlanComparison className="mx-4 md:mx-6" />
 
-      <PlansTable className="mx-4 md:mx-6" />
+      <PlansTable />
 
       <CompanyTestimonialsSection className="mx-4 mt-6 md:mx-6" />
 
