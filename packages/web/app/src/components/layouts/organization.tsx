@@ -40,6 +40,7 @@ import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { OrganizationSelector } from './organization-selectors';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export enum Page {
   Overview = 'overview',
@@ -82,6 +83,30 @@ const OrganizationLayoutQuery = graphql(`
   }
 `);
 
+function OrganizationIdInner(props: { organizationId: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <span className='cursor-help text-gray-700 dark:text-gray-300'>{props.organizationId}</span>
+        </TooltipTrigger>
+        <TooltipContent>
+          This UUID can be used in API calls or CLI commands to Hive instead of passing the name(s).
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+function OrganizationId(props: { organizationId: string }) {
+  return (
+    <div className="flex flex-row text-xs text-gray-600 dark:text-gray-400 gap-x-1">
+      <>Resource ID:</>
+      <OrganizationIdInner organizationId={props.organizationId}/>
+    </div>
+  )
+}
+
 export function OrganizationLayout({
   children,
   page,
@@ -91,6 +116,7 @@ export function OrganizationLayout({
   page?: Page;
   className?: string;
   organizationSlug: string;
+  organizationId?: string;
   children: ReactNode;
 }): ReactElement | null {
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -115,13 +141,16 @@ export function OrganizationLayout({
     <>
       <header>
         <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <OrganizationSelector
-              isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
+          <div className="flex flex-col gap-y-2">
+            <div className="flex flex-row items-center gap-4">
+              <HiveLink className="size-8" />
+              <OrganizationSelector
+                isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
+                currentOrganizationSlug={props.organizationSlug}
+                organizations={query.data?.organizations ?? null}
+              />
+            </div>
+            {props.organizationId ? <OrganizationId organizationId={props.organizationId}/> : null}
           </div>
           <div>
             <UserMenu
