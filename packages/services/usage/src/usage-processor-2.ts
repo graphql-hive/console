@@ -10,16 +10,15 @@ import * as tb from '@sinclair/typebox';
 import * as tc from '@sinclair/typebox/compiler';
 import * as tbe from '@sinclair/typebox/errors';
 import { invalidRawOperations, rawOperationsSize, totalOperations, totalReports } from './metrics';
-import { TokensResponse } from './tokens';
 import { isValidOperationBody } from './usage-processor-1';
 
 export const usageProcessorV2 = traceInlineSync(
   'usageProcessorV2',
   {
     initAttributes: (_logger, _incomingReport, token) => ({
-      'hive.input.target': token.target,
-      'hive.input.project': token.project,
-      'hive.input.organization': token.organization,
+      'hive.input.targetId': token.targetId,
+      'hive.input.projectId': token.projectId,
+      'hive.input.organizationId': token.organizationId,
     }),
     resultAttributes: result => ({
       'hive.result.success': result.success,
@@ -32,7 +31,11 @@ export const usageProcessorV2 = traceInlineSync(
   (
     logger: Logger,
     incomingReport: unknown,
-    token: TokensResponse,
+    targetSelector: {
+      targetId: string;
+      projectId: string;
+      organizationId: string;
+    },
     targetRetentionInDays: number | null,
   ):
     | { success: false; errors: Array<ValueError> }
@@ -44,6 +47,7 @@ export const usageProcessorV2 = traceInlineSync(
           accepted: number;
         };
       } => {
+    logger = logger.child({ source: 'usageProcessorV2' });
     const reportResult = decodeReport(incomingReport);
 
     if (reportResult.success === false) {
@@ -82,8 +86,8 @@ export const usageProcessorV2 = traceInlineSync(
 
     const report: RawReport = {
       id: randomUUID(),
-      target: token.target,
-      organization: token.organization,
+      target: targetSelector.targetId,
+      organization: targetSelector.organizationId,
       size: 0,
       map: {},
       operations: rawOperations,
@@ -98,7 +102,7 @@ export const usageProcessorV2 = traceInlineSync(
       if (!operationMapRecord) {
         logger.warn(
           `Detected invalid operation. Operation map key could not be found. (target=%s): %s`,
-          token.target,
+          targetSelector.targetId,
           operationMapKey,
         );
         invalidRawOperations
@@ -112,7 +116,11 @@ export const usageProcessorV2 = traceInlineSync(
       let newOperationMapKey = newKeyMappings.get(operationMapRecord);
 
       if (!isValidOperationBody(operationMapRecord.operation)) {
-        logger.warn(`Detected invalid operation (target=%s): %s`, token.target, operationMapKey);
+        logger.warn(
+          `Detected invalid operation (target=%s): %s`,
+          targetSelector.targetId,
+          operationMapKey,
+        );
         invalidRawOperations
           .labels({
             reason: 'invalid_operation_body',
@@ -124,7 +132,7 @@ export const usageProcessorV2 = traceInlineSync(
       if (newOperationMapKey === undefined) {
         const sortedFields = operationMapRecord.fields.sort();
         newOperationMapKey = createHash('md5')
-          .update(token.target)
+          .update(targetSelector.targetId)
           .update(operationMapRecord.operation)
           .update(operationMapRecord.operationName ?? '')
           .update(JSON.stringify(sortedFields))
