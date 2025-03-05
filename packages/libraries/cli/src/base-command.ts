@@ -14,7 +14,6 @@ import {
   InvalidRegistryTokenError,
   isAggregateError,
   MissingArgumentsError,
-  MissingTargetError,
   NetworkError,
 } from './helpers/errors';
 import { Texture } from './helpers/texture/texture';
@@ -264,7 +263,12 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
 
         if (jsonData.errors && jsonData.errors.length > 0) {
           if (jsonData.errors[0].extensions?.code === 'ERR_MISSING_TARGET') {
-            throw new MissingTargetError();
+            throw new MissingArgumentsError([
+              'target',
+              'The target on which the action is performed.' +
+                ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
+                ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+            ]);
           }
           if (jsonData.errors[0].message === 'Invalid token provided') {
             throw new InvalidRegistryTokenError();

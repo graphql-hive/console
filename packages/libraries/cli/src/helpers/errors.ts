@@ -137,16 +137,6 @@ export class MissingCdnEndpointError extends HiveCLIError {
   }
 }
 
-export class MissingTargetError extends HiveCLIError {
-  constructor() {
-    super(
-      ExitCode.ERROR,
-      errorCode(ErrorCategory.GENERIC, 9),
-      `A target is required to perform the action. Please provide the "--target" flag.`,
-    );
-  }
-}
-
 export class MissingEnvironmentError extends HiveCLIError {
   constructor(...requiredVars: Array<[string, string]>) {
     const varsStr = requiredVars.map(a => `\t${a[0]} \t${a[1]}`).join('\n');
