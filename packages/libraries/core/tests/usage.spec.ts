@@ -791,5 +791,5 @@ test('constructs URL with usage.target', async ({ expect }) => {
 
   const url = await dUrl.promise;
   expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
-  hive.dispose();
+  await hive.dispose();
 });
