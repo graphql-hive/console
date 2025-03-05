@@ -1,31 +1,42 @@
 import {
+  ChangeEvent,
   ComponentPropsWithoutRef,
   ElementRef,
   forwardRef,
   Fragment,
   InputHTMLAttributes,
   ReactNode,
+  useCallback,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { formatDate } from 'date-fns';
+import { addDays, addHours, formatDate, parse as parseDate, subYears } from 'date-fns';
 import {
   AlertTriangle,
   ArrowUpDown,
   ArrowUpDownIcon,
+  CalendarIcon,
   Check,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Clock,
   ExternalLinkIcon,
+  InfoIcon,
+  LockIcon,
   MoreHorizontal,
   SearchIcon,
   X,
+  ZapIcon,
 } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import type { DateRange } from 'react-day-picker';
+import { Bar, BarChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from 'recharts';
+import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartConfig,
@@ -44,8 +55,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -96,150 +110,279 @@ import {
   VisibilityState,
 } from '@tanstack/react-table';
 
+const rootSpan: SpanProps = {
+  id: 'root',
+  title: 'FetchProducts',
+  serviceName: 'gateway',
+  duration: 8.12,
+  startedAt: 0,
+  children: [
+    {
+      id: '1ns581b',
+      title: 'plan',
+      serviceName: 'gateway',
+      duration: 2.3,
+      startedAt: 0.2,
+      children: [],
+    },
+    {
+      id: '213hbsdgs',
+      title: 'subgraph',
+      serviceName: 'products',
+      duration: 4.06,
+      startedAt: 2.3,
+      children: [
+        {
+          id: '138sndhs',
+          title: 'parse',
+          duration: 0.1,
+          startedAt: 2.4,
+          children: [],
+        },
+        {
+          id: '1n1bsxs1',
+          title: 'validate',
+          duration: 0.9,
+          startedAt: 2.5,
+          children: [],
+        },
+      ],
+    },
+    {
+      id: '1n23sxs1',
+      title: 'subgraph',
+      serviceName: 'prices',
+      duration: 2.03,
+      startedAt: 4.06,
+      children: [
+        {
+          id: '19nxb23b',
+          title: 'parse',
+          duration: 0.1,
+          startedAt: 4.1,
+          children: [],
+        },
+        {
+          id: '284bsdb1',
+          title: 'validate',
+          duration: 1.2,
+          startedAt: 4.2,
+          children: [
+            {
+              id: '284bsdb1',
+              title: 'async validation',
+              duration: 0.2,
+              startedAt: 5.4,
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 const chartData = [
-  { date: '2024-04-01', traces: 222, exceptions: 15 },
-  { date: '2024-04-02', traces: 97, exceptions: 18 },
-  { date: '2024-04-03', traces: 167, exceptions: 12 },
-  { date: '2024-04-04', traces: 242, exceptions: 26 },
-  { date: '2024-04-05', traces: 373, exceptions: 29 },
-  { date: '2024-04-06', traces: 301, exceptions: 34 },
-  { date: '2024-04-07', traces: 245, exceptions: 18 },
-  { date: '2024-04-08', traces: 409, exceptions: 32 },
-  { date: '2024-04-09', traces: 59, exceptions: 11 },
-  { date: '2024-04-10', traces: 261, exceptions: 19 },
-  { date: '2024-04-11', traces: 327, exceptions: 35 },
-  { date: '2024-04-12', traces: 292, exceptions: 21 },
-  { date: '2024-04-13', traces: 342, exceptions: 38 },
-  { date: '2024-04-14', traces: 137, exceptions: 22 },
-  { date: '2024-04-15', traces: 120, exceptions: 17 },
-  { date: '2024-04-16', traces: 138, exceptions: 19 },
-  { date: '2024-04-17', traces: 446, exceptions: 36 },
-  { date: '2024-04-18', traces: 364, exceptions: 41 },
-  { date: '2024-04-19', traces: 243, exceptions: 18 },
-  { date: '2024-04-20', traces: 89, exceptions: 15 },
-  { date: '2024-04-21', traces: 137, exceptions: 20 },
-  { date: '2024-04-22', traces: 224, exceptions: 17 },
-  { date: '2024-04-23', traces: 138, exceptions: 23 },
-  { date: '2024-04-24', traces: 387, exceptions: 29 },
-  { date: '2024-04-25', traces: 215, exceptions: 25 },
-  { date: '2024-04-26', traces: 75, exceptions: 13 },
-  { date: '2024-04-27', traces: 383, exceptions: 42 },
-  { date: '2024-04-28', traces: 122, exceptions: 18 },
-  { date: '2024-04-29', traces: 315, exceptions: 24 },
-  { date: '2024-04-30', traces: 454, exceptions: 38 },
-  { date: '2024-05-01', traces: 165, exceptions: 22 },
-  { date: '2024-05-02', traces: 293, exceptions: 31 },
-  { date: '2024-05-03', traces: 247, exceptions: 19 },
-  { date: '2024-05-04', traces: 385, exceptions: 42 },
-  { date: '2024-05-05', traces: 481, exceptions: 39 },
-  { date: '2024-05-06', traces: 498, exceptions: 52 },
-  { date: '2024-05-07', traces: 388, exceptions: 30 },
-  { date: '2024-05-08', traces: 149, exceptions: 21 },
-  { date: '2024-05-09', traces: 227, exceptions: 18 },
-  { date: '2024-05-10', traces: 293, exceptions: 33 },
-  { date: '2024-05-11', traces: 335, exceptions: 27 },
-  { date: '2024-05-12', traces: 197, exceptions: 24 },
-  { date: '2024-05-13', traces: 197, exceptions: 16 },
-  { date: '2024-05-14', traces: 448, exceptions: 49 },
-  { date: '2024-05-15', traces: 473, exceptions: 38 },
-  { date: '2024-05-16', traces: 338, exceptions: 40 },
-  { date: '2024-05-17', traces: 499, exceptions: 42 },
-  { date: '2024-05-18', traces: 315, exceptions: 35 },
-  { date: '2024-05-19', traces: 235, exceptions: 18 },
-  { date: '2024-05-20', traces: 177, exceptions: 23 },
-  { date: '2024-05-21', traces: 82, exceptions: 14 },
-  { date: '2024-05-22', traces: 81, exceptions: 12 },
-  { date: '2024-05-23', traces: 252, exceptions: 29 },
-  { date: '2024-05-24', traces: 294, exceptions: 22 },
-  { date: '2024-05-25', traces: 201, exceptions: 25 },
-  { date: '2024-05-26', traces: 213, exceptions: 17 },
-  { date: '2024-05-27', traces: 420, exceptions: 46 },
-  { date: '2024-05-28', traces: 233, exceptions: 19 },
-  { date: '2024-05-29', traces: 78, exceptions: 13 },
-  { date: '2024-05-30', traces: 340, exceptions: 28 },
-  { date: '2024-05-31', traces: 178, exceptions: 23 },
-  { date: '2024-06-01', traces: 178, exceptions: 20 },
-  { date: '2024-06-02', traces: 470, exceptions: 41 },
-  { date: '2024-06-03', traces: 103, exceptions: 16 },
-  { date: '2024-06-04', traces: 439, exceptions: 38 },
-  { date: '2024-06-05', traces: 88, exceptions: 14 },
-  { date: '2024-06-06', traces: 294, exceptions: 25 },
-  { date: '2024-06-07', traces: 323, exceptions: 37 },
-  { date: '2024-06-08', traces: 385, exceptions: 32 },
-  { date: '2024-06-09', traces: 438, exceptions: 48 },
-  { date: '2024-06-10', traces: 155, exceptions: 20 },
-  { date: '2024-06-11', traces: 92, exceptions: 15 },
-  { date: '2024-06-12', traces: 492, exceptions: 42 },
-  { date: '2024-06-13', traces: 81, exceptions: 13 },
-  { date: '2024-06-14', traces: 426, exceptions: 38 },
-  { date: '2024-06-15', traces: 307, exceptions: 35 },
-  { date: '2024-06-16', traces: 371, exceptions: 31 },
-  { date: '2024-06-17', traces: 475, exceptions: 52 },
-  { date: '2024-06-18', traces: 107, exceptions: 17 },
-  { date: '2024-06-19', traces: 341, exceptions: 29 },
-  { date: '2024-06-20', traces: 408, exceptions: 45 },
-  { date: '2024-06-21', traces: 169, exceptions: 21 },
-  { date: '2024-06-22', traces: 317, exceptions: 27 },
-  { date: '2024-06-23', traces: 480, exceptions: 53 },
-  { date: '2024-06-24', traces: 132, exceptions: 18 },
-  { date: '2024-06-25', traces: 141, exceptions: 19 },
-  { date: '2024-06-26', traces: 434, exceptions: 38 },
-  { date: '2024-06-27', traces: 448, exceptions: 49 },
-  { date: '2024-06-28', traces: 149, exceptions: 20 },
-  { date: '2024-06-29', traces: 103, exceptions: 16 },
-  { date: '2024-06-30', traces: 446, exceptions: 40 },
+  { date: '2024-04-01', ok: 222, error: 15 },
+  { date: '2024-04-02', ok: 97, error: 18 },
+  { date: '2024-04-03', ok: 167, error: 12 },
+  { date: '2024-04-04', ok: 242, error: 26 },
+  { date: '2024-04-05', ok: 373, error: 29 },
+  { date: '2024-04-06', ok: 301, error: 34 },
+  { date: '2024-04-07', ok: 245, error: 18 },
+  { date: '2024-04-08', ok: 409, error: 32 },
+  { date: '2024-04-09', ok: 59, error: 11 },
+  { date: '2024-04-10', ok: 261, error: 19 },
+  { date: '2024-04-11', ok: 327, error: 35 },
+  { date: '2024-04-12', ok: 292, error: 21 },
+  { date: '2024-04-13', ok: 342, error: 38 },
+  { date: '2024-04-14', ok: 137, error: 22 },
+  { date: '2024-04-15', ok: 120, error: 17 },
+  { date: '2024-04-16', ok: 138, error: 19 },
+  { date: '2024-04-17', ok: 446, error: 36 },
+  { date: '2024-04-18', ok: 364, error: 41 },
+  { date: '2024-04-19', ok: 243, error: 18 },
+  { date: '2024-04-20', ok: 89, error: 15 },
+  { date: '2024-04-21', ok: 137, error: 20 },
+  { date: '2024-04-22', ok: 224, error: 17 },
+  { date: '2024-04-23', ok: 138, error: 23 },
+  { date: '2024-04-24', ok: 387, error: 29 },
+  { date: '2024-04-25', ok: 215, error: 25 },
+  { date: '2024-04-26', ok: 75, error: 13 },
+  { date: '2024-04-27', ok: 383, error: 42 },
+  { date: '2024-04-28', ok: 122, error: 18 },
+  { date: '2024-04-29', ok: 315, error: 24 },
+  { date: '2024-04-30', ok: 454, error: 38 },
+  { date: '2024-05-01', ok: 165, error: 22 },
+  { date: '2024-05-02', ok: 293, error: 31 },
+  { date: '2024-05-03', ok: 247, error: 19 },
+  { date: '2024-05-04', ok: 385, error: 42 },
+  { date: '2024-05-05', ok: 481, error: 39 },
+  { date: '2024-05-06', ok: 498, error: 52 },
+  { date: '2024-05-07', ok: 388, error: 30 },
+  { date: '2024-05-08', ok: 149, error: 21 },
+  { date: '2024-05-09', ok: 227, error: 18 },
+  { date: '2024-05-10', ok: 293, error: 33 },
+  { date: '2024-05-11', ok: 335, error: 27 },
+  { date: '2024-05-12', ok: 197, error: 24 },
+  { date: '2024-05-13', ok: 197, error: 16 },
+  { date: '2024-05-14', ok: 448, error: 49 },
+  { date: '2024-05-15', ok: 473, error: 38 },
+  { date: '2024-05-16', ok: 338, error: 40 },
+  { date: '2024-05-17', ok: 499, error: 42 },
+  { date: '2024-05-18', ok: 315, error: 35 },
+  { date: '2024-05-19', ok: 235, error: 18 },
+  { date: '2024-05-20', ok: 177, error: 23 },
+  { date: '2024-05-21', ok: 82, error: 14 },
+  { date: '2024-05-22', ok: 81, error: 12 },
+  { date: '2024-05-23', ok: 252, error: 29 },
+  { date: '2024-05-24', ok: 294, error: 22 },
+  { date: '2024-05-25', ok: 201, error: 25 },
+  { date: '2024-05-26', ok: 213, error: 17 },
+  { date: '2024-05-27', ok: 420, error: 46 },
+  { date: '2024-05-28', ok: 233, error: 19 },
+  { date: '2024-05-29', ok: 78, error: 13 },
+  { date: '2024-05-30', ok: 340, error: 28 },
+  { date: '2024-05-31', ok: 178, error: 23 },
+  { date: '2024-06-01', ok: 178, error: 20 },
+  { date: '2024-06-02', ok: 470, error: 41 },
+  { date: '2024-06-03', ok: 103, error: 16 },
+  { date: '2024-06-04', ok: 439, error: 38 },
+  { date: '2024-06-05', ok: 88, error: 14 },
+  { date: '2024-06-06', ok: 294, error: 25 },
+  { date: '2024-06-07', ok: 323, error: 37 },
+  { date: '2024-06-08', ok: 385, error: 32 },
+  { date: '2024-06-09', ok: 438, error: 48 },
+  { date: '2024-06-10', ok: 155, error: 20 },
+  { date: '2024-06-11', ok: 92, error: 15 },
+  { date: '2024-06-12', ok: 492, error: 42 },
+  { date: '2024-06-13', ok: 81, error: 13 },
+  { date: '2024-06-14', ok: 426, error: 38 },
+  { date: '2024-06-15', ok: 307, error: 35 },
+  { date: '2024-06-16', ok: 371, error: 31 },
+  { date: '2024-06-17', ok: 475, error: 52 },
+  { date: '2024-06-18', ok: 107, error: 17 },
+  { date: '2024-06-19', ok: 341, error: 29 },
+  { date: '2024-06-20', ok: 408, error: 45 },
+  { date: '2024-06-21', ok: 169, error: 21 },
+  { date: '2024-06-22', ok: 317, error: 27 },
+  { date: '2024-06-23', ok: 480, error: 53 },
+  { date: '2024-06-24', ok: 132, error: 18 },
+  { date: '2024-06-25', ok: 141, error: 19 },
+  { date: '2024-06-26', ok: 434, error: 38 },
+  { date: '2024-06-27', ok: 448, error: 49 },
+  { date: '2024-06-28', ok: 149, error: 20 },
+  { date: '2024-06-29', ok: 103, error: 16 },
+  { date: '2024-06-30', ok: 446, error: 40 },
 ];
 
 const chartConfig = {
-  traces: {
-    label: 'Traces',
+  ok: {
+    label: 'Successful',
     color: 'hsl(var(--chart-1))',
   },
-  exceptions: {
-    label: 'Exceptions',
+  error: {
+    label: 'Failed',
     color: 'hsl(var(--chart-2))',
   },
 } satisfies ChartConfig;
 
 function Traffic() {
-  const [activeChart, setActiveChart] = useState<keyof typeof chartConfig>('traces');
   const total = useMemo(
     () => ({
-      traces: chartData.reduce((acc, curr) => acc + curr.traces, 0),
-      exceptions: chartData.reduce((acc, curr) => acc + curr.exceptions, 0),
+      ok: chartData.reduce((acc, curr) => acc + curr.ok, 0),
+      error: chartData.reduce((acc, curr) => acc + curr.error, 0),
     }),
     [],
   );
+
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  const [zoomedData, setZoomedData] = useState<typeof data | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handle mouse down event to start selection
+  const handleMouseDown = useCallback((e: any) => {
+    if (!e || !e.activeLabel) return;
+
+    // Check if the click is within the chart area and not on the Y-axis
+    // e.chartX is the x-coordinate of the click relative to the chart
+    if (e.chartX < 40) return; // Prevent selection when clicking on Y-axis area
+
+    setRefAreaLeft(e.activeLabel);
+    setRefAreaRight(null);
+    setIsSelecting(true);
+  }, []);
+
+  // Handle mouse move event during selection
+  const handleMouseMove = useCallback(
+    (e: any) => {
+      if (!isSelecting || !e || !e.activeLabel) return;
+      setRefAreaRight(e.activeLabel);
+    },
+    [isSelecting],
+  );
+
+  // Handle mouse up event to end selection
+  const handleMouseUp = useCallback(() => {
+    if (!refAreaLeft || !refAreaRight) {
+      setIsSelecting(false);
+      return;
+    }
+
+    // Ensure left is always before right
+    let left = refAreaLeft;
+    let right = refAreaRight;
+    const now = new Date();
+
+    if (
+      parseDate(left, 'yyyy-MM-dd', now).getTime() > parseDate(right, 'yyyy-MM-dd', now).getTime()
+    ) {
+      [left, right] = [right, left];
+    }
+
+    // Filter data to the selected range
+    const filteredData = data.filter(
+      entry =>
+        parseDate(entry.timestamp, 'yyyy-MM-dd', now).getTime() >=
+          parseDate(left, 'yyyy-MM-dd', now).getTime() &&
+        parseDate(entry.timestamp, 'YYYY-MM-dd', now).getTime() <=
+          parseDate(right, 'yyyy-MM-dd', now).getTime(),
+    );
+
+    if (filteredData.length > 0) {
+      setZoomedData(filteredData);
+    }
+
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+    setIsSelecting(false);
+  }, [refAreaLeft, refAreaRight, data]);
+
   return (
     <Card>
-      <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
+      <CardHeader className="flex flex-col items-center space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Traces</CardTitle>
           <CardDescription>Request traces for the selected time</CardDescription>
         </div>
-        <div className="flex">
-          {['traces', 'exceptions'].map(key => {
-            const chart = key as keyof typeof chartConfig;
-            return (
-              <button
-                key={chart}
-                data-active={activeChart === chart}
-                className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-l sm:border-t-0 sm:px-8 sm:py-6"
-                onClick={() => setActiveChart(chart)}
-              >
-                <span className="text-muted-foreground text-xs">{chartConfig[chart].label}</span>
-                <span className="text-lg font-bold leading-none sm:text-3xl">
-                  {total[key as keyof typeof total].toLocaleString()}
-                </span>
-              </button>
-            );
-          })}
+        <div className="pr-6">
+          <DatePickerWithRange />
         </div>
       </CardHeader>
       <CardContent className="px-2 sm:p-6">
-        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[250px] w-full select-none"
+          ref={chartContainerRef}
+          onMouseLeave={isSelecting ? handleMouseUp : undefined}
+        >
           <BarChart
             accessibilityLayer
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
             data={chartData}
             margin={{
               left: 12,
@@ -265,7 +408,6 @@ function Traffic() {
               content={
                 <ChartTooltipContent
                   className="w-[150px]"
-                  nameKey={activeChart}
                   labelFormatter={value => {
                     return new Date(value).toLocaleDateString('en-US', {
                       month: 'short',
@@ -276,7 +418,11 @@ function Traffic() {
                 />
               }
             />
-            <Bar dataKey={activeChart} fill={`var(--color-${activeChart})`} />
+            <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} />
+            <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} />
+            {refAreaLeft && refAreaRight && (
+              <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
+            )}
           </BarChart>
         </ChartContainer>
       </CardContent>
@@ -616,7 +762,7 @@ function TracesList() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(data[0]);
+  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
 
   const table = useReactTable({
     data,
@@ -865,7 +1011,7 @@ function DurationFilter() {
           <CollapsibleContent>
             <SidebarGroupContent>
               <SidebarMenu>
-                <div className="space-y-6 rounded-lg bg-zinc-950 p-2">
+                <div className="space-y-6 p-2">
                   <div className="space-y-2">
                     <div className="space-y-1">
                       <label className="font-mono text-xs text-zinc-400">MIN</label>
@@ -888,9 +1034,9 @@ function DurationFilter() {
                           type="number"
                           value={values[1].toFixed(2)}
                           onChange={e => handleInputChange(1, e.target.value)}
-                          className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
+                          className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
                         />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
                           ms
                         </span>
                       </div>
@@ -969,6 +1115,16 @@ function Filters() {
   );
 }
 
+const fetchProductsQueryString = `
+  query FetchProduct {
+    products {
+      id
+      name
+      price
+    }
+  }
+`;
+
 interface TraceAttribute {
   name: string;
   value: string | number | ReactNode;
@@ -976,7 +1132,8 @@ interface TraceAttribute {
 }
 
 function TraceSheet({ trace }: { trace: Trace | null }) {
-  const [activeView, setActiveView] = useState<'attributes' | 'events'>('attributes');
+  const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
+  const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
 
   if (!trace) {
     return null;
@@ -1019,6 +1176,8 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
       category: 'HTTP',
     },
   ];
+
+  const serviceNames = listServiceNames(rootSpan);
 
   return (
     <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
@@ -1105,49 +1264,32 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
                 </div>
                 <ScrollArea className="flex-grow">
                   <div>
-                    <TraceTree />
-                    {/* <Span
-                      title="FetchProducts"
-                      description="gateway"
-                      topWidthPercentage={33.33}
-                      spanLeftPercentage={0}
-                      spanWidthPercentage={100}
-                      icon={<FirstSpanIcon />}
-                      duration={8.12}
-                      startedAt={0}
-                      endedAt={8.12}
-                      totalDutation={8.12}
-                      onClick={() => {}}
+                    <TraceTree
+                      rootSpan={rootSpan}
+                      highlightedServiceName={highlightedServiceName}
                     />
-
-                    <Span
-                      title="subgraph"
-                      description="products"
-                      topWidthPercentage={33.33}
-                      spanLeftPercentage={20}
-                      spanWidthPercentage={60}
-                      icon={<SecondSpanIcon />}
-                      duration={4.06}
-                      startedAt={2.03}
-                      endedAt={6.09}
-                      totalDutation={8.12}
-                      onClick={() => {}}
-                    />
-                    <Span
-                      title="subgraph"
-                      description="prices"
-                      topWidthPercentage={33.33}
-                      spanLeftPercentage={50}
-                      spanWidthPercentage={25}
-                      icon={<ThirdSpanIcon />}
-                      duration={2.03}
-                      startedAt={4.06}
-                      endedAt={6.09}
-                      totalDutation={8.12}
-                      onClick={() => {}}
-                    /> */}
                   </div>
                 </ScrollArea>
+                <div className="sticky bottom-0 z-10 px-2 py-4">
+                  <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+                    {serviceNames.map((serviceName, index) => (
+                      <div
+                        key={serviceName}
+                        className="flex cursor-pointer items-center gap-2 hover:text-white"
+                        onMouseEnter={() => setHighlightedServiceName(serviceName)}
+                        onMouseLeave={() => setHighlightedServiceName(null)}
+                      >
+                        <div
+                          className="size-2"
+                          style={{
+                            backgroundColor: colors[index % colors.length],
+                          }}
+                        />
+                        <div>{serviceName}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -1187,10 +1329,18 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
                         </div>
                       </div>
                     </TabButton>
+                    <TabButton
+                      isActive={activeView === 'operation'}
+                      onClick={() => setActiveView('operation')}
+                    >
+                      <div className="flex items-center gap-x-2">
+                        <div>Operation</div>
+                      </div>
+                    </TabButton>
                   </div>
                 </div>
-                <ScrollArea className="flex-grow">
-                  <div>
+                <ScrollArea className="relative grow">
+                  <div className="h-full">
                     {activeView === 'attributes' ? (
                       <div>
                         {attributes.length > 0 ? (
@@ -1259,6 +1409,18 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    ) : null}
+                    {activeView === 'operation' ? (
+                      <div className="absolute bottom-0 top-0 w-full">
+                        <GraphQLHighlight
+                          height={'100%'}
+                          options={{
+                            fontSize: 10,
+                            minimap: { enabled: false },
+                          }}
+                          code={fetchProductsQueryString}
+                        />
                       </div>
                     ) : null}
                   </div>
@@ -1428,91 +1590,27 @@ function TabButton(props: { isActive: boolean; onClick(): void; children: ReactN
 
 //
 
-function TraceTree() {
-  const totalDuration = 8.12;
+function TraceTree(props: { highlightedServiceName: string | null; rootSpan: SpanProps }) {
   const leftPanelWidth = 251;
-  const rootSpan: SpanProps = {
-    id: 'root',
-    title: 'FetchProducts',
-    description: 'gateway',
-    duration: totalDuration,
-    totalDuration,
-    startedAt: 0,
-    children: [
-      {
-        id: '213hbsdgs',
-        title: 'subgraph',
-        description: 'products',
-        duration: 4.06,
-        totalDuration,
-        startedAt: 2.3,
-        children: [
-          {
-            id: '138sndhs',
-            title: 'parse',
-            duration: 0.1,
-            totalDuration,
-            startedAt: 2.4,
-            children: [],
-          },
-          {
-            id: '1n1bsxs1',
-            title: 'validate',
-            duration: 0.9,
-            totalDuration,
-            startedAt: 2.5,
-            children: [],
-          },
-        ],
-      },
-      {
-        id: '1n23sxs1',
-        title: 'subgraph',
-        description: 'prices',
-        duration: 2.03,
-        totalDuration,
-        startedAt: 4.06,
-        children: [
-          {
-            id: '19nxb23b',
-            title: 'parse',
-            duration: 0.1,
-            totalDuration,
-            startedAt: 4.1,
-            children: [],
-          },
-          {
-            id: '284bsdb1',
-            title: 'validate',
-            duration: 1.2,
-            totalDuration,
-            startedAt: 4.2,
-            children: [
-              {
-                id: '284bsdb1',
-                title: 'async validation',
-                description: 'backend validation of prices',
-                duration: 0.2,
-                totalDuration,
-                startedAt: 5.4,
-                children: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
+  const serviceNames = listServiceNames(props.rootSpan);
+  const serviceNameToColorMap = Object.fromEntries(
+    serviceNames.map((name, index) => [name, colors[index % colors.length]]),
+  );
 
   return (
     <div>
       <Node
-        key={rootSpan.id}
+        key={props.rootSpan.id}
         level={0}
+        highlightedServiceName={props.highlightedServiceName}
+        totalDuration={rootSpan.duration}
         leftPanelWidth={leftPanelWidth}
-        span={rootSpan}
+        span={props.rootSpan}
         parentSpan={null}
         groupLines={[]}
+        parentColor={null}
+        color={colors[0]}
+        serviceNameToColorMap={serviceNameToColorMap}
       />
     </div>
   );
@@ -1521,45 +1619,86 @@ function TraceTree() {
 type SpanProps = {
   id: string;
   title: string;
-  description?: string;
+  serviceName?: string;
   duration: number;
-  totalDuration: number;
   startedAt: number;
   children: SpanProps[];
 };
 
 type NodeProps = {
+  highlightedServiceName: string | null;
   level: number;
+  totalDuration: number;
   leftPanelWidth: number;
   span: SpanProps;
   parentSpan: SpanProps | null;
   groupLines: boolean[];
+  color: string;
+  parentColor: string | null;
+  serviceNameToColorMap: Record<string, string>;
 };
 
 function countChildren(spans: SpanProps[]): number {
   return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
 }
 
-const colors = ['#2662d8', '#2eb88a', '#e88d30', '#af56db'];
+function _listServiceNames(span: SpanProps, serviceNames: string[]) {
+  if (span.serviceName && !serviceNames.includes(span.serviceName)) {
+    serviceNames.push(span.serviceName);
+  }
+
+  for (const child of span.children) {
+    _listServiceNames(child, serviceNames);
+  }
+}
+
+function listServiceNames(span: SpanProps): string[] {
+  const serviceNames: string[] = [];
+  _listServiceNames(span, serviceNames);
+  return serviceNames;
+}
+
+const colors = [
+  '#2662d8',
+  '#2eb88a',
+  '#e88d30',
+  '#af56db',
+  '#7BA4F9',
+  '#D8B5FF',
+  '#64748B',
+  '#6C5CE7',
+  '#F27059',
+  '#2D9D78',
+];
 function Node(props: NodeProps) {
   const [collapsed, setCollapsed] = useState(false);
   const leftPositionPercentage = roundFloatToTwoDecimals(
-    (props.span.startedAt / props.span.totalDuration) * 100,
+    (props.span.startedAt / props.totalDuration) * 100,
   );
   const widthPercentage = roundFloatToTwoDecimals(
-    (props.span.duration / props.span.totalDuration) * 100,
+    (props.span.duration / props.totalDuration) * 100,
   );
 
   const isNearRightEdge = leftPositionPercentage + widthPercentage > 85;
+  const isDimmed =
+    typeof props.highlightedServiceName === 'string' &&
+    props.highlightedServiceName !== props.span.serviceName;
 
   const isLastChild =
-    props.parentSpan?.children[props.parentSpan.children.length - 1] === props.span;
+    props.parentSpan?.children[props.parentSpan.children.length - 1].id === props.span.id;
 
   const childrenCount = collapsed
     ? countChildren(props.span.children) + 1
     : props.span.children.length;
   const canBeCollapsed = props.span.children.length > 0;
-  const color = colors[props.level % colors.length];
+
+  const color = props.color;
+  const parentColor = props.parentColor ?? color;
+
+  const percentageOfTotal = ((props.span.duration / props.totalDuration) * 100).toFixed(2);
+  const percentageOfParent = props.parentSpan
+    ? ((props.span.duration / props.parentSpan.duration) * 100).toFixed(2)
+    : null;
 
   return (
     <>
@@ -1582,53 +1721,138 @@ function Node(props: NodeProps) {
                 onClick={canBeCollapsed ? () => setCollapsed(collapsed => !collapsed) : undefined}
               />
             </div>
-            <div className="whitespace-nowrap text-xs text-white">{props.span.title}</div>
-            {props.span.description ? (
-              <div className="overflow-hidden overflow-ellipsis whitespace-nowrap text-xs text-gray-500">
-                {props.span.description}
+            <div
+              className={cn('whitespace-nowrap text-xs', isDimmed ? 'text-gray-500' : 'text-white')}
+            >
+              {props.span.title}
+            </div>
+            {props.span.serviceName ? (
+              <div
+                className={cn(
+                  'overflow-hidden overflow-ellipsis whitespace-nowrap text-xs',
+                  isDimmed ? 'text-gray-600' : 'text-gray-500',
+                )}
+              >
+                {props.span.serviceName}
               </div>
             ) : null}
           </div>
-          <div className="relative flex h-full grow items-center overflow-hidden">
-            <div
-              className={cn('absolute block h-6 min-w-[1px] select-none rounded-sm')}
-              style={{
-                left: `min(${leftPositionPercentage}%, 100% - 1px)`,
-                width: `${widthPercentage}%`,
-                backgroundColor: color,
-              }}
-            >
-              <div
-                className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
-                style={{
-                  fontSize: '11px',
-                  ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
-                }}
+          <div
+            className={cn(
+              'relative flex h-full grow items-center overflow-hidden',
+              isDimmed ? 'opacity-25' : '',
+            )}
+          >
+            <Tooltip disableHoverableContent delayDuration={100}>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn('absolute block h-6 min-w-[1px] select-none rounded-sm')}
+                  style={{
+                    left: `min(${leftPositionPercentage}%, 100% - 1px)`,
+                    width: `${widthPercentage}%`,
+                    backgroundColor: color,
+                  }}
+                >
+                  <div
+                    className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+                    style={{
+                      fontSize: '11px',
+                      ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
+                    }}
+                  >
+                    {props.span.duration}ms
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
               >
-                {props.span.duration}ms
-              </div>
-            </div>
+                {/* Content */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-y-2">
+                    <div className="text-gray-400">Duration</div>
+                    <div className="text-right font-mono">
+                      <span>{props.span.duration}ms</span>
+                    </div>
+
+                    <div className="text-gray-400">Started At</div>
+                    <div className="text-right font-mono">{props.span.startedAt}ms</div>
+
+                    <div className="text-gray-400">% of Total</div>
+                    <div className="text-right font-mono">{percentageOfTotal}%</div>
+
+                    <div className="col-span-2">
+                      {/* Timeline visualization */}
+                      <div>
+                        <div className="h-[2px] w-full overflow-hidden bg-gray-800">
+                          <div
+                            className="h-full"
+                            style={{ width: `${percentageOfTotal}%`, backgroundColor: colors[0] }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {percentageOfParent === null ? null : (
+                      <>
+                        <div className="text-gray-400">% of Parent</div>
+                        <div className="text-right font-mono">{percentageOfParent}%</div>
+
+                        <div className="col-span-2">
+                          {/* Timeline visualization */}
+                          <div>
+                            <div className="h-[2px] w-full overflow-hidden bg-gray-800">
+                              <div
+                                className="h-full"
+                                style={{
+                                  width: `${percentageOfParent}%`,
+                                  backgroundColor: parentColor,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
       {collapsed
         ? null
         : props.span.children.length
-          ? props.span.children.map(span => (
-              <Node
-                leftPanelWidth={props.leftPanelWidth}
-                span={span}
-                level={props.level + 1}
-                key={span.id}
-                parentSpan={props.span}
-                groupLines={
-                  isLastChild
-                    ? // remove the last line if it's the last span from the group
-                      props.groupLines.slice(0, -1).concat(false, true)
-                    : props.groupLines.concat(true)
-                }
-              />
-            ))
+          ? props.span.children.map(childSpan => {
+              const span = {
+                ...childSpan,
+                // if the child span doesn't have a serviceName, use the parent's serviceName
+                serviceName: childSpan.serviceName ?? props.span.serviceName,
+              };
+
+              return (
+                <Node
+                  key={span.id}
+                  highlightedServiceName={props.highlightedServiceName}
+                  leftPanelWidth={props.leftPanelWidth}
+                  totalDuration={props.totalDuration}
+                  span={span}
+                  level={props.level + 1}
+                  parentSpan={props.span}
+                  groupLines={
+                    isLastChild
+                      ? // remove the last line if it's the last span from the group
+                        props.groupLines.slice(0, -1).concat(false, true)
+                      : props.groupLines.concat(true)
+                  }
+                  parentColor={color}
+                  color={span.serviceName ? props.serviceNameToColorMap[span.serviceName] : color}
+                  serviceNameToColorMap={props.serviceNameToColorMap}
+                />
+              );
+            })
           : null}
     </>
   );
@@ -1636,4 +1860,164 @@ function Node(props: NodeProps) {
 
 function roundFloatToTwoDecimals(num: number) {
   return Math.round(num * 100) / 100;
+}
+
+type TimePreset = {
+  name: string;
+  from: Date;
+  to: Date;
+  locked?: boolean;
+};
+
+function DatePickerWithRange(props: React.HTMLAttributes<HTMLDivElement>) {
+  const [date, setDate] = useState<DateRange>({
+    from: addDays(new Date(), -3),
+    to: new Date(),
+  });
+  const [startTime, setStartTime] = useState(formatDate(date.from, 'HH:mm'));
+  const [endTime, setEndTime] = useState(formatDate(date.to, 'HH:mm'));
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isPresetOpen, setIsPresetOpen] = useState(false);
+  const now = new Date();
+  const [selectedPreset, setSelectedPreset] = useState<string | null>('Last 12 hours');
+  const timePresets: TimePreset[] = [
+    { name: 'Last hour', from: addHours(now, -1), to: now },
+    { name: 'Last 6 hours', from: addHours(now, -6), to: now },
+    { name: 'Last 12 hours', from: addHours(now, -12), to: now },
+    { name: 'Last 24 hours', from: addHours(now, -24), to: now, locked: true },
+    { name: 'Last 3 days', from: addDays(now, -3), to: now, locked: true },
+    { name: 'Last 7 days', from: addDays(now, -7), to: now, locked: true },
+    { name: 'Last 14 days', from: addDays(now, -14), to: now, locked: true },
+    { name: 'Last 30 days', from: addDays(now, -30), to: now, locked: true },
+  ];
+
+  // Handle preset selection
+  const handlePresetSelect = (preset: TimePreset) => {
+    setDate({ from: preset.from, to: preset.to });
+    setStartTime(formatDate(preset.from, 'HH:mm'));
+    setEndTime(formatDate(preset.to, 'HH:mm'));
+    setSelectedPreset(preset.name);
+    setIsPresetOpen(false);
+  };
+
+  // Format the date range for display
+  const formatDateRange = () => {
+    if (selectedPreset) {
+      return selectedPreset;
+    }
+
+    const fromDate = formatDate(date.from!, 'MMM d');
+    const fromTime = formatDate(date.from!, 'HH:mm');
+    const toDate = formatDate(date.to!, 'MMM d');
+    const toTime = formatDate(date.to!, 'HH:mm');
+
+    if (fromDate === toDate) {
+      return `${fromDate}, ${fromTime} - ${toTime}`;
+    }
+
+    return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
+  };
+
+  const formatCalendarDateRange = () => {
+    const fromDate = formatDate(date.from!, 'MMM dd, yyyy');
+    const toDate = formatDate(date.to!, 'MMM dd, yyyy');
+    return { fromDate, toDate };
+  };
+
+  return (
+    <div className={cn('relative flex items-center', props.className)}>
+      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="bg-background text-foreground border-input h-10 w-10 select-none rounded-r-none border-r-0"
+            onClick={() => {
+              setIsCalendarOpen(true);
+              setIsPresetOpen(false);
+            }}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            <span className="sr-only">Open calendar</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="center">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={setDate}
+            numberOfMonths={1}
+            className="p-2 pb-0"
+          />
+          <div className="border-border mt-4 space-y-2 border-t p-2">
+            <div>
+              <Label htmlFor="start-date" className="text-sm font-normal text-gray-500">
+                Start
+              </Label>
+              <div className="flex items-center gap-x-2">
+                <Input
+                  id="start-date"
+                  className="h-8 w-[152px] py-0"
+                  value={date?.from ? formatDate(date.from, 'yyyy-MM-dd') : ''}
+                />
+                <Input className="h-8 w-16 py-0" value="01:22" />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="end-date" className="text-sm font-normal text-gray-500">
+                End
+              </Label>
+              <div className="flex items-center gap-x-2">
+                <Input
+                  id="end-date"
+                  className="h-8 w-[152px] py-0"
+                  value={date?.to ? formatDate(date.to, 'yyyy-MM-dd') : ''}
+                />
+                <Input className="h-8 w-16 py-0" value="19:42" />
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full">
+              <span className="relative">
+                Apply
+                <span className="absolute top-[4px] ml-2 text-xs">↵</span>
+              </span>
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      <DropdownMenu open={isPresetOpen} onOpenChange={setIsPresetOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className="bg-background text-foreground border-input h-10 rounded-l-none pl-3 pr-2"
+            onClick={() => {
+              setIsPresetOpen(true);
+              setIsCalendarOpen(false);
+            }}
+          >
+            <span className="mr-1">{formatDateRange()}</span>
+            {isPresetOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="bg-background border-input w-[180px] border" align="center">
+          {timePresets.map(preset => (
+            <DropdownMenuItem
+              key={preset.name}
+              className={cn(
+                'flex cursor-pointer items-center justify-between',
+                selectedPreset === preset.name && 'bg-accent text-accent-foreground',
+              )}
+              disabled={preset.locked}
+              onClick={() => handlePresetSelect(preset)}
+            >
+              <span>{preset.name}</span>
+              {preset.locked && <LockIcon className="text-muted-foreground h-3 w-3" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }
