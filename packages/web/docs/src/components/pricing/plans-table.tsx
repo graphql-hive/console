@@ -355,11 +355,11 @@ function TableSubheaderRow({ icon, title, description }: TableSubheaderRowProps)
   return (
     <tr>
       <td colSpan={4} className="pb-2 pt-8">
-        <div className="flex items-center text-[32px]/10 [&>svg]:mr-1 [&>svg]:size-7 [&>svg]:text-green-600">
+        <div className="flex items-center text-[32px]/10 [&>svg]:m-[6.67px] [&>svg]:mr-[10.67px] [&>svg]:size-[26.67px] [&>svg]:text-green-600">
           {icon}
           {title}
         </div>
-        <p className="text-green-800">{description}</p>
+        <p className="mt-2 text-green-800">{description}</p>
       </td>
     </tr>
   );
