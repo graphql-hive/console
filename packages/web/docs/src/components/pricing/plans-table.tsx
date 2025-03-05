@@ -3,6 +3,17 @@
 import { ReactNode, useState } from 'react';
 import { CallToAction, cn, Heading, ComparisonTable as Table } from '@theguild/components';
 import { CheckmarkIcon, XIcon } from '../../app/gateway/federation-compatible-benchmarks/icons';
+import {
+  AvailabilityIcon,
+  BillingIcon,
+  EnterpriseSupportIcon,
+  FeaturesIcon,
+  OperationsIcon,
+  RetentionIcon,
+  ShortCheckmarkIcon,
+  SSOIcon,
+  UsageIcon,
+} from './icons';
 
 type PlanName = 'Hobby' | 'Pro' | 'Enterprise';
 interface PricingPlan {
@@ -53,12 +64,6 @@ const pricingTiers: PricingPlan[] = [
 export function PlansTable({ className }: { className?: string }) {
   const [activePlan, setActivePlan] = useState<PlanName>('Hobby');
 
-  const getActivePlanIndex = (): number => {
-    return pricingTiers.findIndex(tier => tier.name === activePlan);
-  };
-
-  const activePlanIndex = getActivePlanIndex();
-
   return (
     <section className={cn('py-12 lg:p-24 xl:px-[120px]', className)} data-active-plan={activePlan}>
       <Heading
@@ -90,33 +95,26 @@ export function PlansTable({ className }: { className?: string }) {
         }
       `}</style>
 
-      <Table className="table w-full border-none">
+      <Table className="[&_td]:border-beige-400 table w-full border-none">
         <thead className="bg-beige-100 max-md:hidden">
-          <Table.Row className="*:text-left">
-            <th className="rounded-l-3xl py-6 pl-6 text-xl/6 font-normal">Features</th>
+          <tr className="*:text-left">
+            <th className="rounded-l-3xl p-6 text-xl/6 font-normal">Features</th>
             {pricingTiers.map(tier => (
               <th className="py-6" key={tier.name}>
-                <div className="border-beige-400 flex items-center gap-4 border-l pl-6">
+                <div className="border-beige-400 flex items-center gap-4 border-l px-6 last-of-type:rounded-r-3xl">
                   <div className="text-xl/6 font-medium">{tier.name}</div>
                   {tier.cta}
                 </div>
               </th>
             ))}
-          </Table.Row>
+          </tr>
         </thead>
         <tbody>
-          {/* Mobile CTA row */}
-          <Table.Row className="md:hidden">
-            <Table.Cell colSpan={2} className="py-4">
-              todo
-            </Table.Cell>
-          </Table.Row>
-
-          <tr className="text-lg font-medium">
-            <td colSpan={4} className="pb-2 pt-8">
-              Operations and data retention
-            </td>
-          </tr>
+          <TableSubheaderRow
+            icon={<OperationsIcon />}
+            title="Operations and data retention"
+            description="Consequat orci sed porttitor id dolor donec."
+          />
           <tr>
             <td>Operations per month</td>
             <td data-plan="Hobby">Limit of 100 operations</td>
@@ -134,11 +132,11 @@ export function PlansTable({ className }: { className?: string }) {
             <td data-plan="Enterprise">One year contract</td>
           </tr>
 
-          <tr className="text-lg font-medium">
-            <td colSpan={4} className="pb-2 pt-8">
-              Usage
-            </td>
-          </tr>
+          <TableSubheaderRow
+            icon={<UsageIcon />}
+            title="Usage"
+            description="Consequat orci sed porttitor id dolor donec."
+          />
           <tr>
             <td>Scale: projects and organizations</td>
             <td data-plan="Hobby">Unlimited</td>
@@ -148,13 +146,13 @@ export function PlansTable({ className }: { className?: string }) {
           <tr>
             <td>GitHub issues and chat support</td>
             <td data-plan="Hobby">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Pro">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
           </tr>
           <tr>
@@ -164,86 +162,86 @@ export function PlansTable({ className }: { className?: string }) {
             <td data-plan="Enterprise">Unlimited</td>
           </tr>
 
-          <tr className="text-lg font-medium">
-            <td colSpan={4} className="pb-2 pt-8">
-              Availability
-            </td>
-          </tr>
+          <TableSubheaderRow
+            icon={<AvailabilityIcon />}
+            title="Availability"
+            description="Consequat orci sed porttitor id dolor donec."
+          />
           <tr>
             <td>Zero downtime for upgrades</td>
             <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
+              <XIcon className="text-critical-dark size-6" />
             </td>
             <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
+              <XIcon className="text-critical-dark size-6" />
             </td>
             <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
           </tr>
           <tr>
             <td>100% uptime for schema registry CDN</td>
             <td data-plan="Hobby">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Pro">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
           </tr>
 
-          <tr className="text-lg font-medium">
-            <td colSpan={4} className="pb-2 pt-8">
-              SSO
-            </td>
-          </tr>
+          <TableSubheaderRow
+            icon={<SSOIcon />}
+            title="SSO"
+            description="Consequat orci sed porttitor id dolor donec."
+          />
           <tr>
             <td>Single sign-on via Open ID provider</td>
             <td data-plan="Hobby">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Pro">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
             <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
           </tr>
 
-          <tr className="text-lg font-medium">
-            <td colSpan={4} className="pb-2 pt-8">
-              Enterprise Support
-            </td>
-          </tr>
+          <TableSubheaderRow
+            icon={<EnterpriseSupportIcon />}
+            title="Enterprise Support"
+            description="Consequat orci sed porttitor id dolor donec."
+          />
           <tr>
             <td>Dedicated Slack channel for support</td>
             <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
+              <XIcon className="text-critical-dark size-6" />
             </td>
             <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
+              <XIcon className="text-critical-dark size-6" />
             </td>
             <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
+              <CheckmarkIcon className="text-positive-dark size-6" />
             </td>
           </tr>
           <tr>
-            <td>White-glove onboarding</td>
-            <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
-            </td>
+            <PlansTableCell>White-glove onboarding</PlansTableCell>
+            <PlansTableCell plan="Hobby">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
+              <CheckmarkIcon className="text-positive-dark size-6" />
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>Support SLA</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>Support SLA</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <a
                 href="https://the-guild.dev/graphql/hive/sla.pdf"
                 target="_blank"
@@ -252,8 +250,8 @@ export function PlansTable({ className }: { className?: string }) {
               >
                 Pre-defined SLA
               </a>
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <a
                 href="https://the-guild.dev/graphql/hive/sla.pdf"
                 target="_blank"
@@ -262,44 +260,48 @@ export function PlansTable({ className }: { className?: string }) {
               >
                 Pre-defined SLA
               </a>
-            </td>
-            <td data-plan="Enterprise">365 24/7 support, SLA tailored to your needs</td>
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
+              365 24/7 support, SLA tailored to your needs
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>Technical Account Manager & guidance from The Guild</td>
-            <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
-            </td>
+            <PlansTableCell>Technical Account Manager & guidance from The Guild</PlansTableCell>
+            <PlansTableCell plan="Hobby">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
+              <CheckmarkIcon className="text-positive-dark size-6" />
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>Flexible billing options & extended procurement processes</td>
-            <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
-            </td>
+            <PlansTableCell>
+              Flexible billing options & extended procurement processes
+            </PlansTableCell>
+            <PlansTableCell plan="Hobby">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
+              <CheckmarkIcon className="text-positive-dark size-6" />
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>Custom Data Processing Agreements (DPA)</td>
-            <td data-plan="Hobby">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Pro">
-              <XIcon className="text-critical-dark size-5" />
-            </td>
-            <td data-plan="Enterprise">
-              <CheckmarkIcon className="text-positive-dark size-5" />
-            </td>
+            <PlansTableCell>Custom Data Processing Agreements (DPA)</PlansTableCell>
+            <PlansTableCell plan="Hobby">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
+              <XIcon className="text-critical-dark size-6" />
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
+              <CheckmarkIcon className="text-positive-dark size-6" />
+            </PlansTableCell>
           </tr>
         </tbody>
       </Table>
@@ -333,5 +335,32 @@ function MobileNavbar({
         ))}
       </div>
     </div>
+  );
+}
+
+function PlansTableCell({ plan, children }: { plan?: PlanName; children: ReactNode }) {
+  return (
+    <td data-plan={plan} className="px-4 py-6">
+      {children}
+    </td>
+  );
+}
+
+interface TableSubheaderRowProps {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}
+function TableSubheaderRow({ icon, title, description }: TableSubheaderRowProps) {
+  return (
+    <tr>
+      <td colSpan={4} className="pb-2 pt-8">
+        <div className="flex items-center text-[32px]/10 [&>svg]:mr-1 [&>svg]:size-7 [&>svg]:text-green-600">
+          {icon}
+          {title}
+        </div>
+        <p className="text-green-800">{description}</p>
+      </td>
+    </tr>
   );
 }
