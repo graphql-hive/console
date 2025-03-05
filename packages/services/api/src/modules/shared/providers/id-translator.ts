@@ -1,6 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
-import { MissingTargetError } from '@hive/api/shared/errors';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { MissingTargetError } from '../../../shared/errors';
 import { cache } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Session } from '../../auth/lib/authz';
@@ -18,11 +18,6 @@ interface ProjectSelectorInput extends OrganizationSelectorInput {
 
 export interface TargetSelectorInput extends ProjectSelectorInput {
   targetSlug: string;
-}
-
-export const enum TargetReferenceErrorCode {
-  resourceNotFound,
-  noResouceProvided,
 }
 
 @Injectable({

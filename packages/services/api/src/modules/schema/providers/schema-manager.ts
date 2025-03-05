@@ -22,12 +22,11 @@ import {
   ProjectType,
   Target,
 } from '../../../shared/entities';
-import { HiveError, MissingTargetError } from '../../../shared/errors';
+import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
-import { TargetAccessTokenSession } from '../../auth/lib/target-access-token-strategy';
+import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
