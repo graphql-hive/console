@@ -356,6 +356,7 @@ function OrganizationPageContent(
       page={Page.Overview}
       organizationSlug={props.organizationSlug}
       className="flex justify-between gap-12"
+      organizationId={query.data?.organization?.organization.id}
     >
       <>
         <div className="grow">
