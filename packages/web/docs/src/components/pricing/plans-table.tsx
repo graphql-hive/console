@@ -116,20 +116,20 @@ export function PlansTable({ className }: { className?: string }) {
             description="Consequat orci sed porttitor id dolor donec."
           />
           <tr>
-            <td>Operations per month</td>
-            <td data-plan="Hobby">Limit of 100 operations</td>
-            <td data-plan="Pro">
+            <PlansTableCell>Operations per month</PlansTableCell>
+            <PlansTableCell plan="Hobby">Limit of 100 operations</PlansTableCell>
+            <PlansTableCell plan="Pro">
               1M operations per month
               <br />
               Then $10 per million operations
-            </td>
-            <td data-plan="Enterprise">Custom operation limit</td>
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">Custom operation limit</PlansTableCell>
           </tr>
           <tr>
-            <td>Usage data retention</td>
-            <td data-plan="Hobby">7 days</td>
-            <td data-plan="Pro">90 days</td>
-            <td data-plan="Enterprise">One year contract</td>
+            <PlansTableCell>Usage data retention</PlansTableCell>
+            <PlansTableCell plan="Hobby">7 days</PlansTableCell>
+            <PlansTableCell plan="Pro">90 days</PlansTableCell>
+            <PlansTableCell plan="Enterprise">One year contract</PlansTableCell>
           </tr>
 
           <TableSubheaderRow
@@ -138,28 +138,28 @@ export function PlansTable({ className }: { className?: string }) {
             description="Consequat orci sed porttitor id dolor donec."
           />
           <tr>
-            <td>Scale: projects and organizations</td>
-            <td data-plan="Hobby">Unlimited</td>
-            <td data-plan="Pro">Unlimited</td>
-            <td data-plan="Enterprise">Unlimited</td>
+            <PlansTableCell>Scale: projects and organizations</PlansTableCell>
+            <PlansTableCell plan="Hobby">Unlimited</PlansTableCell>
+            <PlansTableCell plan="Pro">Unlimited</PlansTableCell>
+            <PlansTableCell plan="Enterprise">Unlimited</PlansTableCell>
           </tr>
           <tr>
-            <td>GitHub issues and chat support</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>GitHub issues and chat support</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Enterprise">
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>Schema pushes and checks</td>
-            <td data-plan="Hobby">Unlimited</td>
-            <td data-plan="Pro">Unlimited</td>
-            <td data-plan="Enterprise">Unlimited</td>
+            <PlansTableCell>Schema pushes and checks</PlansTableCell>
+            <PlansTableCell plan="Hobby">Unlimited</PlansTableCell>
+            <PlansTableCell plan="Pro">Unlimited</PlansTableCell>
+            <PlansTableCell plan="Enterprise">Unlimited</PlansTableCell>
           </tr>
 
           <TableSubheaderRow
@@ -168,28 +168,28 @@ export function PlansTable({ className }: { className?: string }) {
             description="Consequat orci sed porttitor id dolor donec."
           />
           <tr>
-            <td>Zero downtime for upgrades</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>Zero downtime for upgrades</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <XIcon className="text-critical-dark size-6" />
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <XIcon className="text-critical-dark size-6" />
-            </td>
-            <td data-plan="Enterprise">
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
+            </PlansTableCell>
           </tr>
           <tr>
-            <td>100% uptime for schema registry CDN</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>100% uptime for schema registry CDN</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Enterprise">
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
+            </PlansTableCell>
           </tr>
 
           <TableSubheaderRow
@@ -198,16 +198,16 @@ export function PlansTable({ className }: { className?: string }) {
             description="Consequat orci sed porttitor id dolor donec."
           />
           <tr>
-            <td>Single sign-on via Open ID provider</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>Single sign-on via Open ID provider</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
-            <td data-plan="Enterprise">
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
+            </PlansTableCell>
           </tr>
 
           <TableSubheaderRow
@@ -216,16 +216,16 @@ export function PlansTable({ className }: { className?: string }) {
             description="Consequat orci sed porttitor id dolor donec."
           />
           <tr>
-            <td>Dedicated Slack channel for support</td>
-            <td data-plan="Hobby">
+            <PlansTableCell>Dedicated Slack channel for support</PlansTableCell>
+            <PlansTableCell plan="Hobby">
               <XIcon className="text-critical-dark size-6" />
-            </td>
-            <td data-plan="Pro">
+            </PlansTableCell>
+            <PlansTableCell plan="Pro">
               <XIcon className="text-critical-dark size-6" />
-            </td>
-            <td data-plan="Enterprise">
+            </PlansTableCell>
+            <PlansTableCell plan="Enterprise">
               <CheckmarkIcon className="text-positive-dark size-6" />
-            </td>
+            </PlansTableCell>
           </tr>
           <tr>
             <PlansTableCell>White-glove onboarding</PlansTableCell>
@@ -340,7 +340,7 @@ function MobileNavbar({
 
 function PlansTableCell({ plan, children }: { plan?: PlanName; children: ReactNode }) {
   return (
-    <td data-plan={plan} className="px-4 py-6">
+    <td data-plan={plan} className="border-beige-400 border px-4 py-6">
       {children}
     </td>
   );
