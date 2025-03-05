@@ -1040,6 +1040,23 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestVersion(target),
     ]);
 
+    if (!latestVersion && input.service) {
+      // this is a new service. Validate the service name.
+      if (input.service.length > 64 || !/^[a-zA-Z][\w_-]+$/g.test(input.service)) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be less than 64 characters, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        };
+      }
+    }
+
     const legacySelector = this.session.getLegacySelector();
 
     const checksum = createHash('md5')
