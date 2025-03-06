@@ -75,16 +75,18 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
 
+  const baseEndpoint =
+    selfHostingOptions?.usageEndpoint ?? options.endpoint ?? 'https://app.graphql-hive.com/usage';
+
+  const endpoint = baseEndpoint + (options?.target ? `/${options.target}` : '');
+
   const agent = createAgent<AgentAction>(
     {
       ...(pluginOptions.agent ?? {
         maxSize: 1500,
       }),
       logger,
-      endpoint:
-        selfHostingOptions?.usageEndpoint ??
-        options.endpoint ??
-        'https://app.graphql-hive.com/usage',
+      endpoint,
       token: pluginOptions.token,
       enabled: pluginOptions.enabled,
       debug: pluginOptions.debug,

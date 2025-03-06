@@ -1,6 +1,7 @@
 /* eslint-disable no-process-env */
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
+import * as GraphQLSchema from 'testkit/gql/graphql';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
@@ -495,5 +496,147 @@ test('schema:check gives correct error message for missing `--service` name flag
     ✖ Detected 1 error
 
        - Missing service name
+  `);
+});
+
+test('schema:check without `--target` flag fails for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken } = await createOrg();
+  const privateKey = await createOrganizationAccessToken({
+    permissions: ['schemaCheck:create', 'project:describe'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentMode.All,
+    },
+  });
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+      'fixtures/init-schema.graphql',
+    ]),
+  ).rejects.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+    exitCode------------------------------------------:
+    2
+    stderr--------------------------------------------:
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
+     ›   > See https://__URL__ for
+     ›    a complete list of error codes and recommended fixes.
+     ›   To disable this message set HIVE_NO_ERROR_TIP=1
+    stdout--------------------------------------------:
+    __NONE__
+  `);
+});
+
+test('schema:check with `--target` flag succeeds for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken, createProject, organization } = await createOrg();
+  const { project, target } = await createProject();
+  const privateKey = await createOrganizationAccessToken({
+    permissions: ['schemaCheck:create', 'project:describe'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentMode.All,
+    },
+  });
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+      '--target',
+      `${organization.slug}/${project.slug}/${target.slug}`,
+      'fixtures/init-schema.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+    stdout--------------------------------------------:
+    ✔ Schema registry is empty, nothing to compare your schema with.
+    View full report:
+    http://__URL__
+  `);
+});
+
+test('schema:publish without `--target` flag fails for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken } = await createOrg();
+  const privateKey = await createOrganizationAccessToken({
+    permissions: ['project:describe', 'schemaVersion:publish'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentMode.All,
+    },
+  });
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+
+      'fixtures/init-schema.graphql',
+    ]),
+  ).rejects.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+    exitCode------------------------------------------:
+    2
+    stderr--------------------------------------------:
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
+     ›   > See https://__URL__ for
+     ›    a complete list of error codes and recommended fixes.
+     ›   To disable this message set HIVE_NO_ERROR_TIP=1
+    stdout--------------------------------------------:
+    __NONE__
+  `);
+});
+
+test('schema:publish with `--target` flag succeeds for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken, organization, createProject } = await createOrg();
+  const { project, target } = await createProject();
+  const privateKey = await createOrganizationAccessToken({
+    permissions: ['project:describe', 'schemaVersion:publish'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentMode.All,
+    },
+  });
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+      '--target',
+      `${organization.slug}/${project.slug}/${target.slug}`,
+      'fixtures/init-schema.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+    stdout--------------------------------------------:
+    ✔ Published initial schema.
+    ℹ Available at http://__URL__
   `);
 });

@@ -3,6 +3,7 @@ import { NoopLogger } from '../../shared/providers/logger';
 import { AuthorizationPolicyStatement, Session } from './authz';
 
 class TestSession extends Session {
+  id = 'test-session';
   policyStatements: Array<AuthorizationPolicyStatement>;
   constructor(policyStatements: Array<AuthorizationPolicyStatement>) {
     super({ logger: new NoopLogger() });
