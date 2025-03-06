@@ -265,7 +265,7 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with wildcard a
   });
 });
 
-test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with wildcard access token', async () => {
+test('/:orgSlug/:projectSlug/:targetSlug > operation is denied without access to target', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { organization, createProject, createOrganizationAccessToken } = await createOrg();
   const { project, target } = await createProject();

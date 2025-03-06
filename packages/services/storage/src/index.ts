@@ -5203,8 +5203,6 @@ export function findTargetBySlug(deps: { pool: DatabasePool }) {
       `,
     );
 
-    console.log('lolol', JSON.stringify(data, null, 2));
-
     if (data === null) {
       return null;
     }
