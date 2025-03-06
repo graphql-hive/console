@@ -5150,6 +5150,68 @@ const targetSQLFields = sql`
   "graphql_endpoint_url" as "graphqlEndpointUrl"
 `;
 
+export function findTargetById(deps: { pool: DatabasePool }) {
+  return async function findByIdImplementation(id: string): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTarget */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+        FROM (
+          SELECT
+            ${targetSQLFields}
+          FROM
+            "targets"
+          WHERE
+            "id" = ${id}
+        ) AS "t"
+        INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
+export function findTargetBySlug(deps: { pool: DatabasePool }) {
+  return async function findTargetsBySlugImplementation(args: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  }): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTargetBySlug */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+          FROM (
+            SELECT
+              ${targetSQLFields}
+            FROM
+              "targets"
+            where
+              "clean_id" = ${args.targetSlug}
+            ) AS "t"
+          INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          INNER JOIN "organizations" "o" on "p"."org_id" = "o"."id"
+        WHERE "p"."clean_id" = ${args.projectSlug}
+         and "o"."clean_id" = ${args.organizationSlug}
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    // Consider adding error handling similar to what was suggested for findTargetById.
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
 const TargetModel = zod.object({
   id: zod.string(),
   slug: zod.string(),

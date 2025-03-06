@@ -22,13 +22,12 @@ export default function PricingPage() {
     <LandingPageContainer className="text-green-1000 light mx-auto max-w-[90rem] overflow-hidden">
       <PricingPageHero className="mx-4 max-sm:mt-2 md:mx-6" />
 
-      <Pricing className="mt-4" />
+      <Pricing className="mx-4 md:mx-6" />
 
       <PlanComparison className="mx-4 md:mx-6" />
 
       <CompanyTestimonialsSection className="mx-4 mt-6 md:mx-6" />
 
-      {/* TODO: Pricing specific questions in the future? */}
       <FrequentlyAskedQuestions className="mx-4 md:mx-6" />
 
       <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />

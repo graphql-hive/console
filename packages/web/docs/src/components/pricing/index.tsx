@@ -1,202 +1,351 @@
 'use client';
 
-import { HTMLAttributes, ReactElement, ReactNode } from 'react';
-import { Arrow, Content, Root, Trigger } from '@radix-ui/react-tooltip';
-import { CallToAction, cn } from '@theguild/components';
+import { HTMLAttributes, ReactElement, ReactNode, useRef, useState } from 'react';
+import { Content, Root, Trigger } from '@radix-ui/react-tooltip';
+import {
+  CallToAction,
+  cn,
+  ContactButton,
+  ContactTextLink,
+  Heading,
+  ShieldFlashIcon,
+  TextLink,
+} from '@theguild/components';
+import {
+  AvailabilityIcon,
+  BillingIcon,
+  EnterpriseSupportIcon,
+  FeaturesIcon,
+  OperationsIcon,
+  RetentionIcon,
+  ShortCheckmarkIcon,
+  SSOIcon,
+  UsageIcon,
+} from './icons';
+import { PlanCard } from './plan-card';
 import { PricingSlider } from './pricing-slider';
 
 function Tooltip({ content, children }: { content: string; children: ReactNode }) {
   return (
-    <Root delayDuration={0}>
+    <Root delayDuration={350}>
       <Trigger className="hive-focus -mx-1 -my-0.5 rounded px-1 py-0.5 text-left">
         {children}
       </Trigger>
       <Content
+        align="start"
         sideOffset={5}
         className="bg-green-1000 z-20 rounded p-2 text-sm font-normal leading-4 text-white shadow"
       >
         {content}
-        <Arrow className="fill-green-1000" />
+        <svg
+          // radix arrow is in wrong spot, so I added a custom one
+          width="10"
+          height="14"
+          viewBox="0 0 12 16"
+          fill="currentColor"
+          className="text-green-1000 absolute bottom-0 left-1/3 -translate-x-1/2 translate-y-1/2"
+        >
+          <path d="M0 8L6 0L12 8L6 16L0 8Z" />
+        </svg>
       </Content>
     </Root>
   );
 }
 
-function Plan(props: {
-  name: string;
-  description: string;
-  price: ReactNode | string;
-  features: ReactNode;
-  linkText: string;
-  linkOnClick?: () => void;
-  adjustable: boolean;
-}): ReactElement {
-  return (
-    <article className="w-1/3">
-      <header className="text-green-800">
-        <div className="flex flex-row items-center gap-2">
-          <h2 className="text-2xl font-medium">{props.name}</h2>
-          {props.adjustable && (
-            <span className="whitespace-nowrap rounded-full bg-green-100 px-3 py-1 text-sm font-medium leading-5">
-              Adjust your plan at any time
-            </span>
-          )}
-        </div>
-        <p className="mt-2">{props.description}</p>
-      </header>
-      <div className="mt-4 text-5xl leading-[56px] tracking-[-0.48px]">{props.price}</div>
-      <div className="mt-4">
-        <CallToAction
-          variant="primary"
-          {...(props.linkOnClick
-            ? {
-                href: '#',
-                onClick: event => {
-                  event.preventDefault();
-                  props.linkOnClick?.();
-                },
-              }
-            : { href: 'https://app.graphql-hive.com' })}
-        >
-          {props.linkText}
-        </CallToAction>
-      </div>
-      <ul className="mt-4 text-green-800">{props.features}</ul>
-    </article>
-  );
+interface PlanFeaturesListItemProps extends HTMLAttributes<HTMLLIElement> {
+  icon: ReactNode;
+  category: string;
+  features: ReactNode[];
+  tooltip?: string;
 }
 
-function PlanFeaturesListItem(props: HTMLAttributes<HTMLLIElement>) {
-  return <li className="border-beige-200 py-2 [&:not(:last-child)]:border-b" {...props} />;
+function PlanFeaturesListItem({
+  icon,
+  category,
+  features,
+  tooltip,
+  ...rest
+}: PlanFeaturesListItemProps) {
+  const content = (
+    <>
+      <strong className="flex h-6 items-center gap-2 font-bold [&>svg]:size-4 [&>svg]:text-green-600">
+        {icon}
+        {category}
+      </strong>
+      {features.map((feature, index) => (
+        <span key={index} className="mt-2 flex gap-2 leading-6">
+          <ShortCheckmarkIcon className="my-1 size-4 text-green-600" />
+          {feature}
+        </span>
+      ))}
+    </>
+  );
+  return (
+    <li
+      className="border-beige-200 flex flex-col px-1 py-2 text-sm text-[#4F6C6A] [&:not(:last-child)]:border-b"
+      {...rest}
+    >
+      {tooltip ? <Tooltip content={tooltip}>{content}</Tooltip> : content}
+    </li>
+  );
 }
 
 const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are stored on Hive';
 const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
 
-export function Pricing({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}): ReactElement {
+export function Pricing({ className }: { className?: string }): ReactElement {
+  type PlanType = 'Hobby' | 'Pro' | 'Enterprise';
+
+  const [highlightedPlan, setHighlightedPlan] = useState<PlanType>('Hobby');
+  const scrollviewRef = useRef<HTMLDivElement>(null);
+
   return (
     <section className={cn('py-12 sm:py-20', className)}>
       <div className="mx-auto box-border w-full max-w-[1200px]">
-        {children}
+        <Heading size="md" as="h3" className="max-md:text-[32px]/10 max-sm:tracking-[-.16px]">
+          Operations: learn more about usage-based pricing
+        </Heading>
+        <p className="mt-6 text-green-800">
+          Hive Console is completely free to use. We charge only for operations collected and
+          processed.
+        </p>
+
+        <PricingSlider
+          className="mt-6 lg:mt-12"
+          onChange={value => {
+            const newPlan = value === 1 ? 'Hobby' : value < 280 ? 'Pro' : 'Enterprise';
+            if (newPlan !== highlightedPlan) {
+              setHighlightedPlan(newPlan);
+              if (!scrollviewRef.current) return;
+              const card = scrollviewRef.current.querySelector(
+                `[data-plan="${newPlan}"]`,
+              ) as HTMLElement;
+              if (!card) return;
+
+              const { left, right } = card.getBoundingClientRect();
+              const containerRect = scrollviewRef.current.getBoundingClientRect();
+              const scrollLeft = scrollviewRef.current.scrollLeft;
+              const containerLeft = containerRect.left;
+              const padding = parseInt(window.getComputedStyle(scrollviewRef.current).paddingLeft);
+
+              const cardLeftRelativeToContainer = left - containerLeft;
+              const cardRightRelativeToContainer = right - containerLeft;
+
+              if (
+                cardLeftRelativeToContainer >= padding &&
+                cardRightRelativeToContainer <= containerRect.width - padding
+              ) {
+                return;
+              }
+
+              let targetScrollLeft = scrollLeft;
+
+              if (cardLeftRelativeToContainer < padding) {
+                targetScrollLeft = scrollLeft - (padding - cardLeftRelativeToContainer);
+              } else if (cardRightRelativeToContainer > containerRect.width - padding) {
+                targetScrollLeft =
+                  scrollLeft + (cardRightRelativeToContainer - (containerRect.width - padding));
+              }
+
+              scrollviewRef.current.scrollTo({
+                left: targetScrollLeft,
+                behavior: 'smooth',
+              });
+            }
+          }}
+        />
 
         <div
+          ref={scrollviewRef}
           // the padding is here so `overflow-auto` doesn't cut button hover states
-          className="-mx-2 overflow-auto px-2"
+          className="nextra-scrollbar -mx-4 -mb-6 flex flex-col items-stretch gap-6 px-4 py-6 sm:flex-row sm:overflow-auto sm:*:min-w-[380px] md:-mx-6 md:px-6 lg:mt-6"
         >
-          <div
-            className={cn(
-              'flex min-w-[1000px] flex-row items-stretch gap-8 px-6 lg:gap-10 xl:gap-12 xl:px-0',
-              children && 'mt-16 lg:mt-24',
-            )}
-          >
-            <Plan
-              name="Hobby"
-              description="For personal or small projects"
-              adjustable={false}
-              price="Free forever"
-              linkText="Start for free"
-              features={
-                <>
-                  <PlanFeaturesListItem>
-                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                      <strong>7 days</strong> of usage data retention
-                    </Tooltip>
-                  </PlanFeaturesListItem>
-                  <li className="mb-2 mt-8">Includes:</li>
-                  <PlanFeaturesListItem>
-                    Unlimited seats, projects and organizations
-                  </PlanFeaturesListItem>
-                  <PlanFeaturesListItem>Unlimited schema pushes & checks</PlanFeaturesListItem>
-                  <PlanFeaturesListItem>
-                    Full access to all features (including&nbsp;SSO)
-                  </PlanFeaturesListItem>
-                  <PlanFeaturesListItem>
-                    <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
+          <PlanCard
+            data-plan="Hobby"
+            name="Hobby"
+            description="For personal or small projects"
+            highlighted={highlightedPlan === 'Hobby'}
+            adjustable={false}
+            price="Free forever"
+            callToAction={
+              <CallToAction variant="tertiary" href="https://app.graphql-hive.com">
+                Get started for free
+              </CallToAction>
+            }
+            features={
+              <>
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={['1M operations per month']}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['7 days']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Full access to everything!']}
+                />
+                <PlanFeaturesListItem
+                  icon={<UsageIcon />}
+                  category="Usage"
+                  features={[
+                    'Unlimited seats, projects and organizations',
+                    'GitHub issues and chat support',
+                    'Unlimited schema pushes and checks',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<ShieldFlashIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
+              </>
+            }
+          />
+          <PlanCard
+            data-plan="Pro"
+            name="Pro"
+            description="For scaling API and teams"
+            highlighted={highlightedPlan === 'Pro'}
+            adjustable
+            startingFrom
+            price={
+              <Tooltip content="Base price charged monthly">
+                $20<span className="text-base leading-normal text-green-800"> / month</span>
+              </Tooltip>
+            }
+            callToAction={
+              <CallToAction variant="primary" href="https://app.graphql-hive.com">
+                Try free for 30 days
+              </CallToAction>
+            }
+            features={
+              <>
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={[
+                    <span>
                       1M operations per month
-                    </Tooltip>
-                  </PlanFeaturesListItem>
-                </>
-              }
-            />
-            <Plan
-              name="Pro"
-              description="For scaling API and teams"
-              adjustable
-              price={
-                <Tooltip content="Base price charged monthly">
-                  $20<span className="text-base leading-normal text-green-800"> / month</span>
-                </Tooltip>
-              }
-              linkText="🎉 Try free for 30 days"
-              features={
-                <>
-                  <PlanFeaturesListItem>
-                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                      <strong>90 days</strong> of usage data retention
-                    </Tooltip>
-                  </PlanFeaturesListItem>
-                  <li className="mb-2 mt-8">Everything in Hobby, plus:</li>
-                  <PlanFeaturesListItem>
-                    <Tooltip key="t1" content={OPERATIONS_EXPLAINER}>
-                      $10 per additional 1M operations
-                    </Tooltip>
-                  </PlanFeaturesListItem>
-                  <PricingSlider className="pt-4" />
-                </>
-              }
-            />
-            <Plan
-              name="Enterprise"
-              description="Custom plan for large companies"
-              adjustable
-              price={
-                <span
-                  className="cursor-pointer"
-                  onClick={() => {
-                    (window as any).$crisp?.push(['do', 'chat:open']);
-                  }}
-                >
-                  Contact us
-                </span>
-              }
-              linkText="Shape a custom plan for your business"
-              linkOnClick={() => {
-                (window as any).$crisp?.push(['do', 'chat:open']);
-              }}
-              features={
-                <>
-                  <PlanFeaturesListItem>
-                    <Tooltip content={USAGE_DATA_RETENTION_EXPLAINER}>
-                      <strong>Custom</strong> data retention
-                    </Tooltip>
-                  </PlanFeaturesListItem>
-                  <li className="mb-2 mt-8">Everything in Pro, plus:</li>
-                  <PlanFeaturesListItem>Dedicated Slack channel for support</PlanFeaturesListItem>
-                  <PlanFeaturesListItem>White-glove onboarding</PlanFeaturesListItem>
-                  <PlanFeaturesListItem>Bulk volume discount</PlanFeaturesListItem>
-                  <PlanFeaturesListItem>
+                      <small className="block text-xs">Then $10 per million operations</small>
+                    </span>,
+                  ]}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['90 days']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Everything in Hobby, plus the ability to scale past 1M operations.']}
+                />
+                <PlanFeaturesListItem
+                  icon={<UsageIcon />}
+                  category="Usage"
+                  features={[
+                    'Unlimited seats, projects and organizations',
+                    'GitHub issues and chat support',
+                    'Unlimited schema pushes and checks',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<AvailabilityIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
+              </>
+            }
+          />
+          <PlanCard
+            data-plan="Enterprise"
+            name="Enterprise"
+            description="Custom plan for large companies"
+            highlighted={highlightedPlan === 'Enterprise'}
+            adjustable
+            price={
+              <ContactTextLink className="hover:text-current hover:no-underline">
+                Contact us
+              </ContactTextLink>
+            }
+            callToAction={
+              <ContactButton variant="primary">
+                Shape a custom plan
+                <span className="hidden sm:inline">for your business</span>
+              </ContactButton>
+            }
+            features={
+              <>
+                <PlanFeaturesListItem
+                  icon={<OperationsIcon />}
+                  category="Operations per month"
+                  features={['Custom operations limit']}
+                  tooltip={OPERATIONS_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<RetentionIcon />}
+                  category="Usage data retention"
+                  features={['One year contract']}
+                  tooltip={USAGE_DATA_RETENTION_EXPLAINER}
+                />
+                <PlanFeaturesListItem
+                  icon={<FeaturesIcon />}
+                  category="Features"
+                  features={['Everything in Pro, plus full enterprise support.']}
+                />
+                <PlanFeaturesListItem
+                  icon={<EnterpriseSupportIcon />}
+                  category="Enterprise support"
+                  features={[
+                    'Dedicated Slack channel for support',
+                    'White-glove onboarding',
                     <span>
                       GraphQL / APIs support and guidance from{' '}
-                      <a
-                        href="https://the-guild.dev"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hive-focus -mx-1 -my-0.5 rounded px-1 py-0.5 underline hover:text-blue-700"
-                      >
-                        The&nbsp;Guild
-                      </a>
-                    </span>
-                  </PlanFeaturesListItem>
-                </>
-              }
-            />
-          </div>
+                      <TextLink href="https://theguild.dev">The&nbsp;Guild</TextLink>
+                    </span>,
+                    '365, 24/7 support, SLA tailored to your needs',
+                    'Custom Data Processing Agreements (DPA)',
+                  ]}
+                />
+                <PlanFeaturesListItem
+                  icon={<AvailabilityIcon />}
+                  category="Availability"
+                  features={['99.95% uptime for operation', '100% uptime for schema registry CDN']}
+                />
+                <PlanFeaturesListItem
+                  icon={<SSOIcon />}
+                  category="SSO"
+                  features={['Single sign-on via Open ID provider']}
+                />
+                <PlanFeaturesListItem
+                  icon={<BillingIcon />}
+                  category="Customized Billing"
+                  features={[
+                    'Flexible billing options tailored to enterprise procurement processes',
+                  ]}
+                />
+              </>
+            }
+          />
         </div>
       </div>
     </section>

@@ -21,6 +21,7 @@ import {
   createCdnAccess,
   createMemberRole,
   createOrganization,
+  createOrganizationAccessToken,
   createProject,
   createTarget,
   createToken,
@@ -110,6 +111,29 @@ export function initSeed() {
 
           return {
             organization,
+            async createOrganizationAccessToken(args: {
+              permissions: Array<string>;
+              resources: GraphQLSchema.ResourceAssignmentInput;
+            }) {
+              const result = await createOrganizationAccessToken(
+                {
+                  title: 'A Access Token',
+                  description: 'access token',
+                  organization: {
+                    byId: organization.id,
+                  },
+                  permissions: args.permissions,
+                  resources: args.resources,
+                },
+                ownerToken,
+              ).then(r => r.expectNoGraphQLErrors());
+
+              if (result.createOrganizationAccessToken.error) {
+                throw new Error(result.createOrganizationAccessToken.error.message);
+              }
+
+              return result.createOrganizationAccessToken.ok!.privateAccessKey;
+            },
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
 

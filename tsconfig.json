@@ -26,16 +26,7 @@
     "strict": true,
     "paths": {
       "@hive/api": ["./packages/services/api/src/index.ts"],
-      "@hive/api/src/modules/schema/providers/artifact-storage-reader": [
-        "./packages/services/api/src/modules/schema/providers/artifact-storage-reader.ts"
-      ],
-      "@hive/api/src/modules/shared/providers/redis": [
-        "./packages/services/api/src/modules/shared/providers/redis.ts"
-      ],
-      "@hive/api/src/modules/shared/providers/pub-sub": [
-        "./packages/services/api/src/modules/shared/providers/pub-sub.ts"
-      ],
-
+      "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
       "@hive/cdn-script/artifact-handler": [
         "./packages/services/cdn-worker/src/artifact-handler.ts"
@@ -60,6 +51,7 @@
       "@hive/emails": ["./packages/services/emails/src/api.ts"],
       "@hive/commerce": ["./packages/services/commerce/src/api.ts"],
       "@hive/storage": ["./packages/services/storage/src/index.ts"],
+      "@hive/storage/*": ["./packages/services/storage/src/*"],
       "@graphql-hive/yoga": ["./packages/libraries/yoga/src/index.ts"],
       "@graphql-hive/apollo": ["./packages/libraries/apollo/src/index.ts"],
       "@graphql-hive/envelop": ["./packages/libraries/envelop/src/index.ts"],
