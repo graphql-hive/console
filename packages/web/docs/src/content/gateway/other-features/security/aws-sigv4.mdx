@@ -174,3 +174,27 @@ export const gatewayConfig = defineConfig({
   }
 })
 ```
+
+### Combining with JWT
+
+If you use JWT for authentication for some services, you can combine both depending on the prefix in
+the `Authorization` header.
+
+In this case if the `Authorization` header starts with `Bearer`, the JWT will be used for
+authentication, otherwise, the request will be validated with AWS SigV4.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: {
+    incoming: true
+  },
+  jwt: {
+    reject: {
+      missingToken: false,
+      invalidToken: false
+    }
+  }
+})
+```
