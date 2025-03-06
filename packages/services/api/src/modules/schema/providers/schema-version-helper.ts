@@ -1,7 +1,8 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
-import { print } from 'graphql';
+import { DocumentNode, isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
+import { mergeTypeDefs } from '@graphql-tools/merge';
 import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
 import {
@@ -134,7 +135,7 @@ export class SchemaVersionHelper {
       'SchemaVersionHelper.getCompositeSchemaAst: Composite',
     );
 
-    return compositeSchemaAst;
+    return this.autoFixCompositeSchemaAst(compositeSchemaAst);
   }
 
   @cache<SchemaVersion>(version => version.id)
@@ -333,7 +334,28 @@ export class SchemaVersionHelper {
   }
 
   /**
+   * There's a possibility that the composite schema contains type extensions.
+   * This is a problem, because other parts of the system may expect it to be clean from type extensions.
+   *
+   * This function will also check for type system extensions and merge them into matching definitions.
+   */
+  private autoFixCompositeSchemaAst(schemaAst: DocumentNode): DocumentNode {
+    const hasTypeExtensions = schemaAst.definitions.some(isTypeSystemExtensionNode);
+
+    if (!hasTypeExtensions) {
+      return schemaAst;
+    }
+
+    this.logger.warn(
+      'Composite schema AST contains type extensions, merging them into matching definitions',
+    );
+
+    return mergeTypeDefs(schemaAst);
+  }
+
+  /**
    * There's a possibility that the composite schema SDL contains parts of the supergraph spec.
+   *
    * This is a problem because we want to show the public schema to the user, and the supergraph spec is not part of that.
    * This may happen when composite schema was produced with an old version of `transformSupergraphToPublicSchema`
    * or when supergraph sdl contained something new.
@@ -342,12 +364,12 @@ export class SchemaVersionHelper {
    */
   private autoFixCompositeSchemaSdl(sdl: string, versionId: string) {
     const isFederationV1Output = sdl.includes('@core');
+
     /**
      * If the SDL is clean from Supergraph spec or it's an output of @apollo/federation, we don't need to transform it.
      * We ignore @apollo/federation, because we never really transformed the output of it to public schema.
      * Doing so might be a breaking change for some users (like: removed join__Graph type).
      */
-
     if (isFederationV1Output || !containsSupergraphSpec(sdl)) {
       return sdl;
     }

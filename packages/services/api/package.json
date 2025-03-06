@@ -18,6 +18,7 @@
     "@graphql-hive/core": "workspace:*",
     "@graphql-hive/federation-link-utils": "workspace:*",
     "@graphql-inspector/core": "5.1.0-alpha-20231208113249-34700c8a",
+    "@graphql-tools/merge": "9.0.22",
     "@hive/cdn-script": "workspace:*",
     "@hive/emails": "workspace:*",
     "@hive/schema": "workspace:*",
