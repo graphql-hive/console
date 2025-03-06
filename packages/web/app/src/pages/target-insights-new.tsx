@@ -1,66 +1,40 @@
 import {
-  ChangeEvent,
   ComponentPropsWithoutRef,
   ElementRef,
   forwardRef,
   Fragment,
-  InputHTMLAttributes,
   ReactNode,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
-import { addDays, addHours, formatDate, parse as parseDate, subYears } from 'date-fns';
+import { addDays, formatDate, parse as parseDate } from 'date-fns';
 import {
   AlertTriangle,
   ArrowUpDown,
-  ArrowUpDownIcon,
   CalendarIcon,
-  Check,
-  ChevronDown,
   ChevronRight,
-  ChevronUp,
   Clock,
   ExternalLinkIcon,
   FilterIcon,
-  InfoIcon,
-  ListRestartIcon,
-  LockIcon,
-  MoreHorizontal,
   SearchIcon,
-  X,
   XIcon,
-  ZapIcon,
 } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
-import { Bar, BarChart, CartesianGrid, ReferenceArea, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
@@ -70,20 +44,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   Sidebar,
@@ -93,10 +63,8 @@ import {
   SidebarGroupLabel,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarProvider,
   SidebarSeparator,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   Table,
@@ -106,9 +74,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatDuration, formatNumber } from '@/lib/hooks';
+import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import { Link } from '@tanstack/react-router';
@@ -124,7 +91,7 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { Filter, FilterInput } from './target-insights-new-filter';
+import { FilterInput, MultiSelectFilter } from './target-insights-new-filter';
 import { useWidthSync, WidthSyncProvider } from './target-insights-new-width';
 
 const rootSpan: SpanProps = {
@@ -1121,62 +1088,313 @@ function TimelineFilter() {
   );
 }
 
+type FilterKeys =
+  | 'graphql.status'
+  | 'graphql.kind'
+  | 'graphql.subgraph'
+  | 'graphql.operation'
+  | 'graphql.client'
+  | 'http.status'
+  | 'http.method'
+  | 'http.host'
+  | 'http.route'
+  | 'http.url';
+
 function Filters() {
+  const [filters, setFilters] = useState<Record<FilterKeys, string[]>>({
+    'graphql.status': [],
+    'graphql.kind': [],
+    'graphql.subgraph': [],
+    'graphql.operation': [],
+    'graphql.client': [],
+    'http.status': [],
+    'http.method': [],
+    'http.host': [],
+    'http.route': [],
+    'http.url': [],
+  });
+
+  // Function to update a specific filter
+  const updateFilter = (key: FilterKeys) => {
+    return (value: string[]) => {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    };
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      'graphql.status': [],
+      'graphql.kind': [],
+      'graphql.subgraph': [],
+      'graphql.operation': [],
+      'graphql.client': [],
+      'http.status': [],
+      'http.method': [],
+      'http.host': [],
+      'http.route': [],
+      'http.url': [],
+    });
+  };
+
+  const filterSelector = (key: FilterKeys) => filters[key];
+
+  const hasChanges = useMemo(() => {
+    return Object.values(filters).some(filter => filter.length > 0);
+  }, [filters]);
+
   return (
     <>
+      <SidebarGroupLabel className="flex items-center justify-between">
+        <div>Filters</div>
+        {hasChanges ? (
+          <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
+            <XIcon className="size-4" />
+          </Button>
+        ) : null}
+      </SidebarGroupLabel>
       <TimelineFilter />
       <DurationFilter />
-      <Filter
+      <MultiSelectFilter
+        key="graphql.status"
         name="Status"
-        hideSearch
-        items={[
-          <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
-          <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
+        options={[
+          {
+            value: 'ok',
+            searchContent: 'ok',
+            label: <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
+          },
+          {
+            value: 'error',
+            searchContent: 'error',
+            label: <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
+          },
         ]}
-        changes={2}
+        selectedValues={filterSelector('graphql.status')}
+        onChange={updateFilter('graphql.status')}
+        hideSearch
       />
-      <Filter
+      <MultiSelectFilter
+        key="kind"
         name="Operation Kind"
+        options={[
+          {
+            value: 'query',
+            searchContent: 'query',
+            label: 'Query',
+          },
+          {
+            value: 'mutation',
+            searchContent: 'mutation',
+            label: 'Mutation',
+          },
+          {
+            value: 'subscription',
+            searchContent: 'subscription',
+            label: 'Subscription',
+          },
+        ]}
+        selectedValues={filterSelector('graphql.kind')}
+        onChange={updateFilter('graphql.kind')}
         hideSearch
-        items={['Query', 'Mutation', 'Subscription']}
-        changes={1}
       />
-      <Filter name="Subgraph Name" items={['link', 'products', 'prices']} />
-      <Filter
+      <MultiSelectFilter
+        key="subgraph"
+        name="Subgraph Name"
+        options={[
+          {
+            value: 'link',
+            searchContent: 'link',
+            label: 'link',
+          },
+          {
+            value: 'products',
+            searchContent: 'products',
+            label: 'products',
+          },
+          {
+            value: 'prices',
+            searchContent: 'prices',
+            label: 'prices',
+          },
+        ]}
+        selectedValues={filterSelector('graphql.subgraph')}
+        onChange={updateFilter('graphql.subgraph')}
+      />
+      <MultiSelectFilter
+        key="name"
         name="Operation Name"
-        changes={2}
-        items={[
-          <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
-          <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
-          <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
+        options={[
+          {
+            value: '3h1s',
+            searchContent: '3h1s fetchproducts',
+            label: <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
+          },
+          {
+            value: '7na1',
+            searchContent: '7na1 fetchUsers',
+            label: <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
+          },
+          {
+            value: '64a1',
+            searchContent: '64a1 FetchProducts',
+            label: <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
+          },
         ]}
+        selectedValues={filterSelector('graphql.operation')}
+        onChange={updateFilter('graphql.operation')}
       />
-      <Filter
+      <MultiSelectFilter
+        key="client"
         name="Client"
-        items={[
-          'unknown',
-          'hive-app',
-          'Hive CLI',
-          'Hive Client',
-          <LabelWithBadge side="right" badgeText="0.46.0">
-            Hive CLI
-          </LabelWithBadge>,
-          <LabelWithBadge side="right" badgeText="0.25.3">
-            Hive Client
-          </LabelWithBadge>,
+        options={[
+          {
+            value: 'unknown',
+            searchContent: 'unknown',
+            label: 'unknown',
+          },
+          {
+            value: 'hive-app',
+            searchContent: 'hive-app',
+            label: 'hive-app',
+          },
+          {
+            value: 'Hive CLI',
+            searchContent: 'Hive CLI',
+            label: 'Hive CLI',
+          },
+          {
+            value: 'Hive Client',
+            searchContent: 'Hive Client',
+            label: 'Hive Client',
+          },
+          {
+            value: 'Hive CLI@0.46.0',
+            searchContent: 'Hive CLI@0.46.0',
+            label: (
+              <LabelWithBadge side="right" badgeText="0.46.0">
+                Hive CLI
+              </LabelWithBadge>
+            ),
+          },
+          {
+            value: 'Hive Client@0.25.3',
+            searchContent: 'Hive Client@0.25.3',
+            label: (
+              <LabelWithBadge side="right" badgeText="0.25.3">
+                Hive Client
+              </LabelWithBadge>
+            ),
+          },
         ]}
+        selectedValues={filterSelector('graphql.client')}
+        onChange={updateFilter('graphql.client')}
       />
-      <Filter name="HTTP Status Code" items={['200', '400', '500']} />
-      <Filter name="HTTP Method" hideSearch items={['POST', 'GET']} changes={1} />
-      <Filter name="HTTP Host" items={['localhost:4000', 'localhost:4200', 'localhost:3000']} />
-      <Filter name="HTTP Route" items={['/graphql', '/']} />
-      <Filter
-        name="HTTP URL"
-        items={[
-          'http://localhost:3000/',
-          'http://localhost:4000/graphql',
-          'http://localhost:4200/graphql',
+      <MultiSelectFilter
+        key="http.status"
+        name="HTTP Status Code"
+        options={[
+          {
+            value: '200',
+            searchContent: '200',
+            label: '200',
+          },
+          {
+            value: '400',
+            searchContent: '400',
+            label: '400',
+          },
+          {
+            value: '500',
+            searchContent: '500',
+            label: '500',
+          },
         ]}
+        selectedValues={filterSelector('http.status')}
+        onChange={updateFilter('http.status')}
+        hideSearch
+      />
+      <MultiSelectFilter
+        key="http.method"
+        name="HTTP Method"
+        options={[
+          {
+            value: 'GET',
+            searchContent: 'get',
+            label: 'GET',
+          },
+          {
+            value: 'POST',
+            searchContent: 'post',
+            label: 'POST',
+          },
+        ]}
+        selectedValues={filterSelector('http.method')}
+        onChange={updateFilter('http.method')}
+        hideSearch
+      />
+      <MultiSelectFilter
+        key="http.host"
+        name="HTTP Host"
+        options={[
+          {
+            value: 'localhost:4000',
+            searchContent: 'localhost:4000',
+            label: 'localhost:4000',
+          },
+          {
+            value: 'localhost:4200',
+            searchContent: 'localhost:4200',
+            label: 'localhost:4200',
+          },
+          {
+            value: 'localhost:3000',
+            searchContent: 'localhost:3000',
+            label: 'localhost:3000',
+          },
+        ]}
+        selectedValues={filterSelector('http.host')}
+        onChange={updateFilter('http.host')}
+      />
+      <MultiSelectFilter
+        key="http.route"
+        name="HTTP Route"
+        options={[
+          {
+            value: '/graphql',
+            searchContent: '/graphql',
+            label: '/graphql',
+          },
+          {
+            value: '/',
+            searchContent: '/',
+            label: '/',
+          },
+        ]}
+        selectedValues={filterSelector('http.route')}
+        onChange={updateFilter('http.route')}
+      />
+      <MultiSelectFilter
+        key="http.url"
+        name="HTTP URL"
+        options={[
+          {
+            value: 'http://localhost:3000/',
+            searchContent: 'http://localhost:3000/',
+            label: 'http://localhost:3000/',
+          },
+          {
+            value: 'http://localhost:4000/graphql',
+            searchContent: 'http://localhost:4000/graphql',
+            label: 'http://localhost:4000/graphql',
+          },
+          {
+            value: 'http://localhost:4200/graphql',
+            searchContent: 'http://localhost:4200/graphql',
+            label: 'http://localhost:4200/graphql',
+          },
+        ]}
+        selectedValues={filterSelector('http.url')}
+        onChange={updateFilter('http.url')}
       />
     </>
   );
@@ -1533,12 +1751,6 @@ function TargetInsightsNewPageContent() {
         {filtersOpen ? (
           <Sidebar collapsible="none" className="bg-transparent">
             <SidebarContent>
-              <SidebarGroupLabel className="flex items-center justify-between">
-                <div>Filters</div>
-                <Button variant="ghost" size="icon-sm">
-                  <XIcon className="size-4" />
-                </Button>
-              </SidebarGroupLabel>
               <Filters />
             </SidebarContent>
           </Sidebar>

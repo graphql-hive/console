@@ -1,4 +1,12 @@
-import { forwardRef, Fragment, InputHTMLAttributes, ReactNode } from 'react';
+import {
+  forwardRef,
+  Fragment,
+  InputHTMLAttributes,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import { CheckIcon, ChevronRightIcon, CircleXIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -30,15 +38,24 @@ export const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
   },
 );
 
-export function FilterSearch() {
+export function FilterSearch(props: { value: string; onChange(value: string): void }) {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    props.onChange(e.target.value);
+  }, []);
+
   return (
     <div className="mt-4 flex w-full max-w-sm items-center space-x-2">
-      <FilterInput type="text" placeholder="Search values" />
+      <FilterInput
+        type="text"
+        placeholder="Search values"
+        value={props.value}
+        onChange={handleChange}
+      />
     </div>
   );
 }
 
-export function FilterTitle(props: { children: ReactNode; changes?: number }) {
+export function FilterTitle(props: { children: ReactNode; changes?: number; onReset(): void }) {
   return (
     <SidebarGroupLabel
       asChild
@@ -52,6 +69,10 @@ export function FilterTitle(props: { children: ReactNode; changes?: number }) {
             variant="secondary"
             size="sm"
             className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
+            onClick={e => {
+              e.preventDefault();
+              props.onReset();
+            }}
           >
             <CircleXIcon className="hidden size-3 group-hover:block" />
             <span className="block group-hover:hidden">{props.changes}</span>
@@ -72,32 +93,91 @@ export function FilterContent(props: { children: ReactNode }) {
   );
 }
 
-export function Filter(props: {
+export function MultiSelectFilter<$Value extends string | number>(props: {
   name: string;
-  items: ReactNode[];
+  /**
+   * Filter's key for the backend and url state
+   */
+  key: string;
   hideSearch?: boolean;
-  changes?: number;
+  options: Array<{
+    /**
+     * What to display
+     */
+    label: ReactNode;
+    /**
+     * What to use when searching
+     */
+    searchContent: string;
+    /**
+     * A value to use when the filter is selected
+     */
+    value: $Value;
+  }>;
+  selectedValues: $Value[];
+  onChange(selectedValues: $Value[]): void;
 }) {
+  const [searchPhrase, setSearchPhrase] = useState('');
+  const filteredOptions = useMemo(() => {
+    const lowerSearchPhrase = searchPhrase.toLowerCase().trim();
+
+    if (!lowerSearchPhrase) {
+      return props.options;
+    }
+
+    return props.options.filter(option =>
+      option.searchContent.toLowerCase().includes(lowerSearchPhrase),
+    );
+  }, [searchPhrase]);
+
+  return (
+    <Filter name={props.name}>
+      <FilterTitle
+        changes={props.selectedValues.length}
+        children={props.name}
+        onReset={() => props.onChange([])}
+      />
+      <FilterContent>
+        {!props.hideSearch && <FilterSearch value={searchPhrase} onChange={setSearchPhrase} />}
+        {filteredOptions.map((option, index) => (
+          <FilterOption
+            key={index}
+            selected={props.selectedValues.includes(option.value)}
+            onClick={() => {
+              if (props.selectedValues.includes(option.value)) {
+                props.onChange(props.selectedValues.filter(val => val !== option.value));
+              } else {
+                props.onChange(props.selectedValues.concat(option.value));
+              }
+            }}
+          >
+            {option.label}
+          </FilterOption>
+        ))}
+      </FilterContent>
+    </Filter>
+  );
+}
+
+function FilterOption(props: { onClick(): void; selected: boolean; children: ReactNode }) {
+  return (
+    <SidebarMenuButton onClick={props.onClick}>
+      <div
+        data-active={props.selected}
+        className="group/filter-item border-sidebar-border text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary data-[active=true]:bg-sidebar-primary flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
+      >
+        <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
+      </div>
+      {props.children}
+    </SidebarMenuButton>
+  );
+}
+
+function Filter(props: { name: string; children: ReactNode }) {
   return (
     <Fragment key={props.name}>
       <SidebarGroup key={props.name} className="py-0">
-        <Collapsible className="group/collapsible">
-          <FilterTitle changes={props.changes} children={props.name} />
-          <FilterContent>
-            {!props.hideSearch && <FilterSearch />}
-            {props.items.map((item, index) => (
-              <SidebarMenuButton>
-                <div
-                  data-active={index < 2}
-                  className="group/filter-item border-sidebar-border text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary data-[active=true]:bg-sidebar-primary flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
-                >
-                  <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
-                </div>
-                {item}
-              </SidebarMenuButton>
-            ))}
-          </FilterContent>
-        </Collapsible>
+        <Collapsible className="group/collapsible">{props.children}</Collapsible>
       </SidebarGroup>
       <SidebarSeparator className="mx-0" />
     </Fragment>
