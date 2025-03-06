@@ -13,9 +13,11 @@ function hashToken(token: string) {
 export class OrganizationAccessTokenSession extends Session {
   public readonly organizationId: string;
   private policies: Array<AuthorizationPolicyStatement>;
+  readonly id: string;
 
   constructor(
     args: {
+      id: string;
       organizationId: string;
       policies: Array<AuthorizationPolicyStatement>;
     },
@@ -24,6 +26,7 @@ export class OrganizationAccessTokenSession extends Session {
     },
   ) {
     super({ logger: deps.logger });
+    this.id = args.id;
     this.organizationId = args.organizationId;
     this.policies = args.policies;
   }
@@ -85,6 +88,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
 
     const organizationAccessToken = await this.organizationAccessTokenCache.get(
       result.accessKey.id,
+      this.logger,
     );
     if (!organizationAccessToken) {
       return null;
@@ -105,6 +109,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
 
     return new OrganizationAccessTokenSession(
       {
+        id: organizationAccessToken.id,
         organizationId: organizationAccessToken.organizationId,
         policies: organizationAccessToken.authorizationPolicyStatements,
       },
