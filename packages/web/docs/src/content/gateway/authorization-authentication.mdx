@@ -24,6 +24,12 @@ gateway, and no other entity can execute requests to the subgraph on behalf of t
 
 </Callout>
 
+<Callout type="warning">
+  If you are looking for an authentication for subgraph requests via [AWS Signature Version 4
+  (Sigv4)](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html), you
+  can enable `awsSigv4` flag documented [here](/docs/gateway/other-features/security/aws-sigv4).
+</Callout>
+
 <Callout>
   You can refer to [Generic Auth plugin docs](https://www.npmjs.com/package/@envelop/generic-auth),
   if you need a more customized auth setup without JWT.

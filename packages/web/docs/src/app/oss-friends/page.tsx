@@ -95,7 +95,7 @@ export default async function OSSFriendsPage() {
           </div>
         </section>
       </div>
-      <section className="relative mx-4 mt-12 overflow-hidden rounded-3xl bg-[#003834] p-12 text-center sm:p-24 md:mx-6">
+      <section className="bg-blueish-green relative mx-4 mt-12 overflow-hidden rounded-3xl p-12 text-center sm:p-24 md:mx-6">
         <DecorationIsolation>
           <ArchDecoration className="absolute -left-1/2 -top-1/2 rotate-180 sm:-left-1/4 md:left-[-105px] md:top-[-109px] [&>path]:fill-none" />
           <HighlightDecoration className="absolute -left-1 -top-16 size-[600px] -scale-x-100 overflow-visible" />
