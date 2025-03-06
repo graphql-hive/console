@@ -354,7 +354,7 @@ export class SchemaVersionHelper {
     const isFederationV1Output = sdl.includes('@core');
     // Poor's man check for type extensions to avoid parsing the SDL if it's not necessary.
     // Checks if the `extend` keyword is followed by a space or a newline and it's not a part of a word.
-    const hasPotentiallyTypeExtensions = false; // /\bextend(?=[\s\n])/.test(sdl);
+    const hasPotentiallyTypeExtensions = /\bextend(?=[\s\n])/.test(sdl);
 
     /**
      * If the SDL is clean from Supergraph spec or it's an output of @apollo/federation, we don't need to transform it.
