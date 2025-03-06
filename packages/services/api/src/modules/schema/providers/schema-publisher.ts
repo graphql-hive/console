@@ -20,7 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
   GitHubIntegrationManager,
@@ -278,10 +278,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaCheck:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1000,10 +1001,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1038,11 +1040,11 @@ export class SchemaPublisher {
     const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
-      this.storage.getLatestSchemas({
+      input.service ? this.storage.getLatestSchemas({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
-      }),
+      }) : Promise.resolve(),
     ]);
 
     // If trying to push with a service name and there are existing services
@@ -1072,8 +1074,6 @@ export class SchemaPublisher {
       }
     }
 
-    const legacySelector = this.session.getLegacySelector();
-
     const checksum = createHash('md5')
       .update(
         stringify({
@@ -1092,7 +1092,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(legacySelector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
@@ -1165,10 +1165,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:deleteService');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
