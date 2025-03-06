@@ -1,5 +1,5 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
-import { DocumentNode, isTypeSystemExtensionNode, print } from 'graphql';
+import { isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
