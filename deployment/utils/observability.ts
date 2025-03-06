@@ -1,5 +1,6 @@
 import * as k8s from '@pulumi/kubernetes';
 import { interpolate, Output } from '@pulumi/pulumi';
+import { Environment } from '../services/environment';
 import { helmChart } from './helm';
 import { Values as OpenTelemetryCollectorValues } from './opentelemetry-collector.types';
 import { VectorValues } from './vector.types';
@@ -31,7 +32,7 @@ export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', 
 
 export class Observability {
   constructor(
-    private envName: string,
+    private environment: Environment,
     private config: ObservabilityConfig,
   ) {}
 
@@ -92,7 +93,7 @@ export class Observability {
               labels: {
                 namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
                 container_name: '{{`{{ kubernetes.container_name }}`}}',
-                env: this.envName,
+                env: this.environment.envName,
               },
               encoding: {
                 codec: 'text',
@@ -111,8 +112,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: '512m',
-          memory: '1000Mi',
+          cpu: this.environment.isProduction ? '512m' : '150m',
+          memory: this.environment.isProduction ? '1000Mi' : '300Mi',
         },
       },
       podAnnotations: {

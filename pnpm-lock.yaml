@@ -672,7 +672,7 @@ importers:
   packages/services/api:
     dependencies:
       reflect-metadata:
-        specifier: ^0.2.0
+        specifier: 0.2.2
         version: 0.2.2
     devDependencies:
       '@aws-sdk/client-s3':
@@ -1548,7 +1548,7 @@ importers:
         specifier: 11.3.0
         version: 11.3.0
       reflect-metadata:
-        specifier: ^0.2.0
+        specifier: 0.2.2
         version: 0.2.2
       zod:
         specifier: 3.24.1

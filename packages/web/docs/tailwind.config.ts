@@ -23,6 +23,7 @@ const config: Config = {
         ...baseConfig.theme.extend.colors,
         primary: baseConfig.theme.extend.colors['hive-yellow'],
         'nextra-primary': baseConfig.theme.extend.colors.primary,
+        'blueish-green': '#003834', // todo: move this to shared Tailwind config
       },
       keyframes: {
         'accordion-down': {
@@ -45,6 +46,7 @@ const config: Config = {
     tailwindcssAnimate,
     blockquotesPlugin(),
     tailwindTypography,
+    firefoxVariantPlugin(),
   ],
 };
 
@@ -85,5 +87,29 @@ function blockquotesPlugin() {
         type: 'color',
       },
     );
+  });
+}
+
+function firefoxVariantPlugin() {
+  return plugin((api: PluginAPI) => {
+    const { addVariant, e, postcss } = api as PluginAPI & { postcss: any };
+    // @ts-expect-error types are outdated
+    addVariant('firefox', ({ container, separator }) => {
+      if (!postcss || !container || !separator) {
+        throw new Error("can't add firefox variant, assumptions invalid. did the API change?");
+      }
+      const isFirefoxRule = postcss.atRule({
+        name: 'supports',
+        params: '(-moz-appearance:none)',
+      });
+      isFirefoxRule.append(container.nodes);
+      container.append(isFirefoxRule);
+      // @ts-expect-error types are outdated
+      isFirefoxRule.walkRules(rule => {
+        rule.selector = `.${e(
+          `firefox${separator}${rule.selector.slice(1).replaceAll('\\', '')}`,
+        )}`;
+      });
+    });
   });
 }
