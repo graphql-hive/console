@@ -1035,14 +1035,29 @@ export class SchemaPublisher {
       targetId: selector.targetId,
     });
 
-    const [contracts, latestVersion] = await Promise.all([
+    const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
+      this.storage.getLatestSchemas({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
     ]);
 
-    if (!latestVersion && input.service) {
+    // If trying to push with a service name and there are existing services
+    if (input.service) {
+      let serviceExists = false;
+      if (latestSchemas?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestSchemas.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
       // this is a new service. Validate the service name.
-      if (input.service.length > 64 || !/^[a-zA-Z][\w\/_-]*$/g.test(input.service)) {
+      if (
+        !serviceExists &&
+        (input.service.length > 64 || !/^[a-zA-Z][\w\/_-]*$/g.test(input.service))
+      ) {
         return {
           __typename: 'SchemaPublishError',
           valid: false,
