@@ -8,6 +8,8 @@ Hive Gateway allows you to sign subgraph requests with
 [AWS Signature Version 4 (SigV4)](https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html)
 for secure communication between the Gateway and the subgraphs.
 
+## Signing outgoing requests
+
 ```mermaid
 flowchart TD
     A[Consumer] -->|GraphQL Request| B(Hive Gateway)
@@ -21,8 +23,6 @@ flowchart TD
     I --> J[Sign the request]
     J --> |HTTP Request| K[Users Subgraph]
 ```
-
-## Signing outgoing requests
 
 ### How to use?
 
