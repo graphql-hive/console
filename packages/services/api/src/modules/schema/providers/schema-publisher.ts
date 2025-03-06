@@ -328,6 +328,30 @@ export class SchemaPublisher {
         }),
       ]);
 
+    if (input.service) {
+      let serviceExists = false;
+      if (latestVersion?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestVersion.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaCheckError',
+          valid: false,
+          changes: [],
+          warnings: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), , or forward slash (/).',
+            },
+          ],
+        };
+      }
+    }
+
     const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
       this.schemaManager.getMaybeLatestVersion(target),
       this.schemaManager.getMaybeLatestValidVersion(target),
@@ -1040,11 +1064,13 @@ export class SchemaPublisher {
     const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
-      input.service ? this.storage.getLatestSchemas({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-        targetId: selector.targetId,
-      }) : Promise.resolve(),
+      input.service
+        ? this.storage.getLatestSchemas({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          })
+        : Promise.resolve(),
     ]);
 
     // If trying to push with a service name and there are existing services
@@ -1056,10 +1082,7 @@ export class SchemaPublisher {
         );
       }
       // this is a new service. Validate the service name.
-      if (
-        !serviceExists &&
-        (input.service.length > 64 || !/^[a-zA-Z][\w\/_-]*$/g.test(input.service))
-      ) {
+      if (!serviceExists && !isValidServiceName(input.service)) {
         return {
           __typename: 'SchemaPublishError',
           valid: false,
@@ -1067,7 +1090,7 @@ export class SchemaPublisher {
           errors: [
             {
               message:
-                'Invalid service name. Service name must be less than 64 characters, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), , or forward slash (/).',
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), , or forward slash (/).',
             },
           ],
         };
@@ -2471,3 +2494,7 @@ const SchemaCheckContextIdModel = z
   .max(200, {
     message: 'Context ID cannot exceed length of 200 characters.',
   });
+
+function isValidServiceName(service: string): boolean {
+  return service.length <= 64 && /^[a-zA-Z][\w\/_-]*$/g.test(service);
+}
