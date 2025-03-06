@@ -524,8 +524,11 @@ test('schema:check without `--target` flag fails for organization access token',
     exitCode------------------------------------------:
     2
     stderr--------------------------------------------:
-     ›   Error: A target is required to perform the action. Please provide the
-     ›   "--target" flag.  [109]
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
      ›   > See https://__URL__ for
      ›    a complete list of error codes and recommended fixes.
      ›   To disable this message set HIVE_NO_ERROR_TIP=1
@@ -593,8 +596,11 @@ test('schema:publish without `--target` flag fails for organization access token
     exitCode------------------------------------------:
     2
     stderr--------------------------------------------:
-     ›   Error: A target is required to perform the action. Please provide the
-     ›   "--target" flag.  [109]
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
      ›   > See https://__URL__ for
      ›    a complete list of error codes and recommended fixes.
      ›   To disable this message set HIVE_NO_ERROR_TIP=1
