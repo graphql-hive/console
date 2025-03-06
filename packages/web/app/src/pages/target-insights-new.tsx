@@ -7,10 +7,12 @@ import {
   InputHTMLAttributes,
   ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { addDays, addHours, formatDate, parse as parseDate, subYears } from 'date-fns';
 import {
   AlertTriangle,
@@ -23,11 +25,14 @@ import {
   ChevronUp,
   Clock,
   ExternalLinkIcon,
+  FilterIcon,
   InfoIcon,
+  ListRestartIcon,
   LockIcon,
   MoreHorizontal,
   SearchIcon,
   X,
+  XIcon,
   ZapIcon,
 } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
@@ -62,6 +67,15 @@ import { Meta } from '@/components/ui/meta';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
@@ -82,6 +96,7 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarSeparator,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   Table,
@@ -109,6 +124,8 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
+import { Filter, FilterInput } from './target-insights-new-filter';
+import { useWidthSync, WidthSyncProvider } from './target-insights-new-width';
 
 const rootSpan: SpanProps = {
   id: 'root',
@@ -361,72 +378,54 @@ function Traffic() {
   }, [refAreaLeft, refAreaRight, data]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col items-center space-y-0 border-b p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
-          <CardTitle>Traces</CardTitle>
-          <CardDescription>Request traces for the selected time</CardDescription>
-        </div>
-        <div className="pr-6">
-          <DatePickerWithRange />
-        </div>
-      </CardHeader>
-      <CardContent className="px-2 sm:p-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full select-none"
-          ref={chartContainerRef}
-          onMouseLeave={isSelecting ? handleMouseUp : undefined}
-        >
-          <BarChart
-            accessibilityLayer
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            data={chartData}
-            margin={{
-              left: 12,
-              right: 12,
-            }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={value => {
-                const date = new Date(value);
-                return date.toLocaleDateString('en-US', {
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[150px] w-full select-none"
+      ref={chartContainerRef}
+      onMouseLeave={isSelecting ? handleMouseUp : undefined}
+    >
+      <BarChart
+        accessibilityLayer
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        data={chartData}
+      >
+        <XAxis
+          dataKey="date"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          minTickGap={32}
+          tickFormatter={value => {
+            const date = new Date(value);
+            return date.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            });
+          }}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              className="w-[150px]"
+              labelFormatter={value => {
+                return new Date(value).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
+                  year: 'numeric',
                 });
               }}
             />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  className="w-[150px]"
-                  labelFormatter={value => {
-                    return new Date(value).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    });
-                  }}
-                />
-              }
-            />
-            <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} />
-            <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} />
-            {refAreaLeft && refAreaRight && (
-              <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
-            )}
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+          }
+        />
+        <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} />
+        <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} />
+        {refAreaLeft && refAreaRight && (
+          <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
+        )}
+      </BarChart>
+    </ChartContainer>
   );
 }
 
@@ -867,53 +866,6 @@ function TracesList() {
   );
 }
 
-function FilterSearch() {
-  return (
-    <div className="mt-4 flex w-full max-w-sm items-center space-x-2">
-      <FilterInput type="text" placeholder="Search values" />
-    </div>
-  );
-}
-
-function Filter(props: { name: string; items: ReactNode[]; hideSearch?: boolean }) {
-  return (
-    <Fragment key={props.name}>
-      <SidebarGroup key={props.name} className="py-0">
-        <Collapsible className="group/collapsible">
-          <SidebarGroupLabel
-            asChild
-            className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
-          >
-            <CollapsibleTrigger>
-              {props.name}{' '}
-              <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-            </CollapsibleTrigger>
-          </SidebarGroupLabel>
-          <CollapsibleContent>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {!props.hideSearch && <FilterSearch />}
-                {props.items.map((item, index) => (
-                  <SidebarMenuButton>
-                    <div
-                      data-active={index < 2}
-                      className="group/filter-item border-sidebar-border text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary data-[active=true]:bg-sidebar-primary flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
-                    >
-                      <Check className="hidden size-3 group-data-[active=true]/filter-item:block" />
-                    </div>
-                    {item}
-                  </SidebarMenuButton>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </SidebarGroup>
-      <SidebarSeparator className="mx-0" />
-    </Fragment>
-  );
-}
-
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-x-2">
@@ -962,25 +914,6 @@ const DoubleSlider = forwardRef<
 ));
 DoubleSlider.displayName = 'DoubleSlider';
 
-interface FilterInputProps extends InputHTMLAttributes<HTMLInputElement> {}
-
-const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          'border-input placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
-          className,
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  },
-);
-FilterInput.displayName = 'Input';
-
 function DurationFilter() {
   const [values, setValues] = useState([6019, 100000]);
 
@@ -1004,8 +937,8 @@ function DurationFilter() {
             className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
           >
             <CollapsibleTrigger>
-              Duration{' '}
-              <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              <ChevronRight className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              <span>Duration</span>
             </CollapsibleTrigger>
           </SidebarGroupLabel>
           <CollapsibleContent>
@@ -1062,9 +995,136 @@ function DurationFilter() {
   );
 }
 
+function TimelineFilter() {
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -3),
+    to: new Date(),
+  });
+
+  const formatted = useMemo(() => {
+    if (!dateRange?.from || !dateRange.to || selectedPreset !== 'custom') {
+      return 'Select time period';
+    }
+
+    const fromDate = formatDate(dateRange.from, 'MMM d');
+    const fromTime = formatDate(dateRange.from, 'HH:mm');
+    const toDate = formatDate(dateRange.to, 'MMM d');
+    const toTime = formatDate(dateRange.to, 'HH:mm');
+
+    if (fromDate === toDate) {
+      return `${fromDate}, ${fromTime} - ${toTime}`;
+    }
+
+    return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
+  }, [dateRange, selectedPreset]);
+
+  return (
+    <Fragment>
+      <SidebarGroup className="py-0">
+        <Collapsible open className="group/collapsible">
+          <SidebarGroupLabel
+            asChild
+            className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
+          >
+            <CollapsibleTrigger>
+              <ChevronRight className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              <span>Timeline</span>
+            </CollapsibleTrigger>
+          </SidebarGroupLabel>
+          <CollapsibleContent>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <div className="space-y-2 p-2">
+                  <Select value={selectedPreset ?? undefined} onValueChange={setSelectedPreset}>
+                    <SelectTrigger className="bg-background w-full">
+                      <SelectValue placeholder="Select time period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="last-5min">Last 5 minutes</SelectItem>
+                      <SelectItem value="last-1h">Last 1 hour</SelectItem>
+                      <SelectItem value="last-3h">Last 3 hours</SelectItem>
+                      <SelectItem value="last-12h">Last 12 hours</SelectItem>
+                      <SelectItem value="last-24h">Last 24 hours</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {selectedPreset === 'custom' ? (
+                    <>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start px-2 text-left">
+                            <CalendarIcon className="mr-2 size-4" />{' '}
+                            <span className="text-xs">{formatted}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="center">
+                          <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={dateRange?.from}
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={1}
+                            className="p-2 pb-0"
+                          />
+                          <div className="border-border mt-4 space-y-2 border-t p-2">
+                            <div>
+                              <Label className="text-sm font-normal text-gray-500">Start</Label>
+                              <div className="flex items-center gap-x-2">
+                                <Input
+                                  className="h-8 w-[152px] py-0"
+                                  value={
+                                    dateRange?.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ''
+                                  }
+                                />
+                                <Input
+                                  className="h-8 w-16 py-0"
+                                  value={dateRange?.from ? formatDate(dateRange.from, 'HH:mm') : ''}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-normal text-gray-500">End</Label>
+                              <div className="flex items-center gap-x-2">
+                                <Input
+                                  className="h-8 w-[152px] py-0"
+                                  value={
+                                    dateRange?.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ''
+                                  }
+                                />
+                                <Input
+                                  className="h-8 w-16 py-0"
+                                  value={dateRange?.to ? formatDate(dateRange.to, 'HH:mm') : ''}
+                                />
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm" className="w-full">
+                              <span className="relative">
+                                Apply
+                                <span className="absolute top-[4px] ml-2 text-xs">↵</span>
+                              </span>
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </>
+                  ) : null}
+                </div>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarGroup>
+      <SidebarSeparator className="mx-0" />
+    </Fragment>
+  );
+}
+
 function Filters() {
   return (
     <>
+      <TimelineFilter />
       <DurationFilter />
       <Filter
         name="Status"
@@ -1073,11 +1133,18 @@ function Filters() {
           <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
           <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
         ]}
+        changes={2}
       />
-      <Filter name="Operation Kind" hideSearch items={['Query', 'Mutation', 'Subscription']} />
+      <Filter
+        name="Operation Kind"
+        hideSearch
+        items={['Query', 'Mutation', 'Subscription']}
+        changes={1}
+      />
       <Filter name="Subgraph Name" items={['link', 'products', 'prices']} />
       <Filter
         name="Operation Name"
+        changes={2}
         items={[
           <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
           <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
@@ -1100,7 +1167,7 @@ function Filters() {
         ]}
       />
       <Filter name="HTTP Status Code" items={['200', '400', '500']} />
-      <Filter name="HTTP Method" hideSearch items={['POST', 'GET']} />
+      <Filter name="HTTP Method" hideSearch items={['POST', 'GET']} changes={1} />
       <Filter name="HTTP Host" items={['localhost:4000', 'localhost:4200', 'localhost:3000']} />
       <Filter name="HTTP Route" items={['/graphql', '/']} />
       <Filter
@@ -1131,9 +1198,73 @@ interface TraceAttribute {
   category?: string;
 }
 
+function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
+  const [width] = useWidthSync();
+  const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
+  const rootSpan = props.rootSpan;
+  const serviceNames = props.serviceNames;
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="sticky top-0 z-10 border-b border-gray-800">
+        <div className="flex w-full items-center text-xs text-white">
+          <div className="h-12 shrink-0 py-2" style={{ width }}>
+            <div className="pl-4">
+              <div className="font-medium">Timeline</div>
+              <div className="text-xs text-gray-500">Spans and details</div>
+            </div>
+          </div>
+          <div className="h-12 grow pr-8">
+            <div className="relative h-full w-full">
+              <div className="absolute left-0 top-6 -translate-x-1/2 text-center">0ms</div>
+              <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
+              <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">2.03ms</div>
+              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">4.06ms</div>
+              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">6.09ms</div>
+              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute right-0 top-6 translate-x-1/2 text-center">8.12ms</div>
+              <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <ScrollArea className="flex-grow">
+        <div>
+          <TraceTree
+            leftPanelWidth={width}
+            rootSpan={rootSpan}
+            highlightedServiceName={highlightedServiceName}
+          />
+        </div>
+      </ScrollArea>
+      <div className="sticky bottom-0 z-10 px-2 py-4">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+          {serviceNames.map((serviceName, index) => (
+            <div
+              key={serviceName}
+              className="flex cursor-pointer items-center gap-2 hover:text-white"
+              onMouseEnter={() => setHighlightedServiceName(serviceName)}
+              onMouseLeave={() => setHighlightedServiceName(null)}
+            >
+              <div
+                className="size-2"
+                style={{
+                  backgroundColor: colors[index % colors.length],
+                }}
+              />
+              <div>{serviceName}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TraceSheet({ trace }: { trace: Trace | null }) {
   const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
-  const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
 
   if (!trace) {
     return null;
@@ -1226,74 +1357,13 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
         </SheetHeader>
         <div className="h-[calc(100vh-113px)]">
           <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={50} minSize={20} maxSize={80}>
-              <div className="flex h-full flex-col">
-                <div className="sticky top-0 z-10 border-b border-gray-800">
-                  <div className="flex w-full items-center text-xs text-white">
-                    <div className="h-12 w-1/3 shrink-0 py-2">
-                      <div className="pl-4">
-                        <div className="font-medium">Timeline</div>
-                        <div className="text-xs text-gray-500">Spans and details</div>
-                      </div>
-                    </div>
-                    <div className="h-12 grow pr-8">
-                      <div className="relative h-full w-full">
-                        <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
-                          0ms
-                        </div>
-                        <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
-                        <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
-                          2.03ms
-                        </div>
-                        <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-                        <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
-                          4.06ms
-                        </div>
-                        <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-                        <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
-                          6.09ms
-                        </div>
-                        <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-                        <div className="absolute right-0 top-6 translate-x-1/2 text-center">
-                          8.12ms
-                        </div>
-                        <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <ScrollArea className="flex-grow">
-                  <div>
-                    <TraceTree
-                      rootSpan={rootSpan}
-                      highlightedServiceName={highlightedServiceName}
-                    />
-                  </div>
-                </ScrollArea>
-                <div className="sticky bottom-0 z-10 px-2 py-4">
-                  <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-                    {serviceNames.map((serviceName, index) => (
-                      <div
-                        key={serviceName}
-                        className="flex cursor-pointer items-center gap-2 hover:text-white"
-                        onMouseEnter={() => setHighlightedServiceName(serviceName)}
-                        onMouseLeave={() => setHighlightedServiceName(null)}
-                      >
-                        <div
-                          className="size-2"
-                          style={{
-                            backgroundColor: colors[index % colors.length],
-                          }}
-                        />
-                        <div>{serviceName}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
+              <WidthSyncProvider defaultWidth={251}>
+                <TraceView rootSpan={rootSpan} serviceNames={serviceNames} />
+              </WidthSyncProvider>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} minSize={10} maxSize={80}>
+            <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
               <div className="flex h-full flex-col">
                 <div className="sticky top-0 z-10 border-b border-gray-800">
                   <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
@@ -1434,27 +1504,51 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
   );
 }
 
-function Content() {
+function SearchBar(props: { onFiltersOpenChange: () => void }) {
+  return null;
+
   return (
-    <div>
-      <Traffic />
+    <div className="flex gap-x-4">
+      <Button
+        variant="outline"
+        className="bg-background size-10 p-0"
+        onClick={props.onFiltersOpenChange}
+      >
+        <FilterIcon className="size-4" />
+      </Button>
+      <div className="relative w-full">
+        <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Input type="search" className="pl-9" placeholder="Search..." {...props} />
+      </div>
     </div>
   );
 }
 
 function TargetInsightsNewPageContent() {
+  const [filtersOpen, setFiltersOpen] = useState(true);
+
   return (
     <div className="py-6">
       <SidebarProvider>
-        <Sidebar collapsible="none" className="bg-transparent">
-          <SidebarContent>
-            <SidebarGroupLabel>Filters</SidebarGroupLabel>
-            <Filters />
-          </SidebarContent>
-        </Sidebar>
+        {filtersOpen ? (
+          <Sidebar collapsible="none" className="bg-transparent">
+            <SidebarContent>
+              <SidebarGroupLabel className="flex items-center justify-between">
+                <div>Filters</div>
+                <Button variant="ghost" size="icon-sm">
+                  <XIcon className="size-4" />
+                </Button>
+              </SidebarGroupLabel>
+              <Filters />
+            </SidebarContent>
+          </Sidebar>
+        ) : null}
         <SidebarInset className="bg-transparent">
-          <div className="flex flex-1 flex-col gap-4 p-4">
-            <Content />
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div>
+              <SearchBar onFiltersOpenChange={() => setFiltersOpen(isOpen => !isOpen)} />
+              <Traffic />
+            </div>
             <TracesList />
           </div>
         </SidebarInset>
@@ -1588,23 +1682,121 @@ function TabButton(props: { isActive: boolean; onClick(): void; children: ReactN
   );
 }
 
-//
+function TraceResize() {
+  const [width, setWidth] = useWidthSync();
+  const [isDragging, setIsDragging] = useState(false);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const startPosRef = useRef(0);
+  const startWidthRef = useRef(0);
+  const minWidth = 175;
+  const maxWidth = 450;
 
-function TraceTree(props: { highlightedServiceName: string | null; rootSpan: SpanProps }) {
-  const leftPanelWidth = 251;
+  // Handle the start of dragging
+  const handleDragStart = useCallback(
+    (clientX: number) => {
+      setIsDragging(true);
+      startPosRef.current = clientX;
+      startWidthRef.current = width;
+
+      // Prevent text selection during drag
+      document.body.style.userSelect = 'none';
+    },
+    [width],
+  );
+
+  // Handle dragging
+  const handleDrag = useCallback(
+    (clientX: number) => {
+      if (!isDragging) return;
+      const delta = clientX - startPosRef.current;
+      let newWidth = startWidthRef.current + delta;
+      // Constrain to min/max
+      newWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+      setWidth(newWidth);
+    },
+    [isDragging, minWidth, maxWidth, setWidth],
+  );
+
+  // Handle the end of dragging
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    document.body.style.userSelect = '';
+  }, []);
+
+  // Pointer event handlers
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      // Set pointer capture on the drag handle element
+      if (handleRef.current) {
+        handleRef.current.setPointerCapture(e.pointerId);
+      }
+      handleDragStart(e.clientX);
+    },
+    [handleDragStart],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      handleDrag(e.clientX);
+    },
+    [isDragging, handleDrag],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      // Release pointer capture
+      if (handleRef.current) {
+        handleRef.current.releasePointerCapture(e.pointerId);
+      }
+      handleDragEnd();
+    },
+    [handleDragEnd],
+  );
+
+  return (
+    <div
+      className="absolute bottom-0 top-0 z-20 w-[5px] cursor-ew-resize"
+      style={{ left: width - 2 }} // Position 2px to the left of the center
+      ref={handleRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* Invisible wider hit area */}
+      <div
+        className={cn(
+          'absolute inset-y-0 left-[2px] w-px bg-gray-800',
+          isDragging ? 'bg-gray-600' : 'hover:bg-gray-700',
+        )}
+      />
+    </div>
+  );
+}
+
+function TraceTree(props: {
+  highlightedServiceName: string | null;
+  rootSpan: SpanProps;
+  leftPanelWidth: number;
+}) {
+  const [width] = useWidthSync();
   const serviceNames = listServiceNames(props.rootSpan);
   const serviceNameToColorMap = Object.fromEntries(
     serviceNames.map((name, index) => [name, colors[index % colors.length]]),
   );
 
   return (
-    <div>
+    <div className="relative">
+      <TraceResize />
       <Node
         key={props.rootSpan.id}
         level={0}
         highlightedServiceName={props.highlightedServiceName}
         totalDuration={rootSpan.duration}
-        leftPanelWidth={leftPanelWidth}
+        leftPanelWidth={width}
         span={props.rootSpan}
         parentSpan={null}
         groupLines={[]}
@@ -1860,164 +2052,4 @@ function Node(props: NodeProps) {
 
 function roundFloatToTwoDecimals(num: number) {
   return Math.round(num * 100) / 100;
-}
-
-type TimePreset = {
-  name: string;
-  from: Date;
-  to: Date;
-  locked?: boolean;
-};
-
-function DatePickerWithRange(props: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = useState<DateRange>({
-    from: addDays(new Date(), -3),
-    to: new Date(),
-  });
-  const [startTime, setStartTime] = useState(formatDate(date.from, 'HH:mm'));
-  const [endTime, setEndTime] = useState(formatDate(date.to, 'HH:mm'));
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isPresetOpen, setIsPresetOpen] = useState(false);
-  const now = new Date();
-  const [selectedPreset, setSelectedPreset] = useState<string | null>('Last 12 hours');
-  const timePresets: TimePreset[] = [
-    { name: 'Last hour', from: addHours(now, -1), to: now },
-    { name: 'Last 6 hours', from: addHours(now, -6), to: now },
-    { name: 'Last 12 hours', from: addHours(now, -12), to: now },
-    { name: 'Last 24 hours', from: addHours(now, -24), to: now, locked: true },
-    { name: 'Last 3 days', from: addDays(now, -3), to: now, locked: true },
-    { name: 'Last 7 days', from: addDays(now, -7), to: now, locked: true },
-    { name: 'Last 14 days', from: addDays(now, -14), to: now, locked: true },
-    { name: 'Last 30 days', from: addDays(now, -30), to: now, locked: true },
-  ];
-
-  // Handle preset selection
-  const handlePresetSelect = (preset: TimePreset) => {
-    setDate({ from: preset.from, to: preset.to });
-    setStartTime(formatDate(preset.from, 'HH:mm'));
-    setEndTime(formatDate(preset.to, 'HH:mm'));
-    setSelectedPreset(preset.name);
-    setIsPresetOpen(false);
-  };
-
-  // Format the date range for display
-  const formatDateRange = () => {
-    if (selectedPreset) {
-      return selectedPreset;
-    }
-
-    const fromDate = formatDate(date.from!, 'MMM d');
-    const fromTime = formatDate(date.from!, 'HH:mm');
-    const toDate = formatDate(date.to!, 'MMM d');
-    const toTime = formatDate(date.to!, 'HH:mm');
-
-    if (fromDate === toDate) {
-      return `${fromDate}, ${fromTime} - ${toTime}`;
-    }
-
-    return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
-  };
-
-  const formatCalendarDateRange = () => {
-    const fromDate = formatDate(date.from!, 'MMM dd, yyyy');
-    const toDate = formatDate(date.to!, 'MMM dd, yyyy');
-    return { fromDate, toDate };
-  };
-
-  return (
-    <div className={cn('relative flex items-center', props.className)}>
-      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-background text-foreground border-input h-10 w-10 select-none rounded-r-none border-r-0"
-            onClick={() => {
-              setIsCalendarOpen(true);
-              setIsPresetOpen(false);
-            }}
-          >
-            <CalendarIcon className="h-4 w-4" />
-            <span className="sr-only">Open calendar</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="center">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={1}
-            className="p-2 pb-0"
-          />
-          <div className="border-border mt-4 space-y-2 border-t p-2">
-            <div>
-              <Label htmlFor="start-date" className="text-sm font-normal text-gray-500">
-                Start
-              </Label>
-              <div className="flex items-center gap-x-2">
-                <Input
-                  id="start-date"
-                  className="h-8 w-[152px] py-0"
-                  value={date?.from ? formatDate(date.from, 'yyyy-MM-dd') : ''}
-                />
-                <Input className="h-8 w-16 py-0" value="01:22" />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="end-date" className="text-sm font-normal text-gray-500">
-                End
-              </Label>
-              <div className="flex items-center gap-x-2">
-                <Input
-                  id="end-date"
-                  className="h-8 w-[152px] py-0"
-                  value={date?.to ? formatDate(date.to, 'yyyy-MM-dd') : ''}
-                />
-                <Input className="h-8 w-16 py-0" value="19:42" />
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="w-full">
-              <span className="relative">
-                Apply
-                <span className="absolute top-[4px] ml-2 text-xs">↵</span>
-              </span>
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-      <DropdownMenu open={isPresetOpen} onOpenChange={setIsPresetOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="bg-background text-foreground border-input h-10 rounded-l-none pl-3 pr-2"
-            onClick={() => {
-              setIsPresetOpen(true);
-              setIsCalendarOpen(false);
-            }}
-          >
-            <span className="mr-1">{formatDateRange()}</span>
-            {isPresetOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-background border-input w-[180px] border" align="center">
-          {timePresets.map(preset => (
-            <DropdownMenuItem
-              key={preset.name}
-              className={cn(
-                'flex cursor-pointer items-center justify-between',
-                selectedPreset === preset.name && 'bg-accent text-accent-foreground',
-              )}
-              disabled={preset.locked}
-              onClick={() => handlePresetSelect(preset)}
-            >
-              <span>{preset.name}</span>
-              {preset.locked && <LockIcon className="text-muted-foreground h-3 w-3" />}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
 }
