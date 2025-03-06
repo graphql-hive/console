@@ -1042,7 +1042,7 @@ export class SchemaPublisher {
 
     if (!latestVersion && input.service) {
       // this is a new service. Validate the service name.
-      if (input.service.length > 64 || !/^[a-zA-Z][\w_-]+$/g.test(input.service)) {
+      if (input.service.length > 64 || !/^[a-zA-Z][\w\/_-]*$/g.test(input.service)) {
         return {
           __typename: 'SchemaPublishError',
           valid: false,
