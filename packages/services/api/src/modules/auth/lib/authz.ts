@@ -497,6 +497,7 @@ class UnauthenticatedSession extends Session {
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {
     return [];
   }
+  id = 'noop';
 }
 
 /**
