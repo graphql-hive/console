@@ -138,7 +138,7 @@ test.concurrent(
       authToken: writeToken.secret,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(secondQuery.latestValidVersion?.unusedSchema?.types).toHaveLength(2);
+    expect(secondQuery.latestValidVersion?.unusedSchema?.types).toHaveLength(1);
 
     userType = secondQuery.latestValidVersion?.unusedSchema?.types.find(t =>
       'name' in t ? t.name === 'User' : false,
