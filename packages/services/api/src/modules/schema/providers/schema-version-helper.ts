@@ -135,7 +135,7 @@ export class SchemaVersionHelper {
       'SchemaVersionHelper.getCompositeSchemaAst: Composite',
     );
 
-    return this.autoFixCompositeSchemaAst(compositeSchemaAst);
+    return compositeSchemaAst;
   }
 
   @cache<SchemaVersion>(version => version.id)
@@ -334,61 +334,69 @@ export class SchemaVersionHelper {
   }
 
   /**
-   * There's a possibility that the composite schema contains type extensions.
-   * This is a problem, because other parts of the system may expect it to be clean from type extensions.
-   *
-   * This function will also check for type system extensions and merge them into matching definitions.
-   */
-  private autoFixCompositeSchemaAst(schemaAst: DocumentNode): DocumentNode {
-    const hasTypeExtensions = schemaAst.definitions.some(isTypeSystemExtensionNode);
-
-    if (!hasTypeExtensions) {
-      return schemaAst;
-    }
-
-    this.logger.warn(
-      'Composite schema AST contains type extensions, merging them into matching definitions',
-    );
-
-    return mergeTypeDefs(schemaAst);
-  }
-
-  /**
    * There's a possibility that the composite schema SDL contains parts of the supergraph spec.
+   *
    *
    * This is a problem because we want to show the public schema to the user, and the supergraph spec is not part of that.
    * This may happen when composite schema was produced with an old version of `transformSupergraphToPublicSchema`
    * or when supergraph sdl contained something new.
    *
    * This function will check if the SDL contains supergraph spec and if it does, it will transform it to public schema.
+   *
+   * ---
+   *
+   * There's also a possibility that the composite schema contains type extensions.
+   * This is a problem, because other parts of the system may expect it to be clean from type extensions.
+   *
+   * This function will check for type system extensions and merge them into matching definitions.
    */
-  private autoFixCompositeSchemaSdl(sdl: string, versionId: string) {
+  private autoFixCompositeSchemaSdl(sdl: string, versionId: string): string {
     const isFederationV1Output = sdl.includes('@core');
+    // Poor's man check for type extensions to avoid parsing the SDL if it's not necessary.
+    // Adds a space to the beginning of the SDL to detect type extensions at the beginning of the SDL.
+    const hasPotentiallyTypeExtensions = (' ' + sdl).includes(' extend ');
 
     /**
      * If the SDL is clean from Supergraph spec or it's an output of @apollo/federation, we don't need to transform it.
      * We ignore @apollo/federation, because we never really transformed the output of it to public schema.
      * Doing so might be a breaking change for some users (like: removed join__Graph type).
      */
-    if (isFederationV1Output || !containsSupergraphSpec(sdl)) {
-      return sdl;
+    if (!isFederationV1Output && containsSupergraphSpec(sdl)) {
+      this.logger.warn(
+        'Composite schema SDL contains supergraph spec, transforming to public schema (versionId: %s)',
+        versionId,
+      );
+
+      const transformedSdl = print(
+        transformSupergraphToPublicSchema(parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl')),
+      );
+
+      this.logger.debug(
+        transformedSdl === sdl
+          ? 'Transformation did not change the original SDL'
+          : 'Transformation changed the original SDL',
+      );
+
+      return transformedSdl;
     }
 
-    this.logger.warn(
-      'Composite schema SDL contains supergraph spec, transforming to public schema (versionId: %s)',
-      versionId,
-    );
+    /**
+     * If the SDL has type extensions, we need to merge them into matching definitions.
+     */
+    if (hasPotentiallyTypeExtensions) {
+      const schemaAst = parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl');
+      const hasTypeExtensions = schemaAst.definitions.some(isTypeSystemExtensionNode);
 
-    const transformedSdl = print(
-      transformSupergraphToPublicSchema(parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl')),
-    );
+      if (!hasTypeExtensions) {
+        return sdl;
+      }
 
-    this.logger.debug(
-      transformedSdl === sdl
-        ? 'Transformation did not change the original SDL'
-        : 'Transformation changed the original SDL',
-    );
+      this.logger.warn(
+        'Composite schema AST contains type extensions, merging them into matching definitions',
+      );
+      return print(mergeTypeDefs(schemaAst));
+    }
 
-    return transformedSdl;
+    return sdl;
   }
 }
