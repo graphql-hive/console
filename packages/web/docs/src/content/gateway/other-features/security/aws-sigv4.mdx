@@ -162,13 +162,14 @@ export const gatewayConfig = defineConfig({
   awsSigV4: {
     incoming: {
       // Hard-coded secret
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      secretAccessKey: () => process.env.AWS_SECRET_ACCESS_KEY,
 
       // Or Assume Role
-      roleArn: 'arn:aws:iam::123456789012:role/role-name',
-      roleSessionName: 'session-name'
-
-      region: process.env.AWS_REGION,
+      assumeRole: () => ({
+        roleArn: process.env['AWS_ROLE_ARN'],
+        roleSessionName: process.env['AWS_ROLE_SESSION_NAME'],
+        region: process.env['AWS_REGION']
+      })
     }
   }
 })
