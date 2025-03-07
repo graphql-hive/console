@@ -43,6 +43,10 @@ export class TargetAccessTokenSession extends Session {
     return this.policies;
   }
 
+  get id(): string {
+    return this.token;
+  }
+
   public getLegacySelector() {
     return {
       token: this.token,

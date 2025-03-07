@@ -25,6 +25,10 @@ export class SuperTokensCookieBasedSession extends Session {
     this.storage = deps.storage;
   }
 
+  get id(): string {
+    return this.superTokensUserId;
+  }
+
   protected async loadPolicyStatementsForOrganization(
     organizationId: string,
   ): Promise<Array<AuthorizationPolicyStatement>> {

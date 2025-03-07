@@ -26,7 +26,7 @@ import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
@@ -123,10 +123,11 @@ export class SchemaManager {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schema:compose');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schema:compose');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1002,10 +1003,11 @@ export class SchemaManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
-      onError() {
-        throw new InsufficientPermissionError('project:describe');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('project:describe');
+    }
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,

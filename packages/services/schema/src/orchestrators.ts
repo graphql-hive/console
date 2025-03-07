@@ -5,6 +5,7 @@ import {
   buildASTSchema,
   concatAST,
   GraphQLError,
+  isTypeSystemExtensionNode,
   Kind,
   parse,
   print,
@@ -14,6 +15,7 @@ import {
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { mergeTypeDefs } from '@graphql-tools/merge';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
@@ -496,12 +498,18 @@ function createSingle(): Orchestrator {
   return {
     async composeAndValidate(schemas) {
       const schema = schemas[0];
-      const schemaAst = parse(schema.raw);
+      let schemaAst = parse(schema.raw);
+
+      // If the schema contains type system extension nodes, merge them into the schema.
+      // We don't want to show many type extension of User, we want to show single User type.
+      if (schemaAst.definitions.some(isTypeSystemExtensionNode)) {
+        schemaAst = mergeTypeDefs(schemaAst);
+      }
       const errors = validateSingleSDL(schemaAst);
 
       return {
         errors,
-        sdl: print(trimDescriptions(parse(schema.raw))),
+        sdl: print(trimDescriptions(schemaAst)),
         supergraph: null,
         contracts: null,
         tags: null,

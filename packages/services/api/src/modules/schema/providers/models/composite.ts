@@ -108,6 +108,7 @@ export class CompositeModel {
     input: {
       sdl: string;
       serviceName: string;
+      url: string | null;
     };
     selector: {
       organizationId: string;
@@ -146,7 +147,9 @@ export class CompositeModel {
       sdl: input.sdl,
       service_name: input.serviceName,
       service_url:
-        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ?? 'temp',
+        input.url ??
+        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ??
+        'temp',
       action: 'PUSH',
       metadata: null,
     };

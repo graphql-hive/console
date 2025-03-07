@@ -160,6 +160,8 @@ const usage = deployUsage({
   docker,
   environment,
   tokens,
+  redis,
+  postgres,
   kafka,
   dbMigrations,
   commerce,

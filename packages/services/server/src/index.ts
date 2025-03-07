@@ -23,8 +23,8 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
-import { HivePubSub } from '@hive/api/src/modules/shared/providers/pub-sub';
-import { createRedisClient } from '@hive/api/src/modules/shared/providers/redis';
+import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';

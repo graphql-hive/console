@@ -588,6 +588,10 @@ export default gql`
     Manually approved breaking changes will be memorized for schema checks with the same context id.
     """
     contextId: String
+    """
+    Optional url if wanting to show subgraph url changes inside checks.
+    """
+    url: String
   }
 
   input SchemaDeleteInput {
