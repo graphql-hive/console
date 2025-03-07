@@ -1,5 +1,33 @@
 # hive
 
+## 5.1.3
+
+### Patch Changes
+
+- [#6553](https://github.com/graphql-hive/console/pull/6553)
+  [`f0fe03c`](https://github.com/graphql-hive/console/commit/f0fe03c9464815b5f11b8e4715f0182959e8d363)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Standardize the design and content of
+  all email templates for consistency.
+
+- [#6571](https://github.com/graphql-hive/console/pull/6571)
+  [`bf06e94`](https://github.com/graphql-hive/console/commit/bf06e94f5f115770f229b0b6e9961a44f057fa4d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Adds ability to all services to write a
+  heap dump to a disk when SIGUSR1 signal is received
+
+- [#6582](https://github.com/graphql-hive/console/pull/6582)
+  [`bb2f2aa`](https://github.com/graphql-hive/console/commit/bb2f2aa30f6cd4a5427e7d977c816d7e78499ea2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adds optional url argument to schema checks
+
+- [#6586](https://github.com/graphql-hive/console/pull/6586)
+  [`e10de03`](https://github.com/graphql-hive/console/commit/e10de0370cd713db1815eee9cabb52725cf5c3b9)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Corrected an issue where fields from
+  type extensions were not marked as unused when appropriate
+
+- [#6542](https://github.com/graphql-hive/console/pull/6542)
+  [`719e3e6`](https://github.com/graphql-hive/console/commit/719e3e68643c673c5539cc18b68772661e52a857)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Consolidates email templating logic
+  into the `emails` service.
+
 ## 5.1.2
 
 ### Patch Changes
