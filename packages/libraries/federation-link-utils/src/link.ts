@@ -130,7 +130,7 @@ export class FederatedLink {
   /**
    * Given the name of an element in a linked schema, this returns the name of that element
    * as it has been imported. This accounts for aliasing and namespacing unreferenced imports.
-   * This can be used by LinkSpecs to get the translated names of elements.
+   * This can be used within implementations to reference the translated names of elements.
    *
    * The directive `@` prefix is removed from the returned name. This is to make it easier to match node names when visiting a schema definition.
    * When visiting nodes, a directive's name doesn't include the `@`.
