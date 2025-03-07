@@ -91,6 +91,85 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`FEDERATION > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`FEDERATION > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`FEDERATION > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`FEDERATION > publish validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`FEDERATION > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`FEDERATION > publish validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`FEDERATION > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
@@ -249,6 +328,85 @@ http://__URL__
 `;
 
 exports[`SINGLE > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`SINGLE > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`SINGLE > publish validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > publish validates the service name > success 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
@@ -439,6 +597,85 @@ exports[`STITCHING > can update the service url and show it in comparison query 
 
 stdout--------------------------------------------:
 ✔ New service url: http://__URL__ (previously: http://__URL__
+ℹ Available at http://__URL__
+`;
+
+exports[`STITCHING > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`STITCHING > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`STITCHING > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`STITCHING > publish validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`STITCHING > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`STITCHING > publish validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
 ℹ Available at http://__URL__
 `;
 

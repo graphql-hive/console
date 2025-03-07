@@ -95,6 +95,115 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
       },
     );
 
+    test.skipIf(projectType === ProjectType.Single).concurrent(
+      'publish validates the service name',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      },
+    );
+
+    test.skipIf(projectType === ProjectType.Single).concurrent(
+      'check validates the service name',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      },
+    );
+
     test.concurrent(
       'publishing invalid schema SDL provides meaningful feedback for the user.',
       async ({ expect }) => {
