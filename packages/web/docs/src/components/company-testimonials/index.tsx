@@ -167,7 +167,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                     value={company}
                     tabIndex={-1}
                     className={cn(
-                      'relative flex w-full shrink-0 snap-center flex-col',
+                      'relative flex w-full shrink-0 snap-center flex-col outline-none',
                       'gap-6 md:flex-row lg:gap-12',
                       'lg:data-[state="inactive"]:hidden',
                       caseStudyHref

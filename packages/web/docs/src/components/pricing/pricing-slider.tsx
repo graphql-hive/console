@@ -29,8 +29,8 @@ export function PricingSlider({
       style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
       {...rest}
     >
-      <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
-        <div className="relative max-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] shrink grow motion-safe:transition-all">
+      <div className="text-green-1000 flex flex-wrap items-center text-2xl font-medium md:h-12 md:w-[calc(100%-260px)]">
+        <div className="relative min-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] max-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] shrink grow motion-safe:transition-all">
           <div
             aria-hidden
             className="flex w-full whitespace-pre rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums leading-8 opacity-[calc(var(--ops)-1)] [transition-duration:calc(clamp(0,var(--ops)-1,1)*350ms)] before:tracking-[-0.12em] before:content-[''_counter(ops)_'_'] motion-safe:transition-all"
@@ -41,7 +41,9 @@ export function PricingSlider({
             How many
           </div>
         </div>
-        <div className="whitespace-pre"> operations per month </div>
+        {/* todo: this needs some tweaking for mobile viewport */}
+        <div className="shrink-0 whitespace-pre"> operations </div>
+        <div className="whitespace-pre [@media(width<900px)]:hidden">per month </div>
         <div className="whitespace-pre opacity-[calc(2-var(--ops))] [transition-duration:350ms] motion-safe:transition">
           do you need?
         </div>
