@@ -89,26 +89,22 @@ function BenchmarkLegend() {
     <div className="mt-6 flex flex-wrap gap-2 whitespace-nowrap text-xs text-green-800 sm:gap-4">
       <div className="flex gap-2 max-sm:-mx-1 max-sm:w-full sm:contents">
         <div className="flex items-center gap-1">
-          <CheckmarkIcon className="size-4" style={{ color: functionalTones.positiveDark }} />{' '}
-          Passed tests
+          <CheckmarkIcon className="size-4" className="text-positive-dark" /> Passed tests
         </div>
         <div className="flex items-center gap-1">
-          <XIcon className="size-4" style={{ color: functionalTones.criticalDark }} /> Failed tests
+          <XIcon className="size-4" className="text-critical-dark" /> Failed tests
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div
-          className="size-2 rounded-full"
-          style={{ background: functionalTones.positiveBright }}
-        />
+        <div className="size-2 rounded-full" className="bg-positive-bright" />
         Perfect compatibility
       </div>
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full" style={{ background: functionalTones.warning }} />
+        <div className="size-2 rounded-full" className="bg-warning-bright" />
         75% and higher
       </div>
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full" style={{ background: functionalTones.criticalDark }} />
+        <div className="size-2 rounded-full" className="bg-critical-dark" />
         Less than 75%
       </div>
     </div>
