@@ -72,15 +72,12 @@ export function NestedSticky({
         const containerRect = container.getBoundingClientRect();
         const parentRect = parent.getBoundingClientRect();
 
-        // Simple sticky logic: stick when container top crosses the offset
-        const shouldBeSticky = containerRect.top < offsetTop;
+        const shouldBeFixed = containerRect.top < offsetTop;
 
-        // Stop being sticky when we reach the bottom of the parent
-        // We add a buffer to prevent jittering
-        if (shouldBeSticky && parentRect.bottom < offsetTop + height + offsetBottom + 10) {
+        if (shouldBeFixed && parentRect.bottom < offsetTop + height + offsetBottom + 10) {
           isSticky = false;
         } else {
-          isSticky = shouldBeSticky;
+          isSticky = shouldBeFixed;
         }
 
         updateStyles();
