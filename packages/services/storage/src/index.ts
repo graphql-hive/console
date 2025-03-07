@@ -5207,7 +5207,6 @@ export function findTargetBySlug(deps: { pool: DatabasePool }) {
       return null;
     }
 
-    // Consider adding error handling similar to what was suggested for findTargetById.
     return TargetWithOrgIdModel.parse(data);
   };
 }

@@ -1772,6 +1772,9 @@ importers:
       '@sentry/types':
         specifier: 7.120.2
         version: 7.120.2
+      '@stepperize/react':
+        specifier: 5.1.0
+        version: 5.1.0(react@18.3.1)
       '@storybook/addon-essentials':
         specifier: 8.4.7
         version: 8.4.7(@types/react@18.3.18)(storybook@8.4.7(prettier@3.4.2))
@@ -7130,6 +7133,14 @@ packages:
   '@smithy/util-waiter@4.0.1':
     resolution: {integrity: sha512-PiLI5OMSDOw0IyA+lB8Ta0CIgaJuIyXE97Khvrk1G1ab71WbMTruzLKP9j3nS6QJScGirkUVN9sTOhZHU8q3OQ==}
     engines: {node: '>=18.0.0'}
+
+  '@stepperize/core@1.2.0':
+    resolution: {integrity: sha512-H3a14uq21HI2hemkjz/zh5qGWZfx87XOu/T+MKwkW3ZkOPBNY8S0jrOOYPrSr30xDbMfSXQ3oq00ieg9rgZUiw==}
+
+  '@stepperize/react@5.1.0':
+    resolution: {integrity: sha512-5FqMd38klnd8OlXqIKZ7/2uRfZJE+UDVLR3fSOvkBZvSIz/G823eW6Bg5nEDXOq1yYOB4QBU9zwPpAvmlKuorw==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@storybook/addon-actions@8.4.7':
     resolution: {integrity: sha512-mjtD5JxcPuW74T6h7nqMxWTvDneFtokg88p6kQ5OnC1M259iAXb//yiSZgu/quunMHPCXSiqn4FNOSgASTSbsA==}
@@ -23441,6 +23452,13 @@ snapshots:
       '@smithy/abort-controller': 4.0.0
       '@smithy/types': 4.0.0
       tslib: 2.8.1
+
+  '@stepperize/core@1.2.0': {}
+
+  '@stepperize/react@5.1.0(react@18.3.1)':
+    dependencies:
+      '@stepperize/core': 1.2.0
+      react: 18.3.1
 
   '@storybook/addon-actions@8.4.7(storybook@8.4.7(prettier@3.4.2))':
     dependencies:
