@@ -1,24 +1,31 @@
 ---
 title: Subgraph Metadata Per Field
 description:
-  One of the most convincing reasons to use GraphQL that it's self documenting. The `@meta` directive takes this a step further by defining a convenient and type safe way to add key-value metadata to your schema.
+  One of the most convincing reasons to use GraphQL that it's self documenting. The `@meta`
+  directive takes this a step further by defining a convenient and type safe way to add key-value
+  metadata to your schema.
 date: 2025-03-08
 authors: [jdolle]
 ---
 
 ## What’s New?
 
-- **Linkable `@meta` directive** – A federation compatible, `@link`-able schema to add metadata and enhance functionality of your schema.
+- **Linkable `@meta` directive** – A federation compatible, `@link`-able schema to add metadata and
+  enhance functionality of your schema.
 
 ## Feature Details
 
-One of the most convincing reasons to use GraphQL that it's self documenting. Hive takes this a step further by defining a convenient and type safe way to add key-value metadata to your schema. The `@meta` directive is the first directive we've added to a new Federation 2.x compatible set of Hive features. To opt-in, add a Federation `link` directive to your schema definition:
+One of the most convincing reasons to use GraphQL that it's self documenting. Hive takes this a step
+further by defining a convenient and type safe way to add key-value metadata to your schema. The
+`@meta` directive is the first directive we've added to a new Federation 2.x compatible set of Hive
+features. To opt-in, add a Federation `link` directive to your schema definition:
 
 ```graphql
 extend schema @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
 ```
 
 Metadata is useful for a variety of cases:
+
 - Indicating granular ownership e.g. `owner: "console-team"`
 - Adding contact information e.g. `contact: "#hive-channel"`
 - Defining field importance e.g. `priority: "tier-1"`
@@ -26,7 +33,9 @@ Metadata is useful for a variety of cases:
 
 ... and more.
 
-Currently, metadata can be viewed from Hive’s explorer page and can be used to filter the explorer view. And we expect there will be even more features built around this metadata in the future as Hive continues to expand.
+Currently, metadata can be viewed from Hive’s explorer page and can be used to filter the explorer
+view. And we expect there will be even more features built around this metadata in the future as
+Hive continues to expand.
 
 A full example schema of using metadata would look like:
 
