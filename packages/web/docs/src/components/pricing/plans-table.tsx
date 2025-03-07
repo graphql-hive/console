@@ -85,7 +85,7 @@ export function PlansTable({ className }: { className?: string }) {
       </Heading>
       <p className="mb-8 mt-4 text-center md:mb-16">
         Part of the Hive ecosystem, Hive Console is a fully-fledged solution that you can easily
-        tailor to your needs.
+        tailor to your&nbsp;needs.
       </p>
 
       <MobileNavbar setActivePlan={setActivePlan} activePlan={activePlan} />
