@@ -23,28 +23,27 @@ export function NestedSticky({
 }: NestedStickyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
-  const placeholderRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const rafRef = useRef<number | null>(null);
+  const topObserverRef = useRef<IntersectionObserver | null>(null);
+  const bottomObserverRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     const sticky = stickyRef.current;
-    const placeholder = placeholderRef.current;
 
-    if (!container || !sticky || !placeholder) return;
+    if (!container || !sticky) return;
 
-    // Store parent element reference
     const parent = container.parentElement;
     if (!parent) return;
 
-    // Initial measurement
+    // Get the placeholder element (first child of container)
+    const placeholder = container.firstElementChild as HTMLElement;
+    if (!placeholder) return;
+
     let width = 0;
     let height = 0;
     let isSticky = false;
     let reachedBottom = false;
 
-    // Measure element dimensions
     const measureDimensions = () => {
       if (!sticky) return;
 
@@ -57,96 +56,118 @@ export function NestedSticky({
       sticky.style.zIndex = String(zIndex);
     };
 
-    // Update sticky state
-    const updateStickyState = (entries: IntersectionObserverEntry[]) => {
-      if (!sticky || !parent || !placeholder) return;
+    const updateStickyState = () => {
+      // Update placeholder height
+      placeholder.style.height = isSticky ? `${height}px` : '0';
 
-      const entry = entries[0];
-      const containerRect = container.getBoundingClientRect();
-      const parentRect = parent.getBoundingClientRect();
+      // Update sticky element position
+      if (isSticky && !reachedBottom) {
+        sticky.style.position = 'fixed';
+        sticky.style.top = `${offsetTop}px`;
+        sticky.style.width = `${width}px`;
+        sticky.setAttribute('data-fixed', '');
+      } else if (reachedBottom) {
+        // When we've reached the bottom boundary
+        const containerRect = container.getBoundingClientRect();
+        const parentRect = parent.getBoundingClientRect();
+        const distanceToBottom = parentRect.bottom - offsetBottom - containerRect.top - height;
 
-      // Check if we should be sticky
-      const shouldBeSticky = containerRect.top <= offsetTop;
-
-      if (shouldBeSticky !== isSticky) {
-        isSticky = shouldBeSticky;
-
-        // Update placeholder height
-        placeholder.style.height = isSticky ? `${height}px` : '0';
-
-        // Update sticky element position
-        if (isSticky) {
-          sticky.style.position = 'fixed';
-          sticky.style.top = `${offsetTop}px`;
-          sticky.style.width = `${width}px`;
-          sticky.setAttribute('data-fixed', '');
-        } else {
-          sticky.style.position = 'relative';
-          sticky.style.top = '';
-          sticky.style.width = '100%';
-          sticky.style.transform = '';
-          sticky.removeAttribute('data-fixed');
-        }
-      }
-
-      // Check if we've reached the bottom boundary
-      if (isSticky) {
-        // Calculate the bottom boundary position, accounting for offsetBottom
-        const bottomBoundary = parentRect.bottom - offsetBottom - height;
-        const hasReachedBottom = offsetTop >= bottomBoundary;
-
-        if (hasReachedBottom !== reachedBottom) {
-          reachedBottom = hasReachedBottom;
-
-          if (reachedBottom) {
-            sticky.style.position = 'relative';
-            sticky.style.transform = `translateY(${parentRect.bottom - offsetBottom - height - containerRect.top}px)`;
-            sticky.removeAttribute('data-fixed');
-          } else {
-            sticky.style.position = 'fixed';
-            sticky.style.transform = '';
-            sticky.setAttribute('data-fixed', '');
-          }
-        }
+        sticky.style.position = 'relative';
+        sticky.style.transform = `translateY(${distanceToBottom}px)`;
+        sticky.removeAttribute('data-fixed');
+      } else {
+        // Normal position
+        sticky.style.position = 'relative';
+        sticky.style.top = '';
+        sticky.style.width = '100%';
+        sticky.style.transform = '';
+        sticky.removeAttribute('data-fixed');
       }
     };
 
-    // Handle resize events
+    // Handle top intersection
+    const handleTopIntersection = (entries: IntersectionObserverEntry[]) => {
+      const entry = entries[0];
+
+      // We become sticky when the top of the container crosses the top of the viewport + offsetTop
+      isSticky = !entry.isIntersecting;
+      updateStickyState();
+    };
+
+    // Handle bottom intersection
+    const handleBottomIntersection = (entries: IntersectionObserverEntry[]) => {
+      if (!isSticky) return;
+
+      const entry = entries[0];
+
+      // We've reached the bottom when the bottom of the parent is about to exit the viewport
+      reachedBottom = !entry.isIntersecting;
+      updateStickyState();
+    };
+
+    const handleScroll = () => {
+      // This is a fallback for browsers that might have issues with Intersection Observer
+      const containerRect = container.getBoundingClientRect();
+      const parentRect = parent.getBoundingClientRect();
+
+      const newIsSticky = containerRect.top <= offsetTop;
+      const newReachedBottom = parentRect.bottom <= window.innerHeight - offsetBottom;
+
+      if (newIsSticky !== isSticky || newReachedBottom !== reachedBottom) {
+        isSticky = newIsSticky;
+        reachedBottom = newReachedBottom;
+        updateStickyState();
+      }
+    };
+
     const handleResize = () => {
       measureDimensions();
+      updateStickyState();
+    };
+
+    // Setup observers
+    const setupObservers = () => {
+      // Top observer to detect when we should become sticky
+      topObserverRef.current = new IntersectionObserver(handleTopIntersection, {
+        threshold: 0,
+        rootMargin: `${-offsetTop}px 0px 0px 0px`,
+      });
+
+      // Bottom observer to detect when we reach the bottom boundary
+      bottomObserverRef.current = new IntersectionObserver(handleBottomIntersection, {
+        threshold: 0,
+        rootMargin: `0px 0px ${-offsetBottom}px 0px`,
+      });
+
+      topObserverRef.current.observe(container);
+      bottomObserverRef.current.observe(parent);
     };
 
     // Initial setup
     measureDimensions();
+    setupObservers();
 
-    // Create intersection observer
-    observerRef.current = new IntersectionObserver(updateStickyState, {
-      threshold: [0, 0.1, 0.5, 1],
-      rootMargin: `${-offsetTop}px 0px 0px 0px`,
-    });
-
-    observerRef.current.observe(container);
-
+    // Add event listeners
     window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
+      if (topObserverRef.current) {
+        topObserverRef.current.disconnect();
       }
 
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      if (bottomObserverRef.current) {
+        bottomObserverRef.current.disconnect();
       }
 
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [offsetTop, offsetBottom, zIndex]);
 
   return (
     <div ref={containerRef} className="relative">
-      <div ref={placeholderRef} style={{ width: '100%', height: 0 }} />
+      <div style={{ width: '100%', height: 0 }} />
       <div ref={stickyRef}>{children}</div>
     </div>
   );
