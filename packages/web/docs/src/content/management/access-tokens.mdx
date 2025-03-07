@@ -3,20 +3,26 @@ import { Callout, Steps } from '@theguild/components'
 
 # Access Tokens
 
-Access Tokens in GraphQL Hive are secure credentials used to authenticate API requests and automate actions without using personal login details.
+Access Tokens in GraphQL Hive are secure credentials used to authenticate API requests and automate
+actions without using personal login details.
 
 With Access Tokens, you can perform tasks such as:
+
 - Publish schemas etc. with the Hive CLI
 - Report usage data (SDK or HTTP)
 - (Soon) Access the public Hive Console GraphQL API for managing resources and export data
 
-Access Tokens in GraphQL Hive support granular permission scopes, allowing you to define exactly what actions a token is allowed to perform and on which resources (project, target, service or app deployment).
-This helps enforce the principle of least privilege, ensuring tokens only have the access they need - and nothing more.
+Access Tokens in GraphQL Hive support granular permission scopes, allowing you to define exactly
+what actions a token is allowed to perform and on which resources (project, target, service or app
+deployment). This helps enforce the principle of least privilege, ensuring tokens only have the
+access they need - and nothing more.
 
-For example, a CI pipeline that publishes schemas only needs the "Publish Service" scope. There’s no need to grant more permissions.
+For example, a CI pipeline that publishes schemas only needs the "Publish Service" scope. There’s no
+need to grant more permissions.
 
 <Callout type="warning">
-**Important**: Treat access tokens like passwords. Keep them secret and revoke them immediately if compromised. Monitor token usage regularly and revoke unused tokens to maintain security.
+  **Important**: Treat access tokens like passwords. Keep them secret and revoke them immediately if
+  compromised. Monitor token usage regularly and revoke unused tokens to maintain security.
 </Callout>
 
 ## Create an Access Token
@@ -25,8 +31,9 @@ For example, a CI pipeline that publishes schemas only needs the "Publish Servic
 
 ### Ensure sufficient permissions
 
-To create an Access Token in GraphQL Hive, you must have the `Manage Access Token` permission at the organization level.
-Tokens are created at the **organization level** and can be managed (created or deleted) by any user with sufficient permissions.
+To create an Access Token in GraphQL Hive, you must have the `Manage Access Token` permission at the
+organization level. Tokens are created at the **organization level** and can be managed (created or
+deleted) by any user with sufficient permissions.
 
 ### Navigate to Access Token Settings
 
@@ -38,7 +45,6 @@ import accessTokensTabImage from '../../../public/docs/pages/management/access-t
   className="mt-8 rounded-lg drop-shadow-md"
 />
 
-
 Go to the `Settings` tab of your organization and open the `Access Tokens` section.
 
 import accessTokenCreateButtonImage from '../../../public/docs/pages/management/access-tokens/access-token-create-button.png'
@@ -48,7 +54,6 @@ import accessTokenCreateButtonImage from '../../../public/docs/pages/management/
   src={accessTokenCreateButtonImage}
   className="mt-8 rounded-lg drop-shadow-md"
 />
-
 
 Click `Create new access token`.
 
@@ -79,7 +84,8 @@ import accessTokenPermissionsImage from '../../../public/docs/pages/management/a
 Choose the permissions the token should have.
 
 <Callout>
-  **Tip**: Follow the principle of least privilege by only selecting the scopes necessary for the token's purpose.
+  **Tip**: Follow the principle of least privilege by only selecting the scopes necessary for the
+  token's purpose.
 </Callout>
 
 Confirm your selection by clicking `Next`.
@@ -87,6 +93,7 @@ Confirm your selection by clicking `Next`.
 ### Select Resources
 
 Decide if the token should have access to:
+
 - **All resources** in the organization, or
 - Only **specific projects/targets/services/apps**.
 
@@ -117,6 +124,7 @@ When you're ready, click `Create Access Token`.
 ### Save your Token
 
 After creation, your **access token key** will be displayed once.
+
 - Copy the token and store it securely (for example, in a secrets manager).
 - You won't be able to view it again.
 - Use this token to authenticate with Hive's CLI or API.
@@ -166,4 +174,7 @@ import accessTokenDeleteConfirmImage from '../../../public/docs/pages/management
 
 ## Updating Access Tokens
 
-Updating access tokens is currently not possible. Please instead [create a new access token](/docs/management/access-tokens#create-an-access-token) with updated permissions, replace the usages of the old access token and then [delete the old access token](/docs/management/access-tokens#deleting-access-tokens).
+Updating access tokens is currently not possible. Please instead
+[create a new access token](/docs/management/access-tokens#create-an-access-token) with updated
+permissions, replace the usages of the old access token and then
+[delete the old access token](/docs/management/access-tokens#deleting-access-tokens).
