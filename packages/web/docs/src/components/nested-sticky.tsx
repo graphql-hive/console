@@ -111,34 +111,9 @@ export function NestedSticky({
       }
     };
 
-    // Handle scroll events
-    const handleScroll = () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-
-      rafRef.current = requestAnimationFrame(() => {
-        if (!observerRef.current) return;
-
-        // Manually trigger the update since IntersectionObserver doesn't fire on every scroll
-        updateStickyState([
-          {
-            boundingClientRect: container.getBoundingClientRect(),
-            intersectionRatio: 0,
-            intersectionRect: new DOMRectReadOnly(),
-            isIntersecting: false,
-            rootBounds: null,
-            target: container,
-            time: Date.now(),
-          },
-        ] as IntersectionObserverEntry[]);
-      });
-    };
-
     // Handle resize events
     const handleResize = () => {
       measureDimensions();
-      handleScroll();
     };
 
     // Initial setup
@@ -152,12 +127,7 @@ export function NestedSticky({
 
     observerRef.current.observe(container);
 
-    // Add event listeners
-    window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleResize, { passive: true });
-
-    // Initial check
-    handleScroll();
 
     return () => {
       if (observerRef.current) {
@@ -170,7 +140,6 @@ export function NestedSticky({
         rafRef.current = null;
       }
 
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
     };
   }, [offsetTop, offsetBottom, zIndex]);
