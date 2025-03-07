@@ -74,10 +74,7 @@ export function PlansTable({ className }: { className?: string }) {
   const YES = <CheckmarkIcon className="text-positive-dark mx-auto size-6" />;
 
   return (
-    <section
-      className={cn('p-4 py-12 md:px-6 lg:p-24 xl:px-[120px]', className)}
-      data-active-plan={activePlan}
-    >
+    <section className={cn('p-4 py-12 md:px-6 lg:p-24 xl:px-[120px]', className)}>
       <Heading
         size="md"
         as="h3"
@@ -92,20 +89,6 @@ export function PlansTable({ className }: { className?: string }) {
       </p>
 
       <MobileNavbar setActivePlan={setActivePlan} activePlan={activePlan} />
-
-      <style jsx global>{`
-        @media (max-width: 767px) {
-          [data-active-plan] td[data-plan] {
-            display: none;
-          }
-
-          [data-active-plan='Hobby'] td[data-plan='Hobby'],
-          [data-active-plan='Pro'] td[data-plan='Pro'],
-          [data-active-plan='Enterprise'] td[data-plan='Enterprise'] {
-            display: table-cell;
-          }
-        }
-      `}</style>
 
       <Table className="table w-full border-separate border-spacing-0 border-none">
         <thead className="bg-beige-100 max-md:hidden">
@@ -134,7 +117,7 @@ export function PlansTable({ className }: { className?: string }) {
             </PlansTableCell>
             <PlansTableCell activePlan={activePlan} plan="Pro">
               1M operations per month
-              <br />
+              <br className="max-sm:inline" />
               Then $10 per million operations
             </PlansTableCell>
             <PlansTableCell activePlan={activePlan} plan="Enterprise">
@@ -157,7 +140,7 @@ export function PlansTable({ className }: { className?: string }) {
           <TableSubheaderRow
             icon={<UsageIcon />}
             title="Usage"
-            description="All plans, all features, all unlimited. Know exactly what you’re working with."
+            description="All plans, all features, all unlimited. Know exactly what you're working with."
           />
           <tr>
             <PlansTableCell>Scale: projects and organizations</PlansTableCell>
@@ -358,22 +341,38 @@ function MobileNavbar({
   activePlan: PlanName;
 }) {
   return (
-    <div className="bg-beige-100 sticky top-0 z-10 flex w-full overflow-hidden rounded-t-lg md:hidden">
+    <div className="bg-beige-100 sticky top-0 z-10 w-full overflow-hidden rounded-2xl p-2 md:hidden">
       <div className="flex w-full">
         {pricingTiers.map(tier => (
           <button
             key={tier.name}
             onClick={() => setActivePlan(tier.name)}
             className={cn(
-              'flex-1 px-2 py-3 text-center font-medium transition-colors',
-              activePlan === tier.name
-                ? 'bg-blue-200 text-blue-900'
-                : 'text-blue-800 hover:bg-blue-200',
+              'hive-focus bg-beige-100 flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium leading-5 transition hover:z-10 hover:ring hover:ring-inset',
+              activePlan === tier.name && 'bg-white',
             )}
           >
             {tier.name}
           </button>
         ))}
+      </div>
+      <div className="relative mt-3 h-9">
+        {pricingTiers.map((plan, i) => {
+          const isActive = plan.name === activePlan;
+
+          return (
+            <div
+              className={cn(
+                'absolute inset-0 z-10 flex items-center justify-center rounded-lg *:!w-full aria-hidden:pointer-events-none aria-hidden:z-0',
+                i === 0 && 'bg-beige-100',
+              )}
+              aria-hidden={!isActive}
+              key={plan.name}
+            >
+              {plan.cta}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -393,9 +392,9 @@ function PlansTableCell({
   return (
     <td
       aria-hidden={plan !== currentPlan}
-      data-plan={plan}
       className={cn(
-        'border-beige-400 border-b border-r px-4 py-6 first:border-l first:font-medium xl:w-1/4 [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 sm:[.subheader+tr>&:last-child]:rounded-tr-3xl max-sm:[.subheader+tr>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl sm:[tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl max-sm:[tr:is(:has(+.subheader),:last-child)>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
+        'border-beige-400 border-b border-r px-4 py-6 first:border-l first:font-medium max-md:w-1/2 xl:w-1/4 [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 md:[.subheader+tr>&:last-child]:rounded-tr-3xl max-md:[.subheader+tr>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl md:[tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl max-md:[tr:is(:has(+.subheader),:last-child)>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
+        plan && plan !== currentPlan && 'max-md:hidden',
         className,
       )}
     >
@@ -414,7 +413,7 @@ function TableSubheaderRow({ icon, title, description }: TableSubheaderRowProps)
     // eslint-disable-next-line tailwindcss/no-custom-classname
     <tr className="subheader">
       <td colSpan={4} className="pb-6 pt-8">
-        <div className="flex items-center text-[32px]/10 [&>svg]:m-[6.67px] [&>svg]:mr-[10.67px] [&>svg]:size-[26.67px] [&>svg]:text-green-600">
+        <div className="flex items-center text-[32px]/10 max-md:text-[20px]/6 max-md:font-medium [&>svg]:m-[6.67px] [&>svg]:mr-[10.67px] [&>svg]:size-[26.67px] [&>svg]:text-green-600">
           {icon}
           {title}
         </div>

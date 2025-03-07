@@ -29,7 +29,7 @@ export function PricingSlider({
       style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
       {...rest}
     >
-      <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
+      <div className="text-green-1000 flex items-center text-2xl font-medium md:h-12 md:w-[calc(100%-260px)]">
         <div className="relative max-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] shrink grow motion-safe:transition-all">
           <div
             aria-hidden
