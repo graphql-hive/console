@@ -345,7 +345,7 @@ function MobileNavbar({
         // --nextra-navbar-height
         64
       }
-      offsetBottom={256}
+      offsetBottom={427}
     >
       <div className="bg-beige-100 before:bg-beige-100 before:border-b-beige-400 relative top-0 z-10 w-full rounded-2xl p-2 duration-100 ease-[var(--hive-ease-overshoot-a-bit)] before:absolute before:inset-0 before:opacity-0 before:transition md:hidden [[data-fixed]>&:before]:scale-x-125 [[data-fixed]>&:before]:border-b [[data-fixed]>&:before]:opacity-100 [[data-fixed]>&:before]:shadow-sm">
         <div className="relative flex w-full">

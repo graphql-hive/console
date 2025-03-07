@@ -35,8 +35,13 @@ export function NestedSticky({
 
     let width = 0;
     let height = 0;
-    let isSticky = false;
     let rafId: number | null = null;
+
+    // relative at the top
+    // fixed when we scroll
+    // absolute when we're near the bottom
+    let state: 'fixed' | 'absolute' | 'relative' = 'relative';
+    let prevState: 'fixed' | 'absolute' | 'relative' = 'relative';
 
     const measureDimensions = () => {
       const rect = sticky.getBoundingClientRect();
@@ -48,11 +53,21 @@ export function NestedSticky({
     };
 
     const updateStyles = () => {
-      placeholder.style.height = isSticky ? `${height}px` : '0';
+      placeholder.style.height = state !== 'relative' ? `${height}px` : '0';
 
-      if (isSticky) {
+      if (state === 'fixed') {
         sticky.style.position = 'fixed';
         sticky.style.top = `${offsetTop}px`;
+        sticky.style.width = `${width}px`;
+        sticky.setAttribute('data-fixed', '');
+      } else if (state === 'absolute') {
+        const containerRect = container.getBoundingClientRect();
+        const stickyRect = sticky.getBoundingClientRect();
+
+        const relativeTop = stickyRect.top - containerRect.top;
+
+        sticky.style.position = 'absolute';
+        sticky.style.top = `${relativeTop}px`;
         sticky.style.width = `${width}px`;
         sticky.setAttribute('data-fixed', '');
       } else {
@@ -74,13 +89,14 @@ export function NestedSticky({
 
         const shouldBeFixed = containerRect.top < offsetTop;
 
-        if (shouldBeFixed && parentRect.bottom < offsetTop + height + offsetBottom + 10) {
-          isSticky = false;
-        } else {
-          isSticky = shouldBeFixed;
-        }
+        const nearBottom = parentRect.bottom < offsetTop + height + offsetBottom + 10;
 
-        updateStyles();
+        state = shouldBeFixed && nearBottom ? 'absolute' : shouldBeFixed ? 'fixed' : 'relative';
+
+        if (state !== prevState) {
+          prevState = state;
+          updateStyles();
+        }
       });
     };
 
