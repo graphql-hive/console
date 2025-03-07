@@ -71,7 +71,7 @@ export function PlansTable({ className }: { className?: string }) {
   const YES = <CheckmarkIcon className="text-positive-dark mx-auto size-6" />;
 
   return (
-    <section className={cn('p-4 py-12 md:px-6 lg:py-24 xl:px-[120px]', className)}>
+    <section className={cn('relative p-4 py-12 md:px-6 lg:py-24 xl:px-[120px]', className)}>
       <Heading
         size="md"
         as="h3"
