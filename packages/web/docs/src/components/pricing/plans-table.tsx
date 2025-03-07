@@ -9,14 +9,11 @@ import {
   TextLink,
 } from '@theguild/components';
 import { CheckmarkIcon, XIcon } from '../../app/gateway/federation-compatible-benchmarks/icons';
+import { NestedSticky } from '../nested-sticky';
 import {
   AvailabilityIcon,
-  BillingIcon,
   EnterpriseSupportIcon,
-  FeaturesIcon,
   OperationsIcon,
-  RetentionIcon,
-  ShortCheckmarkIcon,
   SSOIcon,
   UsageIcon,
 } from './icons';
@@ -343,40 +340,48 @@ function MobileNavbar({
   activePlan: PlanName;
 }) {
   return (
-    <div className="bg-beige-100 sticky top-0 z-10 w-full rounded-2xl p-2 md:hidden">
-      <div className="flex w-full">
-        {pricingTiers.map(tier => (
-          <button
-            key={tier.name}
-            onClick={() => setActivePlan(tier.name)}
-            className={cn(
-              'hive-focus bg-beige-100 flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium leading-5 transition hover:z-10 hover:ring hover:ring-inset',
-              activePlan === tier.name && 'bg-white',
-            )}
-          >
-            {tier.name}
-          </button>
-        ))}
-      </div>
-      <div className="relative mt-3 h-9">
-        {pricingTiers.map((plan, i) => {
-          const isActive = plan.name === activePlan;
-
-          return (
-            <div
+    <NestedSticky
+      offsetTop={
+        // --nextra-navbar-height
+        64
+      }
+      offsetBottom={256}
+    >
+      <div className="bg-beige-100 before:bg-beige-100 before:border-b-beige-400 relative top-0 z-10 w-full rounded-2xl p-2 duration-100 ease-[var(--hive-ease-overshoot-a-bit)] before:absolute before:inset-0 before:opacity-0 before:transition md:hidden [[data-fixed]>&:before]:scale-x-125 [[data-fixed]>&:before]:border-b [[data-fixed]>&:before]:opacity-100 [[data-fixed]>&:before]:shadow-sm">
+        <div className="relative flex w-full">
+          {pricingTiers.map(tier => (
+            <button
+              key={tier.name}
+              onClick={() => setActivePlan(tier.name)}
               className={cn(
-                'absolute inset-0 z-10 flex items-center justify-center rounded-lg *:!w-full aria-hidden:pointer-events-none aria-hidden:z-0',
-                i === 0 && 'bg-beige-100',
+                'hive-focus bg-beige-100 flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium leading-5 transition hover:z-10 hover:ring hover:ring-inset',
+                activePlan === tier.name && 'bg-white',
               )}
-              aria-hidden={!isActive}
-              key={plan.name}
             >
-              {plan.cta}
-            </div>
-          );
-        })}
+              {tier.name}
+            </button>
+          ))}
+        </div>
+        <div className="relative mt-3 h-9">
+          {pricingTiers.map((plan, i) => {
+            const isActive = plan.name === activePlan;
+
+            return (
+              <div
+                className={cn(
+                  'absolute inset-0 z-10 flex items-center justify-center rounded-lg *:!w-full aria-hidden:pointer-events-none aria-hidden:z-0',
+                  i === 0 && 'bg-beige-100',
+                )}
+                aria-hidden={!isActive}
+                key={plan.name}
+              >
+                {plan.cta}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </NestedSticky>
   );
 }
 
