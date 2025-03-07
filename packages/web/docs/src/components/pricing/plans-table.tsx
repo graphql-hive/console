@@ -341,7 +341,7 @@ function MobileNavbar({
   activePlan: PlanName;
 }) {
   return (
-    <div className="bg-beige-100 sticky top-0 z-10 w-full overflow-hidden rounded-2xl p-2 md:hidden">
+    <div className="bg-beige-100 sticky top-0 z-10 w-full rounded-2xl p-2 md:hidden">
       <div className="flex w-full">
         {pricingTiers.map(tier => (
           <button
