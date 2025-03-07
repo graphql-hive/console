@@ -105,6 +105,15 @@ stdout--------------------------------------------:
 __NONE__
 `;
 
+exports[`FEDERATION > schema:check accepts a \`--url\` argument in distributed projects 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
 exports[`FEDERATION > schema:check should notify user when registry is empty > schemaCheck 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
@@ -259,6 +268,20 @@ stderr--------------------------------------------:
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
+`;
+
+exports[`SINGLE > schema:check rejects a \`--url\` argument in single projects 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - url is only supported by distributed projects
+
+
 `;
 
 exports[`SINGLE > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -431,6 +454,15 @@ stderr--------------------------------------------:
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
+`;
+
+exports[`STITCHING > schema:check accepts a \`--url\` argument in distributed projects 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
 `;
 
 exports[`STITCHING > schema:check should notify user when registry is empty > schemaCheck 1`] = `
