@@ -100,7 +100,7 @@ function BenchmarkLegend() {
         Perfect compatibility
       </div>
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full" className="bg-warning-bright" />
+        <div className={cn("size-2 rounded-full", "bg-warning-bright")} />
         75% and higher
       </div>
       <div className="flex items-center gap-2">
