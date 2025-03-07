@@ -33,7 +33,7 @@ function GraphQLOperationBody(props: {
     return <GraphQLHighlight className="pt-6" code={operation.body} />;
   }
 
-  return <div>Loading...</div>;
+  return <div>Operation not found.</div>;
 }
 
 const Operation_View_OperationBodyQuery = graphql(`
@@ -147,7 +147,11 @@ function OperationView({
       )}
       <div className="mt-12 w-full rounded-md border border-gray-800 bg-gray-900/50 p-5">
         <Section.Title>Operation body</Section.Title>
-        <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        {result.fetching ? (
+          <div>Loading...</div>
+        ) : (
+          <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        )}
       </div>
     </>
   );
