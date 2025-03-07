@@ -48,6 +48,10 @@ export function NestedSticky({
       width = rect.width;
       height = rect.height;
 
+      console.log('sticky', sticky);
+      console.log('width', width);
+      console.log('height', height);
+
       sticky.style.width = '100%';
       sticky.style.zIndex = String(zIndex);
     };

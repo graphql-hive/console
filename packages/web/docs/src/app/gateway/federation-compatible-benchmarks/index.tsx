@@ -89,22 +89,22 @@ function BenchmarkLegend() {
     <div className="mt-6 flex flex-wrap gap-2 whitespace-nowrap text-xs text-green-800 sm:gap-4">
       <div className="flex gap-2 max-sm:-mx-1 max-sm:w-full sm:contents">
         <div className="flex items-center gap-1">
-          <CheckmarkIcon className="size-4" className="text-positive-dark" /> Passed tests
+          <CheckmarkIcon className="text-positive-dark size-4" /> Passed tests
         </div>
         <div className="flex items-center gap-1">
-          <XIcon className="size-4" className="text-critical-dark" /> Failed tests
+          <XIcon className="text-critical-dark size-4" /> Failed tests
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full" className="bg-positive-bright" />
+        <div className="bg-positive-bright size-2 rounded-full" />
         Perfect compatibility
       </div>
       <div className="flex items-center gap-2">
-        <div className={cn("size-2 rounded-full", "bg-warning-bright")} />
+        <div className="bg-warning-bright size-2 rounded-full" />
         75% and higher
       </div>
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full" className="bg-critical-dark" />
+        <div className="bg-critical-dark size-2 rounded-full" />
         Less than 75%
       </div>
     </div>
