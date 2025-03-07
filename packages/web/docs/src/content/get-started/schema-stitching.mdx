@@ -110,32 +110,72 @@ type Query {
   </Tabs.Tab>
 </Tabs>
 
-### Hive CLI Access Token
+### Create Access Token
+
 
 As you may have noticed, Hive has created three targets under your project: `development`,
 `staging`, and `production`. This guide will use the `development` target to explore the features
 Hive offers.
 
-To begin, select the `development` target under your Hive project and then choose the **Settings**
-tab. On the Settings screen, you can manage your target's settings and access tokens.
+For this guide we will use the `development` target.
 
-Under the **Registry Access Tokens** section, click the **Generate new token** button. Give your
-access token a name and select **Schema Check & Push** from the list of token presets:
+In order to publish our subgraph schemas to the schema registry, we first need to create an access
+token with the necessary permissions for the Hive CLI.
+
+Within your organization, open the `Settings` tab and select the `Access Token` section.
+
+Click `Create new access token` and enter a name for the access token.
+
+import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
 
 <NextImage
-  alt="Create Registry Token Form"
-  src={tokenImage}
-  className="mt-10 max-w-md rounded-lg drop-shadow-md"
+  src={accessTokensCreateNewImage}
+  alt="Create new access token button within the organization settings access token section"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
 />
 
-Click on **Generate Token** button and you should get your CLI token created, with permissions to
-publish GraphQL schemas.
+Click `Next` and select `Allowed` for `Check schema/service subgraph`, `Publish schema/service/subgraph`, and `Report usage data`.
+
+import accessTokensPermissionsImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+
+<NextImage
+  src={accessTokensPermissionsImage}
+  alt="Grant the permissions required for publishing and checking schemas"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Click `Next` and in the next step keep the `Full Access` selection for the resources.
+For the purpose of this guide there is no need to further restirct the resources.
+
+import accessTokensResourcesImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+
+<NextImage
+  src={accessTokensResourcesImage}
+  alt="Grant full access on all resources"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+One last time click `Next` and review the access token.
+
+import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+
+<NextImage
+  src={accessTokensConfirmImage}
+  alt="Review the permissions"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you generated token.
+
+import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
+
+<NextImage
+  src={accessTokensSuccessImage}
+  alt="Successful access token creation"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
 
 Make sure to copy your token and keep it safe. **You won't be able to see it again.**
-
-<Callout type="info">
-  **Note:** You can create multiple tokens with different permissions for different use cases.
-</Callout>
 
 ### Publish your schemas
 
@@ -144,13 +184,18 @@ Now that you have your access token, you can publish your schema to the registry
 We'll start with the **Users** service.
 
 Run the following command in your terminal, to publish your `subschemas/users.graphql` to the
-registry (replace `YOUR_TOKEN_HERE` with the token you have just created):
+registry.
+
+- Replace `<YOUR_ORGANIZATION>` with the slug of your organization
+- Replace `<YOUR_PROJECT>` with the slug of your project within the organization
+- Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
 
 ```bash
 hive schema:publish \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="users" \
-  --url="http://fake.com/users/graphql" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
+  --url "http://fake.com/users/graphql" \
   --author "Me" \
   --commit "First" \
   subschemas/users.graphql
@@ -185,9 +230,10 @@ Now, let's publish the **Posts** service schema to Hive:
 
 ```bash
 hive schema:publish \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="posts" \
-  --url="http://fake.com/posts/graphql" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "posts" \
+  --url "http://fake.com/posts/graphql" \
   --author "Me" \
   --commit "Second" \
   subschemas/posts.graphql
@@ -244,8 +290,9 @@ file:
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="users" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
   subschemas/users.graphql
 ```
 
@@ -288,8 +335,9 @@ Now, run the Hive CLI with the `schema:check` command again and the modified
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="users" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
   subschemas/users.graphql
 ```
 
@@ -341,8 +389,9 @@ file:
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="users" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
   subschemas/users.graphql
 ```
 
@@ -390,9 +439,10 @@ And publish it to Hive:
 
 ```bash
 hive schema:publish \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="users" \
-  --url="http://fake.com/users/graphql" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
+  --url= http://fake.com/users/graphql" \
   --author "Me" \
   --commit "Third" \
   subschemas/users.graphql
