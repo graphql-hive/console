@@ -23,6 +23,7 @@ import { Link, useRouter } from '@tanstack/react-router';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
+import { ResourceIdentifier } from '../ui/resource-identifier';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { ProjectSelector } from './project-selector';
 
@@ -83,6 +84,7 @@ export function ProjectLayout({
   const me = query.data?.me;
   const currentOrganization = query.data?.organization;
   const currentProject = currentOrganization?.project;
+  const projectId = currentProject?.id;
 
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
@@ -90,13 +92,16 @@ export function ProjectLayout({
     <>
       <header>
         <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <ProjectSelector
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              organizations={query.data?.organizations ?? null}
-            />
+          <div className="flex flex-col gap-y-2">
+            <div className="flex flex-row items-center gap-4">
+              <HiveLink className="size-8" />
+              <ProjectSelector
+                currentOrganizationSlug={props.organizationSlug}
+                currentProjectSlug={props.projectSlug}
+                organizations={query.data?.organizations ?? null}
+              />
+            </div>
+            {projectId ? <ResourceIdentifier id={projectId} /> : null}
           </div>
           <div>
             <UserMenu

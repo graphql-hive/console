@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
+import { ResourceIdentifier } from '../ui/resource-identifier';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { TargetSelector } from './target-selector';
 
@@ -103,6 +104,7 @@ export const TargetLayout = ({
   const currentOrganization = query.data?.organization;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
+  const targetId = currentTarget?.id;
 
   const isCDNEnabled = query.data?.isCDNEnabled === true;
 
@@ -112,14 +114,17 @@ export const TargetLayout = ({
     <>
       <header>
         <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <TargetSelector
-              organizations={query.data?.organizations ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              currentTargetSlug={props.targetSlug}
-            />
+          <div className="flex flex-col gap-y-2">
+            <div className="flex flex-row items-center gap-4">
+              <HiveLink className="size-8" />
+              <TargetSelector
+                organizations={query.data?.organizations ?? null}
+                currentOrganizationSlug={props.organizationSlug}
+                currentProjectSlug={props.projectSlug}
+                currentTargetSlug={props.targetSlug}
+              />
+            </div>
+            {targetId ? <ResourceIdentifier id={targetId} /> : null}
           </div>
           <div>
             <UserMenu

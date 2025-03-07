@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql, useFragment } from '@/gql';
@@ -39,6 +38,7 @@ import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
+import { ResourceIdentifier } from '../ui/resource-identifier';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { OrganizationSelector } from './organization-selectors';
 
@@ -83,32 +83,6 @@ const OrganizationLayoutQuery = graphql(`
   }
 `);
 
-function OrganizationIdInner(props: { organizationId: string }) {
-  return (
-    <TooltipProvider>
-      <Tooltip delayDuration={300}>
-        <TooltipTrigger asChild>
-          <span className="cursor-help text-gray-700 dark:text-gray-300">
-            {props.organizationId}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          This UUID can be used in API calls or CLI commands to Hive instead of passing the name(s).
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
-function OrganizationId(props: { organizationId: string }) {
-  return (
-    <div className="flex flex-row gap-x-1 text-xs text-gray-600 dark:text-gray-400">
-      <>Resource ID:</>
-      <OrganizationIdInner organizationId={props.organizationId} />
-    </div>
-  );
-}
-
 export function OrganizationLayout({
   children,
   page,
@@ -152,7 +126,7 @@ export function OrganizationLayout({
                 organizations={query.data?.organizations ?? null}
               />
             </div>
-            {props.organizationId ? <OrganizationId organizationId={props.organizationId} /> : null}
+            {props.organizationId ? <ResourceIdentifier id={props.organizationId} /> : null}
           </div>
           <div>
             <UserMenu
