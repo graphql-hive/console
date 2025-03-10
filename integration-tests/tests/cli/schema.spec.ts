@@ -95,9 +95,9 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
       },
     );
 
-    test.skipIf(projectType === ProjectType.Single).concurrent(
-      'publish validates the service name',
-      async ({ expect }) => {
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('publish validates the service name', async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { inviteAndJoinMember, createProject } = await createOrg();
         await inviteAndJoinMember();
@@ -148,12 +148,11 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
             'fixtures/init-schema.graphql',
           ]),
         ).resolves.toMatchSnapshot('success');
-      },
-    );
+      });
 
-    test.skipIf(projectType === ProjectType.Single).concurrent(
-      'check validates the service name',
-      async ({ expect }) => {
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('check validates the service name', async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { inviteAndJoinMember, createProject } = await createOrg();
         await inviteAndJoinMember();
@@ -201,8 +200,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
             'fixtures/init-schema.graphql',
           ]),
         ).resolves.toMatchSnapshot('success');
-      },
-    );
+      });
 
     test.concurrent(
       'publishing invalid schema SDL provides meaningful feedback for the user.',
