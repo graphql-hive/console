@@ -6,7 +6,7 @@ import { SchemaVariantFilter } from '@/components/target/explorer/filter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -237,6 +237,10 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
         }
       }
+      project {
+        id
+        type
+      }
     }
     operationsStats(
       selector: {
@@ -355,7 +359,7 @@ function UnusedSchemaExplorer(props: {
               />
             </>
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion projectType={query.data?.target?.project.type} />
           )}
         </>
       )}

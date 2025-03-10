@@ -1,24 +1,28 @@
-import { ReactElement } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
+import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { Card } from './card';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
+import { InputCopy } from './input-copy';
 
 export const EmptyList = ({
   title,
   description,
   docsUrl,
   className,
+  children,
 }: {
   title: string;
   description: string;
   docsUrl?: string | null;
+  children?: ReactNode | null;
   className?: string;
 }): ReactElement => {
   return (
     <Card
-      className={cn('flex grow cursor-default flex-col items-center gap-y-2 py-4', className)}
+      className={cn('flex grow cursor-default flex-col items-center gap-y-2 p-4', className)}
       data-cy="empty-list"
     >
       <img
@@ -30,6 +34,7 @@ export const EmptyList = ({
       />
       <Heading className="text-center">{title}</Heading>
       <span className="text-center text-sm font-medium text-gray-500">{description}</span>
+      {children}
       {docsUrl && <DocsLink href={docsUrl}>Read about it in the documentation</DocsLink>}
     </Card>
   );
@@ -43,13 +48,44 @@ export const noSchema = (
   />
 );
 
-export const noSchemaVersion = (
-  <EmptyList
-    title="Hive is waiting for your first schema"
-    description="You can publish a schema with Hive CLI and Hive Client"
-    docsUrl="/features/schema-registry#publish-a-schema"
-  />
-);
+// @todo consider monolith vs distributed etc
+export const NoSchemaVersion = ({
+  projectType,
+}: {
+  projectType: ProjectType | null;
+}): ReactElement => {
+  const isDistributed =
+    projectType === ProjectType.Federation || projectType === ProjectType.Stitching;
+  return (
+    <EmptyList
+      title="Hive is waiting for your first schema"
+      description="You can publish a schema with Hive CLI and Hive Client"
+      docsUrl="/features/schema-registry#publish-a-schema"
+    >
+      <>
+        <div className="flex w-full justify-center py-2 text-xs text-gray-500">
+          First check that the schema is valid and compatible with the state of the registry.
+        </div>
+        <div className="flex w-full justify-center">
+          <InputCopy
+            value={`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            alignment="center"
+          />
+        </div>
+        <div className="flex w-full justify-center py-2 text-xs text-gray-500">
+          Then publish the schema. For distributed systems, it's recommended to publish the schema
+          after the service is deployed.
+        </div>
+        <div className="flex w-full justify-center">
+          <InputCopy
+            value={`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            alignment="center"
+          />
+        </div>
+      </>
+    </EmptyList>
+  );
+};
 
 export const noValidSchemaVersion = (
   <EmptyList

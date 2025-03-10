@@ -10,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
-import { EmptyList, noSchema, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -169,7 +169,7 @@ function SchemaView(props: {
 
   const { latestSchemaVersion } = target;
   if (!latestSchemaVersion) {
-    return noSchemaVersion;
+    return <NoSchemaVersion projectType={project.type} />;
   }
 
   if (!latestSchemaVersion.schemas.nodes.length) {

@@ -16,7 +16,7 @@ import {
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { noSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -134,6 +134,10 @@ const TargetExplorerPageQuery = graphql(`
           }
           ...ExplorerPage_SchemaExplorerFragment
         }
+      }
+      project {
+        id
+        type
       }
     }
     operationsStats(
@@ -269,7 +273,7 @@ function ExplorerPageContent(props: {
           ) : latestSchemaVersion ? (
             noValidSchemaVersion
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion projectType={query.data?.target?.project.type ?? null} />
           )}
         </>
       )}

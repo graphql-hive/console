@@ -3,7 +3,7 @@ import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -176,6 +176,10 @@ const TargetHistoryPageQuery = graphql(`
         targetSlug: $targetSlug
       }
     ) {
+      project {
+        id
+        type
+      }
       id
       latestSchemaVersion {
         id
@@ -268,7 +272,9 @@ function HistoryPageContent(props: {
         <Title>Versions</Title>
         <Subtitle>Recently published schemas.</Subtitle>
       </div>
-      {query.fetching ? null : noSchemaVersion}
+      {query.fetching ? null : (
+        <NoSchemaVersion projectType={query.data?.target?.project.type ?? null} />
+      )}
     </div>
   );
 }

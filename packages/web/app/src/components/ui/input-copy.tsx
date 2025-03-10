@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useClipboard } from '@/lib/hooks';
 
-export function InputCopy(props: { value: string }) {
+export function InputCopy(props: { value: string; alignment?: 'center' | 'left' }) {
   const [isCopied, setIsCopied] = useState(false);
   const copyToClipboard = useClipboard();
 
