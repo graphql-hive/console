@@ -67,18 +67,15 @@ You can also download a specific version of the binary:
 ### Publish a schema
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires an active registry token with **Read & Write** permissions to the
-  target.
+  This CLI command requires a access token with the `Schema publish` permissions on the specified
+  target. Please refer to our access token [documentation for creating an access
+  token](/docs/management/access-tokens).
 </Callout>
 
 <Callout>
   We recommend publishing the schema from your CI/CD pipeline. You can find more information in out
   [CI/CD Integration guide](/docs/other-integrations/ci-cd).
 </Callout>
-
-Start by setting your Hive token in
-[`hive.json`](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#config-file-hivejson)
-file, or set it as `HIVE_TOKEN` environment variable.
 
 Further reading:
 
@@ -89,13 +86,19 @@ Further reading:
 If you have a single file for your GraphQL schema:
 
 ```bash
-hive schema:publish schema.graphql
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql
 ```
 
 Or, multiple files using a `glob` expression:
 
 ```bash
-hive schema:publish "src/*.graphql"
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  "src/*.graphql"
 ```
 
 Further reading:
@@ -105,7 +108,12 @@ Further reading:
 #### Apollo Federation / Schema-Stitching projects
 
 ```bash
-hive schema:publish --service reviews --url http://my-service.com/graphql schema.graphql
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://my-service.com/graphql \
+  schema.graphql
 ```
 
 Further reading:
@@ -124,13 +132,21 @@ To attach metadata to your published schema, you can use `--metadata` flag when 
 You can load the metadata from a file:
 
 ```bash
-hive schema:publish schema.graphql --metadata metadata.json
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql \
+  --metadata metadata.json
 ```
 
 Or, use an inline JSON passed as a string:
 
 ```bash
-hive schema:publish schema.graphql --metadata '{ "someData": true }'
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql \
+  --metadata '{ "someData": true }'
 ```
 
 Further reading:
@@ -140,12 +156,10 @@ Further reading:
 ### Check a schema
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires an active registry token with **Read** permissions to the target.
+  This CLI command requires a access token with the `Schema Check` permissions on the specified
+  target. Please refer to our access token [documentation for creating an access
+  token](/docs/management/access-tokens).
 </Callout>
-
-Start by setting your Hive token in
-[`hive.json`](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#config-file-hivejson)
-file, or set it as `HIVE_TOKEN` environment variable.
 
 Checking a GraphQL schema is the form of checking the compatbility of an upcoming schema, compared
 to the latest published version.
@@ -157,13 +171,19 @@ Hive CLI will give you a list of all changes, sorted by criticality level (Break
 Safe) and fail the check once breaking change is detected.
 
 ```bash
-hive schema:check schema.graphql
+hive schema:check \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql
 ```
 
 Or, multiple files using a `glob` expression:
 
 ```bash
-hive schema:check "src/*.graphql"
+hive schema:check \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  "src/*.graphql"
 ```
 
 If you want to leverage from retaining approved breaking changes within the lifecyle of a pull/merge
@@ -171,7 +191,10 @@ request or branch, you must provide the `--contextId` parameter. Using `--contex
 when using GitHub repositories and actions with the `--github` flag.
 
 ```bash
-hive schema:check --contextId "pr-123" "src/*.graphql"
+hive schema:check \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --contextId "pr-123" "src/*.graphql"
 ```
 
 Further reading:
@@ -182,23 +205,23 @@ Further reading:
 ### Delete a schema
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires an active registry token with **Read & Write** permissions to the target
-  and the project.
+  This CLI command requires a access token with the `Delete subgraph` permissions on the specified
+  target. Please refer to our access token [documentation for creating an access
+  token](/docs/management/access-tokens).
 </Callout>
 
 <Callout type="info">
   This action is only available for Schema-Stitching and Apollo Federation projects.
 </Callout>
 
-Start by setting your Hive token in
-[`hive.json`](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#config-file-hivejson)
-file, or set it as `HIVE_TOKEN` environment variable.
-
 In case you want to compose a schema (or a subgraph in case of Federation), you can do so by using
 the `hive schema:delete` command.
 
 ```bash
-hive schema:delete SERVICE_NAME
+hive schema:delete \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  "<SERVICE_NAME>"
 ```
 
 <Callout>
@@ -261,22 +284,47 @@ the gateway.
 
 ```bash
 # Introspect the SDL of the local service
-hive dev --remote --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --remote \
+  --service reviews \
+  --url http://localhost:3001/graphql
 
 # Watch mode
-hive dev --remote --watch --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --remote \
+  --watch \
+  --service reviews \
+  --url http://localhost:3001/graphql
 
 # Provide the SDL of the local service
-hive dev --remote --service reviews --url http://localhost:3001/graphql --schema reviews.graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --remote \
+  --service reviews \
+  --url http://localhost:3001/graphql \
+  --schema reviews.graphql
 
 # or with multiple services
 hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
   --remote \
   --service reviews --url http://localhost:3001/graphql \
   --service products --url http://localhost:3002/graphql --schema products.graphql
 
 # Custom output file (default: supergraph.graphql)
-hive dev --remote --service reviews --url http://localhost:3001/graphql --write local-supergraph.graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --remote \
+  --service reviews \
+  --url http://localhost:3001/graphql \
+  --write local-supergraph.graphql
 ```
 
 **Usage example**
@@ -287,7 +335,13 @@ service.
 First, you need to start the `reviews` service locally and then run the following command:
 
 ```bash
-hive dev --remote --watch --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --remote \
+  --watch \
+  --service reviews \
+  --url http://localhost:3001/graphql
 ```
 
 This command will fetch subgraph's schema from the provided URL, replace the original `reviews`
@@ -314,21 +368,41 @@ the gateway.
 
 ```bash
 # Introspect the SDL of the local service
-hive dev --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://localhost:3001/graphql
 
 # Watch mode
-hive dev --watch --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://localhost:3001/graphql
 
 # Provide the SDL of the local service
-hive dev --service reviews --url http://localhost:3001/graphql --schema reviews.graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://localhost:3001/graphql \
+  --schema reviews.graphql
 
 # or with multiple services
 hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
   --service reviews --url http://localhost:3001/graphql \
   --service products --url http://localhost:3002/graphql --schema products.graphql
 
 # Custom output file (default: supergraph.graphql)
-hive dev --service reviews --url http://localhost:3001/graphql --write local-supergraph.graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://localhost:3001/graphql \
+  --write local-supergraph.graphql
 ```
 
 **Usage example**
@@ -339,7 +413,12 @@ service.
 First, you need to start the `reviews` service locally and then run the following command:
 
 ```bash
-hive dev --watch --service reviews --url http://localhost:3001/graphql
+hive dev \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --watch \
+  --service reviews \
+  --url http://localhost:3001/graphql
 ```
 
 This command will fetch subgraph's schema from the provided URL and compose a supergraph. The
@@ -437,11 +516,19 @@ you may specify an additional `--github` flag to report the results back to GitH
 action:
 
 ```bash
-hive schema:publish schema.graphql --github
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql \
+  --github
 ```
 
 ```bash
-hive schema:check schema.graphql --github
+hive schema:check \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql \
+  --github
 ```
 
 <Callout>

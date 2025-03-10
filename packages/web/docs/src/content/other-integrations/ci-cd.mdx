@@ -1,3 +1,5 @@
+import { Callout } from '@theguild/components'
+
 # CI/CD and Hive CLI
 
 This guide is a collection of features and capabilities you can configure with Hive, to integrate it
@@ -26,11 +28,17 @@ is active, you may specify an additional `--github` flag to report the results b
 Check Suite (for `schema:check` and `schema:publish` commands):
 
 ```bash
-hive schema:publish path/to/schema.graphql --github
+hive schema:publish \
+  --target "org/project/target" \
+  path/to/schema.graphql \
+  --github
 ```
 
 ```bash
-hive schema:check path/to/schema.graphql --github
+hive schema:check \
+  --target "org/project/target" \
+  path/to/schema.graphql \
+  --github
 ```
 
 ### GitHub Workflow for CI
@@ -53,10 +61,18 @@ jobs:
           HIVE_ENDPOINT: ${{ secrets.HIVE_ENDPOINT }}
         run: |
           curl -sSL https://graphql-hive.com/install.sh | sh
-          hive schema:check 'path/to/schema.graphql' \
-            --registry.accessToken '${{ secrets.HIVE_TOKEN }}' \
+          hive schema:check "path/to/schema.graphql" \
+            --registry.accessToken "${{ secrets.HIVE_TOKEN }}" \
+            --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
             --github
 ```
+
+<Callout type="warning">
+
+We recommend using a fixed CLI version for your workflows. Please refer to our CLI documentation for
+[installing a specific version using the install script](/docs/api-reference/cli#specific-version).
+
+</Callout>
 
 ### GitHub Workflow for CD
 
@@ -78,10 +94,18 @@ jobs:
           HIVE_ENDPOINT: ${{ secrets.HIVE_ENDPOINT }}
         run: |
           curl -sSL https://graphql-hive.com/install.sh | sh
-          hive schema:publish 'path/to/schema.graphql' \
-            --registry.accessToken '${{ secrets.HIVE_TOKEN }}' \
+          hive schema:publish"'path/to/schema.graphql" \
+            --registry.accessToken "${{ secrets.HIVE_TOKEN }}" \
+            --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
             --github
 ```
+
+<Callout type="warning">
+
+We recommend using a fixed CLI version for your workflows. Please refer to our CLI documentation for
+[installing a specific version using the install script](/docs/api-reference/cli#specific-version).
+
+</Callout>
 
 ## Multi Environment Best Practices
 

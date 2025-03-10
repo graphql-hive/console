@@ -62,7 +62,9 @@ const testServer = new ApolloServer({
     useHive({
       enabled: true,
       token: 'YOUR-TOKEN',
-      usage: true
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      }
     })
   ]
 })
@@ -146,7 +148,9 @@ const wsServer = new WebSocketServer({
 const hiveClient = createHive({
   enabled: true,
   token: 'YOUR-TOKEN',
-  usage: true
+  usage: {
+    target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+  }
 })
 
 const serverCleanup = useServer(
