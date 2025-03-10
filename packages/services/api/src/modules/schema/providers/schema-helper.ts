@@ -37,7 +37,7 @@ export function ensureSingleSchema(schema: Schema | Schema[]): SingleSchema {
   throw new Error('Expected a single schema');
 }
 
-export function ensureCompositeSchemas(schemas: readonly Schema[]): CompositeSchema[] | never {
+export function ensureCompositeSchemas(schemas: readonly Schema[]): CompositeSchema[] {
   return schemas.filter(isCompositeSchema);
 }
 
