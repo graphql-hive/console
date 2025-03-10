@@ -12,10 +12,10 @@
   },
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.4.0",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=10"
+    "pnpm": ">=10.4.0"
   },
   "scripts": {
     "build": "pnpm turbo build --color",
@@ -132,7 +132,8 @@
       "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
       "@fastify/vite": "patches/@fastify__vite.patch",
-      "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch"
+      "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
+      "bentocache": "patches/bentocache.patch"
     }
   }
 }

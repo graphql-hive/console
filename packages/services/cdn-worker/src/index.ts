@@ -147,7 +147,7 @@ const handler: ExportedHandler<Env> = {
           if (i === retries) {
             const res = await fetched;
             if (res.ok) {
-              return res.text();
+              return await res.text();
             }
 
             throw new Error(`Failed to fetch ${url}, status: ${res.status}`);
@@ -156,7 +156,7 @@ const handler: ExportedHandler<Env> = {
           try {
             const res = await fetched;
             if (res.ok) {
-              return res.text();
+              return await res.text();
             }
           } catch (error) {
             // Retry also when there's an exception

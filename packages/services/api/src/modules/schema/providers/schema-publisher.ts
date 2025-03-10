@@ -20,13 +20,13 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
+import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
   GitHubIntegrationManager,
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
-import { RateLimitProvider } from '../../rate-limit/providers/rate-limit.provider';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -278,10 +278,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaCheck:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -338,6 +339,27 @@ export class SchemaPublisher {
         projectType: project.type,
         conclusion,
       });
+    }
+
+    // if url is provided but this is not a distributed project
+    if (
+      input.url != null &&
+      !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)
+    ) {
+      this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
+      increaseSchemaCheckCountMetric('rejected');
+
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message: 'url is only supported by distributed projects',
+          },
+        ],
+      } as const;
     }
 
     if (
@@ -547,6 +569,7 @@ export class SchemaPublisher {
           input: {
             sdl,
             serviceName: input.service,
+            url: input.url ?? null,
           },
           selector,
           latest: latestVersion
@@ -1000,10 +1023,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1040,8 +1064,6 @@ export class SchemaPublisher {
       this.schemaManager.getMaybeLatestVersion(target),
     ]);
 
-    const legacySelector = this.session.getLegacySelector();
-
     const checksum = createHash('md5')
       .update(
         stringify({
@@ -1060,7 +1082,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(legacySelector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
@@ -1133,10 +1155,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:deleteService');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1317,12 +1340,16 @@ export class SchemaPublisher {
                     supergraphSDL: deleteResult.state.supergraph,
                     schemaCompositionErrors: null,
                     tags: deleteResult.state.tags,
+                    schemaMetadata: deleteResult.state.schemaMetadata,
+                    metadataAttributes: deleteResult.state.metadataAttributes,
                   }
                 : {
                     compositeSchemaSDL: null,
                     supergraphSDL: null,
                     schemaCompositionErrors: deleteResult.state.compositionErrors ?? [],
                     tags: null,
+                    schemaMetadata: null,
+                    metadataAttributes: null,
                   }),
               actionFn: async () => {
                 if (deleteResult.state.composable) {
@@ -1874,6 +1901,8 @@ export class SchemaPublisher {
             supergraphSDL: supergraph,
             schemaCompositionErrors: null,
             tags: publishResult.state?.tags ?? null,
+            schemaMetadata: publishResult.state?.schemaMetadata ?? null,
+            metadataAttributes: publishResult.state?.metadataAttributes ?? null,
           }
         : {
             compositeSchemaSDL: null,
@@ -1883,6 +1912,8 @@ export class SchemaPublisher {
               "Can't be null",
             ),
             tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
           }),
     });
 

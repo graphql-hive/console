@@ -1,5 +1,21 @@
 # 16.10.2024
 
+## 2.0.0
+
+### Major Changes
+
+- [#6549](https://github.com/graphql-hive/console/pull/6549)
+  [`158b63b`](https://github.com/graphql-hive/console/commit/158b63b4f217bf08f59dbef1fa14553106074cc9)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Updated core dependnecies (body, http) to
+  match apollo-router v2
+
+### Patch Changes
+
+- [#6549](https://github.com/graphql-hive/console/pull/6549)
+  [`158b63b`](https://github.com/graphql-hive/console/commit/158b63b4f217bf08f59dbef1fa14553106074cc9)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Updated thiserror, jsonschema, lru, rand to
+  latest and adjust the code
+
 ## 1.1.1
 
 ### Patch Changes

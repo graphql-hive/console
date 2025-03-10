@@ -441,10 +441,9 @@ test('sendImmediately should not stop the schedule', async () => {
   expect(logger.getLogs()).toMatch('Sending immediately');
   expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
-  await waitFor(100);
   // Let's check if the scheduled send task is still running
   await collect(args, {});
-  await waitFor(40);
+  await waitFor(60);
   expect(logger.getLogs()).toMatch('Sending report (queue 1)');
 
   await hive.dispose();
@@ -747,4 +746,50 @@ test('retry on non-200', async () => {
     [ERR] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
     [INF] [hive][usage] Disposing
   `);
+});
+
+test('constructs URL with usage.target', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'Token';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
 });

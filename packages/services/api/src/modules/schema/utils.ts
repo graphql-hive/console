@@ -146,6 +146,10 @@ export function buildGraphQLTypesFromSDL(
         },
         supergraph: supergraph
           ? {
+              getFieldMetadata: (fieldName: string) =>
+                supergraph.schemaCoordinateMetadataMappings?.get(
+                  `${typeDefinition.name.value}.${fieldName}`,
+                ) ?? null,
               ownedByServiceNames:
                 supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
               getFieldOwnedByServices: (fieldName: string) =>
@@ -182,6 +186,10 @@ export function buildGraphQLTypesFromSDL(
         },
         supergraph: supergraph
           ? {
+              getFieldMetadata: (fieldName: string) =>
+                supergraph.schemaCoordinateMetadataMappings?.get(
+                  `${typeDefinition.name.value}.${fieldName}`,
+                ) ?? null,
               ownedByServiceNames:
                 supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
               getFieldOwnedByServices: (fieldName: string) =>

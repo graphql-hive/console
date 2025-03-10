@@ -1,6 +1,6 @@
 import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from '../providers/organization-manager';
-import { OrganizationMembers } from '../providers/organization-members';
+import { ResourceAssignments } from '../providers/resource-assignments';
 import type { MemberResolvers } from './../../../__generated__/types';
 
 export const Member: MemberResolvers = {
@@ -36,6 +36,9 @@ export const Member: MemberResolvers = {
     return user;
   },
   resourceAssignment: async (member, _arg, { injector }) => {
-    return injector.get(OrganizationMembers).resolveGraphQLMemberResourceAssignment(member);
+    return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
+      organizationId: member.organizationId,
+      resources: member.assignedRole.resources,
+    });
   },
 };

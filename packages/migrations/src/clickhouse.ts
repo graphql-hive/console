@@ -169,6 +169,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/009-ttl-1-year'),
     import('./clickhouse-actions/010-app-deployment-operations'),
     import('./clickhouse-actions/011-audit-logs'),
+    import('./clickhouse-actions/012-coordinates-typename-index'),
   ]);
 
   async function actionRunner(action: Action, index: number) {

@@ -12,6 +12,7 @@
     "@apollo/federation": "0.38.1",
     "@graphql-hive/external-composition": "workspace:*",
     "@graphql-hive/federation-link-utils": "workspace:*",
+    "@graphql-tools/merge": "9.0.22",
     "@graphql-tools/stitch": "9.4.13",
     "@graphql-tools/stitching-directives": "3.1.24",
     "@hive/service-common": "workspace:*",

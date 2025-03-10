@@ -2,7 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Target } from '../../../shared/entities';
 import { batch } from '../../../shared/helpers';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { TargetManager } from '../../target/providers/target-manager';
@@ -64,10 +64,11 @@ export class AppDeploymentsManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
-      onError() {
-        throw new InsufficientPermissionError('appDeployment:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('appDeployment:create');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
@@ -100,10 +101,11 @@ export class AppDeploymentsManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
-      onError() {
-        throw new InsufficientPermissionError('appDeployment:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('appDeployment:create');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:create',
@@ -134,10 +136,11 @@ export class AppDeploymentsManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
-      onError() {
-        throw new InsufficientPermissionError('appDeployment:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('appDeployment:publish');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:publish',

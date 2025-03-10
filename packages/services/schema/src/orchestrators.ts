@@ -1,10 +1,11 @@
 import type { FastifyRequest } from 'fastify';
-import type { DocumentNode } from 'graphql';
+import type { ConstDirectiveNode, DocumentNode, FieldDefinitionNode, NameNode } from 'graphql';
 import {
   ASTNode,
   buildASTSchema,
   concatAST,
   GraphQLError,
+  isTypeSystemExtensionNode,
   Kind,
   parse,
   print,
@@ -14,6 +15,7 @@ import {
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { mergeTypeDefs } from '@graphql-tools/merge';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
@@ -34,10 +36,13 @@ import {
   extractTagsFromDocument,
   Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
+import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
+import { SetMap } from './lib/setmap';
 import type {
   ComposeAndValidateInput,
   ComposeAndValidateOutput,
   ExternalComposition,
+  Metadata,
   SchemaType,
 } from './types';
 
@@ -163,17 +168,79 @@ const createFederation: (
       includesNetworkError: boolean;
       includesException?: boolean;
       tags: Array<string> | null;
+      schemaMetadata: Record<string, Metadata[]> | null;
+      metadataAttributes: Record<string, string[]> | null;
     }
   >(
     'federation',
     async ({ schemas, external, native, contracts }) => {
-      const subgraphs = schemas.map(schema => {
-        return {
-          typeDefs: trimDescriptions(parse(schema.raw)),
-          name: schema.source,
-          url: 'url' in schema && typeof schema.url === 'string' ? schema.url : undefined,
-        };
-      });
+      const subgraphs = schemas
+        .map(schema => {
+          return {
+            typeDefs: trimDescriptions(parse(schema.raw)),
+            name: schema.source,
+            url: 'url' in schema && typeof schema.url === 'string' ? schema.url : undefined,
+          };
+        })
+        .map(subgraph => {
+          const { matchesImplementation, resolveImportName } = extractLinkImplementations(
+            subgraph.typeDefs,
+          );
+          if (matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0')) {
+            // if this subgraph implements the metadata spec
+            // then copy metadata from the schema to all fields.
+            // @note this is similar to how federation's compose copies join__ directives to fields based on the
+            // subgraph that the field is a part of.
+            const metaDirectiveName = resolveImportName(
+              'https://specs.graphql-hive.com/hive',
+              '@meta',
+            );
+            const applyMetaToField = (
+              fieldNode: FieldDefinitionNode,
+              metaDirectives: ConstDirectiveNode[],
+            ) => {
+              return {
+                ...fieldNode,
+                directives: [
+                  ...(fieldNode.directives ?? []),
+                  ...metaDirectives.map(d => ({ ...d, loc: undefined })),
+                ],
+              };
+            };
+
+            const schemaNodes = subgraph.typeDefs.definitions.filter(
+              d => d.kind === Kind.SCHEMA_DEFINITION || d.kind === Kind.SCHEMA_EXTENSION,
+            );
+            const schemaMetaDirectives = schemaNodes
+              .flatMap(node => node.directives?.filter(d => d.name.value === metaDirectiveName))
+              .filter(d => d !== undefined);
+            const interfaceAndObjectHandler = (node: {
+              readonly fields?: ReadonlyArray<FieldDefinitionNode> | undefined;
+              readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
+              readonly name: NameNode;
+            }) => {
+              // apply type/interface metadata to fields
+              const objectMetaDirectives = node.directives
+                ?.filter(d => d.name.value === metaDirectiveName)
+                .filter(d => d !== undefined);
+              if (objectMetaDirectives?.length) {
+                return {
+                  ...node,
+                  fields: node.fields?.map(f => applyMetaToField(f, objectMetaDirectives)),
+                };
+              }
+              return node;
+            };
+            subgraph.typeDefs = visit(subgraph.typeDefs, {
+              FieldDefinition: field => {
+                return applyMetaToField(field, schemaMetaDirectives);
+              },
+              ObjectTypeDefinition: interfaceAndObjectHandler,
+              InterfaceTypeDefinition: interfaceAndObjectHandler,
+            });
+          }
+          return subgraph;
+        });
 
       /** Determine the correct compose method... */
       let compose: (subgraphs: Array<SubgraphInput>) => Promise<ComposerMethodResult>;
@@ -205,6 +272,9 @@ const createFederation: (
       let result: CompositionResult & {
         includesNetworkError: boolean;
         tags: Array<string> | null;
+        /** Metadata stored by coordinate and then by subgraph */
+        schemaMetadata: Record<string, Metadata[]> | null;
+        metadataAttributes: Record<string, string[]> | null;
       };
 
       {
@@ -214,19 +284,34 @@ const createFederation: (
         } = await compose(subgraphs);
 
         if (composed.type === 'success') {
+          // merge all metadata from every subgraph by coordinate
+          const subgraphsMetadata = subgraphs.map(({ name, typeDefs }) =>
+            extractMetadata(typeDefs, name),
+          );
           const supergraphSDL = parse(composed.result.supergraph);
           const { resolveImportName } = extractLinkImplementations(supergraphSDL);
           const tagDirectiveName = resolveImportName('https://specs.apollo.dev/tag', '@tag');
           const tagStrategy = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
           const tags = extractTagsFromDocument(supergraphSDL, tagStrategy);
+          const schemaMetadata = mergeMetadata(...subgraphsMetadata);
+          const metadataAttributes = new SetMap<string, string>();
+          for (const [_coord, attrs] of schemaMetadata) {
+            for (const attr of attrs) {
+              metadataAttributes.add(attr.name, attr.content);
+            }
+          }
           result = {
             ...composed,
             tags,
+            schemaMetadata: Object.fromEntries(schemaMetadata),
+            metadataAttributes: metadataAttributes.toObject(),
           };
         } else {
           result = {
             ...composed,
             tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
           };
         }
       }
@@ -273,6 +358,7 @@ const createFederation: (
               filter,
             );
             return {
+              // @note Although it can differ from the supergraph's, ignore metadata on contracts.
               ...subgraph,
               typeDefs: filteredSubgraph.typeDefs,
             };
@@ -312,7 +398,9 @@ const createFederation: (
       if (networkErrorContract) {
         return {
           ...networkErrorContract.result,
+          schemaMetadata: null,
           tags: null,
+          metadataAttributes: null,
         };
       }
 
@@ -351,6 +439,8 @@ const createFederation: (
               supergraph: contract.result.result.supergraph ?? null,
             })) ?? null,
           tags: composed.tags ?? null,
+          schemaMetadata: composed.schemaMetadata ?? null,
+          metadataAttributes: composed.metadataAttributes ?? null,
         };
       } catch (error) {
         if (cache.isTimeoutError(error)) {
@@ -366,6 +456,8 @@ const createFederation: (
             includesNetworkError: true,
             contracts: null,
             tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
           };
         }
 
@@ -406,15 +498,23 @@ function createSingle(): Orchestrator {
   return {
     async composeAndValidate(schemas) {
       const schema = schemas[0];
-      const schemaAst = parse(schema.raw);
+      let schemaAst = parse(schema.raw);
+
+      // If the schema contains type system extension nodes, merge them into the schema.
+      // We don't want to show many type extension of User, we want to show single User type.
+      if (schemaAst.definitions.some(isTypeSystemExtensionNode)) {
+        schemaAst = mergeTypeDefs(schemaAst);
+      }
       const errors = validateSingleSDL(schemaAst);
 
       return {
         errors,
-        sdl: print(trimDescriptions(parse(schema.raw))),
+        sdl: print(trimDescriptions(schemaAst)),
         supergraph: null,
         contracts: null,
         tags: null,
+        schemaMetadata: null,
+        metadataAttributes: null,
       };
     },
   };
@@ -452,6 +552,8 @@ const createStitching: (cache: Cache) => Orchestrator = cache => {
         supergraph: null,
         contracts: null,
         tags: null,
+        schemaMetadata: null,
+        metadataAttributes: null,
       };
     },
   };

@@ -9,6 +9,7 @@ import {
   GetYourAPIGameRightSection,
   Heading,
   HighlightDecoration,
+  InfoCard,
   LargeHiveIconDecoration,
   ToolsAndLibrariesCards,
 } from '@theguild/components';
@@ -18,7 +19,6 @@ import { CompanyTestimonialsSection } from '../components/company-testimonials';
 import { EcosystemManagementSection } from '../components/ecosystem-management';
 import { FrequentlyAskedQuestions } from '../components/frequently-asked-questions';
 import { Hero, HeroFeatures, HeroLinks } from '../components/hero';
-import { InfoCard } from '../components/info-card';
 import { LandingPageContainer } from '../components/landing-page-container';
 import { LandingPageFeatureTabs } from '../components/landing-page-feature-tabs';
 import { StatsItem, StatsList } from '../components/stats';
@@ -94,9 +94,9 @@ export default function IndexPage(): ReactElement {
       <TrustedBySection className="mx-auto my-8 md:my-16 lg:my-24" />
       <EcosystemManagementSection className="mx-4 md:mx-6" />
       <StatsList className="mt-6 md:mt-0">
-        <StatsItem label="GitHub commits" value={6.2} suffix="K" decimal />
-        <StatsItem label="Active developers" value={6.2} suffix="K" decimal />
-        <StatsItem label="Registered schemas" value={270} suffix="K" />
+        <StatsItem label="GitHub commits" value={7} suffix="K" decimal />
+        <StatsItem label="Active developers" value={9.6} suffix="K" decimal />
+        <StatsItem label="Registered schemas" value={730} suffix="K" />
         <StatsItem label="Collected operations" value={350} suffix="B" />
       </StatsList>
       <UltimatePerformanceCards />
@@ -117,7 +117,7 @@ function GetStartedTodaySection({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-3xl bg-[#003834] p-12 text-center sm:p-24',
+        'bg-blueish-green relative overflow-hidden rounded-3xl p-12 text-center sm:p-24',
         className,
       )}
     >
@@ -224,7 +224,7 @@ function LearnGraphQLFederationSection(props: { className?: string }) {
   return (
     <section
       className={cn(
-        'to-green-1000 relative rounded-3xl bg-gradient-to-br from-[#003834] p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
+        'to-green-1000 from-blueish-green relative rounded-3xl bg-gradient-to-br p-8 sm:py-12 md:px-6 md:text-center lg:p-24',
         props.className,
       )}
     >

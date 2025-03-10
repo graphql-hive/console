@@ -2,11 +2,12 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
+import { noSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -173,6 +174,12 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
         __typename
         id
         valid
+        explorer {
+          metadataAttributes {
+            name
+            values
+          }
+        }
         deprecatedSchema(usage: { period: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
@@ -252,6 +259,9 @@ function DeprecatedSchemaExplorer(props: {
             targetSlug={props.targetSlug}
             variant="deprecated"
           />
+          {latestValidSchemaVersion?.explorer?.metadataAttributes?.length ? (
+            <MetadataFilter options={latestValidSchemaVersion.explorer.metadataAttributes} />
+          ) : null}
         </div>
       </div>
       {!query.fetching && (
@@ -351,22 +361,9 @@ function ExplorerDeprecatedSchemaPageContent(props: {
   }
 
   const currentOrganization = query.data?.organization?.organization;
-  const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
   if (!currentOrganization) {
     return null;
-  }
-
-  if (!hasCollectedOperations) {
-    return (
-      <div className="py-8">
-        <EmptyList
-          title="Hive is waiting for your first collected operation"
-          description="You can collect usage of your GraphQL API with Hive Client"
-          docsUrl="/features/usage-reporting"
-        />
-      </div>
-    );
   }
 
   return (
@@ -387,14 +384,16 @@ export function TargetExplorerDeprecatedPage(props: {
   return (
     <>
       <Meta title="Deprecated Schema Explorer" />
-      <TargetLayout
-        organizationSlug={props.organizationSlug}
-        projectSlug={props.projectSlug}
-        targetSlug={props.targetSlug}
-        page={Page.Explorer}
-      >
-        <ExplorerDeprecatedSchemaPageContent {...props} />
-      </TargetLayout>
+      <SchemaExplorerProvider>
+        <TargetLayout
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          page={Page.Explorer}
+        >
+          <ExplorerDeprecatedSchemaPageContent {...props} />
+        </TargetLayout>
+      </SchemaExplorerProvider>
     </>
   );
 }

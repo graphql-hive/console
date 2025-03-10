@@ -1,10 +1,9 @@
 import { ReactElement, ReactNode } from 'react';
 import Image from 'next/image';
-import { Anchor, CallToAction, cn, ContactButton, Heading } from '@theguild/components';
+import { Anchor, CallToAction, cn, ContactButton, Heading, InfoCard } from '@theguild/components';
 import { ArrowIcon } from '../../components/arrow-icon';
 import { FrequentlyAskedFederationQuestions } from '../../components/frequently-asked-questions';
 import { Hero, HeroLinks } from '../../components/hero';
-import { InfoCard } from '../../components/info-card';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
 import federationDiagram from '../../../public/federation-diagram.png';

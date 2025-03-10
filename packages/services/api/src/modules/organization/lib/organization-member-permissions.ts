@@ -1,21 +1,7 @@
 import { allPermissions, Permission } from '../../auth/lib/authz';
+import { PermissionGroup } from './permissions';
 
-export type PermissionRecord = {
-  id: Permission;
-  title: string;
-  description: string;
-  dependsOn?: Permission;
-  isReadyOnly?: true;
-  warning?: string;
-};
-
-export type PermissionGroup = {
-  id: string;
-  title: string;
-  permissions: Array<PermissionRecord>;
-};
-
-export const allPermissionGroups: Array<PermissionGroup> = [
+export const permissionGroups: Array<PermissionGroup> = [
   {
     id: 'organization',
     title: 'Organization',
@@ -24,7 +10,7 @@ export const allPermissionGroups: Array<PermissionGroup> = [
         id: 'organization:describe',
         title: 'View organization',
         description: 'Member can see the organization. Permission can not be modified.',
-        isReadyOnly: true,
+        isReadOnly: true,
       },
       {
         id: 'support:manageTickets',
@@ -253,7 +239,7 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
     permissionsToCheck.delete(item);
   }
 
-  for (const group of allPermissionGroups) {
+  for (const group of permissionGroups) {
     for (const permission of group.permissions) {
       permissionsToCheck.delete(permission.id);
     }
@@ -272,7 +258,6 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
  */
 assertAllRulesAreAssigned([
   /** These are CLI only actions for now. */
-  'schema:loadFromRegistry',
   'schema:compose',
   'schemaCheck:create',
   'schemaVersion:publish',
@@ -280,6 +265,8 @@ assertAllRulesAreAssigned([
   'appDeployment:create',
   'appDeployment:publish',
   'appDeployment:retire',
+  'usage:report',
+  'accessToken:modify',
 ]);
 
 /**
@@ -288,9 +275,9 @@ assertAllRulesAreAssigned([
 export const permissions = (() => {
   const assignable = new Set<Permission>();
   const readOnly = new Set<Permission>();
-  for (const group of allPermissionGroups) {
+  for (const group of permissionGroups) {
     for (const permission of group.permissions) {
-      if (permission.isReadyOnly === true) {
+      if (permission.isReadOnly === true) {
         readOnly.add(permission.id);
         continue;
       }

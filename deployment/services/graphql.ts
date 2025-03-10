@@ -2,9 +2,9 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
-import { StripeBillingService } from './billing';
 import { CDN } from './cf-cdn';
 import { Clickhouse } from './clickhouse';
+import { CommerceService } from './commerce';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Emails } from './emails';
@@ -13,7 +13,6 @@ import { GitHubApp } from './github';
 import { Observability } from './observability';
 import { SchemaPolicy } from './policy';
 import { Postgres } from './postgres';
-import { RateLimitService } from './rate-limit';
 import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
@@ -21,7 +20,6 @@ import { Sentry } from './sentry';
 import { Supertokens } from './supertokens';
 import { Tokens } from './tokens';
 import { Usage } from './usage';
-import { UsageEstimator } from './usage-estimation';
 import { Webhooks } from './webhooks';
 import { Zendesk } from './zendesk';
 
@@ -43,10 +41,8 @@ export function deployGraphQL({
   cdn,
   redis,
   usage,
-  usageEstimator,
+  commerce,
   dbMigrations,
-  rateLimit,
-  billing,
   emails,
   supertokens,
   s3,
@@ -75,10 +71,8 @@ export function deployGraphQL({
   s3Mirror: S3;
   s3AuditLog: S3;
   usage: Usage;
-  usageEstimator: UsageEstimator;
   dbMigrations: DbMigrations;
-  rateLimit: RateLimitService;
-  billing: StripeBillingService;
+  commerce: CommerceService;
   emails: Emails;
   supertokens: Supertokens;
   zendesk: Zendesk;
@@ -124,16 +118,14 @@ export function deployGraphQL({
           ...environment.envVars,
           ...apiEnv,
           SENTRY: sentry.enabled ? '1' : '0',
-          REQUEST_LOGGING: '0', // disabled
-          BILLING_ENDPOINT: serviceLocalEndpoint(billing.service),
+          REQUEST_LOGGING: '1', // disabled
+          COMMERCE_ENDPOINT: serviceLocalEndpoint(commerce.service),
           TOKENS_ENDPOINT: serviceLocalEndpoint(tokens.service),
           WEBHOOKS_ENDPOINT: serviceLocalEndpoint(webhooks.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
           HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
-          RATE_LIMIT_ENDPOINT: serviceLocalEndpoint(rateLimit.service),
           EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
-          USAGE_ESTIMATOR_ENDPOINT: serviceLocalEndpoint(usageEstimator.service),
           WEB_APP_URL: `https://${environment.appDns}`,
           GRAPHQL_PUBLIC_ORIGIN: `https://${environment.appDns}`,
           CDN_CF: '1',
@@ -166,8 +158,8 @@ export function deployGraphQL({
         redis.service,
         clickhouse.deployment,
         clickhouse.service,
-        rateLimit.deployment,
-        rateLimit.service,
+        commerce.deployment,
+        commerce.service,
       ],
     )
       // GitHub App

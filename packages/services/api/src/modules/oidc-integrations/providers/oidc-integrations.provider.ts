@@ -60,13 +60,17 @@ export class OIDCIntegrationsProvider {
       return null;
     }
 
-    await this.session.assertPerformAction({
+    const canPerformAction = await this.session.canPerformAction({
       organizationId: args.organizationId,
       action: 'oidc:modify',
       params: {
         organizationId: args.organizationId,
       },
     });
+
+    if (canPerformAction === false) {
+      return null;
+    }
 
     return await this.storage.getOIDCIntegrationForOrganization({
       organizationId: args.organizationId,

@@ -43,6 +43,10 @@ export class TargetAccessTokenSession extends Session {
     return this.policies;
   }
 
+  get id(): string {
+    return this.token;
+  }
+
   public getLegacySelector() {
     return {
       token: this.token,
@@ -110,11 +114,6 @@ export class TargetAccessTokenStrategy extends AuthNStrategy<TargetAccessTokenSe
       return null;
     }
 
-    // if (accessToken.length !== 32) {
-    //   this.logger.debug('Invalid access token length.');
-    //   return null;
-    // }
-
     const tokens = new TokenStorage(this.logger, this.tokensConfig, {
       requestId: args.req.headers['x-request-id'] as string,
     } as any);
@@ -177,7 +176,6 @@ function transformAccessTokenLegacyScopes(args: {
               'appDeployment:retire',
               'schemaVersion:publish',
               'schemaVersion:deleteService',
-              'schema:loadFromRegistry',
               'schemaVersion:publish',
             ],
             resource: [`hrn:${args.organizationId}:target/${args.targetId}`],

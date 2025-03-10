@@ -22,7 +22,7 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   TOKENS_ENDPOINT: zod.string().url(),
-  RATE_LIMIT_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
@@ -65,6 +65,22 @@ const KafkaModel = zod.union([
   }),
 ]);
 
+const PostgresModel = zod.object({
+  POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+  POSTGRES_HOST: zod.string(),
+  POSTGRES_PORT: NumberFromString,
+  POSTGRES_DB: zod.string(),
+  POSTGRES_USER: zod.string(),
+  POSTGRES_PASSWORD: emptyString(zod.string().optional()),
+});
+
+const RedisModel = zod.object({
+  REDIS_HOST: zod.string(),
+  REDIS_PORT: NumberFromString,
+  REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
+});
+
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -92,15 +108,12 @@ const LogModel = zod.object({
 
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
-
   sentry: SentryModel.safeParse(process.env),
-
   kafka: KafkaModel.safeParse(process.env),
-
+  postgres: PostgresModel.safeParse(process.env),
+  redis: RedisModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
-
   log: LogModel.safeParse(process.env),
-
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
 };
 
@@ -128,6 +141,8 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 const base = extractConfig(configs.base);
 const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
+const postgres = extractConfig(configs.postgres);
+const redis = extractConfig(configs.redis);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
@@ -146,9 +161,9 @@ export const env = {
     tokens: {
       endpoint: base.TOKENS_ENDPOINT,
     },
-    rateLimit: base.RATE_LIMIT_ENDPOINT
+    commerce: base.COMMERCE_ENDPOINT
       ? {
-          endpoint: base.RATE_LIMIT_ENDPOINT,
+          endpoint: base.COMMERCE_ENDPOINT,
           ttl: base.RATE_LIMIT_TTL,
         }
       : null,
@@ -183,6 +198,20 @@ export const env = {
       interval: kafka.KAFKA_BUFFER_INTERVAL,
       dynamic: kafka.KAFKA_BUFFER_DYNAMIC === '1',
     },
+  },
+  postgres: {
+    host: postgres.POSTGRES_HOST,
+    port: postgres.POSTGRES_PORT,
+    db: postgres.POSTGRES_DB,
+    user: postgres.POSTGRES_USER,
+    password: postgres.POSTGRES_PASSWORD,
+    ssl: postgres.POSTGRES_SSL === '1',
+  },
+  redis: {
+    host: redis.REDIS_HOST,
+    port: redis.REDIS_PORT,
+    password: redis.REDIS_PASSWORD ?? '',
+    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
   },
   log: {
     level: log.LOG_LEVEL ?? 'info',

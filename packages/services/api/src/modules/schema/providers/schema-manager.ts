@@ -26,7 +26,7 @@ import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
@@ -123,10 +123,11 @@ export class SchemaManager {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schema:compose');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schema:compose');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -397,12 +398,19 @@ export class SchemaManager {
             supergraphSDL: null;
             schemaCompositionErrors: Array<SchemaCompositionError>;
             tags: null;
+            schemaMetadata: null;
+            metadataAttributes: null;
           }
         | {
             compositeSchemaSDL: string;
             supergraphSDL: string | null;
             schemaCompositionErrors: null;
             tags: Array<string> | null;
+            schemaMetadata: null | Record<
+              string,
+              Array<{ name: string; content: string; source: string | null }>
+            >;
+            metadataAttributes: null | Record<string, string[]>;
           }
       ),
   ) {
@@ -995,10 +1003,11 @@ export class SchemaManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
-      onError() {
-        throw new InsufficientPermissionError('schema:loadFromRegistry');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('project:describe');
+    }
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,
@@ -1007,12 +1016,11 @@ export class SchemaManager {
     });
 
     await this.session.assertPerformAction({
-      action: 'schema:loadFromRegistry',
+      action: 'project:describe',
       organizationId: selector.organizationId,
       params: {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
-        targetId: selector.targetId,
       },
     });
 

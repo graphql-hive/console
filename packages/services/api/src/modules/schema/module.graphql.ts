@@ -588,6 +588,10 @@ export default gql`
     Manually approved breaking changes will be memorized for schema checks with the same context id.
     """
     contextId: String
+    """
+    Optional url if wanting to show subgraph url changes inside checks.
+    """
+    url: String
   }
 
   input SchemaDeleteInput {
@@ -723,7 +727,13 @@ export default gql`
     period: DateRangeInput!
   }
 
+  type MetadataAttribute {
+    name: String!
+    values: [String!]!
+  }
+
   type SchemaExplorer {
+    metadataAttributes: [MetadataAttribute!]
     types: [GraphQLNamedType!]!
     type(name: String!): GraphQLNamedType
     query: GraphQLObjectType
@@ -760,11 +770,27 @@ export default gql`
   }
 
   type SupergraphMetadata {
+    metadata: [SchemaMetadata!]
     """
     List of service names that own the field/type.
     Resolves to null if the entity (field, type, scalar) does not belong to any service.
     """
     ownedByServiceNames: [String!]
+  }
+
+  type SchemaMetadata {
+    """
+    The name or key of the metadata. This may not be unique.
+    """
+    name: String!
+    """
+    The value of the metadata
+    """
+    content: String!
+    """
+    The schema or subgraph name where this metadata originated from.
+    """
+    source: String
   }
 
   union GraphQLNamedType =

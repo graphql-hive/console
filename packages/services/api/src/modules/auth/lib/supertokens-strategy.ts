@@ -5,11 +5,7 @@ import { captureException } from '@sentry/node';
 import type { User } from '../../../shared/entities';
 import { AccessError, HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
-import {
-  OrganizationMembers,
-  OrganizationMembershipRoleAssignment,
-  ResourceAssignment,
-} from '../../organization/providers/organization-members';
+import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
@@ -27,6 +23,10 @@ export class SuperTokensCookieBasedSession extends Session {
     this.superTokensUserId = args.superTokensUserId;
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+  }
+
+  get id(): string {
+    return this.superTokensUserId;
   }
 
   protected async loadPolicyStatementsForOrganization(
@@ -94,12 +94,7 @@ export class SuperTokensCookieBasedSession extends Session {
       organizationId,
     );
 
-    const policyStatements = this.translateAssignedRolesToAuthorizationPolicyStatements(
-      organizationId,
-      organizationMembership.assignedRole,
-    );
-
-    return policyStatements;
+    return organizationMembership.assignedRole.authorizationPolicyStatements;
   }
 
   public async getViewer(): Promise<User> {
@@ -116,97 +111,6 @@ export class SuperTokensCookieBasedSession extends Session {
 
   public isViewer() {
     return true;
-  }
-
-  private toResourceIdentifier(organizationId: string, resource: ResourceAssignment): string;
-  private toResourceIdentifier(
-    organizationId: string,
-    resource: ResourceAssignment | Array<ResourceAssignment>,
-  ): Array<string>;
-  private toResourceIdentifier(
-    organizationId: string,
-    resource: ResourceAssignment | Array<ResourceAssignment>,
-  ): string | Array<string> {
-    if (Array.isArray(resource)) {
-      return resource.map(resource => this.toResourceIdentifier(organizationId, resource));
-    }
-
-    if (resource.type === 'organization') {
-      return `hrn:${organizationId}:organization/${resource.organizationId}`;
-    }
-
-    if (resource.type === 'project') {
-      return `hrn:${organizationId}:project/${resource.projectId}`;
-    }
-
-    if (resource.type === 'target') {
-      return `hrn:${organizationId}:target/${resource.targetId}`;
-    }
-
-    if (resource.type === 'service') {
-      return `hrn:${organizationId}:target/${resource.targetId}/service/${resource.serviceName}`;
-    }
-
-    if (resource.type === 'appDeployment') {
-      return `hrn:${organizationId}:target/${resource.targetId}/appDeployment/${resource.appDeploymentName}`;
-    }
-
-    casesExhausted(resource);
-  }
-
-  private translateAssignedRolesToAuthorizationPolicyStatements(
-    organizationId: string,
-    assignedRole: OrganizationMembershipRoleAssignment,
-  ): Array<AuthorizationPolicyStatement> {
-    const policyStatements: Array<AuthorizationPolicyStatement> = [];
-
-    if (assignedRole.role.permissions.organization.size) {
-      policyStatements.push({
-        action: Array.from(assignedRole.role.permissions.organization),
-        effect: 'allow',
-        resource: this.toResourceIdentifier(
-          organizationId,
-          assignedRole.resolvedResources.organization,
-        ),
-      });
-    }
-
-    if (assignedRole.role.permissions.project.size) {
-      policyStatements.push({
-        action: Array.from(assignedRole.role.permissions.project),
-        effect: 'allow',
-        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.project),
-      });
-    }
-
-    if (assignedRole.role.permissions.target.size) {
-      policyStatements.push({
-        action: Array.from(assignedRole.role.permissions.target),
-        effect: 'allow',
-        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.target),
-      });
-    }
-
-    if (assignedRole.role.permissions.service.size) {
-      policyStatements.push({
-        action: Array.from(assignedRole.role.permissions.service),
-        effect: 'allow',
-        resource: this.toResourceIdentifier(organizationId, assignedRole.resolvedResources.service),
-      });
-    }
-
-    if (assignedRole.role.permissions.appDeployment.size) {
-      policyStatements.push({
-        action: Array.from(assignedRole.role.permissions.appDeployment),
-        effect: 'allow',
-        resource: this.toResourceIdentifier(
-          organizationId,
-          assignedRole.resolvedResources.appDeployment,
-        ),
-      });
-    }
-
-    return policyStatements;
   }
 }
 
@@ -325,7 +229,3 @@ const SuperTokenAccessTokenModel = zod.object({
   superTokensUserId: zod.string(),
   email: zod.string(),
 });
-
-function casesExhausted(_value: never): never {
-  throw new Error('Not all cases were handled.');
-}

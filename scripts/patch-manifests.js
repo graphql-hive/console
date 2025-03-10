@@ -40,14 +40,6 @@ function findPackageJson(dirname, until) {
 
 /*
   https://github.com/octokit/webhooks-methods.js/issues/45
-  That's why we patch package.json of @octokit/webhooks-methods and replace the value of `main` with the value from `source`.
-*/
-patchPackage('@octokit/webhooks-methods', pkg => {
-  delete pkg.module;
-});
-
-/*
-  https://github.com/octokit/webhooks-methods.js/issues/45
   That's why we patch package.json of universal-github-app-jwt and replace the value of `main` with the value from `source`.
 */
 patchPackage('universal-github-app-jwt', pkg => {
