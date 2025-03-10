@@ -258,7 +258,11 @@ function TargetAppsView(props: {
           </div>
         </div>
       ) : !data.data?.target?.latestSchemaVersion ? (
+<<<<<<< HEAD
         <NoSchemaVersion projectType={data.data?.target?.project?.type ?? null} />
+=======
+        <NoSchemaVersion projectType={data.data?.target?.project?.type} />
+>>>>>>> b4163643d (feat: add directions for publishing on empty schema)
       ) : !data.data.target.appDeployments ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"
