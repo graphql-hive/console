@@ -345,7 +345,7 @@ export class SchemaPublisher {
           errors: [
             {
               message:
-                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).',
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
             },
           ],
         } as const;
@@ -1112,7 +1112,7 @@ export class SchemaPublisher {
           errors: [
             {
               message:
-                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).',
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
             },
           ],
         };
