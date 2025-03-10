@@ -22,7 +22,7 @@ export function PricingSlider({
     <label
       ref={rootRef}
       className={cn(
-        'relative isolate block select-none rounded-3xl border border-green-400 p-4 [counter-set:ops_calc(var(--ops))_price_calc(var(--price))] sm:p-8',
+        'relative isolate block select-none rounded-3xl border border-green-400 p-4 [counter-set:ops_calc(var(--ops))] sm:p-8',
         className,
       )}
       // 10$ base price + 10$ per 1M
@@ -56,7 +56,7 @@ export function PricingSlider({
           max={max}
           step={1}
           defaultValue={min}
-          counter="after:content-['$'_counter(price)_'_/_month']"
+          counter="after:content-['$'_counter(price)_'_/_month'] after:[counter-set:price_calc(var(--price))]"
           onChange={event => {
             const value = event.currentTarget.valueAsNumber;
             rootRef.current!.style.setProperty('--ops', `${value}`);
