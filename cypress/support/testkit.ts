@@ -1,3 +1,76 @@
+export const as = <$Type>() => undefined as $Type;
+
+export type { Target } from '../../integration-tests/testkit/seed';
+
+// todo: instead of copying this, import it from core utility lib.
+export const environmentVariablesStorageKey = {
+  // todo: optional target effectively gives this the possibility of being silently global
+  // which feels subtle and thus likely to introduce hard to trace defects. Should we abort instead?
+  scoped: (targetId?: string) =>
+    `hive/targetId:${targetId ?? '__null__'}/laboratory/environment-variables`,
+  global: 'hive:laboratory:environment',
+};
+
+// todo: Once other PRs are merged these selectors will be scoped to a place for laboratory.
+export const selectors = {
+  editorEnvironmentVariables: '[data-cy="preflight-editor-mini"]',
+  buttonGraphiQLPreflight: '[aria-label*="Preflight Script"]',
+  buttonModalCy: 'preflight-modal-button',
+  buttonToggleCy: 'toggle-preflight',
+  buttonHeaders: '[data-name="headers"]',
+  headersEditor: {
+    textArea: '.graphiql-editor-tool .graphiql-editor:last-child textarea',
+  },
+  graphiql: {
+    buttonExecute: '.graphiql-execute-button',
+  },
+
+  modal: {
+    buttonSubmitCy: 'preflight-modal-submit',
+  },
+};
+
+export function persistAuthenticationCookies() {
+  const ctx = {
+    cookies: [] as Cypress.Cookie[],
+  };
+
+  before(() => {
+    cy.getCookie('sRefreshToken').should('exist');
+    cy.visit('/');
+    cy.wait(2000);
+
+    cy.getCookie('sAccessToken').should('exist');
+    cy.getCookie('sFrontToken').should('exist');
+    cy.getCookie('st-last-access-token-update').should('exist');
+
+    cy.getCookie('sAccessToken').then(sAccessToken => {
+      ctx.cookies.push(sAccessToken);
+    });
+    cy.getCookie('sFrontToken').then(sFrontToken => {
+      ctx.cookies.push(sFrontToken);
+    });
+    cy.getCookie('sRefreshToken').then(sRefreshToken => {
+      ctx.cookies.push(sRefreshToken);
+    });
+
+    cy.getCookie('st-last-access-token-update').then(stLastAccessTokenUpdate => {
+      ctx.cookies.push(stLastAccessTokenUpdate);
+    });
+
+    cy.clearCookie('st-last-access-token-update');
+    cy.clearCookie('sRefreshToken');
+    cy.clearCookie('sAccessToken');
+    cy.clearCookie('sFrontToken');
+  });
+
+  beforeEach(() => {
+    ctx.cookies.forEach(cookie => {
+      cy.setCookie(cookie.name, cookie.value, cookie);
+    });
+  });
+}
+
 export function generateRandomSlug() {
   return Math.random().toString(36).substring(2);
 }
