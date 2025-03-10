@@ -1123,7 +1123,7 @@ This will log the traces to the console, which can be useful for debugging and t
 
 ## Prometheus Metrics
 
-[Prometheus](https://www.prometheus.io/) is a utility for producing, scraping and storage of metrics
+[Prometheus](https://www.prometheus.io/) is a utility for producing, scraping and storing metrics
 from services and utilities.
 
 You can use this feature of the gateway to expose and collect metrics from all phases of your
@@ -1221,19 +1221,19 @@ recommend using the official
 ### Grafana Dashboard
 
 If you are using Grafana to visualize your metrics, you can
-[import the published Grafana dashboard for Grafana's marketplace](https://grafana.com/grafana/dashboards/21777),
+[import this pre-configured Grafana dashboard from Grafana's marketplace](https://grafana.com/grafana/dashboards/21777),
 or
 [you can use/import this dashboard JSON file directly](https://github.com/graphql-hive/gateway/blob/main/packages/plugins/prometheus/grafana.json)
-to easily visualuze the metrics for your gateway.
+to easily visualize the metrics for your gateway.
 
 ![image](https://github.com/user-attachments/assets/d72ef00b-90c2-4fb2-9bc4-851cec0eaf0b)
 
 For additional instructions, please refer to
-[Import dashboards insturction in Grafana documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/import-dashboards/).
+[Import dashboards instruction in Grafana documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/import-dashboards/).
 
 ### Reported Metrics
 
-You will find the timing of each phase of the GraphQL execution. If you are not familiar with the
+You will find the timing of each GraphQL execution phase. If you are not familiar with the
 lifecycle of a GraphQL operation in the gateway, please refer to the
 [Plugin Lifecycle page](/docs/gateway/other-features/custom-plugins#plugin-lifecycle). Each plugin
 hook has a corresponding metric which tracks timings as
