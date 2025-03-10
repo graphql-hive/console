@@ -110,7 +110,7 @@ export function Slider({ counter, className, deadZone, style, ...rest }: SliderP
   ) : (
     <div className="flex w-full">
       <button
-        className="z-10"
+        className="z-10 my-3"
         style={{ width: deadZone }}
         onClick={event => {
           const input = event.currentTarget.parentElement!.querySelector(
