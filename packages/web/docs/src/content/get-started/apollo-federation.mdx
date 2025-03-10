@@ -109,20 +109,6 @@ extend type Product @key(fields: "upc") {
 
 ### Create Access Token
 
-As you may have noticed, Hive has created three targets under your project: `development`,
-`staging`, and `production`. Each of these targets represent a different environment. You can remove
-or create new targets as needed, for modelling the different environments of your project.
-
-import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
-
-<NextImage
-  src={targetOverview}
-  alt="Project overview showing the available targets"
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
-
-For this guide we will use the `development` target.
-
 In order to publish our subgraph schemas to the schema registry, we first need to create an access
 token with the necessary permissions for the Hive CLI.
 
@@ -184,6 +170,20 @@ import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apo
 Make sure to copy your token and keep it safe. **You won't be able to see it again.**
 
 ### Publish subgraphs
+
+As you may have noticed, Hive has created three targets under your project: `development`,
+`staging`, and `production`. Each of these targets represent a different environment. You can remove
+or create new targets as needed, for modelling the different environments of your project.
+
+import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
+
+<NextImage
+  src={targetOverview}
+  alt="Project overview showing the available targets"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+For this guide we will use the `development` target.
 
 Now that you have your access token, and you have the base schema defined, you can publish your
 schema to the registry.
