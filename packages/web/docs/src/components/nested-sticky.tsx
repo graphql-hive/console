@@ -61,7 +61,7 @@ export function NestedSticky({
         sticky.style.position = 'fixed';
         sticky.style.top = `${offsetTop}px`;
         sticky.style.width = `${width}px`;
-        sticky.setAttribute('data-fixed', '');
+        sticky.setAttribute('data-sticky', 'fixed');
       } else if (state === 'absolute') {
         const containerRect = container.getBoundingClientRect();
         const stickyRect = sticky.getBoundingClientRect();
@@ -71,12 +71,12 @@ export function NestedSticky({
         sticky.style.position = 'absolute';
         sticky.style.top = `${relativeTop}px`;
         sticky.style.width = `${width}px`;
-        sticky.setAttribute('data-fixed', '');
+        sticky.setAttribute('data-sticky', 'absolute');
       } else {
         sticky.style.position = 'relative';
         sticky.style.top = '';
         sticky.style.width = '';
-        sticky.removeAttribute('data-fixed');
+        sticky.removeAttribute('data-sticky');
       }
     };
 

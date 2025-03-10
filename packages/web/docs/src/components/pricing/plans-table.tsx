@@ -88,17 +88,28 @@ export function PlansTable({ className }: { className?: string }) {
       <MobileNavbar setActivePlan={setActivePlan} activePlan={activePlan} />
 
       <div className="md:nextra-scrollbar md:-mx-6 md:overflow-x-auto md:px-6">
+        <NestedSticky offsetTop={80} offsetBottom={90}>
+          <div
+            aria-hidden
+            className="bg-beige-100 [[data-sticky]>&]:border-beige-200 relative flex items-center rounded-3xl border border-transparent *:text-left max-md:hidden md:*:w-1/4 [[data-sticky]>&]:rounded-t-none [[data-sticky]>&]:shadow-sm"
+          >
+            <div className="z-10 rounded-l-3xl p-6 text-xl/6 font-normal">Features</div>
+            {pricingTiers.map(tier => (
+              <div className="py-6 last:rounded-r-3xl" key={tier.name}>
+                <div className="border-beige-400 flex items-center justify-between gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
+                  <div className="text-xl/6 font-medium">{tier.name}</div>
+                  {tier.cta}
+                </div>
+              </div>
+            ))}
+          </div>
+        </NestedSticky>
         <Table className="table w-full border-separate border-spacing-0 border-none">
-          <thead className="bg-beige-100 max-md:hidden">
-            <tr className="*:text-left">
-              <th className="rounded-l-3xl p-6 text-xl/6 font-normal">Features</th>
+          <thead className="sr-only">
+            <tr>
+              <th>Features</th>
               {pricingTiers.map(tier => (
-                <th className="py-6 last:rounded-r-3xl" key={tier.name}>
-                  <div className="border-beige-400 flex items-center justify-between gap-4 border-l px-6">
-                    <div className="text-xl/6 font-medium">{tier.name}</div>
-                    {tier.cta}
-                  </div>
-                </th>
+                <th key={tier.name}>{tier.name}</th>
               ))}
             </tr>
           </thead>
@@ -347,7 +358,7 @@ function MobileNavbar({
       }
       offsetBottom={482}
     >
-      <div className="bg-beige-100 before:bg-beige-100 before:border-b-beige-400 relative top-0 z-10 w-full rounded-2xl p-2 duration-100 ease-[var(--hive-ease-overshoot-a-bit)] before:absolute before:inset-0 before:opacity-0 before:transition md:hidden [[data-fixed]>&:before]:scale-x-125 [[data-fixed]>&:before]:border-b [[data-fixed]>&:before]:opacity-100 [[data-fixed]>&:before]:shadow-sm">
+      <div className="bg-beige-100 before:bg-beige-100 before:border-b-beige-400 relative top-0 z-10 w-full rounded-2xl p-2 duration-100 ease-[var(--hive-ease-overshoot-a-bit)] before:absolute before:inset-0 before:opacity-0 before:transition md:hidden [[data-sticky]>&:before]:scale-x-125 [[data-sticky]>&:before]:border-b [[data-sticky]>&:before]:opacity-100 [[data-sticky]>&:before]:shadow-sm">
         <div className="relative flex w-full">
           {pricingTiers.map(tier => (
             <button
@@ -417,7 +428,6 @@ interface TableSubheaderRowProps {
 }
 function TableSubheaderRow({ icon, title, description }: TableSubheaderRowProps) {
   return (
-    // eslint-disable-next-line tailwindcss/no-custom-classname
     <tr className="subheader">
       <td colSpan={4} className="pb-6 pt-8">
         <div className="flex items-center text-[32px]/10 max-md:text-[20px]/6 max-md:font-medium [&>svg]:m-[6.67px] [&>svg]:mr-[10.67px] [&>svg]:size-[26.67px] [&>svg]:text-green-600">
