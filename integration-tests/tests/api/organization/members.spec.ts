@@ -11,6 +11,7 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
     [
       organization:describe,
       support:manageTickets,
+      accessToken:modify,
       organization:modifySlug,
       auditLog:export,
       organization:delete,
