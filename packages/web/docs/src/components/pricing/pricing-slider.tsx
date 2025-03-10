@@ -41,7 +41,6 @@ export function PricingSlider({
             How many
           </div>
         </div>
-        {/* todo: this needs some tweaking for mobile viewport */}
         <div className="shrink-0 whitespace-pre"> operations </div>
         <div className="whitespace-pre [@media(width<900px)]:hidden">per month </div>
         <div className="whitespace-pre opacity-[calc(2-var(--ops))] [transition-duration:350ms] motion-safe:transition">
