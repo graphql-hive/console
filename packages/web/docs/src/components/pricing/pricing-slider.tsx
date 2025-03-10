@@ -16,32 +16,33 @@ export function PricingSlider({
   const max = 300;
 
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const rootRef = useRef<HTMLLabelElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   return (
-    <label
+    <div
       ref={rootRef}
       className={cn(
-        'relative isolate block select-none rounded-3xl border border-green-400 p-4 [counter-set:ops_calc(var(--ops))_price_calc(var(--price))] sm:p-8',
+        'relative isolate block select-none rounded-3xl border border-green-400 p-4 [counter-set:ops_calc(var(--ops))] sm:p-8',
         className,
       )}
       // 10$ base price + 10$ per 1M
       style={{ '--ops': min, '--price': 'calc(10 + var(--ops) * 10)' }}
       {...rest}
     >
-      <div className="text-green-1000 items-center text-2xl font-medium md:flex md:h-12 md:w-[calc(100%-260px)]">
-        <div className="relative max-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] shrink grow motion-safe:transition-all">
-          <div
-            aria-hidden
-            className="flex w-full whitespace-pre rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums leading-8 opacity-[calc(var(--ops)-1)] [transition-duration:calc(clamp(0,var(--ops)-1,1)*350ms)] before:tracking-[-0.12em] before:content-[''_counter(ops)_'_'] motion-safe:transition-all"
-          >
+      <div
+        aria-hidden
+        className="text-green-1000 flex flex-wrap items-center text-2xl font-medium md:h-12 md:w-[calc(100%-260px)]"
+      >
+        <div className="relative min-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] max-w-[clamp(calc(60.95px+14.47px*round(down,log(max(var(--ops),1),10),1)),(2-var(--ops))*111px,111px)] shrink grow motion-safe:transition-all">
+          <div className="flex w-full whitespace-pre rounded-[40px] bg-blue-300 px-3 py-1 tabular-nums leading-8 opacity-[calc(var(--ops)-1)] [transition-duration:calc(clamp(0,var(--ops)-1,1)*350ms)] before:tracking-[-0.12em] before:content-[''_counter(ops)_'_'] motion-safe:transition-all">
             M
           </div>
           <div className="absolute left-0 top-0 whitespace-pre leading-10 opacity-[calc(2-var(--ops))] [transition-duration:calc(clamp(0,2-var(--ops),1)*350ms)] motion-safe:transition">
             How many
           </div>
         </div>
-        <div className="whitespace-pre"> operations per month </div>
+        <div className="shrink-0 whitespace-pre"> operations </div>
+        <div className="whitespace-pre [@media(width<900px)]:hidden">per month </div>
         <div className="whitespace-pre opacity-[calc(2-var(--ops))] [transition-duration:350ms] motion-safe:transition">
           do you need?
         </div>
@@ -50,12 +51,13 @@ export function PricingSlider({
       <div className="text-green-1000 flex items-center gap-5 pt-12 text-sm">
         <span className="font-medium">{min}M</span>
         <Slider
+          aria-label="How many operations per month do you need?"
           deadZone="16px"
           min={min}
           max={max}
           step={1}
           defaultValue={min}
-          counter="after:content-['$'_counter(price)_'_/_month']"
+          counter="after:content-['$'_counter(price)_'_/_month'] after:[counter-set:price_calc(var(--price))]"
           onChange={event => {
             const value = event.currentTarget.valueAsNumber;
             rootRef.current!.style.setProperty('--ops', `${value}`);
@@ -92,6 +94,6 @@ export function PricingSlider({
           (assuming no sampling).
         </Content>
       </Root>
-    </label>
+    </div>
   );
 }

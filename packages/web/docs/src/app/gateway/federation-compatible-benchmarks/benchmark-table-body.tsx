@@ -2,7 +2,6 @@
 
 import { use } from 'react';
 import { cn, ComparisonTable as Table } from '@theguild/components';
-import { functionalTones } from './functional-tones';
 import { CheckmarkIcon, XIcon } from './icons';
 
 interface BenchmarkDatum {
@@ -47,48 +46,35 @@ export function BenchmarkTableBody() {
             >
               <div className="flex items-center gap-2.5 whitespace-nowrap">
                 <div
-                  className="size-3 rounded-full"
-                  style={{
-                    background:
-                      compatibility > 99
-                        ? functionalTones.positiveBright
-                        : compatibility > 90
-                          ? functionalTones.warning
-                          : functionalTones.criticalBright,
-                  }}
+                  className={cn(
+                    'size-3 rounded-full',
+                    compatibility > 99
+                      ? 'bg-positive-bright'
+                      : compatibility > 90
+                        ? 'bg-warning-bright'
+                        : 'bg-critical-bright',
+                  )}
                 />
                 {row.name}
               </div>
             </Table.Cell>
             <Table.Cell className="text-sm text-green-800">{compatibility.toFixed(2)}%</Table.Cell>
             <Table.Cell>
-              <span
-                className="inline-flex items-center gap-0.5 text-sm"
-                style={{ color: functionalTones.positiveDark }}
-              >
+              <span className="text-positive-dark inline-flex items-center gap-0.5 text-sm">
                 <CheckmarkIcon className="size-4" /> {row.cases.passed}
               </span>
               {row.cases.failed > 0 && (
-                <span
-                  className="ml-2 inline-flex items-center text-sm"
-                  style={{ color: functionalTones.criticalDark }}
-                >
+                <span className="text-critical-dark ml-2 inline-flex items-center text-sm">
                   <XIcon className="size-4" /> {row.cases.failed}
                 </span>
               )}
             </Table.Cell>
             <Table.Cell>
-              <span
-                className="inline-flex items-center gap-0.5 text-sm"
-                style={{ color: functionalTones.positiveDark }}
-              >
+              <span className="text-positive-dark inline-flex items-center gap-0.5 text-sm">
                 <CheckmarkIcon className="size-4" /> {row.suites.passed}
               </span>
               {row.suites.failed > 0 && (
-                <span
-                  className="ml-2 inline-flex items-center text-sm"
-                  style={{ color: functionalTones.criticalDark }}
-                >
+                <span className="text-critical-dark ml-2 inline-flex items-center text-sm">
                   <XIcon className="size-4" /> {row.suites.failed}
                 </span>
               )}
