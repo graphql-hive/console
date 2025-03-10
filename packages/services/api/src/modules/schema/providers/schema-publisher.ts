@@ -2518,5 +2518,5 @@ const SchemaCheckContextIdModel = z
   });
 
 function isValidServiceName(service: string): boolean {
-  return service.length <= 64 && /^[a-zA-Z][\w\/_-]*$/g.test(service);
+  return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
 }
