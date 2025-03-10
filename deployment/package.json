@@ -1,6 +1,6 @@
 {
   "name": "hive",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "private": true,
   "scripts": {
     "generate": "tsx generate.ts",
