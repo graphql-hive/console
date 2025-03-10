@@ -81,8 +81,11 @@ Similarly to changing organization's slug, you can change the slug of your organ
 Settings tab of your project:
 
 <Callout type="warning">
-  Changing the slug of your project will also change the URL, and will invalidate any existing links
-  to your project.
+
+Changing the slug of your project will also change the URL, and will invalidate any existing links
+to your project as well as CLI commands using the `--target` parameter. If you want more resilence
+we recommend using an UUID instead of a target slug for the `--target` parameter.
+
 </Callout>
 
 ### Delete a project
@@ -93,7 +96,7 @@ settings and all data collected during your use of Hive.
 To delete an project, go to the **Settings** tab of your project, and use the **Delete Project**
 section.
 
-<Callout type="warning">This action is not reversible!</Callout>
+<Callout type="warning">This action is not reversible.</Callout>
 
 ## Alerts and Notifications
 

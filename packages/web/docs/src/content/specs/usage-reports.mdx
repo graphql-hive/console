@@ -13,13 +13,20 @@ them in batches (as a single report, when a buffer is full or every few seconds)
 
 > It's recommended to send a report for more than 1 operation. The maximum payload size is 1 MB.
 
-| Name                 | Value                                |
-| -------------------- | ------------------------------------ |
-| Endpoint             | `https://app.graphql-hive.com/usage` |
-| Authorization Header | `Authorization: Bearer token-here`   |
-| API version Header   | `X-Usage-API-Version: 2`             |
-| Method               | `POST`                               |
-| Content-Type Header  | `Content-Type: application/json`     |
+| Name                 | Value                                                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint             | `https://app.graphql-hive.com/usage/<ORGANIZATION>/<PROJECT>/<TARGET>` or `https://app.graphql-hive.com/usage/<TARGET_ID>` |
+| Authorization Header | `Authorization: Bearer <ACCESS_TOKEN>`                                                                                     |
+| API version Header   | `X-Usage-API-Version: 2`                                                                                                   |
+| Method               | `POST`                                                                                                                     |
+| Content-Type Header  | `Content-Type: application/json`                                                                                           |
+
+You can either use the slug or id of the target for the usage reporting endpoint. Be aware that
+using the target ID is more resilient in case you rename either your organization, project or
+target.
+
+For the Authorization header `ACCESS_TOKEN` value, provide a valid access token with the usage
+reporting permissions. [Learn how to create an access token](/docs/management/access-tokens).
 
 ## JSON Body structure
 
