@@ -38,6 +38,7 @@ import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
+import { ResourceIdentifier } from '../ui/resource-identifier';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { OrganizationSelector } from './organization-selectors';
 
@@ -91,6 +92,7 @@ export function OrganizationLayout({
   page?: Page;
   className?: string;
   organizationSlug: string;
+  organizationId?: string;
   children: ReactNode;
 }): ReactElement | null {
   const [isModalOpen, toggleModalOpen] = useToggle();
@@ -115,13 +117,16 @@ export function OrganizationLayout({
     <>
       <header>
         <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <OrganizationSelector
-              isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
+          <div className="flex flex-col gap-y-2">
+            <div className="flex flex-row items-center gap-4">
+              <HiveLink className="size-8" />
+              <OrganizationSelector
+                isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
+                currentOrganizationSlug={props.organizationSlug}
+                organizations={query.data?.organizations ?? null}
+              />
+            </div>
+            {props.organizationId ? <ResourceIdentifier id={props.organizationId} /> : null}
           </div>
           <div>
             <UserMenu
