@@ -95,6 +95,113 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
       },
     );
 
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('publish validates the service name', async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      });
+
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('check validates the service name', async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      });
+
     test.concurrent(
       'publishing invalid schema SDL provides meaningful feedback for the user.',
       async ({ expect }) => {
@@ -352,6 +459,76 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
           type: 'sdl',
         });
         await expect(fetchCmd).resolves.toMatchSnapshot('latest sdl');
+      },
+    );
+
+    test.skipIf(projectType !== ProjectType.Single)(
+      'schema:check rejects a `--url` argument in single projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).rejects.toMatchSnapshot();
+      },
+    );
+
+    test.skipIf(projectType === ProjectType.Single)(
+      'schema:check accepts a `--url` argument in distributed projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).resolves.toMatchSnapshot();
       },
     );
   },

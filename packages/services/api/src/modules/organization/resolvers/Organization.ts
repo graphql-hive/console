@@ -9,6 +9,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'accessToken'
   | 'accessTokens'
   | 'availableMemberPermissionGroups'
   | 'availableOrganizationPermissionGroups'
@@ -26,6 +27,7 @@ export const Organization: Pick<
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
   | 'viewerCanExportAuditLogs'
+  | 'viewerCanManageAccessTokens'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
   | 'viewerCanModifySlug'
@@ -142,6 +144,13 @@ export const Organization: Pick<
           organizationId: organization.id,
         },
       }),
+      session.canPerformAction({
+        action: 'accessToken:modify',
+        organizationId: organization.id,
+        params: {
+          organizationId: organization.id,
+        },
+      }),
     ]).then(result => result.some(Boolean));
   },
   viewerCanSeeMembers: async (organization, _arg, { session }) => {
@@ -201,6 +210,21 @@ export const Organization: Pick<
       organizationId: organization.id,
       first: args.first ?? null,
       after: args.after ?? null,
+    });
+  },
+  viewerCanManageAccessTokens: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      organizationId: organization.id,
+      action: 'accessToken:modify',
+      params: {
+        organizationId: organization.id,
+      },
+    });
+  },
+  accessToken: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).get({
+      organizationId: organization.id,
+      id: args.id,
     });
   },
 };

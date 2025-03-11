@@ -166,12 +166,19 @@ Or, multiple files using a `glob` expression:
 hive schema:check "src/*.graphql"
 ```
 
-If you want to leverage from retaining approved breaking changes within the lifecyle of a pull/merge
-request or branch, you must provide the `--contextId` parameter. Using `--contextId` is optional
-when using GitHub repositories and actions with the `--github` flag.
+If you want to be able to leverage breaking change approvals, you must provide the `--contextId`
+parameter. Using `--contextId` is optional when using GitHub repositories and actions with the
+`--github` flag.
 
 ```bash
 hive schema:check --contextId "pr-123" "src/*.graphql"
+```
+
+For distributed schemas (Federated or Stitching), you are able to view changes to subgraph URLs by
+providing the `--url` parameter.
+
+```bash
+hive schema:check "src/schema.graphql" --service users --url "https://users.graphql-hive.com/graphql"
 ```
 
 Further reading:

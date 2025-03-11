@@ -129,7 +129,7 @@ test.concurrent('create: failure invalid title', async ({ expect }) => {
     {
       details: {
         description: null,
-        title: Can only contain letters, numbers, " ", '_', and '-'.,
+        title: Can only contain letters, numbers, " ", "_", and "-".,
       },
       message: Invalid input provided.,
     }

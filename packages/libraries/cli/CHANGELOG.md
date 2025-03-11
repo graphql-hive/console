@@ -1,5 +1,24 @@
 # @graphql-hive/cli
 
+## 0.49.0
+
+### Minor Changes
+
+- [#6573](https://github.com/graphql-hive/console/pull/6573)
+  [`3bf0598`](https://github.com/graphql-hive/console/commit/3bf05980759d90a9ab80aeb05a8fb0646af1b451)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Better error handling for missing `--target` option
+  when required.
+
+### Patch Changes
+
+- [#6582](https://github.com/graphql-hive/console/pull/6582)
+  [`bb2f2aa`](https://github.com/graphql-hive/console/commit/bb2f2aa30f6cd4a5427e7d977c816d7e78499ea2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adds optional url argument to schema checks
+
+- Updated dependencies
+  [[`494697e`](https://github.com/graphql-hive/console/commit/494697e20f67ef877cd5dd63ccd29984c719ab44)]:
+  - @graphql-hive/core@0.10.0
+
 ## 0.48.3
 
 ### Patch Changes

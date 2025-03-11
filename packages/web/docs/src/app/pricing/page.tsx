@@ -10,6 +10,7 @@ import { FrequentlyAskedQuestions } from '../../components/frequently-asked-ques
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { PlanComparison } from '../../components/plan-comparison';
 import { Pricing } from '../../components/pricing';
+import { PlansTable } from '../../components/pricing/plans-table';
 
 export const metadata = {
   title: 'Hive Platform Pricing',
@@ -25,6 +26,8 @@ export default function PricingPage() {
       <Pricing className="mx-4 md:mx-6" />
 
       <PlanComparison className="mx-4 md:mx-6" />
+
+      <PlansTable />
 
       <CompanyTestimonialsSection className="mx-4 mt-6 md:mx-6" />
 

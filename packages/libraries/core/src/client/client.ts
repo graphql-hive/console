@@ -17,7 +17,14 @@ export function createHive(options: HivePluginOptions): HiveClient {
   let enabled = options.enabled ?? true;
 
   if (enabled === false) {
-    logIf(options.debug === true, 'plugin is not enabled.', logger.info);
+    logIf(
+      options.debug === true &&
+        // hive client can be used only for persisted documents, without the cdn or usage reporting.
+        // hence, we dont want a misleading log message below saying that the plugin is disabled
+        !options.experimental__persistedDocuments,
+      'Plugin is not enabled.',
+      logger.info,
+    );
   }
 
   if (!options.token && enabled) {

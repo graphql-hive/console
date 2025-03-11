@@ -99,7 +99,9 @@ const OrganizationMemberRoleEditor_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleEditor_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
   }
 `);
 
@@ -232,7 +234,7 @@ function OrganizationMemberRoleEditor(props: {
                 <div className="overflow-y-auto">
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    organization={organization}
+                    permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
                 </div>
@@ -262,7 +264,9 @@ function OrganizationMemberRoleEditor(props: {
 const OrganizationMemberRoleView_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleView_OrganizationFragment on Organization {
     id
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -291,7 +295,7 @@ function OrganizationMemberRoleView(props: {
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
-              organization={organization}
+              permissionsGroups={organization.availableMemberPermissionGroups}
             />
           </div>
         </div>
@@ -345,8 +349,12 @@ const OrganizationMemberRoleCreator_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleCreator_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -484,7 +492,7 @@ function OrganizationMemberRoleCreator(props: {
                   <div className="overflow-y-auto">
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
-                      organization={organization}
+                      permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
                   </div>
@@ -495,7 +503,7 @@ function OrganizationMemberRoleCreator(props: {
             <div className="h-[400px] overflow-scroll">
               <SelectedPermissionOverview
                 activePermissionIds={Array.from(selectedPermissions)}
-                organization={organization}
+                permissionsGroups={organization.availableMemberPermissionGroups}
                 showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               />
             </div>

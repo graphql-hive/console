@@ -88,6 +88,7 @@ export default gql`
     description: String
     permissions: [String!]!
     resources: ResourceAssignment!
+    firstCharacters: String!
     createdAt: DateTime!
   }
 
@@ -320,9 +321,17 @@ export default gql`
     """
     availableOrganizationPermissionGroups: [PermissionGroup!]!
     """
+    Whether the viewer can manage access tokens.
+    """
+    viewerCanManageAccessTokens: Boolean!
+    """
     Paginated organization access tokens.
     """
     accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+    """
+    Get organization access token by id.
+    """
+    accessToken(id: ID!): OrganizationAccessToken
   }
 
   type OrganizationAccessTokenEdge {

@@ -31,7 +31,7 @@ import {
 const TitleInputModel = z
   .string()
   .trim()
-  .regex(/^[ a-zA-Z0-9_-]+$/, `Can only contain letters, numbers, " ", '_', and '-'.`)
+  .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
   .min(2, 'Minimum length is 2 characters.')
   .max(100, 'Maximum length is 100 characters.');
 
@@ -304,6 +304,30 @@ export class OrganizationAccessTokens {
         },
       },
     };
+  }
+
+  async get(args: { organizationId: string; id: string }) {
+    await this.session.assertPerformAction({
+      organizationId: args.organizationId,
+      params: { organizationId: args.organizationId },
+      action: 'accessToken:modify',
+    });
+
+    const row = await this.pool.maybeOne<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+      SELECT
+        ${organizationAccessTokenFields}
+      FROM
+        "organization_access_tokens"
+      WHERE
+        "id" = ${args.id}
+        AND "organization_id" = ${args.organizationId}
+    `);
+
+    if (row === null) {
+      return null;
+    }
+
+    return OrganizationAccessTokenModel.parse(row);
   }
 }
 
