@@ -188,7 +188,11 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   awsSigV4: {
-    incoming: true
+    incoming: {
+      enabled: (request, context) =>
+        !('jwt' in context) && !request.headers.get('authorization')?.startsWith('Bearer')
+      // other options
+    }
   },
   jwt: {
     reject: {
