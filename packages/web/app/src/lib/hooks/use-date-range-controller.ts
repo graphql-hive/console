@@ -60,7 +60,7 @@ export function useDateRangeController(args: {
     let to = new Date(parsed.to);
 
     if (from.getTime() === to.getTime()) {
-      to = subSeconds(addHours(new Date(), 20), 1);
+      to = subSeconds(addHours(to, 24), 1);
     }
 
     const resolved = resolveRangeAndResolution({
