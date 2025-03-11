@@ -359,7 +359,10 @@ function UnusedSchemaExplorer(props: {
               />
             </>
           ) : (
-            <NoSchemaVersion projectType={query.data?.target?.project.type} />
+            <NoSchemaVersion
+              recommendedAction="publish"
+              projectType={query.data?.target?.project.type}
+            />
           )}
         </>
       )}

@@ -307,7 +307,10 @@ function DeprecatedSchemaExplorer(props: {
               />
             </>
           ) : (
-            <NoSchemaVersion projectType={query.data?.target?.project?.type ?? null} />
+            <NoSchemaVersion
+              recommendedAction="publish"
+              projectType={query.data?.target?.project?.type ?? null}
+            />
           )}
         </>
       )}

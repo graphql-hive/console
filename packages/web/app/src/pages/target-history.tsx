@@ -273,7 +273,10 @@ function HistoryPageContent(props: {
         <Subtitle>Recently published schemas.</Subtitle>
       </div>
       {query.fetching ? null : (
-        <NoSchemaVersion projectType={query.data?.target?.project.type ?? null} />
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={query.data?.target?.project.type ?? null}
+        />
       )}
     </div>
   );

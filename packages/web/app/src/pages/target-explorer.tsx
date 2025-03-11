@@ -273,7 +273,10 @@ function ExplorerPageContent(props: {
           ) : latestSchemaVersion ? (
             noValidSchemaVersion
           ) : (
-            <NoSchemaVersion projectType={query.data?.target?.project.type ?? null} />
+            <NoSchemaVersion
+              projectType={query.data?.target?.project.type ?? null}
+              recommendedAction="publish"
+            />
           )}
         </>
       )}

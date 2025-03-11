@@ -169,7 +169,7 @@ function SchemaView(props: {
 
   const { latestSchemaVersion } = target;
   if (!latestSchemaVersion) {
-    return <NoSchemaVersion projectType={project.type} />;
+    return <NoSchemaVersion recommendedAction="publish" projectType={project.type} />;
   }
 
   if (!latestSchemaVersion.schemas.nodes.length) {

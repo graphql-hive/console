@@ -267,7 +267,10 @@ function TypeExplorerPageContent(props: {
           styleDeprecated
         />
       ) : type ? (
-        <NoSchemaVersion projectType={query.data?.target?.project?.type ?? null} />
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={query.data?.target?.project?.type ?? null}
+        />
       ) : (
         <div>Not found</div>
       )}

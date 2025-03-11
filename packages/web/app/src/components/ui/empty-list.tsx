@@ -2,6 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import { InlineCode } from '../v2/inline-code';
 import { Card } from './card';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
@@ -48,41 +49,58 @@ export const noSchema = (
   />
 );
 
-// @todo consider monolith vs distributed etc
 export const NoSchemaVersion = ({
-  projectType,
+  projectType = null,
+  recommendedAction = 'none',
 }: {
   projectType: ProjectType | null;
+  recommendedAction: 'publish' | 'check' | 'none';
 }): ReactElement => {
-  const isDistributed =
-    projectType === ProjectType.Federation || projectType === ProjectType.Stitching;
+  let children: ReactElement | null = null;
+  if (recommendedAction !== 'none') {
+    const isDistributed =
+      projectType === ProjectType.Federation || projectType === ProjectType.Stitching;
+
+    if (recommendedAction === 'check') {
+      children = (
+        <>
+          <div className="flex w-full justify-center py-2 text-xs text-gray-500">
+            It's recommended to check that the schema is valid and compatible with the state of the
+            registry before publishing.
+          </div>
+          <div className="flex w-full justify-center">
+            <InlineCode
+              content={`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            />
+          </div>
+        </>
+      );
+    } else if (recommendedAction === 'publish') {
+      children = (
+        <>
+          {isDistributed && (
+            <div className="flex w-full justify-center py-2 text-xs text-gray-500">
+              For distributed systems, it's recommended to publish the schema after the service is
+              deployed.
+            </div>
+          )}
+          <div className="flex w-full justify-center">
+            <InlineCode
+              content={`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            />
+          </div>
+        </>
+      );
+    }
+  }
+
   return (
     <EmptyList
       title="Hive is waiting for your first schema"
       description="You can publish a schema with Hive CLI and Hive Client"
       docsUrl="/features/schema-registry#publish-a-schema"
     >
-      <>
-        <div className="flex w-full justify-center py-2 text-xs text-gray-500">
-          First check that the schema is valid and compatible with the state of the registry.
-        </div>
-        <div className="flex w-full justify-center">
-          <InputCopy
-            value={`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
-            alignment="center"
-          />
-        </div>
-        <div className="flex w-full justify-center py-2 text-xs text-gray-500">
-          Then publish the schema. For distributed systems, it's recommended to publish the schema
-          after the service is deployed.
-        </div>
-        <div className="flex w-full justify-center">
-          <InputCopy
-            value={`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
-            alignment="center"
-          />
-        </div>
-      </>
+      {children}
     </EmptyList>
   );
 };

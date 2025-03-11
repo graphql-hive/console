@@ -4,7 +4,7 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
-import { EmptyList } from '@/components/ui/empty-list';
+import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -196,6 +196,10 @@ const ChecksPageQuery = graphql(`
       }
     ) {
       id
+      project {
+        id
+        type
+      }
       schemaChecks(first: 1) {
         edges {
           node {
@@ -359,7 +363,14 @@ function ChecksPageContent(props: {
         ) : (
           <div>
             <div className="cursor-default text-sm">
-              {hasActiveSchemaCheck ? 'List is empty' : 'Your schema check list is empty'}
+              {hasActiveSchemaCheck ? (
+                'List is empty'
+              ) : (
+                <NoSchemaVersion
+                  projectType={query.data?.target?.project.type ?? null}
+                  recommendedAction="check"
+                />
+              )}
             </div>
             <DocsLink href="/features/schema-registry#check-a-schema">
               {hasActiveSchemaCheck
