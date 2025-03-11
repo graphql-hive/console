@@ -72,6 +72,8 @@ export abstract class Session {
     organizationId: string,
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement>;
 
+  abstract readonly id: string;
+
   /** Retrieve the current viewer. Implementations of the session need to implement this function */
   public getViewer(): Promise<User> {
     throw new AccessError('Authorization token is missing', 'UNAUTHENTICATED');
@@ -131,6 +133,15 @@ export abstract class Session {
   }
 
   /**
+   * Raise an insufficient permission error.
+   * Useful in situations where a resource can not be identified and it should be treated
+   * as having insufficient permissions.
+   */
+  public raise<TAction extends keyof typeof actionDefinitions>(action: TAction): never {
+    throw new InsufficientPermissionError(action);
+  }
+
+  /**
    * Check whether a session is allowed to perform a specific action.
    * Throws a AccessError if the action is not allowed.
    */
@@ -185,7 +196,7 @@ export abstract class Session {
               args.organizationId,
               args.params,
             );
-            throw new InsufficientPermissionError(args.action);
+            this.raise(args.action);
           } else {
             isAllowed = true;
           }
@@ -201,7 +212,7 @@ export abstract class Session {
         args.params,
       );
 
-      throw new InsufficientPermissionError(args.action);
+      this.raise(args.action);
     }
   }
 
@@ -486,6 +497,7 @@ class UnauthenticatedSession extends Session {
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {
     return [];
   }
+  id = 'noop';
 }
 
 /**

@@ -182,6 +182,10 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
   [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.
 - `HIVE_ENDPOINT` (**optional**) - For self-hosting, you can override `/usage` endpoint (defaults to
   `https://app.graphql-hive.com/usage`)
+- `HIVE_TARGET_ID` - A target ID, this can either be a slug following the format
+  "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging") or an UUID
+  (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80"). To be used when `HIVE_TOKEN` is configured with an
+  organization access token.
 
 <Tabs items={['Binary', 'Docker', 'Custom']}>
   <Tabs.Tab>

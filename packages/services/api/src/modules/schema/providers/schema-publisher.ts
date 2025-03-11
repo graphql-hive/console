@@ -20,7 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
   GitHubIntegrationManager,
@@ -278,10 +278,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaCheck:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -327,6 +328,30 @@ export class SchemaPublisher {
         }),
       ]);
 
+    if (input.service) {
+      let serviceExists = false;
+      if (latestVersion?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestVersion.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaCheckError',
+          valid: false,
+          changes: [],
+          warnings: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        } as const;
+      }
+    }
+
     const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
       this.schemaManager.getMaybeLatestVersion(target),
       this.schemaManager.getMaybeLatestValidVersion(target),
@@ -338,6 +363,27 @@ export class SchemaPublisher {
         projectType: project.type,
         conclusion,
       });
+    }
+
+    // if url is provided but this is not a distributed project
+    if (
+      input.url != null &&
+      !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)
+    ) {
+      this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
+      increaseSchemaCheckCountMetric('rejected');
+
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message: 'url is only supported by distributed projects',
+          },
+        ],
+      } as const;
     }
 
     if (
@@ -547,6 +593,7 @@ export class SchemaPublisher {
           input: {
             sdl,
             serviceName: input.service,
+            url: input.url ?? null,
           },
           selector,
           latest: latestVersion
@@ -1000,10 +1047,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1035,12 +1083,41 @@ export class SchemaPublisher {
       targetId: selector.targetId,
     });
 
-    const [contracts, latestVersion] = await Promise.all([
+    const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
+      input.service
+        ? this.storage.getLatestSchemas({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          })
+        : Promise.resolve(),
     ]);
 
-    const legacySelector = this.session.getLegacySelector();
+    // If trying to push with a service name and there are existing services
+    if (input.service) {
+      let serviceExists = false;
+      if (latestSchemas?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestSchemas.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        };
+      }
+    }
 
     const checksum = createHash('md5')
       .update(
@@ -1060,7 +1137,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(legacySelector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
@@ -1133,10 +1210,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:deleteService');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -2438,3 +2516,7 @@ const SchemaCheckContextIdModel = z
   .max(200, {
     message: 'Context ID cannot exceed length of 200 characters.',
   });
+
+function isValidServiceName(service: string): boolean {
+  return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
+}
