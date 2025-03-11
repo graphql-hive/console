@@ -31,7 +31,7 @@ export function InputCopy(props: { value: string; alignment?: 'center' | 'left' 
           type="text"
           value={props.value}
           readOnly
-          className={`bg-secondary truncate text-white${props.alignment === 'center' ? 'text-center' : ''}`}
+          className={`bg-secondary truncate text-white ${props.alignment === 'center' ? 'text-center' : ''}`}
           onFocus={ev => ev.target.select()}
         />
       </div>
