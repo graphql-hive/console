@@ -21,7 +21,7 @@ interface QueryResponse<T> {
 export type Action = (
   exec: (query: string, settings?: Record<string, string>) => Promise<void>,
   query: (queryString: string) => Promise<QueryResponse<unknown>>,
-  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,\
+  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
 ) => Promise<void>;
 
 export async function migrateClickHouse(
