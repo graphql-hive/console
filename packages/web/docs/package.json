@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "0.5.16",
-    "@theguild/tailwind-config": "0.6.2",
+    "@theguild/tailwind-config": "0.6.3",
     "@types/react": "18.3.18",
     "@types/rss": "^0.0.32",
     "next-sitemap": "4.2.3",
