@@ -82,7 +82,7 @@ export interface HiveUsagePluginOptions {
   /**
    * Custom endpoint to collect schema usage
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
@@ -146,7 +146,7 @@ export interface HiveReportingPluginOptions {
   /**
    * Custom endpoint to collect schema reports
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
