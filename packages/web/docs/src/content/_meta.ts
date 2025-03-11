@@ -10,5 +10,6 @@ export default {
   'api-reference': 'CLI/API Reference',
   specs: 'Specifications',
   'use-cases': 'Use Cases',
+  'migration-guides': 'Migration Guides',
   'self-hosting': 'Self-Hosting',
 };

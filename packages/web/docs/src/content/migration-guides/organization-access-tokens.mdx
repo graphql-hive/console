@@ -1,0 +1,274 @@
+import NextImage from 'next/image'
+import { Callout, Tabs } from '@theguild/components'
+import targetSlugDashboard from '../../../public/docs/pages/migration-guides/organization-access-tokens/target-slug-dashboard.png'
+
+# Moving from Registry Access Tokens to Access Tokens
+
+On March 12, 2025, we introduced new Access Tokens managed at the Organization level as a
+replacement for the Registry Access Tokens created at the Target level.
+
+This guide will help you migrate existing registry access tokens to access tokens.
+
+If you are experiencing any difficulties or questions please do not hesitate to reach out to us. We
+are happy to help you along your journey.
+
+## Key Differences
+
+Registry access tokens were exclusively bound to a single Target. All actions performed with them
+using the CLI (e.g., publishing a subgraph or checking a schema) were automatically executed on the
+target they were created within.
+
+The new organization-level access tokens do not have such an association but can be restricted to
+specific resources (project, target, app deployment, or service) upon creation.
+
+Because of that, the new access tokens **require passing a reference to the target** when performing
+actions using the CLI or reporting usage data.
+
+## Creating New Access Tokens
+
+Please follow [our documentation for creating new access tokens](/docs/management/access-tokens).
+
+When creating the access token, select the permissions for the actions you want to perform with this
+access token. For example, if you want to publish a schema, select the
+`Publish schema/service/subgraph` permission. permission. Instead, if you only want to check a
+schema, select the `Create schema check` permission. The same applies for all other CLI actions.
+
+<Callout>
+  **Tip**: Follow the principle of least privilege by only selecting the scopes necessary for the
+  token's purpose.
+</Callout>
+
+Within the `Resources` step, select the project and target in which you want to allow this action. A
+new feature here is that you can now **restrict an access token to publishing a service with a
+specific name**.
+
+After you tested and replaced the old registry access token with the new access token, delete the
+old registry access token.
+
+**Further Reading:**
+
+- [Access Token Documentation](/docs/management/access-tokens)
+
+## Performing Actions with the CLI
+
+New access tokens require passing a reference to the target. When performing an action with the CLI,
+you now need to pass a `--target` parameter, indicating on which target an action should be
+performed
+
+Please at upgrade to at least
+[CLI version `0.49.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fcli%400.49.0).
+
+**Note**: The new access tokens always start with the `hvo1/` prefix.
+
+```diff filename="Publish Schema"
+  hive schema:publish \
+-    --registry.accessToken "...TRUNCATED..." \
++    --registry.accessToken "hvo1/...TRUNCATED..." \
++    --target "the-guild/graphql-hive/development" \
+    --service users \
+    users-subgraph.graphql
+```
+
+For the `--target` option, you can provide the slug as displayed on the Hive Console dashboard.
+
+Retrieve the target slug from the Hive Console dashboard navigation. E.g.
+`the-guild/graphql-hive/production`.
+
+<NextImage
+  alt="Target Slug on the Dashboard Navigation"
+  src={targetSlugDashboard}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+Alternatively, you can also provide the UUID of the target (e.g.
+`a0f4c605-6541-4350-8cfe-b31f21a4bf80`). The UUID is more resilient to organization/project/target
+slug adjustments. You can find it within the target settings or by hovering over the target slug
+within the Hive dashboard.
+
+If the provided access token has insufficient permissions on the provided target, an error message
+will be printed when executing the command.
+
+**Further Reading:**
+
+- [CLI Reference](/docs/api-reference/cli)
+
+## Usage Data Reporting
+
+Whether you are using Hive Gateway, Apollo Router, the Hive SDK (for Yoga or Apollo Server), or have
+your own custom logic for sending usage data, small adjustments need to be made as you must include
+the target to which the usage data is sent.
+
+Ensure that the access token created for usage reporting contains the `Report usage data`
+permission.
+
+Retrieve the target slug from the Hive Console dashboard navigation, e.g.,
+`the-guild/graphql-hive/production`.
+
+<NextImage
+  alt="Target Slug on the Dashboard Navigation"
+  src={targetSlugDashboard}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+Alternatively, you can also provide the UUID of the target (e.g.,
+`a0f4c605-6541-4350-8cfe-b31f21a4bf80`). The UUID is more resilient to organization/project/target
+slug adjustments. You can find it within the target settings or by hovering over the target slug
+within the Hive dashboard.
+
+### Hive Gateway
+
+TODO
+
+### Hive SDKs
+
+Providing the `target` for the usage reporting configuration is mandatory for the new access tokens.
+
+<Tabs items={['GraphQL Yoga', 'Apollo Server', 'Envelop', 'Custom']}>
+
+{/* GraphQL Yoga */}
+
+<Tabs.Tab>
+
+Upgrade [`@graphql-hive/yoga@0.41.0`](/docs/other-integrations/graphql-yoga) to at least version
+[`0.41.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fyoga%400.41.0).
+
+```ts {7}
+import { useHive } from '@graphql-hive/yoga'
+
+const hivePlugin = useHive({
+  enabled: true,
+  token: 'hvo1/...TRUNCATED...',
+  usage: {
+    target: 'my-org/my-project/my-target'
+  }
+})
+```
+
+</Tabs.Tab>
+
+{/* Apollo Server */}
+
+<Tabs.Tab>
+
+Upgrade
+[`@graphql-hive/apollo`](https://the-guild.dev/graphql/hive/docs/other-integrations/apollo-server)
+to at least version
+[`0.38.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fapollo%400.38.0).
+
+```ts {7}
+import { useHive } from '@graphql-hive/apollo'
+
+const hivePlugin = useHive({
+  enabled: true,
+  token: 'hvo1/...TRUNCATED...',
+  usage: {
+    target: 'my-org/my-project/my-target'
+  }
+})
+```
+
+</Tabs.Tab>
+
+{/* Envelop */}
+
+<Tabs.Tab>
+
+Upgrade [`@graphql-hive/envelop`](/docs/other-integrations/envelop) to at least version
+[`0.35.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fenvelop%400.35.0).
+
+```ts {7}
+import { useHive } from '@graphql-hive/envelop'
+
+const hivePlugin = useHive({
+  enabled: true,
+  token: 'hvo1/...TRUNCATED...',
+  usage: {
+    target: 'my-org/my-project/my-target'
+  }
+})
+```
+
+</Tabs.Tab>
+
+{/* Custom */}
+
+<Tabs.Tab>
+
+Upgrade `@graphql-hive/core` to at least version
+[`0.10.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fcore%400.10.0).
+
+```ts {7}
+import { createHive } from '@graphql-hive/core'
+
+const hive = createHive({
+  enabled: true,
+  token: 'hvo1/...TRUNCATED...',
+  usage: {
+    target: 'my-org/my-project/my-target'
+  }
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Apollo Router
+
+Upgrade your docker image to at least
+[`router2.0.0-plugin2.1.0`](https://github.com/graphql-hive/console/pkgs/container/apollo-router/370721851?tag=router2.0.0-plugin2.1.0)
+or update the plugin to
+[`hive-apollo-router-plugin@2.1.0`](https://github.com/graphql-hive/console/releases/tag/hive-apollo-router-plugin%402.1.0)
+if you are compling the router from source.
+
+Adjust your `router.yml` file accordingly.
+
+```yaml {6}
+# ... other apollo-router configuration
+plugins:
+  hive.usage:
+    enabled: true
+    registry_token: 'hvo1/...TRUNCATED...'
+    target: 'my-org/my-project/my-target'
+```
+
+Altenatively, the target can also be specified via the `HIVE_TARGET_ID` environment variable.
+
+**Further Reading:**
+
+- [Apollo Router Documentation](/docs/other-integrations/apollo-router)
+
+### Custom HTTP Implementation
+
+The HTTP endpoint for the usage reporting changed for the new access tokens
+
+```diff
+- https://app.graphql-hive.com/usage
++ https://app.graphql-hive.com/usage/<ORGANIZATION>/<PROJECT>/<TARGET>
+```
+
+Retrieve the target slug from the Hive Console dashboard navigation, e.g.,
+`the-guild/graphql-hive/production`.
+
+<NextImage
+  alt="Target Slug on the Dashboard Navigation"
+  src={targetSlugDashboard}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+Using this slug the endpoint would be
+`https://app.graphql-hive.com/usage/the-guild/graphql-hive/production`.
+
+Alternatively, you can also use the target's UUID instead of the slug.
+
+```diff
+- https://app.graphql-hive.com/usage
++ https://app.graphql-hive.com/usage/<TARGET_UUID>
+```
+
+The `/usage/<ORGANIZATION>/<PROJECT>/<TARGET>` and `/usage/<TARGET_UUID>` endpoints only support the
+`X-Usage-API-Version: 2` specification.
+
+**Further Reading:**
+
+- [Hive Usage Reporting Endpoint Specification](/docs/specs/usage-reports)
