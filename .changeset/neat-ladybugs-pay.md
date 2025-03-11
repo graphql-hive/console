@@ -1,5 +1,5 @@
 ---
-'hive': minor
+'hive': major
 ---
 
 Add organization access tokens; a new way to issue access tokens for performing actions with the CLI
