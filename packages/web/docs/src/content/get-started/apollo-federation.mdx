@@ -609,7 +609,8 @@ guide, we can simply re-use the registry token we already use for the CLI.
 hive-gateway supergraph \
   "<hive_cdn_endpoint>" \
   --hive-cdn-key "<hive_cdn_access_key>" \
-  --hive-registry-token "<hive_registry_token>"
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 | Parameter               | Description                                 |
@@ -632,7 +633,8 @@ docker run --name hive-gateway -rm \
   ghcr.io/graphql-hive/gateway supergraph \
   "<hive_cdn_endpoint>" \
   --hive-cdn-key "<hive_cdn_access_key>" \
-  --hive-registry-token "<hive_registry_token>"
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 | Parameter               | Description                                 |
@@ -651,14 +653,16 @@ docker run --name hive-gateway -rm \
 npx hive-gateway supergraph \
   "<hive_cdn_endpoint>" \
   --hive-cdn-key "<hive_cdn_access_key>" \
-  --hive-registry-token "<hive_registry_token>"
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
-| Parameter               | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `<hive_cdn_endpoint>`   | The endpoint of your Hive target            |
-| `<hive_cdn_access_key>` | The Hive CDN access key                     |
-| `<hive_registry_token>` | The Hive registry token for usage reporting |
+| Parameter                   | Description                                                            |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `<hive_cdn_endpoint>`       | The endpoint of your Hive target                                       |
+| `<hive_cdn_access_key>`     | The Hive CDN access key                                                |
+| `<hive_usage_target>`       | The Hive registry token for usage reporting                            |
+| `<hive_usage_access_token>` | The Hive registry target to which the usage data should be reported to |
 
 </Tabs.Tab>
 
