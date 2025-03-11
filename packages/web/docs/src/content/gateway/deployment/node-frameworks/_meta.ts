@@ -6,5 +6,5 @@ export default {
   uwebsockets: 'µWebSockets.js',
   nextjs: 'Next.js',
   sveltekit: 'SvelteKit',
-  nestjs: 'NestJS
+  nestjs: 'NestJS',
 };
