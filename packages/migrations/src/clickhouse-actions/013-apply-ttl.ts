@@ -149,5 +149,5 @@ export const action: Action = async (exec, query) => {
 };
 
 function hasTTL(engineFull: string) {
-  return engineFull.replace('\n\t', ' ').includes(' TTL ');
+  return engineFull.replace(/[\n\t]/g, ' ').includes(' TTL ');
 }
