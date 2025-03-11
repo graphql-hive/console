@@ -199,7 +199,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
 export type HivePluginOptions = OptionalWhenFalse<
   {
     /**
-     * Enable/Disable Hive
+     * Enable/Disable Hive usage reporting
      *
      * Default: true
      */
@@ -211,7 +211,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     debug?: boolean;
     /**
-     * Access Token
+     * Access Token for usage reporting
      */
     token: string;
     /**
