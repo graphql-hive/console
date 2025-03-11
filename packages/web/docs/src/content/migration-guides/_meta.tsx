@@ -1,3 +1,3 @@
 export default {
-  'organization-access-tokens': 'Move away from Registry Access Tokens',
+  'organization-access-tokens': 'Registry Access Tokens to Access Tokens',
 };

@@ -117,7 +117,25 @@ within the Hive dashboard.
 
 ### Hive Gateway
 
-TODO
+Please upgrade Hive Gateway to at least version
+[`hive-gateway@1.10.4`](https://github.com/graphql-hive/gateway/releases/tag/hive-gateway%401.10.4).
+
+Replace the usage of the `--hive-registry-token` config flag with the `--hive-usage-target` and
+`--hive-usage-access-token` flags.
+
+```diff
+  hive-gateway supergraph \
+    "<hive_cdn_endpoint>" \
+    --hive-cdn-key "<hive_cdn_access_key>" \
+-    --hive-registry-token "<hive_registry_token>"
++    --hive-usage-target "my-org/my-project/my-target" \
++    --hive-usage-access-token "hvo1/...TRUNCATED..."
+```
+
+**Further Reading:**
+
+- [Hive Gateway Usage Reporting Documentation](/docs/gateway/usage-reporting)
+- [Hive Gateway CLI Reference](/docs/api-reference/gateway-cli)
 
 ### Hive SDKs
 
@@ -144,6 +162,11 @@ const hivePlugin = useHive({
 })
 ```
 
+**Further Reading:**
+
+- [GraphQL Yoga Integration Guide](/docs/other-integrations/graphql-yoga)
+- [Hive Client Reference](/docs/api-reference/client)
+
 </Tabs.Tab>
 
 {/* Apollo Server */}
@@ -167,6 +190,11 @@ const hivePlugin = useHive({
 })
 ```
 
+**Further Reading:**
+
+- [Apollo Integration Guide](/docs/other-integrations/apollo-server)
+- [Hive Client Reference](/docs/api-reference/client)
+
 </Tabs.Tab>
 
 {/* Envelop */}
@@ -188,6 +216,11 @@ const hivePlugin = useHive({
 })
 ```
 
+**Further Reading:**
+
+- [Envelop Integration Guide](/docs/other-integrations/envelop)
+- [Hive Client Reference](/docs/api-reference/client)
+
 </Tabs.Tab>
 
 {/* Custom */}
@@ -208,6 +241,10 @@ const hive = createHive({
   }
 })
 ```
+
+**Further Reading:**
+
+- [Hive Client Reference](/docs/api-reference/client)
 
 </Tabs.Tab>
 
