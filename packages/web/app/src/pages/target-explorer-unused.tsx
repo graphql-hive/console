@@ -361,7 +361,7 @@ function UnusedSchemaExplorer(props: {
           ) : (
             <NoSchemaVersion
               recommendedAction="publish"
-              projectType={query.data?.target?.project.type}
+              projectType={query.data?.target?.project.type ?? null}
             />
           )}
         </>

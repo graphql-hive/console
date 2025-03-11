@@ -6,7 +6,6 @@ import { InlineCode } from '../v2/inline-code';
 import { Card } from './card';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
-import { InputCopy } from './input-copy';
 
 export const EmptyList = ({
   title,
