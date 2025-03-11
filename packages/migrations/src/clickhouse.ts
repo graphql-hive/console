@@ -21,7 +21,7 @@ interface QueryResponse<T> {
 export type Action = (
   exec: (query: string, settings?: Record<string, string>) => Promise<void>,
   query: (queryString: string) => Promise<QueryResponse<unknown>>,
-  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
+  hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,\
 ) => Promise<void>;
 
 export async function migrateClickHouse(
@@ -42,6 +42,9 @@ export async function migrateClickHouse(
   }
 
   const endpoint = `${clickhouse.protocol}://${clickhouse.host}:${clickhouse.port}`;
+
+  // Make sure people don't accidentally define the GRAPHQL_HIVE_ENVIRONMENT environment variable
+  hiveCloudEnvironment = isHiveCloud ? hiveCloudEnvironment : null;
 
   console.log('Migrating ClickHouse');
   console.log('Endpoint:          ', endpoint);
@@ -170,6 +173,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/010-app-deployment-operations'),
     import('./clickhouse-actions/011-audit-logs'),
     import('./clickhouse-actions/012-coordinates-typename-index'),
+    import('./clickhouse-actions/013-apply-ttl'),
   ]);
 
   async function actionRunner(action: Action, index: number) {
