@@ -17,17 +17,19 @@ export function createHive(options: HivePluginOptions): HiveClient {
   let enabled = options.enabled ?? true;
 
   if (enabled === false) {
-    logIf(options.debug === true, 'plugin is not enabled.', logger.info);
+    logIf(
+      options.debug === true &&
+        // hive client can be used only for persisted documents, without the cdn or usage reporting.
+        // hence, we dont want a misleading log message below saying that the plugin is disabled
+        !options.experimental__persistedDocuments,
+      'Plugin is not enabled.',
+      logger.info,
+    );
   }
 
   if (!options.token && enabled) {
     enabled = false;
-    if (options.experimental__persistedDocuments) {
-      // hive client can be used only for persisted documents, without the cdn or usage reporting.
-      // hence, we dont want a misleading log message below saying that the plugin is disabled
-    } else {
-      logger.info('Missing token, disabling.');
-    }
+    logger.info('Missing token, disabling.');
   }
 
   const mergedOptions: HivePluginOptions = { ...options, enabled } as HivePluginOptions;
