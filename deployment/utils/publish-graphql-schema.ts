@@ -1,4 +1,5 @@
 import { local } from '@pulumi/command';
+import * as pulumi from '@pulumi/pulumi';
 import type { GraphQL } from '../services/graphql';
 
 const dockerImage = 'ghcr.io/graphql-hive/cli:0.44.4';
@@ -6,7 +7,7 @@ const dockerImage = 'ghcr.io/graphql-hive/cli:0.44.4';
 /** Publish API GraphQL schema to Hive schema registry. */
 export function publishGraphQLSchema(args: {
   graphql: GraphQL;
-  registry: { accessToken: string; endpoint: string };
+  registry: { accessToken: string; endpoint: string; target: string };
   version: {
     commit: string;
   };
@@ -14,7 +15,7 @@ export function publishGraphQLSchema(args: {
 }) {
   const command =
     `schema:publish` +
-    ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${args.registry.accessToken}` +
+    ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${args.registry.accessToken} --target ${args.registry.target}` +
     ` --commit ${args.version.commit} --author "Hive CD" ./schema.graphqls`;
 
   return new local.Command(

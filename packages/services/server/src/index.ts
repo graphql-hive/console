@@ -445,7 +445,7 @@ export async function main() {
       },
       isProduction: env.environment !== 'development',
       release: env.release,
-      hiveConfig: env.hive,
+      hiveUsageConfig: env.hive,
       hivePersistedDocumentsConfig: env.hivePersistedDocuments,
       tracing,
       logger: logger as any,

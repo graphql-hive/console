@@ -33,6 +33,7 @@ import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
 import { publishAppDeployment } from './utils/publish-app-deployment';
 import { publishGraphQLSchema } from './utils/publish-graphql-schema';
+import { ServiceSecret } from './utils/secrets';
 
 // eslint-disable-next-line no-process-env
 const imagesTag = process.env.DOCKER_IMAGE_TAG as string;
@@ -229,14 +230,17 @@ const graphql = deployGraphQL({
   observability,
 });
 
-const apiConfig = new pulumi.Config('api');
-const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
+const hiveConfig = new pulumi.Config('hive');
+const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
+  usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
+});
 
 const publishGraphQLSchemaCommand = publishGraphQLSchema({
   graphql,
   registry: {
     endpoint: `https://${environment.appDns}/registry`,
-    accessToken: apiEnv.HIVE_API_TOKEN,
+    accessToken: hiveConfigSecret.raw.usageAccessToken.get(),
+    target: hiveConfig.require('target'),
   },
   version: {
     commit: imagesTag,
@@ -251,7 +255,8 @@ if (hiveAppPersistedDocumentsAbsolutePath) {
     appName: 'hive-app',
     registry: {
       endpoint: `https://${environment.appDns}/registry`,
-      accessToken: apiEnv.HIVE_API_TOKEN,
+      accessToken: hiveConfigSecret.raw.usageAccessToken.get(),
+      target: hiveConfig.require('target'),
     },
     version: {
       commit: imagesTag,
