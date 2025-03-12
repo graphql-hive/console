@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
@@ -263,6 +264,7 @@ const SettingsPageRenderer = (props: {
 
   return (
     <div className="flex flex-col gap-y-4">
+      <ResourceDetails id={organization.id} />
       {organization.viewerCanModifySlug && (
         <Form {...slugForm}>
           <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
