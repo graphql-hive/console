@@ -82,7 +82,7 @@ export interface HiveUsagePluginOptions {
   /**
    * Custom endpoint to collect schema usage
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
@@ -146,7 +146,7 @@ export interface HiveReportingPluginOptions {
   /**
    * Custom endpoint to collect schema reports
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
@@ -199,7 +199,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
 export type HivePluginOptions = OptionalWhenFalse<
   {
     /**
-     * Enable/Disable Hive
+     * Enable/Disable Hive usage reporting
      *
      * Default: true
      */
@@ -211,7 +211,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     debug?: boolean;
     /**
-     * Access Token
+     * Access Token for usage reporting
      */
     token: string;
     /**
