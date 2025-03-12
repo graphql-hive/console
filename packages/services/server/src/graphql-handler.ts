@@ -56,7 +56,7 @@ export interface GraphQLHandlerOptions {
   authN: AuthN;
 }
 
-interface Context extends RegistryContext {
+export interface Context extends RegistryContext {
   req: FastifyRequest;
   reply: FastifyReply;
   session: Session;
