@@ -403,35 +403,14 @@ export async function main() {
       prometheus: env.prometheus,
     });
 
-    const authN = new AuthN({
-      strategies: [
-        (logger: Logger) =>
-          new SuperTokensUserAuthNStrategy({
-            logger,
-            storage,
-            organizationMembers: new OrganizationMembers(
-              storage.pool,
-              new OrganizationMemberRoles(storage.pool, logger),
-              logger,
-            ),
-          }),
-        (logger: Logger) =>
-          new OrganizationAccessTokenStrategy({
-            logger,
-            organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
-            organizationAccessTokenValidationCache: registry.injector.get(
-              OrganizationAccessTokenValidationCache,
-            ),
-          }),
-        (logger: Logger) =>
-          new TargetAccessTokenStrategy({
-            logger,
-            tokensConfig: {
-              endpoint: env.hiveServices.tokens.endpoint,
-            },
-          }),
-      ],
-    });
+    const organizationAccessTokenStrategy = (logger: Logger) =>
+      new OrganizationAccessTokenStrategy({
+        logger,
+        organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
+        organizationAccessTokenValidationCache: registry.injector.get(
+          OrganizationAccessTokenValidationCache,
+        ),
+      });
 
     const graphqlPath = '/graphql';
     const port = env.http.port;
@@ -450,7 +429,28 @@ export async function main() {
       hivePersistedDocumentsConfig: env.hivePersistedDocuments,
       tracing,
       logger: logger as any,
-      authN,
+      authN: new AuthN({
+        strategies: [
+          (logger: Logger) =>
+            new SuperTokensUserAuthNStrategy({
+              logger,
+              storage,
+              organizationMembers: new OrganizationMembers(
+                storage.pool,
+                new OrganizationMemberRoles(storage.pool, logger),
+                logger,
+              ),
+            }),
+          organizationAccessTokenStrategy,
+          (logger: Logger) =>
+            new TargetAccessTokenStrategy({
+              logger,
+              tokensConfig: {
+                endpoint: env.hiveServices.tokens.endpoint,
+              },
+            }),
+        ],
+      }),
     });
 
     server.route({
@@ -465,6 +465,10 @@ export async function main() {
       handler: createPublicGraphQLHandler({
         registry,
         logger: logger as any,
+        authN: new AuthN({
+          strategies: [organizationAccessTokenStrategy],
+        }),
+        tracing,
       }),
     });
 
