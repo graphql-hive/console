@@ -29,8 +29,9 @@ Before proceeding, make sure you have
 ```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
 hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -43,8 +44,9 @@ hive-gateway supergraph \
 docker run --rm --name hive-gateway -p 4000:4000 \
   ghcr.io/graphql-hive/gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -56,8 +58,9 @@ docker run --rm --name hive-gateway -p 4000:4000 \
 ```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
 npx hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -75,6 +78,8 @@ export const gatewayConfig = defineConfig({
     type: 'hive',
     // The registry token provided by Hive Registry
     token: '<token>'
+    // The registry target which the usage data should be reported to
+    target: '<target>'
     /**
      * Other options
      *
