@@ -42,6 +42,7 @@
       "@hive/cdn-script/aws": ["./packages/services/cdn-worker/src/aws.ts"],
       "@hive/server": ["./packages/services/server/src/api.ts"],
       "@hive/schema": ["./packages/services/schema/src/api.ts"],
+      "@hive/schema/*": ["./packages/services/schema/src/*"],
       "@hive/usage-common": ["./packages/services/usage-common/src/index.ts"],
       "@hive/usage": ["./packages/services/usage/src/index.ts"],
       "@hive/usage-ingestor": ["./packages/services/usage-ingestor/src/index.ts"],

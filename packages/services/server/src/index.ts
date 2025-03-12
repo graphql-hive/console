@@ -65,6 +65,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
+import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
 export async function main() {
@@ -456,6 +457,15 @@ export async function main() {
       method: ['GET', 'POST'],
       url: graphqlPath,
       handler: graphql,
+    });
+
+    server.route({
+      method: ['GET', 'POST'],
+      url: '/test',
+      handler: createPublicGraphQLHandler({
+        registry,
+        logger: logger as any,
+      }),
     });
 
     const introspection = JSON.stringify({
