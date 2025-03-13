@@ -62,7 +62,7 @@ export class ServiceDeployment {
         };
       };
       availabilityOnEveryNode?: boolean;
-      command?: string[];
+      command?: pulumi.Input<pulumi.Input<string>[]>;
     },
     protected dependencies?: Array<pulumi.Resource | undefined | null>,
     protected parent?: pulumi.Resource | null,

@@ -1,6 +1,7 @@
 import { local } from '@pulumi/command';
 import { Secret } from '@pulumi/kubernetes/core/v1';
 import { Resource } from '@pulumi/pulumi';
+import * as pulumi from '@pulumi/pulumi';
 import { ClickhouseConnectionSecret } from '../services/clickhouse';
 import { ServiceDeployment } from './service-deployment';
 
@@ -9,7 +10,7 @@ const dockerImage = 'ghcr.io/graphql-hive/cli:0.44.4';
 /** Publish API GraphQL schema to Hive schema registry. */
 export function publishAppDeployment(args: {
   appName: string;
-  registry: { accessToken: string; endpoint: string; target: string };
+  registry: { accessToken: pulumi.Output<string>; endpoint: string; target: string };
   version: {
     commit: string;
   };
@@ -49,13 +50,15 @@ export function publishAppDeployment(args: {
   const createCommand = new local.Command(
     `create-app-deployment-${args.appName}`,
     {
-      create:
-        `docker run --name "create-app-deployment-${args.appName}"` +
-        ` --rm -v ${args.persistedDocumentsPath}:/usr/src/app/persisted-documents.json` +
-        ` ${dockerImage}` +
-        ` app:create` +
-        ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${args.registry.accessToken} --target ${args.registry.target}` +
-        ` --name ${args.appName} --version ${args.version.commit} ./persisted-documents.json`,
+      create: args.registry.accessToken.apply(
+        accessToken =>
+          `docker run --name "create-app-deployment-${args.appName}"` +
+          ` --rm -v ${args.persistedDocumentsPath}:/usr/src/app/persisted-documents.json` +
+          ` ${dockerImage}` +
+          ` app:create` +
+          ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target}` +
+          ` --name ${args.appName} --version ${args.version.commit} ./persisted-documents.json`,
+      ),
     },
     {
       dependsOn: [wakeupCommandJob, ...(args.dependsOn || [])].filter(v => v !== null),
@@ -66,12 +69,14 @@ export function publishAppDeployment(args: {
   return new local.Command(
     `publish-app-deployment-${args.appName}`,
     {
-      create:
-        `docker run --rm --name "publish-app-deployment-${args.appName}"` +
-        ` ${dockerImage}` +
-        ` app:publish` +
-        ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${args.registry.accessToken} --target ${args.registry.target}` +
-        ` --name ${args.appName} --version ${args.version.commit}`,
+      create: args.registry.accessToken.apply(
+        accessToken =>
+          `docker run --rm --name "publish-app-deployment-${args.appName}"` +
+          ` ${dockerImage}` +
+          ` app:publish` +
+          ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target}` +
+          ` --name ${args.appName} --version ${args.version.commit}`,
+      ),
     },
     {
       dependsOn: createCommand,

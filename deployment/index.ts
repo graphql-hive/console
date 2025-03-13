@@ -239,7 +239,7 @@ const publishGraphQLSchemaCommand = publishGraphQLSchema({
   graphql,
   registry: {
     endpoint: `https://${environment.appDns}/registry`,
-    accessToken: hiveConfigSecret.raw.usageAccessToken.get(),
+    accessToken: hiveConfigSecret.raw.usageAccessToken,
     target: hiveConfig.require('target'),
   },
   version: {
@@ -255,7 +255,7 @@ if (hiveAppPersistedDocumentsAbsolutePath) {
     appName: 'hive-app',
     registry: {
       endpoint: `https://${environment.appDns}/registry`,
-      accessToken: hiveConfigSecret.raw.usageAccessToken.get(),
+      accessToken: hiveConfigSecret.raw.usageAccessToken,
       target: hiveConfig.require('target'),
     },
     version: {
