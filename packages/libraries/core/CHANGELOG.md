@@ -1,5 +1,14 @@
 # @graphql-hive/core
 
+## 0.10.1
+
+### Patch Changes
+
+- [#6606](https://github.com/graphql-hive/console/pull/6606)
+  [`ee70018`](https://github.com/graphql-hive/console/commit/ee7001883970fac81210ec21ce70a72bfd3b67bb)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Client can be used only for experimental
+  persisted documents
+
 ## 0.10.0
 
 ### Minor Changes

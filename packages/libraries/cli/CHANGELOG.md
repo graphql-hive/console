@@ -1,5 +1,18 @@
 # @graphql-hive/cli
 
+## 0.49.1
+
+### Patch Changes
+
+- [#6585](https://github.com/graphql-hive/console/pull/6585)
+  [`c0d9ca3`](https://github.com/graphql-hive/console/commit/c0d9ca30d4c360e75be7902d2693303ffe622975)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restrict new service names to 64 characters,
+  alphanumberic, `_` and `-`.
+
+- Updated dependencies
+  [[`ee70018`](https://github.com/graphql-hive/console/commit/ee7001883970fac81210ec21ce70a72bfd3b67bb)]:
+  - @graphql-hive/core@0.10.1
+
 ## 0.49.0
 
 ### Minor Changes
