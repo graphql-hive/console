@@ -3,9 +3,9 @@ import magnifier from '../../../public/images/figures/magnifier.svg?url';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { Card } from './card';
+import { Code } from './code';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
-import { Code } from './code';
 
 export const EmptyList = ({
   title,
@@ -85,7 +85,7 @@ export const NoSchemaVersion = ({
           )}
           <div className="flex w-full justify-center">
             <Code>
-             {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+              {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
             </Code>
           </div>
         </>
