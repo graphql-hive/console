@@ -2,10 +2,10 @@ import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { InlineCode } from '../v2/inline-code';
 import { Card } from './card';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
+import { Code } from './code';
 
 export const EmptyList = ({
   title,
@@ -68,9 +68,9 @@ export const NoSchemaVersion = ({
             registry before publishing.
           </div>
           <div className="flex w-full justify-center">
-            <InlineCode
-              content={`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
-            />
+            <Code>
+              {`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            </Code>
           </div>
         </>
       );
@@ -84,9 +84,9 @@ export const NoSchemaVersion = ({
             </div>
           )}
           <div className="flex w-full justify-center">
-            <InlineCode
-              content={`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
-            />
+            <Code>
+             {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+            </Code>
           </div>
         </>
       );
