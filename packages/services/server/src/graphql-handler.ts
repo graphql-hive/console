@@ -29,7 +29,7 @@ import { cleanRequestId, type TracingInstance } from '@hive/service-common';
 import { runWithAsyncContext } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { asyncStorage } from './async-storage';
-import type { HiveConfig, HivePersistedDocumentsConfig } from './environment';
+import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
 import { useArmor } from './use-armor';
 import { extractUserId, useSentryUser } from './use-sentry-user';
 
@@ -49,7 +49,7 @@ export interface GraphQLHandlerOptions {
     apiKey: string;
   };
   isProduction: boolean;
-  hiveConfig: HiveConfig;
+  hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;
   release: string;
   logger: FastifyBaseLogger;
@@ -167,22 +167,25 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
       })),
       useHive({
         debug: true,
-        enabled: !!options.hiveConfig,
-        token: options.hiveConfig?.token ?? '',
-        usage: {
-          endpoint: options.hiveConfig?.usage?.endpoint ?? undefined,
-          clientInfo(ctx: { req: FastifyRequest; reply: FastifyReply }) {
-            const name = ctx.req.headers['graphql-client-name'] as string;
-            const version = (ctx.req.headers['graphql-client-version'] as string) ?? 'missing';
+        enabled: !!options.hiveUsageConfig,
+        token: options.hiveUsageConfig?.token ?? '',
+        usage: options.hiveUsageConfig
+          ? {
+              target: options.hiveUsageConfig.target,
+              endpoint: options.hiveUsageConfig.endpoint ?? undefined,
+              clientInfo(ctx: { req: FastifyRequest; reply: FastifyReply }) {
+                const name = ctx.req.headers['graphql-client-name'] as string;
+                const version = (ctx.req.headers['graphql-client-version'] as string) ?? 'missing';
 
-            if (name) {
-              return { name, version };
+                if (name) {
+                  return { name, version };
+                }
+
+                return null;
+              },
+              exclude: ['readiness'],
             }
-
-            return null;
-          },
-          exclude: ['readiness'],
-        },
+          : false,
         experimental__persistedDocuments: options.hivePersistedDocumentsConfig
           ? {
               cdn: {

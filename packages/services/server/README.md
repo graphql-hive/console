@@ -29,7 +29,7 @@ The GraphQL API for GraphQL Hive.
 | `CLICKHOUSE_REQUEST_TIMEOUT`                | No                                                   | Force a request timeout value for ClickHouse operations (in ms)                                          | `30000`                                              |
 | `REDIS_HOST`                                | **Yes**                                              | The host of your redis instance.                                                                         | `"127.0.0.1"`                                        |
 | `REDIS_PORT`                                | **Yes**                                              | The port of your redis instance.                                                                         | `6379`                                               |
-| `REDIS_PASSWORD`                            | **Yes**                                              | The password of your redis instance.                                                                     | `"apollorocks"`                                      |
+| `REDIS_PASSWORD`                            | **Yes**                                              | The password of your redis instance.                                                                     | `"password"`                                         |
 | `REDIS_TLS_ENABLED`                         | **No**                                               | Enable TLS for redis connection (rediss://).                                                             | `"0"`                                                |
 | `S3_ENDPOINT`                               | **Yes**                                              | The S3 endpoint.                                                                                         | `http://localhost:9000`                              |
 | `S3_ACCESS_KEY_ID`                          | **Yes**                                              | The S3 access key id.                                                                                    | `minioadmin`                                         |
@@ -89,14 +89,12 @@ The GraphQL API for GraphQL Hive.
 If you are self-hosting GraphQL Hive, you can ignore this section. It is only required for the Cloud
 version.
 
-| Name                      | Required                      | Description                            | Example Value                   |
-| ------------------------- | ----------------------------- | -------------------------------------- | ------------------------------- |
-| `COMMERCE_ENDPOINT`       | **Yes**                       | The endpoint of the commerce service.  | `http://127.0.0.1:4012`         |
-| `CDN_CF`                  | No                            | Whether the CDN is enabled.            | `1` (enabled) or `0` (disabled) |
-| `CDN_CF_BASE_URL`         | No (**Yes** if `CDN` is `1`)  | The base URL of the cdn.               | `https://cdn.graphql-hive.com`  |
-| `HIVE`                    | No                            | The internal endpoint key.             | `iliketurtles`                  |
-| `HIVE_API_TOKEN`          | No (**Yes** if `HIVE` is set) | The internal endpoint key.             | `iliketurtles`                  |
-| `HIVE_USAGE`              | No                            | The internal endpoint key.             | `1` (enabled) or `0` (disabled) |
-| `HIVE_USAGE_ENDPOINT`     | No                            | The endpoint used for usage reporting. | `http://127.0.0.1:4001`         |
-| `HIVE_REPORTING`          | No                            | The internal endpoint key.             | `iliketurtles`                  |
-| `HIVE_REPORTING_ENDPOINT` | No                            | The internal endpoint key.             | `http://127.0.0.1:4000/graphql` |
+| Name                      | Required                             | Description                                                    | Example Value                                       |
+| ------------------------- | ------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------- |
+| `COMMERCE_ENDPOINT`       | **Yes**                              | The endpoint of the commerce service.                          | `http://127.0.0.1:4012`                             |
+| `CDN_CF`                  | No                                   | Whether the CDN is enabled.                                    | `1` (enabled) or `0` (disabled)                     |
+| `CDN_CF_BASE_URL`         | No (**Yes** if `CDN` is `1`)         | The base URL of the cdn.                                       | `https://cdn.graphql-hive.com`                      |
+| `HIVE_USAGE`              | No                                   | Whether usage reporting for the GraphQL API to Hive is enabled | `1` (enabled) or `0` (disabled)                     |
+| `HIVE_USAGE_TARGET`       | No (**Yes** if `HIVE` is set to `1`) | The target to which the usage data should be reported          | `the-guild/graphql-hive/development`                |
+| `HIVE_USAGE_ACCESS_TOKEN` | No (**Yes** if `HIVE` is set to `1`) | The internal endpoint key.                                     | `iliketurtles`                                      |
+| `HIVE_USAGE_ENDPOINT`     | No                                   | The endpoint used for usage reporting.                         | `http://app.graphql-hive.com/usage` (default value) |

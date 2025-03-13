@@ -8,8 +8,6 @@ import cdnAccessTokenCreated from '../../../public/docs/pages/get-started/apollo
 import publishFirstSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png'
 import publishSecondSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png'
 import publishThirdSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png'
-import registryTokenSettings from '../../../public/docs/pages/get-started/apollo-federation/registry-token-settings.png'
-import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 # Get started with Apollo Federation
 
@@ -109,11 +107,75 @@ extend type Product @key(fields: "upc") {
 
 </Tabs>
 
-### Hive CLI setup
+### Create Access Token
+
+In order to publish our subgraph schemas to the schema registry, we first need to create an access
+token with the necessary permissions for the Hive CLI.
+
+Within your organization, open the `Settings` tab and select the `Access Token` section.
+
+Click `Create new access token` and enter a name for the access token.
+
+import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
+
+<NextImage
+  src={accessTokensCreateNewImage}
+  alt="Create new access token button within the organization settings access token section"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Click `Next` and select `Allowed` for `Check schema/service subgraph`,
+`Publish schema/service/subgraph`, and `Report usage data`.
+
+import accessTokensPermissionsImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+
+<NextImage
+  src={accessTokensPermissionsImage}
+  alt="Grant the permissions required for publishing and checking schemas"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Click `Next` and in the next step keep the `Full Access` selection for the resources. For the
+purpose of this guide there is no need to further restirct the resources.
+
+import accessTokensResourcesImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+
+<NextImage
+  src={accessTokensResourcesImage}
+  alt="Grant full access on all resources"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+One last time click `Next` and review the access token.
+
+import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+
+<NextImage
+  src={accessTokensConfirmImage}
+  alt="Review the permissions"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you
+generated token.
+
+import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
+
+<NextImage
+  src={accessTokensSuccessImage}
+  alt="Successful access token creation"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Make sure to copy your token and keep it safe. **You won't be able to see it again.**
+
+### Publish subgraphs
 
 As you may have noticed, Hive has created three targets under your project: `development`,
 `staging`, and `production`. Each of these targets represent a different environment. You can remove
 or create new targets as needed, for modelling the different environments of your project.
+
+import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 <NextImage
   src={targetOverview}
@@ -122,40 +184,6 @@ or create new targets as needed, for modelling the different environments of you
 />
 
 For this guide we will use the `development` target.
-
-In order to publish our subgraph schemas to the schema registry, we first need to create an registry
-access token with the necessary permissions for the Hive CLI.
-
-Select the `development` target under your Hive project and then choose the **Settings** tab. On the
-Settings screen, you can manage your target's settings and access tokens.
-
-<NextImage
-  src={registryTokenSettings}
-  alt="Target settings for registry token management"
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
-
-Under the **Registry Access Tokens** section, click the **Create new registry token** button. Give
-your access token a name and select **Read & Write** for the permissions:
-
-<NextImage
-  alt="Create Registry Token Form"
-  src={createAccessToken}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
-
-Click on **Generate Token** button and you should get your CLI token created, with permissions to
-publish GraphQL schemas.
-
-<NextImage
-  alt="Created Registry Token Form"
-  src={createdAccessToken}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
-
-Make sure to copy your token and keep it safe. **You won't be able to see it again.**
-
-### Publish subgraphs
 
 Now that you have your access token, and you have the base schema defined, you can publish your
 schema to the registry.
@@ -166,7 +194,11 @@ If you did not yet copy the contents of the `subgraphs/users.graphql` to a local
 now.
 
 Run the following command in your terminal, to publish your `subgraphs/users.graphql` to the
-registry. Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
+registry.
+
+- Replace `<YOUR_ORGANIZATION>` with the slug of your organization
+- Replace `<YOUR_PROJECT>` with the slug of your project within the organization
+- Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
 
 <Tabs items={['Binary', 'NodeJS', 'Docker']}>
 
@@ -177,8 +209,9 @@ registry. Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
 ```bash
 hive schema:publish \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="users" \
-  --url="https://federation-demo.theguild.workers.dev/users" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
+  --url "https://federation-demo.theguild.workers.dev/users" \
   --author "John Doe" \
   --commit "First Version" \
   subgraphs/users.graphql
@@ -193,8 +226,9 @@ hive schema:publish \
 ```bash
 npx hive schema:publish \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="users" \
-  --url="https://federation-demo.theguild.workers.dev/users" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
+  --url "https://federation-demo.theguild.workers.dev/users" \
   --author "John Doe" \
   --commit "First Version" \
   subgraphs/users.graphql
@@ -214,8 +248,9 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:publish \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="users" \
-  --url="https://federation-demo.theguild.workers.dev/users" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "users" \
+  --url "https://federation-demo.theguild.workers.dev/users" \
   --author "John Doe" \
   --commit "First Version" \
   ./subgraphs/users.graphql
@@ -258,8 +293,9 @@ schema to a local file.
 ```bash
 hive schema:publish \
   --registry.accessToken YOUR_TOKEN_HERE \
-  --service="products" \
-  --url="https://federation-demo.theguild.workers.dev/products" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "products" \
+  --url "https://federation-demo.theguild.workers.dev/products" \
   --author "John Doe" \
   --commit "Second Version" \
   subgraphs/products.graphql
@@ -274,8 +310,9 @@ hive schema:publish \
 ```bash
 npx hive schema:publish \
   --registry.accessToken YOUR_TOKEN_HERE \
-  --service="products" \
-  --url="https://federation-demo.theguild.workers.dev/products" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "products" \
+  --url "https://federation-demo.theguild.workers.dev/products" \
   --author "John Doe" \
   --commit "Second Version" \
   subgraphs/products.graphql
@@ -295,8 +332,9 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:publish \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="products" \
-  --url="https://federation-demo.theguild.workers.dev/reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "products" \
+  --url "https://federation-demo.theguild.workers.dev/reviews" \
   --author "John Doe" \
   --commit "Second Version" \
   ./subgraphs/products.graphql
@@ -335,8 +373,9 @@ Then, we run the following command in your terminal.
 ```bash
 hive schema:publish \
   --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
-  --url="https://federation-demo.theguild.workers.dev/reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
+  --url "https://federation-demo.theguild.workers.dev/reviews" \
   --author "John Doe" \
   --commit "My second commit" \
   subgraphs/reviews.graphql
@@ -351,8 +390,9 @@ hive schema:publish \
 ```bash
 npx hive schema:publish \
   --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
-  --url="https://federation-demo.theguild.workers.dev/reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
+  --url "https://federation-demo.theguild.workers.dev/reviews" \
   --author "John Doe" \
   --commit "My second commit" \
   subgraphs/reviews.graphql
@@ -372,8 +412,9 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:publish \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="reviews" \
-  --url="https://federation-demo.theguild.workers.dev/reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
+  --url "https://federation-demo.theguild.workers.dev/reviews" \
   --author "John Doe" \
   --commit "My second commit" \
   ./subgraphs/reviews.graphql
@@ -596,8 +637,8 @@ query TopProductsWithReview {
 Up next let's report the usage from our gateway to the registry, so we can see on the dashboard how
 the API is being used.
 
-For this, we simply provide a usage reporting token in addition to our CDN access token. For this
-guide, we can simply re-use the registry token we already use for the CLI.
+For this, we will reuse the previously create access token that already has the `Report usage data`
+permissions.
 
 <Tabs items={['Binary', 'Docker', 'Node.js Package']}>
 
@@ -744,8 +785,9 @@ file:
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -757,8 +799,9 @@ hive schema:check \
 
 ```bash
 npx hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -776,7 +819,8 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:check \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   ./subgraphs/reviews.graphql
 ```
 
@@ -824,8 +868,9 @@ extend type Product @key(fields: "upc") {
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -837,8 +882,9 @@ hive schema:check \
 
 ```bash
 npx hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -856,7 +902,8 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:check \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   ./subgraphs/reviews.graphql
 ```
 
@@ -917,8 +964,9 @@ file:
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -930,8 +978,9 @@ hive schema:check \
 
 ```bash
 npx hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
-  --service="reviews" \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   subgraphs/reviews.graphql
 ```
 
@@ -949,7 +998,8 @@ docker run --name graphql-hive-cli --rm \
   ghcr.io/graphql-hive/cli \
   schema:check \
   --registry.accessToken "<YOUR_TOKEN_HERE>" \
-  --service="reviews" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
+  --service "reviews" \
   ./subgraphs/reviews.graphql
 ```
 
@@ -991,6 +1041,12 @@ learn about all the features of the Hive platform.
 <Cards>
   <Cards.Card arrow title="Learn about the Schema Registry" href="/docs/schema-registry" />
   <Cards.Card arrow title="Learn about Hive Gateway" href="/docs/gateway" />
+  <Cards.Card
+    arrow
+    title="Learn about Organization Members, Roles, and Permissions"
+    href="/docs/management/members-roles-permissions"
+  />
+  <Cards.Card arrow title="Learn about Access Tokens" href="/docs/access-tokens" />
   <Cards.Card arrow title="CI/CD Integration" href="/docs/other-integrations/ci-cd" />
 </Cards>
 

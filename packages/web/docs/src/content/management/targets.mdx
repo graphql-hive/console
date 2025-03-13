@@ -145,37 +145,7 @@ section.
 
 ## Manage Tokens
 
-Under a target's **Settings** page, you can manage two different types of tokens:
-
-### Registry Access Tokens
-
-**Registry Access Tokens** are used to access to Hive Registry and perform actions on your
-targets/projects. In most cases, this token is used from the Hive CLI.
-
-Under the **Registry Access Tokens** section, click the **Generate new token** button. Give your
-access token a either select a predefined preset for your token (under **Simple** view), or create a
-token with custom permissions (under **Advanced** view).
-
-<NextImage
-  alt="Create Registry Token Form"
-  src={tokenImage}
-  className="mt-10 max-w-md rounded-lg drop-shadow-md"
-/>
-
-Click on **Generate Token** button and you should get your CLI token created, with permissions to
-publish GraphQL schemas.
-
-<NextImage
-  alt="Created Token"
-  src={tokenCreateSuccess}
-  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
-/>
-
-Make sure to copy your token and keep it safe. **You won't be able to see it again.**
-
-<Callout type="info">
-  **Note:** You can create multiple tokens with different permissions for different use cases.
-</Callout>
+Under a target's **Settings** page, you can manage two different types of tokens.
 
 ### CDN Access Tokens
 
@@ -214,3 +184,37 @@ in the list of CDN tokens.
 <Callout type="info">
   Revoking CDN access token can take up to 5 minutes to update across the CDN network.
 </Callout>
+
+### Registry Access Tokens
+
+<Callout type="warning">
+
+Please use [Access Tokens](/docs/management/access-tokens), which allow more granular access
+control, instead of Registry Access Tokens. Registry Access Tokens are deprecated and will be
+removed in the future.
+
+</Callout>
+
+**Registry Access Tokens** are used to access to Hive Registry and perform actions on your
+targets/projects. In most cases, this token is used from the Hive CLI.
+
+Under the **Registry Access Tokens** section, click the **Generate new token** button. Give your
+access token a either select a predefined preset for your token (under **Simple** view), or create a
+token with custom permissions (under **Advanced** view).
+
+<NextImage
+  alt="Create Registry Token Form"
+  src={tokenImage}
+  className="mt-10 max-w-md rounded-lg drop-shadow-md"
+/>
+
+Click on **Generate Token** button and you should get your CLI token created, with permissions to
+publish GraphQL schemas.
+
+<NextImage
+  alt="Created Token"
+  src={tokenCreateSuccess}
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Make sure to copy your token and keep it safe. **You won't be able to see it again.**

@@ -57,7 +57,9 @@ const yoga = createYoga({
       enabled: true, // Enable/Disable Hive Client
       token: 'YOUR-TOKEN',
       // Collects and send usage reporting based on executed operations
-      usage: true
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      }
     })
   ]
 })
@@ -87,8 +89,10 @@ export default {
     const hive = createHive({
       enabled: true, // Enable/Disable Hive Client
       token: 'YOUR-TOKEN',
-      usage: true // Collects schema usage based on operations,
-      autoDispose: false,
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      },
+      autoDispose: false
     })
 
     const yoga = createYoga({
@@ -142,7 +146,9 @@ const yoga = createYoga({
     useHive({
       enabled: true,
       token: 'YOUR-TOKEN',
-      usage: true
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      }
     })
   ]
 })
@@ -194,7 +200,9 @@ const yoga = createYoga({
     useHive({
       enabled: true,
       token: 'YOUR-TOKEN',
-      usage: true
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      }
     })
   ]
 })

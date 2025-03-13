@@ -82,6 +82,8 @@ export function deployGraphQL({
   const apiConfig = new pulumi.Config('api');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
+  const hiveConfig = new pulumi.Config('hive');
+
   const oauthConfig = new pulumi.Config('oauth');
   const githubOAuthSecret = new AppOAuthSecret('oauth-github', {
     clientId: oauthConfig.requireSecret('githubClient'),
@@ -94,6 +96,9 @@ export function deployGraphQL({
 
   const persistedDocumentsSecret = new ServiceSecret('persisted-documents', {
     cdnAccessKeyId: apiConfig.requireSecret('hivePersistedDocumentsCdnAccessKeyId'),
+  });
+  const hiveUsageSecret = new ServiceSecret('hive-usage', {
+    usageAccessToken: hiveConfig.requireSecret('usageAccessToken'),
   });
 
   return (
@@ -124,15 +129,13 @@ export function deployGraphQL({
           WEBHOOKS_ENDPOINT: serviceLocalEndpoint(webhooks.service),
           SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
           SCHEMA_POLICY_ENDPOINT: serviceLocalEndpoint(schemaPolicy.service),
-          HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
           EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
           WEB_APP_URL: `https://${environment.appDns}`,
           GRAPHQL_PUBLIC_ORIGIN: `https://${environment.appDns}`,
           CDN_CF: '1',
-          HIVE: '1',
-          HIVE_REPORTING: '1',
           HIVE_USAGE: '1',
-          HIVE_REPORTING_ENDPOINT: 'http://0.0.0.0:4000/graphql',
+          HIVE_USAGE_TARGET: hiveConfig.require('target'),
+          HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
           HIVE_PERSISTED_DOCUMENTS: '1',
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
           INTEGRATION_GITHUB: '1',
@@ -206,6 +209,8 @@ export function deployGraphQL({
       .withSecret('AUTH_GITHUB_CLIENT_SECRET', githubOAuthSecret, 'clientSecret')
       .withSecret('AUTH_GOOGLE_CLIENT_ID', googleOAuthSecret, 'clientId')
       .withSecret('AUTH_GOOGLE_CLIENT_SECRET', googleOAuthSecret, 'clientSecret')
+      // Hive Usage Reporting
+      .withSecret('HIVE_USAGE_ACCESS_TOKEN', hiveUsageSecret, 'usageAccessToken')
       // Persisted Documents
       .withSecret(
         'HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY_ID',

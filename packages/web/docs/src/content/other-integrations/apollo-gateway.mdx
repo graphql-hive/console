@@ -105,7 +105,10 @@ const server = new ApolloServer({
     useHive({
       enabled: true,
       token: 'YOUR-TOKEN',
-      usage: true // add this one to report usage and operations
+      // add this one to report usage and operations
+      usage: {
+        target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+      }
     })
   ]
 })
