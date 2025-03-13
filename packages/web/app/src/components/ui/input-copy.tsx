@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useClipboard } from '@/lib/hooks';
 
-export function InputCopy(props: { value: string }) {
+export function InputCopy(props: { value: string; className?: string }) {
   const [isCopied, setIsCopied] = useState(false);
   const copyToClipboard = useClipboard();
 
@@ -31,7 +31,7 @@ export function InputCopy(props: { value: string }) {
           type="text"
           value={props.value}
           readOnly
-          className="bg-secondary truncate text-white"
+          className={`bg-secondary truncate text-white ${props.className}`}
           onFocus={ev => ev.target.select()}
         />
       </div>
