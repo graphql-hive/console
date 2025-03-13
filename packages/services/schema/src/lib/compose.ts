@@ -94,7 +94,7 @@ export type SubgraphInput = {
 
 export function composeFederationV2(
   subgraphs: Array<SubgraphInput>,
-  logger: ServiceLogger,
+  logger?: ServiceLogger,
 ): ComposerMethodResult & {
   includesException?: boolean;
 } {
@@ -121,7 +121,7 @@ export function composeFederationV2(
       includesNetworkError: false,
     } as const;
   } catch (error) {
-    logger.error(error);
+    logger?.error(error);
     Sentry.captureException(error);
 
     return {

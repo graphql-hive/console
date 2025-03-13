@@ -290,7 +290,7 @@ export default gql`
     """
     Whether the CLI supports retrying the schema publish, in case acquiring the schema publish lock fails due to a busy queue.
     """
-    supportsRetry: Boolean = False
+    supportsRetry: Boolean = false
   }
 
   input SchemaComposeInput {
