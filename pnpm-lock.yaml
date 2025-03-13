@@ -850,8 +850,8 @@ importers:
         specifier: 17.5.0
         version: 17.5.0
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 16.7.6
+        version: 16.7.6(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1313,8 +1313,8 @@ importers:
         specifier: 0.0.4
         version: 0.0.4
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 16.7.6
+        version: 16.7.6(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1977,8 +1977,8 @@ importers:
         specifier: 8.4.7
         version: 8.4.7(prettier@3.4.2)
       supertokens-auth-react:
-        specifier: 0.38.0
-        version: 0.38.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0)
+        specifier: 0.48.0
+        version: 0.48.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0)
       supertokens-web-js:
         specifier: 0.9.0
         version: 0.9.0
@@ -3496,7 +3496,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -13755,6 +13754,9 @@ packages:
     resolution: {integrity: sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==}
     engines: {node: '>=6.0.0'}
 
+  qr.js@0.0.0:
+    resolution: {integrity: sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==}
+
   qs@6.13.0:
     resolution: {integrity: sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==}
     engines: {node: '>=0.6'}
@@ -13887,6 +13889,11 @@ packages:
     resolution: {integrity: sha512-mAIPHfioD7yxO0GNYVFD1303QFtI3lyyQZLY229UEAp/a10cSW+hPcakg0Keq8uWJxT2OiT/4Gt+Lc9bD6bJmQ==}
     peerDependencies:
       react: '>=16.6.0'
+
+  react-qr-code@2.0.15:
+    resolution: {integrity: sha512-MkZcjEXqVKqXEIMVE0mbcGgDpkfSdd8zhuzXEl9QzYeNcw8Hq2oVIzDLWuZN2PQBwM5PWjc2S31K8Q1UbcFMfw==}
+    peerDependencies:
+      react: '*'
 
   react-refresh@0.14.2:
     resolution: {integrity: sha512-jCvmsr+1IUSMUyzOkRcvnVbX3ZYC6g9TDrDbFuFmRDq7PD4yaGbLKNQL6k2jnArV8hjYxh7hVhAZB6s9HDGpZA==}
@@ -14832,19 +14839,19 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  supertokens-auth-react@0.38.0:
-    resolution: {integrity: sha512-MOFSZtmcbpp65hEXeCmn3hwiPVLnkcpW97U9J36osbqRH9eI6MD0HiRkKG8KvA+vV+FIaC2xiCu9OOLmyZk1EA==}
+  supertokens-auth-react@0.48.0:
+    resolution: {integrity: sha512-JDahnvSKahso6LbD3Oe/e2Ifxz/dg7kMVGnlt+sZbz/kNSQAKk7yaTrxrCemcNDw5IDB9etheCVrLu7ye/ndmQ==}
     engines: {node: '>=16.0.0', npm: '>=8'}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
-      supertokens-web-js: ^0.9.0
+      supertokens-web-js: ^0.14.0
 
   supertokens-js-override@0.0.4:
     resolution: {integrity: sha512-r0JFBjkMIdep3Lbk3JA+MpnpuOtw4RSyrlRAbrzMcxwiYco3GFWl/daimQZ5b1forOiUODpOlXbSOljP/oyurg==}
 
-  supertokens-node@16.7.5:
-    resolution: {integrity: sha512-xrVwi0GfgLIqHKaWXEp7fCgmVQ2wTiJTHG2CQGLkGMvrO9dUcxY+H6qozn3EvyXxbkm1BmflYD8N7ILNSIbR1g==}
+  supertokens-node@16.7.6:
+    resolution: {integrity: sha512-2yqoF6vvpfJEd66Ug261I2IsVrHO3D2XPaY3Xeo5A3CL3V/LIQ9zGfcgS0fDdx49F6Ep2DDqQ35zzgqVRMPaXg==}
 
   supertokens-web-js@0.9.0:
     resolution: {integrity: sha512-7DucVUWxImrcjckza0oW6tkPfMzScj8V/qiQNZeUT/EfCqIbslNSO8holBHc9Eykc0vG/CC0d9ne5TRhAmRcxg==}
@@ -23026,7 +23033,7 @@ snapshots:
       '@slack/types': 2.11.0
       '@types/node': 22.10.5
       '@types/retry': 0.12.0
-      axios: 1.8.3(debug@4.3.7)
+      axios: 1.8.3(debug@4.4.0)
       eventemitter3: 5.0.1
       form-data: 4.0.0
       is-electron: 2.2.2
@@ -25096,9 +25103,9 @@ snapshots:
 
   axe-core@4.7.0: {}
 
-  axios@1.8.3(debug@4.3.7):
+  axios@1.8.3(debug@4.4.0):
     dependencies:
-      follow-redirects: 1.15.6(debug@4.3.7)
+      follow-redirects: 1.15.6(debug@4.4.0)
       form-data: 4.0.0
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -27391,9 +27398,9 @@ snapshots:
 
   fn-name@3.0.0: {}
 
-  follow-redirects@1.15.6(debug@4.3.7):
+  follow-redirects@1.15.6(debug@4.4.0):
     optionalDependencies:
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0(supports-color@8.1.1)
 
   for-each@0.3.3:
     dependencies:
@@ -31568,6 +31575,8 @@ snapshots:
 
   pvutils@1.1.3: {}
 
+  qr.js@0.0.0: {}
+
   qs@6.13.0:
     dependencies:
       side-channel: 1.0.6
@@ -31707,6 +31716,12 @@ snapshots:
       prop-types: 15.8.1
       react: 19.0.0
       react-fast-compare: 3.2.2
+
+  react-qr-code@2.0.15(react@18.3.1):
+    dependencies:
+      prop-types: 15.8.1
+      qr.js: 0.0.0
+      react: 18.3.1
 
   react-refresh@0.14.2: {}
 
@@ -32903,23 +32918,24 @@ snapshots:
       pirates: 4.0.5
       ts-interface-checker: 0.1.13
 
-  supertokens-auth-react@0.38.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0):
+  supertokens-auth-react@0.48.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0):
     dependencies:
       intl-tel-input: 17.0.19
       prop-types: 15.8.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+      react-qr-code: 2.0.15(react@18.3.1)
       supertokens-js-override: 0.0.4
       supertokens-web-js: 0.9.0
 
   supertokens-js-override@0.0.4: {}
 
-  supertokens-node@16.7.5(encoding@0.1.13):
+  supertokens-node@16.7.6(encoding@0.1.13):
     dependencies:
       content-type: 1.0.5
       cookie: 0.7.2
       cross-fetch: 3.1.8(encoding@0.1.13)
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0(supports-color@8.1.1)
       inflation: 2.0.0
       jose: 4.15.9
       libphonenumber-js: 1.10.14
@@ -32927,7 +32943,7 @@ snapshots:
       pkce-challenge: 3.1.0
       psl: 1.8.0
       supertokens-js-override: 0.0.4
-      twilio: 4.23.0(debug@4.3.7)
+      twilio: 4.23.0(debug@4.4.0)
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -33338,9 +33354,9 @@ snapshots:
 
   tweetnacl@0.14.5: {}
 
-  twilio@4.23.0(debug@4.3.7):
+  twilio@4.23.0(debug@4.4.0):
     dependencies:
-      axios: 1.8.3(debug@4.3.7)
+      axios: 1.8.3(debug@4.4.0)
       dayjs: 1.11.13
       https-proxy-agent: 5.0.1
       jsonwebtoken: 9.0.0
