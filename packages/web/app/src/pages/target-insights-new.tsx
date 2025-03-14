@@ -1,15 +1,6 @@
-import {
-  ComponentPropsWithoutRef,
-  ElementRef,
-  forwardRef,
-  Fragment,
-  ReactNode,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { addDays, formatDate, parse as parseDate } from 'date-fns';
+import { Fragment, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { addDays, formatDate, formatISO, parse as parseDate } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -21,7 +12,6 @@ import {
   SearchIcon,
   XIcon,
 } from 'lucide-react';
-import type { DateRange } from 'react-day-picker';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -91,7 +81,13 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table';
-import { FilterInput, MultiSelectFilter } from './target-insights-new-filter';
+import {
+  DurationFilter,
+  FilterInput,
+  MultiInputFilter,
+  MultiSelectFilter,
+  TimelineFilter,
+} from './target-insights-new-filter';
 import { useWidthSync, WidthSyncProvider } from './target-insights-new-width';
 
 const rootSpan: SpanProps = {
@@ -398,7 +394,7 @@ function Traffic() {
 
 type Trace = {
   id: string;
-  timestamp: string;
+  timestamp: number;
   duration: number;
   status: 'ok' | 'error';
   kind: 'query' | 'mutation' | 'subscription';
@@ -412,10 +408,14 @@ type Trace = {
   subgraphNames: string[];
 };
 
+const now = new Date();
+function generateTraceId() {
+  return [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
 const data: Trace[] = [
   {
-    id: '1',
-    timestamp: '2024-04-01 12:00:00',
+    id: generateTraceId(),
+    timestamp: now.getTime(),
     status: 'ok',
     duration: 6019,
     kind: 'query',
@@ -429,8 +429,8 @@ const data: Trace[] = [
     subgraphNames: ['link', 'products', 'prices'],
   },
   {
-    id: '2',
-    timestamp: '2024-04-01 12:00:00',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 120000,
     status: 'ok',
     duration: 6019,
     kind: 'query',
@@ -444,8 +444,8 @@ const data: Trace[] = [
     subgraphNames: ['link', 'products', 'prices'],
   },
   {
-    id: '3',
-    timestamp: '2024-04-01 12:01:00',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 240000,
     status: 'error',
     duration: 10045,
     kind: 'mutation',
@@ -459,8 +459,8 @@ const data: Trace[] = [
     subgraphNames: ['products'],
   },
   {
-    id: '4',
-    timestamp: '2024-04-01 12:02:30',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 360000,
     status: 'ok',
     duration: 3045,
     kind: 'query',
@@ -474,8 +474,8 @@ const data: Trace[] = [
     subgraphNames: ['users'],
   },
   {
-    id: '5',
-    timestamp: '2024-04-01 12:03:15',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 480000,
     status: 'ok',
     duration: 4521,
     kind: 'query',
@@ -489,8 +489,8 @@ const data: Trace[] = [
     subgraphNames: ['orders', 'users'],
   },
   {
-    id: '6',
-    timestamp: '2024-04-01 12:04:20',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 600000,
     status: 'error',
     duration: 7890,
     kind: 'mutation',
@@ -504,8 +504,8 @@ const data: Trace[] = [
     subgraphNames: ['orders'],
   },
   {
-    id: '7',
-    timestamp: '2024-04-01 12:05:05',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 720000,
     status: 'ok',
     duration: 2156,
     kind: 'subscription',
@@ -519,8 +519,8 @@ const data: Trace[] = [
     subgraphNames: ['orders'],
   },
   {
-    id: '8',
-    timestamp: '2024-04-01 12:06:45',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 840000,
     status: 'ok',
     duration: 5092,
     kind: 'query',
@@ -534,8 +534,8 @@ const data: Trace[] = [
     subgraphNames: ['cart', 'products'],
   },
   {
-    id: '9',
-    timestamp: '2024-04-01 12:07:30',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 960000,
     status: 'ok',
     duration: 6820,
     kind: 'mutation',
@@ -549,8 +549,8 @@ const data: Trace[] = [
     subgraphNames: ['cart'],
   },
   {
-    id: '10',
-    timestamp: '2024-04-01 12:08:10',
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
     status: 'error',
     duration: 3502,
     kind: 'query',
@@ -567,6 +567,17 @@ const data: Trace[] = [
 
 export const columns: ColumnDef<Trace>[] = [
   {
+    accessorKey: 'id',
+    header: () => <div className="text-center">Trace ID</div>,
+    cell: ({ row }) => {
+      return (
+        <div className="w-24 truncate px-2 text-center font-mono text-xs font-medium">
+          {row.getValue('id')}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: 'timestamp',
     header: ({ column }) => {
       return (
@@ -581,9 +592,34 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="px-4 font-mono text-xs uppercase">
-        {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-      </div>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <div className="px-4 font-mono text-xs uppercase">
+            {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+        >
+          <GridTable
+            rows={[
+              {
+                key: 'Local',
+                value: formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss'),
+              },
+              {
+                key: 'UTC',
+                value: formatInTimeZone(row.getValue('timestamp'), 'UTC', 'MMM dd HH:mm:ss'),
+              },
+              {
+                key: 'ISO',
+                value: formatISO(toZonedTime(row.getValue('timestamp'), 'UTC')),
+              },
+            ]}
+          />
+        </TooltipContent>
+      </Tooltip>
     ),
   },
   {
@@ -603,12 +639,40 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="flex items-center gap-2 px-4 text-xs">
-        <span className="text-muted-foreground font-mono">
-          {row.original.operationHash.substring(0, 4)}
-        </span>
-        <span>{row.getValue('operationName')}</span>
-      </div>
+      <Tooltip disableHoverableContent delayDuration={100}>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-2 px-4 text-xs">
+            <span className="text-muted-foreground font-mono">
+              {row.original.operationHash.substring(0, 4)}
+            </span>
+            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+              {row.original.kind.substring(0, 1).toUpperCase()}
+            </span>
+            <span>{row.getValue('operationName')}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+        >
+          <GridTable
+            rows={[
+              {
+                key: 'Name',
+                value: row.getValue('operationName'),
+              },
+              {
+                key: 'Kind',
+                value: row.original.kind,
+              },
+              {
+                key: 'Hash',
+                value: row.original.operationHash,
+              },
+            ]}
+          />
+        </TooltipContent>
+      </Tooltip>
     ),
   },
   {
@@ -859,249 +923,27 @@ function LabelWithBadge(props: {
   );
 }
 
-const DoubleSlider = forwardRef<
-  ElementRef<typeof SliderPrimitive.Root>,
-  ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn('relative flex w-full touch-none select-none items-center', className)}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-gray-800">
-      <SliderPrimitive.Range className="absolute h-full bg-gray-400" />
-    </SliderPrimitive.Track>
-    {props.value?.map((_, index) => (
-      <SliderPrimitive.Thumb
-        key={index}
-        className="block h-4 w-4 rounded-full border border-gray-700 bg-gray-800 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-      />
-    ))}
-  </SliderPrimitive.Root>
-));
-DoubleSlider.displayName = 'DoubleSlider';
+type FilterState = {
+  'trace.id': string[];
+  duration: [] | [number, number];
+  'graphql.status': string[];
+  'graphql.kind': string[];
+  'graphql.subgraph': string[];
+  'graphql.operation': string[];
+  'graphql.client': string[];
+  'http.status': string[];
+  'http.method': string[];
+  'http.host': string[];
+  'http.route': string[];
+  'http.url': string[];
+};
 
-function DurationFilter() {
-  const [values, setValues] = useState([6019, 100000]);
-
-  const handleSliderChange = (newValues: number[]) => {
-    setValues(newValues);
-  };
-
-  const handleInputChange = (index: number, value: string) => {
-    const numValue = Number.parseFloat(value) || 0;
-    const newValues = [...values];
-    newValues[index] = Math.min(Math.max(numValue, 0), 100000);
-    setValues(newValues);
-  };
-
-  return (
-    <Fragment>
-      <SidebarGroup className="py-0">
-        <Collapsible className="group/collapsible">
-          <SidebarGroupLabel
-            asChild
-            className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
-          >
-            <CollapsibleTrigger>
-              <ChevronRight className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-              <span>Duration</span>
-            </CollapsibleTrigger>
-          </SidebarGroupLabel>
-          <CollapsibleContent>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <div className="space-y-6 p-2">
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <label className="font-mono text-xs text-zinc-400">MIN</label>
-                      <div className="relative">
-                        <FilterInput
-                          type="number"
-                          value={values[0].toFixed(2)}
-                          onChange={e => handleInputChange(0, e.target.value)}
-                          className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
-                          ms
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-mono text-xs text-zinc-400">MAX</label>
-                      <div className="relative">
-                        <FilterInput
-                          type="number"
-                          value={values[1].toFixed(2)}
-                          onChange={e => handleInputChange(1, e.target.value)}
-                          className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
-                          ms
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <DoubleSlider
-                    defaultValue={[6019, 100000]}
-                    max={100000}
-                    min={0}
-                    step={1}
-                    value={values}
-                    onValueChange={handleSliderChange}
-                    className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
-                  />
-                </div>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </SidebarGroup>
-      <SidebarSeparator className="mx-0" />
-    </Fragment>
-  );
-}
-
-function TimelineFilter() {
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -3),
-    to: new Date(),
-  });
-
-  const formatted = useMemo(() => {
-    if (!dateRange?.from || !dateRange.to || selectedPreset !== 'custom') {
-      return 'Select time period';
-    }
-
-    const fromDate = formatDate(dateRange.from, 'MMM d');
-    const fromTime = formatDate(dateRange.from, 'HH:mm');
-    const toDate = formatDate(dateRange.to, 'MMM d');
-    const toTime = formatDate(dateRange.to, 'HH:mm');
-
-    if (fromDate === toDate) {
-      return `${fromDate}, ${fromTime} - ${toTime}`;
-    }
-
-    return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
-  }, [dateRange, selectedPreset]);
-
-  return (
-    <Fragment>
-      <SidebarGroup className="py-0">
-        <Collapsible open className="group/collapsible">
-          <SidebarGroupLabel
-            asChild
-            className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
-          >
-            <CollapsibleTrigger>
-              <ChevronRight className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-              <span>Timeline</span>
-            </CollapsibleTrigger>
-          </SidebarGroupLabel>
-          <CollapsibleContent>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <div className="space-y-2 p-2">
-                  <Select value={selectedPreset ?? undefined} onValueChange={setSelectedPreset}>
-                    <SelectTrigger className="bg-background w-full">
-                      <SelectValue placeholder="Select time period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="last-5min">Last 5 minutes</SelectItem>
-                      <SelectItem value="last-1h">Last 1 hour</SelectItem>
-                      <SelectItem value="last-3h">Last 3 hours</SelectItem>
-                      <SelectItem value="last-12h">Last 12 hours</SelectItem>
-                      <SelectItem value="last-24h">Last 24 hours</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {selectedPreset === 'custom' ? (
-                    <>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start px-2 text-left">
-                            <CalendarIcon className="mr-2 size-4" />{' '}
-                            <span className="text-xs">{formatted}</span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="center">
-                          <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={dateRange?.from}
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                            numberOfMonths={1}
-                            className="p-2 pb-0"
-                          />
-                          <div className="border-border mt-4 space-y-2 border-t p-2">
-                            <div>
-                              <Label className="text-sm font-normal text-gray-500">Start</Label>
-                              <div className="flex items-center gap-x-2">
-                                <Input
-                                  className="h-8 w-[152px] py-0"
-                                  value={
-                                    dateRange?.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ''
-                                  }
-                                />
-                                <Input
-                                  className="h-8 w-16 py-0"
-                                  value={dateRange?.from ? formatDate(dateRange.from, 'HH:mm') : ''}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-normal text-gray-500">End</Label>
-                              <div className="flex items-center gap-x-2">
-                                <Input
-                                  className="h-8 w-[152px] py-0"
-                                  value={
-                                    dateRange?.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ''
-                                  }
-                                />
-                                <Input
-                                  className="h-8 w-16 py-0"
-                                  value={dateRange?.to ? formatDate(dateRange.to, 'HH:mm') : ''}
-                                />
-                              </div>
-                            </div>
-                            <Button variant="outline" size="sm" className="w-full">
-                              <span className="relative">
-                                Apply
-                                <span className="absolute top-[4px] ml-2 text-xs">↵</span>
-                              </span>
-                            </Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </>
-                  ) : null}
-                </div>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </SidebarGroup>
-      <SidebarSeparator className="mx-0" />
-    </Fragment>
-  );
-}
-
-type FilterKeys =
-  | 'graphql.status'
-  | 'graphql.kind'
-  | 'graphql.subgraph'
-  | 'graphql.operation'
-  | 'graphql.client'
-  | 'http.status'
-  | 'http.method'
-  | 'http.host'
-  | 'http.route'
-  | 'http.url';
+type FilterKeys = keyof FilterState;
 
 function Filters() {
-  const [filters, setFilters] = useState<Record<FilterKeys, string[]>>({
+  const [filters, setFilters] = useState<FilterState>({
+    duration: [],
+    'trace.id': [],
     'graphql.status': [],
     'graphql.kind': [],
     'graphql.subgraph': [],
@@ -1115,14 +957,16 @@ function Filters() {
   });
 
   // Function to update a specific filter
-  const updateFilter = (key: FilterKeys) => {
-    return (value: string[]) => {
+  const updateFilter = <$Key extends FilterKeys>(key: $Key) => {
+    return (value: FilterState[$Key]) => {
       setFilters(prev => ({ ...prev, [key]: value }));
     };
   };
 
   const resetFilters = () => {
     setFilters({
+      duration: [],
+      'trace.id': [],
       'graphql.status': [],
       'graphql.kind': [],
       'graphql.subgraph': [],
@@ -1136,10 +980,26 @@ function Filters() {
     });
   };
 
-  const filterSelector = (key: FilterKeys) => filters[key];
+  const filterSelector = <$Key extends FilterKeys>(key: $Key) => filters[key];
 
   const hasChanges = useMemo(() => {
-    return Object.values(filters).some(filter => filter.length > 0);
+    for (let key in filters) {
+      const filterName = key as FilterKeys;
+
+      if (filterName === 'duration') {
+        if (
+          filters[filterName].length === 2 &&
+          (filters[filterName][0] !== 0 || filters[filterName][1] !== 100_000)
+        ) {
+          return true;
+        }
+        continue;
+      }
+
+      if (filters[filterName].length > 0) {
+        return true;
+      }
+    }
   }, [filters]);
 
   return (
@@ -1153,7 +1013,13 @@ function Filters() {
         ) : null}
       </SidebarGroupLabel>
       <TimelineFilter />
-      <DurationFilter />
+      <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
+      <MultiInputFilter
+        key="trace.id"
+        name="Trace ID"
+        selectedValues={filterSelector('trace.id')}
+        onChange={updateFilter('trace.id')}
+      />
       <MultiSelectFilter
         key="graphql.status"
         name="Status"
@@ -1162,11 +1028,13 @@ function Filters() {
             value: 'ok',
             searchContent: 'ok',
             label: <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
+            count: 12_500_000,
           },
           {
             value: 'error',
             searchContent: 'error',
             label: <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
+            count: 13_123,
           },
         ]}
         selectedValues={filterSelector('graphql.status')}
@@ -1181,16 +1049,19 @@ function Filters() {
             value: 'query',
             searchContent: 'query',
             label: 'Query',
+            count: 12_500_000,
           },
           {
             value: 'mutation',
             searchContent: 'mutation',
             label: 'Mutation',
+            count: 3_200_000,
           },
           {
             value: 'subscription',
             searchContent: 'subscription',
             label: 'Subscription',
+            count: 123_123,
           },
         ]}
         selectedValues={filterSelector('graphql.kind')}
@@ -1205,16 +1076,19 @@ function Filters() {
             value: 'link',
             searchContent: 'link',
             label: 'link',
+            count: 530_000,
           },
           {
             value: 'products',
             searchContent: 'products',
             label: 'products',
+            count: 612_000,
           },
           {
             value: 'prices',
             searchContent: 'prices',
             label: 'prices',
+            count: 610_000,
           },
         ]}
         selectedValues={filterSelector('graphql.subgraph')}
@@ -1228,16 +1102,19 @@ function Filters() {
             value: '3h1s',
             searchContent: '3h1s fetchproducts',
             label: <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
+            count: 368_000,
           },
           {
             value: '7na1',
             searchContent: '7na1 fetchUsers',
             label: <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
+            count: 123_000,
           },
           {
             value: '64a1',
             searchContent: '64a1 FetchProducts',
             label: <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
+            count: 1_000,
           },
         ]}
         selectedValues={filterSelector('graphql.operation')}
@@ -1251,21 +1128,25 @@ function Filters() {
             value: 'unknown',
             searchContent: 'unknown',
             label: 'unknown',
+            count: 43_123,
           },
           {
             value: 'hive-app',
             searchContent: 'hive-app',
             label: 'hive-app',
+            count: 720_000,
           },
           {
             value: 'Hive CLI',
             searchContent: 'Hive CLI',
             label: 'Hive CLI',
+            count: 340_000,
           },
           {
             value: 'Hive Client',
             searchContent: 'Hive Client',
             label: 'Hive Client',
+            count: 87_123,
           },
           {
             value: 'Hive CLI@0.46.0',
@@ -1275,6 +1156,7 @@ function Filters() {
                 Hive CLI
               </LabelWithBadge>
             ),
+            count: 1_000,
           },
           {
             value: 'Hive Client@0.25.3',
@@ -1284,6 +1166,7 @@ function Filters() {
                 Hive Client
               </LabelWithBadge>
             ),
+            count: 6_120,
           },
         ]}
         selectedValues={filterSelector('graphql.client')}
@@ -1297,16 +1180,19 @@ function Filters() {
             value: '200',
             searchContent: '200',
             label: '200',
+            count: 9_123_000,
           },
           {
             value: '400',
             searchContent: '400',
             label: '400',
+            count: 100_000,
           },
           {
             value: '500',
             searchContent: '500',
             label: '500',
+            count: 52_400,
           },
         ]}
         selectedValues={filterSelector('http.status')}
@@ -1321,11 +1207,13 @@ function Filters() {
             value: 'GET',
             searchContent: 'get',
             label: 'GET',
+            count: 1230,
           },
           {
             value: 'POST',
             searchContent: 'post',
             label: 'POST',
+            count: 12_000_000,
           },
         ]}
         selectedValues={filterSelector('http.method')}
@@ -1340,16 +1228,19 @@ function Filters() {
             value: 'localhost:4000',
             searchContent: 'localhost:4000',
             label: 'localhost:4000',
+            count: 12_000_000,
           },
           {
             value: 'localhost:4200',
             searchContent: 'localhost:4200',
             label: 'localhost:4200',
+            count: 7_540_123,
           },
           {
             value: 'localhost:3000',
             searchContent: 'localhost:3000',
             label: 'localhost:3000',
+            count: 2_320_123,
           },
         ]}
         selectedValues={filterSelector('http.host')}
@@ -1363,11 +1254,13 @@ function Filters() {
             value: '/graphql',
             searchContent: '/graphql',
             label: '/graphql',
+            count: 12_000_000,
           },
           {
             value: '/',
             searchContent: '/',
             label: '/',
+            count: 7_540_123,
           },
         ]}
         selectedValues={filterSelector('http.route')}
@@ -1381,16 +1274,19 @@ function Filters() {
             value: 'http://localhost:3000/',
             searchContent: 'http://localhost:3000/',
             label: 'http://localhost:3000/',
+            count: 12_000_000,
           },
           {
             value: 'http://localhost:4000/graphql',
             searchContent: 'http://localhost:4000/graphql',
             label: 'http://localhost:4000/graphql',
+            count: 7_540_123,
           },
           {
             value: 'http://localhost:4200/graphql',
             searchContent: 'http://localhost:4200/graphql',
             label: 'http://localhost:4200/graphql',
+            count: 2_320_123,
           },
         ]}
         selectedValues={filterSelector('http.url')}
@@ -2259,6 +2155,24 @@ function Node(props: NodeProps) {
             })
           : null}
     </>
+  );
+}
+
+function GridTable(props: {
+  rows: Array<{
+    key: string;
+    value: ReactNode;
+  }>;
+}) {
+  return (
+    <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
+      {props.rows.map(row => (
+        <Fragment key={row.key}>
+          <div className="font-sans text-gray-400">{row.key}</div>
+          <div className="text-right font-mono">{row.value}</div>
+        </Fragment>
+      ))}
+    </div>
   );
 }
 
