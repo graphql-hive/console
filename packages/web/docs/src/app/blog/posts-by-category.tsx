@@ -11,11 +11,11 @@ export function PostsByCategory() {
   // todo: get this from Nextra
   const allPosts: BlogFrontmatter[] = [];
 
-  const categories = Array.from(new Set(allPosts.map(post => post.category)));
+  const categories = Array.from(new Set(allPosts.flatMap(post => post.tags)));
   let posts: BlogFrontmatter[];
 
   if (category && categories.includes(category)) {
-    posts = allPosts.filter(post => post.category === category);
+    posts = allPosts.filter(post => post.tags.includes(category!));
   } else {
     posts = allPosts;
     category = null;
@@ -78,7 +78,7 @@ function FeaturedPosts({ posts }: { posts: BlogFrontmatter[] }) {
     <ul className="mt-6 flex items-stretch gap-4 *:flex-1 max-md:flex-col sm:gap-6 lg:mt-16">
       {featuredPosts.map(post => (
         <li key={post.href}>
-          <BlogCard {...post} className="h-full" />
+          <BlogCard frontmatter={post} className="h-full" />
         </li>
       ))}
     </ul>
@@ -95,7 +95,7 @@ function LatestPosts({ posts, category }: { posts: BlogFrontmatter[]; category?:
         {posts.map(post => {
           return (
             <li key={post.title} className="basis-1/3">
-              <BlogCard {...post} />
+              <BlogCard frontmatter={post} />
             </li>
           );
         })}

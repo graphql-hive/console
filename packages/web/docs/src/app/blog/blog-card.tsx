@@ -3,20 +3,17 @@ import { Anchor, cn } from '@theguild/components';
 import { authors, AvatarFromGitHub } from '../../authors';
 import { BlogFrontmatter } from './blog-types';
 
-export interface BlogCardProps extends BlogFrontmatter {
+export interface BlogCardProps {
+  frontmatter: BlogFrontmatter;
   className?: string;
   colorScheme?: 'default' | 'featured';
 }
 
-export function BlogCard({
-  title,
-  author,
-  date,
-  href,
-  category,
-  className,
-  colorScheme,
-}: BlogCardProps) {
+export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps) {
+  const { title, href, tags } = frontmatter;
+  const author = frontmatter.authors[0]; // TODO: We should handle multiple authors
+  const date = new Date(frontmatter.date);
+
   const { name, avatar, github } = authors[author];
   const avatarSrc =
     avatar === AvatarFromGitHub
@@ -46,20 +43,17 @@ export function BlogCard({
               colorScheme === 'featured' ? 'bg-green-800' : 'bg-beige-800 dark:bg-beige-800/40',
             )}
           >
-            {category}
+            {tags[0]}
+            {/* TODO: should we show all tags on hover? */}
           </span>
           <time
-            dateTime={new Date(date).toISOString()}
+            dateTime={date.toISOString()}
             className="text-beige-800 whitespace-pre text-sm/5 font-medium"
           >
-            {new Date(date).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
+            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </time>
         </header>
-        <h3 className="text-xl/6 xl:min-h-[172px]">{title}</h3>
+        <h3 className="text-xl/8 xl:min-h-[172px]">{title}</h3>
         <footer className="mt-auto flex items-center gap-3">
           <div className="relative size-6">
             <Image src={avatarSrc} alt={name} width={24} height={24} className="rounded-full" />
