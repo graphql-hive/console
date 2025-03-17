@@ -1,13 +1,9 @@
 import Image from 'next/image';
 import { Anchor, cn } from '@theguild/components';
-import { AuthorId, authors, AvatarFromGitHub } from '../../authors';
+import { authors, AvatarFromGitHub } from '../../authors';
+import { BlogFrontmatter } from './blog-types';
 
-export interface BlogCardProps {
-  author: AuthorId;
-  title: string;
-  date: string;
-  href: string;
-  category: string;
+export interface BlogCardProps extends BlogFrontmatter {
   className?: string;
   colorScheme?: 'default' | 'featured';
 }
