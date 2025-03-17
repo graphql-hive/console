@@ -21,7 +21,6 @@ import { deployRedis } from './services/redis';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
-import { deploySentryEventsMonitor } from './services/sentry-events';
 import { configureSlackApp } from './services/slack-app';
 import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
@@ -72,7 +71,6 @@ const environment = prepareEnvironment({
   environment: envName,
   rootDns: new pulumi.Config('common').require('dnsZone'),
 });
-deploySentryEventsMonitor({ docker, environment, sentry });
 const observability = deployObservability({ environment });
 const clickhouse = deployClickhouse();
 const postgres = deployPostgres();
