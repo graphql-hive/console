@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Anchor, useConfig } from '@theguild/components';
-import { authors } from '../../../authors';
+import { AuthorId, authors } from '../../../authors';
 import { SocialAvatar } from '../../../components/social-avatar';
 
 type Meta = {
@@ -16,7 +16,10 @@ const Authors = ({ meta }: { meta: Meta }) => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
   if (meta.authors.length === 1) {
-    const author = authors[meta.authors[0]];
+    const author = authors[meta.authors[0] as AuthorId];
+    if (!author) {
+      throw new Error(`Author ${meta.authors[0]} not found`);
+    }
 
     return (
       <div className="my-5 flex flex-row items-center justify-center">
@@ -49,7 +52,11 @@ const Authors = ({ meta }: { meta: Meta }) => {
       </time>
       <div className="my-5 flex flex-wrap justify-center gap-5">
         {meta.authors.map(authorId => {
-          const author = authors[authorId];
+          const author = authors[authorId as AuthorId];
+          if (!author) {
+            throw new Error(`Author ${authorId} not found`);
+          }
+
           return (
             <div key={authorId}>
               <Anchor href={author.link} title={author.name} className="font-semibold text-[#777]">

@@ -1,7 +1,7 @@
-import Image, { StaticImageData } from 'next/image';
+import Image from 'next/image';
 import { CallToAction, cn, Heading } from '@theguild/components';
-import { ArrowIcon } from '../arrow-icon';
-import saihajPhoto from './saihaj.webp';
+import { Author, authors, AvatarFromGitHub } from '../authors';
+import { ArrowIcon } from './arrow-icon';
 
 export function TeamSection({ className }: { className?: string }) {
   return (
@@ -36,7 +36,7 @@ export function TeamSection({ className }: { className?: string }) {
         <TeamGallery
           className={cn(
             'max-xl:-mx-4 max-xl:max-w-[calc(100%-1rem)] max-xl:px-4 max-xl:py-6 max-lg:max-w-[calc(100%+2rem)] xl:ml-auto',
-            team.length === 12 ? 'xl:w-[628px]' : 'xl:w-[664px]',
+            teamMembers.length === 12 ? 'xl:w-[628px]' : 'xl:w-[664px]',
           )}
         />
       </div>
@@ -44,67 +44,19 @@ export function TeamSection({ className }: { className?: string }) {
   );
 }
 
-type TeamMember = [name: string, avatar: string | StaticImageData, social: string];
-const team: TeamMember[] = [
-  [
-    'Denis Badurina',
-    'https://avatars.githubusercontent.com/enisdenjo?v=4&s=180',
-    'https://github.com/enisdenjo',
-  ],
-  [
-    'Dotan Simha',
-    'https://avatars.githubusercontent.com/dotansimha?v=4&s=180',
-    'https://github.com/dotansimha',
-  ],
-  [
-    'Gil Gardosh',
-    'https://avatars.githubusercontent.com/gilgardosh?v=4&s=180',
-    'https://github.com/gilgardosh',
-  ],
-
-  [
-    'Kamil Kisiela',
-    'https://avatars.githubusercontent.com/kamilkisiela?v=4&s=180',
-    'https://github.com/kamilkisiela',
-  ],
-  [
-    'Laurin Quast',
-    'https://avatars.githubusercontent.com/n1ru4l?v=4&s=180',
-    'https://github.com/n1ru4l',
-  ],
-  // ['Noam Malka', noamPhoto, 'https://noam-malka.com/'],
-  ['Saihajpreet Singh', saihajPhoto, 'https://github.com/saihaj'],
-
-  [
-    'Tuval Simha',
-    'https://avatars.githubusercontent.com/tuvalsimha?v=4&s=180',
-    'https://github.com/tuvalsimha',
-  ],
-  [
-    'Uri Goldshtein',
-    'https://avatars.githubusercontent.com/Urigo?v=4&s=180',
-    'https://github.com/Urigo',
-  ],
-  [
-    'Valentin Cocaud',
-    'https://avatars.githubusercontent.com/EmrysMyrddin?v=4&s=180',
-    'https://github.com/EmrysMyrddin',
-  ],
-  [
-    'Jason Kuhrt',
-    'https://avatars.githubusercontent.com/jasonkuhrt?v=4&s=180',
-    'https://github.com/jasonkuhrt',
-  ],
-  [
-    'Arda Tanrikulu',
-    'https://avatars.githubusercontent.com/ardatan?v=4&s=180',
-    'https://github.com/ardatan',
-  ],
-  [
-    'Jeff Dolle',
-    'https://avatars.githubusercontent.com/jdolle?v=4&s=180',
-    'https://github.com/jdolle',
-  ],
+const teamMembers: Author[] = [
+  authors.denis,
+  authors.dotan,
+  authors.gil,
+  authors.kamil,
+  authors.laurin,
+  authors.saihaj,
+  authors.tuval,
+  authors.uri,
+  authors.valentin,
+  authors.jason,
+  authors.arda,
+  authors.jdolle,
 ];
 
 function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
@@ -114,14 +66,14 @@ function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
       className={cn(
         'nextra-scrollbar flex shrink-0 grid-cols-5 flex-row items-stretch justify-items-stretch gap-2 [scrollbar-color:#00000029_transparent] [scrollbar-width:auto] max-lg:overflow-auto lg:flex-wrap lg:gap-6 lg:max-xl:grid',
         '[--size:120px]',
-        team.length <= 12 && 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
-        team.length === 13 &&
+        teamMembers.length <= 12 && 'grid-cols-6 xl:[&>:nth-child(8n-7)]:ml-[calc(var(--size)/2)]',
+        teamMembers.length === 13 &&
           'grid-cols-5 xl:[--size:112px] xl:[&>:nth-child(9n-8)]:ml-[calc(var(--size)/2)]',
-        team.length > 13 && 'nextra-scrollbar size-full flex-col p-1 xl:overflow-scroll',
+        teamMembers.length > 13 && 'nextra-scrollbar size-full flex-col p-1 xl:overflow-scroll',
         props.className,
       )}
     >
-      {team.map((member, i) => (
+      {teamMembers.map((member, i) => (
         <li key={i}>
           <TeamAvatar data={member} />
         </li>
@@ -130,11 +82,11 @@ function TeamGallery(props: React.HTMLAttributes<HTMLElement>) {
   );
 }
 
-function TeamAvatar({ data: [name, avatar, social] }: { data: TeamMember }) {
+function TeamAvatar({ data: { name, avatar, link, github } }: { data: Author }) {
   return (
     <a
       className="group relative flex flex-col focus-visible:outline-none focus-visible:ring-transparent focus-visible:ring-offset-transparent"
-      href={social}
+      href={link}
       target="_blank"
       rel="noreferrer"
     >
@@ -143,9 +95,11 @@ function TeamAvatar({ data: [name, avatar, social] }: { data: TeamMember }) {
         <Image
           alt=""
           className="firefox:bg-blend-multiply firefox:![filter:grayscale(1)] rounded-2xl bg-black brightness-100 grayscale transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-110"
-          {...(typeof avatar === 'string'
-            ? { src: avatar }
-            : { blurDataURL: avatar.blurDataURL, src: avatar.src })}
+          {...(avatar === AvatarFromGitHub
+            ? { src: `https://avatars.githubusercontent.com/${github}?v=4&s=180` }
+            : typeof avatar === 'string'
+              ? { src: avatar }
+              : { blurDataURL: avatar.blurDataURL, src: avatar.src })}
           width={180}
           height={180}
         />
