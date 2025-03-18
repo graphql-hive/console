@@ -226,6 +226,23 @@ export class TargetManager {
     return this.storage.setTargetValidation(input);
   }
 
+  async updateTargetDangerousChangeClassification(
+    input: Pick<TargetSettings, 'considerDangerousToBeBreaking'> & TargetSelector,
+  ): Promise<TargetSettings> {
+    this.logger.debug('Updating target dangerous change classification (input=%o)', input);
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+        targetId: input.targetId,
+      },
+    });
+
+    return this.storage.updateTargetDangerousChangeClassification(input);
+  }
+
   async updateTargetValidationSettings(
     input: Omit<TargetSettings['validation'], 'enabled'> & TargetSelector,
   ): Promise<TargetSettings['validation']> {

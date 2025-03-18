@@ -391,6 +391,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
   ) {
     target(selector: $selector) {
       id
+      considerDangerousToBeBreaking
       validationSettings {
         ...TargetSettings_TargetValidationSettingsFragment
       }
@@ -431,6 +432,7 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
       ok {
         target {
           id
+          considerDangerousToBeBreaking
           validationSettings {
             ...TargetSettings_TargetValidationSettingsFragment
           }
@@ -448,12 +450,31 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
   }
 `);
 
+const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation(
+    $input: UpdateTargetDangerousChangeClassificationInput!
+    $target: TargetReferenceInput!
+  ) {
+    updateTargetDangerousChangeClassification(input: $input, target: $target) {
+      ok {
+        target {
+          id
+          considerDangerousToBeBreaking
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 function floorDate(date: Date): Date {
   const time = 1000 * 60;
   return new Date(Math.floor(date.getTime() / time) * time);
 }
 
-const ConditionalBreakingChanges = (props: {
+const BreakingChanges = (props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -461,6 +482,9 @@ const ConditionalBreakingChanges = (props: {
   const [targetValidation, setValidation] = useMutation(SetTargetValidationMutation);
   const [mutation, updateValidation] = useMutation(
     TargetSettingsPage_UpdateTargetValidationSettingsMutation,
+  );
+  const [dangerousAsBreaking, updateTargetDangerousChangeClassification] = useMutation(
+    TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation,
   );
   const [targetSettings] = useQuery({
     query: TargetSettingsPage_TargetSettingsQuery,
@@ -484,6 +508,9 @@ const ConditionalBreakingChanges = (props: {
     TargetSettings_TargetValidationSettingsFragment,
     targetSettings.data?.target?.validationSettings,
   );
+
+  const considerDangerousAsBreaking =
+    targetSettings?.data?.target?.considerDangerousToBeBreaking || false;
   const isEnabled = settings?.enabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
   const { toast } = useToast();
@@ -580,23 +607,29 @@ const ConditionalBreakingChanges = (props: {
   });
 
   return (
-    <form onSubmit={handleSubmit}>
+    <>
       <SubPageLayout>
         <SubPageLayoutHeader
-          subPageTitle="Conditional Breaking Changes"
+          subPageTitle="Consider Dangerous Changes to be Breaking"
           description={
             <>
-              <CardDescription>
-                Conditional Breaking Changes can change the behavior of schema checks, based on real
-                traffic data sent to Hive.
+              <CardDescription className="max-w-[700px]">
+                Dangerous changes are not technically breaking the protocol, but could cause issues
+                for consumers of the schema. Treating dangerous changes as breaking helps safeguard
+                against these situations by requiring approval for dangerous changes.
+                <br />
+                <br />
+                Before enabling this feature, be sure "contextId" is used on schema checks.
               </CardDescription>
               <CardDescription>
                 <DocsLink
-                  href="/management/targets#conditional-breaking-changes"
+                  href="/management/targets#dangerous-changes"
                   className="text-gray-500 hover:text-gray-300"
                 >
                   Learn more
                 </DocsLink>
+                <br />
+                <br />
               </CardDescription>
             </>
           }
@@ -606,224 +639,287 @@ const ConditionalBreakingChanges = (props: {
           ) : (
             <Switch
               className="shrink-0"
-              checked={isEnabled}
-              onCheckedChange={async enabled => {
-                await setValidation({
+              checked={considerDangerousAsBreaking}
+              onCheckedChange={async considerDangerousToBeBreaking => {
+                await updateTargetDangerousChangeClassification({
                   input: {
-                    targetSlug: props.targetSlug,
-                    projectSlug: props.projectSlug,
-                    organizationSlug: props.organizationSlug,
-                    enabled,
+                    considerDangerousToBeBreaking,
+                  },
+                  target: {
+                    bySelector: {
+                      targetSlug: props.targetSlug,
+                      projectSlug: props.projectSlug,
+                      organizationSlug: props.organizationSlug,
+                    },
                   },
                 });
               }}
-              disabled={targetValidation.fetching}
+              disabled={dangerousAsBreaking.fetching}
             />
           )}
         </SubPageLayoutHeader>
-        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
-          <div>A schema change is considered as breaking only if it affects more than</div>
-          <div className="mx-4 my-2">
-            <RadioGroup
-              name="breakingChangeFormula"
-              value={values.breakingChangeFormula}
-              onValueChange={async value => {
-                await setFieldValue('breakingChangeFormula', value);
-              }}
-            >
-              <div>
-                <RadioGroupItem
-                  id="percentage"
-                  key="percentage"
-                  value="PERCENTAGE"
-                  disabled={isSubmitting}
-                  data-cy="target-cbc-breakingChangeFormula-option-percentage"
-                >
-                  <RadioGroupIndicator />
-                </RadioGroupItem>
-                <Input
-                  name="percentage"
-                  onChange={async event => {
-                    const value = Number(event.target.value);
-                    if (!Number.isNaN(value)) {
-                      await setFieldValue('percentage', value < 0 ? 0 : value, true);
-                    }
-                  }}
-                  onBlur={handleBlur}
-                  value={values.percentage}
-                  disabled={isSubmitting}
-                  type="number"
-                  step="0.01"
-                  className="mx-2 !inline-flex w-16 text-center"
-                />
-                <label htmlFor="percentage">Percent of Traffic</label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  id="requestCount"
-                  key="requestCount"
-                  value="REQUEST_COUNT"
-                  disabled={isSubmitting}
-                  data-cy="target-cbc-breakingChangeFormula-option-requestCount"
-                >
-                  <RadioGroupIndicator />
-                </RadioGroupItem>
-                <Input
-                  name="requestCount"
-                  onChange={async event => {
-                    const value = Math.round(Number(event.target.value));
-                    if (!Number.isNaN(value)) {
-                      await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
-                    }
-                  }}
-                  onBlur={handleBlur}
-                  value={values.requestCount}
-                  disabled={isSubmitting}
-                  type="number"
-                  step="1"
-                  className="mx-2 !inline-flex w-16 text-center"
-                />
-                <label htmlFor="requestCount">Total Operations</label>
-              </div>
-            </RadioGroup>
-          </div>
-          <div>
-            in the past
-            <Input
-              name="period"
-              onChange={handleChange}
-              onBlur={handleBlur}
-              value={values.period}
-              disabled={isSubmitting}
-              type="number"
-              min="1"
-              max={targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30}
-              className="mx-2 !inline-flex w-16"
-            />
-            days.
-          </div>
-          <div className="mt-3">
-            {touched.percentage && errors.percentage && (
-              <div className="text-red-500">{errors.percentage}</div>
+        {dangerousAsBreaking.error && (
+          <span className="ml-2 text-red-500">
+            {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
+              dangerousAsBreaking.error.message}
+          </span>
+        )}
+      </SubPageLayout>
+      <form onSubmit={handleSubmit}>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Conditional Breaking Changes"
+            description={
+              <>
+                <CardDescription>
+                  Conditional Breaking Changes can change the behavior of schema checks, based on
+                  real traffic data sent to Hive.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    href="/management/targets#conditional-breaking-changes"
+                    className="text-gray-500 hover:text-gray-300"
+                  >
+                    Learn more
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          >
+            {targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                className="shrink-0"
+                checked={isEnabled}
+                onCheckedChange={async enabled => {
+                  await setValidation({
+                    input: {
+                      targetSlug: props.targetSlug,
+                      projectSlug: props.projectSlug,
+                      organizationSlug: props.organizationSlug,
+                      enabled,
+                    },
+                  });
+                }}
+                disabled={targetValidation.fetching}
+              />
             )}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.percentage && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
-              </div>
-            )}
-            {touched.requestCount && errors.requestCount && (
-              <div className="text-red-500">{errors.requestCount}</div>
-            )}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.requestCount && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.requestCount}
-              </div>
-            )}
-            {/* @todo: inputErrors */}
-            {touched.period && errors.period && <div className="text-red-500">{errors.period}</div>}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.period}
-              </div>
-            )}
-          </div>
-          <div className="space-y-6">
-            <div>
-              <div className="space-y-2">
+          </SubPageLayoutHeader>
+          <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+            <div>A schema change is considered as breaking only if it affects more than</div>
+            <div className="mx-4 my-2">
+              <RadioGroup
+                name="breakingChangeFormula"
+                value={values.breakingChangeFormula}
+                onValueChange={async value => {
+                  await setFieldValue('breakingChangeFormula', value);
+                }}
+              >
                 <div>
-                  <div className="font-semibold">Allow breaking change for these clients:</div>
-                  <div className="text-xs text-gray-400">
-                    Marks a breaking change as safe when it only affects the following clients.
-                  </div>
+                  <RadioGroupItem
+                    id="percentage"
+                    key="percentage"
+                    value="PERCENTAGE"
+                    disabled={isSubmitting}
+                    data-cy="target-cbc-breakingChangeFormula-option-percentage"
+                  >
+                    <RadioGroupIndicator />
+                  </RadioGroupItem>
+                  <Input
+                    name="percentage"
+                    onChange={async event => {
+                      const value = Number(event.target.value);
+                      if (!Number.isNaN(value)) {
+                        await setFieldValue('percentage', value < 0 ? 0 : value, true);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    value={values.percentage}
+                    disabled={isSubmitting}
+                    type="number"
+                    step="0.01"
+                    className="mx-2 !inline-flex w-16 text-center"
+                  />
+                  <label htmlFor="percentage">Percent of Traffic</label>
                 </div>
-                <div className="max-w-[420px]">
-                  {values.targetIds.length > 0 ? (
-                    <ClientExclusion
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      selectedTargetIds={values.targetIds}
-                      clientsFromSettings={settings?.excludedClients ?? []}
-                      name="excludedClients"
-                      value={values.excludedClients}
-                      onBlur={() => setFieldTouched('excludedClients')}
-                      onChange={async options => {
-                        await setFieldValue(
-                          'excludedClients',
-                          options.map(o => o.value),
-                        );
-                      }}
-                      disabled={isSubmitting}
-                    />
-                  ) : (
-                    <div className="text-gray-500">Select targets first</div>
+                <div>
+                  <RadioGroupItem
+                    id="requestCount"
+                    key="requestCount"
+                    value="REQUEST_COUNT"
+                    disabled={isSubmitting}
+                    data-cy="target-cbc-breakingChangeFormula-option-requestCount"
+                  >
+                    <RadioGroupIndicator />
+                  </RadioGroupItem>
+                  <Input
+                    name="requestCount"
+                    onChange={async event => {
+                      const value = Math.round(Number(event.target.value));
+                      if (!Number.isNaN(value)) {
+                        await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    value={values.requestCount}
+                    disabled={isSubmitting}
+                    type="number"
+                    step="1"
+                    className="mx-2 !inline-flex w-16 text-center"
+                  />
+                  <label htmlFor="requestCount">Total Operations</label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div>
+              in the past
+              <Input
+                name="period"
+                onChange={handleChange}
+                onBlur={handleBlur}
+                value={values.period}
+                disabled={isSubmitting}
+                type="number"
+                min="1"
+                max={
+                  targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30
+                }
+                className="mx-2 !inline-flex w-16"
+              />
+              days.
+            </div>
+            <div className="mt-3">
+              {touched.percentage && errors.percentage && (
+                <div className="text-red-500">{errors.percentage}</div>
+              )}
+              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.percentage && (
+                <div className="text-red-500">
+                  {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
+                </div>
+              )}
+              {touched.requestCount && errors.requestCount && (
+                <div className="text-red-500">{errors.requestCount}</div>
+              )}
+              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.requestCount && (
+                <div className="text-red-500">
+                  {mutation.data.updateTargetValidationSettings.error.inputErrors.requestCount}
+                </div>
+              )}
+              {targetValidation.error && (
+                <div className="text-red-500">
+                  Something went wrong: {targetValidation.error.message}
+                </div>
+              )}
+              {touched.period && errors.period && (
+                <div className="text-red-500">{errors.period}</div>
+              )}
+              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
+                <div className="text-red-500">
+                  {mutation.data.updateTargetValidationSettings.error.inputErrors.period}
+                </div>
+              )}
+            </div>
+            <div className="space-y-6">
+              <div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-semibold">Allow breaking change for these clients:</div>
+                    <div className="text-xs text-gray-400">
+                      Marks a breaking change as safe when it only affects the following clients.
+                    </div>
+                  </div>
+                  <div className="max-w-[420px]">
+                    {values.targetIds.length > 0 ? (
+                      <ClientExclusion
+                        organizationSlug={props.organizationSlug}
+                        projectSlug={props.projectSlug}
+                        selectedTargetIds={values.targetIds}
+                        clientsFromSettings={settings?.excludedClients ?? []}
+                        name="excludedClients"
+                        value={values.excludedClients}
+                        onBlur={() => setFieldTouched('excludedClients')}
+                        onChange={async options => {
+                          await setFieldValue(
+                            'excludedClients',
+                            options.map(o => o.value),
+                          );
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    ) : (
+                      <div className="text-gray-500">Select targets first</div>
+                    )}
+                  </div>
+                  {touched.excludedClients && errors.excludedClients && (
+                    <div className="text-red-500">{errors.excludedClients}</div>
                   )}
                 </div>
-                {touched.excludedClients && errors.excludedClients && (
-                  <div className="text-red-500">{errors.excludedClients}</div>
-                )}
               </div>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <div className="font-semibold">Schema usage data from these targets:</div>
-                <div className="text-xs text-gray-400">
-                  Marks a breaking change as safe when it was not requested in the targets clients.
+              <div className="space-y-2">
+                <div>
+                  <div className="font-semibold">Schema usage data from these targets:</div>
+                  <div className="text-xs text-gray-400">
+                    Marks a breaking change as safe when it was not requested in the targets
+                    clients.
+                  </div>
+                </div>
+                <div className="pl-2">
+                  {possibleTargets?.map(pt => (
+                    <div key={pt.id} className="flex items-center gap-x-2">
+                      <Checkbox
+                        checked={values.targetIds.includes(pt.id)}
+                        onCheckedChange={async isChecked => {
+                          await setFieldValue(
+                            'targetIds',
+                            isChecked
+                              ? [...values.targetIds, pt.id]
+                              : values.targetIds.filter(value => value !== pt.id),
+                          );
+                        }}
+                        onBlur={() => setFieldTouched('targetIds', true)}
+                      />{' '}
+                      {pt.slug}
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="pl-2">
-                {possibleTargets?.map(pt => (
-                  <div key={pt.id} className="flex items-center gap-x-2">
-                    <Checkbox
-                      checked={values.targetIds.includes(pt.id)}
-                      onCheckedChange={async isChecked => {
-                        await setFieldValue(
-                          'targetIds',
-                          isChecked
-                            ? [...values.targetIds, pt.id]
-                            : values.targetIds.filter(value => value !== pt.id),
-                        );
-                      }}
-                      onBlur={() => setFieldTouched('targetIds', true)}
-                    />{' '}
-                    {pt.slug}
-                  </div>
-                ))}
+            </div>
+            {touched.targetIds && errors.targetIds && (
+              <div className="text-red-500">{errors.targetIds}</div>
+            )}
+            <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+              <div>
+                <div className="font-semibold">Example settings</div>
+                <div className="text-sm">Removal of a field is considered breaking if</div>
+              </div>
+
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  0%
+                </Tag>{' '}
+                - the field was used at least once in past 30 days
+              </div>
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  10%
+                </Tag>{' '}
+                - the field was requested by more than 10% of all GraphQL operations in recent 30
+                days
               </div>
             </div>
+            <Button type="submit" disabled={isSubmitting}>
+              Save
+            </Button>
+            {mutation.error && (
+              <span className="ml-2 text-red-500">
+                {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
+              </span>
+            )}
           </div>
-          {touched.targetIds && errors.targetIds && (
-            <div className="text-red-500">{errors.targetIds}</div>
-          )}
-          <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
-            <div>
-              <div className="font-semibold">Example settings</div>
-              <div className="text-sm">Removal of a field is considered breaking if</div>
-            </div>
-
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                0%
-              </Tag>{' '}
-              - the field was used at least once in past 30 days
-            </div>
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                10%
-              </Tag>{' '}
-              - the field was requested by more than 10% of all GraphQL operations in recent 30 days
-            </div>
-          </div>
-          <Button type="submit" disabled={isSubmitting}>
-            Save
-          </Button>
-          {mutation.error && (
-            <span className="ml-2 text-red-500">
-              {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
-            </span>
-          )}
-        </div>
-      </SubPageLayout>
-    </form>
+        </SubPageLayout>
+      </form>
+    </>
   );
 };
 
@@ -1277,7 +1373,7 @@ function TargetSettingsContent(props: {
     );
   }
 
-  if (!resolvedPage || !currentOrganization || !currentProject || !currentTarget) {
+  if (!resolvedPage || !currentProject || !currentTarget || !currentOrganization) {
     return null;
   }
 
@@ -1348,7 +1444,7 @@ function TargetSettingsContent(props: {
             />
           ) : null}
           {resolvedPage.key === 'breaking-changes' ? (
-            <ConditionalBreakingChanges
+            <BreakingChanges
               organizationSlug={props.organizationSlug}
               projectSlug={props.projectSlug}
               targetSlug={props.targetSlug}

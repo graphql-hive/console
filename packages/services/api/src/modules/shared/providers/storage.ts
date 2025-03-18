@@ -321,6 +321,10 @@ export interface Storage {
     _: TargetSelector & Omit<TargetSettings['validation'], 'enabled'>,
   ): Promise<TargetSettings['validation'] | never>;
 
+  updateTargetDangerousChangeClassification(
+    _: TargetSelector & Pick<TargetSettings, 'considerDangerousToBeBreaking'>,
+  ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
+
   countSchemaVersionsOfProject(
     _: ProjectSelector & {
       period: {

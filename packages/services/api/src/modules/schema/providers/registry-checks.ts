@@ -2,7 +2,7 @@ import { URL } from 'node:url';
 import type { GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { CriticalityLevel, Rule } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -425,6 +425,7 @@ export class RegistryChecks {
     approvedChanges: null | Map<string, SchemaChangeType>;
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
+    considerDangerousToBeBreaking: null | boolean;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -462,7 +463,11 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+    let inspectorChanges = await this.inspector.diff(
+      existingSchema,
+      incomingSchema,
+      args.considerDangerousToBeBreaking ? [dangerousBreaking] : undefined,
+    );
 
     // Filter out federation specific changes as they are not relevant for the schema diff and were in previous schema versions by accident.
     if (args.filterOutFederationChanges === true) {
@@ -854,3 +859,19 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
 }
+
+const dangerousBreaking: Rule = ({ changes }) => {
+  return changes.map(change => {
+    if (change.criticality.level === CriticalityLevel.Dangerous) {
+      return {
+        ...change,
+        criticality: {
+          ...change.criticality,
+          level: CriticalityLevel.Breaking,
+        },
+      };
+    }
+
+    return change;
+  });
+};

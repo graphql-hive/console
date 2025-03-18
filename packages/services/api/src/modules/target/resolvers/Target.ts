@@ -6,6 +6,7 @@ import type { TargetResolvers } from './../../../__generated__/types';
 export const Target: Pick<
   TargetResolvers,
   | 'cleanId'
+  | 'considerDangerousToBeBreaking'
   | 'experimental_forcedLegacySchemaComposition'
   | 'graphqlEndpointUrl'
   | 'id'

@@ -215,10 +215,17 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const project = await this.projectManager.getProject({
-      organizationId: schemaVersion.organizationId,
-      projectId: schemaVersion.projectId,
-    });
+    const [project, { considerDangerousToBeBreaking }] = await Promise.all([
+      this.projectManager.getProject({
+        organizationId: schemaVersion.organizationId,
+        projectId: schemaVersion.projectId,
+      }),
+      this.storage.getTargetSettings({
+        targetId: schemaVersion.targetId,
+        projectId: schemaVersion.projectId,
+        organizationId: schemaVersion.organizationId,
+      }),
+    ]);
 
     const diffCheck = await this.registryChecks.diff({
       approvedChanges: null,
@@ -230,6 +237,7 @@ export class SchemaVersionHelper {
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
+      considerDangerousToBeBreaking,
     });
 
     if (diffCheck.status === 'skipped') {

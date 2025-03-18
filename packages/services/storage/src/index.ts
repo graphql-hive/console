@@ -361,11 +361,13 @@ export async function createStorage(
       | 'validation_excluded_clients'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
+      | 'consider_dangerous_breaking'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
   ): TargetSettings {
     return {
+      considerDangerousToBeBreaking: row.consider_dangerous_breaking,
       validation: {
         enabled: row.validation_enabled,
         percentage: row.validation_percentage,
@@ -1794,6 +1796,7 @@ export async function createStorage(
           | 'validation_excluded_clients'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
+          | 'consider_dangerous_breaking'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1805,7 +1808,8 @@ export async function createStorage(
           t.validation_excluded_clients,
           t.validation_request_count,
           t.validation_breaking_change_formula,
-          array_agg(tv.destination_target_id) as targets
+          array_agg(tv.destination_target_id) as targets,
+          t.consider_dangerous_breaking
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1837,6 +1841,7 @@ export async function createStorage(
               | 'validation_excluded_clients'
               | 'validation_breaking_change_formula'
               | 'validation_request_count'
+              | 'consider_dangerous_breaking'
             > & {
               targets: target_validation['destination_target_id'][];
             }
@@ -1855,10 +1860,36 @@ export async function createStorage(
               LIMIT 1
             ) ret
           WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
+          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.consider_dangerous_breaking;
         `);
         }),
       ).validation;
+    },
+    async updateTargetDangerousChangeClassification({
+      targetId: target,
+      projectId: project,
+      considerDangerousToBeBreaking,
+    }) {
+      return transformTargetSettings(
+        await tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
+          return trx.one(sql`/* updateTargetValidationSettings */
+            UPDATE targets as t
+            SET consider_dangerous_breaking = ${considerDangerousToBeBreaking}
+            FROM (
+              SELECT
+                it.id,
+                array_agg(tv.destination_target_id) as targets
+              FROM targets AS it
+              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
+              WHERE it.id = ${target} AND it.project_id = ${project}
+              GROUP BY it.id
+              LIMIT 1
+            ) ret
+            WHERE t.id = ret.id
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.consider_dangerous_breaking;
+          `);
+        }),
+      );
     },
     async updateTargetValidationSettings({
       targetId: target,
@@ -1909,7 +1940,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.consider_dangerous_breaking;
           `);
         }),
       ).validation;
@@ -5147,7 +5178,8 @@ const targetSQLFields = sql`
   "clean_id" as "slug",
   "name",
   "project_id" as "projectId",
-  "graphql_endpoint_url" as "graphqlEndpointUrl"
+  "graphql_endpoint_url" as "graphqlEndpointUrl",
+  "consider_dangerous_breaking" as "considerDangerousToBeBreaking"
 `;
 
 export function findTargetById(deps: { pool: DatabasePool }) {
@@ -5217,6 +5249,7 @@ const TargetModel = zod.object({
   name: zod.string(),
   projectId: zod.string(),
   graphqlEndpointUrl: zod.string().nullable(),
+  considerDangerousToBeBreaking: zod.boolean(),
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({

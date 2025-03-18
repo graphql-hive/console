@@ -20,6 +20,10 @@ export default gql`
     updateTargetGraphQLEndpointUrl(
       input: UpdateTargetGraphQLEndpointUrlInput!
     ): UpdateTargetGraphQLEndpointUrlResult!
+    updateTargetDangerousChangeClassification(
+      target: TargetReferenceInput!
+      input: UpdateTargetDangerousChangeClassificationInput!
+    ): UpdateTargetDangerousChangeClassificationResult!
     """
     Overwrites project's schema composition library.
     Works only for Federation projects with native composition enabled.
@@ -43,6 +47,23 @@ export default gql`
     projectSlug: String!
     targetSlug: String!
     graphqlEndpointUrl: String
+  }
+
+  input UpdateTargetDangerousChangeClassificationInput {
+    considerDangerousToBeBreaking: Boolean!
+  }
+
+  type UpdateTargetDangerousChangeClassificationOk {
+    target: Target!
+  }
+
+  type UpdateTargetDangerousChangeClassificationError {
+    message: String!
+  }
+
+  type UpdateTargetDangerousChangeClassificationResult {
+    ok: UpdateTargetDangerousChangeClassificationOk
+    error: UpdateTargetDangerousChangeClassificationError
   }
 
   type UpdateTargetGraphQLEndpointUrlOk {
@@ -183,6 +204,7 @@ export default gql`
     The endpoint url of the target's explorer instance.
     """
     graphqlEndpointUrl: String
+    considerDangerousToBeBreaking: Boolean!
     validationSettings: TargetValidationSettings!
     experimental_forcedLegacySchemaComposition: Boolean!
     viewerCanAccessSettings: Boolean!
