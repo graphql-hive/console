@@ -4,7 +4,7 @@ authors: charlypoly
 tags: [graphql, typescript, codegen, node, react]
 date: 2021-04-29
 description: How to get the most of React application types with GraphQL Code Generator.
-image: /blog-assets/graphql-code-generator/cover.png
+image: ./graphql-code-generator/cover.png
 canonical: https://charlypoly.com/publications/typescript-with-graphql-done-right
 ---
 
@@ -41,7 +41,7 @@ of functional components dealing with state and data in order to provide UI to t
 Like with plain JavaScript functions, the same rules of the “types chain” apply to your React
 application that will look to something similar to the following:
 
-![/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-1.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-1.png)
+![./typescript-with-graphql-done-right/typescript-with-graphql-done-right-1.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-1.png)$2
 
 _Most modern React applications have the following data setup: centralized data store passed down to
 components through contexts, transformed by custom hooks down to UI components._
@@ -97,7 +97,7 @@ As we saw earlier, the strength of your React TypeScript types is based on your 
 therefore, any mistake on your manually maintained data types will ripple in many of your React
 components.
 
-![/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-2.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-2.png)
+![./typescript-with-graphql-done-right/typescript-with-graphql-done-right-2.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-2.png)$2
 
 _In our hypothetical application, the User type has some typos that will impact the stability of the
 associated components at runtime, defecting the benefits of TypeScript._
@@ -110,7 +110,7 @@ providing data-types - and even more - generation tools.
 [GraphQL Code Generator](https://graphql-code-generator.com), given the mutations and queries used
 by the app and the access to the target GraphQL API, generates the corresponding TypeScript types.
 
-![/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-3.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-3.png)
+![./typescript-with-graphql-done-right/typescript-with-graphql-done-right-3.png](/blog-assets/typescript-with-graphql-done-right/typescript-with-graphql-done-right-3.png)$2
 
 GraphQL Code Generator is doing all the heavy lifting by getting from the API the definitions of the
 data types used by the React applications queries and mutations.

@@ -4,8 +4,8 @@ authors: laurin
 tags: [graphql, sql, postgresql]
 date: 2023-02-15
 description: 'An SQL based approach for understanding and implementing GraphQL Cursor Pagination.'
-image: /blog-assets/graphql-cursor-pagination-with-postgresql/cover.png
-thumbnail: /blog-assets/graphql-cursor-pagination-with-postgresql/thumbnail.png
+image: ./cover.png
+thumbnail: ./thumbnail.png
 ---
 
 The GraphQL Cursor Pagination specification is a popular approach for exposing paginated data via an
@@ -22,11 +22,17 @@ cursor pagination. While this fact is true, using offset-based pagination has so
 shortcomings.
 
 ```sql filename="Offset-based Pagination"
-SELECT "id", "name"
-FROM "users"
-ORDER BY "id" ASC
-OFFSET 10
-LIMIT 10
+SELECT
+  "id",
+  "name"
+FROM
+  "users"
+ORDER BY
+  "id" ASC
+OFFSET
+  10
+LIMIT
+  10
 ```
 
 Compared to offset-based pagination, we need to pick a column and need to use the value of that
@@ -70,10 +76,15 @@ table that has consistent sorting, e.g. a serial primary key.
 In the first roundtrip, we start without a `cursor` and fetch the first two items.
 
 ```sql filename="Initial SQL query"
-SELECT "id", "name"
-FROM "users"
-ORDER BY "id" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name"
+FROM
+  "users"
+ORDER BY
+  "id" ASC
+LIMIT
+  2
 ```
 
 ```diff filename="Initial SQL query result"
@@ -86,11 +97,17 @@ LIMIT 2
 Afterward we use the cursor (last `id` in the result set) to fetch the next two items.
 
 ```sql filename="Follow-up SQL query" {3}
-SELECT "id", "name"
-FROM "users"
-WHERE "id" > 2
-ORDER BY "id" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name"
+FROM
+  "users"
+WHERE
+  "id" > 2
+ORDER BY
+  "id" ASC
+LIMIT
+  2
 ```
 
 ```diff filename="Follow-up SQL query result"
@@ -123,11 +140,18 @@ which is not monotonically orderable.
 Let's try using this table with the same SQL query as before and fetch the users after `"Dotan"`.
 
 ```sql filename="SQL query"
-SELECT "id", "name", to_json("created_at") as "created_at"
-FROM "users"
-WHERE "id" > '628995bf-2907-49d1-a36f-978566a053c4'
-ORDER BY "id" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
+WHERE
+  "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+ORDER BY
+  "id" ASC
+LIMIT
+  2
 ```
 
 ```diff filename="SQL query result"
@@ -170,20 +194,25 @@ Before we perform such pagination, we should as always with our SQL queries, add
 column to ensure good performance as the table grows in size.
 
 ```sql filename="Create index"
-CREATE INDEX "users_pagination" ON "users" (
-  "created_at" ASC
-);
+CREATE INDEX "users_pagination" ON "users" ("created_at" ASC);
 ```
 
 Instead of the `id`, we now use the `created_at` value from the row with the name `Dotan` as the
 cursor.
 
 ```sql filename="SQL query"
-SELECT "id", "name", to_json("created_at") as "created_at"
-FROM "users"
-WHERE "created_at" > '2023-01-11T10:32:07.853915+00:00'
-ORDER BY "created_at" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
+WHERE
+  "created_at" > '2023-01-11T10:32:07.853915+00:00'
+ORDER BY
+  "created_at" ASC
+LIMIT
+  2
 ```
 
 <Callout type="info">
@@ -214,11 +243,18 @@ Again, we will try to fetch the users after `Dotan` using our cursor value from 
 column.
 
 ```sql filename="SQL query"
-SELECT "id", "name", to_json("created_at") as "created_at"
-FROM "users"
-WHERE "created_at" > '2023-01-11T10:32:07.853915+00:00'
-ORDER BY "created_at" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
+WHERE
+  "created_at" > '2023-01-11T10:32:07.853915+00:00'
+ORDER BY
+  "created_at" ASC
+LIMIT
+  2
 ```
 
 However, this will yield zero results this time.
@@ -235,11 +271,18 @@ operator, but then we would also get back `Dotan` and end up with multiple `Dota
 UI of our application.
 
 ```sql filename="SQL query"
-SELECT "id", "name", to_json("created_at") as "created_at"
-FROM "users"
-WHERE "created_at" >= '2023-01-11T10:32:07.853915+00:00'
-ORDER BY "created_at" ASC
-LIMIT 2
+SELECT
+  "id",
+  "name",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
+WHERE
+  "created_at" >= '2023-01-11T10:32:07.853915+00:00'
+ORDER BY
+  "created_at" ASC
+LIMIT
+  2
 ```
 
 ```diff filename="SQL query result"
@@ -257,8 +300,12 @@ So lets execute the SQL query, but now with both the `id` (`'628995bf-2907-49d1-
 and `created_at` (`'2023-01-11T10:32:07.853915+00:00'`) value of the row `Dotan`.
 
 ```sql filename="SQL query using compound cursor"
-SELECT "id", "name", to_json("created_at") as "created_at"
-FROM "users"
+SELECT
+  "id",
+  "name",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
 WHERE
   (
     "created_at" = '2023-01-11T10:32:07.853915+00:00'
@@ -266,9 +313,10 @@ WHERE
   )
   OR "created_at" >= '2023-01-11T10:32:07.853915+00:00'
 ORDER BY
-  "created_at" ASC
-  , "id" ASC
-LIMIT 2
+  "created_at" ASC,
+  "id" ASC
+LIMIT
+  2
 ```
 
 Note, that we now have to use the `AND` operator to combine the two possible conditions.
@@ -276,8 +324,8 @@ Note, that we now have to use the `AND` operator to combine the two possible con
 It might be tempting to just write the following condition, but this will not work.
 
 ```sql filename="Wrong Condition"
-  "created_at" >= '2023-01-11T10:32:07.853915+00:00'
-    AND "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+"created_at" >= '2023-01-11T10:32:07.853915+00:00'
+AND "id" > '628995bf-2907-49d1-a36f-978566a053c4'
 ```
 
 This is because the `id` column is not serial and thus not stable for sorting. We only want to
@@ -289,10 +337,7 @@ Furthermore, we now also added the `id` as an additional field to the `ORDER BY`
 In order to yield and preserve the best possible performance we again need to set an index.
 
 ```sql filename="SQL index for compound cursor"
-CREATE INDEX "users_pagination" ON "users" (
-  "created_at" ASC
-  , "id" ASC
-);
+CREATE INDEX "users_pagination" ON "users" ("created_at" ASC, "id" ASC);
 ```
 
 ## Cursor Pagination with Additional Filters
@@ -313,8 +358,13 @@ Again, lets query for all users after `Dotan` using our cursor value from the `c
 with an additional `role` filter.
 
 ```sql filename="SQL query"
-SELECT "id", "name", "role", to_json("created_at") as "created_at"
-FROM "users"
+SELECT
+  "id",
+  "name",
+  "role",
+  to_json("created_at") AS "created_at"
+FROM
+  "users"
 WHERE
   (
     (
@@ -325,9 +375,10 @@ WHERE
   )
   AND "role" = 'admin'
 ORDER BY
-  "created_at" ASC
-  , "id" ASC
-LIMIT 2
+  "created_at" ASC,
+  "id" ASC
+LIMIT
+  2
 ```
 
 If you now execute this query it will work, however, if you are operating on a large dataset, the
@@ -337,11 +388,7 @@ This is because the `role` filter is not applied to the index. In order to fix t
 the column to it.
 
 ```sql filename="SQL index for compound cursor with additional filter"
-CREATE INDEX "users_pagination" ON "users" (
-  "created_at" ASC
-  , "id" ASC
-  , "role" ASC
-);
+CREATE INDEX "users_pagination" ON "users" ("created_at" ASC, "id" ASC, "role" ASC);
 ```
 
 <Callout type="info">

@@ -6,8 +6,8 @@ date: 2020-12-04
 description:
   The GraphQL Stack - Part 2. GraphQL Modules Preset with Codegen since it essentially also splits
   your types and generates types.
-image: /blog-assets/graphql-deep-dive-4/cover.png
-thumbnail: /blog-assets/graphql-deep-dive-4/cover.png
+image: ./cover.png
+thumbnail: ./cover.png
 ---
 
 _This blog is a part of a series on GraphQL where we will dive deep into GraphQL and its ecosystem
@@ -70,18 +70,18 @@ Domain. For instance, this is how portion of my directory structure looks like. 
 able to split every Microservice into multiple modules like this which allows me to manage the code
 better.
 
-![GraphQL Modules Directory Structure](/blog-assets/graphql-deep-dive-4/1.png)
+![GraphQL Modules Directory Structure](./1.png)$2
 
 And this is how a simple provider looks like. If you notice, this makes it very simple to
 comprehend. The convention I use is that, I try to group CRUD operations into a single module but it
 need not call for a separate microservice all by itself.
 
-![Sample GraphQL Provider](/blog-assets/graphql-deep-dive-4/2.png)
+![Sample GraphQL Provider](./2.png)$2
 
 And your Mutations become as simple as this, calling the injector, doing the operations and
 returning the results:
 
-![](/blog-assets/graphql-deep-dive-4/3.png)
+![](./graphql-deep-dive-4/3.png)
 
 And finally all you have to do is compose the schema and resolvers from all the modules in your
 server giving a unified GraphQL endpoint you can use.
@@ -130,13 +130,13 @@ makes all the operations you do fully typed.
 Since I am just in the initial phases of development, this is how my `.meshrc` file looks like where
 I interface with Dgraph with GraphQL Mesh
 
-![GraphQL Meshrc file](/blog-assets/graphql-deep-dive-4/4.png)
+![GraphQL Meshrc file](./4.png)$2
 
 And when I have the SDK generated with GraphQL Mesh, all I have to do is just use the methods the
 SDK providers me (based on the GraphQL Mutations and Queries I have provided to it as inputs) like
 this:
 
-![](/blog-assets/graphql-deep-dive-4/5.png)
+![](./5.png)
 
 Which makes it really powerful to use without worrying about what happens underneath. While there is
 a lot we can talk about GraphQL Mesh as well, I will leave it at this for now.
@@ -162,18 +162,18 @@ focus on the other things which really matter the most in your journey with Grap
 see below, I use the functions from GraphQL Tools extensively when I do operations with my schema
 like this:
 
-![GraphQL Tools operations](/blog-assets/graphql-deep-dive-4/6.png)
+![GraphQL Tools operations](./6.png)$2
 
 And it also helps me write my own directives like this:
 
-![GraphQL Directives](/blog-assets/graphql-deep-dive-4/7.png)
+![GraphQL Directives](./7.png)$2
 
 And since I have recently moved from [Federation](https://the-guild.dev/graphql/hive/federation) to
 Stitching, I am also starting to use
 [**Typemerging**](https://graphql-tools.com/docs/stitch-type-merging) from GraphQL Tools to have my
 GraphQL Gateway setup as well like this:
 
-![GraphQL Gateway](/blog-assets/graphql-deep-dive-4/8.png)
+![GraphQL Gateway](./graphql-deep-dive-4/8.png)
 
 If you are new to schema stitching with Typemerging, I would recommend you check out
 [**this repository**](https://github.com/gmac/schema-stitching-demos) from Greg where he does a
@@ -198,14 +198,14 @@ requests.
 For eg. this is how I use TypedDocumentNode to have all my GraphQL operations typed when calling
 `@apollo/client/core` in my app.
 
-![Typed Document Node Example](/blog-assets/graphql-deep-dive-4/9.png)
+![Typed Document Node Example](./9.png)$2
 
 All I had to do is pass the document which was generated and if you notice, even my response is
 fully typed.
 
 And this is how the generated Document Nodes look like:
 
-![Typed Document Node](/blog-assets/graphql-deep-dive-4/10.png)
+![Typed Document Node](./10.png)
 
 Initially I had it running on both the server and the client side but then removed it from the
 server side since the SDK from GraphQL Mesh was already doing this job for me.

@@ -5,8 +5,8 @@ authors: [kamil]
 date: 2022-11-08
 description:
   Learn how ClickHouse enabled GraphQL Hive to scale from millions to billions of requests monthly.
-image: /blog-assets/graphql-hive-and-clickhouse/cover.png
-thumbnail: /blog-assets/graphql-hive-and-clickhouse/thumbnail.png
+image: ./cover.png
+thumbnail: ./thumbnail.png
 ---
 
 You will learn how **ClickHouse** and **Kafka** enabled GraphQL Hive to collect billions of requests
@@ -89,7 +89,7 @@ the problems we were facing and the decision-making process that lead us to love
 The data pipeline in GraphQL Hive is relatively simple but has proven to be highly scalable and
 reliable. Here's a high-level data flow of the usage reporting part of GraphQL Hive.
 
-![](/blog-assets/graphql-hive-and-clickhouse/data-pipeline.png 'An overview of the architecture')
+![](./graphql-hive-and-clickhouse/data-pipeline.png 'An overview of the architecture')$2
 
 We can distinguish two parts here, the **collecting** and **processing** of data.
 
@@ -107,7 +107,7 @@ Kafka by 10 times**.
 It sounds mysterious, but we find this part extremely interesting, that's why we're going to write a
 dedicated article about it soon.
 
-![](/blog-assets/graphql-hive-and-clickhouse/data-collecting-part.png 'Data collecting part')
+![](./graphql-hive-and-clickhouse/data-collecting-part.png 'Data collecting part')$2
 
 Thanks to Kafka and its persistence of messages, the collecting and processing parts are nicely and
 reliably separated.
@@ -118,7 +118,7 @@ The Usage Ingestor service receives the messages from Kafka, then it unpacks the
 each message and processes them. Once the processing of reports is done, the service writes data to
 Clickhouse.
 
-![](/blog-assets/graphql-hive-and-clickhouse/data-processing-part.png 'Data processing part')
+![](./graphql-hive-and-clickhouse/data-processing-part.png 'Data processing part')$2
 
 The data pipeline does not end here, there're still a few quite interesting techniques we use within
 ClickHouse.
@@ -146,23 +146,22 @@ Nothing special here.
 
 An overview of our ClickHouse tables.
 
-![](/blog-assets/graphql-hive-and-clickhouse/tables.png 'An overview of our ClickHouse tables')
+![](./graphql-hive-and-clickhouse/tables.png 'An overview of our ClickHouse tables')$2
 
 In GraphQL Hive, we use `MergeTree` to store received GraphQL requests in the
 [`operations` table](https://github.com/kamilkisiela/graphql-hive/blob/64e53f207b413f8bb222eabd6aeb437e3300dbfd/packages/services/storage/migrations/clickhouse.ts#L29-L49).
 
 ```sql
-CREATE TABLE 'operations'
-(
-  target String,
-  timestamp DateTime('UTC'),
-  expires_at DateTime('UTC'),
-  hash String,
+CREATE TABLE 'operations' (
+  target STRING,
+  timestamp DateTime ('UTC'),
+  expires_at DateTime ('UTC'),
+  hash STRING,
   ok UInt8,
   errors UInt16,
   duration UInt64,
-  client_name String,
-  client_version String
+  client_name STRING,
+  client_version STRING
 )
 ```
 
@@ -197,7 +196,7 @@ p95, p99) of all and individual operations, and a lot more other things.
 
 The page contains a date range filter.
 
-![](/blog-assets/graphql-hive-and-clickhouse/date-ranges.png 'Operations page and the date range filter')
+![](./graphql-hive-and-clickhouse/date-ranges.png 'Operations page and the date range filter')$2
 
 Calculating the percentiles of the latency for a large number of GraphQL requests (stored as rows)
 might be a challenge, even for ClickHouse. Maybe not for "Last 24 hours" as we get only 1/30 of all
@@ -235,16 +234,24 @@ we improved it.
 
 Here's yet another, this time extreme example of a table designed with an end goal in mind.
 
-![](/blog-assets/graphql-hive-and-clickhouse/clients.png 'Operations page and the Clients section')
+![](./graphql-hive-and-clickhouse/clients.png 'Operations page and the Clients section')$2
 
 GraphQL Hive allows you to understand who are the consumers of your GraphQL API.
 
 Here's the SQL query that we previously used to generate the charts:
 
 ```sql
-SELECT COUNT(*) as total, client_name, client_version
-FROM operations WHERE timestamp >= subtractDays(now(), 30)
-GROUP BY client_name, client_version
+SELECT
+  COUNT(*) AS total,
+  client_name,
+  client_version
+FROM
+  operations
+WHERE
+  timestamp >= subtractDays (now(), 30)
+GROUP BY
+  client_name,
+  client_version
 ```
 
 The latency was awfully slow, the more data we had, the slower it was. For a few billion rows, **it
@@ -253,14 +260,13 @@ took 56 seconds**, a ridiculously poor performance.
 We decided to create a special materialized view, designed specifically for the UI component.
 
 ```sql
-CREATE MATERIALIZED VIEW 'clients_daily'
-(
-  target String,
-  client_name String,
-  client_version String,
-  hash String,
-  timestamp DateTime('UTC'),
-  expires_at DateTime('UTC'),
+CREATE MATERIALIZED VIEW 'clients_daily' (
+  target STRING,
+  client_name STRING,
+  client_version STRING,
+  hash STRING,
+  timestamp DateTime ('UTC'),
+  expires_at DateTime ('UTC'),
   total UInt32
 )
 ```
@@ -272,9 +278,17 @@ of that table.
 Now the SQL query looks like this:
 
 ```sql
-SELECT sum(total) as total, client_name, client_version
-FROM clients_daily WHERE timestamp >= subtractDays(now(), 30)
-GROUP BY client_name, client_version
+SELECT
+  sum(total) AS total,
+  client_name,
+  client_version
+FROM
+  clients_daily
+WHERE
+  timestamp >= subtractDays (now(), 30)
+GROUP BY
+  client_name,
+  client_version
 ```
 
 <Callout type="info" emoji="🤯">
@@ -289,7 +303,7 @@ Another fantastic feature of ClickHouse is **Asynchronous Inserts**. This opt-in
 up inserted data and flush it in a single batch. Thanks to the async inserts we're able to accept a
 higher rate of INSERT queries, without worrying about the performance.
 
-![](/blog-assets/graphql-hive-and-clickhouse/async-sync-inserts.png 'Difference between synchronous and asynchronous inserts in ClickHouse')
+![](./graphql-hive-and-clickhouse/async-sync-inserts.png 'Difference between synchronous and asynchronous inserts in ClickHouse')$2
 
 Every read operation in ClickHouse is being cached, writing too often translates to a lot of cache
 misses. To avoid that, we either use the async inserts mode or synchronously write data less often

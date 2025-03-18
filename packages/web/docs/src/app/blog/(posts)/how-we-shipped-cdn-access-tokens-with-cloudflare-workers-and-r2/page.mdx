@@ -6,8 +6,8 @@ date: 2023-02-02
 description:
   Learn how we are using Cloudflare Workers to provide highly available access tokens for the Hive
   schema artifacts CDN.
-image: /blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/cover.png
-thumbnail: /blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/thumbnail.png
+image: ./cover.png
+thumbnail: ./thumbnail.png
 ---
 
 As we are building the GraphQL schema registry Hive we are constantly facing interesting problems
@@ -130,13 +130,13 @@ We ended up with a database schema like this.
 
 ```sql
 CREATE TABLE "public"."cdn_access_tokens" (
-  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4()
-  , "target_id" uuid NOT NULL REFERENCES "targets"("id") ON DELETE CASCADE
-  , "s3_key" text UNIQUE NOT NULL
-  , "first_characters" text NOT NULL
-  , "last_characters" text NOT NULL
-  , "alias" text NOT NULL
-  , "created_at" timestamp with time zone NOT NULL DEFAULT NOW()
+  "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
+  "target_id" UUID NOT NULL REFERENCES "targets" ("id") ON DELETE CASCADE,
+  "s3_key" TEXT UNIQUE NOT NULL,
+  "first_characters" TEXT NOT NULL,
+  "last_characters" TEXT NOT NULL,
+  "alias" TEXT NOT NULL,
+  "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -287,11 +287,11 @@ const validateLegacyCDNAccessToken = async (args: {
 After everything was implemented and properly tested via our integration test suite, we finally
 rolled it out to production. And... everything was on fire.
 
-![Fire Fire Fire](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-3-rollout-errors.png)
+![Fire Fire Fire](./phase-3-rollout-errors.png)$2
 
 We quickly responded with rolling back the latest changes and then it was time for debugging...
 
-![Revert](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-3-revert.png)
+![Revert](./phase-3-revert.png)
 
 ## Phase 3.1
 
@@ -317,7 +317,7 @@ database migration from Phase 2 was now run with the correct secret.
 
 On the dashboard, we could now finally see the new validation method to succeed.
 
-![Rollout](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-3-1-rollout.png)
+![Rollout](./phase-3-1-rollout.png)$2
 
 That mean it was now safe to re-apply the changes from Phase 3 and roll them out to production.
 
@@ -326,7 +326,7 @@ This time everything went smooth and as expected.
 The analytics now showed that most requests hit the cached access key validation and we had no
 clients complaining.
 
-![All good](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-3-1-all-good-in-da-hood.png)
+![All good](./phase-3-1-all-good-in-da-hood.png)
 
 ## Phase 4
 
@@ -400,11 +400,11 @@ this project.
 
 The new token overview:
 
-![All good](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-4-cdn-access-token-overview.png)
+![All good](./phase-4-cdn-access-token-overview.png)$2
 
 Creating a new token:
 
-![All good](/blog-assets/how-we-shipped-cdn-access-tokens-with-cloudflare-workers-and-r2/phase-4-token-create-form.png)
+![All good](./phase-4-token-create-form.png)
 
 We successfully deployed this to production and then informed all our clients that are waiting for
 this feature. 🎉

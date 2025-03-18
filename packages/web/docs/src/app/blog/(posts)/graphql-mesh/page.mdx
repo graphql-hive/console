@@ -6,8 +6,8 @@ date: 2020-03-23
 description:
   We are excited to announce GraphQL Mesh. A powerful open source library enabling developers to
   leverage the power of GraphQL without requiring changes
-image: /blog-assets/graphql-mesh/cover.webm
-thumbnail: /blog-assets/graphql-mesh/cover.jpg
+image: ./cover.webm
+thumbnail: ./cover.jpg
 ---
 
 We are excited to announce [GraphQL Mesh](https://github.com/Urigo/graphql-mesh) — a powerful open
@@ -17,7 +17,7 @@ technologies your servers already use.
 We've been using this tool to significantly improve our clients stacks — improving the areas that a
 classic GraphQL gateways would have left untouched
 
-![Mesh SDK](/blog-assets/graphql-mesh/sdk.png 'Mesh SDK')
+![Mesh SDK](./graphql-mesh/sdk.png 'Mesh SDK')$2
 
 ## The Basics
 
@@ -59,7 +59,7 @@ Here are some use cases and how GraphQL Mesh can be used to support them:
 - Access and fetch data across microservices (a merged Data Graph) without adding a central failure
   point to your deployment architecture
 
-![Pipeline Architecture](/blog-assets/graphql-mesh/pipeline-architecture.png 'Pipeline Architecture')
+![Pipeline Architecture](./graphql-mesh/pipeline-architecture.png 'Pipeline Architecture')$2
 
 The way GraphQL Mesh works is:
 
@@ -82,7 +82,7 @@ GraphQL Mesh was created by the open source group called [The Guild](/).
 
 We currently maintain the following libraries:
 
-![Libraries](/blog-assets/graphql-mesh/libraries.png 'Libraries')
+![Libraries](./graphql-mesh/libraries.png 'Libraries')$2
 
 We love what we do and are fulfilled by that, but if you wish to support us, here are some possible
 ways:
@@ -119,7 +119,7 @@ But what about the services and data sources you **query from your resolvers**?
 In your resolvers you still call regular REST endpoints? They might not be typed and might not
 return the shape of response you want them to return.
 
-![Any](/blog-assets/graphql-mesh/img-1.png 'Any')
+![Any](./graphql-mesh/img-1.png 'Any')$2
 
 Wouldn't it be nice if you could use those data sources as GraphQL sources?
 
@@ -148,7 +148,7 @@ SDK**, take would make it look like those sources exposed GraphQL themselves.
 
 That SDK can run locally on your GraphQL server without affecting the underlining services at all.
 
-![No Any](/blog-assets/graphql-mesh/img-2.png 'No Any')
+![No Any](./graphql-mesh/img-2.png 'No Any')$2
 
 ### 2 — the Merging Use Case
 
@@ -291,7 +291,7 @@ GraphQL engine will be in charge of running the actual data fetching, using the 
 This method brings the GraphQL schema management closer to the developer, and allows you to modify
 and manage the GraphQL schema according to your application needs.
 
-![GraphQL Mesh as an SDK running inside the services](/blog-assets/graphql-mesh/gateway-1.png 'GraphQL Mesh as an SDK running inside the services')
+![GraphQL Mesh as an SDK running inside the services](./graphql-mesh/gateway-1.png 'GraphQL Mesh as an SDK running inside the services')$2
 
 ### GraphQL Mesh as a Gateway
 
@@ -302,7 +302,7 @@ the schema is being managed by the gateway itself, and not the consuming applica
 Using GraphQL Mesh output as a gateway means that the consuming applications will execute GraphQL
 over the network to the gateway, and from the gateway to the source APIs.
 
-![GraphQL Mesh as a self hosted gateway](/blog-assets/graphql-mesh/gateway-2.png 'GraphQL Mesh as a self hosted gateway')
+![GraphQL Mesh as a self hosted gateway](./graphql-mesh/gateway-2.png 'GraphQL Mesh as a self hosted gateway')$2
 
 ### Querying Data from Mesh
 

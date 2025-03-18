@@ -4,8 +4,8 @@ authors: charlypoly
 tags: [graphql, graphql-federation]
 date: 2022-02-14
 description: A guide to avoid common learning biases and misconceptions around GraphQL.
-thumbnail: /blog-assets/how-not-to-learn-graphql/preview.png
-image: /blog-assets/how-not-to-learn-graphql/cover.png
+thumbnail: ./preview.png$2
+image: ./cover.png
 ---
 
 "_GraphQL is a front-end technology_", "_[Federation](https://the-guild.dev/graphql/hive/federation)
@@ -29,7 +29,7 @@ Yes, is it true that GraphQL was first popularized as a technology solving issue
 - reducing the size of fetched data by requesting only the necessary fields
 - removing the overhead of fetching and crunching data from multiple endpoints
 
-![](/blog-assets/how-not-to-learn-graphql/how-not-to-learn-graphql-1.jpg)
+![](./how-not-to-learn-graphql-1.jpg)$2
 
 In short, GraphQL gave the control back to the data consumers (mobile apps, web apps).
 
@@ -43,7 +43,7 @@ name the major ones: [GraphQL Tools](https://graphql-tools.com/docs/introduction
 [Apollo Federation](https://apollographql.com/docs/federation), [Hasura](https://hasura.io),
 [GraphQL Mesh](https://graphql-mesh.com/docs/getting-started/introduction).
 
-![graphql gateway.png](/blog-assets/how-not-to-learn-graphql/how-not-to-learn-graphql-2.png)
+![graphql gateway.png](./how-not-to-learn-graphql-2.png)
 
 Rapidly, some companies started to offer enterprise solutions such as SaaS/PaaS to manage GraphQL
 schema at scale: [Apollo Studio](https://apollographql.com/docs/studio),
@@ -669,7 +669,7 @@ As explained in the
 [GraphQL Tools v7+ documentation](https://graphql-tools.com/docs/schema-stitching/stitch-type-merging#merging-flow),
 here is the merging flow performed when processing the `UserPosts` operation:
 
-![Untitled](/blog-assets/how-not-to-learn-graphql/how-not-to-learn-graphql-3.png)
+![Untitled](./how-not-to-learn-graphql-3.png)$2
 
 Modern Stitching's Type Merging approach follows the initial design of GraphQL resolvers but for
 types sharing fields across multiple subschemas.
@@ -813,7 +813,7 @@ The separation in development and deployment workflows and allowing teams to hav
 schema can also be achieved by merging the subschemas at build time and deploying it as a gateway
 that runs local modules, with no network overhead.
 
-![gateway.png](/blog-assets/how-not-to-learn-graphql/how-not-to-learn-graphql-4.png)
+![gateway.png](./how-not-to-learn-graphql-4.png)$2
 
 Using a monorepo with schema merging at build time solves the incompressible performance issue while
 preserving the ownership of the subschemas and guaranteeing that deployed subschemas are compatible.

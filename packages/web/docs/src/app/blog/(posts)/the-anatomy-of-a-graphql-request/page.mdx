@@ -4,8 +4,8 @@ authors: laurin
 tags: [graphql]
 date: 2022-01-30
 description: Let's go back to the basics and break down a GraphQL request.
-thumbnail: /blog-assets/the-anatomy-of-a-graphql-request/thumbnail.png
-image: /blog-assets/the-anatomy-of-a-graphql-request/image.png
+thumbnail: ./thumbnail.png$2
+image: ./image.png
 ---
 
 On a high-level, GraphQL servers are pretty easy to set up. Just passing a GraphQL schema and
@@ -21,7 +21,7 @@ used protocol [GraphQL over HTTP](https://github.com/graphql/graphql-over-http).
 knowledge can be transferred to other protocols such as GraphQL over WebSockets or other more exotic
 ones.
 
-![The Phases of an GraphQL Request](/blog-assets/the-anatomy-of-a-graphql-request/phases-breakdown.png)
+![The Phases of an GraphQL Request](./phases-breakdown.png)$2
 
 ## HTTP Parsing and Normalization
 
@@ -400,7 +400,7 @@ const getEnveloped = envelop({ plugins: [myPlugin] })
 const { parse, validate, execute, subscribe } = getEnveloped()
 ```
 
-![Envelop Plugin Illustration](/blog-assets/the-anatomy-of-a-graphql-request/envelop-breakdown.png)
+![Envelop Plugin Illustration](./envelop-breakdown.png)$2
 
 Furthermore, the plugins can be easily shared across projects.
 

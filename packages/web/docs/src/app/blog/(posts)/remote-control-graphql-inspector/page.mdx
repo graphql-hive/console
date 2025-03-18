@@ -6,7 +6,7 @@ date: 2020-05-01
 description:
   Intercept schema changes via HTTP and decide which changes are acceptable which are not and all of
   this through a serverless function.
-image: /blog-assets/remote-control-graphql-inspector/cover.png
+image: ./cover.png
 ---
 
 The new version of GraphQL Inspector comes with **remote control of Pull Requests and Pushes via
@@ -27,7 +27,7 @@ Every Push or opened Pull Request is checked with GraphQL Inspector and based on
 schema, it decides whether to reject those changes. We don't want to stop you there so Inspector
 lets you review changes and decide what to do.
 
-![](/blog-assets/remote-control-graphql-inspector/remote-graph.png 'What is Remote Control?')
+![](./remote-control-graphql-inspector/remote-graph.png 'What is Remote Control?')$2
 
 The idea is simple. You create an HTTP endpoint, like serverless function or whatever and on every
 Push or Pull Request we send you a list of changes with all the details (mainly criticality level)

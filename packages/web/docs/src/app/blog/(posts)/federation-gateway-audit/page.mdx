@@ -6,8 +6,8 @@ date: 2024-09-10
 description:
   Set of tests to evaluate and compare the compatibility of different GraphQL gateways with Apollo
   Federation.
-image: /blog-assets/federation-gateway-audit/cover.png
-thumbnail: /blog-assets/federation-gateway-audit/thumbnail.png
+image: ./cover.png
+thumbnail: ./thumbnail.png
 ---
 
 import NextImage from 'next/image'
@@ -77,7 +77,7 @@ extend type Product @key(fields: "id name") @key(fields: "upc") {
 Not everyone knows that key fields of extension types in Federation v1, must be annotated with
 @external , and these are still resolvable by the subgraph. That's why we built the audit!
 
-![CLI output](/blog-assets/federation-gateway-audit/cli-not-compatible.png)
+![CLI output](./cli-not-compatible.png)$2
 
 > Here's how the auditing tool looks like. It's a simple CLI and we're going to release it on NPM
 > and as a binary soon. As of today, you need to clone the repository.
@@ -105,7 +105,7 @@ it away to everyone, even our “competitors”, for free, no strings attached!
 > We never had a tool to measure gateway's compatibility with Apollo Federation, but now we have one
 > — and we've put it to the test!
 
-![Screenshot of results](/blog-assets/federation-gateway-audit/results.png)
+![Screenshot of results](./results.png)$2
 
 Visit the audit page and see the results:
 [https://the-guild.dev/graphql/hive/federation-gateway-audit](https://the-guild.dev/graphql/hive/federation-gateway-audit)

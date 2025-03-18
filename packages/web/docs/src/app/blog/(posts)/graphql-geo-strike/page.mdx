@@ -4,7 +4,7 @@ authors: david
 tags: [cesium, graphql, angular]
 date: 2018-02-15
 description: A GeoReferenced Multiplayer First-Person Shooter Game.
-image: /blog-assets/graphql-geo-strike/cover.png
+image: ./cover.png
 ---
 
 **TLDR:** We've built a multiplayer shooter and used Apollo's GraphQL subscriptions to keep game
@@ -32,7 +32,8 @@ There are two ways you can understand our challenges:
   tools and look at the `subscriptions` websocket frames.
 - Read what our game is all about.
 
-<Video src="/blog-assets/graphql-geo-strike/gameplay.webm" />
+<Video src="./graphql-geo-strike/gameplay.webm" />
+$2
 
 For those of you that have not played the game (yet!) I'll explain a bit what it is.
 
@@ -42,7 +43,8 @@ to find and shoot the other team's players. The winning team is the one that sta
 other team's players are dead. If you die, you can only view the rest of the game from a bird's eye
 view.
 
-<Video src="/blog-assets/graphql-geo-strike/map.webm" />
+<Video src="./graphql-geo-strike/map.webm" />
+$2
 
 We use CesiumJS — a Google Earth like, open source, mapping engine — as our scene, so when I say the
 game takes place in the Times Square, It's an actual representation of the Times Square with the
@@ -61,7 +63,7 @@ gets. Next we wrote a small GraphQL schema that defines our Game entity.
 
 It ended up looking like so:
 
-![](/blog-assets/graphql-geo-strike/structure.png)
+![](./structure.png)$2
 
 Some parts of this graph will change very rapidly (~10 times a sec) and some parts of it will change
 rarely. Getting to this realization we decided to expose this graph with both Query type for less
@@ -72,7 +74,7 @@ to it.
 
 In our game, this subscription query turned out to be the only parts we need updated frequently:
 
-![](/blog-assets/graphql-geo-strike/game-state.png)
+![](./game-state.png)$2
 
 At the beginning we went with the naive implementation and set things up so that we will get any
 change made by any client as it happens. Basically publish on the mutation resolver. But we quickly
@@ -84,7 +86,7 @@ triggers every 200ms and publishes the game state to the gameData subscription. 
 most significant changes we made to allow for low latency, in our state synchronization process, and
 it was done with a couple lines of code, thanks to the way GraphQL subscriptions work.
 
-![](/blog-assets/graphql-geo-strike/game-flow.png)
+![](./graphql-geo-strike/game-flow.png)
 
 Not only that we were able to reduce latency, we were also able to scale the number of players quite
 easily.
@@ -101,7 +103,7 @@ state subscription and updated the normalized client store seamlessly.
 amazing angular-cesium framework and have the players magically move and update on a 3d scene
 rendered with CesiumJS!
 
-![](/blog-assets/graphql-geo-strike/game-client.png)
+![](./game-client.png)$2
 
 ## Not Just One Subscription
 
@@ -117,7 +119,7 @@ as soon a player is killed, all other players will get a notification indicating
 
 ## Further Improvements
 
-![](/blog-assets/graphql-geo-strike/pov.png)
+![](./pov.png)$2
 
 As our game is played on the same size scene as our own earth, we cannot help but thinking of future
 game modes where whole armies could play one against the other to take over / save the world!
