@@ -1,0 +1,263 @@
+---
+title: SOFA — The best way to REST (is GraphQL)
+authors: uri
+tags: [graphql, rest, sofa]
+date: 2019-01-25
+description: Ending the REST vs. GraphQL debate once and for all
+image: /blog-assets/sofa/cover.webm
+thumbnail: /blog-assets/sofa/cover.jpg
+---
+
+## Ending the REST vs. GraphQL Debate Once and for All
+
+## TL;DR
+
+- Don't choose between REST and GraphQL — **create a fully RESTful API automatically** from your
+  GraphQL implementation (with a library and a single line of code)
+- Get most of **the benefits of GraphQL** on the backend and frontend, while using and **exposing
+  REST**
+- **Support all your existing clients** with REST while improving your backend stack with GraphQL
+- Create custom, perfectly client-aligned REST endpoints for your frontend simply by naming a route
+  and attaching a query
+- Stop arguing about REST vs GraphQL. Use GraphQL, generate REST and get the best from both
+- In the other way around (REST to GraphQL) you won't get the best of both world but less powerful,
+  harder to maintain server implementation with some benefits of GraphQL. It is a good and fast
+  start for a migration though.
+
+## Wait, What!?
+
+Many articles have been written about the pros and cons of GraphQL and REST APIs and how to decide
+which one to use. I'm not going to repeat those here..
+
+A lot of time and energy spent by smart consultants to write those articles, read those articles,
+while most of them are finished with the “it depends on your use case” summary, without actually
+specifying those use cases!
+
+I've been working with REST, GraphQL and SOAP APIs for many years. So I thought, why not come up
+with a list of those use cases and for each one of those to check — what can't you do in GraphQL
+that you can do with REST and what you wouldn't want to do with GraphQL and you would prefer REST.
+
+After creating that list, I suddenly had a thought — what if there was another option — what if my
+powerful GraphQL server could just generate a REST API for me?
+
+> Then I could get the best of both worlds!
+
+The more I dived into the idea and implementation then more I realized it's not only that we can
+have both types of APIs created for us, but even if we just want to expose REST APIs, and none of
+our clients use GraphQL, **GraphQL is the best way the create REST APIs!**
+
+## How Does the above Sentence Even Make Sense?!
+
+Usually when we ([The Guild](/)) help companies and organizations to modernize their APIs, the first
+to understand the benefits of GraphQL are the frontend developers, for obvious reasons. But as soon
+as the backend developers “Get it”, they become the biggest advocates of the technology. But they
+still need to support existing clients and 3rd party partners.
+
+That's why those newly generated REST APIs get a lot of the features and benefits from the internal
+GraphQL implementation that make backend developers happy:
+
+- Fully **generated documentation** that is always up-to-date (Swagger, OpenAPI and GraphiQL)
+- Truly **RESTful API** out of the box
+- **GraphQL Subscriptions as Webhooks**
+- **Runtime validation of data** — be 100% sure that fetched data matches schema's and query's
+  structure. You send exactly what I want to send, string is a string, an object has exactly the
+  same properties.
+- Creating a custom endpoint is now a matter of choose a route name and attaching a query to it.
+  done. **No more manual work of creating and maintaining client specific endpoints!**
+- Use GraphQL's philosophy of evolving APIs through schemas — **no more painful V1 — V2 API
+  migrations.**
+- Use modern technology that is easier to hire people to. Companies like Facebook, Airbnb and
+  [others](https://graphql.org/users) have moved to GraphQL. None of them has gone back.
+- **The power of GraphQL resolvers** to create your API implementation, instead of manually written
+  controllers from MVC
+
+**What I get from having resolvers?**
+
+- Easier to transform data, so it matches the response (GraphQL Schema). That's because every entity
+  has its own resolvers, so the mapping is moved into smaller pieces and reused across an entire
+  app.
+- GraphQL allows you to easily share data across every resolver, we call it Context.
+- Forces you to define and resolve data in an opinionated way that actually helps to build an API.
+  It runs functions in parallel (functions that are nested at the same level), handles async and at
+  the end, it is responsible for merging all of that into a single object, so you don't have to
+  think about it.
+
+## SOFA — Use GraphQL to Create RESTful API
+
+So we created [SOFA](https://github.com/Urigo/SOFA) (pun intended), an open source library you
+install on your GraphQL server to create a fully RESTful and configurable API gateway. Use GraphQL
+to REST.
+
+## "How to" Tutorial
+
+Let's create a short step-by-step tutorial on how to create a RESTful API.
+
+Step 1: npm install the [`sofa-api`](https://npmjs.com/package/sofa-api) package and add the
+following line of code:
+
+```ts
+import express from 'express'
+import sofa from 'sofa-api'
+
+const app = express()
+
+app.use(sofa({ schema }))
+```
+
+Step 2: Go REST on a Sofa, you're done.
+
+Kamil Kisiela added Sofa to the
+[SpaceX GraphQL API](https://medium.com/open-graphql/migrating-spacex-api-to-graphql-e1fe69a3a8e7)
+implementation by Carlos Rufo, **in a single
+[commit](https://github.com/spacexland/api/pull/7/commits/9b50393ad33c27693d89f271ec1247715c6dcc53#diff-f41e9d04a45c83f3b6f6e630f10117fe)**.
+
+Check out the fully generated [REST endpoints](https://api.spacex.land/rest/capsules), the
+[Swagger live documentation](https://api.spacex.land/rest),
+[GraphiQL editor](https://api.spacex.land/graphql) and the
+[GraphiQL-Explorer](https://api.spacex.land)!
+
+By the way, what you see here is a REST API, generated on top of a GraphQL API, created on top of
+another REST API….
+
+> Why did you do that for!?!?
+
+## Gradually Migrating from Old REST Implementations
+
+This is actually a good direction to go. In many of the companies we work with, they've created REST
+API layers using old technology on top of their original web-services.
+
+But those REST implementations are problematic (for all the obvious reasons people choose to move to
+GraphQL).
+
+So our way to go is to create GraphQL implementations on top of those REST layers, migrate the
+clients to those implementations and then gradually remove the old RESTful layer and call the
+services directly.
+
+Using Sofa made those transitions much faster because we can offer all the existing clients to
+migrate to our GraphQL implementation without actually using GraphQL themselves. We simply expose
+the same REST endpoints on top of GraphQL and they are moving to our layer happily because we can
+accommodate all of their requests and custom REST endpoints much faster than the original, old REST
+implementations.
+
+---
+
+## Give Me More Details
+
+Sofa uses Express by default, but you can use any other server framework. Sofa is also GraphQL
+server implementation agnostic.
+
+Head over to the [Sofa website](https://sofa-api.com) for documentation and to the
+[Github repository](https://github.com/Urigo/sofa) for reporting issues and helping out.
+
+## How SOFA Works?
+
+Under the hood, Sofa turns each field of Query and Mutation types into routes. First group of routes
+is available only through GET method, mutations on the other hand get POST.
+
+Sofa uses GraphQL's AST to create an operation with all possible variables (even those deeply
+nested) and knows exactly what to fetch. Later on it converts the request's body into operation's
+variables and execute it against the Schema. It happens locally, but it's also possible to use an
+external GraphQL Server or even Apollo Link.
+
+Right now Sofa has a built-in support for [Express](https://expressjs.com) but it's totally possible
+to use a different framework. The main concept stays exactly the same so only the way we handle the
+request differs across different server implementations.
+
+## GraphQL Subscriptions as Webhooks?
+
+The way it works is simply, you start a subscription by calling a special route and you get a unique
+ID that later on might be used to update or even stop the subscription. Subscriptions are Webhooks.
+Sofa knows exactly when there's an even happening on your API and notifies you through the endpoint
+you've assigned a subscription to.
+
+## Models / Resources?
+
+In some cases you don't want to expose an entire object but just its id. How you're able to do that
+with Sofa? You need to have two queries. First one has to return a single entity based just on its
+id (which would be an argument) and the second one should resolve a list of those. Also the names
+should match, for example a resource called User should have two queries: `user(id: ID): User` and
+`users: [User]`. Pretty much the same thing you would do with REST.
+
+```graphql
+type Query {
+  user(id: ID!): User
+  users: [User]
+}
+```
+
+Before Sofa creates the routes, it looks for those Models and registers them so when the operations
+are built you don't fetch everything but only an id.
+
+But what if you want to fetch an entire object but only in few places?
+
+There's an option called `ignore` that allows you to do that. You simply pass a path in which you
+want to overwrite the default behavior.
+
+Given the schema below, you would get just author's id.
+
+```graphql
+type Book {
+  id: ID
+  title: String!
+  author: User!
+}
+
+extend type Query {
+  book(id: ID!): Book
+  books: [Book]
+}
+```
+
+With `ignore: ['Book.author']`you end up with an entire User object.
+
+```ts
+sofa({
+  // ...
+  ignore: ['Book.author']
+})
+```
+
+## Swagger and OpenAPI
+
+Thanks to GraphQL's type system Sofa is able to generate always up-to-date documentation for your
+REST API. Right now we support Swagger and its OpenAPI specification but it's really easy to adopt
+different specs.
+
+```ts
+import sofa, { OpenAPI } from 'sofa-api'
+
+const openApi = OpenAPI({
+  schema,
+  info: {
+    title: 'Example API',
+    version: '3.0.0'
+  }
+})
+
+app.use(
+  sofa({
+    schema,
+    onRoute(info) {
+      openApi.addRoute(info, {
+        basePath: ''
+      })
+    }
+  })
+)
+
+openApi.save('./swagger.json')
+```
+
+## Summary
+
+[sofa-api](https://github.com/Urigo/sofa) makes it extremely easy to create a RESTful API with all
+the best practices of REST from a GraphQL server using all its power.
+
+Stop wasting your life arguing about REST vs GraphQL — Be productive, get the benefits of both
+worlds and move into the future of API development.
+
+I hope this would become the last REST vs. GraphQL article out there…. if you think it won't,
+comment with a use case and let's try it out!
+
+Thanks to [Kamil Kisiela](https://twitter.com/kamilkisiela) for working with me on this and making
+this library a reality!

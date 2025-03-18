@@ -1,0 +1,155 @@
+---
+title: GraphQL Tools - next generation schema stitching and new leadership
+authors: arda
+tags: [graphql, graphql-tools, schema-first, schema-stitching, graphql-federation]
+date: 2020-05-21
+description: GraphQL Tools v6 with more tools, improved schema stitching and bug fixes.
+image: /blog-assets/graphql-tools-v6/cover.webm
+thumbnail: /blog-assets/graphql-tools-v6/cover.png
+---
+
+We are happy to announce the new GraphQL Tools v6 together with
+[the new documentation website.](https://graphql-tools.com)
+
+As the Guild, we recently took over the popular GraphQL Tools repository from the team at Apollo,
+who created this amazing library. We released v5 as a temporary stopgap release with a lot of
+bug-fixes around schema stitching and are now proud to reintroduce graphql-tools to the community
+with v6.
+
+During that process we've reviewed and fixed hundreds of issues and pull requests and reduced the
+number of issues to a few that are being reviewed and processed speedily.
+
+The low number of issues is despite the fact that the package is widely used with quick issue triage
+and turnaround -- a new standard for open source maintenance that we apply to
+[all of our open source tools](https://github.com/the-guild-org/Stack).
+
+The original GraphQL Tools enabled users to:
+
+- **build “SDL-first“ GraphQL schemas** by attaching resolvers (and the other non-SDL GraphQL
+  entities) to type definitions written in graphql schema definition language.
+- **modify schemas** simply by annotating them with reusable schema directives
+- **create and transform “remote“ GraphQL schemas** , i.e. executable GraphQL schemas that proxy
+  queries to a remote GraphQL endpoint.
+- “**stitch“ together multiple subschemas** by combining subschemas into a new schema, adding new
+  fields, and enabling delegation of all or some of the new fields to existing subschemas.
+- **mock schemas** by defining a default resolver on a per-type basis
+
+You asked and we listened! With the integration of the Guild's
+[graphql-toolkit](https://github.com/ardatan/graphql-toolkit),
+[merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas), and the
+[graphql-import](https://github.com/ardatan/graphql-import) libraries into a new graphql-tools
+monorepo, The new GraphQL Tools does all of the above and more:
+
+- **merge schemas** prior to schema creation by merging typeDefs and/or resolvers
+  ([merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas))
+- **import schemas** within.. (previously
+  [graphql-import](https://github.com/ardatan/graphql-import)).
+- optimize client side queries with relay compiler (relay-operation-optimizer)
+- load resolvers and type definitions from your file system using glob expressions
+- [much, much more ...](https://graphql-tools.com/docs/introduction)
+
+## New Monorepo Structure
+
+The new GraphQL Tools is split into different packages by functionality under the @graphql-tools
+scope. You can pick individual packages according to your needs instead of having one large package
+with unused functionalities in your project, which will **significantly decrease bundle size**. When
+bundle size is not an issue, you can still directly import all functionality directly from the
+`graphql-tools` package...
+
+Some functions have been renamed to avoid conflicts between packages - see the migration guide for
+further help in upgrading.
+
+<LinkPreview link="https://graphql-tools.com/docs/migration-from-tools-v5" />
+
+Let's talk about the improvements we have made in each area.
+
+## Building "SDL-First" GraphQL Schemas
+
+The primary use case of the graphql-tools library is still the makeExecutableSchema function that
+enables users to start building their schemas directly from type definitions. This approach makes
+the SDL the single “source of truth“ for the entire graph.
+
+Under the hood, as before, makeExecutableSchema calls out to upstream graphql-js functions to build
+the initial schema from type definitions, with the major contribution from graphql-tools of the
+addResolversToSchema function that can add resolvers and the other non-SDL GraphQL entities.
+
+In older versions of GraphQL Tools, addResolversToSchema and the other schema modification functions
+did their work “in place,“ mutating the initial schema. GraphQL Tools now almost never does this,
+making the underlying schema modification functions safe and useful for other schema generation
+workflows and hopefully form a valuable independent contribution to the community.
+
+## Modify Schemas with Directives
+
+For v6, we built a new -- and more flexible -- way of modifying existing schemas with directives.
+Instead of defining a new class that inherits from SchemaDirectiveVisitor, we export two powerful
+new functions that can work in tandem to modify schemas via one or more directives: mapSchema and
+getDirectives.
+
+The mapSchema function allows one to create a new schema from an existing schema by defining
+individual mapping functions that map each GraphQL entity as specified.
+
+The getDirectives function reaches from a given GraphQL entity to retrieve the directives with any
+arguments defined in the original SDL for that entity.
+
+By passing user-defined mapping functions to mapSchema that make use of getDirectives function, one
+can introspect a schema for one (or more!) directives in as simple or complex a fashion as desired.
+
+<LinkPreview link="https://graphql-tools.com/docs/schema-directives" />
+
+## Create and Transform "Remote" GraphQL Schemas
+
+Many users use GraphQL-Tools primarily to wrap remote GraphQL schemas, transforming them as
+necessary. In v6, multiple new transforms allow modification of output types on a per field level,
+including even initial support for wrapping and hoisting of fields.
+
+In a performance boost, GraphQL Tools no longer requires two rounds of delegation to transform
+remote schemas. Previously, a remote schema was created with makeRemoteExecutableSchema and then
+transformSchema would wrap that schema with another layer of delegation, transforming as necessary.
+
+In v6, wrapSchema now takes a GraphQL Tools-defined “schema config“ object instead of a schema,
+where the schema config properties allow specifying how to delegate to the remote schema as well as
+the transforms to apply. These changes mean that transforming a remote schema only requires one
+round of delegation instead of two.
+
+Another important v6 change is that remote schema configuration properties are now executor and
+subscriber functions that return generic graphql-js results -- rather than Apollo specific links.
+This increases interoperability between GraphQL Tools and the entire ecosystem, including paving the
+way for any changes to the Apollo link protocol coming in the future. Don't worry, we provide
+linkToExecutor and linkToSubscriber functions
+[for full Apollo link backwards compatibility!](https://graphql-tools.com/docs/remote-schemas)
+
+## Stitch Together Multiple Subschemas
+
+We know [GraphQL federation](https://the-guild.dev/graphql/hive/federation) and other large scale
+GraphQL backend approaches are already out there, but GraphQL Tools schema stitching method remains
+-- to our knowledge -- the only way to combine and transform multiple remote schemas into a new and
+**graphql-js community-wide compatible** executable schema.
+
+Schema stitching previously used up to at least three rounds of delegation when stitching (x1) to a
+transformed (x2) remote schema (x3). Now you can specify remote schema and transform properties
+directly when schema stitching, reducing that to a single delegation.
+
+Schema stitching also now supports type merging from multiple remote subschemas, à la Federation --
+without requiring the remote schemas to be annotated with the Federation directives.
+
+<LinkPreview link="https://graphql-tools.com/docs/schema-stitching" />
+
+At the Guild, we use the schema stitching approach in our own tools. For example, you can see how we
+apply schema stitching to the different remote schemas generated from different sources in
+[GraphQL Mesh repository](https://graphql-mesh.com).
+
+## Thank You to the GraphQL Community!
+
+Thanks go to the Apollo team in opening up the graphql-tools repository, the steady work previously
+done within graphql-tools-fork, and also to the wider community, who have contributed additional
+functionality, tests, bug reports, and discussion, without which this release would not be possible.
+
+GraphQL Tools is an extremely popular library that is used by many other popular libraries.
+
+We've gone ahead and helped them with the upgrade, for example Gatsby.
+
+<LinkPreview link="https://github.com/gatsbyjs/gatsby/pull/24158" />
+
+At [The Guild](/), we are hopeful to continue engaging the community and pushing for further
+improvements within the new GraphQL Tools and within the wider ecosystem. Let us know what you are
+looking for in GraphQL Tools v7!

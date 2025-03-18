@@ -1,0 +1,308 @@
+---
+title: Announcing Accounts.js 1.0 Release Candidate
+tags: [accounts-js, graphql-modules, graphql]
+authors: [niccolo]
+date: 2024-01-08
+description:
+  Introducing Accounts.js 1.0 Release Candidate, an end to end authentication and accounts
+  management solution.
+image: /blog-assets/accounts.js-1.0-rc/accounts-logo-wide.png
+thumbnail: /blog-assets/accounts.js-1.0-rc/accounts-logo-squared.png
+---
+
+The first release candidate of [Accounts.js](https://www.accountsjs.com/) 1.0 is now officially
+available!
+
+It's the culmination of a long process of rearchitecting the whole framework, which is finally a
+first-class citizen of the [graphql-modules](https://the-guild.dev/graphql/modules) package. It
+supports the latest GraphQL.js v16 and [graphql-tools](https://the-guild.dev/graphql/tools) v10 as
+well as any modern GraphQL server including Apollo Server v4 and
+[GraphQL Yoga](https://the-guild.dev/graphql/yoga-server) v5.
+
+## About Me
+
+My name is Niccolò Belli, [darkbasic](https://github.com/darkbasic) on GitHub. I'm a freelance
+full-stack web developer passionate about open source who loves to work with Typescript and GraphQL,
+along with managing Linux servers. I've been working on Open Source technologies since many years
+and I've recently become an Accounts.js maintainer because I was tired of the existing alternatives
+and their lack of GraphQL integration. While I don't like overly-opinionated frameworks that lock
+you in into their ecosystems I love to work with libraries that allow you to quickly prototype your
+application while being scalable and highly customizable. That's why I'm also a MikroORM
+collaborator, which is the best Node.js ORM available and allows me to retain any amount of
+flexibility if I decide to manually write big PostgreSQL queries and hydrate the results back into
+the ORM for further processing. I've developed many tools around this workflow, including
+automatically generating [slonik](https://github.com/gajus/slonik) types via the ORM metadata to
+manually write composable SQL queries that are type safe at runtime and build time. This is material
+for another blog post but I would love to make everything open source once my prerequisite
+[zod PR](https://github.com/colinhacks/zod/pull/2234) gets merged.
+
+## What Is Accounts.JS
+
+The `@accounts` suite of packages aims to provide an end-to-end authentication and accounts
+management solution with n user-friendly way to start while preserving options for configuration.
+These packages offer OAuth support for popular providers such as Instagram or Twitter, two-factor
+authentication, password-based accounts, recovery options, and customizable account creation and
+validation.
+
+To integrate `accounts-js` into your application, you need to configure these three components:
+
+1.  **Transports**: The flexibility of `accounts-js` allows it to be integrated with different types
+    of APIs. For now, we provide packages for both GraphQL and REST.
+
+2.  **Databases**: Accounts.js provides a
+    [native Mongo integration](https://github.com/accounts-js/accounts/tree/master/packages/database-mongo).
+    Additionally, it offers
+    [MikroORM](https://github.com/accounts-js/accounts/tree/master/packages/database-mikro-orm) and
+    [Typeorm](https://github.com/accounts-js/accounts/tree/master/packages/database-typeorm)
+    integrations, which lets you use `accounts-js` with any database. Optionally, you can use Redis
+    to store the session data, or provide a custom database adapter that will work with existing
+    authentication strategies by implementing the `DatabaseInterface`.
+
+3.  **Strategies**: You can use multiple strategies to let your users access your app. For now, it
+    supports password-based, magic link, and OAuth authentication methods.
+
+**Note**: Accounts.js is a **full-stack** solution, providing a full set of packages to seamlessly
+implement your chosen authentication workflow on the **client** as well!
+
+## The New Architecture
+
+In Accounts.js 1.0, we use `graphql-modules` to compose the authentication framework, automatically
+piecing together your preferred database adapter(s) with the authentication service(s) of your
+choice (password-based, OAuth, etc). As mentioned before, `accounts-js` currently supports GraphQL
+and REST. For the former, `graphql-modules` automatically provides the schema based on the modules
+you're using, while for the latter, it provides dependency injection across the various modules to
+piece them together.
+
+```ts
+const app = createApplication({
+  modules: [
+    createAccountsCoreModule({ tokenSecret: 'secret' }),
+    createAccountsPasswordModule({
+      requireEmailVerification: true,
+      sendVerificationEmailAfterSignup: true,
+    }),
+    createAccountsMongoModule({ dbConn }),
+  ],
+  schemaBuilder: buildSchema({ typeDefs, resolvers }),
+```
+
+If your application already uses `graphql-modules`, all you need to do is add the `accounts.js`
+modules of your choice to your own application module. Otherwise, it's a matter of providing your
+resolvers and type definitions to the `buildSchema` function.
+
+```ts
+// GraphQL Yoga 5
+const yoga = createYoga({
+  plugins: [useGraphQLModules(app)],
+  context: ctx => context(ctx, { createOperationController })
+})
+createServer(yoga).listen()
+
+// Apollo Server 4
+const apollo = new ApolloServer({
+  gateway: app.createApolloGateway()
+})
+startStandaloneServer(apollo, {
+  context: ctx => context(ctx, { createOperationController })
+})
+```
+
+At this point, whatever your GraphQL server of choice, your authenticated application is just a few
+lines of code away.
+
+> But what if all I care is REST?
+
+Use the `graphql-modules` injector to retrieve the `AccountsServer` instance and feed it to
+`@accounts/rest-express`!
+
+```ts
+const controller = app.createOperationController({
+  context: {}
+})
+const accountsServer = controller.injector.get(AccountsServer)
+expressApp.use(accountsExpress(accountsServer))
+```
+
+Alternatively, if you don't want to use `graphql-modules`, you can still manually instantiate the
+providers. Here's
+[an example](https://github.com/accounts-js/accounts/blob/master/examples/rest-express-typescript-without-modules/src/index.ts).
+
+## The New MikroORM Database Adapter
+
+The second big change in Accounts.js 1.0 is the release of the brand new
+[MikroORM](https://mikro-orm.io/) database adapter. MikroORM is a TypeScript ORM for Node.js based
+on Data Mapper, Unit of Work and Identity Map patterns. It is also very well-written and actively
+developed. Today also marks the release of the v6 of MikroORM, which incorporates
+[my recent work](https://github.com/mikro-orm/mikro-orm/pull/4321) to automatically batch references
+and collections and retrieve them via dataloaders firing a single query. This is especially useful
+with GraphQL transport since it automatically solves its notorious N+1 problem without you even
+noticing it—more information [here](https://mikro-orm.io/docs/dataloaders).
+
+```ts
+@Entity()
+export class User extends AccountsUser {
+  @Property()
+  firstName: string
+
+  @Property({ nullable: true })
+  lastName?: string
+
+  constructor({ firstName, lastName, ...otherProps }: CtorArgs) {
+    super(otherProps)
+    this.firstName = firstName
+    if (lastName) {
+      this.lastName = lastName
+    }
+  }
+}
+```
+
+The Accounts.js MikroORM database adapter can be backed by your database of choice (PostgreSQL,
+MySQL, MariaDB, SQLite, MongoDB). It won't force you into any existing entity schema: you can use
+the existing entities or provide your own, but please make sure to extend the base ones so that
+authentication can occur.
+
+```ts
+entities: [
+  User,
+  getUserSchema({ AccountsUser, abstract: true }),
+  getEmailSchema({ UserEntity: User }),
+  getServiceSchema({ UserEntity: User }),
+  getSessionSchema({ UserEntity: User }),
+],
+```
+
+Under the hood, it uses MikroORM's [EntitySchema](https://mikro-orm.io/docs/entity-schema), so you
+must also provide the schema for the base entities.
+
+## Breaking Changes
+
+`@accounts/boost` has been removed. It was no longer deemed necessary because of the new
+`graphql-modules` architecture that already allows you to plug and play various modules. For
+example, instead of providing an existing database connection, you can let `@accounts/module-mongo`
+create a new one for you:
+
+```ts
+const app = createApplication({
+  modules: [
+    [...],
+    // If you don't provide dbConn it will automatically
+    // create a new one, but the module needs to be awaited.
+    await createAccountsMongoModule(),
+```
+
+`@accounts/graphql-api` has been moved into the following packages:
+
+- `@accounts/module-core`
+- `@accounts/module-magic-link`
+- `@accounts/module-mikro-orm`
+- `@accounts/module-mongo`
+- `@accounts/module-password`
+- `@accounts/module-typeorm`
+
+These packages can assemble your desired authentication workflow and your preferred database
+adapter. Despite the significant changes under the hood, I strived to keep the public API mostly the
+same, so migrating to 1.0 should be a manageable effort.
+
+## What's New
+
+- We switched from pnpm to yarn 4.
+- We now return code 401 unmasked errors when unauthorized.
+- Added the `requireEmailVerification` option to require the user to verify the email in order to be
+  able to authenticate.
+- You can now enable both `ambiguousErrorMessages` and `enableAutologin` if
+  `requireEmailVerification` is disabled.
+- `@accounts/password` provides express endpoints to verify the email or reset the password whenever
+  the user clicks on the links received via email.
+- `@accounts/rest-express` now validates its inputs via express-validator.
+- The examples now use graphql-yoga v5 instead of the old apollo-server 2.
+- A new `@apollo/server` v4 example has been added.
+- A basic graphql-http example has been added.
+- A MikroORM example has been added.
+- The accounts-microservice example has been rewritten from scratch to use modern graphql-tools.
+- Docs have been refactored to use `docusaurus-plugin-typedoc-api` instead of
+  `scripts/generate-api-docs.ts`.
+- New and much improved CI release workflow.
+- Basic support for running tests from vscode.
+- Upgraded `graphql-modules` to v3 alpha
+- Upgraded `@graphql-tools/merge` to v9
+- Upgraded `@graphql-tools/schema` to v10
+- Upgraded `@graphql-tools/utils` to v10
+- Upgraded `graphql` to v16
+- Upgraded `typeorm` to 0.3.17
+- Upgraded `@apollo/client` to 3.8
+- Upgraded `@graphql-codegen` to v5
+- Upgraded `mongodb` to v6
+- Upgraded `ioredis` to v5
+- Upgraded `jsonwebtoken` to v9
+- Upgraded `lodash` to 4.17
+- Upgraded `pg` to 8.11
+- Upgraded `request-ip` to 3.3
+- Upgraded `oauth` to 0.10
+- Upgraded `node-fetch` to 2.7
+- Upgraded `express` to 4.18
+- Upgraded `emittery` to 0.13
+- Upgraded `@levminer/speakeasy` to 1.4
+- Upgraded `@graphql-tools/delegate` to v10
+- Upgraded `@graphql-tools/stitch` to v9
+- Upgraded `@graphql-tools/wrap` to v10
+- Upgraded `mongoose` to v8
+- Upgraded `react` to 18.2
+- Upgraded `jest` to 29
+- Upgraded `typescript` to 5.3
+- Upgraded `eslint` to v8
+- Upgraded `prettier` to v3
+- Upgraded `@apollo/server` to 4.9
+- Upgraded `docusaurus` to v3
+
+## Remaining Work for the Stable Release
+
+OAuth authentication, while working, surely deserves some love. While REST endpoints for OAuth
+should be functional, there are no mutations or resolvers yet, meaning you can't use them with the
+GraphQL transport. I'd also like to review the OAuth code and write some examples.
+`@accounts/oauth-instagram`, in particular, still relies upon the deprecated `request` package and
+should be updated. Other popular OAuth providers like Facebook still need to be added (but PRs
+exist).
+
+Before the 1.0 stable gets released, I plan to get the existing providers in a better shape,
+together with examples and the relevant GraphQL schema.
+
+## Post 1.0
+
+I want to create a new `@accounts/phone` authentication service which lets you authenticate via SMS
+OTPs. That would be especially useful in react-native applications where you could automatically
+read the SMS and automate the authentication process.
+
+Currently, Accounts.js bundles CommonJS code. While CommonJS can be imported in both CommonJS and
+ESM applications, that would rule out Deno/Bun support. For the same reason, we cannot use a wrapper
+either: while that would allow us to use ESM imports, it wouldn't be real ESM and thus won't be
+compatible. The remaining alternatives are pure ESM and dual packages. While several library authors
+opted for the former because of
+[dual package hazard](https://nodejs.org/api/packages.html#packages_dual_package_hazard) concerns, I
+weigh the benefits differently. While dual package hazards are real, the whole GraphQL ecosystem
+relies on dual packages; thus, using `instance of` is already a hazard. These authors suggest using
+`async imports` to import their pure ESM libraries in common projects, which exposes everyone to the
+same hazard (not even considering that this is only viable in async contexts). That goes against why
+they decided to bundle pure ESM in the first place. I think it's still too early to target pure ESM,
+and dual package is the lesser evil, so I'm leaning towards that for future releases, but I'm ready
+to change my mind if you provide enough arguments.
+
+I'd also like to implement some form of account linking, where users could link their existing
+account with a different authentication service (for example, password-based and OAuth).
+
+I want to extend Multi-Factor Authentication outside of the password service, baking it into the
+core of accounts.js so that any authentication service can take advantage of it.
+
+If future major versions of Accounts.js introduce breaking changes to the database structure, I
+would like to provide migrations directly via the `@accounts/mikro-orm` package.
+
+Last but not least, I would like to bake in cookies authentication. Not only would that fare better
+against XSS, but it would also allow server-side rendering and thus enable the usage of frameworks
+like Next.js. Alternative storage methods would remain available for those using native
+applications.
+
+At the end of the day, 1.0 is just a number, and I really want to provide stable APIs via semantic
+versioning.
+
+Accounts.js is an open-source project, and we welcome your
+[contributions](https://github.com/accounts-js/accounts)!

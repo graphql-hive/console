@@ -1,0 +1,96 @@
+---
+title: A New Year for GraphQL Schema Stitching
+description: 2021 is the year to give Schema Stitching a fresh look after its recent renovation
+date: 2021-01-14
+authors: gmac
+tags: [graphql, graphql-federation, graphql-tools, schema-stitching]
+image: https://user-images.githubusercontent.com/727224/104328926-56b0a700-54ba-11eb-9ad3-f6d2b971d55d.jpg
+thumbnail: https://user-images.githubusercontent.com/727224/104328777-29fc8f80-54ba-11eb-87d0-9982af1d8281.jpg
+---
+
+> If you'd told me eight months ago that I'd end up
+> [writing a book](https://github.com/gmac/schema-stitching-handbook) on Schema Stitching, I
+> wouldn't have believed it.
+
+That's because eight months ago my team was trying to mature an old GraphQL prototype into a formal
+API product, and our dependence on Schema Stitching v4 (a
+[famously abandoned project](https://apollographql.com/docs/federation/migrating-from-stitching) of
+Apollo) imposed numerous bugs, limitations, and performance bottlenecks on our work. I researched
+transitioning to the newer [Apollo Federation](https://apollographql.com/docs/federation) as a
+solution to these woes, but the involved migration path proved too daunting for our immediate time
+constraints.
+
+## Not "The Old" Schema Stitching
+
+Something remarkable happened at this critical juncture for my team...
+
+[GraphQL Tools](https://graphql-tools.com/docs/introduction) (the repo of Schema Stitching
+libraries) was brought back to life by **The Guild** and friends. The most pivotal new addition was
+a small mention of "[type merging](https://graphql-tools.com/docs/stitch-type-merging)", a feature
+that introduced automated query planning for types distributed across services (very similar to
+Apollo Federation). The new v5 library was still pretty raw, but it started a feedback loop that
+matured the library dramatically in v6, and then again in v7 (and will again in v8!).
+
+During these development cycles, numerous missing Stitching features were identified and added:
+[batch execution](https://github.com/gmac/schema-stitching-handbook/wiki/Batching-Arrays-and-Queries#what-is-query-batching)
+for consolidating sub-service requests,
+[computed fields](https://graphql-tools.com/docs/stitch-type-merging#computed-fields) for
+encapsulating service concerns,
+[interface proxies](https://graphql-tools.com/docs/stitch-type-merging#computed-fields) for bridging
+interfaces across services, and
+[schema directives](https://graphql-tools.com/docs/stitch-directives-sdl) for configuring stitched
+schemas via SDL annotations. Also, the
+[library documentation](https://graphql-tools.com/docs/stitch-combining-schemas) was rewritten from
+top-to-bottom for a new generation of users.
+
+Coming into 2021, Schema Stitching has been revitalized into an un-opinionated library capable of
+building an opinionated framework like Apollo Federation. If you want out-of-the-box workflows,
+Federation is the tool for you. Otherwise, Stitching is the comparable alternative that keeps you in
+control of your full system architecture.
+
+## The Handbook
+
+The tricky thing about the self-service nature of Schema Stitching is that its usage extends beyond
+just the scope of library documentation. To bridge this knowledge gap, the
+[Schema Stitching Handbook](https://github.com/gmac/schema-stitching-handbook) was started as a
+companion guide that walks through building stitching libraries into practical applications. The
+content is split into a few major sections:
+
+1. **Foundation** chapters cover the setup and use of core stitching library features. These
+   chapters provide code examples and detailed explanations of subjects covered in the
+   [official documentation](https://graphql-tools.com/docs/stitch-combining-schemas).
+2. **Architecture** chapters explore larger structural concerns around
+   [testing](https://github.com/gmac/schema-stitching-handbook/blob/master/continuous-integration-testing),
+   [versioning](https://github.com/gmac/schema-stitching-handbook/blob/master/versioning-schema-releases),
+   and
+   [releasing](https://github.com/gmac/schema-stitching-handbook/blob/master/hot-schema-reloading)
+   stitched schemas. Stitching has no CLI or
+   [managed services](https://apollographql.com/docs/federation/managed-federation/overview), but
+   you may find that these tools are not prohibitively difficult to self-service.
+3. **Other Integration** chapters explore how
+   [other tools](https://github.com/gmac/schema-stitching-handbook/tree/master/federation-services)
+   and
+   [programming languages](https://github.com/gmac/schema-stitching-handbook/tree/master/subservice-languages/ruby)
+   fit into a stitched schema. Stitching is perfectly compatible with any valid GraphQL resource,
+   and we're excited to catalog that here.
+
+The Handbook is versioned as a living repo to provide a comprehensive guide that may evolve with the
+library. We look to you, fellow developers, to contribute your own discoveries of how Schema
+Stitching integrates with tools and languages that we haven't explored yet.
+
+## A New Year
+
+Whether you're planning a new API project, looking to migrate an existing one, or curious of
+alternatives for your current distributed GraphQL architecture, 2021 is the year to give Schema
+Stitching a fresh look. Read the
+[new documentation](https://graphql-tools.com/docs/stitch-combining-schemas),
+[review the handbook](https://github.com/gmac/schema-stitching-handbook),
+[watch the video series](https://youtube.com/watch?v=8-mZqjgIdiI&list=PLTJ2vmU3jbWy6JntdRQZAmy0mcpYu2OD1),
+or [join us for a conversation](https://github.com/ardatan/graphql-tools/discussions) to learn about
+the exciting progress that was made last year.
+
+---
+
+- [GraphQL Tools repository](https://github.com/ardatan/graphql-tools)
+- [GraphQL Schema Stitching Handbook](https://github.com/gmac/schema-stitching-handbook)
+- [Schema Stitching official documentation](https://graphql-tools.com/docs/stitch-combining-schemas)

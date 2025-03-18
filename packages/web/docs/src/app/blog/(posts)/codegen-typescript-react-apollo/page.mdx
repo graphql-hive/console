@@ -1,0 +1,151 @@
+---
+title: GraphQL Code Generator for Typescript React Apollo
+authors: arda
+tags: [graphql, codegen, react, react-apollo, hooks]
+date: 2018-08-21
+updateDate: 2020-05-20
+description:
+  Generate React Apollo Query, Mutation and Subscription components and hook. All completely typed
+  by TypeScript.
+image: /medium/897186a7e3bfe61428b91f7f82c5b922.png
+---
+
+export const embedOptions = {
+  theme: 'light',
+  view: 'editor',
+  previewwindow: 'console'
+}
+
+[GraphQL Code Generator](https://github.com/dotansimha/graphql-code-generator) is a template based
+generator that lets you generate anything out of your GraphQL schemas and queries.
+
+So we've created a new template that generates **React Apollo**'s **_Query_**, **_Mutation_** and
+**_Subscription_** components, as well as **_HOC_** components, all completely typed by
+**_TypeScript_**, so you won't have to do that work manually!
+
+## Introducing a Code Generator for React Apollo
+
+Whether you use the new **React Apollo API** or you prefer to use **HOC**, there is really no need
+to write those wrapper components again and again!
+
+Based on a GraphQL static schema and a GraphQL query, the
+[GraphQL Codegen - Typescript React Apollo Template](https://github.com/dotansimha/graphql-code-generator/tree/master/packages/templates/typescript-react-apollo)
+will generate a ready to use, fully typed components. All you need to do is to write your query,
+mutation or subscription and just use those components in your application.
+
+![](/medium/b58035f95547416aab98b54d3ce812f6.png)
+
+Using **_React_**, **_TypeScript_** and **_GraphQL_** in a coordinated way, gives us new level of
+simplicity and power for our developer experience:
+
+- **Less code to write** — no need to create a network call, no need to create Typescript typings,
+  no need to create a dedicated React Component
+- **Strongly typed out of the box** — all types are being generated, no need to write any Typescript
+  definitions and struggle to keep them updated
+- **Full developer experience of tools and IDEs** — development time autocomplete and error
+  checking, not only across your frontend app but also with your API teams!
+
+## Play with It
+
+We prepared an example of how to use those auto generated components,
+[it's available on CodeSandbox](https://codesandbox.io/s/github/dotansimha/graphql-codegen-react-apollo-example).
+
+<CodeSandbox
+  codeSandboxId={'github/dotansimha/graphql-codegen-react-apollo-example'}
+  size={'300px'}
+  embedOptions={{
+    ...embedOptions,
+    module: '/src/List.tsx,/codegen.yml,/src/all-posts.query.graphql,/src/generated-types.tsx'
+  }}
+/>
+
+## Start Using It
+
+All you need to do to use React Apollo template is to install two packages:
+
+```
+yarn add -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations @graphql-codegen/typescript-react-apollo
+```
+
+> Make sure you have `graphql` installed as well.
+
+Now let's create `codegen.yml` configuration file, pointing to our schema and documents files:
+
+<CodeSandbox
+  codeSandboxId={'github/dotansimha/graphql-codegen-react-apollo-example'}
+  size={'300px'}
+  embedOptions={{
+    ...embedOptions,
+    module: '/codegen.yml,/src/all-posts.query.graphql'
+  }}
+/>
+
+Now let's set up a npm script in `package.json` to run `graphql-codegen` command:
+
+```json
+{
+  "scripts": {
+    "generate": "graphql-codegen"
+  }
+}
+```
+
+It might seem like a lot but lets split it into smaller pieces and explain each one of them it will
+make things easier.
+
+- **schema:** — path of a file with schema or an URL
+- **documents** - list of code files that contains your GraphQL queries
+- **generates:** — list of output files, with a nested list of plugins we would like to use.
+
+Then, define a `.graphql` file with a document that you'd like to use in a component:
+
+<CodeSandbox
+  codeSandboxId={'github/dotansimha/graphql-codegen-react-apollo-example'}
+  size={'300px'}
+  embedOptions={{ ...embedOptions, module: '/src/all-posts.query.graphql' }}
+/>
+
+Next, you need to run GraphQL Code Generator to generate Typescript types and React components:
+
+```
+yarn generate
+```
+
+> You can also run `yarn graphql-codegen` directly.
+
+Then, you simply import the auto-generated React Hook, named after your GraphQL operation name and
+use it in your component:
+
+<CodeSandbox
+  codeSandboxId={'github/dotansimha/graphql-codegen-react-apollo-example'}
+  size={'300px'}
+  embedOptions={{ ...embedOptions, module: '/src/List.tsx' }}
+/>
+
+You can learn more about [React Apollo API here](https://apollographql.com/docs/react).
+
+<Callout>
+If you are not using React Hooks, and you prefer to use React HOC or React Components for your data fetching, you can change the codegen configuration flags according to your needs:
+
+`withHooks: true` - will generate type-safe hooks.
+
+`withComponent: true` - will generate type-safe data components.
+
+`withHOC: true` - will generate type-safe High-Order-Components.
+
+</Callout>
+
+---
+
+We believe **_GraphQL_** is a game changer in how you plan and create your frontend apps.
+
+The vision that guides us is that you should be able to sketch a list of data types your backend can
+provide, sketch components and their data dependencies — and all the rest of the plumbing can be
+generated for you.
+
+Once you'll write an app like that, you will ask yourself why did you write all the other
+boilerplate code by yourself before.
+
+This is just one template out of many, check out more things you can generate with the
+[GraphQL Code Generator](https://graphql-code-generator.com) and give us ideas about other templates
+you would like to see implemented.

@@ -1,0 +1,176 @@
+---
+title: Add reactivity to an existing source using GraphQL Mesh
+authors: jycouet
+tags: [graphql, graphql-mesh, subscription]
+date: 2020-12-15
+description:
+  How To extend an existing endpoint with subscriptions to bring reactivity to your application.
+image: /blog-assets/add-reactivity-to-an-existing-source/PimpMyGraphQL.jpg
+---
+
+## Introduction
+
+Working on the
+[code generator for svelte plugin](https://github.com/ticruz38/graphql-codegen-svelte-apollo), I was
+looking for a public graphQL endpoint having queries, mutations and subscriptions for nice examples.
+Unfortunately I didn't find anything out of the box, ready to use for my demos. So I decided to
+extend an existing source!
+
+## Starting Point
+
+Across my researches I found one cool public endpoint regarding
+[SpaceX](https://api.spacex.land/graphql). It has `Queries` and `Mutations` ready to use! So I
+decided to pimp this endpoint, and bring a bit of reactivity with subscriptions.
+
+The idea is to publish the new user when it's inserted with this `mutation`:
+
+```graphql
+mutation addUser {
+  insert_users(objects: { name: "jyc" }) {
+    affected_rows
+    returning {
+      name
+    }
+  }
+}
+```
+
+<Callout emoji="🏎">How hard is to do this? Let's find out... **Let's Pimp this GraphQL!**</Callout>
+
+<Video
+  src="/blog-assets/add-reactivity-to-an-existing-source/PimpMyGraphQL.webm"
+  title="Pimp my graphQL"
+/>
+
+## Implementation
+
+Multiple ways are possible!
+
+<details>
+  <summary>Spoiler alert</summary>
+  Thanks to `graphql-mesh`, it's dead easy! 🚀🚀🚀
+</details>
+
+### 1. Create a New Repo
+
+```sh
+mkdir newRepo
+cd newRepo
+yarn init
+```
+
+### 2. Add `graphql-mesh` Packages
+
+```sh
+yarn add @graphql-mesh/cli @graphql-mesh/graphql @graphql-mesh/transform-resolvers-composition graphql
+```
+
+### 3. Add `.meshrc.yaml` File in the Root Folder With
+
+```yaml filename=".meshrc.yaml"
+sources:
+  - name: spacexGQL
+    handler:
+      graphql:
+        endpoint: https://api.spacex.land/graphql/
+
+additionalTypeDefs: |
+  extend type Subscription {
+    usersAdded: [users]
+  }
+
+transforms:
+  - resolversComposition:
+      - resolver: 'Mutation.insert_users'
+        composer: ./src/composition/insert_user
+
+additionalResolvers:
+  - type: Subscription
+    field: usersAdded
+    pubsubTopic: usersAdded
+```
+
+Where I
+
+- declare the graphQL source
+- extend `Subscription` to listen to user added users
+- compose the existing `Mutation.insert_users`
+
+### 4. Add `./src/composition/insert_user.js` File with All the Logic for This New Mutation Composition
+
+```js filename="insert_user.js"
+module.exports = next => async (root, args, context, info) => {
+  // add returning.id to the selection
+  info.operation.selectionSet.selections[0].selectionSet.selections.push({
+    kind: 'Field',
+    name: {
+      kind: 'Name',
+      value: 'returning'
+    },
+    arguments: [],
+    directives: [],
+    selectionSet: {
+      kind: 'SelectionSet',
+      selections: [
+        {
+          kind: 'Field',
+          name: {
+            kind: 'Name',
+            value: 'id'
+          },
+          arguments: [],
+          directives: []
+        }
+      ]
+    }
+  })
+
+  // send the mutation to the graphQL source
+  const result = await next(root, args, context, info)
+
+  // select returned ids
+  const ids = result.returning.map(c => c.id)
+
+  // Query users enforcing fields to return
+  const responseUser = await context.spacexGQL.apiQuery.users(
+    {
+      where: { id: { _in: ids } }
+    },
+    {
+      fields: {
+        id: true,
+        name: true,
+        rocket: true,
+        timestamp: true,
+        twitter: true
+      }
+    }
+  )
+
+  // publish new users
+  context.pubsub.publish('usersAdded', responseUser)
+
+  return result
+}
+```
+
+That's it!
+
+## Wrap Up
+
+- Extending an endpoint with subscription is easy! _Thx to tooling._
+
+- You can find the source on [GitHub](https://github.com/jycouet/space-x-land-with-sub)
+
+- You see all this in action directly in the
+  [playground](https://space-x-land-with-sub.herokuapp.com)
+
+I'm now ready to work on the demo for
+[**Svelte Codegen**](https://github.com/ticruz38/graphql-codegen-svelte-apollo)! Stay tunned ;)
+
+[@jycouet](https://twitter.com/jycouet)
+
+<Callout>
+  Special thanks to [n1ru4l](https://twitter.com/n1rual) who helped me find the nicest way to do it
+  ;)
+</Callout>

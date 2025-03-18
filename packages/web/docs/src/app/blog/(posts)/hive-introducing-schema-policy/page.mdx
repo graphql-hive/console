@@ -1,0 +1,95 @@
+---
+title: Introducing Schema Policy in Hive
+tags: [graphql, graphql-hive]
+authors: dotan
+date: 2023-05-16
+description: New GraphQL-Hive feature for enfocring best-practices and schema-design styles.
+image: /blog-assets/graphql-hive/hive-introducing-schema-policy/cover.png?0
+thumbnail: /blog-assets/graphql-hive/hive-introducing-schema-policy/cover.png?0
+---
+
+import NextImage from 'next/image'
+
+**We are thrilled to announce that Hive got a new, shiny feature: Schema Policy** 🎉
+
+As your GraphQL API and schema grow, tasks such as enforcing best practices, deciding on schema
+design, and collaborating with other teams become more complicated.
+
+We have learned from our experience of building and maintaining many GraphQL APIs over the years
+that the ability to scale and evolve your API is an important goal. Therefore, we have introduced a
+new feature in Hive that enables developers to easily lint, verify, and enforce best practices
+across the entire GraphQL API.
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-overview.e560205a.png 'Choose a custom policy and enfore best practices')
+
+With a simple dashboard configuration, you can enforce the following:
+
+1. **Naming conventions** (e.g `type User` instead `type user`), **order of appearance** (e.g field
+   `name` should come after field `age`), and enum value style (e.g `VALUE` instead of `Value`).
+2. **Require descriptions** for specific elements in your GraphQL schemas (e.g a type or a field),
+   and even require a specific style for your descriptions (inline using `" ... "`, block
+   `""" ... """` and even forbid `# ...` ).
+3. **Deprecation rules** for enforcing a reason for every deprecation, and even a deprecation date.
+4. A set of rules to enforce **Relay-style GraphQL schema:** pagination inputs, `Connection` types,
+   `PageInfo` and `Node` interfaces.
+5. Enforce `@oneOf` structure the right way (by ensuring response structure and directives usage)
+6. **And +20 more rules you can customize!**
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-rules-config.ff7acd8f.png 'Every rule has a broad range of configuration')
+
+<Callout type="info">
+  **Reminder:** Hive does not have feature-gates or any limitation on features. All features are
+  available to all users and organization (including the Free plan!) 😍
+</Callout>
+
+### Gradual Adoption
+
+During the GraphQL schema `check` process, policies are executed and evaluated.
+
+You can use this mechanism to ensure that your schema is fully compatible and adhere the schema
+policies, before running the `publish` flow and update the schema in the registry.
+
+Each rule can be configured to trigger either a **warning** or an **error**.
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-cli-warning.4937f501.png)
+
+A warning will be printed as CLI output, while an error will allow you to reject and fail the schema
+check. This way, you can introduce new policy rules and gradually without breaking your existing
+pipelines.
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-cli-error.12678074.png)
+
+### Organization/project Level
+
+The GraphQL schema policies are defined at the organization level, and applied to all projects and
+targets.
+
+You can enable Policy override for projects, and either disable or modify specific policy rules
+defined at the organization level.
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-override-config.c08c0bba.png)
+
+![](https://the-guild.dev/graphql/hive/_next/static/media/policy-override-severity.a35154f9.png)
+
+### Open-Source under the Hood
+
+The schema policies feature is powered by [GraphQL-ESLint](https://the-guild.dev/graphql/eslint),
+which is another project built and maintained by The Guild. We are using a subset of this feature,
+specifically designed for linting GraphQL schemas.
+
+With GraphQL-ESLint, you can easily integrate GraphQL into ESLint, and lint GraphQL schemas,
+operations, and the combination of the two in a full-stack project. You can also build custom rules
+to enforce specific GraphQL schema designs.
+
+We invite all members of Hive and the GraphQL community to collaborate and improve GraphQL-ESLint by
+sharing new use-cases and best practices. Rules and customizations added to GraphQL-ESLint will be
+available quickly as part of Hive.
+
+### How to Use Schema Policy?
+
+You can use Policy today with your existing [GraphQL-Hive](https://app.graphql-hive.com/) projects.
+[Documentation is also available](https://the-guild.dev/graphql/hive/docs/features/schema-policy).
+
+After enabling Policy and rules for your organization or project, try
+[performing a GraphQL schema `check`](https://the-guild.dev/graphql/hive/docs/features/schema-registry#check-a-schema)
+to execute the policy check.

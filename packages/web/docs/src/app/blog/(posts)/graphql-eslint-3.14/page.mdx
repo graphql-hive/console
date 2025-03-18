@@ -1,0 +1,334 @@
+---
+title: GraphQL-ESLint v3.14 - What's New?
+tags: [graphql, eslint, linter]
+authors: dimitri
+date: 2022-12-28
+description:
+  The best GraphQL linter becomes even better! Check out what we added in the new version.
+image: /blog-assets/graphql-eslint-3.14/image.png
+thumbnail: /blog-assets/graphql-eslint-3.14/thumbnail.png
+skipSync: true
+---
+
+import NextImage from 'next/image'
+import { Comparison } from '#components/comparison'
+import graphqlJsSuggestions from './graphql-js-suggestions.gif'
+
+## Introduction
+
+Hi! I am Dimitri 👋, the current maintainer of the
+[GraphQL-ESLint](https://github.com/dimaMachina/graphql-eslint) linter, and today I want to share
+with you all changes that were made in the last version. This is a small minor version update, but a
+bunch of new rules and options were added.
+
+<Callout>
+  If you are not familiar with GraphQL-ESLint check out [here](/blog/introducing-graphql-eslint) an
+  introduction blog post by GraphQL-ESLint creator [Dotan Simha](https://github.com/dotansimha).
+</Callout>
+
+## Support New ESLint Flat Config System
+
+> Say Hello to the new flat config system!
+
+GraphQL-ESLint v3.14 fully supports
+[the new ESLint flat config system](https://eslint.org/blog/2022/08/new-config-system-part-2),
+[most of the examples](https://github.com/dimaMachina/graphql-eslint/tree/master/examples) were
+updated to show you how you will set it up in the newly `eslint.config.js` file in the following
+years!
+
+## ESLint Suggestions for `graphql-js` Rules
+
+All `graphql-js` rules that contain "Did you mean" suggestions now can be fixable via ESLint
+suggestions API in your editor 🎉.
+
+<NextImage src={graphqlJsSuggestions} alt="GraphQL-JS suggestions in VSCode" className="mt-6" />
+
+## Update of `graphql-config`
+
+GraphQL-ESLint comes with a new GraphQL Config v4.4 that no longer requires a `typescript`
+dependency to be installed.
+
+<Callout>
+  Also, GraphQL Config is no longer bundled with `cosmiconfig-toml-loader` and
+  `cosmiconfig-typescript-loader`. You must install it manually in case of using TOML or TypeScript
+  config. The benefit of this is that bundle size is reduced by 35%.
+</Callout>
+
+## New Rules
+
+The new version introduces 4 new rules:
+
+### Rule `require-nullable-fields-with-oneof`
+
+Require `input` or `type` fields to be non-nullable with `@oneOf` directive
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/require-nullable-fields-with-oneof": "error"
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+input Input @oneOf {
+  foo: String!
+  bar: [Int!]!
+}
+```
+```graphql filename="✅ Correct"
+input Input @oneOf {
+  foo: String
+  bar: [Int!]
+}
+```
+</Comparison>
+
+### Rule `require-type-pattern-with-oneof`
+
+Enforce types with `@oneOf` directive have `error` and `ok` fields.
+
+- It's easier to communicate user errors in the response
+- Errors can contain any additional info the client might need (error code, validation info and so
+  on)
+- Reduce the need to use `... on Error` and so on, no need to specify type names in the query
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/require-type-pattern-with-oneof": "error"
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+type DoSomethingMutationResult @oneOf {
+  notok: DoSomethingSuccess
+  noterror: Error
+}
+```
+```graphql filename="✅ Correct"
+type DoSomethingMutationResult @oneOf {
+  ok: DoSomethingSuccess
+  error: Error
+}
+```
+</Comparison>
+
+### Rule `lone-executable-definition`
+
+Require queries, mutations, subscriptions or fragments to be located in separate files.
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/lone-executable-definition": "error"
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+# users.graphql
+query Users {
+  users {
+    ...UserFields
+  }
+}
+fragment UserFields on User {
+  id
+}
+```
+```graphql filename="✅ Correct"
+# users.graphql
+query Users {
+  users {
+    ...UserFields
+  }
+}
+```
+</Comparison>
+
+### Rule `no-one-place-fragments`
+
+An original proposal for a rule to suggest inline fragments that are spread only in one place was
+asked [2 years ago](https://github.com/dimaMachina/graphql-eslint/issues/72#issue-715054179) and
+finally, this rule is a part of GraphQL-ESLint.
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/no-one-place-fragments": "error"
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+fragment UserFields on User {
+  id
+}
+
+{ user { ...UserFields } }
+
+````
+```graphql filename="✅ Correct"
+{
+  user {
+    ...UserFields
+    friends {
+      ...UserFields
+    }
+  }
+}
+````
+
+</Comparison>
+
+## New Options
+
+### `groups` Option for `alphabetize` Rule
+
+`alphabetize` rule is one of the powerful GraphQL-ESLint rules, that can sort all the things in your
+GraphQL, it also supports ESLint suggestions fixes.
+
+Unfortunately, before it was not possible to configure to put some properties at the start or at the
+end, but now it was fixed with new option `groups`.
+
+Here is an example of configuration and cases:
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/alphabetize": [
+      "error",
+      {
+        "fields": ["ObjectTypeDefinition"],
+        "groups": ["id", "*", "createdAt", "updatedAt"]
+      }
+    ]
+  }
+}
+```
+
+<Callout type="warning">`*` symbol is mandatory, which means everything else.</Callout>
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+type User {
+  createdAt: DateTime!
+  email: Email!
+  firstName: String!
+  id: ID!
+  lastName: String!
+  updatedAt: DateTime!
+}
+```
+```graphql filename="✅ Correct"
+type User {
+  id: ID!
+  email: Email!
+  firstName: String!
+  lastName: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+```
+</Comparison>
+
+### `rootField` Option for `require-description` Rule
+
+This option enforces each field of root type (`Query`, `Mutation` and `Subscription`) to have a
+description.
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/require-description": ["error", { "rootField": true }]
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+type Mutation {
+  createUser: User
+}
+
+type User { name: String }
+
+````
+```graphql filename="✅ Correct"
+type Mutation {
+  "Create a new user"
+  createUser: User
+}
+
+type User {
+  name: String
+}
+````
+
+</Comparison>
+
+### `prefix` Option for `match-document-filename` Rule
+
+Previously in this rule, we had only a `suffix` option but in our open-source SAAS project
+[Hive](/graphql/hive), we prefix all files with executable definitions with
+[their operation types](https://github.com/kamilkisiela/graphql-hive/tree/main/packages/web/app/src/graphql).
+
+Now, everybody can take benefit from this new option 🎉.
+
+```json filename=".eslintrc.json"
+{
+  "rules": {
+    "@graphql-eslint/match-document-filename": [
+      "error",
+      {
+        "mutation": {
+          "style": "kebab-case",
+          "prefix": "mutation."
+        }
+      }
+    ]
+  }
+}
+```
+
+<Comparison>
+```graphql filename="❌ Incorrect"
+# createUser.graphql
+
+mutation CreateUser {
+
+# ...
+
+}
+
+````
+```graphql filename="✅ Correct"
+# mutation.create-user.graphql
+
+mutation CreateUser {
+  # ...
+}
+````
+
+</Comparison>
+
+## Next Steps
+
+Check out
+[the roadmap for the V4 version](https://github.com/dimaMachina/graphql-eslint/issues/981), the next
+major will be released once ESLint 9 will out and of course, propose your suggestions 🙂.
+
+Don't forget to give a star ⭐️ for [GraphQL-ESLint](https://github.com/dimaMachina/graphql-eslint)
+if you like it!
+
+And Happy New 2023 Year! 🎄🎉 🥂
+
+### Community
+
+Thanks to our contributors @FloEdelmann, @TuvalSimha and @tshedor.

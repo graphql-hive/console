@@ -1,0 +1,348 @@
+---
+title: What does it take to support Node.js ESM?
+authors: pablosz
+tags: [nodejs, mjs, esm, typescript]
+date: 2021-08-12
+description:
+  I have worked on all The Guild's libraries and graphql-js to support ESM. Here is how you can do
+  it too.
+image: /blog-assets/nodejs-esm/nodejs_logo.png
+---
+
+**ECMAScript modules**, also known as **ESM**, is the
+[official standard format](https://tc39.es/ecma262/#sec-modules) to package JavaScript, and
+fortunately [Node.js supports it](https://nodejs.org/api/esm.html#esm_modules_ecmascript_modules)
+🎉.
+
+But if you have been in the Node.js Ecosystem for some time and developing libraries, you have
+probably encountered the fact that ESM compatibility has been a struggle, behind experimental flags
+and/or broken for practical usage.
+
+Very few libraries actually supported it officially, but since Node.js **v12.20.0** (2020-11-24) and
+**v14.13.0** (2020-09-29) the latest and finally stable version of `package.exports` is available,
+and since support for Node.js v10.x is dropped, everything should be fine and supporting ESM
+shouldn't be that hard.
+
+After working on migrating all **The Guild** libraries, for example
+[GraphQL Code Generator](https://github.com/dotansimha/graphql-code-generator/pull/6102) or the
+recently released [Envelop](https://github.com/dotansimha/envelop/pull/259), and contributing in
+other important libraries in the ecosystem, like
+[graphql-js](https://github.com/graphql/graphql-js/pull/3217), I felt like sharing this experience
+is really valuable, and the current state of ESM in the Node.js Ecosystem as a whole needs some
+extra care from everyone.
+
+This post is intended to work as a guide to support both CommonJS **and** ESM and will be updated
+accordingly in the future as needed, and one key feature to be able to make this happens, is the
+`package.json` `exports` field.
+
+## `exports` Field
+
+The official Node.js documentation about it is available
+[here](https://nodejs.org/api/packages.html#packages_exports), but the most interesting section is
+[Conditional exports](https://nodejs.org/api/packages.html#packages_conditional_exports), which
+enables libraries to support both CommonJS and ESM:
+
+```json filename="package.json"
+{
+  "name": "foo",
+  "exports": {
+    "require": "./main.js",
+    "import": "./main.mjs"
+  }
+}
+```
+
+This field basically tells Node.js what file to use when importing/requiring the package.
+
+But very often you will encounter the situation that a library can (and should, in my opinion) ship
+the library keeping their file structure, which allows for the library user to import/require only
+the modules they need for their application, or simply for the fact that a library can have more
+than a single entry-point.
+
+For the reason just mentioned, the standard `package.json#exports` should look something like this
+(even for single entry-point libraries, it won't hurt in any way):
+
+> Assuming that the build/compilation/transpilation is outputted into the "dist" folder
+
+```jsonc
+{
+  // package.json
+  "name": "foo",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./*": {
+      "require": "./dist/*.js",
+      "import": "./dist/*.mjs"
+    }
+  }
+}
+```
+
+To specify specific paths for deep imports, you can specify them:
+
+```jsonc
+{
+  "exports": {
+    // ...
+    "./utils": {
+      "require": "./dist/utils.js",
+      "import": "./dist/utils.mjs"
+    }
+  }
+}
+```
+
+If you don't want to break backward compatibility on import/require with the explicit `.js`, the
+solution is to add the extension in the export:
+
+```jsonc
+{
+  "exports": {
+    // ...
+    "./utils": {
+      "require": "./dist/utils.js",
+      "import": "./dist/utils.mjs"
+    },
+    "./utils.js": {
+      "require": "./dist/utils.js",
+      "import": "./dist/utils.mjs"
+    }
+  }
+}
+```
+
+## Using the `.mjs` Extension
+
+To add support ESM for Node.js, you have two alternatives:
+
+1. build your library into [ESM Compatible](#esm-compatible) modules with the extension `.mjs`, and
+   keep the CommonJS version with the standard `.js` extension
+2. build your library into [ESM Compatible](#esm-compatible) modules with the extension `.js`, set
+   `"type": "module"`, and the CommonJS version of your modules with the `.cjs` extension.
+
+Clearly using the `.mjs` extension is the cleaner solution, and everything should work just fine.
+
+## ESM Compatible
+
+This section assumes that your library is written in TypeScript or has at least has a transpilation
+process, if your library is targeting the browser and/or React.js, it most likely already does.
+
+Building for a library to be compatible with ESM might not be as straight-forward as we would like,
+and it's for the simple fact that in the pure ESM world, `require` doesn't exists, as simple as
+that, **You will need to refactor any `require` into `import`**.
+
+### Changing `require`
+
+If you have a top-level `require`, changing it to ESM should be straight-forward:
+
+> from
+
+```js
+const foo = require('foo')
+```
+
+> to
+
+```js
+import foo from 'foo'
+```
+
+But if you are dynamically calling require inside of functions, you will need to do some refactoring
+to be able to handle async imports:
+
+> from
+
+```js
+function getFoo() {
+  const { bar } = require('foo')
+
+  return bar
+}
+```
+
+> to
+
+```js
+async function getFoo() {
+  const { bar } = await import('foo')
+
+  return bar
+}
+```
+
+#### What about `__dirname`, `require.resolve`, `require.cache`?
+
+This is when it gets complicated,
+[citing the Node.js documentation](https://nodejs.org/api/esm.html#esm_differences_between_es_modules_and_commonjs):
+
+- ![image.png](https://cdn.hashnode.com/res/hashnode/image/upload/v1625694693887/reb3raKCA.png)
+
+This is kinda obvious, you should use `import` and `export`
+
+- ![image.png](https://cdn.hashnode.com/res/hashnode/image/upload/v1625694836704/ON-ICGMTa.png)
+
+The only workaround to have an isomorphic `__dirname` or `__filename` to be used for both "cjs" and
+"esm" without using build-time tools like
+[@rollup/plugin-replace](https://github.com/rollup/plugins/tree/master/packages/replace) or
+[esbuild "define"](https://esbuild.github.io/api/#define) would be using a library like
+[filedirname](https://npmjs.com/package/filedirname) that does a trick inspecting error stacks, it's
+clearly not the cleanest solution.
+
+The workaround alongside with `createRequire` should like this
+
+```ts
+import { createRequire } from 'node:module'
+import filedirname from 'filedirname'
+
+const [filename] = filedirname()
+
+const require_isomorphic = createRequire(filename)
+
+require_isomorphic('foo')
+```
+
+- ![image.png](https://cdn.hashnode.com/res/hashnode/image/upload/v1625698233060/vHvCI9hH6.png)
+
+`require.resolve` and `require.cache` are not available in the ESM world, and if you are not able to
+do the refactor to not use them, you could use
+[createRequire](https://nodejs.org/api/module.html#module_module_createrequire_filename), but keep
+in mind that the cache and file resolution is not the same as while using `import` in ESM.
+
+### Deep Import of `node_modules` Packages
+
+Part of the ESM Specification is that you have to specify the extension in explicit scripts imports,
+which means when you are importing a specific JavaScript file from a node_modules package you have
+to specify the `.js` extension, otherwise all the users will get
+`Error [ERR_MODULE_NOT_FOUND]: Cannot find module`
+
+This **won't work** in ESM
+
+```ts
+import { foo } from 'foo/lib/main'
+```
+
+But this will
+
+```ts
+import { foo } from 'foo/lib/main.js'
+```
+
+**BUT** there is a **big exception** to this, which is the node_modules package you are importing
+uses the [`exports`](#exports) `package.json` field, because generally the `exports` field will have
+to extension in the alias itself, and if you specify the extension on those packages, it will result
+in a double extension:
+
+```json filename="bar/package.json"
+{
+  "name": "bar",
+  "exports": {
+    "./*": {
+      "require": "./dist/*.js",
+      "import": "./dist/*.mjs"
+    }
+  }
+}
+```
+
+```ts
+import { bar } from 'bar/main.js'
+```
+
+That will translate into `node_modules/bar/main.js.js` in CommonJS and
+`node_modules/bar/main.js.mjs` in ESM.
+
+### Can We Test If Everything Is Actually ESM Compatible?
+
+The best solution for this is to have ESM examples in a monorepo testing firsthand if everything
+with the logic included doesn't break, using tools that output both CommonJS & ESM like
+[tsup](https://tsup.egoist.sh) might become very handy, but that might not be straightforward,
+especially for big projects.
+
+There is a relatively small but effective way of automated testing for all the top-level imports in
+ESM, you can have an ESM script that imports every `.mjs` file of your project, it will quickly
+scan, importing everything, and if nothing breaks, you are good to go 👍, here is a small example of
+a script that does this, and it's currently used in some projects that support ESM
+https://gist.github.com/PabloSzx/6f9a34a677e27d2ee3e4826d02490083.
+
+## TypeScript
+
+In regard to TypeScript supporting ESM, it divides into two subjects:
+
+### Support for `exports`
+
+Until this issue [TypeScript#33069](https://github.com/microsoft/TypeScript/issues/33079) is closed,
+TypeScript doesn't have complete support for it, fortunately, there are 2 workarounds:
+
+- Using `typesVersions`
+
+The original usage for this TypeScript feature
+[was not for this purpose](https://typescriptlang.org/docs/handbook/declaration-files/publishing.html#version-selection-with-typesversions),
+but it works, and it's a fine workaround until TypeScript actually supports it
+
+```json filename="package.json"
+{
+  "typesVersions": {
+    "*": {
+      "dist/index.d.ts": ["dist/index.d.ts"],
+      "*": ["dist/*", "dist/*/index.d.ts"]
+    }
+  }
+}
+```
+
+- Publishing a modified version of the package
+
+This method requires tooling and/or support from the package manager. For example, using the
+package.json field `publishConfig.directory`,
+[pnpm supports it](https://pnpm.io/package_json#publishconfigdirectory) and
+[lerna publish as well](https://github.com/lerna/lerna/tree/main/commands/publish#publishconfigdirectory).
+This allows you to publish a modified version of the package that can contain a modified version of
+the `exports`, following the types with the file structure in the root, and TypeScript will
+understand it without needing to specify anything special in the package.json for it to work.
+
+```json filename="dist/package.json"
+{
+  "exports": {
+    "./*": {
+      "require": "./*.js",
+      "import": "./*.mjs"
+    },
+    ".": {
+      "require": "./index.js",
+      "import": "./index.mjs"
+    }
+  }
+}
+```
+
+> In [The Guild](/) we use this method using tooling that creates the temporary package.json
+> automatically. See [bob-the-bundler](https://github.com/kamilkisiela/bob) &
+> [bob-esbuild](https://github.com/PabloSzx/bob-esbuild)
+
+### Support for `.mjs` Output
+
+Currently, the TypeScript compiler can't output `.mjs`, Check the issue
+[TypeScript#18442](https://github.com/microsoft/TypeScript/issues/18442).
+
+There are workarounds, but nothing actually works in 100% of the possible use-cases (see for
+example, [ts-jest issue](https://github.com/kulshekhar/ts-jest/issues/1057)), and for that reason,
+we recommend tooling that enables this type of building without needing any workaround, usually
+using [Rollup](https://rollupjs.org) and/or [esbuild](https://esbuild.github.io).
+
+## ESM Needs Our Attention
+
+There are still some rough edges while supporting ESM, this guide shows only some of them, but now
+it's time to rip the bandaid off.
+
+I can mention a very famous contributor of the Node.js Ecosystem
+[sindresorhus](https://github.com/sindresorhus) who has a very strong stance in ESM. His Blog post
+[`Get Ready For ESM`](https://blog.sindresorhus.com/get-ready-for-esm-aa53530b3f77) and a
+[very common GitHub Gist](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)
+nowadays in a lot of very important libraries he maintains.
+
+But personally, I don't think only supporting ESM and killing CommonJS should be the norm, both
+standards can live together, there is already a big ecosystem behind CommonJS, and we shouldn't
+ignore it.

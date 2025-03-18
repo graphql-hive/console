@@ -1,0 +1,128 @@
+---
+title: WhatsApp Clone - Angular, GraphQL, Apollo, TypeScript and PostgreSQL
+authors: niccolo
+tags: [whatsapp-clone, angular, graphql, typescript, postgres]
+date: 2019-02-25
+description:
+  An open-source full-stack example app made with Angular 7.2, TypeScript, GraphQL Subscriptions,
+  GraphQL Code Generator, GraphQL Modules, PostgreSQL and TypeORM.
+image: /blog-assets/whatsapp-clone-apollo-angular-graphql-typescript-and-postgresql/cover.jpeg
+---
+
+You might have seen it around already — an open-source WhatsApp Clone tutorial; a project which was
+originally started in 2015 by [Urigo](https://github.com/urigo) based on
+[Angular-Meteor](https://angular-meteor.com/tutorials/whatsapp2-tutorial) and
+[Ionic](https://ionicframework.com), and have been throughout different incarnations ever since.
+
+You may have also noticed that we recently published a new
+[React version](/blog/whatsapp-clone-react-hooks-graphql-typescript-and-postgresql) of the Whatsapp
+Clone tutorial.
+
+This time around, I'm happy to announce that a new version of the WhatsApp Clone is here, and it's
+based on Angular 7.2, Angular CLI 7.3.2, Material-UI, TypeScript, Apollo, GraphQL-Subscriptions,
+[GraphQL Code Generator](https://graphql-code-generator.com),
+[GraphQL Modules](https://graphql-modules.com), PostgreSQL and TypeORM, full with step by step
+guides to teach you every step of the way.
+
+[**Click mme to go to the tutorial page**](https://tortilla.academy/Urigo/whatsapp-textrepo-angularcli-express)
+
+<Video src="/blog-assets/whatsapp-clone-apollo-angular-graphql-typescript-and-postgresql/app.webm" />
+
+## What Is It Good for?
+
+This app was built with all the latest and hottest technologies out there. The purpose is simple —
+it should be a guideline for building a proper app, thus we thought very carefully about the design
+patterns and architecture used in it, plus, we made sure to cover all communication methods with a
+GraphQL-back-end in different variations (query, mutation, subscription). This way whenever you're
+looking to start a new app, maintain an existing one or upgrade your dev-stack, the WhatsApp-clone
+can be a great source to start with! It's full stack and has a complete flow.
+
+## Why Did We Choose This Dev-Stack?
+
+Angular, GraphQL, Apollo, PostgreSQL and TypeScript for obvious reasons — they are backed by a
+strong ecosystem that grows rapidly. These technologies can be used in endless variations, and
+there's no one way which is the most right of doing so, but we chose a way that makes the most sense
+for us and that we truly believe in when it comes to building apps. We've connected it all with
+TypeORM, GraphQL-Code-Generator, GraphQL-Modules for the following reasons:
+
+- The GraphQL back-end was implemented using **GraphQL-Modules** where logic was splitted into
+  feature based modules. GraphQL-Modules is a library which provides you with the ability to manage
+  and maintain your GraphQL schema in a scalable and reusable way. Not once nor twice I have seen
+  people who struggle with that and get tangled upon their own creation, and with GraphQL-Modules
+  where you have a very defined structure, this problem can be easily solved. You can read more in
+  [this series of 7 blog posts about it](/blog/graphql-modules).
+- Every GraphQL/TypeScript definition was automatically generated with GraphQL-Code-Generator using
+  a single command call. There's no need to maintain the same thing twice if it already exists in
+  one way or another. This way you don't have to write TypeScript type definitions for your all your
+  server responses, you get ready-to-use — fully typed Angular services, GraphQL resolvers and
+  GraphQL types.
+- The new version of Angular 7.2 was used with the Angular Material UI and Angular CLI 7.3.2 (and
+  we'll keep updating the tutorial with the latest versions)
+- We used TypeORM to correctly split the logic of the entities in the database and define the
+  relationships between them. ORMs are controversial these days, but they can help a lot in some
+  cases, and we thought a good example could be valuable to the community.
+
+## What to Expect?
+
+- Basic authentication.
+- Image uploading with [Cloudinary](https://cloudinary.com).
+- Live updates with GraphQL Subscriptions.
+- Zero latency even on the slowest network thanks to Apollo's Cache
+
+The tutorial goes through every aspect of building the app, starting from the very basics. We will
+start building a very simple server with a fake db, then we will introduce Authentication,
+Subscriptions, a real database backed by PostgreSQL and TypeORM plus advanced tooling like GraphQL
+Code Generator and GraphQL Modules.
+
+This can be extremely useful for those who have little to no background in one of the technologies
+in our dev-stack.
+
+## What's Next?
+
+Right now we implemented a simple REST-based [Passport](https://passportjs.org) authentication, but
+we already have PRs for [Accounts-JS](https://github.com/accounts-js/accounts) based authentication
+which will use the GraphQL endpoint instead of traditional REST ones. An additional chapter about
+Pagination is also expected, as well as a “Performance” chapter tackling the N+1 problem with
+GraphQL. Our backend has been designed to handle way more features than the ones currently
+implemented, so be ready because features like the Whatsapp blue ticks are going to land on our
+clone very soon.
+
+## Keep up to Date
+
+This tutorial was written using [Tortilla — the Tutorial framework](https://tortilla.academy).
+
+This means that we will keep upgrading the tutorial with the latest versions of Angular and the
+other libraries, and instead of doing the same tutorial all over again, you will get a
+[git-diff](https://tortilla.academy/Urigo/whatsapp-textrepo-angularcli-express/master/1.4.0/diff/2.0.0)
+of how to upgrade the existing tutorial! We care about your time as a developer.
+
+## Influence
+
+We want to hear your opinions!
+
+Should we choose another library and technology over another? Could we write the code
+better/cleaner? Should we add a specific feature to the app? We want to hear it all!
+
+Please tell us now, so we could integrate your feedback on the tutorial itself!
+
+We keep evolving the stack and as the tutorial is based on git commits, we can create the same clone
+with different tech-stacks and compare them on this real app using code diffs.
+
+Soon we will also release yet another version of the Whatsapp Clone, using
+[Ionic](https://ionicframework.com), [Stencil](https://stenciljs.com) and Web Components.
+
+If you are good at creating screencast and videos, we would love your help in creating videos for
+some chapters.
+
+Everything is completely free and open source, and we want your help and (**not financial**)
+contribution!
+
+Best place would be to open an issue or create a PR on the repositories:
+
+- Server — [Urigo/WhatsApp-Clone-Server](https://github.com/Urigo/WhatsApp-Clone-server)
+- Client —
+  [Urigo/WhatsApp-Clone-Client-Angular](https://github.com/Urigo/whatsapp-client-angularcli-material)
+
+Again, all types of feedback is welcome, write freely!
+
+See you in the tutorial!

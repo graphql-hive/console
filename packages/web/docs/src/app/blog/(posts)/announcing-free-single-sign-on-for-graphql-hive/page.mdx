@@ -1,0 +1,45 @@
+---
+title: Announcing free SSO (Single Sign On) for GraphQL Hive
+tags: [graphql, graphql-federation, graphql-hive]
+authors: laurin
+date: 2022-11-07
+description: Link your GraphQL Hive Organization to your OAuth OIDC provider of choice.
+image: /blog-assets/announcing-free-single-sign-on-for-graphql-hive/cover.png
+thumbnail: /blog-assets/announcing-free-single-sign-on-for-graphql-hive/thumbnail.png
+---
+
+Today we are excited to announce that due to popular demand we now support connecting a GraphQL Hive
+Organization to an OAuth Open ID Connect Provider (OIDC) for Single Sign On (SSO).
+
+> [GraphQL Hive](https://the-guild.dev/graphql/hive) is our schema registry solution for
+> continuously evolving your GraphQL schema backed by performance insights and usage statistics.
+> Whether you are working in a small company with a single GraphQL service or a big multi-team
+> company with multiple (federated or composed) GraphQL services, GraphQL Hive is the perfect tool
+> to help you manage your GraphQL schema.
+
+GraphQL Hive gives you the flexibility of choosing your existing identity provider of choice for
+authenticating users, such as Google Workspaces, Okta, Auth0, and many more.
+
+Users logging into GraphQL Hive via an OIDC provider will be automatically added and limited to
+interacting within your organization.
+
+You can start using OIDC SSO on the GraphQL Hive Cloud version for any type of organization at no
+additional cost starting today.
+
+Offering this feature for free is a big deal for us. We at The Guild believe that Single Sign On is
+a core security requirement and not a luxury feature that you have to buy in.
+
+You can learn more about the broken relationship between SaaS vendors and SSO on the
+[SSO Wall of Shame](https://sso.tax/).
+
+In addition, OAuth Open ID Connect login is not only limited to the GraphQL Hive Cloud version, but
+is also available on self-hosted GraphQL Hive
+[which we announced Last month](/blog/announcing-self-hosted-graphql-hive).
+
+Huge thanks go out to the incredible helpful team at [SuperTokens](https://supertokens.com/) that
+helped us a lot with questions and feedback on shipping this feature. GraphQL Hive is
+[fully open source](https://github.com/graphql-hive/console) and also uses the SuperTokens Open
+Source project for user authentication.
+
+- [Get started with adding OAuth OIDC SSO to your GraphQL Hive organization](https://the-guild.dev/graphql/hive/docs/management/sso-oidc-provider)
+- [Get started with with custom OIDC providers for self-hosted Hive](https://the-guild.dev/graphql/hive/docs/self-hosting/oidc-login)
