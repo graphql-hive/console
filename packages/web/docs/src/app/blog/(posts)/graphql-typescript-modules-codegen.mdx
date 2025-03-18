@@ -1,0 +1,101 @@
+---
+title: GraphQL TypeScript - w/ GraphQL-Modules and GraphQL-Code-Generator
+authors: arda
+tags: [graphql, graphql-modules, codegen, typescript]
+date: 2018-12-04
+description: Writing a GraphQL TypeScript project w/ GraphQL-Modules and GraphQL-Code-Generator.
+image: /medium/0e0c64ec5841ba4731bddefaabbb75c8.png
+---
+
+Last year we've released [GraphQL-Modules](https://graphql-modules.com) — which applies modular
+approach to large scale, GraphQL-based applications.
+
+We've also released a new version of [GraphQL Code Generator](https://graphql-code-generator.com)
+which generates server-side typings and signatures for resolvers from GraphQL Schemas.
+
+Those are two separate projects, but because we use both in production across many different
+applications, we wanted to write about the benefits of the tight integration of those projects and
+how it provides us with great development experience while implementing our projects in TypeScript.
+
+GraphQL Code Generator can take a JS/TS export from GraphQL-Modules to generate server-side typings
+(or anything else that its [plugins can generate](https://graphql-code-generator.com/plugins)). So,
+let's export typeDefs without any business logic that includes resolvers, DI, providers etc…
+
+You can create a `schema.ts` file to expose `typeDefs` to GraphQL Code Generator:
+
+```ts filename="schema.ts"
+import { AppModule } from './modules/app'
+
+export default AppModule.typeDefs
+
+// If your module needs a configuration
+
+export default AppModule.forRoot({ ...dummyConfiguration }).typeDefs
+```
+
+Create a `codegen.yml` config file, including `schema.ts` as a schema source, and generate
+[common](https://graphql-code-generator.com/docs/plugins/typescript-common) and
+[server](https://graphql-code-generator.com/docs/plugins/typescript-server) typings for TypeScript.
+We use `transpile-only` to prevent errors related to TypeScript on typing generation phase to let
+`ts-node` handle this on running the actual application.
+
+```yaml filename="codegen.yml"
+overwrite: true
+schema: ./src/schema.ts
+require:
+  - ts-node/register/transpile-only
+generates:
+  ./src/generated-models.ts:
+    plugins:
+      - typescript
+      - typescript-resolvers
+    config:
+      contextType: @graphql-modules/core#ModuleContext
+```
+
+We can add a script to `package.json` to run:
+
+```jsonc
+{
+  //...
+ "scripts": {
+   //...
+    "generate": "gql-gen",
+    // You can use nodemon to watch changes on graphql files
+    "generate:watch": "nodemon --exec yarn generate -e graphql",
+   //...
+ //...
+}
+```
+
+Then, we can use these typings in our project. This example shows a resolvers handler that
+implements resolvers for `Query` type with generated types.
+
+```ts
+import { IResolvers } from '../../generated-models'
+import { UsersProvider } from '../providers/users.provider'
+
+export default <IResolvers>{
+  Query: {
+    // all parameters and return value are typed
+    users: (root, args, context, info) => context.injector.get(UsersProvider).getUsers(args)
+  }
+}
+```
+
+At the end, we have a strictly-typed backend project, based of separate feature modules, and each of
+those modules uses GraphQL and TypeScript.
+
+You can check our working example that is created by using this approach;
+[https://github.com/darkbasic/graphql-modules-seed](https://github.com/darkbasic/graphql-modules-seed)
+
+# All Posts about GraphQL Modules
+
+- [GraphQL Modules — Feature based GraphQL Modules at scale](/blog/graphql-modules)
+- [Why is True Modular Encapsulation So Important in Large-Scale GraphQL Projects?](/blog/modular-encapsulation-graphql-modules)
+- [Why did we implement our own Dependency Injection library for GraphQL-Modules?](/blog/dependency-injection-library-in-graphql-modules)
+- [Scoped Providers in GraphQL-Modules Dependency Injection](/blog/graphql-modules-scoped-providers)
+- [Writing a GraphQL TypeScript project w/ GraphQL-Modules and GraphQL-Code-Generator](/blog/graphql-typescript-modules-codegen)
+- [Authentication and Authorization in GraphQL (and how GraphQL-Modules can help)](/blog/graphql-modules-auth)
+- [Authentication with AccountsJS & GraphQL Modules](/blog/accountsjs-graphql-modules)
+- [Manage Circular Imports Hell with GraphQL-Modules](/blog/manage-circular-imports-hell-in-graphql-modules)

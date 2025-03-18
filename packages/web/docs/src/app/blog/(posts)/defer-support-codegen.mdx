@@ -1,0 +1,262 @@
+---
+title: Using @defer Directive with GraphQL Code Generator
+authors: aleksandra
+tags: [graphql, graphql-federation, codegen]
+date: 2023-05-24
+description:
+  Learn how to boost GraphQL performance using the @defer directive and GraphQL Code Generator for
+  deferred fragment field resolution.
+image: /blog-assets/defer-directive/cover.png
+thumbnail: /blog-assets/defer-directive/thumbnail.png
+---
+
+Optimization is crucial for the good performance of GraphQL applications, which can grow in
+complexity and size. The `@defer` directive in GraphQL is a feature that allows fragment fields to
+be resolved separately from the rest of the query. This can be useful when dealing with large
+queries or slow-to-resolve fields.
+
+And now, we have some exciting news to share: support for `@defer` is available in GraphQL Code
+Generator! 🥳
+
+You can start using GraphQL Code Generator to generate code for queries that include deferred
+fragments, and the generated code will automatically include support for the `@defer` directive.
+
+Let's take a closer look at how the directive works and how you can use it in your GraphQL
+applications.
+
+## How Does `@defer` Work?
+
+When a query includes a deferred fragment field, the server will return a partial response with the
+non-deferred fields first, followed by the remaining fields once they have been resolved.
+
+For example, consider the following query:
+
+```graphql
+query GetUser($id: ID!) {
+  user(id: $id) {
+    id
+    name
+    ...OrdersFragment @defer
+  }
+}
+
+fragment OrdersFragment on User {
+  orders {
+    id
+    total
+  }
+}
+```
+
+Let's say you have a query that fetches information about a user, but the `orders` field takes more
+time to resolve. You can use the `@defer` directive to first return a partial response with the `id`
+and `name` and then later return the `orders` field. This can improve the performance of your
+application by reducing the amount of time it takes to load initial data.
+
+## Using `@defer` with GraphQL Codegen
+
+Once you update the GraphQL Code Generator to the latest version and start using the `@defer`
+directive in your queries, the generated code will automatically include support for the directive.
+Below, we're going to see an example of usage.
+
+As the `@defer` directive
+[is now supported in Apollo](https://www.apollographql.com/docs/react/data/defer/), we're going
+explore how it works with Apollo Client. You need to use Apollo Client version 3.7.0 or higher for
+the defer support to work.
+
+_Note: you could also use the `@defer` directive with other GraphQL clients, such as
+[URQL](https://formidable.com/open-source/urql/docs/) — the example usage in Hive with URQL is
+described below._
+
+Here's an example `codegen.ts` config:
+
+```jsx
+// condegen.ts
+import { type CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: '<PATH_TO_YOUR_SCHEMA>',
+  documents: ['src/**/*.tsx'],
+  generates: {
+    './gql/': {
+      preset: 'client'
+    }
+  },
+  hooks: { afterAllFileWrite: ['prettier --write'] }
+}
+
+export default config
+```
+
+Let's consider the same example with `user` and `orders`. Once you declare a fragment and a query in
+your application, you can run the codegen, and it will have the information about deferred fields.
+
+```jsx
+// src/index.tsx
+import { graphql } from './gql'
+
+const OrdersFragment = graphql(`
+  fragment OrdersFragment on User {
+    orders {
+      id
+      total
+    }
+  }
+`)
+
+const GetUserQuery = graphql(`
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      id
+      name
+      ...OrdersFragment @defer
+    }
+  }
+`)
+```
+
+The generated type for `GetUserQuery` will have information that the fragment is _incremental,_
+meaning it may not be available right away.
+
+```tsx
+// gql/graphql.ts
+
+export type GetUserQuery = { __typename?: 'Query'; id: string; name: string } & ({
+  __typename?: 'Query'
+} & {
+  ' $fragmentRefs'?: { OrdersFragment: Incremental<OrdersFragment> }
+})
+```
+
+Apart from generating code that includes support for the `@defer` directive, the Codegen also
+exports a utility function called `isFragmentReady`. This function can be used to determine whether
+the data for a deferred fragment field has been resolved or not. The `isFragmentReady` function
+takes three arguments: the query document, the fragment definition, and the data returned by the
+query. You can use it to conditionally render components based on whether the data for a deferred
+fragment is available, as shown in the example below:
+
+```jsx
+// index.tsx
+import { useQuery } from '@apollo/client';
+
+import { useFragment, graphql, FragmentType, isFragmentReady } from './gql';
+
+const OrdersFragment = graphql(`...`)
+
+const GetUserQuery = graphql(`...`);
+
+const OrdersList = (props: { data: FragmentType<typeof OrdersFragment> }) => {
+  const data = useFragment(OrdersFragment, props.data);
+  return (
+    // render orders list
+  )
+};
+
+function App() {
+  const { data } = useQuery(GetUserQuery);
+
+  return (
+    <div className="App">
+      {data && (
+        <>
+          <span>Name: {data.name}</span>
+          <span>Id: {data.name}</span>
+          {isFragmentReady(GetUserQuery, OrdersFragment, data)
+						&& <OrdersList data={data} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+With the above code, the `orders` field is rendered only if it's available in the data object.
+
+### Example with GraphQL Yoga and Apollo Client
+
+If you want to see the `@defer` directive in action, you can check out
+[the example in the GraphQL Code Generator repository](https://github.com/dotansimha/graphql-code-generator/tree/master/examples/react/apollo-client-defer).
+
+### How Does It Compare with Relay?
+
+Relay allows for incremental delivery of data from the server to the client without an extra logic
+on the client because it uses Suspense. It enables the client to render parts of the UI as soon as
+the corresponding data is available.
+
+The same can be achieved in other GraphQL clients with the `@defer` directive and the
+`isFragmentReady` utility function.
+
+As the Suspense usage requires deep integration with a GraphQL client code, the GraphQL Code
+Generator does not support it out-of-the-box. We are looking forward to collaborate with the
+maintainers of clients like Apollo Client and Urql, and go for a more generic suspense-backed
+implementation in the future.
+
+## Example Usage in GraphQL Hive
+
+To evaluate the codegen support for the `@defer` directive, we integrated it into the GraphQL Hive
+application. GraphQL Hive is a schema registry for GraphQL.
+
+> With Hive you manage and collaborate on all your GraphQL schemas and GraphQL workflows, regardless
+> of the underlying strategy, engine or framework you're using: this includes Schema Stitching
+> (opens in a new tab), [Apollo Federation](https://the-guild.dev/graphql/hive/federation), or just
+> a traditional monolith approach.
+
+The Hive application uses [URQL](https://formidable.com/open-source/urql/docs/) as its GraphQL
+client, which supports the `@defer` directive starting from version 4.0.0.
+
+In Hive, the operations page displays all server-executed operations, providing valuable insights
+into operation performance, end-user consumption, and operation success rates.
+
+![](/blog-assets/defer-directive/monitoring-view.png)
+
+Given the substantial amount of data to be loaded, we decided to apply the `@defer` directive to the
+operation stats query fragments:
+
+```graphql
+query generalOperationsStats($selector: OperationsStatsSelectorInput!, $resolution: Int!) {
+  operationsStats(selector: $selector) {
+    ... on OperationsStats {
+      # ...
+    }
+    ... on OperationsStats @defer {
+      failuresOverTime(resolution: $resolution) {
+        # ...
+      }
+      requestsOverTime(resolution: $resolution) {
+        # ...
+      }
+      durationOverTime(resolution: $resolution) {
+        # ...
+      }
+    }
+    ... on OperationsStats @defer {
+      clients {
+        # ...
+      }
+    }
+  }
+}
+```
+
+You can check out [a PR to Hive](https://github.com/kamilkisiela/graphql-hive/pull/2082) that adds
+`@defer` in the operations page.
+
+Throughout the process, we collaborated a bit with the URQL team to enhance URQL's `graphcache`
+exchange, resulting in improved support for the `@defer` directive in the new version. You can check
+out the relevant PRs:
+
+- [Mark deferred, uncached results as partial](https://github.com/urql-graphql/urql/pull/3163)
+- [Fix defer field state becoming sticky and affecting future fields](https://github.com/urql-graphql/urql/pull/3167)
+- [Handle both variations of multipart/mixed preamble](https://github.com/urql-graphql/urql/pull/3172)
+
+---
+
+To summarize, the `@defer` directive in GraphQL is a feature that allows fragment fields in a query
+to be resolved separately from the rest of the query. With support for `@defer` now available in
+GraphQL Code Generator, you can easily add deferred resolution to your GraphQL applications and
+optimize their performance. We hope that this new feature will help you build even more powerful and
+performant GraphQL apps!
+
+Let us know your thoughts. We'd love your feedback!

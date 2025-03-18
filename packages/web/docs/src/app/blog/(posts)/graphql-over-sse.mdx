@@ -1,0 +1,322 @@
+---
+title: GraphQL over SSE (Server-Sent Events)
+tags: [graphql, graphql-subscriptions]
+authors: enisdenjo
+date: 2021-09-01
+description:
+  Zero-dependency, HTTP/1 safe, simple, GraphQL over Server-Sent Events Protocol server and client.
+image: /blog-assets/graphql-over-sse/graphql-over-sse.jpg
+---
+
+## Introduction
+
+You've probably been faced with a challenge of making sure your app is up-to-date at all times
+without user interaction. Yes,
+[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) are a great fit! But, what
+if I've told you there is something else? Something "simpler" and
+[widely supported](https://caniuse.com/?search=server-sent%20events)? I humbly present to you:
+[Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+
+Server-Sent Events (abbr. SSE) are persisted HTTP connections enabling simplex communication from
+the server to connected clients. In comparison to WebSockets, which enable full-duplex communication
+(both connected parties can send information at any time), simplex communication is just a fancy
+word for channels that send data in one direction only, in this case from the server to the client.
+You may think that this is a drawback, at least when comparing SSEs to WebSockets; but, think
+again - is it really?
+
+When subscribing to an information source, you make one descriptive request in order to receive
+multiple responses. Specifically, when using GraphQL subscriptions or streaming operations (like
+with
+[`@defer` and `@stream` directives](https://graphql.org/blog/2020-12-08-improving-latency-with-defer-and-stream-directives)),
+you do exactly this - you send one request and expect multiple responses (events) in return. Having
+said this, Server-Sent Events seem like a perfect fit!
+
+Not only does it fit like a glove, but it even has one more small leverage over WebSockets - it is
+firewall-proof. If you've used WebSockets extensively before, you must've been faced with a
+situation where WebSocket connections were declined and you have had absolutely no idea why - yes
+sir, you were bamboozled by an outdated corporate firewall that rejects
+[HTTP Upgrade requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Upgrade) crippling
+WebSocket's full potential. However, SSEs are plain ol' HTTP requests whose TCP connection is kept
+alive, they're immune to rogue firewalls.
+
+## Limitations with SSEs
+
+Ah, if the world was only that simple... There are a few limitations when considering SSEs, some of
+you might've already discovered them, but I'll go over them briefly.
+
+#### Maximum Number of Open Connections
+
+> When **not used over HTTP/2**, SSE suffers from a limitation to the maximum number of open
+> connections, which can be specially painful when opening various tabs as the limit is per browser
+> and set to a very low number (6). The issue has been marked as "Won't fix" in
+> [Chrome](https://bugs.chromium.org/p/chromium/issues/detail?id=275955) and
+> [Firefox](https://bugzilla.mozilla.org/show_bug.cgi?id=906896). This limit is per browser +
+> domain, so that means that you can open 6 SSE connections across all the tabs to
+> `www.example1.com` and another 6 SSE connections to `www.example2.com`. (from
+> [Stackoverflow](https://stackoverflow.com/a/5326159/1905229)). When using HTTP/2, the maximum
+> number of simultaneous HTTP streams is negotiated between the server and the client (defaults to
+> 100).
+
+_[WebAPIs | MDN](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)_
+
+#### Browser's [`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
+
+Not only are you not able to customise the HTTP request by providing custom headers or changing the
+request method, but the
+[`EventSource.onerror` event handler](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/onerror)
+will tell you nothing about why the request failed, no status code, no message, no body - you're in
+the dark.
+
+#### How to GraphQL over SSE?
+
+If you've done your Googling, you probably came across hot discussions like
+["Does HTTP/2 make websockets obsolete?"](https://stackoverflow.com/questions/28582935/does-http-2-make-websockets-obsolete)
+or
+["WebSockets vs. Server-Sent events/EventSource"](https://stackoverflow.com/questions/5195452/websockets-vs-server-sent-events-eventsource).
+Or even the somewhat harsh
+["@deprecate WebSockets: GraphQL Subscriptions using SSE"](https://wundergraph.com/blog/deprecate_graphql_subscriptions_over_websockets)
+article from WunderGraph.
+
+With all this insightful talking and knowledgeable discussions, you'd expect integrating SSE in your
+next project would be easy? You should have options, not be limited to Socket.IO or WebSockets,
+right? Absolutely, it _is_ easy and you _do_ have options!
+
+## Bye Bye Limitations, Hello [`graphql-sse`](https://github.com/enisdenjo/graphql-sse) 👋
+
+I am happy to introduce the lost plug-n-play, zero-dependency, HTTP/1 safe, simple,
+[GraphQL over Server-Sent Events Protocol](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md)
+server and client.
+
+Aforementioned limitations are taken care with a specialised SSE client (inspired by the awesome
+[`@microsoft/fetch-event-source`](https://github.com/Azure/fetch-event-source)) and two separate
+connection modes:
+[the HTTP/1 safe "single connection mode"](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#single-connection-mode)
+that uses a single SSE connection for receiving events with separate HTTP requests dictating the
+behaviour, and
+[the HTTP/2+ "distinct connections mode"](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#distinct-connections-mode)
+that uses distinct SSE connections for each GraphQL operation, accommodating the parameters in the
+request itself.
+
+[`graphql-sse`](https://github.com/enisdenjo/graphql-sse) is a reference implementation of the
+[GraphQL over Server-Sent Events Protocol aiming to become a part of the GraphQL over HTTP standard](https://github.com/graphql/graphql-over-http/pull/163).
+
+### How Can I Try It Out?
+
+I thought you'd never ask! Here is how:
+
+#### Install
+
+```sh
+yarn add graphql-sse
+```
+
+#### Create a GraphQL Schema
+
+```ts
+import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
+
+/**
+ * Construct a GraphQL schema and define the necessary resolvers.
+ *
+ * type Query {
+ *   hello: String
+ * }
+ * type Subscription {
+ *   greetings: String
+ * }
+ */
+const schema = new GraphQLSchema({
+  query: new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+      hello: {
+        type: GraphQLString,
+        resolve: () => 'world'
+      }
+    }
+  }),
+  subscription: new GraphQLObjectType({
+    name: 'Subscription',
+    fields: {
+      greetings: {
+        type: GraphQLString,
+        subscribe: async function* () {
+          for (const hi of ['Hi', 'Bonjour', 'Hola', 'Ciao', 'Zdravo']) {
+            yield { greetings: hi }
+          }
+        }
+      }
+    }
+  })
+})
+```
+
+#### Start the Server
+
+##### With [`http`](https://nodejs.org/api/http.html)
+
+```ts
+import http from 'http'
+import { createHandler } from 'graphql-sse'
+
+// Create the GraphQL over SSE handler
+const handler = createHandler({
+  schema // from the previous step
+})
+
+// Create a HTTP server using the handler on `/graphql/stream`
+const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/graphql/stream')) return handler(req, res)
+  return res.writeHead(404).end()
+})
+
+server.listen(4000)
+console.log('Listening to port 4000')
+```
+
+##### With [`http2`](https://nodejs.org/api/http2.html)
+
+_Browsers might complain about self-signed SSL/TLS certificates.
+[Help can be found on StackOverflow.](https://stackoverflow.com/questions/7580508/getting-chrome-to-accept-self-signed-localhost-certificate)_
+
+```sh
+openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' \
+  -keyout localhost-privkey.pem -out localhost-cert.pem
+```
+
+```ts
+import fs from 'fs'
+import http2 from 'http2'
+import { createHandler } from 'graphql-sse/lib/use/http2'
+
+// Create the GraphQL over SSE handler
+const handler = createHandler({
+  schema // from the previous step
+})
+
+// Create a HTTP/2 server using the handler on `/graphql/stream`
+const server = http2.createSecureServer(
+  {
+    key: fs.readFileSync('localhost-privkey.pem'),
+    cert: fs.readFileSync('localhost-cert.pem')
+  },
+  (req, res) => {
+    if (req.url.startsWith('/graphql/stream')) return handler(req, res)
+    return res.writeHead(404).end()
+  }
+)
+
+server.listen(4000)
+console.log('Listening to port 4000')
+```
+
+##### With [`express`](https://expressjs.com)
+
+```ts
+// yarn add express
+import express from 'express'
+import { createHandler } from 'graphql-sse'
+
+// Create the GraphQL over SSE handler
+const handler = createHandler({ schema })
+
+// Create an express app serving all methods on `/graphql/stream`
+const app = express()
+app.all('/graphql/stream', handler)
+
+app.listen(4000)
+console.log('Listening to port 4000')
+```
+
+##### With [`fastify`](https://fastify.io)
+
+```ts
+// yarn add fastify
+import Fastify from 'fastify'
+import { createHandler } from 'graphql-sse'
+
+// Create the GraphQL over SSE handler
+const handler = createHandler({ schema })
+
+// Create a fastify instance serving all methods on `/graphql/stream`
+const fastify = Fastify()
+fastify.all('/graphql/stream', (req, res) =>
+  handler(
+    req.raw,
+    res.raw,
+    req.body // fastify reads the body for you
+  )
+)
+
+fastify.listen(4000)
+console.log('Listening to port 4000')
+```
+
+#### Use the Client
+
+```ts
+import { createClient } from 'graphql-sse'
+
+const client = createClient({
+  // singleConnection: true, use "single connection mode" instead of the default "distinct connection mode"
+  url: 'http://localhost:4000/graphql/stream'
+})
+
+// query
+;(async () => {
+  const result = await new Promise((resolve, reject) => {
+    let result
+    client.subscribe(
+      {
+        query: '{ hello }'
+      },
+      {
+        next: data => (result = data),
+        error: reject,
+        complete: () => resolve(result)
+      }
+    )
+  })
+
+  expect(result).toEqual({ hello: 'world' })
+})()
+
+// subscription
+;(async () => {
+  const onNext = () => {
+    /* handle incoming values */
+  }
+
+  let unsubscribe = () => {
+    /* complete the subscription */
+  }
+
+  await new Promise((resolve, reject) => {
+    unsubscribe = client.subscribe(
+      {
+        query: 'subscription { greetings }'
+      },
+      {
+        next: onNext,
+        error: reject,
+        complete: resolve
+      }
+    )
+  })
+
+  expect(onNext).toBeCalledTimes(5) // we say "Hi" in 5 languages
+})()
+```
+
+## Want to Find Out More?
+
+Check the repo out to for
+[Getting Started](https://github.com/enisdenjo/graphql-sse#getting-started) quickly with some
+[Recepies](https://github.com/enisdenjo/graphql-sse#recipes) for vanilla usage, or with
+[Relay](https://relay.dev) and [Apollo Client](https://apollographql.com/docs/react). Opening
+issues, contributing with code or simply improving the documentation is always welcome!
+
+I am [@enisdenjo](https://github.com/enisdenjo) and you can chat with me about this topic on the
+[GraphQL Discord workspace](https://discord.graphql.org) anytime.
+
+Thanks for reading and happy coding! 👋

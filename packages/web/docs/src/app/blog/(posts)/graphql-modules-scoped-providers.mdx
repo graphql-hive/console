@@ -1,0 +1,304 @@
+---
+title: Scoped Providers in GraphQL-Modules
+authors: arda
+tags: [graphql, graphql-modules, di]
+date: 2019-01-11
+description: Understand how scoped providers work in GraphQL-Modules Dependency Injection.
+image: /medium/330126a7ddd518886b068e1f1e23ee41.png
+---
+
+We recently released a new version of GraphQL-Modules with a new feature called Scoped Providers in
+the dependency injection system of GraphQL-Modules.
+
+Dependency injection in **GraphQL-Modules** is optional, and you can use it according to your
+preference. It provides a solution for writing `Provider`s, which are just classes, you can use to
+write your business-logic, and this way to separate it from your API declaration, reuse it, and
+communicate between modules easily.
+
+This new feature allows you to define `Provider`s to be used in different scopes;
+
+## Application Scope
+
+If you define a provider in this scope which is default, the provider will be instantiated on
+application-start and will be same in the entire application and all the following requests. The
+providers in this scope can be considered as a shared state across all users' interactions with our
+application. It's basically means that the instance will be treated as
+[Singleton](https://en.wikipedia.org/wiki/Singleton_pattern).
+
+For example, you have a provider called `ExampleApplicationProvider` , then this provider has a
+counter in it;
+
+```typescript
+import { Injectable, ProviderScope } from '@graphql-modules/di'
+
+@Injectable({
+  scope: ProviderScope.Application
+})
+export class ExampleApplicationProvider {
+  counter = 0
+  increment() {
+    counter++
+    return counter
+  }
+}
+```
+
+And let's assume that we have a module declaration something like below;
+
+```ts
+import { GraphQLModule } from '@graphql-modules/core'
+import { ExampleApplicationProvider } from './ExampleApplicationProvider'
+
+export const ExampleModule = new GraphQLModule({
+  providers: [ExampleApplicationProvider],
+  typeDefs: `
+   type Mutation {
+    increment: Int
+   }
+ `,
+  resolvers: {
+    Mutation: {
+      increment: (root, args, context) =>
+        context.injector.get(ExampleApplicationProvider).increment()
+    }
+  }
+})
+```
+
+Finally, let's try to call the following GraphQL Request in multiple times;
+
+```graphql
+mutation ExampleMutation {
+  increment
+}
+```
+
+In first call, you will get `1` , but in the second call you will get `2` . And in every request
+this value will be incremented; because Application-Scoped Providers are kept in memory until the
+application is terminated; and the same instance of that provider will be used on each request.
+Let's see other types of providers to understand this one better.
+
+## Session Scope
+
+When a network request is arriving to your GraphQL-Server, GraphQL-Server calls the context factory
+of the parent module. The parent module creates a session injector together with instantiating
+session-scoped providers with that session object which contains the current context, session
+injector and network request. This session object is passed through module's resolvers using
+module's context.
+
+In other words, providers defined in the session scope are constructed in the beginning of the
+network request, then kept until the network request is closed. While application-scoped providers
+is kept during the application runtime, and shared between all the following network requests and
+resolvers inside these requests, this type of providers would not be shared between different
+requests but in resolver calls those belong to same network request.
+
+Let's try the same thing in that scope by creating a new provider called `ExampleSessionProvider` .
+
+```typescript
+import { Injectable, ProviderScope } from '@graphql-modules/di'
+
+@Injectable({
+  scope: ProviderScope.Session
+})
+export class ExampleSessionProvider {
+  counter = 0
+  increment() {
+    counter++
+    return counter
+  }
+}
+```
+
+Then change our module declaration to use this provider;
+
+```typescript
+import { GraphQLModule } from '@graphql-modules/core'
+import { ExampleSessionProvider } from './ExampleApplicationProvider'
+
+export const ExampleModule = new GraphQLModule({
+  providers: [ExampleSessionProvider],
+  typeDefs: `
+   type Mutation {
+    increment: Int
+   }
+ `,
+  resolvers: {
+    Mutation: {
+      increment: (root, args, context) => context.injector.get(ExampleSessionProvider).increment()
+    }
+  }
+})
+```
+
+So at this time, in every mutation call our Session-Scoped Provider's increment method will be
+called and its value will be returned as a result of that mutation.
+
+```graphql
+mutation ExampleMutation {
+  increment
+}
+```
+
+In first call, you will get `1` , but in the second call you will get `1` again. But why? Because on
+each request `ExampleSessionProvider` is instantiated from scratch specifically for that network
+request which is called session in our DI system. But to see the point of the session scope, let's
+assume we have two more resolvers called `multiply` . First let's add another method called
+`multiply` that takes one argument to be multiplied by our counter value;
+
+```typescript
+import { Injectable, ProviderScope } from '@graphql-modules/di'
+
+@Injectable({
+  scope: ProviderScope.Session
+})
+export class ExampleSessionProvider {
+  counter = 0
+  increment() {
+    counter++
+    return counter
+  }
+  multiply(times: number) {
+    counter = counter * times
+    return counter
+  }
+}
+```
+
+After that, let's use this new method in our new resolver;
+
+```typescript
+import { GraphQLModule } from '@graphql-modules/core'
+import { ExampleApplicationProvider } from './ExampleApplicationProvider'
+
+export const ExampleModule = new GraphQLModule({
+  providers: [ExampleApplicationProvider],
+  typeDefs: `
+   type Mutation {
+    increment: Int
+    multiply(times: Int): Int
+   }
+ `,
+  resolvers: {
+    Mutation: {
+      increment: (root, args, context) =>
+        context.injector.get(ExampleApplicationProvider).increment(),
+      multiply: (root, args, context) =>
+        context.injector.get(ExampleApplicationProvider).multiply(args.times)
+    }
+  }
+})
+```
+
+When we call the following GraphQL request,
+
+```graphql
+mutation ExampleMutation {
+  increment
+  multiply(times: 2)
+}
+```
+
+In first call, the initial counter value `0` will be incremented . Then the result becomes `1` and
+this value will be returned as a result of `increment` mutation, but on the same request we have
+`multiply` as well. So the same counter value will be multiplied by `2` , and this value will be
+returned as a result of `multiply` mutation.
+
+So, on every request the result will be:
+
+```json
+{
+  "increment": 1,
+  "multiply": 2
+}
+```
+
+But if the provider is in ApplicationScope, the result will be `[3,6]` in the second call.
+
+## Request Scope
+
+If you have request-scoped providers in your GraphQL Module, these providers are generated in every
+injection. This means a request-scoped provider is never kept neither application state, nor session
+state. So, this type of providers works just like
+[Factory](https://en.wikipedia.org/wiki/Factory_method_pattern). It creates an instance each time
+you request from the injector.
+
+Let's assume we do the similar changes for RequestScope. The results will be like below on each
+request:
+
+```json
+{
+  "increment": 1,
+  "multiply": 0
+}
+```
+
+Because request-scoped providers are constructed on each `injector.get` call. They are kept in the
+current function scope, they're not kept in any session or DI container. That's why, we can consider
+them `factory` .
+
+As you can see the example and the results above, `ExampleApplicationProvider` is shared between
+different network requests, while `ExampleSessionProvider` is shared between resolver-calls inside
+the same network request. But, `ExampleRequestProvider` is only kept in the same resolver call.
+
+## New `ModuleSessionInfo` Built-In Provider
+
+Let's assume that you have a token required for your authentication process. And this token is
+probably stored in request header. And GraphQL-Modules provides you access to network request in a
+built-in provider called **_ModuleSessionInfo_**. This session object is the raw request/response
+object passed by your HTTP Server. For example, if you're using Express, you will get something like
+`{ req: IncommingMessage, res: Response }` .
+
+Every GraphQL-Module creates a _ModuleSessionInfo_ instance in each network request that contains
+raw `Session` from the GraphQL Server, `SessionInjector` that contains Session-scoped instances
+together with Application-scoped ones and `Context` object which is constructed with
+`contextBuilder` of the module. But, notice that you cannot use this built-in provider.
+
+```typescript
+@Injectable({
+  scope: ProviderScope.Session
+})
+class ExampleSessionScopeProvider {
+  constructor(private moduleSessionInfo: ModuleSessionInfo) {
+    moduleSessionInfo // { session, context, injector }
+  }
+}
+
+@Injectable({
+  scope: ProviderScope.Application
+})
+class ExampleInvalidApplicationScopeProvider {
+  constructor(private moduleSessionInfo: ModuleSessionInfo) {} // Error: ModuleSessionInfo is not valid provider
+}
+
+@Injectable({
+  scope: ProviderScope.Application
+})
+class ExampleApplicationScopeProvider implements OnRequest {
+  onRequest(moduleSessionInfo) {
+    moduleSessionInfo // { session, context, injector }
+  }
+}
+```
+
+As you can see, you cannot use `ModuleSessionInfo` in Application Scope, because application-scoped
+providers belong to the whole application, and application-scoped providers are completely
+independent of the network request.
+
+However, you can use `onRequest` hook to have `ModuleSessionInfo` in your Application-Scoped
+provider which is called on each network request.
+
+## What's Next?
+
+We are constantly trying to improve the set of tools provided by **GraphQL-Modules**, and we welcome
+you to try it and share your experience and thoughts.
+
+### All Posts about GraphQL Modules
+
+- [GraphQL Modules — Feature based GraphQL Modules at scale](/blog/graphql-modules)
+- [Why is True Modular Encapsulation So Important in Large-Scale GraphQL Projects?](/blog/modular-encapsulation-graphql-modules)
+- [Why did we implement our own Dependency Injection library for GraphQL-Modules?](/blog/dependency-injection-library-in-graphql-modules)
+- [Scoped Providers in GraphQL-Modules Dependency Injection](/blog/graphql-modules-scoped-providers)
+- [Writing a GraphQL TypeScript project w/ GraphQL-Modules and GraphQL-Code-Generator](/blog/graphql-typescript-modules-codegen)
+- [Authentication and Authorization in GraphQL (and how GraphQL-Modules can help)](/blog/graphql-modules-auth)
+- [Authentication with AccountsJS & GraphQL Modules](/blog/accountsjs-graphql-modules)
+- [Manage Circular Imports Hell with GraphQL-Modules](/blog/manage-circular-imports-hell-in-graphql-modules)

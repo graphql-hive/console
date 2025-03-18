@@ -10,6 +10,7 @@ import { getPageMap } from '@theguild/components/server';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { isBlogPost } from './blog-types';
 import { CompanyNewsAndPressSection } from './company-news-and-press-section';
+import { PostsByCategory } from './posts-by-category';
 
 export const metadata = {
   title: 'Hive Blog',
@@ -18,13 +19,13 @@ export const metadata = {
 export default async function BlogPage() {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
 
-  const blogPosts = pageMap.filter(isBlogPost);
+  const allPosts = pageMap.filter(isBlogPost);
 
   return (
     <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden px-6">
       <HiveLayoutConfig widths="landing-narrow" />
       <BlogPageHero className="mx-4 max-sm:mt-2 md:mx-6" />
-      <PostsByCategory className="mx-4 md:mx-6" allPosts={blogPosts} />
+      <PostsByCategory allPosts={allPosts.map(post => post.frontMatter)} />
       <CompanyNewsAndPressSection className="mx-4 md:mx-6" />
       <GetYourAPIGameRightSection className="light text-green-1000 dark:bg-primary/95 mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>

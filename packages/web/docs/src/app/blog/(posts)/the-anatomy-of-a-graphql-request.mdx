@@ -1,0 +1,428 @@
+---
+title: The Anatomy of a GraphQL Request
+authors: laurin
+tags: [graphql]
+date: 2022-01-30
+description: Let's go back to the basics and break down a GraphQL request.
+thumbnail: /blog-assets/the-anatomy-of-a-graphql-request/thumbnail.png
+image: /blog-assets/the-anatomy-of-a-graphql-request/image.png
+---
+
+On a high-level, GraphQL servers are pretty easy to set up. Just passing a GraphQL schema and
+starting the server does the job.
+
+However, for many use-cases, such a setup might not be sufficient.
+
+Let's dive into each of the phases of a GraphQL request and learn how enhancing each phase can help
+to set up a production ready GraphQL server.
+
+Note: While GraphQL can be done over almost any protocol, this article focuses on the most commonly
+used protocol [GraphQL over HTTP](https://github.com/graphql/graphql-over-http). However, most
+knowledge can be transferred to other protocols such as GraphQL over WebSockets or other more exotic
+ones.
+
+![The Phases of an GraphQL Request](/blog-assets/the-anatomy-of-a-graphql-request/phases-breakdown.png)
+
+## HTTP Parsing and Normalization
+
+Clients send HTTP requests to the server with a payload that contains an operation document string
+(query, mutation, or subscription), optionally some variables, and the operation name from the
+document that shall be executed.
+
+When the requests are executed via the POST HTTP method, the body will be a JSON object:
+
+**Example JSON POST Body**
+
+```json
+{
+  "query": "query UserById($id: ID!) { user(id: $id) { id name } }",
+  "variables": { "id": "10" },
+  "operationName": "UserById"
+}
+```
+
+However, when using the GET HTTP method (e.g. for query operations) those parameters can also be
+provided as a query search string. The values are then URL-encoded.
+
+**Example GET URL**
+
+```
+http://localhost:8080/graphql?query=query%20UserById%28%24id%3A%20ID%21%29%20%7B%20user%28id%3A%20%24id%29%20%7B%20id%20name%20%7D%20%7D&variables=%7B%20%22id%22%3A%20%2210%22%20%7DoperationName=UserById
+```
+
+The GraphQL HTTP server's first task is to parse and normalize the body or query string and
+furthermore determine the protocol that shall be used for sending the response. The protocols can
+be:
+
+- `application/graphql+json` (or `application/json` for legacy clients) for a single result that
+  yields from the execution phase
+- `multipart/mixed` for incremental delivery (when using `@defer` and `@stream` directives).
+
+Not officially in the specification, but also used is `text/event-stream` for event streams (e.g.
+when executing subscription or live query operations).
+
+## GraphQL Parse
+
+After parsing and normalizing the request, the server will pass on the GraphQL parameters onto the
+GraphQL engine that will parse the GraphQL operation document (which can contain any number of
+query, mutation, or subscription operations and fragment definitions).
+
+If there is any typo or syntax error, this phase will yield GraphQLErrors for each of those issues
+and pass them back to the server layer to send those back to the client.
+
+For the following invalid GraphQL operation (`)` missing after `$id` at line 2):
+
+```
+query UserById($id: ID!) {
+  user(id: $id {
+    id
+    name
+  }
+}
+```
+
+The error will look similar to this:
+
+```json
+{
+  "message": "Syntax Error: Expected Name, found {",
+  "locations": [
+    {
+      "line": 2,
+      "column": 16
+    }
+  ]
+}
+```
+
+As you can see, the error messages are unfortunately not always straightforward and helpful. The
+location can, however, help you track down the syntax error!
+
+In case no error occurs, the parse phase produces an AST (abstract syntax tree).
+
+The AST is a handy format that is used for the follow-up phases `validate` and `execute`.
+
+For our operation it would be identical to the following JSON:
+
+```json
+{
+  "kind": "Document",
+  "definitions": [
+    {
+      "kind": "OperationDefinition",
+      "operation": "query",
+      "name": {
+        "kind": "Name",
+        "value": "UserById"
+      },
+      "variableDefinitions": [
+        {
+          "kind": "VariableDefinition",
+          "variable": {
+            "kind": "Variable",
+            "name": {
+              "kind": "Name",
+              "value": "id"
+            }
+          },
+          "type": {
+            "kind": "NonNullType",
+            "type": {
+              "kind": "NamedType",
+              "name": {
+                "kind": "Name",
+                "value": "ID"
+              }
+            }
+          }
+        }
+      ],
+      "selectionSet": {
+        "kind": "SelectionSet",
+        "selections": [
+          {
+            "kind": "Field",
+            "name": {
+              "kind": "Name",
+              "value": "user"
+            },
+            "arguments": [
+              {
+                "kind": "Argument",
+                "name": {
+                  "kind": "Name",
+                  "value": "id"
+                },
+                "value": {
+                  "kind": "Variable",
+                  "name": {
+                    "kind": "Name",
+                    "value": "id"
+                  }
+                }
+              }
+            ],
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "id"
+                  }
+                },
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "name"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+This procedure is performed by the `parse` function that is exported from `graphql-js`. Other
+languages that are orientate themselves on the `graphql-js` reference implementation have a
+corresponding counterpart.
+
+## GraphQL Validate
+
+In the validation phase, the parsed document is validated against our GraphQL schema to ensure all
+selected fields in the operation are available and valid. The previously parsed AST makes it easier
+for the validation rules to have a common interface of traversing the document. Furthermore, other
+validation rules that ensure that the document follows the GraphQL specification are checked, E.g.
+whether variables referenced in the document are declared in the operation definition.
+
+As an example the following operation is missing a definition for the `$id` variable:
+
+```graphql
+query UserById {
+  user(id: $id) {
+    id
+    name
+  }
+}
+```
+
+If the AST of that operation would be validated the following error will be raised.
+
+```json
+[
+  {
+    "message": "Variable \"$id\" is not defined by operation \"UserById\".",
+    "locations": [
+      {
+        "line": 2,
+        "column": 12
+      },
+      {
+        "line": 1,
+        "column": 1
+      }
+    ]
+  }
+]
+```
+
+In case any error is raised the errors are forwarded to the HTTP layer which takes care of sending
+them back to the client over the determined protocol. Otherwise, if no errors are raised the
+`execution` phase will be performed next.
+
+This procedure is performed by the `validate` function that is exported from `graphql-js`. Other
+languages that are orientate themselves on the `graphql-js` reference implementation have a
+corresponding counterpart.
+
+## GraphQL Execute
+
+In the execution phase we are actually resolving the data requested by the client using the parsed
+and validated GraphQL operation document AST and our GraphQL schema, which contains the resolvers
+that specify from where the data the client requests is retrieved.
+
+Previously, the HTTP request has been parsed and normalized, which yielded the following additional
+(but optional) values: `variables` and `operationName`.
+
+If the GraphQL document used for execution included more than one executable mutation, query or
+subscription operation, the `operationName` is determined to identify the document that shall be
+used. If the determined executable operation has any variable definitions, those are asserted
+against the `variables` values parsed from the HTTP request.
+
+If anything goes wrong or is incorrect an error is raised. E.g. the variables provided are invalid
+or the operation that shall be executed cannot be determined as the `operationName` is invalid or
+missing.
+
+**Example error for anonymous document alongside named document**
+
+```graphql
+query UserById($id: ID!) {
+  user(id: $id) {
+    id
+    name
+  }
+}
+query {
+  __typename
+}
+```
+
+```json
+{
+  "errors": [
+    {
+      "message": "This anonymous operation must be the only defined operation.",
+      "locations": [
+        {
+          "line": 7,
+          "column": 1
+        }
+      ]
+    }
+  ]
+}
+```
+
+Such an error will again be forwarded to the client by the HTTP layer.
+
+Otherwise, if no error occurs, the field values will be resolved with all the parsed and provided
+parameters. The phase yields a single or stream of GraphQL execution results.
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "10",
+      "name": "Laurin"
+    }
+  }
+}
+```
+
+The HTTP layer forwards those to the client that initiated the request.
+
+This procedure is performed by the `execute` and `subscribe` functions that are exported from
+`graphql-js`. Other languages that are orientate themselves on the `graphql-js` reference
+implementation have a corresponding counterpart.
+
+# Why Do We Want to Override Different Phases?
+
+## Overriding `parse`
+
+### Add Caching
+
+Parsing a GraphQL document string comes with overhead. We could cache frequently sent document
+strings and serve the document from the cache instead of parsing it every single time.
+
+### Test New Functionality
+
+The GraphQL Type system defines the capabilities of the GraphQL service. This phase can be used to
+add new capabilities to the type system that may not yet be supported by GraphQL specification.
+
+## Overriding `validate`
+
+### Add Caching
+
+Similar to parsing, validating a GraphQL document AST comes with an overhead. We could cache
+recurring document ASTs and server the validation result from the cache instead of validating it
+every single time.
+
+### Add Custom Rules
+
+You might want to restrict what kind of operations are allowed to be executed. E.g. If we only want
+to allow `query` operations, we can provide a custom validation rule that yields errors as soon as a
+`mutation` or `subscription` operation is encountered.
+
+## Overriding `execute` or `subscribe`
+
+### Add Caching
+
+We can serve frequently executed GraphQL operation results from a cache instead of calling all our
+resolvers and fetching from a remote database/server every time.
+
+### Add Tracing Information
+
+We can collect statistics by measuring how long it takes to resolve each field in our documents'
+selection set and narrow down bottlenecks.
+
+### Mask and Report Errors
+
+We want to make sure the errors occurring during the execution do not contain sensitive information
+and are properly reported, so they do not go unnoticed and are properly reported.
+
+### Add New Functionality
+
+We could customize the algorithm that is used by `graphql-js` in order to add new features or make
+it more performant e.g. by using [graphql-executor](https://npmjs.com/package/graphql-executor).
+
+## Use Envelop for Extending the Phases
+
+While making our GraphQL servers production ready and working with our clients we discovered that we
+were writing the same custom code over and over again.
+
+Envelop provides us a user-friendly way of hooking into the before and after phases of `parse`,
+`validate`, `execute` and `subscribe`.
+
+```ts
+import { NoSchemaIntrospectionCustomRule } from 'graphql'
+import { envelop, Plugin } from '@envelop/core'
+
+const myPlugin: Plugin = {
+  onParse() {
+    console.log('before parsing')
+    return function afterParse({ result }) {
+      if (result instanceof Error) {
+        console.log('Error occured during parsing: ', result)
+      }
+    }
+  },
+  onValidate({ addValidationRule }) {
+    // add a custom validation rule
+    addValidationRule(NoSchemaIntrospectionCustomRule)
+
+    return function afterValidate({ result }) {
+      if (result.length) {
+        console.log('Errors occured duting validation: ', result)
+      }
+    }
+  },
+  onExecute({ args }) {
+    const myVar = args.contextValue.myVar
+  }
+}
+
+const getEnveloped = envelop({ plugins: [myPlugin] })
+const { parse, validate, execute, subscribe } = getEnveloped()
+```
+
+![Envelop Plugin Illustration](/blog-assets/the-anatomy-of-a-graphql-request/envelop-breakdown.png)
+
+Furthermore, the plugins can be easily shared across projects.
+
+[You can learn more about Envelop on our introduction blog post](/blog/introducing-envelop) or by
+[visiting the Envelop documentation](https://envelop.dev).
+
+## Why Is GraphQL Yoga V2 so Important?
+
+As you might have noticed
+[we adopted GraphQL Yoga to The Guild ecosystem quite a while ago](https://github.com/dotansimha/graphql-yoga/issues/670).
+[We have been thinking a lot on how version 2 should look like](https://github.com/dotansimha/graphql-yoga/issues/704)
+and while building and using envelop within our customer projects we realized a few limitations that
+can only be solved by owning/wrapping the whole HTTP GraphQL request pipeline.
+
+While envelop is strictly about wrapping the `graphql-js` core functions (`parse`, `validate`,
+`execute` and `subscribe`). GraphQL Yoga will provide a unified plugin interface for writing plugins
+that hook into ALL of those phases envelop has plus all the encapsulated phases for parsing and
+normalizing the HTTP request, allowing you to write powerful GraphQL servers and making features
+such as Automatic Persisted Queries or Response Caching more powerful and easy to adopt.
+
+For a small sneak peek check out
+[GraphQL.wtf Episode 24 - Batteries Included GraphQL Server](https://graphql.wtf/episodes/24-graphql-yoga)
+or [try the GraphQL Yoga alpha](https://graphql-yoga.com).
+
+We are excited to announce more details soon.

@@ -1,0 +1,1410 @@
+---
+title: Nextra 4 x App Router. What's New and Migration Guide
+description:
+  App Router, Turbopack, Rust search engine Pagefind, RSC i18n, server/client components, compiled
+  by React Compiler, GitHub Alert Syntax, new _meta.global file
+date: 2025-01-13
+authors: [dimitri]
+image: https://nextra.site/og?title=Nextra%204%0AApp%20Router%20/%20Turbopack
+tags: [react, nextjs, nextra, react-compiler, rsc, app-router, turbopack, pagefind, i18n]
+---
+
+import { Button, FileTree, Steps, Tabs } from 'nextra/components'
+import BlogV3BundleSize from 'public/blog-assets/nextra-4/blog-v3-bundle-size.mdx'
+import BlogV4BundleSize from 'public/blog-assets/nextra-4/blog-v4-bundle-size.mdx'
+import DocsV3BundleSize from 'public/blog-assets/nextra-4/docs-v3-bundle-size.mdx'
+import DocsV4BundleSize from 'public/blog-assets/nextra-4/docs-v4-bundle-size.mdx'
+import ExampleLayoutForBlogTheme from 'public/blog-assets/nextra-4/example-layout-for-blog-theme.mdx'
+import ExampleLayoutForDocsTheme from 'public/blog-assets/nextra-4/example-layout-for-docs-theme.mdx'
+import ExampleLayoutForI18nDocsTheme from 'public/blog-assets/nextra-4/example-layout-for-i18n-docs-theme.mdx'
+import GitHubAlertSyntax from 'public/blog-assets/nextra-4/github-alert-syntax.mdx'
+import I18nDocsV3BundleSize from 'public/blog-assets/nextra-4/i18n-v3-bundle-size.mdx'
+import I18nDocsV4BundleSize from 'public/blog-assets/nextra-4/i18n-v4-bundle-size.mdx'
+
+export function ExclamationTriangleIcon(props) {
+  return (
+    <svg viewBox="0 0 15 15" fill="currentColor" {...props}>
+      <path d="M8.4449 0.608765C8.0183 -0.107015 6.9817 -0.107015 6.55509 0.608766L0.161178 11.3368C-0.275824 12.07 0.252503 13 1.10608 13H13.8939C14.7475 13 15.2758 12.07 14.8388 11.3368L8.4449 0.608765ZM7.4141 1.12073C7.45288 1.05566 7.54712 1.05566 7.5859 1.12073L13.9798 11.8488C14.0196 11.9154 13.9715 12 13.8939 12H1.10608C1.02849 12 0.980454 11.9154 1.02018 11.8488L7.4141 1.12073ZM6.8269 4.48611C6.81221 4.10423 7.11783 3.78663 7.5 3.78663C7.88217 3.78663 8.18778 4.10423 8.1731 4.48612L8.01921 8.48701C8.00848 8.766 7.7792 8.98664 7.5 8.98664C7.2208 8.98664 6.99151 8.766 6.98078 8.48701L6.8269 4.48611ZM8.24989 10.476C8.24989 10.8902 7.9141 11.226 7.49989 11.226C7.08567 11.226 6.74989 10.8902 6.74989 10.476C6.74989 10.0618 7.08567 9.72599 7.49989 9.72599C7.9141 9.72599 8.24989 10.0618 8.24989 10.476Z" />
+    </svg>
+  )
+}
+
+export function Removed({ children }) {
+  return (
+    <span className="text-yellow-500">
+      <ExclamationTriangleIcon height="15" className="inline" /> Removed
+      {children && <>. {children}</>}
+    </span>
+  )
+}
+
+export function Video({ src, alt }) {
+  return (
+    <figure>
+      <video autoPlay="autoplay" loop muted playsInline className="mt-6 rounded-md">
+        <source src={src} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <figcaption className="mt-2 text-center text-sm">{alt}</figcaption>
+    </figure>
+  )
+}
+
+Nextra 4 just released, marking the largest update in its history, with a ton of exciting
+improvements. Here's what's new:
+
+## App Router Support
+
+Nextra 4 exclusively uses Next.js [App Router](https://nextjs.org/docs/app). Support for the
+[Pages Router](https://nextjs.org/docs/pages) has been discontinued. In Nextra 4, there are two ways
+to render MDX files using file-based routing:
+
+- **Content directory convention:** Using
+  [a **catch-all** route](https://nextjs.org/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)
+  which loads MDX files from the specific directory.
+- **Page file convention:** Follows
+  [Next.js App Router convention](https://nextjs.org/docs/getting-started/project-structure#app-routing-conventions)
+  with enhanced page extensions: `page.{md,mdx}`.
+
+<Callout type="info">
+**Trade-offs**
+
+- The **catch-all** route route may lead to longer compilation times, depending on the number of MDX
+  files.
+- The **page file convention** works well with colocation, allowing you to keep all the assets for
+  an article in one place.
+
+</Callout>
+
+### Using Content Directory Convention
+
+Migrate your Pages Router site with minimal changes using this mode. Follow these steps:
+
+<Steps>
+
+<h4>Rename your `pages` folder to `content`</h4>
+
+You can keep `content` directory in root of your project, or in `src` directory.
+
+<h4>Set `contentDirBasePath` option in `next.config` file (_optional_)</h4>
+
+If you want to serve your content from a different path, you can set `contentDirBasePath` option:
+
+```js filename="next.config.mjs" {4}
+import nextra from 'nextra'
+
+const withNextra = nextra({
+  contentDirBasePath: '/docs' // Or even nested e.g. `/docs/advanced`
+})
+```
+
+<h4>Add `[[...mdxPath]]/page.jsx` file</h4>
+
+Place this file in `app` directory with
+[the following content](https://github.com/shuding/nextra/blob/main/examples/docs/src/app/docs/%5B%5B...mdxPath%5D%5D/page.jsx),
+you should get the following structure:
+
+<FileTree>
+  <FileTree.Folder name="app" open>
+    <FileTree.File name="layout.jsx" />
+    <FileTree.Folder name="[[...mdxPath]]" open active>
+      <FileTree.File name="page.jsx" active />
+    </FileTree.Folder>
+  </FileTree.Folder>
+  <FileTree.Folder name="content" open>
+    <FileTree.File name="index.mdx" />
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="index.mdx" />
+      <FileTree.File name="getting-started.mdx" />
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+<Callout>
+**Tip**
+
+Consider the single catch-all route `[[...mdxPath]]/page.jsx` as a gateway to your `content`
+directory.
+
+If you set `contentDirBasePath` option in `next.config` file, you should put
+`[[...mdxPath]]/page.jsx` in the corresponding directory.
+
+</Callout>
+
+<h4>You are ready to go!</h4>
+
+<Callout type="info">
+**Note**
+
+Many existing solutions such as
+[Refreshing the Next.js App Router When Your Markdown Content Changes](https://steveruiz.me/posts/nextjs-refresh-content)
+rely on extra dependencies like `concurrently` and `ws`. These approaches include
+[Dan Abramov workaround with `<AutoRefresh>` component and dev web socket server](https://github.com/hashicorp/next-remote-watch/issues/42#issuecomment-1794052655).
+
+Nextra's content mode delivers a streamlined solution right out of the box:
+
+- you don't need to install unnecessary dependencies
+- you don't need to restart your server on changes in `content` directory
+- hot reloading works out of the box
+- you can use `import` statements in MDX files and
+  [static images](https://nextra.site/docs/guide/image#static-image) works as well
+
+Checkout Nextra's
+[docs website](https://github.com/shuding/nextra/tree/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/docs)
+and
+[i18n website example](https://github.com/shuding/nextra/tree/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/swr-site).
+
+</Callout>
+
+</Steps>
+
+### Using Page File Convention
+
+The above file-based routing structure, following the
+[Using Content Directory Convention](#using-content-directory-convention), will appear as follows
+when using this mode:
+
+<FileTree>
+  <FileTree.Folder name="app" open>
+    <FileTree.File name="layout.jsx" />
+    <FileTree.File name="page.jsx" active />
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="page.mdx" active />
+      <FileTree.Folder name="getting-started" open>
+        <FileTree.File name="page.mdx" active />
+      </FileTree.Folder>
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+<Callout>
+**Warning**
+
+All pages `page.{jsx,tsx}` should export
+[`metadata` object](https://nextjs.org/docs/app/building-your-application/optimizing/metadata#static-metadata).
+
+</Callout>
+
+<Callout type="info">
+**Note**
+
+See
+[Nextra's website](https://github.com/shuding/nextra/tree/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/docs)
+or Nextra's
+[blog example](https://github.com/shuding/nextra/tree/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/blog)
+as an examples of this mode.
+
+</Callout>
+
+## Turbopack Support
+
+After being one of our [most requested features](https://github.com/shuding/nextra/issues/1054) for
+over 2 years, Nextra 4 finally supports [Turbopack](https://nextjs.org/docs/architecture/turbopack),
+the Rust-based incremental bundler. Enable it by adding `--turbopack` to your dev command:
+
+```diff filename="package.json"
+"scripts": {
+-  "dev": "next dev"
++  "dev": "next dev --turbopack"
+}
+```
+
+<Callout type="info">
+**Note**
+
+Without `--turbopack` flag Next.js under the hood uses
+[Webpack](https://github.com/webpack/webpack), written in JavaScript.
+
+</Callout>
+
+<Callout type="warning">
+**Warning**
+
+At the time of writing this blog **only JSON serializable values** can be passed to `nextra`
+function. You cannot pass custom `remarkPlugins`, `rehypePlugins` or `recmaPlugins` since they are
+functions.
+
+```js filename="next.config.mjs" {5-7}
+import nextra from 'nextra'
+
+const withNextra = nextra({
+  mdxOptions: {
+    remarkPlugins: [myRemarkPlugin],
+    rehypePlugins: [myRehypePlugin],
+    recmaPlugins: [myRecmaPlugin]
+  }
+})
+```
+
+If you try to pass them, you'll get an error from Turbopack:
+
+```text copy=false
+Error: loader nextra/loader for match "./{src/app,app}/**/page.{md,mdx}" does not have serializable options.
+Ensure that options passed are plain JavaScript objects and values.
+```
+
+</Callout>
+
+## Discontinuing `theme.config` Support
+
+Nextra 4 no longer support `theme.config` files, which were previously used for configuring your
+theme options, `theme` and `themeConfig` option were removed too:
+
+```diff filename="next.config.mjs"
+const withNextra = nextra({
+- theme: 'nextra-theme-docs',
+- themeConfig: './theme.config.tsx'
+})
+```
+
+<Callout type="info">
+**Note**
+
+Previously theme config options now should be passed as `props` for `<Layout>`, `<Navbar>`,
+`<Footer>`, `<Search>` and `<Banner>` components in `app/layout.jsx` file.
+
+</Callout>
+
+## New Search Engine – Pagefind
+
+The search engine has been migrated from [FlexSearch](https://github.com/nextapps-de/flexsearch),
+which is written in JavaScript to the Rust-powered [Pagefind](https://pagefind.app).
+
+### Benefits
+
+Pagefind is **significantly** faster and delivers **far superior** search results compared to
+FlexSearch. Here are some examples that didn’t work in earlier versions of Nextra:
+
+1. Indexing remote MDX.
+
+   {/* prettier-ignore */}
+   ```mdx filename="page.mdx" "{await getUpdatedAt()}" "<Stars />"
+    import { Callout } from 'nextra/components'
+
+    export async function Stars() {
+      const response = await fetch('https://api.github.com/repos/shuding/nextra')
+      const repo = await response.json()
+      const stars = repo.stargazers_count
+      return <b>{stars}</b>
+    }
+    export async function getUpdatedAt() {
+      const response = await fetch('https://api.github.com/repos/shuding/nextra')
+      const repo = await response.json()
+      const updatedAt = repo.updated_at
+      return new Date(updatedAt).toLocaleDateString()
+    }
+
+    <Callout emoji="🏆">
+      {/* Stars count will be indexed 🎉 */}
+      Nextra has <Stars /> stars on GitHub!
+
+      {/* Last update time will be indexed 🎉 */}
+      Last repository update _{await getUpdatedAt()}_.
+    </Callout>
+    ```
+
+1. Indexing dynamic content written in Markdown/MDX.
+
+   {/* prettier-ignore */}
+   ```mdx filename="page.mdx" "{new Date().getFullYear()}"
+    {/* Current year will be indexed 🎉 */}
+    MIT {new Date().getFullYear()} © Nextra.
+    ```
+
+1. Indexing imported JavaScript or MDX files in MDX page.
+
+   ```jsx filename="../path/to/your/reused-js-component.js"
+   export function ReusedJsComponent() {
+     return <strong>My content will be indexed</strong>
+   }
+   ```
+
+   ```mdx filename="../path/to/your/reused-mdx-component.mdx"
+   **My content will be indexed as well**
+   ```
+
+   ```mdx filename="page.mdx"
+   import { ReusedJsComponent } from '../path/to/your/reused-js-component.js'
+   import ReusedMdxComponent from '../path/to/your/reused-mdx-component.mdx'
+
+   <ReusedJsComponent />
+   <ReusedMdxComponent />
+   ```
+
+1. Indexing static pages written in JavaScript or TypeScript.
+
+   For JavaScript/TypeScript pages **you need to add**
+   [`data-pagefind-body` attribute](https://pagefind.app/docs/indexing/#limiting-what-sections-of-a-page-are-indexed)
+   to the tag enclosing the main content area you want indexed.
+
+   You can ignore indexing of specific tags by adding
+   [`data-pagefind-ignore` attribute](https://pagefind.app/docs/indexing/#removing-individual-elements-from-the-index).
+
+   ```jsx filename="page.jsx" /data-pagefind-body/ /data-pagefind-ignore/
+   export default function Page() {
+     return (
+       // All content of tags with `data-pagefind-body` attribute will be indexed
+       <ul data-pagefind-body>
+         <li>Nextra 4 is the best MDX Next.js library</li>
+         {/* Except for tags with `data-pagefind-ignore` attribute */}
+         <li data-pagefind-ignore>Nextra 3 is the best MDX Next.js library</li>
+       </ul>
+     )
+   }
+   ```
+
+   <Callout>
+     **Tip**
+     {''}
+     For MDX pages while using `nextra-theme-docs` and `nextra-theme-blog` **you don't need to add**
+     `data-pagefind-body` attribute.
+   </Callout>
+
+### Setup {/* eslint-disable-line mdx/remark */}[#pagefind-setup]
+
+New search engine requires few steps to setup:
+
+<Steps>
+<h4>Install `pagefind` as a dev dependency</h4>
+```sh npm2yarn
+npm i -D pagefind
+```
+<h4>Add a `postbuild` script</h4>
+
+Pagefind indexes `.html` pages and search indexing should be done after building your application:
+
+<Tabs items={['Server builds', 'Static exports']}>
+<Tabs.Tab>
+```json filename="package.json" {2}
+"scripts": {
+  "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind"
+}
+```
+</Tabs.Tab>
+<Tabs.Tab>
+```json filename="package.json" {2}
+"scripts": {
+  "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind"
+}
+```
+</Tabs.Tab>
+</Tabs>
+
+<h4>Enable `pre`/`post` scripts (_optional_)</h4>
+
+Some package managers like `pnpm@8` by default
+[don't execute `pre/post` scripts](https://pnpm.io/8.x/cli/run#enable-pre-post-scripts), you should
+enable it via `.npmrc` file via `enable-pre-post-scripts` setting:
+
+```text filename=".npmrc"
+enable-pre-post-scripts=true
+```
+
+<Callout type="info">
+**Note**
+
+`pnpm@9` by default [run `pre`/`post` scripts](https://pnpm.io/9.x/cli/run#enable-pre-post-scripts).
+
+</Callout>
+
+<h4>Add `_pagefind/` directory to `.gitignore` file</h4>
+
+You don’t need to commit `_pagefind/` directory to your Git repository, as it is always newly
+generated.
+
+```text filename=".gitignore" {3}
+node_modules/
+.next/
+_pagefind/
+```
+
+<h4>Use `<Search>` component in your custom theme</h4>
+
+Search from `nextra-theme-docs` was exported in `nextra/components`. With this change
+`nextra-theme-blog` now also supports search. You can take advantage of this feature as well in your
+custom themes.
+
+```jsx filename="app/layout.jsx" {1,8}
+import { Search } from 'nextra/components'
+
+export function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <header>
+          <Search />
+        </header>
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+
+</Steps>
+
+## RSC I18n Support
+
+Thanks to server components, we no longer need to ship to client translation dictionary files, e.g
+`./dictionaries/en.json`. We can dynamically load translations in server components and pass
+according translation as `props` to `<Layout>`, `<Banner>`, `<Footer>`, etc. components in
+`app/[lang]/layout.jsx`.
+
+Below is an example of server components i18n using `nextra-theme-docs`, but the same approach
+should be applied to your custom theme:
+
+<ExampleLayoutForI18nDocsTheme />
+
+where `get-dictionary` file may looks like:
+
+```js filename="../path/to/your/get-dictionary.js"
+// Ensure this file is always called in server component
+import 'server-only'
+
+// Enumerate all dictionaries
+const dictionaries = {
+  en: () => import('./en.json'),
+  fr: () => import('./fr.json'),
+  ru: () => import('./ru.json')
+}
+
+export async function getDictionary(locale) {
+  const { default: dictionary } = await (dictionaries[locale] || dictionaries.en)()
+
+  return dictionary
+}
+
+export function getDirection(locale) {
+  switch (locale) {
+    case 'he':
+      return 'rtl'
+    default:
+      return 'ltr'
+  }
+}
+```
+
+<Callout type="info">
+**Note**
+
+Read more about server components i18n in
+[Next.js docs](https://nextjs.org/docs/app/building-your-application/routing/internationalization).<br />
+See
+[working example of i18n website](https://github.com/shuding/nextra/tree/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/swr-site)
+in Nextra's examples.
+
+</Callout>
+
+## Enhanced by React Compiler
+
+The source code for `nextra`, `nextra-theme-docs` and `nextra-theme-blog` has been optimized using
+the [React Compiler](https://react.dev/learn/react-compiler). All Nextra's components and hooks are
+optimized under the hood by React Compiler and all internal usages of `useCallback`, `useMemo` and
+`memo` were removed.
+
+## GitHub Alert Syntax
+
+<GitHubAlertSyntax />
+
+## Bundle Size Difference with Nextra 3
+
+Let's compare how bundle size changed between Nextra 3 and Nextra 4. Similar to
+[Nextra 3 blogpost](https://the-guild.dev/blog/nextra-3#better-bundle-size) I am comparing
+[Docs Example](https://github.com/shuding/nextra/tree/main/examples/docs) which uses
+`nextra-theme-docs` and [Blog Example](https://github.com/shuding/nextra/tree/main/examples/blog)
+which uses `nextra-theme-blog`.
+
+<Callout type="info">
+**Note**
+
+All 4 examples were updated to the latest Next.js 15.1.3 at the moment of writing this blogpost.
+
+</Callout>
+
+### Docs Example
+
+<details>
+  <summary>Theme Docs with Nextra 3</summary>
+  <DocsV3BundleSize />
+</details>
+
+<details>
+  <summary>Theme Docs with **Nextra 4**</summary>
+  <DocsV4BundleSize />
+</details>
+
+**First Load JS shared by all** is decreased by **36.9%** from **168 kB** to **106 kB**.
+
+### I18n Docs Example
+
+<details>
+  <summary>I18n Theme Docs with Nextra 3</summary>
+  <I18nDocsV3BundleSize />
+</details>
+
+<details>
+  <summary>I18n Theme Docs with **Nextra 4**</summary>
+  <I18nDocsV4BundleSize />
+</details>
+
+**First Load JS shared by all** is decreased by **38.7%** from **173 kB** to **106 kB**.
+
+### Blog Example
+
+<details>
+  <summary>Theme Blog with Nextra 3</summary>
+  <BlogV3BundleSize />
+</details>
+<details>
+  <summary>Theme Blog with **Nextra 4**</summary>
+  <BlogV4BundleSize />
+</details>
+
+**First Load JS shared by all** is decreased by **7.9%** from **114 kB** to **105 kB**.
+
+<Callout type="info" emoji="🚀">
+**Conclusion**
+
+First Load JS is significantly decreased in all above examples.
+
+</Callout>
+
+## Remote Docs
+
+Remote docs configuration has changed, please refers to
+[official example](https://github.com/shuding/nextra/blob/aca79fa5e224e861c253d0cae5bed91268804a19/examples/swr-site/app/%5Blang%5D/remote/graphql-eslint/%5B%5B...slug%5D%5D/page.tsx),
+Additionally you will need to modify `pageMap` list in `layout` file, to properly display sidebar
+navigation links. Example of modified `layout` file is
+[here](https://github.com/shuding/nextra/blob/aca79fa5e224e861c253d0cae5bed91268804a19/examples/swr-site/app/%5Blang%5D/layout.tsx#L52-L56).
+
+## `nextra-theme-docs` Changes
+
+### Zustand
+
+All previous React context usages were migrated to [zustand](https://github.com/pmndrs/zustand)
+except places where we need
+[dependency injection](https://en.wikipedia.org/wiki/Dependency_injection). This applies only to the
+`useConfig` and `useThemeConfig` hooks which needs
+[initialize their state with props](https://zustand.docs.pmnd.rs/guides/initialize-state-with-props).
+
+### Migrated to Tailwind CSS 4
+
+Theme Docs has been updated to [Tailwind CSS 4](https://tailwindcss.com/docs/v4-beta). The
+previously used [Tailwind CSS prefix](https://tailwindcss.com/docs/configuration#prefix) `_` which
+helped prevent class name conflicts, has been replaced with `x:`. If you have overridden Nextra's
+theme classes, make sure to update them accordingly.
+
+```diff filename="my-styles.css"
+- ._text-primary-600 { ... }
++ .x\:text-primary-600 { ... }
+```
+
+### New Headings `:target` State Animation
+
+All headings now have animation for `:target` state
+
+<Video
+  alt="Example animation for headings for `:target` state"
+  src="/blog-assets/nextra-4/heading-target-animation.mp4"
+/>
+
+### Enhanced `<NotFoundPage>`
+
+The built-in `<NotFoundPage>` now includes a URL for creating a issue with the `referrer` URL
+included. This makes it easier to identify the broken page that led the user to the 404 error.
+
+### Migration Guide
+
+<Steps>
+<h4>Choose [MDX rendering mode](#app-router-support)</h4>
+
+<h4>Add `layout.jsx` file</h4>
+
+Example of `app/layout.jsx` for Nextra documentation theme:
+
+<ExampleLayoutForDocsTheme />
+
+<h4 id="use-mdx-components">Add an `mdx-components.jsx` file</h4>
+
+Create an `mdx-components.jsx` file in the root of your project to define global MDX Components:
+
+```jsx filename="mdx-components.jsx"
+import { useMDXComponents as getDocsMDXComponents } from 'nextra-theme-docs'
+
+const docsComponents = getDocsMDXComponents()
+
+export function useMDXComponents(components) {
+  return {
+    ...docsComponents,
+    ...components
+    // ... your additional components
+  }
+}
+```
+
+<h4>Migrate `theme.config` options</h4>
+
+<details open>
+<summary>Table of migration `theme.config` options</summary>
+
+| Nextra 3                           | Nextra 4                                                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `banner.content`                   | `children` prop in `<Banner>`[^1]                                                                                                    |
+| `banner.dismissible`               | `dismissible` prop in `<Banner>`                                                                                                     |
+| `banner.key`                       | `storageKey` prop in `<Banner>`                                                                                                      |
+| `backgroundColor.dark`             | `backgroundColor.dark` prop in `<Head>`[^2]                                                                                          |
+| `backgroundColor.light`            | `backgroundColor.light` prop in `<Head>`                                                                                             |
+| `chat.icon`                        | `chatIcon` prop in `<Navbar>`[^3]                                                                                                    |
+| `chat.link`                        | `chatLink` prop in `<Navbar>`                                                                                                        |
+| `components`                       | <Removed>Provide custom components inside [`useMDXComponents` function](#use-mdx-components)</Removed>                               |
+| `darkMode`                         | `darkMode` prop in `<Layout>`[^4]                                                                                                    |
+| `direction`                        | <Removed>Use `dir` attribute on `<html>` tag</Removed>                                                                               |
+| `docsRepositoryBase`               | `docsRepositoryBase` prop in `<Layout>`                                                                                              |
+| `editLink.component`               | `editLink` prop in `<Layout>`                                                                                                        |
+| `editLink.content`                 | `children` prop in `<LastUpdated>`[^5]                                                                                               |
+| `faviconGlyph`                     | `faviconGlyph` prop in `<Head>`                                                                                                      |
+| `feedback.content`                 | `feedback.content` prop in `<Layout>`                                                                                                |
+| `feedback.labels`                  | `feedback.labels` prop in `<Layout>`                                                                                                 |
+| `feedback.useLink`                 | <Removed />                                                                                                                          |
+| `footer.component`                 | `footer` prop in `<Layout>`                                                                                                          |
+| `footer.content`                   | `children` prop in `<Footer>`[^6]                                                                                                    |
+| `gitTimestamp`                     | `lastUpdated` prop in `<Layout>`                                                                                                     |
+| `head`                             | <Removed>Use `<Head>` or Next.js [Metadata API](https://nextjs.org/docs/app/building-your-application/optimizing/metadata)</Removed> |
+| `i18n[number].direction`           | <Removed>Use `dir` attribute on `<html>` tag</Removed>                                                                               |
+| `i18n[number].locale`              | `i18n[number].locale` prop in `<Layout>`                                                                                             |
+| `i18n[number].name`                | `i18n[number].name` prop in `<Layout>`                                                                                               |
+| `logo`                             | `logo` prop in `<Navbar>`                                                                                                            |
+| `logoLink`                         | `logoLink` prop in `<Navbar>`                                                                                                        |
+| `main`                             | <Removed />                                                                                                                          |
+| `navbar.component`                 | `navbar` prop in `<Layout>`                                                                                                          |
+| `navbar.extraContent`              | `children` prop in `<Layout>`                                                                                                        |
+| `navigation`                       | `navigation` prop in `<Layout>`                                                                                                      |
+| `nextThemes`                       | `nextThemes` prop in `<Layout>`                                                                                                      |
+| `notFound.content`                 | `content` prop in `<NotFoundPage>`[^7]                                                                                               |
+| `notFound.labels`                  | `labels` prop in `<NotFoundPage>`                                                                                                    |
+| `color.hue`                        | `color.hue` prop in `<Head>`                                                                                                         |
+| `color.saturation`                 | `color.saturation` prop in `<Head>`                                                                                                  |
+| `project.icon`                     | `projectIcon` prop in `<Navbar>`                                                                                                     |
+| `project.link`                     | `projectLink` prop in `<Navbar>`                                                                                                     |
+| `search.component`                 | `search` prop in `<Layout>`                                                                                                          |
+| `search.emptyResult`               | `emptyResult` prop in `<Search>`[^8]                                                                                                 |
+| `search.error`                     | `errorText` prop in `<Search>`                                                                                                       |
+| `search.loading`                   | `loading` prop in `<Search>`                                                                                                         |
+| `search.placeholder`               | `placeholder` prop in `<Search>`                                                                                                     |
+| `sidebar.autoCollapse`             | `sidebar.autoCollapse` prop in `<Layout>`                                                                                            |
+| `sidebar.defaultMenuCollapseLevel` | `sidebar.defaultMenuCollapseLevel` prop in `<Layout>`                                                                                |
+| `sidebar.toggleButton`             | `sidebar.toggleButton` prop in `<Layout>`                                                                                            |
+| `themeSwitch.component`            | <Removed />                                                                                                                          |
+| `themeSwitch.useOptions`           | `themeSwitch` prop in `<Layout>`                                                                                                     |
+| `toc.backToTop`                    | `toc.backToTop` prop in `<Layout>`                                                                                                   |
+| `toc.component`                    | <Removed />                                                                                                                          |
+| `toc.extraContent`                 | `toc.extraContent` prop in `<Layout>`                                                                                                |
+| `toc.float`                        | `toc.float` prop in `<Layout>`                                                                                                       |
+| `toc.title`                        | `toc.title` prop in `<Layout>`                                                                                                       |
+
+</details>
+
+</Steps>
+
+### Dynamic `<head>` Tags
+
+Dynamic head tags previously were configured via `head` theme config option. In Nextra 4 you should
+use Next.js
+[Metadata API](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) instead.
+
+**Nextra 3:**
+
+```jsx filename="theme.config.jsx"
+export default {
+  head() {
+    const config = useConfig()
+    const { route } = useRouter()
+    const title = config.title + (route === '/' ? '' : ' | Nextra')
+    return (
+      <>
+        <title>{title}</title>
+        <meta property="og:title" content={title} />
+      </>
+    )
+  }
+}
+```
+
+**Nextra 4:**
+
+```jsx filename="app/layout.jsx"
+export const metadata = {
+  title: {
+    default: 'Nextra – Next.js Static Site Generator',
+    template: '%s | Nextra'
+  },
+  openGraph: {
+    url: 'https://nextra.site',
+    siteName: 'Nextra',
+    locale: 'en_US',
+    type: 'website'
+  }
+}
+```
+
+```jsx filename="app/page.mdx" {2,5}
+---
+description: Make beautiful websites with Next.js & MDX.
+---
+
+# Hello Nextra 4
+```
+
+Front matter `title` field or first Markdown heading `<h1>` will set `<title>` and
+`<meta property="og:title">{:jsx}` and front matter `description` field will set
+`<meta name="description">{:jsx}` and `<meta property="og:description">{:jsx}` in `<head>` element.
+
+```html
+<head>
+  <title>Hello Nextra 4 | Nextra</title>
+  <meta property="og:title" content="Hello Nextra 4 | Nextra" />
+  <meta name="description" content="Make beautiful websites with Next.js &amp; MDX." />
+  <meta property="og:description" content="Make beautiful websites with Next.js &amp; MDX." />
+</head>
+```
+
+## `nextra-theme-blog` Changes
+
+### Support for `_meta` Files
+
+The blog theme now includes partial support for `_meta` files, allowing you to define navbar links
+directly within an `_meta` file. The previously used `draft: true` option in the front matter has
+been replaced with
+[`display: 'hidden'` in an `_meta` file](https://nextra.site/docs/docs-theme/page-configuration#hidden-routes).
+
+### `react-cusdis` Was Removed
+
+Previously optional peer dependency `react-cusdis` was removed, since:
+
+- this library is no longer maintained
+- has only React 17 specified in `peerDependencies`
+
+We use [Cusdis SDK](https://cusdis.com/doc#/advanced/sdk) directly in `<Comments>`[^9] component.
+
+### `next-view-transitions` Was Added
+
+Blog received support of
+[View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) by
+using [`next-view-transitions`](https://github.com/shuding/next-view-transitions) package.
+
+<Video alt="Demo View Transitions API" src="/blog-assets/nextra-4/view-transitions-api.mp4" />
+
+### Use Built-In Nextra `<Search>`
+
+`nextra-theme-blog` v4 is the first version where you can use built-in search. To do it, import
+`<Search>` component from `nextra/components` and place it as children of `<Navbar>` component, then
+follow [search setup steps](#pagefind-setup).
+
+```jsx filename="app/layout.jsx" {7}
+<Navbar pageMap={await getPageMap()}>
+  <Search />
+  <ThemeSwitch />
+</Navbar>
+```
+
+### Migration Guide
+
+<Steps>
+<h4>Choose [MDX rendering mode](#app-router-support)</h4>
+<h4>Migrate `theme.config` options</h4>
+<h4>Add `layout.jsx` file</h4>
+
+Example of `app/layout.jsx` for Nextra blog theme:
+
+<ExampleLayoutForBlogTheme />
+
+<h4 id="use-mdx-components2">Add an `mdx-components.jsx` file</h4>
+
+Create an `mdx-components.jsx` file in the root of your project to define global MDX Components:
+
+```jsx filename="mdx-components.jsx"
+import { useMDXComponents as getBlogMDXComponents } from 'nextra-theme-blog'
+
+const blogComponents = getBlogMDXComponents()
+
+export function useMDXComponents(components) {
+  return {
+    ...blogComponents,
+    ...components
+    // ... your additional components
+  }
+}
+```
+
+<details open>
+<summary>Table of migration `theme.config` options</summary>
+
+| Nextra 3        | Nextra 4                                                                                                                                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `comments`      | Provide your comments component in post layout, e.g. [`app/posts/(with-comments)/layout.jsx` file](<https://github.com/shuding/nextra/blob/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/blog/app/posts/(with-comments)/layout.jsx>) |
+| `components`    | Provide custom components inside [`useMDXComponents` function](#use-mdx-components2)                                                                                                                                                     |
+| `darkMode`      | To disable theme toggle [remove `<ThemeSwitch>` from `<Navbar>`](https://github.com/shuding/nextra/blob/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/blog/app/layout.jsx#L31)                                                       |
+| `dateFormatter` | Provide `DateFormatter` component inside [`useMDXComponents` function](#use-mdx-components2)                                                                                                                                             |
+| `footer`        | Provide your `<Footer>` component as last child of `<Layout>`                                                                                                                                                                            |
+| `head`          | Use `<Head>` or Next.js [Metadata API](https://nextjs.org/docs/app/building-your-application/optimizing/metadata)                                                                                                                        |
+| `navs`          | Setup your navbar links via `_meta` files                                                                                                                                                                                                |
+| `postFooter`    | Provide your post footer in post layout, e.g. [`app/posts/(with-comments)/layout.jsx` file](<https://github.com/shuding/nextra/blob/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/blog/app/posts/(with-comments)/layout.jsx>)        |
+| `readMore`      | Provide `readMore` prop for [`<PostCard>` component](https://github.com/shuding/nextra/blob/d5cb1bc0e84494cbcc8decbae56fb091ce9999f0/examples/blog/app/posts/page.jsx#L30)                                                               |
+| `titleSuffix`   | Use Next.js [Metadata API](https://nextjs.org/docs/app/building-your-application/optimizing/metadata)                                                                                                                                    |
+|                 | **New** `banner` prop on `<Layout>`. E.g. you can now provide Nextra's `<Banner>`[^1]                                                                                                                                                    |
+|                 | **New** `nextThemes` prop on `<Layout>`. Configuration options can be found in [`next-themes` docs](https://github.com/pacocoursey/next-themes#themeprovider)                                                                            |
+
+</details>
+</Steps>
+
+## Various Changes
+
+### `_meta` Files Changes
+
+1. Your `_meta` files should be server component files, without `'use client'` directive.
+1. [zod](https://github.com/colinhacks/zod) now parses and transforms `_meta` files on server, to
+   improve DX and avoid typos.
+1. The `_meta`'s `newWindow` field was removed.
+1. All external links declared in `_meta` files now opens in a new tab with with `rel="noreferrer"`
+   attribute and have visual `↗` suffix icon.
+1. `theme.topContent` and `theme.bottomContent` fields were removed.
+1. `theme.layout: 'raw'` option has been removed. To create pages without a layout, use
+   `page.{jsx,tsx}` files instead.
+
+#### `_meta.global` File
+
+You can now define all your pages in a single `_meta` file, suffixed with `.global`. The API remains
+the same as for folder-specific `_meta` files, with 1 exception: folder items must include an
+`items` field.
+
+##### Example
+
+For the following structure, you might use the following `_meta` files:
+
+<div className="md:flex gap-4 [&_pre]:h-[calc(100%-48px)]">
+
+<FileTree>
+  <FileTree.Folder name="app" open>
+    <FileTree.File name="layout.jsx" />
+    <FileTree.File name="_meta.js" active />
+    <FileTree.File name="page.jsx" />
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="page.mdx" />
+      <FileTree.File name="_meta.js" active />
+      <FileTree.Folder name="getting-started" open>
+        <FileTree.File name="page.mdx" />
+      </FileTree.Folder>
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+```js filename="app/_meta.js" copy=false
+export default {
+  docs: {
+    type: 'page',
+    title: 'Documentation'
+  }
+}
+```
+
+```js filename="app/docs/_meta.js" copy=false
+export default {
+  items: {
+    index: 'Getting Started'
+  }
+}
+```
+
+</div>
+
+With signle `_meta.global` file it can be defined as below:
+
+```js filename="app/_meta.global.js" copy=false
+export default {
+  docs: {
+    type: 'page',
+    title: 'Documentation',
+    items: {
+      index: 'Getting Started'
+    }
+  }
+}
+```
+
+<Callout type="warning">
+**Warning**
+
+You can't use both `_meta.global` and `_meta` files in your project.
+
+</Callout>
+
+### Component Migration: Moving UI Elements
+
+Several components were migrated from `nextra-theme-docs` to `nextra/components` to make them
+accessible for use in your custom themes:
+
+- `<Collapse>`
+- `<Details>`
+- `<Summary>`
+- `<SkipNavContent>`
+- `<SkipNavLink>`
+- `<Select>`
+- `<Bleed>`
+- `<Head>`
+
+<Callout>
+**Tip**
+
+With migration `<Head>` component to `nextra/components`, both `nextra-theme-blog` and your custom
+themes can now configure:
+
+- primary color, `color` prop
+- background color, `backgroundColor` prop
+- glyph to use as the favicon, `faviconGlyph` prop
+- color of selection based on primary color
+
+Previously all of these options were exclusive to `nextra-theme-docs` only.
+
+</Callout>
+
+All built-in Nextra components were refactored to be either server or client.
+
+<details>
+<summary>Table of comparison components from `nextra/components`</summary>
+
+Here's the table sorted alphabetically by component name:
+
+| Component                                  | Type       |
+| ------------------------------------------ | ---------- |
+| `<Banner>`                                 | **server** |
+| `<Bleed>`                                  | **server** |
+| `<Button>`                                 | _client_   |
+| `<Callout>`                                | **server** |
+| `<Cards>`/`<Cards.Card>`                   | **server** |
+| `<Collapse>`                               | _client_   |
+| `<FileTree>`/`<FileTree.File>`             | **server** |
+| `<FileTree.Folder>`                        | _client_   |
+| `<Head>`                                   | **server** |
+| `<Playground>`                             | _client_   |
+| `<Popup>`/`<Popup.Button>`/`<Popup.Panel>` | _client_   |
+| `<Search>`                                 | _client_   |
+| `<Select>`                                 | _client_   |
+| `<SkipNavContent>`                         | **server** |
+| `<SkipNavLink>`                            | _client_   |
+| `<Tabs>`/`<Tabs.Tab>`                      | _client_   |
+| `<Steps>`                                  | **server** |
+| `<MDXRemote>` (previous `<RemoteContent>`) | **server** |
+
+</details>
+
+### Front Matter = Metadata
+
+All fields from the front matter are now exported as a `metadata` object in MDX file. If you prefer
+not to use front matter, you can directly export a `metadata` from your MDX file, but you can't use
+both in same file.
+
+{/* prettier-ignore */}
+```mdx filename="✅ Front matter"
+---
+title: Foo
+description: Bar
+---
+
+{/* Will be compiled to 👇 */}
+export const metadata = {
+  title: 'Foo',
+  description: 'Bar'
+}
+```
+
+{/* prettier-ignore */}
+```mdx filename="✅ export of a metadata"
+export const metadata = {
+  title: 'Foo',
+  description: 'Bar'
+}
+```
+
+{/* prettier-ignore */}
+```mdx filename="❌ Invalid"
+---
+title: Foo
+---
+
+export const metadata = { description: 'Bar' }
+```
+
+### `whiteListTagsStyling` Option
+
+Nextra introduces a new option called `whiteListTagsStyling`, which allows you to whitelist HTML
+elements to be replaced with components defined in the
+[`mdx-components.js` file](#use-mdx-components). By default, Nextra only replaces `<details>` and
+`<summary>`. With this option, you can extend the behavior to replace any HTML element.
+
+```js filename="next.config.mjs"
+import nextra from 'nextra'
+
+const withNextra = nextra({
+  whiteListTagsStyling: ['h1']
+})
+```
+
+{/* prettier-ignore */}
+```mdx filename="Example of replacing <h1>"
+# Hello
+
+{/* This will be replaced as well */}
+<h1>World</h1>
+```
+
+### Folders with Index Pages Changes
+
+In Nextra 2 and 3, the structure shown below is referred to as
+[folders with index pages](https://nextra.site/docs/docs-theme/page-configuration#folders-with-index-page)
+. Notice the presence of both a `docs` folder and a `docs.mdx` file at the same level:
+
+<FileTree>
+  <FileTree.Folder name="content" open>
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="getting-started.mdx" />
+    </FileTree.Folder>
+    <FileTree.File name="docs.mdx" active />
+  </FileTree.Folder>
+</FileTree>
+
+This structure is incompatible with the [page file convention](#page-file-convention), to fix it a
+new front matter option called `asIndexPage` has been introduced. You should set `asIndexPage: true`
+in the front matter of `docs/page.mdx` to achieve the same effect.
+
+<FileTree>
+  <FileTree.Folder name="app" open>
+    <FileTree.File name="layout.jsx" />
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="page.mdx" active />
+      <FileTree.Folder name="getting-started" open>
+        <FileTree.File name="page.mdx" />
+      </FileTree.Folder>
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+When using the [content directory convention](#content-directory-convention), you can achieve the
+same result by setting `asIndexPage: true` in the front matter of `docs/index.mdx`
+
+<FileTree>
+  <FileTree.Folder name="content" open>
+    <FileTree.Folder name="docs" open>
+      <FileTree.File name="index.mdx" active />
+      <FileTree.File name="getting-started.mdx" />
+    </FileTree.Folder>
+  </FileTree.Folder>
+</FileTree>
+
+#### List Subpages
+
+It's now possible to automatically list all subpages of a given route as cards.
+
+1. Import `createIndexPage` and `getPageMap` from `nextra/page-map`.
+1. Use `MDXRemote` from `nextra/mdx-remote` to render list of subpages
+1. Replace `'/my-route'` with the route whose subpages you want to display
+1. To show card's icon, use `icon` front matter field in your subpages (_optional_)
+1. Provide `Cards` and your icons to `MDXRemote`'s components prop
+
+<div className="mt-6 md:grid gap-4 grid-cols-2 [&_pre]:h-[calc(100%-48px)] [&>div]:!mt-0">
+
+{/* prettier-ignore */}
+```mdx filename="app/my-route/page.mdx"
+import { Cards } from 'nextra/components'
+import { MDXRemote } from 'nextra/mdx-remote'
+import { createIndexPage, getPageMap } from 'nextra/page-map'
+import { MyIcon } from '../path/to/your/icons'
+
+<MDXRemote
+  compiledSource={
+    await createIndexPage(
+      await getPageMap('/my-route')
+    )
+  }
+  components={{
+    Cards,
+    MyIcon
+  }}
+/>
+```
+
+```mdx filename="app/my-route/demo/page.mdx"
+---
+icon: MyIcon
+---
+
+# My Subpage
+```
+
+</div>
+
+<figure className="mt-6 [&_img]:rounded-md [&_img]:border [&_img]:border-gray-300 [&_img]:dark:border-neutral-700">
+  <>![Subpages Example](/blog-assets/nextra-4/subpages-example.png)</>
+  <figcaption className="mt-2 text-center text-sm">
+    Subpages Example from [nextra.site/docs/advanced](https://nextra.site/docs/advanced)
+  </figcaption>
+</figure>
+
+### Sidebar Title Priority Changes
+
+In Nextra 4, the sidebar title is now determined by the following order:
+
+1. A non-empty title from the `_meta` file.
+1. `sidebarTitle` in the front matter.
+1. `title` in the front matter.
+1. **New in Nextra 4:** The title derived from the first `h1` Markdown heading (e.g.
+   `# Dima Machina`).
+1. If none of the above are available, it falls back to the filename of the page, formatted
+   according to [The Chicago Manual of Style](https://title.sh).
+
+### Code Block Icons Changes
+
+#### Customizing Icons
+
+You can now customize icons for code blocks. Here's an example for `nextra-theme-docs`, but the same
+approach applies to custom themes:
+
+1. Import `withIcons` HOC function from `nextra/components`.
+1. Wrap the `Pre` component with `withIcons`, passing your custom icon for the desired language.
+
+```jsx filename="mdx-components.jsx"
+import { useMDXComponents as useDocsMDXComponents } from 'nextra-theme-docs'
+import { Pre, withIcons } from 'nextra/components'
+
+const docsComponents = getDocsMDXComponents({
+  pre: withIcons(Pre, { js: MyCustomIcon })
+})
+
+export function useMDXComponents(components) {
+  return {
+    ...docsComponents,
+    ...components
+    // ... your additional components
+  }
+}
+```
+
+#### Icons Updates
+
+- **JSX icons:** The `jsx` and `tsx` languages now display the React icon for better visual
+  identification.
+- **Diff icons:** For code blocks with the `diff` language, if a
+  [`filename` attribute](https://nextra.site/docs/guide/syntax-highlighting#filenames-and-titles) is
+  provided, the icon will automatically correspond to the file extension of the specified filename.
+
+### Markdown Links Changes
+
+All external Markdown links declared in MDX files now opens in a new tab with with
+`rel="noreferrer"` attribute and have visual `↗` suffix icon. (Was inspired from Next.js docs)
+
+Example:
+
+```mdx filename="example.mdx"
+[dimaMachina](https://github.com/dimaMachina)
+```
+
+Will compiles to:
+
+```jsx
+<a href="https://github.com/dimaMachina" target="_blank" rel="noreferrer">
+  dimaMachina&thinsp;
+  <LinkArrowIcon height="16" className="_inline _align-baseline" />
+</a>
+```
+
+### `::selection` Styles
+
+Variant of primary color which is set via `color` prop on `<Head>` component is now used for
+`::selection` styles.
+
+### `<Table>` Changes
+
+The `<Th>`, `<Tr>` and `<Td>` components have been removed and are now attached directly into
+`<Table>` component. This change improves the DX, as these components are typically used together
+within a `<Table>`.
+
+```diff filename="Example of migration"
+- import { Table, Th, Tr, Td } from 'nextra/components'
++ import { Table } from 'nextra/components'
+
+<Table>
+  <thead>
+-    <Tr>
++    <Table.Tr>
+-      <Th>Items</Th>
++      <Table.Th>Items</Table.Th>
+-    </Tr>
++    </Table.Tr>
+  </thead>
+  <tbody>
+-    <Tr>
++    <Table.Tr>
+-      <Th>Donuts</Th>
++      <Table.Th>Donuts</Table.Th>
+-    </Tr>
++    </Table.Tr>
+  </tbody>
+  <tfoot>
+-    <Tr>
++    <Table.Tr>
+-      <Th>Totals</Th>
++      <Table.Th>Totals</Table.Th>
+-     </Tr>
++    </Table.Tr>
+  </tfoot>
+</Table>
+```
+
+### `compileMdx` Changes
+
+`compileMdx` function now returns a `Promise<string>` instead of a `Promise<object>`.
+
+```diff
+import { compileMdx } from 'nextra/compile'
+
+const rawMdx = '# Hello Nextra 4'
+
+- const { result: rawJs } = await compileMdx(rawMdx)
++ const rawJs = await compileMdx(rawMdx)
+```
+
+### `<RemoteContent>` Changes
+
+1. The `<RemoteContent>` component has been renamed to `<MDXRemote>`.
+1. He has been removed from `nextra/components` and moved to `nextra/mdx-remote`
+1. You no longer need to manually pass your default components to `<MDXRemote>`. They will now be
+   automatically provided from your [`mdx-components.jsx` file](#use-mdx-components).
+
+### Optimized Imports
+
+Imports from `nextra/components`, `nextra-theme-docs` and `nextra-theme-blog` are now optimized
+internally with Next.js'
+[`optimizePackageImports`](https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports)
+option resulting in improved bundle size.
+
+### `useRouter` Removed
+
+Nextra's `useRouter` hook was removed, use Next.js' `useRouter` from `next/navigation` instead now.
+
+```diff
+- import { useRouter } from 'nextra/hooks'
++ import { useRouter } from 'next/navigation'
+```
+
+### Bump Minimal Next.js to V14
+
+Nextra 4 requires at least Next.js 14 to be installed in your project.
+
+### Update Your `tsconfig.json`
+
+If you are using TypeScript and have `moduleResolution` set to `node`, you will receive type errors:
+
+```text
+Type error: Cannot find module 'nextra/components' or its corresponding type declarations.
+```
+
+`"typesVersions"` fields from `package.json`'s of Nextra packages were removed. You need to set
+`"moduleResolution": "bundler"` in your `tsconfig.json`.
+
+```diff filename="tsconfig.json"
+{
+  "compilerOptions": {
+-   "moduleResolution": "node"
++   "moduleResolution": "bundler"
+  }
+}
+```
+
+## Conclusion. Why Prefer **Nextra 4** over Others? [#conclusion]
+
+Nextra 4 introduces several key features that enhance its functionality and performance:
+
+- **App Router Support**: Nextra 4 uses Next.js App Router, discontinuing support for the Pages
+  Router. This change aligns with the latest Next.js API such as Metadata API.
+
+- **Turbopack Support**: Improved development experience, addressing a long-standing community
+  request.
+
+- **New Search Engine**: New Rust-powered search engine Pagefind provides faster performance and
+  significantly better search results.
+
+- **RSC I18n Support**: Enhanced internationalization by supporting React Server Components (RSC)
+  with built-in i18n capabilities, facilitating the creation of multilingual websites.
+
+- **Enhanced by React Compiler**: Compiling official Nextra packages source code with the React
+  Compiler in leads to optimized performance, resulting in a better user experience.
+
+- **Reduced Bundle Size**: Through various optimizations, the smallest bundle size ever for a
+  Nextra-powered website was achieved, enhancing load times and overall performance.
+
+- **Improved Pages Collection**: Structure of pages called
+  "[Page Map](https://nextra.site/docs/guide/organize-files)" was improved and now collects not only
+  static `md`/`mdx` pages, but any static `jsx`/`tsx` pages from `app/` directory as well.
+
+- **Powerful Table of Content**:
+  [The improved Table of Content (TOC)](https://the-guild.dev/blog/nextra-3#more-powerful-toc) from
+  Nextra 3 shows exact same content from your Markdown headings, including interpolated content,
+  inlined code-blocks, JSX elements, React components and even rendered math formulas LaTeX.
+
+- **Remote MDX Rendering**:
+  [Remote rendering of MDX content](https://the-guild.dev/blog/nextra-3#remote-docs-support) added
+  in Nextra 3 allows you to render your content from any source, and rendering proper sidebar
+  navigation links.
+
+These features make Nextra 4 a more powerful and efficient framework for building content-focused
+websites.
+
+## Next Steps
+
+Nextra 4 is a major release with a lot of breaking changes. I already created a roadmap for next
+major release [Nextra 5](https://github.com/shuding/nextra/issues/3316) optional using Rust-powered
+MDX [`mdxjs-rs` parser](https://github.com/wooorm/mdxjs-rs). Share your thoughts as well.
+
+## Credits
+
+A sincere thank for
+[the most active Nextra contributor](https://github.com/shuding/nextra/pulls?q=sort%3Aupdated-desc+is%3Apr+author%3A87xie),
+I can even name him as a perfect example of a great Open Source contributor
+[Oscar Xie](https://github.com/87xie)! His amazing contributions previously pushed me a lot to
+release Nextra 3!
+
+Huge thanks for Nextra sponsors:
+
+- [GraphQL Hive – Open-source GraphQL platform](https://the-guild.dev/graphql/hive?utm_source=the-guild.dev&utm_campaign=nextra-4-blog&utm_content=blog_post)
+
+- [Speakeasy – SDKs & Terraform Providers for Your API](https://speakeasy.com?utm_source=the-guild.dev&utm_campaign=nextra-4-blog&utm_content=blog_post)
+
+- [xyflow - Node Based UIs for React and Svelte](https://xyflow.com/?utm_source=the-guild.dev&utm_campaign=nextra-4-blog&utm_content=blog_post)
+
+<Callout type="error" emoji="❤️">
+The Nextra 4 documentation is still a work in progress, and we need your help to improve it!<br />
+Check out the recent updates in this blog post, and feel free to submit your contribution PRs to improve Nextra docs.
+
+Spread the word about Nextra on 𝕏 using the `#Nextra` hashtag. You can also follow me on
+[𝕏](https://x.com/dimaMachina_) and [GitHub](https://github.com/dimaMachina) to stay updated!
+
+</Callout>
+
+---
+
+[^1]: `import { Banner } from 'nextra/components'{:js}`
+
+[^2]: `import { Head } from 'nextra/components'{:js}`
+
+[^3]: `import { Navbar } from 'nextra-theme-docs'{:js}`
+
+[^4]: `import { Layout } from 'nextra-theme-docs'{:js}`
+
+[^5]: `import { LastUpdated } from 'nextra-theme-docs'{:js}`
+
+[^6]: `import { Footer } from 'nextra-theme-docs'{:js}`
+
+[^7]: `import { NotFoundPage } from 'nextra-theme-docs'{:js}`
+
+[^8]: `import { Search } from 'nextra/components'{:js}`
+
+[^9]: `import { Comments } from 'nextra-theme-blog'{:js}`

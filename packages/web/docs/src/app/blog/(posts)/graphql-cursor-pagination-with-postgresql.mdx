@@ -1,0 +1,368 @@
+---
+title: GraphQL Cursor Pagination with PostgreSQL
+authors: laurin
+tags: [graphql, sql, postgresql]
+date: 2023-02-15
+description: 'An SQL based approach for understanding and implementing GraphQL Cursor Pagination.'
+image: /blog-assets/graphql-cursor-pagination-with-postgresql/cover.png
+thumbnail: /blog-assets/graphql-cursor-pagination-with-postgresql/thumbnail.png
+---
+
+The GraphQL Cursor Pagination specification is a popular approach for exposing paginated data via an
+API. There are many resources out there that describe the behavior of the
+[GraphQL Cursor Connections Specification](https://relay.dev/graphql/connections.htm), but few real
+world implementations using a real database.
+
+This guide will cover PostgreSQL concepts for building and optimizing paginated SQL queries.
+
+## Why Cursors over Offset Pagination?
+
+A lot of people think offset-based pagination is easier to grasp and easier to implement compared to
+cursor pagination. While this fact is true, using offset-based pagination has some other
+shortcomings.
+
+```sql filename="Offset-based Pagination"
+SELECT "id", "name"
+FROM "users"
+ORDER BY "id" ASC
+OFFSET 10
+LIMIT 10
+```
+
+Compared to offset-based pagination, we need to pick a column and need to use the value of that
+column in order to fetch the next items.
+
+```sql filename="Cursor-based Pagination"
+SELECT "id", "name"
+FROM "users"
+WHERE "id" > $lastId
+ORDER BY "id" ASC
+LIMIT 10
+```
+
+One of the main benefits of cursor-based pagination is better query consistency (no skipped or
+duplicated data) as the database is updated and new rows are added. This is because the cursor is
+based on an actual value (e.g. the primary key `id`) of a row that stays consistent, compared to
+just a number that describes the offset at a given point in time.
+
+The other main benefit is better performance as the to-be-paginated table becomes large. Using
+offset-based pagination requires a full dataset scan to determine the next items, where a cursor
+based pagination can simply use an (hopefully existing) index to determine the next items.
+
+You can learn more details about the superiority of cursor-based pagination in the article
+["Is offset pagination dead? Why cursor pagination is taking over"](https://uxdesign.cc/why-facebook-says-cursor-pagination-is-the-greatest-d6b98d86b6c0).
+
+## Cursor Pagination with Serial Primary Keys
+
+The easiest way of implementing cursor pagination is to use an existing primary key column in a
+table that has consistent sorting, e.g. a serial primary key.
+
+```diff filename="Dataset users table"
+| "id" | "name"   |
+| ---- | -------- |
+| 1    | 'Laurin' |
+| 2    | 'Uri'    |
+| 3    | 'Dotan'  |
+| 4    | 'Dima'   |
+| 5    | 'Saihaj' |
+```
+
+In the first roundtrip, we start without a `cursor` and fetch the first two items.
+
+```sql filename="Initial SQL query"
+SELECT "id", "name"
+FROM "users"
+ORDER BY "id" ASC
+LIMIT 2
+```
+
+```diff filename="Initial SQL query result"
+| "id" | "name"   |
+| ---- | -------- |
+| 1    | 'Laurin' |
+| 2    | 'Uri'    |
+```
+
+Afterward we use the cursor (last `id` in the result set) to fetch the next two items.
+
+```sql filename="Follow-up SQL query" {3}
+SELECT "id", "name"
+FROM "users"
+WHERE "id" > 2
+ORDER BY "id" ASC
+LIMIT 2
+```
+
+```diff filename="Follow-up SQL query result"
+| "id" | "name"   |
+| ---- | -------- |
+| 3    | 'Dotan'  |
+| 4    | 'Dima'   |
+```
+
+## Cursor Pagination with non-serial Primary Keys
+
+While using a serial primary key is the easiest way to implement cursor pagination, it is not always
+possible to use a serial primary key. E.g. you might be using `uuid` as the primary key datatype,
+which is not monotonically orderable.
+
+<Callout type="info">
+  You might consider using `ULID` as an alternative to `UUID`. `ULID`s are lexicographically
+  sortable.
+</Callout>
+
+```diff filename="Dataset users table"
+| "id"                                   | "name"   | "created_at"                       |
+| -------------------------------------- | -------- | -----------------------------------|
+| '7c2730cb-a973-4a0a-9e9a-f8aa0044d321' | 'Dima'   | '2023-01-10T10:32:07.853915+00:00' |
+| '628995bf-2907-49d1-a36f-978566a053c4' | 'Dotan'  | '2023-01-11T10:32:07.853915+00:00' |
+| 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-12T10:32:07.853915+00:00' |
+| '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-13T10:32:07.853915+00:00' |
+```
+
+Let's try using this table with the same SQL query as before and fetch the users after `"Dotan"`.
+
+```sql filename="SQL query"
+SELECT "id", "name", to_json("created_at") as "created_at"
+FROM "users"
+WHERE "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+ORDER BY "id" ASC
+LIMIT 2
+```
+
+```diff filename="SQL query result"
+| "id"                                   | "name"   | "created_at"                       |
+| -------------------------------------- | -------- | -----------------------------------|
+| 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-12T10:32:07.853915+00:00' |
+| '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-13T10:32:07.853915+00:00' |
+```
+
+Now let's imagine a new user is added to the dataset.
+
+```diff filename="Dataset users table"
+  | "id"                                   | "name"   | "created_at"                       |
+  | -------------------------------------- | -------- | -----------------------------------|
+  | '7c2730cb-a973-4a0a-9e9a-f8aa0044d321' | 'Dima'   | '2023-01-10T10:32:07.853915+00:00' |
+  | '628995bf-2907-49d1-a36f-978566a053c4' | 'Dotan'  | '2023-01-11T10:32:07.853915+00:00' |
++ | '98a64d9e-5c42-4064-84d9-f9ea51e2fecc' | 'Laurin' | '2023-01-14T10:32:07.853915+00:00' |
+  | 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-12T10:32:07.853915+00:00' |
+  | '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-13T10:32:07.853915+00:00' |
+```
+
+If we now execute the same query again, we suddenly get a different result than before.
+
+```diff filename="SQL query result"
+  | "id"                                   | "name"   | "created_at"                       |
+  | -------------------------------------- | -------- | -----------------------------------|
++ | '98a64d9e-5c42-4064-84d9-f9ea51e2fecc' | 'Laurin' | '2023-01-14T10:32:07.853915+00:00' |
+  | 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-12T10:32:07.853915+00:00' |
+- | '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-13T10:32:07.853915+00:00' |
+```
+
+This is not convenient if you want to implement a consistent pagination experience for your users.
+
+In such a scenario it is necessary to utilize another column that is more stable. A good pick for
+that is the `created_at` column that is often added to all tables within a database in order to keep
+track of when a row was created.
+
+If we use such a column with a consistent order as the cursor, the pagination is more consistent.
+Before we perform such pagination, we should as always with our SQL queries, add an index to the
+column to ensure good performance as the table grows in size.
+
+```sql filename="Create index"
+CREATE INDEX "users_pagination" ON "users" (
+  "created_at" ASC
+);
+```
+
+Instead of the `id`, we now use the `created_at` value from the row with the name `Dotan` as the
+cursor.
+
+```sql filename="SQL query"
+SELECT "id", "name", to_json("created_at") as "created_at"
+FROM "users"
+WHERE "created_at" > '2023-01-11T10:32:07.853915+00:00'
+ORDER BY "created_at" ASC
+LIMIT 2
+```
+
+<Callout type="info">
+  By now you might have noticed that we are using `to_json("created_at") as "created_at"` instead of
+  simply selecting `"created_at"`. The reason behind this is that this consistently returns the date
+  as a string in the [`ISO8601` format](https://en.wikipedia.org/wiki/ISO_8601). When working with
+  pagination it is generally recommended to treat dates as strings as parsing them to numbers and
+  then back can lead to subtle bugs, especially in languages like JavaScript where numbers are a bit
+  complicated.
+</Callout>
+
+While this method so far has been working, it is not perfect. This only shows up as you have items
+in the database that share the same `created_at` value. This can often happen when batch inserts are
+used throughout an application.
+
+In this dataset, the users `Dotan`, `Saihaj`, and `Uri` all share the same `created_at` value.
+
+```diff filename="Dataset users with same created_at date"
+| "id"                                   | "name"   | "created_at"                       |
+| -------------------------------------- | -------- | -----------------------------------|
+| '7c2730cb-a973-4a0a-9e9a-f8aa0044d321' | 'Dima'   | '2023-01-10T10:32:07.853915+00:00' |
+| '628995bf-2907-49d1-a36f-978566a053c4' | 'Dotan'  | '2023-01-11T10:32:07.853915+00:00' |
+| 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-11T10:32:07.853915+00:00' |
+| '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-11T10:32:07.853915+00:00' |
+```
+
+Again, we will try to fetch the users after `Dotan` using our cursor value from the `created_at`
+column.
+
+```sql filename="SQL query"
+SELECT "id", "name", to_json("created_at") as "created_at"
+FROM "users"
+WHERE "created_at" > '2023-01-11T10:32:07.853915+00:00'
+ORDER BY "created_at" ASC
+LIMIT 2
+```
+
+However, this will yield zero results this time.
+
+```diff filename="SQL query result"
+  | "id"                                   | "name"   | "created_at"                       |
+  | -------------------------------------- | -------- | -----------------------------------|
+- | 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-11T10:32:07.853915+00:00' |
+- | '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-11T10:32:07.853915+00:00' |
+```
+
+This is because the `>` operator is not inclusive. We could try to fix this, using the `>=`
+operator, but then we would also get back `Dotan` and end up with multiple `Dotan` showing up in the
+UI of our application.
+
+```sql filename="SQL query"
+SELECT "id", "name", to_json("created_at") as "created_at"
+FROM "users"
+WHERE "created_at" >= '2023-01-11T10:32:07.853915+00:00'
+ORDER BY "created_at" ASC
+LIMIT 2
+```
+
+```diff filename="SQL query result"
+  | "id"                                   | "name"   | "created_at"                       |
+  | -------------------------------------- | -------- | -----------------------------------|
++ | '628995bf-2907-49d1-a36f-978566a053c4' | 'Dotan'  | '2023-01-11T10:32:07.853915+00:00' |
++ | 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | '2023-01-11T10:32:07.853915+00:00' |
++ | '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | '2023-01-11T10:32:07.853915+00:00' |
+```
+
+The only solution here is to also introduce another, truely unique, column to our cursor. In this
+case we can utilize the `"id"` column.
+
+So lets execute the SQL query, but now with both the `id` (`'628995bf-2907-49d1-a36f-978566a053c4'`)
+and `created_at` (`'2023-01-11T10:32:07.853915+00:00'`) value of the row `Dotan`.
+
+```sql filename="SQL query using compound cursor"
+SELECT "id", "name", to_json("created_at") as "created_at"
+FROM "users"
+WHERE
+  (
+    "created_at" = '2023-01-11T10:32:07.853915+00:00'
+    AND "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+  )
+  OR "created_at" >= '2023-01-11T10:32:07.853915+00:00'
+ORDER BY
+  "created_at" ASC
+  , "id" ASC
+LIMIT 2
+```
+
+Note, that we now have to use the `AND` operator to combine the two possible conditions.
+
+It might be tempting to just write the following condition, but this will not work.
+
+```sql filename="Wrong Condition"
+  "created_at" >= '2023-01-11T10:32:07.853915+00:00'
+    AND "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+```
+
+This is because the `id` column is not serial and thus not stable for sorting. We only want to
+utilize this column for sorting in case there is a conflict for the primary sorting column
+`created_at`.
+
+Furthermore, we now also added the `id` as an additional field to the `ORDER BY` condition.
+
+In order to yield and preserve the best possible performance we again need to set an index.
+
+```sql filename="SQL index for compound cursor"
+CREATE INDEX "users_pagination" ON "users" (
+  "created_at" ASC
+  , "id" ASC
+);
+```
+
+## Cursor Pagination with Additional Filters
+
+As an application grows additional filters might need to be applied to the pagination query. E.g.
+you want to only query for users with a certain role.
+
+```diff filename="Dataset users with roles"
+| "id"                                   | "name"   | "role"   | "created_at"                       |
+| -------------------------------------- | -------- | -------- | -----------------------------------|
+| '7c2730cb-a973-4a0a-9e9a-f8aa0044d321' | 'Dima'   | 'admin'  | '2023-01-10T10:32:07.853915+00:00' |
+| '628995bf-2907-49d1-a36f-978566a053c4' | 'Dotan'  | 'admin'  | '2023-01-11T10:32:07.853915+00:00' |
+| 'a0c3e7e5-700a-4c10-9afe-d36df294ddc3' | 'Saihaj' | 'user'   | '2023-01-11T10:32:07.853915+00:00' |
+| '8771195f-7a8a-4685-8e4e-ae45d017c11b' | 'Uri'    | 'admin'  | '2023-01-11T10:32:07.853915+00:00' |
+```
+
+Again, lets query for all users after `Dotan` using our cursor value from the `created_at` column
+with an additional `role` filter.
+
+```sql filename="SQL query"
+SELECT "id", "name", "role", to_json("created_at") as "created_at"
+FROM "users"
+WHERE
+  (
+    (
+      "created_at" = '2023-01-11T10:32:07.853915+00:00'
+      AND "id" > '628995bf-2907-49d1-a36f-978566a053c4'
+    )
+    OR "created_at" > '2023-01-11T10:32:07.853915+00:00'
+  )
+  AND "role" = 'admin'
+ORDER BY
+  "created_at" ASC
+  , "id" ASC
+LIMIT 2
+```
+
+If you now execute this query it will work, however, if you are operating on a large dataset, the
+query might be very slow.
+
+This is because the `role` filter is not applied to the index. In order to fix this we need to add
+the column to it.
+
+```sql filename="SQL index for compound cursor with additional filter"
+CREATE INDEX "users_pagination" ON "users" (
+  "created_at" ASC
+  , "id" ASC
+  , "role" ASC
+);
+```
+
+<Callout type="info">
+  When you introduce a filter to a SQL query it is always important to add it to the index in order
+  to guarantee fast responses. A SQL operation that took 1 second to execute could suddenly start
+  taking several minutes as the database query planner has decided to change its query strategy due
+  to increasing row count within the table.
+
+**This is also why we do not recommend allowing arbitrary filters to be applied to your pagination
+through user input, as you might not be able to guarantee the performance of your application.**
+
+</Callout>
+
+## Conclusion
+
+While Cursor Pagination seems to be more complicated to implement than Offset Pagination, it is
+still the superior and more future-proof solution.
+
+By now, you should know the pitfalls and things to consider when implementing cursor pagination in a
+PostgreSQL database. Namely, use stable cursor values and keep setting indexes for your paginated
+queries.
+
+In case you have additional questions or feedback, feel free to reach out to us on the comment
+section below or by sending a pull request to this blog post.
