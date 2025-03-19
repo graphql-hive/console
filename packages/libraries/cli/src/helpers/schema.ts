@@ -73,8 +73,13 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
   const breakingChanges = changes.nodes.filter(
     change => change.criticality === CriticalityLevel.Breaking,
   );
-  const safeChanges = changes.nodes.filter(
-    change => change.criticality !== CriticalityLevel.Breaking,
+  const dangerousChanges = changes.nodes.filter(
+    change => change.criticality === CriticalityLevel.Dangerous,
+  );
+  const safeChanges = changes.nodes.filter(change => change.criticality === CriticalityLevel.Safe);
+
+  const otherChanges = changes.nodes.filter(
+    change => !Object.keys(CriticalityLevel).includes(change.criticality),
   );
 
   if (breakingChanges.length) {
@@ -82,9 +87,21 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
     writeChanges(breakingChanges);
   }
 
+  if (dangerousChanges.length) {
+    t.indent(`Dangerous changes:`);
+    writeChanges(dangerousChanges);
+  }
+
   if (safeChanges.length) {
     t.indent(`Safe changes:`);
     writeChanges(safeChanges);
+  }
+
+  // For backwards compatibility in case more criticality levels are added.
+  // This is unlikely to happen.
+  if (otherChanges.length) {
+    t.indent(`Other changes: (Current CLI version does not support these CriticalityLevels)`);
+    writeChanges(otherChanges);
   }
 
   return t.state.value;
