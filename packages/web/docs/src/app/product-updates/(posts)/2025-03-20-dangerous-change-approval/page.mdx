@@ -5,6 +5,13 @@ date: 2025-03-20
 authors: [jdolle]
 ---
 
+## What’s New?
+
+- **Require approval for dangerous changes** – A new setting, configurable per Schema Target, to
+  require approval for dangerous schema changes.
+
+## Feature Details
+
 We are constantly striving to make schema management easier and safer. One issue that isn't
 discussed so much is dangerous changes. These are technically safe changes from an API perspective,
 but are known to cause issues if systems are not built to handle them. An example is adding a new
@@ -18,5 +25,7 @@ Requiring approval for dangerous changes doesn't entirely solve this issue, beca
 requires the approver to manually verify that the change is safe. But it can help raise awareness
 that the change could cause issues and therefore empowers schema owners to better make decisions
 about their schema.
+
+---
 
 [For more information see the Target Management docs](/docs/management/targets#dangerous-changes).
