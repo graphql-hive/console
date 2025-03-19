@@ -5,7 +5,6 @@ export interface BlogFrontmatter {
   authors: AuthorId | AuthorId[];
   title: string;
   date: string;
-  href: string;
   tags: string | string[];
   featured?: boolean;
 }

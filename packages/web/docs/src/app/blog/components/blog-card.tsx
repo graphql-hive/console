@@ -1,16 +1,18 @@
 import Image from 'next/image';
 import { Anchor, cn } from '@theguild/components';
-import { Author, AuthorId, authors } from '../../authors';
-import { BlogFrontmatter } from './blog-types';
+import { Author, AuthorId, authors } from '../../../authors';
+import { BlogPostFile } from '../blog-types';
+import { prettyPrintTag } from './pretty-print-tag';
 
 export interface BlogCardProps {
-  frontmatter: BlogFrontmatter;
+  post: Pick<BlogPostFile, 'frontMatter' | 'route'>;
   className?: string;
   colorScheme?: 'default' | 'featured';
 }
 
-export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps) {
-  const { title, href, tags } = frontmatter;
+export function BlogCard({ post, className, colorScheme }: BlogCardProps) {
+  const frontmatter = post.frontMatter;
+  const { title, tags } = frontmatter;
   const date = new Date(frontmatter.date);
 
   const postAuthors: Author[] = (
@@ -36,7 +38,7 @@ export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps)
         'group/card hive-focus hover:ring-beige-400 block rounded-2xl dark:ring-neutral-600 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600',
         className,
       )}
-      href={href}
+      href={post.route}
     >
       <article
         className={cn(
@@ -50,10 +52,12 @@ export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps)
           <span
             className={cn(
               'rounded-full px-3 py-1 text-white',
-              colorScheme === 'featured' ? 'bg-green-800' : 'bg-beige-800 dark:bg-beige-800/40',
+              colorScheme === 'featured'
+                ? 'dark:bg-primary/80 bg-green-800 dark:text-neutral-900'
+                : 'bg-beige-800 dark:bg-beige-800/40',
             )}
           >
-            {tags[0]}
+            {prettyPrintTag(tags[0])}
             {/* TODO: should we show all tags on hover? */}
           </span>
           <time
@@ -63,7 +67,14 @@ export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps)
             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </time>
         </header>
-        <h3 className="text-xl/8 xl:min-h-[172px]">{title}</h3>
+        <h3
+          className={cn(
+            'text-xl/7 lg:min-h-[172px]',
+            colorScheme === 'featured' ? 'text-2xl/8' : 'xl:min-h-[120px]',
+          )}
+        >
+          {title}
+        </h3>
         <footer className="mt-auto flex items-center gap-3">
           <div className="relative size-6">
             <Image
