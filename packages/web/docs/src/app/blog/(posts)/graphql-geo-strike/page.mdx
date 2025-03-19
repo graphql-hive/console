@@ -32,7 +32,7 @@ There are two ways you can understand our challenges:
   tools and look at the `subscriptions` websocket frames.
 - Read what our game is all about.
 
-<Video src="./graphql-geo-strike/gameplay.webm" />
+<Video src="/blog-assets/graphql-geo-strike/gameplay.webm" />
 
 For those of you that have not played the game (yet!) I'll explain a bit what it is.
 
@@ -42,7 +42,7 @@ to find and shoot the other team's players. The winning team is the one that sta
 other team's players are dead. If you die, you can only view the rest of the game from a bird's eye
 view.
 
-<Video src="./graphql-geo-strike/map.webm" />
+<Video src="/blog-assets/graphql-geo-strike/map.webm" />
 
 We use CesiumJS — a Google Earth like, open source, mapping engine — as our scene, so when I say the
 game takes place in the Times Square, It's an actual representation of the Times Square with the
@@ -84,7 +84,7 @@ triggers every 200ms and publishes the game state to the gameData subscription. 
 most significant changes we made to allow for low latency, in our state synchronization process, and
 it was done with a couple lines of code, thanks to the way GraphQL subscriptions work.
 
-![](./graphql-geo-strike/game-flow.png)
+![](./game-flow.png)
 
 Not only that we were able to reduce latency, we were also able to scale the number of players quite
 easily.

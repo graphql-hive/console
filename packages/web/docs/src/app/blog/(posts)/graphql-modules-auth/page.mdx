@@ -26,7 +26,7 @@ I found
 [good answer in StackOverflow](https://stackoverflow.com/questions/6367865/is-there-a-difference-between-authentication-and-authorization/6367931#6367931)
 covers the main differences between authentication and authorization:
 
-![StackOverflow Answer](./graphql-modules-auth/stackoverflow-answer.png 'StackOverflow Answer')
+![StackOverflow Answer](./stackoverflow-answer.png 'StackOverflow Answer')
 
 In this article, I'll cover the difference between authentication and authorization with GraphQL
 APIs, explain how to implement them with GraphQL server, and with the
@@ -52,7 +52,7 @@ And the following features regarding _authorization_:
 To understand why implementing authentication in GraphQL might be tricky, let's start with the
 following chart:
 
-![Where to put your authentication?](./graphql-modules-auth/where-to-put-graph.png 'Where to put your authentication?')
+![Where to put your authentication?](./where-to-put-graph.png 'Where to put your authentication?')
 
 A request comes from the network, go through an HTTP server (for example, `express`) — That's **#1**
 in the chart. Then it goes through GraphQL server, which builds a `context`, and then it runs your
@@ -430,7 +430,7 @@ export const validateRole = role => next => (root, args, context, info) => {
 
 ## Next-Level Implementation with GraphQL-Modules
 
-![GraphQL Modules](./graphql-modules-auth/graphql-modules.png 'GraphQL Modules')
+![GraphQL Modules](./graphql-modules.png 'GraphQL Modules')
 
 If you wish to take your GraphQL server to the next level, and build a scalable, testable and
 readable server, I recommend to give [GraphQL-Modules](https://graphql-modules.com) a try.

@@ -67,6 +67,36 @@ const updateImagePaths = async (filePath: string) => {
   return { file: filePath, modified: false, count: 0 };
 };
 
+const updateImportPaths = async (filePath: string) => {
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    const dirName = basename(dirname(filePath));
+
+    // Look for import statements with directory paths
+    const importRegex = /import __img\d+ from "\.\/([\w-]+)\/([^"]+)"/g;
+
+    if (!content.match(importRegex)) {
+      return { file: filePath, modified: false, count: 0 };
+    }
+
+    // Replace the import paths to reference files directly in the current directory
+    const newContent = content.replace(importRegex, (_match, _dir, fileName) => {
+      return `import __img$1 from "./${fileName}"`;
+    });
+
+    if (newContent !== content) {
+      await writeFile(filePath, newContent);
+      const count = (content.match(importRegex) || []).length;
+      return { file: filePath, modified: true, count };
+    }
+
+    return { file: filePath, modified: false, count: 0 };
+  } catch (error) {
+    console.error(`Error processing ${filePath}:`, error);
+    return { file: filePath, modified: false, count: 0 };
+  }
+};
+
 const main = async () => {
   const mdxFiles = await findMdxFiles(currentDir);
   console.log(`Found ${mdxFiles.length} MDX files`);
@@ -75,13 +105,13 @@ const main = async () => {
     mdxFiles.map(async (file, index) => {
       const progress = `[${index + 1}/${mdxFiles.length}]`;
       console.log(`${progress} Processing ${file}`);
-      return updateImagePaths(file);
+      return updateImportPaths(file);
     }),
   );
 
   const modifiedFiles = results.filter(result => result.modified);
 
-  let output = 'Updated image paths in MDX files:\n';
+  let output = 'Updated import paths in MDX files:\n';
   for (const { file, count } of modifiedFiles) {
     output += `\n${file}: ${count} replacements\n`;
   }
