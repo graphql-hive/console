@@ -15,8 +15,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
@@ -275,8 +276,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
@@ -524,8 +526,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
