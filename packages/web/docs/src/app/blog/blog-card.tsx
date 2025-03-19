@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Anchor, cn } from '@theguild/components';
-import { authors, AvatarFromGitHub } from '../../authors';
+import { Author, AuthorId, authors } from '../../authors';
 import { BlogFrontmatter } from './blog-types';
 
 export interface BlogCardProps {
@@ -11,14 +11,24 @@ export interface BlogCardProps {
 
 export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps) {
   const { title, href, tags } = frontmatter;
-  const author = frontmatter.authors[0]; // TODO: We should handle multiple authors
   const date = new Date(frontmatter.date);
 
-  const { name, avatar, github } = authors[author];
+  const postAuthors: Author[] = (
+    typeof frontmatter.authors === 'string'
+      ? [authors[frontmatter.authors as AuthorId]]
+      : frontmatter.authors.map(author => authors[author as AuthorId])
+  ).filter(Boolean);
+
+  if (postAuthors.length === 0) {
+    console.error('author not found', frontmatter);
+    throw new Error(`authors ${JSON.stringify(frontmatter.authors)} not found`);
+  }
+
+  const firstAuthor = postAuthors[0];
+
+  // todo: show more authors on hover?
   const avatarSrc =
-    avatar === AvatarFromGitHub
-      ? `https://avatars.githubusercontent.com/${github}?v=4&s=48`
-      : avatar;
+    firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`;
 
   return (
     <Anchor
@@ -56,10 +66,16 @@ export function BlogCard({ frontmatter, className, colorScheme }: BlogCardProps)
         <h3 className="text-xl/8 xl:min-h-[172px]">{title}</h3>
         <footer className="mt-auto flex items-center gap-3">
           <div className="relative size-6">
-            <Image src={avatarSrc} alt={name} width={24} height={24} className="rounded-full" />
+            <Image
+              src={avatarSrc}
+              alt={firstAuthor.name}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
             <div className="bg-beige-200/70 absolute inset-0 size-full rounded-full opacity-30 mix-blend-hue" />
           </div>
-          <span className="text-sm/5 font-medium">{name}</span>
+          <span className="text-sm/5 font-medium">{firstAuthor.name}</span>
         </footer>
       </article>
     </Anchor>

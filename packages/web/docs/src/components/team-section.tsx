@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { CallToAction, cn, Heading } from '@theguild/components';
-import { Author, authors, AvatarFromGitHub } from '../authors';
+import { Author, authors } from '../authors';
 import { ArrowIcon } from './arrow-icon';
 
 export function TeamSection({ className }: { className?: string }) {
@@ -95,7 +95,7 @@ function TeamAvatar({ data: { name, avatar, link, github } }: { data: Author }) 
         <Image
           alt=""
           className="firefox:bg-blend-multiply firefox:![filter:grayscale(1)] rounded-2xl bg-black brightness-100 grayscale transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-110"
-          {...(avatar === AvatarFromGitHub
+          {...(!avatar
             ? { src: `https://avatars.githubusercontent.com/${github}?v=4&s=180` }
             : typeof avatar === 'string'
               ? { src: avatar }

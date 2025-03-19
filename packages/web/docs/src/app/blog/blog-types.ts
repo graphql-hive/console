@@ -2,11 +2,11 @@ import { AuthorId } from '../../authors';
 import { MdxFile, PageMapItem } from '../case-studies/case-study-types';
 
 export interface BlogFrontmatter {
-  authors: AuthorId[];
+  authors: AuthorId | AuthorId[];
   title: string;
   date: string;
   href: string;
-  tags: string[];
+  tags: string | string[];
   featured?: boolean;
 }
 

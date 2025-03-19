@@ -6,13 +6,25 @@ import { CategorySelect } from './category-select';
 import { FeaturedPosts } from './featured-posts';
 import { LatestPosts } from './latest-posts';
 
+const TOP_10_TAGS = [
+  'graphql',
+  'graphql-federation',
+  'codegen',
+  'typescript',
+  'react',
+  'graphql-hive',
+  'node',
+  'graphql-modules',
+  'angular',
+  'graphql-tools',
+];
+
 export function PostsByCategory({ allPosts }: { allPosts: BlogFrontmatter[] }) {
   const searchParams = useSearchParams();
   let category = searchParams.get('category');
 
-  console.log(allPosts);
+  const categories = TOP_10_TAGS;
 
-  const categories = Array.from(new Set(allPosts.flatMap(post => post.tags)));
   let posts: BlogFrontmatter[];
 
   if (category && categories.includes(category)) {

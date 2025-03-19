@@ -8,7 +8,7 @@ export function CategorySelect({
   categories: string[];
 }) {
   return (
-    <ul>
+    <ul className="flex flex-wrap items-center justify-center gap-2 px-4 py-6">
       <li>
         <CategoryFilterLink category={null} currentCategory={currentCategory} />
       </li>
