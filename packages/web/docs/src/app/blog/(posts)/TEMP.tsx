@@ -1,20 +1,9 @@
 /* eslint-disable react/jsx-filename-extension */
-import {
-  copyFile,
-  mkdir,
-  readdir,
-  readFile,
-  rmdir,
-  stat,
-  unlink,
-  writeFile,
-} from 'node:fs/promises';
-import { dirname, join, parse } from 'node:path';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const postsDir = currentDir;
-const assetsDir = join(currentDir, '../blog-assets');
 
 const findMdxFiles = async (directory: string): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -45,29 +34,6 @@ const findMediumImages = async (filePath: string): Promise<{ file: string; image
   return { file: filePath, images };
 };
 
-const processFile = async (filePath: string) => {
-  const content = await readFile(filePath, 'utf-8');
-
-  if (!content.includes('$2')) {
-    return;
-  }
-
-  const newContent = content.replace(/([^"'\`]*)\\$2/g, '$1');
-
-  if (newContent !== content) {
-    console.log(`Updating ${filePath}`);
-    console.log('Found matches:');
-    const matches = content.match(/[^"'\`]*\\$2/g);
-    if (matches) {
-      for (const match of matches) {
-        const fixed = match.replace('$2', '');
-        console.log(`  ${match} → ${fixed}`);
-      }
-    }
-    await writeFile(filePath, newContent);
-  }
-};
-
 const main = async () => {
   const mdxFiles = await findMdxFiles(currentDir);
   console.log(`Found ${mdxFiles.length} MDX files`);
@@ -82,16 +48,19 @@ const main = async () => {
 
   const filesWithImages = results.filter(result => result.images.length > 0);
 
-  console.log('\nFound medium images in:');
+  let output = 'Found medium images in:\n';
   for (const { file, images } of filesWithImages) {
-    console.log(`\n${file}:`);
+    output += `\n${file}:\n`;
     for (const image of images) {
-      console.log(`  ${image}`);
+      output += `  ${image}\n`;
     }
   }
 
   const totalImages = filesWithImages.reduce((sum, { images }) => sum + images.length, 0);
-  console.log(`\nTotal: ${totalImages} images in ${filesWithImages.length} files`);
+  output += `\nTotal: ${totalImages} images in ${filesWithImages.length} files\n`;
+
+  await writeFile(join(currentDir, 'RAPORT.txt'), output);
+  console.log('Report written to RAPORT.txt');
 };
 
 main().catch(error => {
