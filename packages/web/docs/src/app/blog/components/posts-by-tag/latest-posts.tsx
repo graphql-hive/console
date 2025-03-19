@@ -9,6 +9,7 @@ export function LatestPosts({ posts, tag }: { posts: BlogPostFile[]; tag: string
     <section className="sm:pt-12">
       <Heading size="md" as="h2" className="text-center">
         Latest posts
+        {/* Probably redundant, but I wanted to consult designers. */}
         {/* {' '} */}
         {/* {tag ? (
           <>

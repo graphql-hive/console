@@ -38,7 +38,11 @@ export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
     firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`;
 
   const TEMPORARY_SHOULD_BE_REMOVED =
-    !post.frontMatter.tags.includes('graphql') && post.frontMatter.tags.includes('graphql-hive');
+    !post.frontMatter.tags.includes('graphql') && !post.frontMatter.tags.includes('graphql-hive');
+
+  if (TEMPORARY_SHOULD_BE_REMOVED) {
+    console.log(post.route);
+  }
 
   return (
     <Anchor
