@@ -70,13 +70,13 @@ Domain. For instance, this is how portion of my directory structure looks like. 
 able to split every Microservice into multiple modules like this which allows me to manage the code
 better.
 
-![GraphQL Modules Directory Structure](./1.png)$2
+![GraphQL Modules Directory Structure](./1.png)
 
 And this is how a simple provider looks like. If you notice, this makes it very simple to
 comprehend. The convention I use is that, I try to group CRUD operations into a single module but it
 need not call for a separate microservice all by itself.
 
-![Sample GraphQL Provider](./2.png)$2
+![Sample GraphQL Provider](./2.png)
 
 And your Mutations become as simple as this, calling the injector, doing the operations and
 returning the results:
@@ -130,7 +130,7 @@ makes all the operations you do fully typed.
 Since I am just in the initial phases of development, this is how my `.meshrc` file looks like where
 I interface with Dgraph with GraphQL Mesh
 
-![GraphQL Meshrc file](./4.png)$2
+![GraphQL Meshrc file](./4.png)
 
 And when I have the SDK generated with GraphQL Mesh, all I have to do is just use the methods the
 SDK providers me (based on the GraphQL Mutations and Queries I have provided to it as inputs) like
@@ -162,11 +162,11 @@ focus on the other things which really matter the most in your journey with Grap
 see below, I use the functions from GraphQL Tools extensively when I do operations with my schema
 like this:
 
-![GraphQL Tools operations](./6.png)$2
+![GraphQL Tools operations](./6.png)
 
 And it also helps me write my own directives like this:
 
-![GraphQL Directives](./7.png)$2
+![GraphQL Directives](./7.png)
 
 And since I have recently moved from [Federation](https://the-guild.dev/graphql/hive/federation) to
 Stitching, I am also starting to use
@@ -198,7 +198,7 @@ requests.
 For eg. this is how I use TypedDocumentNode to have all my GraphQL operations typed when calling
 `@apollo/client/core` in my app.
 
-![Typed Document Node Example](./9.png)$2
+![Typed Document Node Example](./9.png)
 
 All I had to do is pass the document which was generated and if you notice, even my response is
 fully typed.

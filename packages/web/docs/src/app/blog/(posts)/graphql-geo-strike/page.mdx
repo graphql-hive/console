@@ -33,7 +33,6 @@ There are two ways you can understand our challenges:
 - Read what our game is all about.
 
 <Video src="./graphql-geo-strike/gameplay.webm" />
-$2
 
 For those of you that have not played the game (yet!) I'll explain a bit what it is.
 
@@ -44,7 +43,6 @@ other team's players are dead. If you die, you can only view the rest of the gam
 view.
 
 <Video src="./graphql-geo-strike/map.webm" />
-$2
 
 We use CesiumJS — a Google Earth like, open source, mapping engine — as our scene, so when I say the
 game takes place in the Times Square, It's an actual representation of the Times Square with the
@@ -63,7 +61,7 @@ gets. Next we wrote a small GraphQL schema that defines our Game entity.
 
 It ended up looking like so:
 
-![](./structure.png)$2
+![](./structure.png)
 
 Some parts of this graph will change very rapidly (~10 times a sec) and some parts of it will change
 rarely. Getting to this realization we decided to expose this graph with both Query type for less
@@ -74,7 +72,7 @@ to it.
 
 In our game, this subscription query turned out to be the only parts we need updated frequently:
 
-![](./game-state.png)$2
+![](./game-state.png)
 
 At the beginning we went with the naive implementation and set things up so that we will get any
 change made by any client as it happens. Basically publish on the mutation resolver. But we quickly
@@ -103,7 +101,7 @@ state subscription and updated the normalized client store seamlessly.
 amazing angular-cesium framework and have the players magically move and update on a 3d scene
 rendered with CesiumJS!
 
-![](./game-client.png)$2
+![](./game-client.png)
 
 ## Not Just One Subscription
 
@@ -119,7 +117,7 @@ as soon a player is killed, all other players will get a notification indicating
 
 ## Further Improvements
 
-![](./pov.png)$2
+![](./pov.png)
 
 As our game is played on the same size scene as our own earth, we cannot help but thinking of future
 game modes where whole armies could play one against the other to take over / save the world!

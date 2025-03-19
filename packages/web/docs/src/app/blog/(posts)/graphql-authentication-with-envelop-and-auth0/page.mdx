@@ -81,7 +81,7 @@ it should be super fast!
 After logging in navigate to the [Auth0 dashboard](https://manage.auth0.com/dashboard) and from
 there to the APIs page, where we will click the **Create API** button.
 
-![Auth0 Dashboard](./01-dashboard.jpg)$2
+![Auth0 Dashboard](./01-dashboard.jpg)
 
 Choose any name for the API, we are going with `Envelop Demo` for this example. The `Identifier`
 field should be set to the URL of our GraphQL API. We are hosting our API on localhost and set it to
@@ -89,7 +89,7 @@ the host and port on which our fastify helix server is served, which is
 `http://localhost:3000/graphql`. For production, you should instead set it to the URL of the
 production server.
 
-![Auth0 API](./02-create-api.jpg)$2
+![Auth0 API](./02-create-api.jpg)
 
 We can ignore the Signing Algorithm option and go with the pre-set value. Once everything is filled
 out properly we can click the `Create` button.
@@ -97,12 +97,12 @@ out properly we can click the `Create` button.
 Now we already have one of the missing config options we needed `audience` , which is equal to the
 URL we just entered `http://localhost:3000/graphql`.
 
-![Auth0 Copy Audience](./03-copy-audience.jpg)$2
+![Auth0 Copy Audience](./03-copy-audience.jpg)
 
 The `domain` value is a bit hidden, but we can find it on the detail page of the API we just
 created, on the `Test` tab.
 
-![Auth0 domain](./04-domain.jpg)$2
+![Auth0 domain](./04-domain.jpg)
 
 It will vary depending on your account name and region, but in general it follows this pattern
 
@@ -194,7 +194,7 @@ query {
 }
 ```
 
-![GraphiQL Unauthenticated](./05-graphiql-unauthenticated.jpg)$2
+![GraphiQL Unauthenticated](./05-graphiql-unauthenticated.jpg)
 
 As expected the value of the `authInfo` field is `null`, as we are not passing any authentication
 headers along with our request.
@@ -211,13 +211,13 @@ favorite Frontend Framework. If you are using Next.js you should check out
 
 Let's go back into the Auth0 interface on the Applications page.
 
-![Auth0 Applications](./06-auth0-applications.jpg)$2
+![Auth0 Applications](./06-auth0-applications.jpg)
 
 Press the **Create application** button, enter a name of your choice (e.g.
 `Envelop Example Single Page Web`) and select the `Single Page Web Applications` application type.
 Confirm by pressing the **Create** button.
 
-![Auth0 Create Application](./07-auth-create-application.jpg)$2
+![Auth0 Create Application](./07-auth-create-application.jpg)
 
 We will be redirected to the Application detail page.
 
@@ -269,7 +269,7 @@ app.route({
 As mentioned before it is not that fancy. After restarting the server and opening
 `http://localhost:3000/` URL we should see a blank page and an Auth0 LogIn pop-up.
 
-![Auth0 Create Application](./08-login.jpg)$2
+![Auth0 Create Application](./08-login.jpg)
 
 After a successful login the authentication token is added to the blank page.
 
@@ -300,7 +300,7 @@ information!
 }
 ```
 
-![Auth0 Create Application](./10-authenticated-request.jpg)$2
+![Auth0 Create Application](./10-authenticated-request.jpg)
 
 ## Next Steps
 

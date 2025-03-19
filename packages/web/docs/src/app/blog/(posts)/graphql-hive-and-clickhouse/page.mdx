@@ -89,7 +89,7 @@ the problems we were facing and the decision-making process that lead us to love
 The data pipeline in GraphQL Hive is relatively simple but has proven to be highly scalable and
 reliable. Here's a high-level data flow of the usage reporting part of GraphQL Hive.
 
-![](./graphql-hive-and-clickhouse/data-pipeline.png 'An overview of the architecture')$2
+![](./graphql-hive-and-clickhouse/data-pipeline.png 'An overview of the architecture')
 
 We can distinguish two parts here, the **collecting** and **processing** of data.
 
@@ -107,7 +107,7 @@ Kafka by 10 times**.
 It sounds mysterious, but we find this part extremely interesting, that's why we're going to write a
 dedicated article about it soon.
 
-![](./graphql-hive-and-clickhouse/data-collecting-part.png 'Data collecting part')$2
+![](./graphql-hive-and-clickhouse/data-collecting-part.png 'Data collecting part')
 
 Thanks to Kafka and its persistence of messages, the collecting and processing parts are nicely and
 reliably separated.
@@ -118,7 +118,7 @@ The Usage Ingestor service receives the messages from Kafka, then it unpacks the
 each message and processes them. Once the processing of reports is done, the service writes data to
 Clickhouse.
 
-![](./graphql-hive-and-clickhouse/data-processing-part.png 'Data processing part')$2
+![](./graphql-hive-and-clickhouse/data-processing-part.png 'Data processing part')
 
 The data pipeline does not end here, there're still a few quite interesting techniques we use within
 ClickHouse.
@@ -146,7 +146,7 @@ Nothing special here.
 
 An overview of our ClickHouse tables.
 
-![](./graphql-hive-and-clickhouse/tables.png 'An overview of our ClickHouse tables')$2
+![](./graphql-hive-and-clickhouse/tables.png 'An overview of our ClickHouse tables')
 
 In GraphQL Hive, we use `MergeTree` to store received GraphQL requests in the
 [`operations` table](https://github.com/kamilkisiela/graphql-hive/blob/64e53f207b413f8bb222eabd6aeb437e3300dbfd/packages/services/storage/migrations/clickhouse.ts#L29-L49).
@@ -196,7 +196,7 @@ p95, p99) of all and individual operations, and a lot more other things.
 
 The page contains a date range filter.
 
-![](./graphql-hive-and-clickhouse/date-ranges.png 'Operations page and the date range filter')$2
+![](./graphql-hive-and-clickhouse/date-ranges.png 'Operations page and the date range filter')
 
 Calculating the percentiles of the latency for a large number of GraphQL requests (stored as rows)
 might be a challenge, even for ClickHouse. Maybe not for "Last 24 hours" as we get only 1/30 of all
@@ -234,7 +234,7 @@ we improved it.
 
 Here's yet another, this time extreme example of a table designed with an end goal in mind.
 
-![](./graphql-hive-and-clickhouse/clients.png 'Operations page and the Clients section')$2
+![](./graphql-hive-and-clickhouse/clients.png 'Operations page and the Clients section')
 
 GraphQL Hive allows you to understand who are the consumers of your GraphQL API.
 
@@ -303,7 +303,7 @@ Another fantastic feature of ClickHouse is **Asynchronous Inserts**. This opt-in
 up inserted data and flush it in a single batch. Thanks to the async inserts we're able to accept a
 higher rate of INSERT queries, without worrying about the performance.
 
-![](./graphql-hive-and-clickhouse/async-sync-inserts.png 'Difference between synchronous and asynchronous inserts in ClickHouse')$2
+![](./graphql-hive-and-clickhouse/async-sync-inserts.png 'Difference between synchronous and asynchronous inserts in ClickHouse')
 
 Every read operation in ClickHouse is being cached, writing too often translates to a lot of cache
 misses. To avoid that, we either use the async inserts mode or synchronously write data less often
