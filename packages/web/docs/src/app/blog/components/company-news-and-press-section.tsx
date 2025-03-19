@@ -15,7 +15,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
               frontMatter: {
                 title: 'Understanding the Differences Between GraphQL and REST API Gateways',
                 authors: ['saihaj'],
-                tags: ['GraphQL'],
+                tags: ['graphql'],
                 date: '2024-12-03',
               },
             }}
@@ -25,7 +25,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
         <li>
           <BlogCard
             post={{
-              route: '/blog/stellate-acquisition',
+              route: 'https://the-guild.dev/blog/stellate-acquisition',
               frontMatter: {
                 title: 'The Guild acquires Stellate',
                 authors: ['uri'],
