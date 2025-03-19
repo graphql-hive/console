@@ -4,7 +4,7 @@ export default {
   'csrf-prevention': 'CSRF Prevention',
   'rate-limiting': 'Rate Limiting',
   'demand-control': 'Demand Control',
-  'disable-introspection': 'Introspection',
+  'disable-introspection': 'Disable Introspection',
   https: 'HTTPS',
   'hmac-signature': 'HMAC Signature',
   'aws-sigv4': 'AWS Signature V4',
