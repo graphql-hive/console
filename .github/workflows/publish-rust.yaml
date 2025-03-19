@@ -21,7 +21,7 @@ jobs:
       rust_changed: ${{ steps.rust_changed.outputs.rust_changed }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
       - name: Look for changes
@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
 
@@ -82,7 +82,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
           toolchain: '1.84.1'
           target: ${{ env.RUST_TARGET }}
@@ -94,10 +94,10 @@ jobs:
           rustup default 1.84.1-${{ env.RUST_TARGET }}
 
       - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
 
       - name: Build
-        uses: actions-rs/cargo@v1
+        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1
         with:
           command: build
           args: --release
@@ -111,14 +111,14 @@ jobs:
           ./target/release/compress ./target/release/${{ env.RUST_TARGET_FILE }} ./router.tar.gz
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
         with:
           name: router-${{ env.RUST_TARGET_OS }}
           path: router.tar.gz
 
       - name: Upload to R2 (${{ inputs.version }})
         if: ${{ inputs.publish }}
-        uses: randomairborne/r2-release@v1.0.2
+        uses: randomairborne/r2-release@9cbc35a2039ee2ef453a6988cd2a85bb2d7ba8af # v1.0.2
         with:
           endpoint: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
           accesskeyid: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -129,7 +129,7 @@ jobs:
 
       - name: Upload to R2 (latest)
         if: ${{ inputs.publish && inputs.latest }}
-        uses: randomairborne/r2-release@v1.0.2
+        uses: randomairborne/r2-release@9cbc35a2039ee2ef453a6988cd2a85bb2d7ba8af # v1.0.2
         with:
           endpoint: https://6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
           accesskeyid: ${{ secrets.R2_ACCESS_KEY_ID }}
