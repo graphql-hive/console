@@ -6,7 +6,7 @@ date: 2018-11-05
 description:
   Today we are happy to announce that we are open sourcing a framework we've been using for the past
   couple of months in production, GraphQL Modules!
-image: /medium/a4a2c4f56993a801a7ffe394fc0f95f1.png
+image: ./a4a2c4f56993a801a7ffe394fc0f95f1.png
 ---
 
 Today we are happy to announce that we are open sourcing a framework we've been using for the past
@@ -28,12 +28,12 @@ The basic concept behind GraphQL Modules is to separate your GraphQL server into
 
 A basic and initial implementation of a GraphQL server usually includes:
 
-![](/medium/d57986e2af5dd85000392ee831ba0162.png)
+![](./d57986e2af5dd85000392ee831ba0162.png)
 
 A more advanced implementation will usually use a context to inject things like data models, data
 sources, fetchers, etc., like Apollo Server 2.0 provides us with:
 
-![](/medium/297c11db8129c64380966f6a15dc8dd8.png)
+![](./297c11db8129c64380966f6a15dc8dd8.png)
 
 Usually, for simple use cases, the example above will do.
 
@@ -53,7 +53,7 @@ The modules are being defined by their GraphQL schema — so we've taken the “
 lead by Apollo and combined it together with classic modularization tooling to create new ways of
 writing GraphQL servers!
 
-![](/medium/0f1a8490480abbc46d06daf9cf727171.png)
+![](./0f1a8490480abbc46d06daf9cf727171.png)
 
 The GraphQL Modules toolset has tools to help with:
 
@@ -316,12 +316,12 @@ could depend on other modules to provide some of the logic.
 
 Here's a simple example for a GraphQL Schema as we described:
 
-![](/medium/ab6a60456476a8bc274f6d388b0c7178.png)
+![](./ab6a60456476a8bc274f6d388b0c7178.png)
 
 But if we think of apps in terms of features and then separate the schema by module, the modules
 separation will look like so:
 
-![](/medium/c806f0ae70dca7a4d1e434736f241ed5.png)
+![](./c806f0ae70dca7a4d1e434736f241ed5.png)
 
 This way, each module can declare only the part of the schema that it contributes, and the complete
 schema is a representation of all merged type definitions. Module can also depend, import and extend

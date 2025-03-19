@@ -6,7 +6,7 @@ date: 2019-07-24
 description:
   I wrote a customizable CSS engine in JavaScript. Custom selectors, custom rules and custom events.
   You determine its behavior.
-image: /medium/9ecd4800956fc386f893c8730a0beb63.jpeg
+image: ./9ecd4800956fc386f893c8730a0beb63.jpeg
 ---
 
 ## Custom Selectors, Custom Rules and Custom Events. You Determine Its Behavior
@@ -66,7 +66,7 @@ such as animations, URLs, selection and transformation functions, etc.
 Indeed, there's a lot going on under the hood and a lot to go through, so let's get into the
 interesting bits.
 
-![](/medium/33a00b9051bfb0894f2d6964afed0de9.png)
+![](./33a00b9051bfb0894f2d6964afed0de9.png)
 
 ## Keynotes from the Implementation
 
@@ -85,7 +85,7 @@ about [building a Babel plug-in](/blog/how-i-build-babel-plugins).
 
 The CSS is broken down into AST nodes like following:
 
-![](/medium/4d50875c67ddc3d9139635c8597a1ea1.png)
+![](./4d50875c67ddc3d9139635c8597a1ea1.png)
 
 The AST is now presented as a plain JSON. To make things even more convenient, I run it through a
 second iteration where it's gonna get wrapped with the classes defined in the registry of the
@@ -95,7 +95,7 @@ and
 [`ClassNameSelector`](https://github.com/DAB0mB/eventsheet/blob/9224349b895ee15efc43d879ceed8786bac660bb/demo.js#L19).
 A node will be wrapped if it matches the properties of the target class:
 
-![](/medium/2b3e4b1d4204649da2b520229d0a3b5d.png)
+![](./2b3e4b1d4204649da2b520229d0a3b5d.png)
 
 With a wrapped AST, not only we can get information about the given CSS string, but we can also call
 related methods directly from a specific node. So given a node of `Selector` type, we can call the
@@ -118,7 +118,7 @@ To overcome this issue, I've normalized the collection of mutation records to in
 mutations which are relevant, based on the logic that I just mentioned (see
 [`normalizeMutations()`](https://github.com/DAB0mB/eventsheet/blob/9224349b895ee15efc43d879ceed8786bac660bb/src/utils/mutations.js#L3)).
 
-![](/medium/7e4dac18ecbfa0f679d7d2c41134b75d.png)
+![](./7e4dac18ecbfa0f679d7d2c41134b75d.png)
 
 One of the core behaviors of CSS is that once it's loaded, the style is immediately applied. The
 catch here, is that the mutation observer callback will not be invoked unless real mutations
@@ -131,7 +131,7 @@ of mutation records can be injected to the observation callback and the style sh
 based defined customizations to the engine (see
 [`synthesizeMutations()`](https://github.com/DAB0mB/eventsheet/blob/9224349b895ee15efc43d879ceed8786bac660bb/src/utils/mutations.js#L90)).
 
-![](/medium/dee039857e0e507016a5fb742f50c814.png)
+![](./dee039857e0e507016a5fb742f50c814.png)
 
 One thing to note is that we're likely to change the `style` attribute inside rule event handlers,
 which will unnecessarily re-trigger the mutation callback and might potentially cause an infinite
@@ -250,7 +250,7 @@ done is to run the
 function of a specific selector **before** event listeners are disposed. If there has been a change
 in the outcome of tests, only then proceed to disposing and reallocating the event listeners.
 
-![](/medium/b8088e43c6db651c5daa8ed96b65125a.png)
+![](./b8088e43c6db651c5daa8ed96b65125a.png)
 
 This can be taken a step further by observing which properties of the element has changed during the
 application of specific rule, and store them all in-order. Once a selector becomes irrelevant and

@@ -4,7 +4,7 @@ authors: kamil
 tags: [graphql, apollo-angular]
 date: 2017-03-01
 description: New name, AoT support, TypeScript improvements, and Angular 4 readiness
-image: /medium/cc2b3a84ee2ef485ffad79881a284b9a.png
+image: ./cc2b3a84ee2ef485ffad79881a284b9a.png
 ---
 
 ## New Name, AoT Support, TypeScript Improvements, and Angular 4 Readiness
@@ -30,7 +30,7 @@ So let's dive into it!
 
 ## New Name
 
-![](/medium/3b47588c7a195cbb887dad8db7fb8c7f.png 'After years of research we discovered a secret formula')
+![](./3b47588c7a195cbb887dad8db7fb8c7f.png 'After years of research we discovered a secret formula')
 
 As you all know, the term “Angular 2” is
 [no longer a thing](https://angularjs.blogspot.com/2017/01/branding-guidelines-for-angular-and.html),
@@ -69,14 +69,14 @@ performance. check out the full list
 
 ## Ahead-Of-Time Compilation
 
-![](/medium/9eb65f486aae61db008b4b6f5bea90e3.png 'Ahead-of-Time Compilation')
+![](./9eb65f486aae61db008b4b6f5bea90e3.png 'Ahead-of-Time Compilation')
 
 One of the most interesting features of Angular is Ahead-of-Time compilation. Angular's compiler
 converts the application, components, and templates to executable JavaScript code at build time. AoT
 compilation improves the size of the app as well as the performance and stability thanks to
 static-code analysis at build time.
 
-![](/medium/063a3d092340209bd6e454e2fee4ac41.png 'Just-In-Time Compilation')
+![](./063a3d092340209bd6e454e2fee4ac41.png 'Just-In-Time Compilation')
 
 To support this feature, we had to change the way of providing ApolloClient to ApolloModule. Instead
 of using an instance of ApolloClient directly, it has to be wrapped with a function. Here's an
@@ -99,7 +99,7 @@ ApolloModule.withClient(provideClient)
 
 ## Multiple Clients
 
-![](/medium/251fe78b9075dac4e8088a4e174427e1.png 'Apollo service')
+![](./251fe78b9075dac4e8088a4e174427e1.png 'Apollo service')
 
 We're happy to introduce a support for multiple clients. Yes, it's now possible to use many
 instances of the ApolloClient inside of the ApolloModule, meaning you can call multiple GraphQL
@@ -159,7 +159,7 @@ class AppComponent {
 
 ## More Control
 
-![](/medium/26d1e2f5199df372a39ca801d9ce936b.png 'We improved integration between frameworks')
+![](./26d1e2f5199df372a39ca801d9ce936b.png 'We improved integration between frameworks')
 
 Apollo-Client and Apollo-Angular both are written in TypeScript, but we still had room for
 improvements for our users, here are some of them.
@@ -240,7 +240,7 @@ class AppComponent {
 
 ## It Is Human Nature to Be Lazy
 
-![](/medium/1600bc44b918bf784039061e9895496f.png)
+![](./1600bc44b918bf784039061e9895496f.png)
 
 We love automation, just to avoid keep repeating the same things on and on again. I have great news
 for you!
@@ -254,7 +254,7 @@ longer have to define types for their queries manually.
 
 ## Better Developer Experience
 
-![](/medium/c6953c9d535f0c4ab8a02f8019954e99.png)
+![](./c6953c9d535f0c4ab8a02f8019954e99.png)
 
 We are happy to announce that Angular integration works great with the
 [**Apollo Client Developer Tools**](https://dev-blog.apollodata.com/apollo-client-developer-tools-ff89181ebcf).
@@ -275,7 +275,7 @@ Try the dev tools in your Angular Apollo app today!
 
 ## ES6 Modules and Tree Shaking
 
-![](/medium/8356f13d18d0ff7af35920e4bf73f854.png 'UMD bundle and ES6 Modules')
+![](./8356f13d18d0ff7af35920e4bf73f854.png 'UMD bundle and ES6 Modules')
 
 App load time is an important part of the overall user experience. Earlier, I talked about AoT
 compilation, which radically improves performance, but there is still room to speed things up.
@@ -294,7 +294,7 @@ you can use tree shaking in your app!
 
 ## Ready for the Future
 
-![](/medium/250a232da3f4667a2feba74895729d19.png 'Coming out in March 2017')
+![](./250a232da3f4667a2feba74895729d19.png 'Coming out in March 2017')
 
 With the first stable version of Angular, the core team announced a predictable release schedule. It
 means that every 6 months there's going to be a new major version of the framework.

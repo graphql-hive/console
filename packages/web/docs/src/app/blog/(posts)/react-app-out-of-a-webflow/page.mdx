@@ -4,7 +4,7 @@ authors: eytan
 tags: [react, webflow]
 date: 2018-09-07
 description: How to create a React app out of a Webflow project.
-image: /medium/50ea860594889aa4f1b96a509c886b9c.jpg
+image: ./50ea860594889aa4f1b96a509c886b9c.jpg
 ---
 
 _tl;dr: It can be transpiled with a single command._
@@ -35,7 +35,7 @@ machine generated names. When I started to tear it apart into React components, 
 client after few hours of trial and canceled the plan; since the budget was limited, and I wasn't
 willing to spend so much time on a project with a very little value in return.
 
-![](/medium/50ea860594889aa4f1b96a509c886b9c.jpg)
+![](./50ea860594889aa4f1b96a509c886b9c.jpg)
 
 > _Above: A Webflow page whose HTML file can be found
 > [here](https://gist.github.com/DAB0mB/1979ac9cfa5fbe52e6375d80841200ae). Credit:
@@ -61,7 +61,7 @@ Once we identify them we should select their corresponding element in the Webflo
 new attribute; the key's going to be `af-el` (Appfairy element) and the value should be set to the
 name of the component e.g. `consult-form`:
 
-![](/medium/4133a89b94c1797a726c64732a6acb4a.jpg)
+![](./4133a89b94c1797a726c64732a6acb4a.jpg)
 
 > _Above: Selecting the element and setting its attribute_
 
@@ -82,7 +82,7 @@ a view and a controller, where we treat the view as a black-box and don't touch 
 controller is controlling what's going on in there; it would tell the view what to render, when to
 render, and how to render.
 
-![](/medium/31360e1c8ab84c672e68d7faa4af0846.jpg)
+![](./31360e1c8ab84c672e68d7faa4af0846.jpg)
 
 In the picture above we have a schematic description which shows the view/controller flow. In a
 brief, the controller holds elements which are proxies to the real elements, so whatever we pass to
@@ -96,7 +96,7 @@ which will submit the data received by the inputs, therefore we would probably a
 elements in our React controller components. Accordingly, we will define socket attributes to each
 of the elements with distinct names:
 
-![](/medium/9cf1c0081093630fe6dfeeab6055e0d3.jpg)
+![](./9cf1c0081093630fe6dfeeab6055e0d3.jpg)
 
 Our Webflow project is now ready for migration! To do so, we will first need to create a directory
 named `.appfairy` in the root of our project:
@@ -109,7 +109,7 @@ This directory is used by Appfairy as an input for the CLI function, which means
 to export our project and extract the generated zip file's content into the directory we've just
 created:
 
-![](/medium/da0137e3b38b30be41a5c32479e3c4cd.jpg)
+![](./da0137e3b38b30be41a5c32479e3c4cd.jpg)
 
 ```sh
 unzip ~/Downloads/project.webflow.zip -d .appfairy
@@ -210,7 +210,7 @@ That's it! Now you can just import the controller and use it anywhere and anytim
 having to deal with the hustle of maintaining a complex machine generated Webflow code; and any time
 you update the design just update your code using the `appfairy` command.
 
-<Video src="/medium/55d6dee0027f11ee6061a0e3e140c028.webm" />
+<Video src="./55d6dee0027f11ee6061a0e3e140c028.webm" />
 
 > _Above: An example usage of an Appfairy generated React component_
 

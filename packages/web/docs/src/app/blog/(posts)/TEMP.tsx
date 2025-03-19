@@ -1,9 +1,10 @@
 /* eslint-disable react/jsx-filename-extension */
-import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const mediumDir = join(currentDir, '..', 'medium');
 
 const findMdxFiles = async (directory: string): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -34,6 +35,38 @@ const findMediumImages = async (filePath: string): Promise<{ file: string; image
   return { file: filePath, images };
 };
 
+const copyMediumImage = async (imagePath: string, targetDir: string) => {
+  const sourceFile = join(mediumDir, basename(imagePath));
+  const targetFile = join(targetDir, basename(imagePath));
+
+  try {
+    await mkdir(targetDir, { recursive: true });
+    await copyFile(sourceFile, targetFile);
+    return { success: true, path: targetFile };
+  } catch (error) {
+    return { success: false, path: sourceFile, error };
+  }
+};
+
+const updateImagePaths = async (filePath: string) => {
+  const content = await readFile(filePath, 'utf-8');
+
+  if (!content.includes('/medium/')) {
+    return { file: filePath, modified: false, count: 0 };
+  }
+
+  // Simple search and replace
+  const newContent = content.replace(/\/medium\//g, './');
+
+  if (newContent !== content) {
+    await writeFile(filePath, newContent);
+    const count = (content.match(/\/medium\//g) || []).length;
+    return { file: filePath, modified: true, count };
+  }
+
+  return { file: filePath, modified: false, count: 0 };
+};
+
 const main = async () => {
   const mdxFiles = await findMdxFiles(currentDir);
   console.log(`Found ${mdxFiles.length} MDX files`);
@@ -42,22 +75,19 @@ const main = async () => {
     mdxFiles.map(async (file, index) => {
       const progress = `[${index + 1}/${mdxFiles.length}]`;
       console.log(`${progress} Processing ${file}`);
-      return findMediumImages(file);
+      return updateImagePaths(file);
     }),
   );
 
-  const filesWithImages = results.filter(result => result.images.length > 0);
+  const modifiedFiles = results.filter(result => result.modified);
 
-  let output = 'Found medium images in:\n';
-  for (const { file, images } of filesWithImages) {
-    output += `\n${file}:\n`;
-    for (const image of images) {
-      output += `  ${image}\n`;
-    }
+  let output = 'Updated image paths in MDX files:\n';
+  for (const { file, count } of modifiedFiles) {
+    output += `\n${file}: ${count} replacements\n`;
   }
 
-  const totalImages = filesWithImages.reduce((sum, { images }) => sum + images.length, 0);
-  output += `\nTotal: ${totalImages} images in ${filesWithImages.length} files\n`;
+  const totalReplacements = modifiedFiles.reduce((sum, { count }) => sum + count, 0);
+  output += `\nTotal: ${totalReplacements} replacements in ${modifiedFiles.length} files\n`;
 
   await writeFile(join(currentDir, 'RAPORT.txt'), output);
   console.log('Report written to RAPORT.txt');

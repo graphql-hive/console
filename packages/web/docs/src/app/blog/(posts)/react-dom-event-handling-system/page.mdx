@@ -4,7 +4,7 @@ authors: eytan
 tags: [react, dom]
 date: 2018-10-22
 description: Getting to know React DOM's event handling system inside out.
-image: /medium/dff8edec78c39a832292c7435ee1213b.png
+image: ./dff8edec78c39a832292c7435ee1213b.png
 ---
 
 It all started when I've tried to redirect submitted React event handlers into another DOM element.
@@ -27,14 +27,14 @@ Summary of `ReactBrowserEventEmitter` event handling:
   - The `EventPluginHub` then dispatches the events.
 ```
 
-![](/medium/c7455683b79da1438932e5b04bb9cc36.png)
+![](./c7455683b79da1438932e5b04bb9cc36.png)
 
 > Source:
 > _[src/events/ReactBrowserEventEmitter.js:32](https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/react-dom/src/events/ReactBrowserEventEmitter.js#L32)_
 
 At the beginning this is what I saw:
 
-![](/medium/bb65d66b9bfbfdb35da621677cd25dd5.jpg)
+![](./bb65d66b9bfbfdb35da621677cd25dd5.jpg)
 
 But after debugging a little, going through the stack trace and some of React's documentation,
 things are much clearer now. Let's break it down then, and try to make things simpler.
@@ -71,7 +71,7 @@ event handlers of `keydown`type, we would get the following output:
 {click: Array(1), keydown: Array(1)}
 ```
 
-> **_Source:_**
+> **_Source:_** >
 > _[packages/react-dom/src/client/ReactDOMComponent.js:225](https://github.com/facebook/react/blob/8a8d973d3cc5623676a84f87af66ef9259c3937c/packages/react-dom/src/client/ReactDOMComponent.js#L225)_
 
 ```
@@ -97,14 +97,14 @@ event arguments will look like so:
 - **number** screen
 - **boolean** shiftKey
 
-> **_Docs:_** _[events:supported-events](https://reactjs.org/docs/events.html#supported-events)
-> **Source:**
+> **_Docs:_** _[events:supported-events](https://reactjs.org/docs/events.html#supported-events) >
+> **Source:** >
 > [packages/react-dom/src/events/SimpleEventPlugin.js:259](https://github.com/facebook/react/blob/master/packages/react-dom/src/events/SimpleEventPlugin.js#L259)_
 
 Since React is registering a single event listener per multiple handlers, it would need to
 re-dispatch the event for each and every handler.
 
-> **_Source:_**
+> **_Source:_** >
 > _[EventPluginHub.js:168](https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/events/EventPluginHub.js#L168)_
 
 ```
@@ -120,7 +120,7 @@ across most browsers like mouse events and key presses
 we also have the `ChangeEventPlugin`which will handle the very famous `onChange` event
 ([source](https://github.com/facebook/react/blob/master/packages/react-dom/src/events/ChangeEventPlugin.js)).
 
-> **_Source:_**
+> **_Source:_** >
 > [packages/events/EventPluginHub.js:168](https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/events/EventPluginHub.js#L168)
 
 Synthetic events are React's normalized event arguments which ensures that there's consistency
@@ -144,8 +144,8 @@ function onClick(event) {
 }
 ```
 
-> **_Docs:_** _[events:event-pooling](https://reactjs.org/docs/events.html#event-pooling)
-> **Source:**
+> **_Docs:_** _[events:event-pooling](https://reactjs.org/docs/events.html#event-pooling) >
+> **Source:** >
 > [packages/react-dom/src/events/SimpleEventPlugin.js:322](https://github.com/facebook/react/blob/master/packages/react-dom/src/events/SimpleEventPlugin.js#L322)_
 
 ```
@@ -157,7 +157,7 @@ being listened once by the real DOM. Accordingly, the relevant “dispatches” 
 handlers and their corresponding fiber nodes (nodes in the virtual DOM tree) need to be accumulated
 for future use.
 
-> **_Source:_**
+> **_Source:_** >
 > _[packages/events/EventPropagators.js:90](https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/events/EventPropagators.js#L90)_
 
 ```
@@ -167,7 +167,7 @@ The `EventPluginHub` then dispatches the events.
 The plug-in hub goes through the accumulated information and dispatches the events, thus invoking
 the submitted event handlers.
 
-> **_Source:_**
+> **_Source:_** >
 > _[packages/events/EventPluginUtils.js:77](https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/events/EventPluginUtils.js#L77)_
 
 So that's how that events handling system works in a nutshell. There are few things I would like you

@@ -4,7 +4,7 @@ authors: eytan
 tags: [javascript, babel]
 date: 2018-10-08
 description: The basics of AOT compilers and how to write Babel plug-ins.
-image: /medium/b00e12c482b6ba2f40860ff3471bc55c.png
+image: ./b00e12c482b6ba2f40860ff3471bc55c.png
 ---
 
 https://youtu.be/67DmVvjAdJU
@@ -49,7 +49,7 @@ function foo(x) {
 }
 ```
 
-![](/medium/b00e12c482b6ba2f40860ff3471bc55c.png)
+![](./b00e12c482b6ba2f40860ff3471bc55c.png)
 
 > _Example taken from
 > [Lachezar Nickolov's article](https://blog.sessionstack.com/how-javascript-works-parsing-abstract-syntax-trees-asts-5-tips-on-how-to-minimize-parse-time-abfcf7e8a0c8)
@@ -69,7 +69,7 @@ Babel is made out of numerous components which work together to bring the latest
 to life. Specifically the code transformation flow works with the following components and following
 relations:
 
-![](/medium/44878b4c39410ab4dd64d38230625752.png)
+![](./44878b4c39410ab4dd64d38230625752.png)
 
 - The parser parses the code string into a data representational structure called AST (abstract
   syntax tree) using
@@ -90,7 +90,7 @@ If you'll go to [astexplorer.net](https://dillinger.io/astexplorer.net) you'll f
 compiler that will transform code into AST. Let's take the code `foo = "foo"` as an example. The
 generated AST should look like so:
 
-![](/medium/7dcdb894fc6fc51790d358c69c98aefe.png)
+![](./7dcdb894fc6fc51790d358c69c98aefe.png)
 
 As you can see, each node in the tree represents a part of the code, and it's recursive. The
 assignment expression `foo = "foo"` uses the operator `=`, the operand on the left is an identifier
@@ -169,7 +169,7 @@ We will first take all global assignments and turn it into member assignment exp
 to prevent confusions and potential misunderstandings. I like to start by first exploring the
 desired AST output:
 
-![](/medium/f842356c49c8c281d1e2072723f92010.png)
+![](./f842356c49c8c281d1e2072723f92010.png)
 
 And then writing the plug-in itself accordingly:
 

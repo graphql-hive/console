@@ -4,7 +4,7 @@ authors: eytan
 tags: [react]
 date: 2018-11-05
 description: The challenges that I've faced and how I solved them.
-image: /medium/db6c7817bbaf73790065c3e1f8ebb835.png
+image: ./db6c7817bbaf73790065c3e1f8ebb835.png
 ---
 
 ## The Challenges That I've Faced and How I Solved Them
@@ -70,7 +70,7 @@ My tree is made out of 3 internal components:
   modified), and its children. This node is also used as a controller to directly control the node's
   metadata and update the view right after. More information about that further this article.
 
-![](/medium/db6c7817bbaf73790065c3e1f8ebb835.png 'A relational diagram of the tree')
+![](./db6c7817bbaf73790065c3e1f8ebb835.png 'A relational diagram of the tree')
 
 The recursion pattern in the diagram above is very clear to see. Programmatically speaking, this
 causes a problematic situation where each module is dependent on one another. So before FSNode.js
@@ -150,7 +150,7 @@ A floating tree makes complete sense. It nicely vertically aligns the nodes with
 deepness level we're currently at. The deeper we go the further away we'll get from the left edge,
 which will result in this nice staircase effect.
 
-![](/medium/97a3475a06a03454f868d7b3f894c1d3.png 'A floating tree')
+![](./97a3475a06a03454f868d7b3f894c1d3.png 'A floating tree')
 
 However, as you can see in the illustrated tree, when selecting a node it will not be fully
 stretched to the left, as it completely floats with the branch. The solutions for that would be a
@@ -162,7 +162,7 @@ This way the nodes will still be vertically aligned like a staircase, but now wh
 the highlight would appear all across the container. It's less intuitive and slightly harder to
 implement, but it does the job.
 
-![](/medium/e02fcb8858f8f24b40d4259001c474f0.png 'A padded tree')
+![](./e02fcb8858f8f24b40d4259001c474f0.png 'A padded tree')
 
 Programmatically speaking, this would require us to pass a counter that will indicate how deep the
 current branch is (n), and multiply it by a constant value for each of its nodes (x) (See
@@ -221,4 +221,4 @@ learnt.
 Below is the final result of the tree that I've created. Feel free to visit its
 [GitHub page](https://github.com/DAB0mB/react-fs-tree) or grab a copy using NPM.
 
-![](/medium/c8c1a6838b625929134696ac2cc64f8a.png '$ npm install react-fs-tree')
+![](./c8c1a6838b625929134696ac2cc64f8a.png '$ npm install react-fs-tree')
