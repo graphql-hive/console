@@ -50,6 +50,7 @@ export default gql`
   }
 
   input UpdateTargetDangerousChangeClassificationInput {
+    target: TargetReferenceInput!
     considerDangerousToBeBreaking: Boolean!
   }
 
