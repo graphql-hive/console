@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
@@ -1264,6 +1265,14 @@ const TargetSettingsPageQuery = graphql(`
   }
 `);
 
+function TargetInfo(props: { targetId: string }) {
+  return (
+    <div>
+      <ResourceDetails id={props.targetId} />
+    </div>
+  );
+}
+
 function TargetSettingsContent(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -1408,6 +1417,7 @@ function TargetSettingsContent(props: {
         <div className="space-y-12">
           {resolvedPage.key === 'general' ? (
             <>
+              <TargetInfo targetId={currentTarget.id} />
               <TargetSlug
                 targetSlug={props.targetSlug}
                 projectSlug={props.projectSlug}
