@@ -453,9 +453,8 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
 const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = graphql(`
   mutation TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation(
     $input: UpdateTargetDangerousChangeClassificationInput!
-    $target: TargetReferenceInput!
   ) {
-    updateTargetDangerousChangeClassification(input: $input, target: $target) {
+    updateTargetDangerousChangeClassification(input: $input) {
       ok {
         target {
           id
@@ -644,12 +643,12 @@ const BreakingChanges = (props: {
                 await updateTargetDangerousChangeClassification({
                   input: {
                     considerDangerousToBeBreaking,
-                  },
-                  target: {
-                    bySelector: {
-                      targetSlug: props.targetSlug,
-                      projectSlug: props.projectSlug,
-                      organizationSlug: props.organizationSlug,
+                    target: {
+                      bySelector: {
+                        targetSlug: props.targetSlug,
+                        projectSlug: props.projectSlug,
+                        organizationSlug: props.organizationSlug,
+                      },
                     },
                   },
                 });

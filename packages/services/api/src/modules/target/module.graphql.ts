@@ -22,7 +22,6 @@ export default gql`
     ): UpdateTargetGraphQLEndpointUrlResult!
     updateTargetDangerousChangeClassification(
       input: UpdateTargetDangerousChangeClassificationInput!
-      input: UpdateTargetDangerousChangeClassificationInput!
     ): UpdateTargetDangerousChangeClassificationResult!
     """
     Overwrites project's schema composition library.
