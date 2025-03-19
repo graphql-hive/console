@@ -17,16 +17,18 @@ You can use rate limiting feature in order to limit the rate of calling queries 
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
-  rateLimiting: [
-    {
-      type: 'Query',
-      field: 'foo',
-      max: 5, // requests limit for a time period
-      ttl: 5000, // time period
-      // You can use any value from the context
-      identifier: '{context.headers.authorization}'
-    }
-  ]
+  security: {
+    rateLimiting: [
+      {
+        type: 'Query',
+        field: 'foo',
+        max: 5, // requests limit for a time period
+        ttl: 5000, // time period
+        // You can use any value from the context
+        identifier: '{context.headers.authorization}'
+      }
+    ]
+  }
 })
 ```
 
@@ -36,9 +38,15 @@ export const gatewayConfig = defineConfig({
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
-  rateLimiting: true
+  security: {
+    rateLimiting: true
+  }
 })
 ```
+
+<Callout>
+  Rate limiting will also be enabled if the `security` option itself is set to `true`.
+</Callout>
 
 This approach follows the pattern of
 [`graphql-rate-limit`](https://github.com/teamplanes/graphql-rate-limit/blob/master/README.md#field-config).
