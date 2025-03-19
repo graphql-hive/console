@@ -5,7 +5,7 @@ import { CompanyNewsAndPressSection } from '../components/company-news-and-press
 
 export default function BlogPageLayout({ children }: { children: React.ReactNode }) {
   return (
-    <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden">
+    <LandingPageContainer className="text-green-1000 mx-auto max-w-[90rem] overflow-hidden dark:text-white">
       <HiveLayoutConfig widths="landing-narrow" />
       <BlogPageHero className="mx-4 max-sm:mt-2 md:mx-6" />
       {children}

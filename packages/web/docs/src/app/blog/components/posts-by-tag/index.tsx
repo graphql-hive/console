@@ -17,20 +17,15 @@ const TOP_10_TAGS = [
   'graphql-tools',
 ];
 
-export function PostsByTag({
-  posts,
-  tag,
-  className,
-}: {
-  posts: BlogPostFile[];
-  tag?: string;
-  className?: string;
-}) {
+export function PostsByTag(props: { posts: BlogPostFile[]; tag?: string; className?: string }) {
+  const { posts, className } = props;
+  const tag = props.tag ?? null;
+
   return (
     <section className={cn('px-4 sm:px-6', className)}>
-      <CategorySelect currentCategory={tag ?? null} categories={TOP_10_TAGS} />
-      <FeaturedPosts posts={posts} className="sm:mb-12" />
-      <LatestPosts posts={posts} />
+      <CategorySelect tag={tag} categories={TOP_10_TAGS} />
+      <FeaturedPosts posts={posts} className="sm:mb-12" tag={tag} />
+      <LatestPosts posts={posts} tag={tag} />
     </section>
   );
 }

@@ -8,9 +8,14 @@ export interface BlogCardProps {
   post: Pick<BlogPostFile, 'frontMatter' | 'route'>;
   className?: string;
   colorScheme?: 'default' | 'featured';
+  /**
+   * The tag to display on the card. If not provided, the first tag will be used.
+   * Used for tag index page, where we want to show all cards with the same tag.
+   */
+  tag?: string | null;
 }
 
-export function BlogCard({ post, className, colorScheme }: BlogCardProps) {
+export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
   const frontmatter = post.frontMatter;
   const { title, tags } = frontmatter;
   const date = new Date(frontmatter.date);
@@ -32,11 +37,15 @@ export function BlogCard({ post, className, colorScheme }: BlogCardProps) {
   const avatarSrc =
     firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`;
 
+  const TEMPORARY_SHOULD_BE_REMOVED =
+    !post.frontMatter.tags.includes('graphql') && post.frontMatter.tags.includes('graphql-hive');
+
   return (
     <Anchor
       className={cn(
         'group/card hive-focus hover:ring-beige-400 block rounded-2xl dark:ring-neutral-600 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600',
         className,
+        TEMPORARY_SHOULD_BE_REMOVED && 'ring-2 ring-red-600',
       )}
       href={post.route}
     >
@@ -57,8 +66,8 @@ export function BlogCard({ post, className, colorScheme }: BlogCardProps) {
                 : 'bg-beige-800 dark:bg-beige-800/40',
             )}
           >
-            {prettyPrintTag(tags[0])}
             {/* TODO: should we show all tags on hover? */}
+            {prettyPrintTag(tag ?? tags[0])}
           </span>
           <time
             dateTime={date.toISOString()}
