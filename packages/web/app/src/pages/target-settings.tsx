@@ -392,7 +392,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
   ) {
     target(selector: $selector) {
       id
-      considerDangerousToBeBreaking
+      failDangerousChecks
       validationSettings {
         ...TargetSettings_TargetValidationSettingsFragment
       }
@@ -433,7 +433,7 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
       ok {
         target {
           id
-          considerDangerousToBeBreaking
+          failDangerousChecks
           validationSettings {
             ...TargetSettings_TargetValidationSettingsFragment
           }
@@ -459,7 +459,7 @@ const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = gra
       ok {
         target {
           id
-          considerDangerousToBeBreaking
+          failDangerousChecks
         }
       }
       error {
@@ -509,8 +509,7 @@ const BreakingChanges = (props: {
     targetSettings.data?.target?.validationSettings,
   );
 
-  const considerDangerousAsBreaking =
-    targetSettings?.data?.target?.considerDangerousToBeBreaking || false;
+  const considerDangerousAsBreaking = targetSettings?.data?.target?.failDangerousChecks || false;
   const isEnabled = settings?.enabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
   const { toast } = useToast();
@@ -615,8 +614,8 @@ const BreakingChanges = (props: {
             <>
               <CardDescription className="max-w-[700px]">
                 Dangerous changes are not technically breaking the protocol, but could cause issues
-                for consumers of the schema. Failing schema checks for dangerous changes helps safeguard
-                against these situations by requiring approval for dangerous changes.
+                for consumers of the schema. Failing schema checks for dangerous changes helps
+                safeguard against these situations by requiring approval for dangerous changes.
                 <br />
                 <br />
                 Before enabling this feature, be sure "contextId" is used on schema checks.
@@ -640,10 +639,10 @@ const BreakingChanges = (props: {
             <Switch
               className="shrink-0"
               checked={considerDangerousAsBreaking}
-              onCheckedChange={async considerDangerousToBeBreaking => {
+              onCheckedChange={async failDangerousChecks => {
                 await updateTargetDangerousChangeClassification({
                   input: {
-                    considerDangerousToBeBreaking,
+                    failDangerousChecks,
                     target: {
                       bySelector: {
                         targetSlug: props.targetSlug,
@@ -1381,7 +1380,7 @@ function TargetSettingsContent(props: {
     );
   }
 
-  if (!resolvedPage || !currentProject || !currentTarget || !currentOrganization) {
+  if (!resolvedPage || !currentOrganization || !currentProject || !currentTarget) {
     return null;
   }
 

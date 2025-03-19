@@ -366,8 +366,8 @@ export interface target_validation {
 export interface targets {
   base_schema: string | null;
   clean_id: string;
-  consider_dangerous_breaking: boolean;
   created_at: Date;
+  fail_dangerous_checks: boolean;
   graphql_endpoint_url: string | null;
   id: string;
   name: string;

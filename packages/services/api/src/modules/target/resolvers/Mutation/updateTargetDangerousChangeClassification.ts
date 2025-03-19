@@ -4,7 +4,7 @@ import { MutationResolvers } from './../../../../__generated__/types';
 
 export const updateTargetDangerousChangeClassification: NonNullable<
   MutationResolvers['updateTargetDangerousChangeClassification']
-> = async (_, { input: { considerDangerousToBeBreaking, target: targetRef } }, { injector }) => {
+> = async (_, { input: { failDangerousChecks, target: targetRef } }, { injector }) => {
   const targetManager = injector.get(TargetManager);
   let targetId: string, projectId: string, organizationId: string;
   if (targetRef.byId) {
@@ -24,7 +24,7 @@ export const updateTargetDangerousChangeClassification: NonNullable<
   }
 
   await targetManager.updateTargetDangerousChangeClassification({
-    considerDangerousToBeBreaking,
+    failDangerousChecks,
     targetId,
     projectId,
     organizationId,

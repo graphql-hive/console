@@ -425,7 +425,7 @@ export class RegistryChecks {
     approvedChanges: null | Map<string, SchemaChangeType>;
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
-    considerDangerousToBeBreaking: null | boolean;
+    failDangerousChecks: null | boolean;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -545,7 +545,7 @@ export class RegistryChecks {
     for (const change of inspectorChanges) {
       if (
         change.criticality === CriticalityLevel.Breaking ||
-        (args.considerDangerousToBeBreaking && change.criticality === CriticalityLevel.Dangerous)
+        (args.failDangerousChecks && change.criticality === CriticalityLevel.Dangerous)
       ) {
         if (change.isSafeBasedOnUsage === true) {
           breakingChanges.push(change);

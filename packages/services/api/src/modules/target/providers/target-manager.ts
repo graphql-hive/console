@@ -227,7 +227,7 @@ export class TargetManager {
   }
 
   async updateTargetDangerousChangeClassification(
-    input: Pick<TargetSettings, 'considerDangerousToBeBreaking'> & TargetSelector,
+    input: Pick<TargetSettings, 'failDangerousChecks'> & TargetSelector,
   ): Promise<TargetSettings> {
     this.logger.debug('Updating target dangerous change classification (input=%o)', input);
     await this.session.assertPerformAction({

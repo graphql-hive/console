@@ -50,7 +50,7 @@ export default gql`
 
   input UpdateTargetDangerousChangeClassificationInput {
     target: TargetReferenceInput!
-    considerDangerousToBeBreaking: Boolean!
+    failDangerousChecks: Boolean!
   }
 
   type UpdateTargetDangerousChangeClassificationOk {
@@ -204,7 +204,7 @@ export default gql`
     The endpoint url of the target's explorer instance.
     """
     graphqlEndpointUrl: String
-    considerDangerousToBeBreaking: Boolean!
+    failDangerousChecks: Boolean!
     validationSettings: TargetValidationSettings!
     experimental_forcedLegacySchemaComposition: Boolean!
     viewerCanAccessSettings: Boolean!
