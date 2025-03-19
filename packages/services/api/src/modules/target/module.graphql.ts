@@ -21,7 +21,7 @@ export default gql`
       input: UpdateTargetGraphQLEndpointUrlInput!
     ): UpdateTargetGraphQLEndpointUrlResult!
     updateTargetDangerousChangeClassification(
-      target: TargetReferenceInput!
+      input: UpdateTargetDangerousChangeClassificationInput!
       input: UpdateTargetDangerousChangeClassificationInput!
     ): UpdateTargetDangerousChangeClassificationResult!
     """
