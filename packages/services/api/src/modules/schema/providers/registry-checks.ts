@@ -2,7 +2,7 @@ import { URL } from 'node:url';
 import type { GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel, Rule } from '@graphql-inspector/core';
+import { CriticalityLevel } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -463,11 +463,7 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    let inspectorChanges = await this.inspector.diff(
-      existingSchema,
-      incomingSchema,
-      args.considerDangerousToBeBreaking ? [dangerousBreaking] : undefined,
-    );
+    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
 
     // Filter out federation specific changes as they are not relevant for the schema diff and were in previous schema versions by accident.
     if (args.filterOutFederationChanges === true) {
@@ -547,7 +543,10 @@ export class RegistryChecks {
     const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
 
     for (const change of inspectorChanges) {
-      if (change.criticality === CriticalityLevel.Breaking) {
+      if (
+        change.criticality === CriticalityLevel.Breaking ||
+        (args.considerDangerousToBeBreaking && change.criticality === CriticalityLevel.Dangerous)
+      ) {
         if (change.isSafeBasedOnUsage === true) {
           breakingChanges.push(change);
           continue;
@@ -859,19 +858,3 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
 }
-
-const dangerousBreaking: Rule = ({ changes }) => {
-  return changes.map(change => {
-    if (change.criticality.level === CriticalityLevel.Dangerous) {
-      return {
-        ...change,
-        criticality: {
-          ...change.criticality,
-          level: CriticalityLevel.Breaking,
-        },
-      };
-    }
-
-    return change;
-  });
-};

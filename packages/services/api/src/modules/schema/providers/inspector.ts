@@ -10,7 +10,7 @@ import {
   type GraphQLSchema,
 } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
-import { Change, ChangeType, diff, Rule } from '@graphql-inspector/core';
+import { Change, ChangeType, diff } from '@graphql-inspector/core';
 import { traceFn } from '@hive/service-common';
 import { HiveSchemaChangeModel } from '@hive/storage';
 import { Logger } from '../../shared/providers/logger';
@@ -31,10 +31,10 @@ export class Inspector {
       'hive.diff.changes.count': result.length,
     }),
   })
-  async diff(existing: GraphQLSchema, incoming: GraphQLSchema, rules?: Rule[]) {
+  async diff(existing: GraphQLSchema, incoming: GraphQLSchema) {
     this.logger.debug('Comparing Schemas');
 
-    const changes = await diff(existing, incoming, rules);
+    const changes = await diff(existing, incoming);
 
     return changes
       .filter(dropTrimmedDescriptionChangedChange)
