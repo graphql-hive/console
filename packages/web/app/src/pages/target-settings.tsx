@@ -610,12 +610,12 @@ const BreakingChanges = (props: {
     <>
       <SubPageLayout>
         <SubPageLayoutHeader
-          subPageTitle="Consider Dangerous Changes to be Breaking"
+          subPageTitle="Fail Checks for Dangerous Changes"
           description={
             <>
               <CardDescription className="max-w-[700px]">
                 Dangerous changes are not technically breaking the protocol, but could cause issues
-                for consumers of the schema. Treating dangerous changes as breaking helps safeguard
+                for consumers of the schema. Failing schema checks for dangerous changes helps safeguard
                 against these situations by requiring approval for dangerous changes.
                 <br />
                 <br />

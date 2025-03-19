@@ -96,10 +96,9 @@ enum value.
 
 These have potentially negative side effects (I.e. outages or unhandled responses) depending on how
 consumers of your schema handle these cases. In order to protect clients from these changes, you can
-enable the option to "Consider Dangerous Changes to be Breaking". This setting can be found under
-the target's Settings "Breaking Changes" tab. Enabling this will cause dangerous changes to be
-flagged as breaking, which will require
-[Breaking change approval](/docs/schema-registry#approve-breaking-schema-changes) to publish.
+enable the option to "Fail Checks for Dangerous Changes". This setting can be found under
+the target's Settings "Breaking Changes" tab. Enabling this will cause dangerous changes to require
+[Breaking change approval](/docs/schema-registry#approve-breaking-schema-changes) in order to publish.
 
 ### Schema Extensions
 
