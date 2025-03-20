@@ -379,9 +379,7 @@ target "apollo-router" {
 
 target "otel-collector" {
   inherits = ["otel-collector-base", get_target()]
-  contexts = {
-    config = "${PWD}/docker/configs/otel-collector"
-  }
+  context = "${PWD}/docker/configs/otel-collector"
   args = {
     IMAGE_TITLE = "graphql-hive/otel-collector"
     IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
