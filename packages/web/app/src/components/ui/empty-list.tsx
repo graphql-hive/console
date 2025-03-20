@@ -69,7 +69,7 @@ export const NoSchemaVersion = ({
           </div>
           <div className="flex w-full justify-center">
             <Code>
-              {`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+              {`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''} --target "<org>/<project>/<target>" <path/schema.graphql>`}
             </Code>
           </div>
         </>
@@ -85,7 +85,7 @@ export const NoSchemaVersion = ({
           )}
           <div className="flex w-full justify-center">
             <Code>
-              {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''}<path/schema.graphql>`}
+              {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''} --target "<org>/<project>/<target>" <path/schema.graphql>`}
             </Code>
           </div>
         </>
