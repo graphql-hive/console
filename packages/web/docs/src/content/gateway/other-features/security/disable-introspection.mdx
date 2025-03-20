@@ -52,3 +52,29 @@ export const gatewayConfig = defineConfig({
   }
 })
 ```
+
+## Blocking Field Suggestions
+
+When executing invalid GraphQL operation the GraphQL engine will try to construct smart suggestions
+that hint typos in the executed GraphQL document. This can be considered a security issue, as it can
+leak information about the GraphQL schema, even if introspection is disabled.
+
+Tools like [Clairvoyance](https://github.com/nikitastupin/clairvoyance) can exploit the smart
+suggestions and brute-force obtaining the GraphQL schema even if the introspection has been
+disabled.
+
+[Enabling the `blockFieldSuggestions` option](/docs/gateway/other-features/security/block-field-suggestions)
+will disable these smart suggestions and therefore prevent schema leaking.
+
+Combined with the `disableIntrospection` option, you can make your schema more secure.
+
+```ts filename="gateway.config.ts" {7}
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  disableIntrospection: {
+    disableIf: () => true
+  },
+  blockFieldSuggestions: true
+})
+```
