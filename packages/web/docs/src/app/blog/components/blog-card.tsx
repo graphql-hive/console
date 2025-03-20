@@ -1,6 +1,3 @@
-'use client';
-
-import { useEffect } from 'react';
 import Image from 'next/image';
 import { Anchor, cn } from '@theguild/components';
 import { Author, AuthorId, authors } from '../../../authors';
@@ -40,27 +37,11 @@ export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
   const avatarSrc =
     firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`;
 
-  const TEMPORARY_SHOULD_BE_REMOVED =
-    !post.frontMatter.tags.includes('graphql') &&
-    !post.frontMatter.tags.includes('graphql-hive') &&
-    !post.frontMatter.tags.includes('codegen') &&
-    post.route.startsWith('/');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !TEMPORARY_SHOULD_BE_REMOVED) {
-      (window as any).__POSTS_TO_KEEP_IN_OLD_BLOG ||= new Set();
-      (window as any).__POSTS_TO_KEEP_IN_OLD_BLOG.add(post.route);
-    }
-  }, [post.route]);
-
-  console.log(post.route, TEMPORARY_SHOULD_BE_REMOVED);
-
   return (
     <Anchor
       className={cn(
         'group/card hive-focus hover:ring-beige-400 block rounded-2xl dark:ring-neutral-600 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600',
         className,
-        TEMPORARY_SHOULD_BE_REMOVED && 'ring-2 ring-red-600',
       )}
       href={post.route}
     >

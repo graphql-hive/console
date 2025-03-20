@@ -29,7 +29,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
               frontMatter: {
                 title: 'The Guild acquires Stellate',
                 authors: ['uri'],
-                tags: ['Company'],
+                tags: ['Company', 'GraphQL'],
                 date: '2024-09-10',
               },
             }}
