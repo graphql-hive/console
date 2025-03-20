@@ -125,7 +125,7 @@ export default gql`
     period: Int!
     percentage: Float!
     requestCount: Int! = 1
-    breakingChangeFormula: BreakingChangeFormula!
+    breakingChangeFormula: BreakingChangeFormula! = PERCENTAGE
     targetIds: [ID!]!
     excludedClients: [String!]
   }
