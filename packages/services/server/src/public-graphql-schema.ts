@@ -49,8 +49,10 @@ export function createPublicGraphQLSchema<TContext>(registry: Registry) {
   ]);
 
   if (compositionResult.type === 'failure') {
-    // TODO: print errors
-    throw new Error('Could not create public GraphQL schema.');
+    throw new Error(
+      'Could not create public GraphQL schema.\nEncountered the following composition errors:\n' +
+        compositionResult.result.errors.map(error => `- ${error.message}`).join('\n'),
+    );
   }
 
   return createSchema<TContext>({
