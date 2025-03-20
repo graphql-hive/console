@@ -18,11 +18,11 @@ export default gql`
   ) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION | SCHEMA
 
   type Query {
-    noop: Boolean @tag(name: "public")
+    _: Boolean @tag(name: "public")
   }
 
   type Mutation {
-    noop(noop: String): Boolean @tag(name: "public")
+    _: Boolean @tag(name: "public")
   }
 
   type PageInfo {
