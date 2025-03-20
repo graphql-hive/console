@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { Anchor, cn } from '@theguild/components';
 import { Author, AuthorId, authors } from '../../../authors';
@@ -40,11 +43,17 @@ export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
   const TEMPORARY_SHOULD_BE_REMOVED =
     !post.frontMatter.tags.includes('graphql') &&
     !post.frontMatter.tags.includes('graphql-hive') &&
+    !post.frontMatter.tags.includes('codegen') &&
     post.route.startsWith('/');
 
-  if (TEMPORARY_SHOULD_BE_REMOVED) {
-    console.log(post.route);
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !TEMPORARY_SHOULD_BE_REMOVED) {
+      (window as any).__POSTS_TO_KEEP_IN_OLD_BLOG ||= new Set();
+      (window as any).__POSTS_TO_KEEP_IN_OLD_BLOG.add(post.route);
+    }
+  }, [post.route]);
+
+  console.log(post.route, TEMPORARY_SHOULD_BE_REMOVED);
 
   return (
     <Anchor

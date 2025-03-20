@@ -25,7 +25,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
         <li>
           <BlogCard
             post={{
-              route: 'https://the-guild.dev/blog/stellate-acquisition',
+              route: '/blog/stellate-acquisition',
               frontMatter: {
                 title: 'The Guild acquires Stellate',
                 authors: ['uri'],
