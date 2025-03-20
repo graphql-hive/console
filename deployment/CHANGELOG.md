@@ -1,5 +1,72 @@
 # hive
 
+## 6.0.0
+
+### Major Changes
+
+- [#6556](https://github.com/graphql-hive/console/pull/6556)
+  [`7b9129c`](https://github.com/graphql-hive/console/commit/7b9129cd86d4d76873734426b7044203bb389a2c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add organization access tokens; a new way to issue
+  access tokens for performing actions with the CLI and doing usage reporting.
+
+  **Breaking Change:** The `usage` service now requires environment variables for Postgres
+  (`POSTGRES_SSL`, `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`,
+  `POSTGRES_PASSWORD`) and Redis (`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`,
+  `REDIS_TLS_ENABLED`).
+
+  For more information please refer to the organization access token documentation.
+
+  - [Product Update: Organization-Level Access Tokens for Enhanced Security & Flexibility](https://the-guild.dev/graphql/hive/product-updates/2025-03-10-new-access-tokens)
+  - [Migration Guide: Moving from Registry Access Tokens to Access Tokens](https://the-guild.dev/graphql/hive/docs/migration-guides/organization-access-tokens)
+  - [Access Token Documentation](https://the-guild.dev/graphql/hive/docs/management/access-tokens)
+
+- [#6613](https://github.com/graphql-hive/console/pull/6613)
+  [`0fd4d96`](https://github.com/graphql-hive/console/commit/0fd4d966ab6f01cd16a5716e1c33363ca5771127)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Restructure the environment variables used for the
+  Hive Cloud hosting. While this is techincally a breaking change it will not really affect people
+  self-hosting Hive.
+
+  **Breaking**: Remove unused environment variable options `HIVE_REPORTING`,
+  `HIVE_REPORTING_ENDPOINT` and `HIVE_USAGE_DATA_RETENTION_PURGE_INTERVAL_MINUTES` from the `server`
+  service.
+
+  These environment variables are obsolete since the Hive GraphQL schema is reported via the Hive
+  CLI instead.
+
+  **Breaking**: Replace the environment variable option `HIVE` with `HIVE_USAGE`, rename environment
+  variable option `HIVE_API_TOKEN` to `HIVE_USAGE_ACCESS_TOKEN` for the `server` service. Require
+  providing the `HIVE_USAGE_ACCESS_TOKEN` environment variable if `HIVE_USAGE` is set to `1`.
+
+### Patch Changes
+
+- [#6594](https://github.com/graphql-hive/console/pull/6594)
+  [`06e7012`](https://github.com/graphql-hive/console/commit/06e70129689570f3602cd01eae4ef7f1dfe24f00)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix insights range if selecting same start and end
+
+- [#6633](https://github.com/graphql-hive/console/pull/6633)
+  [`a5e00f2`](https://github.com/graphql-hive/console/commit/a5e00f260a6f21b3207fc8257c302e68a0d671b1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix Federation composition error when having an
+  inaccessible default value on an inaccessible field.
+
+- [#6609](https://github.com/graphql-hive/console/pull/6609)
+  [`1c44345`](https://github.com/graphql-hive/console/commit/1c4434522385c744bd484f7964d3c92f73f3641f)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Mark usage-ingestor as unhealthy when
+  Kafka consumer crashed
+
+- [#6584](https://github.com/graphql-hive/console/pull/6584)
+  [`d1e6ab0`](https://github.com/graphql-hive/console/commit/d1e6ab094b881a6ce08c55f68a8ecd6018c47613)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add readonly resource ID to settings pages
+
+- [#6585](https://github.com/graphql-hive/console/pull/6585)
+  [`c0d9ca3`](https://github.com/graphql-hive/console/commit/c0d9ca30d4c360e75be7902d2693303ffe622975)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restrict new service names to 64 characters,
+  alphanumberic, `_` and `-`.
+
+- [#6607](https://github.com/graphql-hive/console/pull/6607)
+  [`18f82b4`](https://github.com/graphql-hive/console/commit/18f82b4e3fddb507f685cb85d48e3f42a87a0039)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Ensure all materialized views have
+  correct TTL
+
 ## 5.1.3
 
 ### Patch Changes
