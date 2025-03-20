@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
@@ -319,6 +320,7 @@ const ProjectSettingsPage_OrganizationFragment = graphql(`
 
 const ProjectSettingsPage_ProjectFragment = graphql(`
   fragment ProjectSettingsPage_ProjectFragment on Project {
+    id
     slug
     type
     isProjectNameInGitHubCheckEnabled
@@ -399,6 +401,7 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
       <div className="flex flex-col gap-y-4">
         {project && organization ? (
           <>
+            <ResourceDetails id={project.id} />
             <ProjectSettingsPage_SlugForm
               organizationSlug={props.organizationSlug}
               projectSlug={props.projectSlug}

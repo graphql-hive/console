@@ -9,9 +9,13 @@ on:
 jobs:
   update:
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 1
 
@@ -22,7 +26,7 @@ jobs:
           actor: apollo-router-updater
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
           toolchain: '1.84.1'
           default: true
@@ -39,9 +43,9 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check.outputs.update == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
-          token: ${{ secrets.GUILD_BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Update apollo-router to version ${{ steps.check.outputs.version }}
           branch: apollo-router-update-${{ steps.check.outputs.version }}
           delete-branch: true

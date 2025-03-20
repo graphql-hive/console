@@ -41,6 +41,11 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
     type: 'page',
     display: 'hidden',
   },
+  gateway: {
+    title: 'Gateway',
+    type: 'page',
+    display: 'hidden',
+  },
   products: {
     title: 'Products',
     type: 'menu',

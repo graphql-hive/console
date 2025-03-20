@@ -33,10 +33,10 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
-          token: ${{ secrets.GUILD_BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup environment
         uses: ./.github/actions/setup
@@ -56,14 +56,14 @@ jobs:
 
       - name: publish stable
         id: changesets
-        uses: changesets/action@v1.4.9
+        uses: changesets/action@06245a4e0a36c064a573d4150030f5ec548e4fcc # v1.4.10
         with:
           publish: pnpm release
           version: pnpm release:version
           commit: 'chore(release): update monorepo packages versions'
           title: 'Upcoming Release Changes'
         env:
-          GITHUB_TOKEN: ${{ secrets.GUILD_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: extract published cli version
         if:
