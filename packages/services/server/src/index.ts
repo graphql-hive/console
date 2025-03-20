@@ -593,7 +593,7 @@ export async function main() {
       return;
     });
 
-    createOtelAuthEndpoint(server);
+    createOtelAuthEndpoint({ server, authN, redis, pgPool: storage.pool, tracing: !!tracing });
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

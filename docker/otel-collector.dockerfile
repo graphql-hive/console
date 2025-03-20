@@ -1,3 +1,7 @@
+FROM scratch AS config
+
+COPY builder-config.yaml .
+
 FROM golang:1.23.7-bookworm AS builder
 
 ARG OTEL_VERSION=0.122.0
@@ -10,7 +14,7 @@ RUN go install go.opentelemetry.io/collector/cmd/builder@v${OTEL_VERSION}
 COPY --from=config builder-config.yaml .
 
 # Build the custom collector
-RUN builder --config=/build/builder-config.yaml
+RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
 
 # Stage 2: Final Image
 FROM alpine:3.14
