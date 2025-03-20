@@ -22,6 +22,7 @@ export function prepareEnvironment(input: {
       : input.environment;
 
   const appDns = `app.${input.rootDns}`;
+  const apiDns = `api.${input.rootDns}`;
 
   return {
     envVars: {
@@ -38,6 +39,7 @@ export function prepareEnvironment(input: {
     encryptionSecret,
     release: input.release,
     appDns,
+    apiDns,
     rootDns: input.rootDns,
   };
 }
