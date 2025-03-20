@@ -7,20 +7,36 @@ import { Callout } from '@theguild/components'
 # Block Field Suggestions
 
 This is a feature that allows you to prevent **returning field suggestions** and **leaking your
-schema** to unauthorized actors provided by
-[GraphQL Armor](https://escape.tech/graphql-armor/docs/plugins/block-field-suggestions/)
+schema** to unauthorized actors. In production, this can lead to leaking schema information even if
+the introspection is disabled.
 
-In production, this can lead to Schema leak even if the introspection is disabled.
+## Basic Configuration
 
-## How to use?
+<Callout type="info">
+  Powered by [GraphQL
+  Armor](https://escape.tech/graphql-armor/docs/plugins/block-field-suggestions/).
+</Callout>
 
-Install the plugin:
+Hive Gateway ships with the basic "block field suggestion" security feature. You can enable it by
+setting the `blockFieldSuggestions` option to `true`.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  blockFieldSuggestions: true
+})
+```
+
+## Advanced Configuration
+
+The built-in configuration options are limited and should be enough for most use-cases. However, if
+you need more control, you can configure more by installing the
+[GraphQL Armor Block Field Suggestions plugin](https://escape.tech/graphql-armor/docs/plugins/block-field-suggestions/).
 
 ```sh npm2yarn
 npm install @escape.tech/graphql-armor-block-field-suggestions
 ```
-
-Then, add it to your plugins:
 
 ```ts filename="gateway.config.ts"
 import { blockFieldSuggestionsPlugin } from '@escape.tech/graphql-armor-block-field-suggestions'

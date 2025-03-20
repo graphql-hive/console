@@ -1,5 +1,24 @@
 # @graphql-hive/cli
 
+## 0.49.1
+
+### Patch Changes
+
+- [#6633](https://github.com/graphql-hive/console/pull/6633)
+  [`a5e00f2`](https://github.com/graphql-hive/console/commit/a5e00f260a6f21b3207fc8257c302e68a0d671b1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix Federation composition error when having an
+  inaccessible default value on an inaccessible field.
+
+- [#6585](https://github.com/graphql-hive/console/pull/6585)
+  [`c0d9ca3`](https://github.com/graphql-hive/console/commit/c0d9ca30d4c360e75be7902d2693303ffe622975)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restrict new service names to 64 characters,
+  alphanumberic, `_` and `-`.
+
+- Updated dependencies
+  [[`ee70018`](https://github.com/graphql-hive/console/commit/ee7001883970fac81210ec21ce70a72bfd3b67bb),
+  [`a003f78`](https://github.com/graphql-hive/console/commit/a003f781cb1a38d8b00a3256163c50e3893db5f2)]:
+  - @graphql-hive/core@0.10.1
+
 ## 0.49.0
 
 ### Minor Changes
