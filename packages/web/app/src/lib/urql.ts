@@ -22,7 +22,7 @@ export const urqlClient = createClient({
   url: env.graphqlPublicEndpoint,
   fetchOptions: {
     headers: {
-      'graphql-client-name': 'Hive App',
+      'graphql-client-name': 'hive-app',
       'graphql-client-version': env.release,
     },
   },
