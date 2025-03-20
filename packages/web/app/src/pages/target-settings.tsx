@@ -392,7 +392,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
   ) {
     target(selector: $selector) {
       id
-      failDangerousChecks
+      failDiffOnDangerousChange
       validationSettings {
         ...TargetSettings_TargetValidationSettingsFragment
       }
@@ -433,7 +433,7 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
       ok {
         target {
           id
-          failDangerousChecks
+          failDiffOnDangerousChange
           validationSettings {
             ...TargetSettings_TargetValidationSettingsFragment
           }
@@ -459,7 +459,7 @@ const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = gra
       ok {
         target {
           id
-          failDangerousChecks
+          failDiffOnDangerousChange
         }
       }
       error {
@@ -509,7 +509,8 @@ const BreakingChanges = (props: {
     targetSettings.data?.target?.validationSettings,
   );
 
-  const considerDangerousAsBreaking = targetSettings?.data?.target?.failDangerousChecks || false;
+  const considerDangerousAsBreaking =
+    targetSettings?.data?.target?.failDiffOnDangerousChange || false;
   const isEnabled = settings?.enabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
   const { toast } = useToast();
@@ -639,10 +640,10 @@ const BreakingChanges = (props: {
             <Switch
               className="shrink-0"
               checked={considerDangerousAsBreaking}
-              onCheckedChange={async failDangerousChecks => {
+              onCheckedChange={async failDiffOnDangerousChange => {
                 await updateTargetDangerousChangeClassification({
                   input: {
-                    failDangerousChecks,
+                    failDiffOnDangerousChange,
                     target: {
                       bySelector: {
                         targetSlug: props.targetSlug,

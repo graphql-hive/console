@@ -173,7 +173,7 @@ export class SchemaPublisher {
     };
   }): Promise<{
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration | null;
-    failDangerousChecks: boolean;
+    failDiffOnDangerousChange: boolean;
   }> {
     try {
       const settings = await this.storage.getTargetSettings(selector);
@@ -182,7 +182,7 @@ export class SchemaPublisher {
         this.logger.debug('Usage validation disabled');
         this.logger.debug('Mark all as used');
         return {
-          failDangerousChecks: settings.failDangerousChecks,
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
         };
       }
@@ -191,7 +191,7 @@ export class SchemaPublisher {
         this.logger.debug('Usage validation enabled but no targets to check against');
         this.logger.debug('Mark all as used');
         return {
-          failDangerousChecks: settings.failDangerousChecks,
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
           conditionalBreakingChangeConfiguration: null,
         };
       }
@@ -227,7 +227,7 @@ export class SchemaPublisher {
           breakingChangeFormula: settings.validation.breakingChangeFormula,
           totalRequestCount,
         },
-        failDangerousChecks: settings.failDangerousChecks,
+        failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
       };
     } catch (error: unknown) {
       this.logger.error(`Failed to get settings`, error);
@@ -554,7 +554,7 @@ export class SchemaPublisher {
       );
     });
 
-    const { conditionalBreakingChangeConfiguration, failDangerousChecks } =
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
       await this.getBreakingChangeConfiguration({
         selector,
       });
@@ -591,7 +591,7 @@ export class SchemaPublisher {
           approvedChanges: approvedSchemaChanges,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-          failDangerousChecks,
+          failDiffOnDangerousChange,
         });
         break;
       case ProjectType.FEDERATION:
@@ -636,7 +636,7 @@ export class SchemaPublisher {
             })) ?? null,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-          failDangerousChecks,
+          failDiffOnDangerousChange,
         });
         break;
       default:
@@ -1328,7 +1328,7 @@ export class SchemaPublisher {
           } as const;
         }
 
-        const { conditionalBreakingChangeConfiguration, failDangerousChecks } =
+        const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
           await this.getBreakingChangeConfiguration({
             selector: {
               targetId: selector.targetId,
@@ -1371,7 +1371,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
-          failDangerousChecks,
+          failDiffOnDangerousChange,
         });
 
         let diffSchemaVersionId: string | null = null;
@@ -1661,7 +1661,7 @@ export class SchemaPublisher {
 
     this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
 
-    const { conditionalBreakingChangeConfiguration, failDangerousChecks } =
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
       await this.getBreakingChangeConfiguration({
         selector: {
           organizationId: organization.id,
@@ -1722,7 +1722,7 @@ export class SchemaPublisher {
           baseSchema,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-          failDangerousChecks,
+          failDiffOnDangerousChange,
         });
         break;
       case ProjectType.FEDERATION:
@@ -1757,7 +1757,7 @@ export class SchemaPublisher {
           contracts,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
-          failDangerousChecks,
+          failDiffOnDangerousChange,
         });
         break;
       default: {

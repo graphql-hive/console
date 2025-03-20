@@ -7,6 +7,6 @@ export default {
     ALTER TABLE
       targets
     ADD COLUMN
-      fail_dangerous_checks BOOLEAN NOT NULL DEFAULT FALSE;
+      fail_diff_on_dangerous_change BOOLEAN NOT NULL DEFAULT FALSE;
   `,
 } satisfies MigrationExecutor;

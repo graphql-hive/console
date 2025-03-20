@@ -322,7 +322,7 @@ export interface Storage {
   ): Promise<TargetSettings['validation'] | never>;
 
   updateTargetDangerousChangeClassification(
-    _: TargetSelector & Pick<TargetSettings, 'failDangerousChecks'>,
+    _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
   ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
 
   countSchemaVersionsOfProject(

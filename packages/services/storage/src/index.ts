@@ -361,13 +361,13 @@ export async function createStorage(
       | 'validation_excluded_clients'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
-      | 'fail_dangerous_checks'
+      | 'fail_diff_on_dangerous_change'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
   ): TargetSettings {
     return {
-      failDangerousChecks: row.fail_dangerous_checks,
+      failDiffOnDangerousChange: row.fail_diff_on_dangerous_change,
       validation: {
         enabled: row.validation_enabled,
         percentage: row.validation_percentage,
@@ -1796,7 +1796,7 @@ export async function createStorage(
           | 'validation_excluded_clients'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
-          | 'fail_dangerous_checks'
+          | 'fail_diff_on_dangerous_change'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1809,7 +1809,7 @@ export async function createStorage(
           t.validation_request_count,
           t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets,
-          t.fail_dangerous_checks
+          t.fail_diff_on_dangerous_change
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1841,7 +1841,7 @@ export async function createStorage(
               | 'validation_excluded_clients'
               | 'validation_breaking_change_formula'
               | 'validation_request_count'
-              | 'fail_dangerous_checks'
+              | 'fail_diff_on_dangerous_change'
             > & {
               targets: target_validation['destination_target_id'][];
             }
@@ -1860,7 +1860,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
           WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_dangerous_checks;
+          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
         `);
         }),
       ).validation;
@@ -1868,13 +1868,13 @@ export async function createStorage(
     async updateTargetDangerousChangeClassification({
       targetId: target,
       projectId: project,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     }) {
       return transformTargetSettings(
         await tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
           return trx.one(sql`/* updateTargetValidationSettings */
             UPDATE targets as t
-            SET fail_dangerous_checks = ${failDangerousChecks}
+            SET fail_diff_on_dangerous_change = ${failDiffOnDangerousChange}
             FROM (
               SELECT
                 it.id,
@@ -1886,7 +1886,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_dangerous_checks;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
           `);
         }),
       );
@@ -1940,7 +1940,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_dangerous_checks;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
           `);
         }),
       ).validation;
@@ -5179,7 +5179,7 @@ const targetSQLFields = sql`
   "name",
   "project_id" as "projectId",
   "graphql_endpoint_url" as "graphqlEndpointUrl",
-  "fail_dangerous_checks" as "failDangerousChecks"
+  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
 `;
 
 export function findTargetById(deps: { pool: DatabasePool }) {
@@ -5249,7 +5249,7 @@ const TargetModel = zod.object({
   name: zod.string(),
   projectId: zod.string(),
   graphqlEndpointUrl: zod.string().nullable(),
-  failDangerousChecks: zod.boolean(),
+  failDiffOnDangerousChange: zod.boolean(),
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({

@@ -53,7 +53,7 @@ export class CompositeModel {
     > | null;
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
-    failDangerousChecks: null | boolean;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
@@ -81,7 +81,7 @@ export class CompositeModel {
             approvedChanges: contract.approvedChanges ?? null,
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
-            failDangerousChecks: args.failDangerousChecks,
+            failDiffOnDangerousChange: args.failDiffOnDangerousChange,
           }),
         };
       }),
@@ -106,7 +106,7 @@ export class CompositeModel {
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
     contracts,
-    failDangerousChecks,
+    failDiffOnDangerousChange,
   }: {
     input: {
       sdl: string;
@@ -134,7 +134,7 @@ export class CompositeModel {
     organization: Organization;
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
-    failDangerousChecks: null | boolean;
+    failDiffOnDangerousChange: null | boolean;
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -226,7 +226,7 @@ export class CompositeModel {
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
     this.logger.info('Contract checks: %o', contractChecks);
 
@@ -239,7 +239,7 @@ export class CompositeModel {
         incomingSdl:
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
-        failDangerousChecks,
+        failDiffOnDangerousChange,
       }),
       this.checks.policyCheck({
         selector,
@@ -310,7 +310,7 @@ export class CompositeModel {
     baseSchema,
     contracts,
     conditionalBreakingChangeDiffConfig,
-    failDangerousChecks,
+    failDiffOnDangerousChange,
   }: {
     input: PublishInput;
     project: Project;
@@ -330,7 +330,7 @@ export class CompositeModel {
     baseSchema: string | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
-    failDangerousChecks: null | boolean;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaPublishResult> {
     const incoming: PushedCompositeSchema = {
       kind: 'composite',
@@ -486,14 +486,14 @@ export class CompositeModel {
       approvedChanges: null,
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
 
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
 
     const messages: string[] = [];
@@ -555,7 +555,7 @@ export class CompositeModel {
     baseSchema,
     conditionalBreakingChangeDiffConfig,
     contracts,
-    failDangerousChecks,
+    failDiffOnDangerousChange,
   }: {
     input: {
       serviceName: string;
@@ -580,7 +580,7 @@ export class CompositeModel {
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
-    failDangerousChecks: null | boolean;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaDeleteResult> {
     const incoming: DeletedCompositeSchema = {
       kind: 'composite',
@@ -657,14 +657,14 @@ export class CompositeModel {
       approvedChanges: null,
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
 
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
 
     if (

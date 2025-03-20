@@ -215,7 +215,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const [project, { failDangerousChecks }] = await Promise.all([
+    const [project, { failDiffOnDangerousChange }] = await Promise.all([
       this.projectManager.getProject({
         organizationId: schemaVersion.organizationId,
         projectId: schemaVersion.projectId,
@@ -237,7 +237,7 @@ export class SchemaVersionHelper {
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
-      failDangerousChecks,
+      failDiffOnDangerousChange,
     });
 
     if (diffCheck.status === 'skipped') {
