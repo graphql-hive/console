@@ -461,10 +461,11 @@ export async function main() {
 
     server.route({
       method: ['GET', 'POST'],
-      url: '/test',
+      url: '/graphql-public',
       handler: createPublicGraphQLHandler({
         registry,
         logger: logger as any,
+        hiveUsageConfig: env.hive,
         authN: new AuthN({
           strategies: [organizationAccessTokenStrategy],
         }),

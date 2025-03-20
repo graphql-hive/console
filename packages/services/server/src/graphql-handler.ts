@@ -162,7 +162,7 @@ export function useHiveSentry() {
   });
 }
 
-export function useHiveTracing() {
+export function useHiveTracing(tracingProvider?: Parameters<typeof useOpenTelemetry>[1]) {
   return useOpenTelemetry(
     {
       document: true,
@@ -177,7 +177,7 @@ export function useHiveTracing() {
       },
       excludedOperationNames: ['readiness'],
     },
-    options.tracing.traceProvider(),
+    tracingProvider,
   );
 }
 
@@ -266,7 +266,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
           },
         },
       ),
-      options.tracing ? useHiveTracing() : {},
+      options.tracing ? useHiveTracing(options.tracing.traceProvider()) : {},
       useExecutionCancellation(),
     ],
     graphiql: !options.isProduction,

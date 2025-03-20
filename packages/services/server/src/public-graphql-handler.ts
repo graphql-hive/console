@@ -1,11 +1,13 @@
 import { type FastifyBaseLogger, type RouteHandlerMethod } from 'fastify';
 import { createYoga, useExecutionCancellation, useExtendContext, useSchema } from 'graphql-yoga';
 import { useGraphQLModules } from '@envelop/graphql-modules';
+import { useHive } from '@graphql-hive/yoga';
 import { type Registry } from '@hive/api';
 import { type AuthN } from '@hive/api/modules/auth/lib/authz';
 import { cleanRequestId, TracingInstance } from '@hive/service-common';
 import { runWithAsyncContext } from '@sentry/node';
 import { asyncStorage } from './async-storage';
+import { type HiveUsageConfig } from './environment';
 import {
   reqIdGenerate,
   useHiveErrorHandler,
@@ -20,6 +22,7 @@ type CreatePublicGraphQLHandlerArgs = {
   registry: Registry;
   logger: FastifyBaseLogger;
   authN: AuthN;
+  hiveUsageConfig: HiveUsageConfig;
   tracing?: TracingInstance;
 };
 
@@ -40,11 +43,25 @@ export const createPublicGraphQLHandler = (
       useHiveErrorHandler(error => {
         server.logger.error(error);
       }),
-      // TODO: Hive usage reporting
-      args.tracing ? useHiveTracing() : {},
+      useHive({
+        debug: true,
+        enabled: !!args.hiveUsageConfig,
+        token: args.hiveUsageConfig?.token ?? '',
+        usage: args.hiveUsageConfig
+          ? {
+              target: args.hiveUsageConfig.target,
+              endpoint: args.hiveUsageConfig.endpoint ?? undefined,
+              clientInfo: () => ({
+                name: 'hive-public-api',
+                version: '0.1',
+              }),
+            }
+          : false,
+      }),
+      args.tracing ? useHiveTracing(args.tracing.traceProvider()) : {},
       useExecutionCancellation(),
     ],
-    graphqlEndpoint: '/test',
+    graphqlEndpoint: '/graphql-public',
   });
 
   return async (req, reply) => {
