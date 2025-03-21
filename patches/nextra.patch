@@ -1,5 +1,5 @@
 diff --git a/dist/server/compile.js b/dist/server/compile.js
-index 4b3f41397995dd4c796f6945627fb14d43776eb3..4b48e97086b5e4d1acfebcf6d8ecb5c31ec3c90e 100644
+index 4b3f41397995dd4c796f6945627fb14d43776eb3..f1ce8898b8c356137bab4c0b0d10114c3ba785bd 100644
 --- a/dist/server/compile.js
 +++ b/dist/server/compile.js
 @@ -142,7 +142,8 @@ async function compileMdx(source, {
@@ -12,7 +12,7 @@ index 4b3f41397995dd4c796f6945627fb14d43776eb3..4b48e97086b5e4d1acfebcf6d8ecb5c3
        ].filter((v) => !!v),
        recmaPlugins: [
          ...recmaPlugins || [],
-@@ -154,3 +155,93 @@ async function compileMdx(source, {
+@@ -154,3 +155,94 @@ async function compileMdx(source, {
  export {
    compileMdx
  };
@@ -50,25 +50,26 @@ index 4b3f41397995dd4c796f6945627fb14d43776eb3..4b48e97086b5e4d1acfebcf6d8ecb5c3
 +    
 +    // Find thumbnail and image properties
 +    for (const prop of properties) {
++      const key = prop.key?.value;
++
 +      // Skip if not the properties we're looking for
-+      if (prop.key?.value !== 'thumbnail' && prop.key?.value !== 'image') continue;
++      if (key !== 'thumbnail' && key !== 'image') continue;
 +      // Skip if not a string literal
 +      if (prop.value?.type !== 'Literal' || typeof prop.value.value !== 'string') continue;
 +      
 +      const imagePath = prop.value.value;
 +      
-+      let value;
-+      if (imagePath.startsWith('./') || imagePath.startsWith('../')) {
-+        value = imagePath;
-+      } else {
-+        continue;
-+      }
++      // Only process relative paths (./ or ../)
++      if (!imagePath.startsWith('./') && !imagePath.startsWith('../')) continue;
 +      
-+      // Create a unique import name
-+      let name = imported.get(value);
++      const value = imagePath;
++      
++      // Create a unique import name based on the property key
++      let name = imported.get(imagePath);
 +      
 +      if (!name) {
-+        name = `_frontMatterImage${imported.size}`;
++        // Use the property key (thumbnail/image) in the variable name
++        name = `_frontMatter_${key}`;
 +        
 +        // Create an import declaration
 +        imports.push({
