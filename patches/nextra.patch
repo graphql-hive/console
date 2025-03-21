@@ -1,0 +1,52 @@
+diff --git a/dist/server/compile.js b/dist/server/compile.js
+index 4b3f41397995dd4c796f6945627fb14d43776eb3..42b8b786bd71fdc80a71d44a4003e709ea0b3368 100644
+--- a/dist/server/compile.js
++++ b/dist/server/compile.js
+@@ -142,7 +142,8 @@ async function compileMdx(source, {
+           rehypeTwoslashPopup,
+           [rehypeAttachCodeMeta, { search }]
+         ],
+-        rehypeExtractTocContent
++        rehypeExtractTocContent,
++        rehypeFrontmatterRelativeImages
+       ].filter((v) => !!v),
+       recmaPlugins: [
+         ...recmaPlugins || [],
+@@ -154,3 +155,37 @@ async function compileMdx(source, {
+ export {
+   compileMdx
+ };
++
++function rehypeFrontmatterRelativeImages() {
++  return (ast, file) => {
++    const path = file.history[0] || '';
++    
++    // Find frontmatter node
++    const frontMatterNode = ast.children.find((node) => 
++      node.type === 'mdxjsEsm' && 
++      node.data?.estree?.body?.[0]?.type === 'ExportNamedDeclaration' &&
++      node.data?.estree?.body?.[0]?.declaration?.declarations?.[0]?.id?.name === 'metadata'
++    );
++    
++    if (frontMatterNode) {
++      // Get frontmatter properties
++      const properties = frontMatterNode.data.estree.body[0].declaration.declarations[0].init.properties;
++      
++      // Find thumbnail and image properties
++      for (const prop of properties) {
++        if (prop.key.value === 'thumbnail' || prop.key.value === 'image') {
++          if (prop.value.type === 'Literal' && typeof prop.value.value === 'string') {
++            // Add ❤️ emoji to the value
++            prop.value.value = `❤️ ${prop.value.value}`;
++            // Also update the raw value if it exists
++            if (prop.value.raw) {
++              prop.value.raw = `"❤️ ${prop.value.value.substring(2)}"`;
++            }
++          }
++        }
++      }
++    }
++    
++    return ast;
++  };
++}
