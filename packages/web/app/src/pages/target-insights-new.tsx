@@ -1,4 +1,4 @@
-import { Fragment, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
@@ -325,10 +325,8 @@ function Traffic() {
     // Filter data to the selected range
     const filteredData = data.filter(
       entry =>
-        parseDate(entry.timestamp, 'yyyy-MM-dd', now).getTime() >=
-          parseDate(left, 'yyyy-MM-dd', now).getTime() &&
-        parseDate(entry.timestamp, 'YYYY-MM-dd', now).getTime() <=
-          parseDate(right, 'yyyy-MM-dd', now).getTime(),
+        entry.timestamp >= parseDate(left, 'yyyy-MM-dd', now).getTime() &&
+        entry.timestamp <= parseDate(right, 'yyyy-MM-dd', now).getTime(),
     );
 
     if (filteredData.length > 0) {
@@ -563,16 +561,246 @@ const data: Trace[] = [
     httpUrl: 'http://localhost:3000/',
     subgraphNames: ['users'],
   },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
+  {
+    id: generateTraceId(),
+    timestamp: now.getTime() + 1080000,
+    status: 'error',
+    duration: 3502,
+    kind: 'query',
+    operationName: 'FetchUserProfile',
+    operationHash: 'h3q6',
+    httpStatus: 401,
+    httpMethod: 'GET',
+    httpHost: 'localhost:3000',
+    httpRoute: '/graphql',
+    httpUrl: 'http://localhost:3000/',
+    subgraphNames: ['users'],
+  },
 ];
 
 export const columns: ColumnDef<Trace>[] = [
   {
     accessorKey: 'id',
-    header: () => <div className="text-center">Trace ID</div>,
+    header: () => <div className="pl-2 text-left">Trace ID</div>,
     cell: ({ row }) => {
+      const traceId = row.getValue('id') as string;
+
       return (
-        <div className="w-24 truncate px-2 text-center font-mono text-xs font-medium">
-          {row.getValue('id')}
+        <div className="px-2 text-left font-mono text-xs font-medium">
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
+            className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
+          >
+            <span>
+              <span className="underline decoration-gray-800 decoration-2 underline-offset-2 group-hover:decoration-white">
+                {traceId.substring(0, 8)}
+              </span>
+              <span
+                style={{
+                  color: 'transparent',
+                  pointerEvents: 'none',
+                  textDecoration: 'none',
+                }}
+              >
+                {traceId.substring(8)}
+              </span>
+            </span>
+          </Link>
         </div>
       );
     },
@@ -591,36 +819,49 @@ export const columns: ColumnDef<Trace>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <Tooltip delayDuration={300}>
-        <TooltipTrigger asChild>
-          <div className="px-4 font-mono text-xs uppercase">
-            {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
-        >
-          <GridTable
-            rows={[
-              {
-                key: 'Local',
-                value: formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss'),
-              },
-              {
-                key: 'UTC',
-                value: formatInTimeZone(row.getValue('timestamp'), 'UTC', 'MMM dd HH:mm:ss'),
-              },
-              {
-                key: 'ISO',
-                value: formatISO(toZonedTime(row.getValue('timestamp'), 'UTC')),
-              },
-            ]}
-          />
-        </TooltipContent>
-      </Tooltip>
-    ),
+    cell: ({ row }) => {
+      const timestamp = row.getValue('timestamp') as number;
+
+      return (
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <div className="px-4 font-mono text-xs uppercase">
+                {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+              onClick={e => {
+                e.stopPropagation();
+              }}
+            >
+              <GridTable
+                rows={[
+                  {
+                    key: 'Local',
+                    value: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                  },
+                  {
+                    key: 'UTC',
+                    value: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                  },
+                  {
+                    key: 'Unix',
+                    value: timestamp,
+                  },
+                  {
+                    key: 'ISO',
+                    value: formatISO(toZonedTime(timestamp, 'UTC')),
+                  },
+                ]}
+              />
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
   },
   {
     accessorKey: 'operationName',
@@ -639,40 +880,42 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
     cell: ({ row }) => (
-      <Tooltip disableHoverableContent delayDuration={100}>
-        <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 px-4 text-xs">
-            <span className="text-muted-foreground font-mono">
-              {row.original.operationHash.substring(0, 4)}
-            </span>
-            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-              {row.original.kind.substring(0, 1).toUpperCase()}
-            </span>
-            <span>{row.getValue('operationName')}</span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
-        >
-          <GridTable
-            rows={[
-              {
-                key: 'Name',
-                value: row.getValue('operationName'),
-              },
-              {
-                key: 'Kind',
-                value: row.original.kind,
-              },
-              {
-                key: 'Hash',
-                value: row.original.operationHash,
-              },
-            ]}
-          />
-        </TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip disableHoverableContent delayDuration={100}>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 px-4 text-xs">
+              <span className="text-muted-foreground font-mono">
+                {row.original.operationHash.substring(0, 4)}
+              </span>
+              <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                {row.original.kind.substring(0, 1).toUpperCase()}
+              </span>
+              <span>{row.getValue('operationName')}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="bottom"
+            className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+          >
+            <GridTable
+              rows={[
+                {
+                  key: 'Name',
+                  value: row.getValue('operationName'),
+                },
+                {
+                  key: 'Kind',
+                  value: row.original.kind,
+                },
+                {
+                  key: 'Hash',
+                  value: row.original.operationHash,
+                },
+              ]}
+            />
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     ),
   },
   {
@@ -698,20 +941,22 @@ export const columns: ColumnDef<Trace>[] = [
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: () => <div className="text-center">Status</div>,
     cell: ({ row }) => {
       const status = row.getValue('status');
 
       return (
-        <Badge
-          variant="outline"
-          className={cn(
-            'rounded-sm border-0 px-1 text-xs font-medium uppercase',
-            status === 'ok' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-          )}
-        >
-          {status}
-        </Badge>
+        <div className="text-center">
+          <Badge
+            variant="outline"
+            className={cn(
+              'rounded-sm border-0 px-1 text-xs font-medium uppercase',
+              status === 'ok' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
+            )}
+          >
+            {status}
+          </Badge>
+        </div>
       );
     },
   },
@@ -770,25 +1015,14 @@ export const columns: ColumnDef<Trace>[] = [
       );
     },
   },
-  {
-    accessorKey: 'actions',
-    header: () => <div className="text-center">Actions</div>,
-    cell: () => {
-      return (
-        <div className="text-center font-sans text-xs">
-          <Button asChild variant="link">
-            <Link to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace">
-              View Trace
-            </Link>
-          </Button>
-        </div>
-      );
-    },
-  },
 ];
 
 function TracesList() {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 20,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
@@ -805,11 +1039,13 @@ function TracesList() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
@@ -940,6 +1176,217 @@ type FilterState = {
 
 type FilterKeys = keyof FilterState;
 
+const filterOptions = {
+  'graphql.status': [
+    {
+      value: 'ok',
+      searchContent: 'ok',
+      label: <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
+      count: 12_500_000,
+    },
+    {
+      value: 'error',
+      searchContent: 'error',
+      label: <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
+      count: 13_123,
+    },
+  ],
+  'graphql.kind': [
+    {
+      value: 'query',
+      searchContent: 'query',
+      label: 'Query',
+      count: 12_500_000,
+    },
+    {
+      value: 'mutation',
+      searchContent: 'mutation',
+      label: 'Mutation',
+      count: 3_200_000,
+    },
+    {
+      value: 'subscription',
+      searchContent: 'subscription',
+      label: 'Subscription',
+      count: 123_123,
+    },
+  ],
+  'graphql.subgraph': [
+    {
+      value: 'link',
+      searchContent: 'link',
+      label: 'link',
+      count: 530_000,
+    },
+    {
+      value: 'products',
+      searchContent: 'products',
+      label: 'products',
+      count: 612_000,
+    },
+    {
+      value: 'prices',
+      searchContent: 'prices',
+      label: 'prices',
+      count: 610_000,
+    },
+  ],
+  'graphql.name': [
+    {
+      value: '3h1s',
+      searchContent: '3h1s fetchproducts',
+      label: <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
+      count: 368_000,
+    },
+    {
+      value: '7na1',
+      searchContent: '7na1 fetchUsers',
+      label: <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
+      count: 123_000,
+    },
+    {
+      value: '64a1',
+      searchContent: '64a1 FetchProducts',
+      label: <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
+      count: 1_000,
+    },
+  ],
+  'graphql.client': [
+    {
+      value: 'unknown',
+      searchContent: 'unknown',
+      label: 'unknown',
+      count: 43_123,
+    },
+    {
+      value: 'hive-app',
+      searchContent: 'hive-app',
+      label: 'hive-app',
+      count: 720_000,
+    },
+    {
+      value: 'Hive CLI',
+      searchContent: 'Hive CLI',
+      label: 'Hive CLI',
+      count: 340_000,
+    },
+    {
+      value: 'Hive Client',
+      searchContent: 'Hive Client',
+      label: 'Hive Client',
+      count: 87_123,
+    },
+    {
+      value: 'Hive CLI@0.46.0',
+      searchContent: 'Hive CLI@0.46.0',
+      label: (
+        <LabelWithBadge side="right" badgeText="0.46.0">
+          Hive CLI
+        </LabelWithBadge>
+      ),
+      count: 1_000,
+    },
+    {
+      value: 'Hive Client@0.25.3',
+      searchContent: 'Hive Client@0.25.3',
+      label: (
+        <LabelWithBadge side="right" badgeText="0.25.3">
+          Hive Client
+        </LabelWithBadge>
+      ),
+      count: 6_120,
+    },
+  ],
+  'http.status': [
+    {
+      value: '200',
+      searchContent: '200',
+      label: '200',
+      count: 9_123_000,
+    },
+    {
+      value: '400',
+      searchContent: '400',
+      label: '400',
+      count: 100_000,
+    },
+    {
+      value: '500',
+      searchContent: '500',
+      label: '500',
+      count: 52_400,
+    },
+  ],
+  'http.method': [
+    {
+      value: 'GET',
+      searchContent: 'get',
+      label: 'GET',
+      count: 1230,
+    },
+    {
+      value: 'POST',
+      searchContent: 'post',
+      label: 'POST',
+      count: 12_000_000,
+    },
+  ],
+  'http.host': [
+    {
+      value: 'localhost:4000',
+      searchContent: 'localhost:4000',
+      label: 'localhost:4000',
+      count: 12_000_000,
+    },
+    {
+      value: 'localhost:4200',
+      searchContent: 'localhost:4200',
+      label: 'localhost:4200',
+      count: 7_540_123,
+    },
+    {
+      value: 'localhost:3000',
+      searchContent: 'localhost:3000',
+      label: 'localhost:3000',
+      count: 2_320_123,
+    },
+  ],
+  'http.route': [
+    {
+      value: '/graphql',
+      searchContent: '/graphql',
+      label: '/graphql',
+      count: 12_000_000,
+    },
+    {
+      value: '/',
+      searchContent: '/',
+      label: '/',
+      count: 7_540_123,
+    },
+  ],
+  'http.url': [
+    {
+      value: 'http://localhost:3000/',
+      searchContent: 'http://localhost:3000/',
+      label: 'http://localhost:3000/',
+      count: 12_000_000,
+    },
+    {
+      value: 'http://localhost:4000/graphql',
+      searchContent: 'http://localhost:4000/graphql',
+      label: 'http://localhost:4000/graphql',
+      count: 7_540_123,
+    },
+    {
+      value: 'http://localhost:4200/graphql',
+      searchContent: 'http://localhost:4200/graphql',
+      label: 'http://localhost:4200/graphql',
+      count: 2_320_123,
+    },
+  ],
+};
+
 function Filters() {
   const [filters, setFilters] = useState<FilterState>({
     duration: [],
@@ -956,12 +1403,19 @@ function Filters() {
     'http.url': [],
   });
 
-  // Function to update a specific filter
-  const updateFilter = <$Key extends FilterKeys>(key: $Key) => {
-    return (value: FilterState[$Key]) => {
-      setFilters(prev => ({ ...prev, [key]: value }));
-    };
-  };
+  const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
+  const updateFilter = useCallback(
+    <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
+      if (!updateHandlersRef.current.has(key)) {
+        const handler = (value: FilterState[$Key]) => {
+          setFilters(prev => ({ ...prev, [key]: value }));
+        };
+        updateHandlersRef.current.set(key, handler);
+      }
+      return updateHandlersRef.current.get(key)!;
+    },
+    [setFilters],
+  );
 
   const resetFilters = () => {
     setFilters({
@@ -1023,178 +1477,44 @@ function Filters() {
       <MultiSelectFilter
         key="graphql.status"
         name="Status"
-        options={[
-          {
-            value: 'ok',
-            searchContent: 'ok',
-            label: <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
-            count: 12_500_000,
-          },
-          {
-            value: 'error',
-            searchContent: 'error',
-            label: <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
-            count: 13_123,
-          },
-        ]}
+        options={filterOptions['graphql.status']}
         selectedValues={filterSelector('graphql.status')}
         onChange={updateFilter('graphql.status')}
         hideSearch
       />
       <MultiSelectFilter
-        key="kind"
+        key="graphql.kind"
         name="Operation Kind"
-        options={[
-          {
-            value: 'query',
-            searchContent: 'query',
-            label: 'Query',
-            count: 12_500_000,
-          },
-          {
-            value: 'mutation',
-            searchContent: 'mutation',
-            label: 'Mutation',
-            count: 3_200_000,
-          },
-          {
-            value: 'subscription',
-            searchContent: 'subscription',
-            label: 'Subscription',
-            count: 123_123,
-          },
-        ]}
+        options={filterOptions['graphql.kind']}
         selectedValues={filterSelector('graphql.kind')}
         onChange={updateFilter('graphql.kind')}
         hideSearch
       />
       <MultiSelectFilter
-        key="subgraph"
+        key="graphql.subgraph"
         name="Subgraph Name"
-        options={[
-          {
-            value: 'link',
-            searchContent: 'link',
-            label: 'link',
-            count: 530_000,
-          },
-          {
-            value: 'products',
-            searchContent: 'products',
-            label: 'products',
-            count: 612_000,
-          },
-          {
-            value: 'prices',
-            searchContent: 'prices',
-            label: 'prices',
-            count: 610_000,
-          },
-        ]}
+        options={filterOptions['graphql.subgraph']}
         selectedValues={filterSelector('graphql.subgraph')}
         onChange={updateFilter('graphql.subgraph')}
       />
       <MultiSelectFilter
-        key="name"
+        key="graphql.name"
         name="Operation Name"
-        options={[
-          {
-            value: '3h1s',
-            searchContent: '3h1s fetchproducts',
-            label: <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
-            count: 368_000,
-          },
-          {
-            value: '7na1',
-            searchContent: '7na1 fetchUsers',
-            label: <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
-            count: 123_000,
-          },
-          {
-            value: '64a1',
-            searchContent: '64a1 FetchProducts',
-            label: <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
-            count: 1_000,
-          },
-        ]}
+        options={filterOptions['graphql.name']}
         selectedValues={filterSelector('graphql.operation')}
         onChange={updateFilter('graphql.operation')}
       />
       <MultiSelectFilter
-        key="client"
+        key="graphql.client"
         name="Client"
-        options={[
-          {
-            value: 'unknown',
-            searchContent: 'unknown',
-            label: 'unknown',
-            count: 43_123,
-          },
-          {
-            value: 'hive-app',
-            searchContent: 'hive-app',
-            label: 'hive-app',
-            count: 720_000,
-          },
-          {
-            value: 'Hive CLI',
-            searchContent: 'Hive CLI',
-            label: 'Hive CLI',
-            count: 340_000,
-          },
-          {
-            value: 'Hive Client',
-            searchContent: 'Hive Client',
-            label: 'Hive Client',
-            count: 87_123,
-          },
-          {
-            value: 'Hive CLI@0.46.0',
-            searchContent: 'Hive CLI@0.46.0',
-            label: (
-              <LabelWithBadge side="right" badgeText="0.46.0">
-                Hive CLI
-              </LabelWithBadge>
-            ),
-            count: 1_000,
-          },
-          {
-            value: 'Hive Client@0.25.3',
-            searchContent: 'Hive Client@0.25.3',
-            label: (
-              <LabelWithBadge side="right" badgeText="0.25.3">
-                Hive Client
-              </LabelWithBadge>
-            ),
-            count: 6_120,
-          },
-        ]}
+        options={filterOptions['graphql.client']}
         selectedValues={filterSelector('graphql.client')}
         onChange={updateFilter('graphql.client')}
       />
       <MultiSelectFilter
         key="http.status"
         name="HTTP Status Code"
-        options={[
-          {
-            value: '200',
-            searchContent: '200',
-            label: '200',
-            count: 9_123_000,
-          },
-          {
-            value: '400',
-            searchContent: '400',
-            label: '400',
-            count: 100_000,
-          },
-          {
-            value: '500',
-            searchContent: '500',
-            label: '500',
-            count: 52_400,
-          },
-        ]}
+        options={filterOptions['http.status']}
         selectedValues={filterSelector('http.status')}
         onChange={updateFilter('http.status')}
         hideSearch
@@ -1202,20 +1522,7 @@ function Filters() {
       <MultiSelectFilter
         key="http.method"
         name="HTTP Method"
-        options={[
-          {
-            value: 'GET',
-            searchContent: 'get',
-            label: 'GET',
-            count: 1230,
-          },
-          {
-            value: 'POST',
-            searchContent: 'post',
-            label: 'POST',
-            count: 12_000_000,
-          },
-        ]}
+        options={filterOptions['http.method']}
         selectedValues={filterSelector('http.method')}
         onChange={updateFilter('http.method')}
         hideSearch
@@ -1223,72 +1530,21 @@ function Filters() {
       <MultiSelectFilter
         key="http.host"
         name="HTTP Host"
-        options={[
-          {
-            value: 'localhost:4000',
-            searchContent: 'localhost:4000',
-            label: 'localhost:4000',
-            count: 12_000_000,
-          },
-          {
-            value: 'localhost:4200',
-            searchContent: 'localhost:4200',
-            label: 'localhost:4200',
-            count: 7_540_123,
-          },
-          {
-            value: 'localhost:3000',
-            searchContent: 'localhost:3000',
-            label: 'localhost:3000',
-            count: 2_320_123,
-          },
-        ]}
+        options={filterOptions['http.host']}
         selectedValues={filterSelector('http.host')}
         onChange={updateFilter('http.host')}
       />
       <MultiSelectFilter
         key="http.route"
         name="HTTP Route"
-        options={[
-          {
-            value: '/graphql',
-            searchContent: '/graphql',
-            label: '/graphql',
-            count: 12_000_000,
-          },
-          {
-            value: '/',
-            searchContent: '/',
-            label: '/',
-            count: 7_540_123,
-          },
-        ]}
+        options={filterOptions['http.route']}
         selectedValues={filterSelector('http.route')}
         onChange={updateFilter('http.route')}
       />
       <MultiSelectFilter
         key="http.url"
         name="HTTP URL"
-        options={[
-          {
-            value: 'http://localhost:3000/',
-            searchContent: 'http://localhost:3000/',
-            label: 'http://localhost:3000/',
-            count: 12_000_000,
-          },
-          {
-            value: 'http://localhost:4000/graphql',
-            searchContent: 'http://localhost:4000/graphql',
-            label: 'http://localhost:4000/graphql',
-            count: 7_540_123,
-          },
-          {
-            value: 'http://localhost:4200/graphql',
-            searchContent: 'http://localhost:4200/graphql',
-            label: 'http://localhost:4200/graphql',
-            count: 2_320_123,
-          },
-        ]}
+        options={filterOptions['http.url']}
         selectedValues={filterSelector('http.url')}
         onChange={updateFilter('http.url')}
       />
@@ -1426,194 +1682,192 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
 
   return (
     <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
-      <TooltipProvider>
-        <SheetHeader className="relative border-b border-gray-800 p-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-medium text-white">
-              {trace.operationName}
-              <span className="text-muted-foreground ml-2 font-mono font-normal">
-                {trace.operationHash.substring(0, 4)}
-              </span>
-            </SheetTitle>
-          </div>
-          <SheetDescription className="mt-1 text-xs text-gray-400">
-            Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
-          </SheetDescription>
-          <div className="mt-2 flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-gray-400" />
-              <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                'rounded-sm border-0 px-1 font-medium uppercase',
-                trace.status === 'ok'
-                  ? 'bg-green-900/30 text-green-400'
-                  : 'bg-red-900/30 text-red-400',
-              )}
-            >
-              {trace.status}
-            </Badge>
-            <span className="font-mono uppercase text-gray-300">
-              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+      <SheetHeader className="relative border-b border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <SheetTitle className="text-lg font-medium text-white">
+            {trace.operationName}
+            <span className="text-muted-foreground ml-2 font-mono font-normal">
+              {trace.operationHash.substring(0, 4)}
             </span>
+          </SheetTitle>
+        </div>
+        <SheetDescription className="mt-1 text-xs text-gray-400">
+          Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
+        </SheetDescription>
+        <div className="mt-2 flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3 text-gray-400" />
+            <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link
-              to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
-              className="absolute bottom-4 right-4"
-            >
-              <ExternalLinkIcon className="mr-1 h-3 w-3" />
-              Full Trace
-            </Link>
-          </Button>
-        </SheetHeader>
-        <div className="h-[calc(100vh-113px)]">
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
-              <WidthSyncProvider defaultWidth={251}>
-                <TraceView rootSpan={rootSpan} serviceNames={serviceNames} />
-              </WidthSyncProvider>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
-              <div className="flex h-full flex-col">
-                <div className="sticky top-0 z-10 border-b border-gray-800">
-                  <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
-                    <TabButton
-                      isActive={activeView === 'attributes'}
-                      onClick={() => setActiveView('attributes')}
-                    >
-                      <div className="flex items-center gap-x-2">
-                        <div>Attributes</div>
-                        <div>
-                          <Badge
-                            variant="secondary"
-                            className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                          >
-                            7
-                          </Badge>
-                        </div>
-                      </div>
-                    </TabButton>
-                    <TabButton
-                      isActive={activeView === 'events'}
-                      onClick={() => setActiveView('events')}
-                    >
-                      <div className="flex items-center gap-x-2">
-                        <div>Events</div>
-                        <div>
-                          <Badge
-                            variant="secondary"
-                            className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                          >
-                            3
-                          </Badge>
-                        </div>
-                      </div>
-                    </TabButton>
-                    <TabButton
-                      isActive={activeView === 'operation'}
-                      onClick={() => setActiveView('operation')}
-                    >
-                      <div className="flex items-center gap-x-2">
-                        <div>Operation</div>
-                      </div>
-                    </TabButton>
-                  </div>
-                </div>
-                <ScrollArea className="relative grow">
-                  <div className="h-full">
-                    {activeView === 'attributes' ? (
+          <Badge
+            variant="outline"
+            className={cn(
+              'rounded-sm border-0 px-1 font-medium uppercase',
+              trace.status === 'ok'
+                ? 'bg-green-900/30 text-green-400'
+                : 'bg-red-900/30 text-red-400',
+            )}
+          >
+            {trace.status}
+          </Badge>
+          <span className="font-mono uppercase text-gray-300">
+            {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+          </span>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
+            className="absolute bottom-4 right-4"
+          >
+            <ExternalLinkIcon className="mr-1 h-3 w-3" />
+            Full Trace
+          </Link>
+        </Button>
+      </SheetHeader>
+      <div className="h-[calc(100vh-113px)]">
+        <ResizablePanelGroup direction="vertical">
+          <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
+            <WidthSyncProvider defaultWidth={251}>
+              <TraceView rootSpan={rootSpan} serviceNames={serviceNames} />
+            </WidthSyncProvider>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
+            <div className="flex h-full flex-col">
+              <div className="sticky top-0 z-10 border-b border-gray-800">
+                <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
+                  <TabButton
+                    isActive={activeView === 'attributes'}
+                    onClick={() => setActiveView('attributes')}
+                  >
+                    <div className="flex items-center gap-x-2">
+                      <div>Attributes</div>
                       <div>
-                        {attributes.length > 0 ? (
-                          <div>
-                            {attributes.map((attr, index) => (
-                              <div
-                                key={index}
-                                className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
-                              >
-                                <div className="text-gray-400">{attr.name}</div>
-                                <div className="font-mono text-white">{attr.value}</div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="py-4 text-center">
-                            <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
-                            <p className="text-xs text-gray-500">
-                              No attributes found for this trace
-                            </p>
-                          </div>
-                        )}
+                        <Badge
+                          variant="secondary"
+                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        >
+                          7
+                        </Badge>
                       </div>
-                    ) : null}
-                    {activeView === 'events' ? (
-                      <div className="p-4">
-                        <div className="space-y-2">
-                          {[
-                            {
-                              code: 'DB_CONNECTION_ERROR',
-                              message: 'Connection to database timed out after 5 seconds',
-                              stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
-                            },
-                            {
-                              code: 'GRAPHQL_PARSE_FAILED',
-                              message: 'Sent GraphQL Operation cannot be parsed',
-                            },
-                            {
-                              code: 'TIMEOUT_ERROR',
-                              message: 'Operation timed out after 10 seconds',
-                            },
-                          ].map((exception, index) => (
+                    </div>
+                  </TabButton>
+                  <TabButton
+                    isActive={activeView === 'events'}
+                    onClick={() => setActiveView('events')}
+                  >
+                    <div className="flex items-center gap-x-2">
+                      <div>Events</div>
+                      <div>
+                        <Badge
+                          variant="secondary"
+                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        >
+                          3
+                        </Badge>
+                      </div>
+                    </div>
+                  </TabButton>
+                  <TabButton
+                    isActive={activeView === 'operation'}
+                    onClick={() => setActiveView('operation')}
+                  >
+                    <div className="flex items-center gap-x-2">
+                      <div>Operation</div>
+                    </div>
+                  </TabButton>
+                </div>
+              </div>
+              <ScrollArea className="relative grow">
+                <div className="h-full">
+                  {activeView === 'attributes' ? (
+                    <div>
+                      {attributes.length > 0 ? (
+                        <div>
+                          {attributes.map((attr, index) => (
                             <div
                               key={index}
-                              className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
+                              className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
                             >
-                              <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
-                                <span className="font-mono text-xs font-medium text-red-300">
-                                  {exception.code}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="border-red-700 bg-red-950 text-[10px] text-red-300"
-                                >
-                                  Exception
-                                </Badge>
-                              </div>
-                              <div className="p-3 text-xs">
-                                <p className="text-gray-300">{exception.message}</p>
-                                {exception.stacktrace && (
-                                  <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
-                                    {exception.stacktrace}
-                                  </pre>
-                                )}
-                              </div>
+                              <div className="text-gray-400">{attr.name}</div>
+                              <div className="font-mono text-white">{attr.value}</div>
                             </div>
                           ))}
                         </div>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                          <p className="text-xs text-gray-500">
+                            No attributes found for this trace
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                  {activeView === 'events' ? (
+                    <div className="p-4">
+                      <div className="space-y-2">
+                        {[
+                          {
+                            code: 'DB_CONNECTION_ERROR',
+                            message: 'Connection to database timed out after 5 seconds',
+                            stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
+                          },
+                          {
+                            code: 'GRAPHQL_PARSE_FAILED',
+                            message: 'Sent GraphQL Operation cannot be parsed',
+                          },
+                          {
+                            code: 'TIMEOUT_ERROR',
+                            message: 'Operation timed out after 10 seconds',
+                          },
+                        ].map((exception, index) => (
+                          <div
+                            key={index}
+                            className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
+                          >
+                            <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
+                              <span className="font-mono text-xs font-medium text-red-300">
+                                {exception.code}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="border-red-700 bg-red-950 text-[10px] text-red-300"
+                              >
+                                Exception
+                              </Badge>
+                            </div>
+                            <div className="p-3 text-xs">
+                              <p className="text-gray-300">{exception.message}</p>
+                              {exception.stacktrace && (
+                                <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+                                  {exception.stacktrace}
+                                </pre>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ) : null}
-                    {activeView === 'operation' ? (
-                      <div className="absolute bottom-0 top-0 w-full">
-                        <GraphQLHighlight
-                          height={'100%'}
-                          options={{
-                            fontSize: 10,
-                            minimap: { enabled: false },
-                          }}
-                          code={fetchProductsQueryString}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                </ScrollArea>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </div>
-      </TooltipProvider>
+                    </div>
+                  ) : null}
+                  {activeView === 'operation' ? (
+                    <div className="absolute bottom-0 top-0 w-full">
+                      <GraphQLHighlight
+                        height={'100%'}
+                        options={{
+                          fontSize: 10,
+                          minimap: { enabled: false },
+                        }}
+                        code={fetchProductsQueryString}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </ScrollArea>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
     </SheetContent>
   );
 }
@@ -1790,14 +2044,13 @@ function TabButton(props: { isActive: boolean; onClick(): void; children: ReactN
   );
 }
 
-function TraceResize() {
+function TraceResize(props: { minWidth: number; maxWidth: number }) {
   const [width, setWidth] = useWidthSync();
   const [isDragging, setIsDragging] = useState(false);
   const handleRef = useRef<HTMLDivElement>(null);
   const startPosRef = useRef(0);
   const startWidthRef = useRef(0);
-  const minWidth = 175;
-  const maxWidth = 450;
+  const { minWidth, maxWidth } = props;
 
   // Handle the start of dragging
   const handleDragStart = useCallback(
@@ -1891,14 +2144,17 @@ function TraceTree(props: {
   leftPanelWidth: number;
 }) {
   const [width] = useWidthSync();
+  const minWidth = 175;
+  const maxWidth = 450;
   const serviceNames = listServiceNames(props.rootSpan);
   const serviceNameToColorMap = Object.fromEntries(
     serviceNames.map((name, index) => [name, colors[index % colors.length]]),
   );
+  const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative">
-      <TraceResize />
+    <div className="relative" ref={containerRef}>
+      <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
       <Node
         key={props.rootSpan.id}
         level={0}
@@ -2043,82 +2299,84 @@ function Node(props: NodeProps) {
               isDimmed ? 'opacity-25' : '',
             )}
           >
-            <Tooltip disableHoverableContent delayDuration={100}>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn('absolute block h-6 min-w-[1px] select-none rounded-sm')}
-                  style={{
-                    left: `min(${leftPositionPercentage}%, 100% - 1px)`,
-                    width: `${widthPercentage}%`,
-                    backgroundColor: color,
-                  }}
-                >
+            <TooltipProvider>
+              <Tooltip disableHoverableContent delayDuration={100}>
+                <TooltipTrigger asChild>
                   <div
-                    className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+                    className={cn('absolute z-20 block h-6 min-w-[1px] select-none rounded-sm')}
                     style={{
-                      fontSize: '11px',
-                      ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
+                      left: `min(${leftPositionPercentage}%, 100% - 1px)`,
+                      width: `${widthPercentage}%`,
+                      backgroundColor: color,
                     }}
                   >
-                    {props.span.duration}ms
+                    <div
+                      className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+                      style={{
+                        fontSize: '11px',
+                        ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
+                      }}
+                    >
+                      {props.span.duration}ms
+                    </div>
                   </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
-              >
-                {/* Content */}
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-y-2">
-                    <div className="text-gray-400">Duration</div>
-                    <div className="text-right font-mono">
-                      <span>{props.span.duration}ms</span>
-                    </div>
-
-                    <div className="text-gray-400">Started At</div>
-                    <div className="text-right font-mono">{props.span.startedAt}ms</div>
-
-                    <div className="text-gray-400">% of Total</div>
-                    <div className="text-right font-mono">{percentageOfTotal}%</div>
-
-                    <div className="col-span-2">
-                      {/* Timeline visualization */}
-                      <div>
-                        <div className="h-[2px] w-full overflow-hidden bg-gray-800">
-                          <div
-                            className="h-full"
-                            style={{ width: `${percentageOfTotal}%`, backgroundColor: colors[0] }}
-                          />
-                        </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
+                >
+                  {/* Content */}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-y-2">
+                      <div className="text-gray-400">Duration</div>
+                      <div className="text-right font-mono">
+                        <span>{props.span.duration}ms</span>
                       </div>
-                    </div>
 
-                    {percentageOfParent === null ? null : (
-                      <>
-                        <div className="text-gray-400">% of Parent</div>
-                        <div className="text-right font-mono">{percentageOfParent}%</div>
+                      <div className="text-gray-400">Started At</div>
+                      <div className="text-right font-mono">{props.span.startedAt}ms</div>
 
-                        <div className="col-span-2">
-                          {/* Timeline visualization */}
-                          <div>
-                            <div className="h-[2px] w-full overflow-hidden bg-gray-800">
-                              <div
-                                className="h-full"
-                                style={{
-                                  width: `${percentageOfParent}%`,
-                                  backgroundColor: parentColor,
-                                }}
-                              />
-                            </div>
+                      <div className="text-gray-400">% of Total</div>
+                      <div className="text-right font-mono">{percentageOfTotal}%</div>
+
+                      <div className="col-span-2">
+                        {/* Timeline visualization */}
+                        <div>
+                          <div className="h-[2px] w-full overflow-hidden bg-gray-800">
+                            <div
+                              className="h-full"
+                              style={{ width: `${percentageOfTotal}%`, backgroundColor: colors[0] }}
+                            />
                           </div>
                         </div>
-                      </>
-                    )}
+                      </div>
+
+                      {percentageOfParent === null ? null : (
+                        <>
+                          <div className="text-gray-400">% of Parent</div>
+                          <div className="text-right font-mono">{percentageOfParent}%</div>
+
+                          <div className="col-span-2">
+                            {/* Timeline visualization */}
+                            <div>
+                              <div className="h-[2px] w-full overflow-hidden bg-gray-800">
+                                <div
+                                  className="h-full"
+                                  style={{
+                                    width: `${percentageOfParent}%`,
+                                    backgroundColor: parentColor,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
