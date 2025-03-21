@@ -1,4 +1,4 @@
-import { ReactElement, ReactNode, useMemo, useState } from 'react';
+import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -39,10 +39,47 @@ export enum Page {
   Checks = 'checks',
   History = 'history',
   Insights = 'insights',
+  Traces = 'traces',
   Laboratory = 'laboratory',
   Apps = 'apps',
   Settings = 'settings',
 }
+
+type TargetReference = {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+};
+
+const TargetReferenceContext = createContext<TargetReference | undefined>(undefined);
+
+type TargetReferenceProviderProps = {
+  children: ReactNode;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+};
+
+export const TargetReferenceProvider = ({
+  children,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: TargetReferenceProviderProps) => {
+  return (
+    <TargetReferenceContext.Provider value={{ organizationSlug, projectSlug, targetSlug }}>
+      {children}
+    </TargetReferenceContext.Provider>
+  );
+};
+
+export const useTargetReference = () => {
+  const context = useContext(TargetReferenceContext);
+  if (!context) {
+    throw new Error('useTargetReference must be used within a TargetReferenceProvider');
+  }
+  return context;
+};
 
 const TargetLayoutQuery = graphql(`
   query TargetLayoutQuery($organizationSlug: String!, $projectSlug: String!, $targetSlug: String!) {
@@ -113,7 +150,11 @@ export const TargetLayout = ({
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   return (
-    <>
+    <TargetReferenceProvider
+      organizationSlug={props.organizationSlug}
+      projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
+    >
       <header>
         <div className="container flex h-[--header-height] items-center justify-between">
           <div className="flex flex-row items-center gap-4">
@@ -207,6 +248,18 @@ export const TargetLayout = ({
                         Insights
                       </Link>
                     </TabsTrigger>
+                    <TabsTrigger variant="menu" value={Page.Traces} asChild>
+                      <Link
+                        to="/$organizationSlug/$projectSlug/$targetSlug/traces"
+                        params={{
+                          organizationSlug: props.organizationSlug,
+                          projectSlug: props.projectSlug,
+                          targetSlug: props.targetSlug,
+                        }}
+                      >
+                        Traces
+                      </Link>
+                    </TabsTrigger>
                     {currentTarget.viewerCanViewAppDeployments && (
                       <TabsTrigger variant="menu" value={Page.Apps} asChild>
                         <Link
@@ -284,7 +337,7 @@ export const TargetLayout = ({
           </div>
         </>
       )}
-    </>
+    </TargetReferenceProvider>
   );
 };
 
