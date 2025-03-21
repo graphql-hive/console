@@ -1,12 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { useFrontmatter } from '../../../../components/use-frontmatter';
 import type { BlogFrontmatter } from '../../blog-types';
 
 export function BlogPostPicture() {
   const { frontmatter } = useFrontmatter<BlogFrontmatter>();
-  const image = frontmatter.image ?? frontmatter.thumbnail;
+  const image = frontmatter.image;
 
   if (!image) {
     return null;
