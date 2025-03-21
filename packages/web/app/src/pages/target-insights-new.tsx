@@ -834,6 +834,8 @@ export const columns: ColumnDef<Trace>[] = [
               side="bottom"
               className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
               onClick={e => {
+                // Prevent the click event from bubbling up to the row,
+                // which would trigger the sheet with trace details to open
                 e.stopPropagation();
               }}
             >
@@ -1403,6 +1405,7 @@ function Filters() {
     'http.url': [],
   });
 
+  // Stores the update handlers in a ref to prevent unnecessary re-renders
   const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
   const updateFilter = useCallback(
     <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
