@@ -1,4 +1,6 @@
 import { lazy, useCallback, useEffect } from 'react';
+import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
+import qs from 'query-string';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
@@ -19,6 +21,8 @@ import {
   createRouter,
   Navigate,
   Outlet,
+  parseSearchWith,
+  stringifySearchWith,
   useNavigate,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
@@ -71,11 +75,16 @@ import { TargetHistoryVersionPage } from './pages/target-history-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
-import { TargetInsightsNewPage } from './pages/target-insights-new';
-import { TargetInsightsNewTracePage } from './pages/target-insights-new-trace';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
+import { TargetTracePage } from './pages/target-trace';
+import {
+  TargetTracesFilterState,
+  TargetTracesPage,
+  TargetTracesPagination,
+  TargetTracesSort,
+} from './pages/target-traces';
 
 SuperTokens.init(frontendConfig());
 if (env.sentry) {
@@ -648,28 +657,40 @@ const targetInsightsRoute = createRoute({
   },
 });
 
-const targetInsightsNewRoute = createRoute({
+const TargetTracesRouteSearch = z.object({
+  filter: TargetTracesFilterState.optional().default({}),
+  sort: TargetTracesSort.shape.optional().default([]),
+  pagination: TargetTracesPagination.shape.optional().default({}),
+});
+const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
-  path: 'insights-new',
-  component: function TargetInsightsNewRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetInsightsNewRoute.useParams();
+  path: 'traces',
+  validateSearch: TargetTracesRouteSearch.parse,
+  component: function TargetTracesRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
+    const { filter, sort, pagination } = targetTracesRoute.useSearch();
+
     return (
-      <TargetInsightsNewPage
+      <TargetTracesPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        sorting={sort}
+        pagination={pagination}
+        filter={filter}
       />
     );
   },
 });
 
-const targetInsightsNewTraceRoute = createRoute({
+const targetTraceRoute = createRoute({
   getParentRoute: () => targetRoute,
-  path: 'insights-new/trace',
-  component: function TargetInsightsNewTraceRoute() {
-    const { organizationSlug, projectSlug, targetSlug } = targetInsightsNewTraceRoute.useParams();
+  path: 'trace/$traceId',
+  component: function TargetTraceRoute() {
+    const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
     return (
-      <TargetInsightsNewTracePage
+      <TargetTracePage
+        traceId={traceId}
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
@@ -908,8 +929,8 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
-      targetInsightsNewRoute,
-      targetInsightsNewTraceRoute,
+      targetTraceRoute,
+      targetTracesRoute,
       targetInsightsCoordinateRoute,
       targetInsightsClientRoute,
       targetInsightsOperationsRoute,
@@ -924,7 +945,25 @@ const routeTree = root.addChildren([
   ]),
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  parseSearch: parseSearchWith(jsUrlParse),
+  stringifySearch: stringifySearchWith(jsUrlStringify),
+  // parseSearch: parseSearchWith(value =>
+  //   qs.parse(value, {
+  //     parseNumbers: true,
+  //     parseBooleans: true,
+  //     arrayFormat: 'bracket-separator',
+  //     arrayFormatSeparator: '|',
+  //   }),
+  // ),
+  // stringifySearch: stringifySearchWith(value =>
+  //   qs.stringify(value, {
+  //     arrayFormat: 'bracket-separator',
+  //     arrayFormatSeparator: '|',
+  //   }),
+  // ),
+});
 
 router.history.subscribe(() => {
   gtag.pageview(router.history.location.href);

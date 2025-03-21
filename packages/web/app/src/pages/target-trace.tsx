@@ -9,7 +9,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useWidthSync, WidthSyncProvider } from './target-insights-new-width';
+import { useWidthSync, WidthSyncProvider } from './target-traces-width';
 
 const rootSpan: SpanProps = {
   id: 'root',
@@ -1247,19 +1247,20 @@ function TargetInsightsNewPageContent() {
   return <TraceSheet trace={traceInSheet} />;
 }
 
-export function TargetInsightsNewTracePage(props: {
+export function TargetTracePage(props: {
+  traceId: string;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) {
   return (
     <>
-      <Meta title="Trace 12323134" />
+      <Meta title={`Trace ${props.traceId}`} />
       <TargetLayout
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
-        page={Page.Insights}
+        page={Page.Traces}
         className="flex flex-col"
       >
         <div className="flex flex-1 flex-col">
