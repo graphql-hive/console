@@ -234,6 +234,10 @@ export type HivePluginOptions = OptionalWhenFalse<
     /**
      * Print info about the token.
      * Disabled by default (enabled by default only in debug mode)
+     *
+     * **Note:** The new access tokens do not support printing the token info. For every access token starting with `hvo1/`
+     * no information will be printed.
+     * @deprecated This option will be removed in the future.
      */
     printTokenInfo?: boolean;
     /**

@@ -51,16 +51,18 @@ function isAbortAction(result: Parameters<CollectUsageCallback>[1]): result is A
   return 'action' in result && result.action === 'abort';
 }
 
+const noopUsageCollector: UsageCollector = {
+  collect() {
+    return async () => {};
+  },
+  collectRequest() {},
+  async dispose() {},
+  collectSubscription() {},
+};
+
 export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   if (!pluginOptions.usage || pluginOptions.enabled === false) {
-    return {
-      collect() {
-        return async () => {};
-      },
-      collectRequest() {},
-      async dispose() {},
-      collectSubscription() {},
-    };
+    return noopUsageCollector;
   }
 
   let reportSize = 0;
@@ -74,6 +76,23 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const logger = createHiveLogger(pluginOptions.agent?.logger ?? console, '[hive][usage]');
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
+
+  /** Access tokens using the `hvo1/` require a target. */
+  if (!options.target && pluginOptions.token.startsWith('hvo1/')) {
+    logger.error(
+      "Using an organization access token (starting with 'hvo1/') requires providing the 'target' option." +
+        '\nUsage reporting is disabled.',
+    );
+    return noopUsageCollector;
+  }
+
+  if (options.target && !pluginOptions.token.startsWith('hvo1/')) {
+    logger.error(
+      "Using the 'target' option requires using an organization access token (starting with 'hvo1/')." +
+        '\nUsage reporting is disabled.',
+    );
+    return noopUsageCollector;
+  }
 
   const baseEndpoint =
     selfHostingOptions?.usageEndpoint ?? options.endpoint ?? 'https://app.graphql-hive.com/usage';
