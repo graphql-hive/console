@@ -1,11 +1,9 @@
-import { Fragment, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addDays, formatDate, formatISO, parse as parseDate } from 'date-fns';
+import { Fragment, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
   AlertTriangle,
   ArrowUpDown,
-  CalendarIcon,
-  ChevronRight,
   Clock,
   ExternalLinkIcon,
   FilterIcon,
@@ -17,27 +15,15 @@ import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -48,13 +34,9 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarInset,
-  SidebarMenu,
   SidebarProvider,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   Table,
@@ -67,7 +49,6 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import * as SliderPrimitive from '@radix-ui/react-slider';
 import { Link } from '@tanstack/react-router';
 import {
   ColumnDef,
@@ -83,7 +64,6 @@ import {
 } from '@tanstack/react-table';
 import {
   DurationFilter,
-  FilterInput,
   MultiInputFilter,
   MultiSelectFilter,
   TimelineFilter,
@@ -268,17 +248,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 function Traffic() {
-  const total = useMemo(
-    () => ({
-      ok: chartData.reduce((acc, curr) => acc + curr.ok, 0),
-      error: chartData.reduce((acc, curr) => acc + curr.error, 0),
-    }),
-    [],
-  );
-
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
-  const [zoomedData, setZoomedData] = useState<typeof data | null>(null);
+  const [_, setZoomedData] = useState<typeof data | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1878,21 +1850,21 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
 function SearchBar(props: { onFiltersOpenChange: () => void }) {
   return null;
 
-  return (
-    <div className="flex gap-x-4">
-      <Button
-        variant="outline"
-        className="bg-background size-10 p-0"
-        onClick={props.onFiltersOpenChange}
-      >
-        <FilterIcon className="size-4" />
-      </Button>
-      <div className="relative w-full">
-        <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
-        <Input type="search" className="pl-9" placeholder="Search..." {...props} />
-      </div>
-    </div>
-  );
+  // return (
+  //   <div className="flex gap-x-4">
+  //     <Button
+  //       variant="outline"
+  //       className="bg-background size-10 p-0"
+  //       onClick={props.onFiltersOpenChange}
+  //     >
+  //       <FilterIcon className="size-4" />
+  //     </Button>
+  //     <div className="relative w-full">
+  //       <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+  //       <Input type="search" className="pl-9" placeholder="Search..." {...props} />
+  //     </div>
+  //   </div>
+  // );
 }
 
 function TargetInsightsNewPageContent() {
