@@ -4,6 +4,7 @@ import {
   forwardRef,
   Fragment,
   InputHTMLAttributes,
+  memo,
   ReactNode,
   useCallback,
   useMemo,
@@ -13,7 +14,6 @@ import { addDays, formatDate } from 'date-fns';
 import {
   CalendarIcon,
   CheckIcon,
-  ChevronRight,
   ChevronRightIcon,
   CircleXIcon,
   MinusIcon,
@@ -88,22 +88,27 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
       className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
     >
       <CollapsibleTrigger>
-        <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-        {props.children}
-        {props.changes ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
-            onClick={e => {
-              e.preventDefault();
-              props.onReset();
-            }}
-          >
-            <CircleXIcon className="hidden size-3 group-hover:block" />
-            <span className="block group-hover:hidden">{props.changes}</span>
-          </Button>
-        ) : null}
+        <>
+          <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+          {props.children}
+          {props.changes ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
+              onClick={e => {
+                e.preventDefault();
+                props.onReset();
+              }}
+              asChild
+            >
+              <>
+                <CircleXIcon className="hidden size-3 group-hover:block" />
+                <span className="block group-hover:hidden">{props.changes}</span>
+              </>
+            </Button>
+          ) : null}
+        </>
       </CollapsibleTrigger>
     </SidebarGroupLabel>
   );
@@ -119,89 +124,91 @@ export function FilterContent(props: { children: ReactNode }) {
   );
 }
 
-export function MultiInputFilter(props: {
-  name: string;
-  /**
-   * Filter's key for the backend and url state
-   */
-  key: string;
-  selectedValues: string[];
-  onChange(selectedValues: string[]): void;
-}) {
-  const [traceId, setTraceId] = useState('');
-  const handleTraceIdChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setTraceId(e.target.value);
-    },
-    [setTraceId],
-  );
+export const MultiInputFilter = memo(
+  (props: {
+    name: string;
+    /**
+     * Filter's key for the backend and url state
+     */
+    key: string;
+    selectedValues: string[];
+    onChange(selectedValues: string[]): void;
+  }) => {
+    const [traceId, setTraceId] = useState('');
+    const handleTraceIdChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTraceId(e.target.value);
+      },
+      [setTraceId],
+    );
 
-  const addTraceId = useCallback(() => {
-    if (!traceId) {
-      return;
-    }
+    const addTraceId = useCallback(() => {
+      if (!traceId) {
+        return;
+      }
 
-    if (!props.selectedValues.includes(traceId)) {
-      props.onChange(props.selectedValues.concat(traceId));
-    }
+      if (!props.selectedValues.includes(traceId)) {
+        props.onChange(props.selectedValues.concat(traceId));
+      }
 
-    setTraceId('');
-  }, [traceId, setTraceId]);
+      setTraceId('');
+    }, [traceId, setTraceId]);
 
-  return (
-    <Filter name={props.name}>
-      <FilterTitle
-        changes={props.selectedValues.length}
-        children={props.name}
-        onReset={() => props.onChange([])}
-      />
-      <FilterContent>
-        <form
-          className="mt-4 flex w-full max-w-sm items-center space-x-2"
-          onSubmit={e => {
-            e.preventDefault();
-            addTraceId();
-          }}
-        >
-          <FilterInput
-            type="text"
-            placeholder="Trace ID..."
-            value={traceId}
-            onChange={handleTraceIdChange}
-          />
-          <Button
-            variant="secondary"
-            className="h-9 w-9 p-0"
-            type="submit"
-            onClick={() => {
+    return (
+      <Filter name={props.name}>
+        <FilterTitle
+          changes={props.selectedValues.length}
+          children={props.name}
+          onReset={() => props.onChange([])}
+        />
+        <FilterContent>
+          <form
+            className="mt-4 flex w-full max-w-sm items-center space-x-2"
+            onSubmit={e => {
+              e.preventDefault();
               addTraceId();
             }}
           >
-            <PlusIcon className="size-4" />
-          </Button>
-        </form>
-        {props.selectedValues.map(value => (
-          <SidebarMenuButton
-            key={value}
-            onClick={() => props.onChange(props.selectedValues.filter(val => val !== value))}
-            className="group/trace-id hover:bg-sidebar-accent/50"
-          >
-            <div
-              data-active
-              className="text-sidebar-primary-foreground border-sidebar-primary bg-sidebar-primary group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+            <FilterInput
+              type="text"
+              placeholder="Trace ID..."
+              value={traceId}
+              onChange={handleTraceIdChange}
+            />
+            <Button
+              variant="secondary"
+              className="h-9 w-9 p-0"
+              type="submit"
+              onClick={() => {
+                addTraceId();
+              }}
             >
-              <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
-              <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
-            </div>
-            {value}
-          </SidebarMenuButton>
-        ))}
-      </FilterContent>
-    </Filter>
-  );
-}
+              <PlusIcon className="size-4" />
+            </Button>
+          </form>
+          {props.selectedValues.map(value => (
+            <SidebarMenuButton
+              key={value}
+              onClick={() => props.onChange(props.selectedValues.filter(val => val !== value))}
+              className="group/trace-id hover:bg-sidebar-accent/50"
+            >
+              <div
+                data-active
+                className="text-sidebar-primary-foreground border-sidebar-primary bg-sidebar-primary group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+              >
+                <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
+                <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
+              </div>
+              {value}
+            </SidebarMenuButton>
+          ))}
+        </FilterContent>
+      </Filter>
+    );
+  },
+);
 
-export function MultiSelectFilter<$Value>(props: {
+export const MultiSelectFilter = memo(function <$Value>(props: {
   name: string;
   /**
    * Filter's key for the backend and url state
@@ -270,7 +277,7 @@ export function MultiSelectFilter<$Value>(props: {
       </FilterContent>
     </Filter>
   );
-}
+});
 
 function FilterOption(props: {
   onClick(): void;
@@ -333,81 +340,80 @@ const DoubleSlider = forwardRef<
   </SliderPrimitive.Root>
 ));
 
-export function DurationFilter(props: {
-  value: [number, number] | [];
-  onChange(value: [number, number]): void;
-}) {
-  const minValue = 0;
-  const maxValue = 100000;
-  const defaultValues: [number, number] = [minValue, maxValue];
-  const values: [number, number] = props.value.length ? props.value : defaultValues;
+export const DurationFilter = memo(
+  (props: { value: [number, number] | []; onChange(value: [number, number]): void }) => {
+    const minValue = 0;
+    const maxValue = 100000;
+    const defaultValues: [number, number] = [minValue, maxValue];
+    const values: [number, number] = props.value.length ? props.value : defaultValues;
 
-  const handleSliderChange = (newValues: [number, number]) => {
-    props.onChange(newValues);
-  };
+    const handleSliderChange = (newValues: [number, number]) => {
+      props.onChange(newValues);
+    };
 
-  const handleInputChange = (index: number, value: string) => {
-    const numValue = Number.parseInt(value) || minValue;
-    const newValues: [number, number] = [...values];
-    newValues[index] = Math.min(Math.max(numValue, minValue), maxValue);
-    props.onChange(newValues);
-  };
+    const handleInputChange = (index: number, value: string) => {
+      const numValue = Number.parseInt(value) || minValue;
+      const newValues: [number, number] = [...values];
+      newValues[index] = Math.min(Math.max(numValue, minValue), maxValue);
+      props.onChange(newValues);
+    };
 
-  return (
-    <Filter name="Duration">
-      <FilterTitle
-        changes={values[0] === minValue && values[1] === maxValue ? 0 : 1}
-        children={'Duration'}
-        onReset={() => props.onChange(defaultValues)}
-      />
-      <FilterContent>
-        <div className="space-y-6 p-2">
-          <div className="space-y-2">
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MIN</label>
-              <div className="relative">
-                <FilterInput
-                  type="number"
-                  value={values[0]}
-                  onChange={e => handleInputChange(0, e.target.value)}
-                  className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
-                  ms
-                </span>
+    return (
+      <Filter name="Duration">
+        <FilterTitle
+          changes={values[0] === minValue && values[1] === maxValue ? 0 : 1}
+          children={'Duration'}
+          onReset={() => props.onChange(defaultValues)}
+        />
+        <FilterContent>
+          <div className="space-y-6 p-2">
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="font-mono text-xs text-zinc-400">MIN</label>
+                <div className="relative">
+                  <FilterInput
+                    type="number"
+                    value={values[0]}
+                    onChange={e => handleInputChange(0, e.target.value)}
+                    className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
+                    ms
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="font-mono text-xs text-zinc-400">MAX</label>
+                <div className="relative">
+                  <FilterInput
+                    type="number"
+                    value={values[1]}
+                    onChange={e => handleInputChange(1, e.target.value)}
+                    className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
+                    ms
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-zinc-400">MAX</label>
-              <div className="relative">
-                <FilterInput
-                  type="number"
-                  value={values[1]}
-                  onChange={e => handleInputChange(1, e.target.value)}
-                  className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
-                  ms
-                </span>
-              </div>
-            </div>
+            <DoubleSlider
+              defaultValue={defaultValues}
+              max={maxValue}
+              min={minValue}
+              step={1}
+              value={values}
+              onValueChange={handleSliderChange}
+              className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+            />
           </div>
-          <DoubleSlider
-            defaultValue={defaultValues}
-            max={maxValue}
-            min={minValue}
-            step={1}
-            value={values}
-            onValueChange={handleSliderChange}
-            className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
-          />
-        </div>
-      </FilterContent>
-    </Filter>
-  );
-}
+        </FilterContent>
+      </Filter>
+    );
+  },
+);
 
-export function TimelineFilter() {
+export const TimelineFilter = memo(() => {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: addDays(new Date(), -3),
@@ -510,4 +516,4 @@ export function TimelineFilter() {
       </FilterContent>
     </Filter>
   );
-}
+});
