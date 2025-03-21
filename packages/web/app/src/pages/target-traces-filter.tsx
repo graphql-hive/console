@@ -1,4 +1,5 @@
 import {
+  ChangeEventHandler,
   ComponentPropsWithoutRef,
   ElementRef,
   forwardRef,
@@ -7,10 +8,12 @@ import {
   memo,
   ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { addDays, formatDate } from 'date-fns';
+import debounce from 'lodash.debounce';
 import {
   CalendarIcon,
   CheckIcon,
@@ -88,27 +91,25 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
       className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
     >
       <CollapsibleTrigger>
-        <>
-          <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-          {props.children}
-          {props.changes ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
-              onClick={e => {
-                e.preventDefault();
-                props.onReset();
-              }}
-              asChild
-            >
-              <>
-                <CircleXIcon className="hidden size-3 group-hover:block" />
-                <span className="block group-hover:hidden">{props.changes}</span>
-              </>
-            </Button>
-          ) : null}
-        </>
+        <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+        {props.children}
+        {props.changes ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
+            onClick={e => {
+              e.preventDefault();
+              props.onReset();
+            }}
+            asChild
+          >
+            <div>
+              <CircleXIcon className="hidden size-3 group-hover:block" />
+              <span className="block group-hover:hidden">{props.changes}</span>
+            </div>
+          </Button>
+        ) : null}
       </CollapsibleTrigger>
     </SidebarGroupLabel>
   );
@@ -345,18 +346,51 @@ export const DurationFilter = memo(
     const minValue = 0;
     const maxValue = 100000;
     const defaultValues: [number, number] = [minValue, maxValue];
-    const values: [number, number] = props.value.length ? props.value : defaultValues;
+    const [values, setValues] = useState<[number, number]>(
+      props.value.length ? props.value : defaultValues,
+    );
 
-    const handleSliderChange = (newValues: [number, number]) => {
-      props.onChange(newValues);
-    };
+    const handleStateChange = useMemo(
+      () =>
+        debounce((newValues: [number, number]) => {
+          props.onChange(newValues);
+        }, 1000),
+      [props.onChange],
+    );
 
-    const handleInputChange = (index: number, value: string) => {
-      const numValue = Number.parseInt(value) || minValue;
-      const newValues: [number, number] = [...values];
-      newValues[index] = Math.min(Math.max(numValue, minValue), maxValue);
-      props.onChange(newValues);
-    };
+    const handleSliderChange = useCallback(
+      (newValues: [number, number]) => {
+        handleStateChange(newValues);
+        setValues(newValues);
+      },
+      [handleStateChange, setValues],
+    );
+
+    useEffect(() => {
+      return () => handleStateChange.cancel();
+    }, [handleStateChange]);
+
+    const handleInputChange = useCallback(
+      (index: number, value: string) => {
+        const numValue = Number.parseInt(value) || minValue;
+        const newValues: [number, number] = [...values];
+        newValues[index] = Math.min(Math.max(numValue, minValue), maxValue);
+
+        handleStateChange(newValues);
+        setValues(newValues);
+      },
+      [handleStateChange, setValues],
+    );
+
+    const handleMinInputChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
+      e => handleInputChange(0, e.target.value),
+      [handleInputChange],
+    );
+
+    const handleMaxInputChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
+      e => handleInputChange(1, e.target.value),
+      [handleInputChange],
+    );
 
     return (
       <Filter name="Duration">
@@ -374,7 +408,7 @@ export const DurationFilter = memo(
                   <FilterInput
                     type="number"
                     value={values[0]}
-                    onChange={e => handleInputChange(0, e.target.value)}
+                    onChange={handleMinInputChange}
                     className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
@@ -388,7 +422,7 @@ export const DurationFilter = memo(
                   <FilterInput
                     type="number"
                     value={values[1]}
-                    onChange={e => handleInputChange(1, e.target.value)}
+                    onChange={handleMaxInputChange}
                     className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">

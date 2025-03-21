@@ -1,13 +1,4 @@
-import {
-  createContext,
-  FC,
-  ReactNode,
-  useCallback,
-  useContext,
-  useDeferredValue,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, FC, ReactNode, useCallback, useContext, useRef, useState } from 'react';
 
 interface WidthSyncContextType {
   width: number;

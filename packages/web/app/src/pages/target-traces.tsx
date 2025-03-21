@@ -1,18 +1,11 @@
 import { Fragment, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import {
-  AlertTriangle,
-  ArrowUpDown,
-  Clock,
-  ExternalLinkIcon,
-  FilterIcon,
-  SearchIcon,
-  XIcon,
-} from 'lucide-react';
+import { AlertTriangle, ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
+import { z } from 'zod';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
-import { Page, TargetLayout } from '@/components/layouts/target';
+import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,26 +42,23 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 import {
   ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
+  OnChangeFn,
   useReactTable,
-  VisibilityState,
 } from '@tanstack/react-table';
 import {
   DurationFilter,
   MultiInputFilter,
   MultiSelectFilter,
   TimelineFilter,
-} from './target-insights-new-filter';
-import { useWidthSync, WidthSyncProvider } from './target-insights-new-width';
+} from './target-traces-filter';
+import { useWidthSync, WidthSyncProvider } from './target-traces-width';
 
 const rootSpan: SpanProps = {
   id: 'root',
@@ -750,12 +740,19 @@ export const columns: ColumnDef<Trace>[] = [
     accessorKey: 'id',
     header: () => <div className="pl-2 text-left">Trace ID</div>,
     cell: ({ row }) => {
+      const targetRef = useTargetReference();
       const traceId = row.getValue('id') as string;
 
       return (
         <div className="px-2 text-left font-mono text-xs font-medium">
           <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
+            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+            params={{
+              organizationSlug: targetRef.organizationSlug,
+              projectSlug: targetRef.projectSlug,
+              targetSlug: targetRef.targetSlug,
+              traceId,
+            }}
             className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
           >
             <span>
@@ -991,35 +988,92 @@ export const columns: ColumnDef<Trace>[] = [
   },
 ];
 
-function TracesList() {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 20,
-  });
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+const TargetTracesSortShape = z
+  .array(
+    z.object({
+      desc: z.coerce.boolean(),
+      id: z.string(),
+    }),
+  )
+  .default([
+    {
+      desc: true,
+      id: 'timestamp',
+    },
+  ]);
+export const TargetTracesSort = {
+  shape: TargetTracesSortShape,
+};
+type SortState = z.infer<typeof TargetTracesSortShape>;
+type SortProps = {
+  sorting: SortState;
+};
+
+const TargetTracesPaginationShape = z.object({
+  pageIndex: z.number().min(0).default(0),
+  pageSize: z.number().min(10).max(100).default(20),
+});
+export const TargetTracesPagination = {
+  shape: TargetTracesPaginationShape,
+};
+
+type PaginationState = z.infer<typeof TargetTracesPaginationShape>;
+type PaginationProps = {
+  pagination: PaginationState;
+};
+
+function TracesList(props: SortProps & PaginationProps) {
+  // const [sorting, setSorting] = useState<SortingState>([]);
+  // const [pagination, setPagination] = useState({
+  //   pageIndex: 0,
+  //   pageSize: 20,
+  // });
   const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
+  const router = useRouter();
+
+  const onSortingChange = useCallback<OnChangeFn<SortState>>(
+    updater => {
+      const value = typeof updater === 'function' ? updater(props.sorting) : updater;
+
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            sort: value,
+          };
+        },
+      });
+    },
+    [router],
+  );
+
+  const onPaginationChange = useCallback<OnChangeFn<PaginationState>>(
+    updater => {
+      const value = typeof updater === 'function' ? updater(props.pagination) : updater;
+
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            pagination: value,
+          };
+        },
+      });
+    },
+    [router],
+  );
 
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
+    onPaginationChange,
     state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
+      sorting: props.sorting,
+      pagination: props.pagination,
     },
   });
 
@@ -1133,19 +1187,25 @@ function LabelWithBadge(props: {
   );
 }
 
-type FilterState = {
-  'trace.id': string[];
-  duration: [] | [number, number];
-  'graphql.status': string[];
-  'graphql.kind': string[];
-  'graphql.subgraph': string[];
-  'graphql.operation': string[];
-  'graphql.client': string[];
-  'http.status': string[];
-  'http.method': string[];
-  'http.host': string[];
-  'http.route': string[];
-  'http.url': string[];
+export const TargetTracesFilterState = z.object({
+  'trace.id': z.array(z.string()).default([]),
+  duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
+  'graphql.status': z.array(z.string()).default([]),
+  'graphql.kind': z.array(z.string()).default([]),
+  'graphql.subgraph': z.array(z.string()).default([]),
+  'graphql.operation': z.array(z.string()).default([]),
+  'graphql.client': z.array(z.string()).default([]),
+  'http.status': z.array(z.string()).default([]),
+  'http.method': z.array(z.string()).default([]),
+  'http.host': z.array(z.string()).default([]),
+  'http.route': z.array(z.string()).default([]),
+  'http.url': z.array(z.string()).default([]),
+});
+
+type FilterState = z.infer<typeof TargetTracesFilterState>;
+
+type FilterProps = {
+  filter: FilterState;
 };
 
 type FilterKeys = keyof FilterState;
@@ -1361,51 +1421,43 @@ const filterOptions = {
   ],
 };
 
-function Filters() {
-  const [filters, setFilters] = useState<FilterState>({
-    duration: [],
-    'trace.id': [],
-    'graphql.status': [],
-    'graphql.kind': [],
-    'graphql.subgraph': [],
-    'graphql.operation': [],
-    'graphql.client': [],
-    'http.status': [],
-    'http.method': [],
-    'http.host': [],
-    'http.route': [],
-    'http.url': [],
-  });
+function Filters(props: FilterProps) {
+  const filters = props.filter;
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
+  const router = useRouter();
   const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
   const updateFilter = useCallback(
     <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
       if (!updateHandlersRef.current.has(key)) {
         const handler = (value: FilterState[$Key]) => {
-          setFilters(prev => ({ ...prev, [key]: value }));
+          void router.navigate({
+            search(params) {
+              return {
+                ...params,
+                filter: {
+                  ...('filter' in params ? params.filter : {}),
+                  [key]: value,
+                },
+              };
+            },
+          });
         };
         updateHandlersRef.current.set(key, handler);
       }
       return updateHandlersRef.current.get(key)!;
     },
-    [setFilters],
+    [router],
   );
 
   const resetFilters = () => {
-    setFilters({
-      duration: [],
-      'trace.id': [],
-      'graphql.status': [],
-      'graphql.kind': [],
-      'graphql.subgraph': [],
-      'graphql.operation': [],
-      'graphql.client': [],
-      'http.status': [],
-      'http.method': [],
-      'http.host': [],
-      'http.route': [],
-      'http.url': [],
+    void router.navigate({
+      search(params) {
+        return {
+          ...params,
+          filter: {},
+        };
+      },
     });
   };
 
@@ -1608,8 +1660,10 @@ function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
   );
 }
 
-function TraceSheet({ trace }: { trace: Trace | null }) {
+function TraceSheet(props: { trace: Trace | null }) {
+  const targetRef = useTargetReference();
   const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
+  const trace = props.trace;
 
   if (!trace) {
     return null;
@@ -1691,7 +1745,13 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
         </div>
         <Button asChild variant="outline" size="sm">
           <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/insights-new/trace"
+            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+            params={{
+              organizationSlug: targetRef.organizationSlug,
+              projectSlug: targetRef.projectSlug,
+              targetSlug: targetRef.targetSlug,
+              traceId: trace.id,
+            }}
             className="absolute bottom-4 right-4"
           >
             <ExternalLinkIcon className="mr-1 h-3 w-3" />
@@ -1867,7 +1927,7 @@ function SearchBar(props: { onFiltersOpenChange: () => void }) {
   // );
 }
 
-function TargetInsightsNewPageContent() {
+function TargetInsightsNewPageContent(props: SortProps & PaginationProps & FilterProps) {
   const [filtersOpen, setFiltersOpen] = useState(true);
 
   return (
@@ -1876,7 +1936,7 @@ function TargetInsightsNewPageContent() {
         {filtersOpen ? (
           <Sidebar collapsible="none" className="bg-transparent">
             <SidebarContent>
-              <Filters />
+              <Filters filter={props.filter} />
             </SidebarContent>
           </Sidebar>
         ) : null}
@@ -1886,7 +1946,7 @@ function TargetInsightsNewPageContent() {
               <SearchBar onFiltersOpenChange={() => setFiltersOpen(isOpen => !isOpen)} />
               <Traffic />
             </div>
-            <TracesList />
+            <TracesList sorting={props.sorting} pagination={props.pagination} />
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -1894,21 +1954,29 @@ function TargetInsightsNewPageContent() {
   );
 }
 
-export function TargetInsightsNewPage(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
+export function TargetTracesPage(
+  props: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  } & SortProps &
+    PaginationProps &
+    FilterProps,
+) {
   return (
     <>
-      <Meta title="Insights" />
+      <Meta title="Traces" />
       <TargetLayout
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
-        page={Page.Insights}
+        page={Page.Traces}
       >
-        <TargetInsightsNewPageContent />
+        <TargetInsightsNewPageContent
+          sorting={props.sorting}
+          pagination={props.pagination}
+          filter={props.filter}
+        />
       </TargetLayout>
     </>
   );
