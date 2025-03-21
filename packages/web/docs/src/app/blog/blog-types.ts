@@ -7,6 +7,8 @@ export interface BlogFrontmatter {
   date: string;
   tags: string | string[];
   featured?: boolean;
+  image?: string;
+  thumbnail?: string;
 }
 
 export type BlogPostFile = Required<MdxFile<BlogFrontmatter>>;
