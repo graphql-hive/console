@@ -750,7 +750,7 @@ test('retry on non-200', async () => {
 
 test('constructs URL with usage.target', async ({ expect }) => {
   const logger = createHiveTestingLogger();
-  const token = 'Token';
+  const token = 'hvo1/brrrrt';
   const dUrl = Promise.withResolvers<string>();
 
   const hive = createHive({
