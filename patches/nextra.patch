@@ -1,5 +1,5 @@
 diff --git a/dist/server/compile.js b/dist/server/compile.js
-index 4b3f41397995dd4c796f6945627fb14d43776eb3..3b05b570b76308391453fe0516c23bd482fe8874 100644
+index 4b3f41397995dd4c796f6945627fb14d43776eb3..4b48e97086b5e4d1acfebcf6d8ecb5c31ec3c90e 100644
 --- a/dist/server/compile.js
 +++ b/dist/server/compile.js
 @@ -142,7 +142,8 @@ async function compileMdx(source, {
@@ -12,7 +12,7 @@ index 4b3f41397995dd4c796f6945627fb14d43776eb3..3b05b570b76308391453fe0516c23bd4
        ].filter((v) => !!v),
        recmaPlugins: [
          ...recmaPlugins || [],
-@@ -154,3 +155,94 @@ async function compileMdx(source, {
+@@ -154,3 +155,93 @@ async function compileMdx(source, {
  export {
    compileMdx
  };
@@ -52,7 +52,6 @@ index 4b3f41397995dd4c796f6945627fb14d43776eb3..3b05b570b76308391453fe0516c23bd4
 +    for (const prop of properties) {
 +      // Skip if not the properties we're looking for
 +      if (prop.key?.value !== 'thumbnail' && prop.key?.value !== 'image') continue;
-+      
 +      // Skip if not a string literal
 +      if (prop.value?.type !== 'Literal' || typeof prop.value.value !== 'string') continue;
 +      
@@ -62,7 +61,7 @@ index 4b3f41397995dd4c796f6945627fb14d43776eb3..3b05b570b76308391453fe0516c23bd4
 +      if (imagePath.startsWith('./') || imagePath.startsWith('../')) {
 +        value = imagePath;
 +      } else {
-+        value = `./${imagePath}`;
++        continue;
 +      }
 +      
 +      // Create a unique import name
