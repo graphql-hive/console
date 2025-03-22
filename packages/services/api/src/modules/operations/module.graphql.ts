@@ -259,6 +259,73 @@ export default gql`
     body: String! @tag(name: "public")
   }
 
+  type TraceConnection {
+    edges: [TraceEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  type TraceEdge {
+    node: Trace!
+    cursor: String!
+  }
+
+  type Trace {
+    id: ID!
+    timestamp: DateTime!
+    operationName: String!
+    operationType: GraphQLOperationType!
+    duration: Int!
+    subgraphs: [String!]!
+    success: Boolean!
+    clientName: String
+    clientVersion: String
+    httpStatusCode: Int
+    httpMethod: String
+    httpHost: String
+    httpRoute: String
+    httpUrl: String
+  }
+
+  input TracesFilterInput {
+    id: [ID!]
+    operationName: [String!]
+    operationType: [GraphQLOperationType!]
+    success: [Boolean!]
+    httpStatusCode: [Int!]
+    httpMethod: [String!]
+    httpHost: [String!]
+    httpRoute: [String!]
+    httpUrl: [String!]
+    subgraphs: [String!]
+  }
+
+  type TracesFilterOptions {
+    success: [FilterBooleanOption!]!
+    operationType: [FilterStringOption!]!
+    operationName(top: Int): [FilterStringOption!]!
+    httpStatusCode(top: Int): [FilterIntOption!]!
+    httpMethod(top: Int): [FilterStringOption!]!
+    httpHost(top: Int): [FilterStringOption!]!
+    httpRoute(top: Int): [FilterStringOption!]!
+    httpUrl(top: Int): [FilterStringOption!]!
+    subgraphs(top: Int): [FilterStringOption!]!
+  }
+
+  type FilterStringOption {
+    value: String!
+    count: Int!
+  }
+
+  type FilterBooleanOption {
+    value: Boolean!
+    count: Int!
+  }
+
+  type FilterIntOption {
+    value: Int!
+    count: Int!
+  }
+
   extend type Target {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
@@ -266,6 +333,8 @@ export default gql`
     Retrieve an operation via it's hash.
     """
     operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
+    traces(first: Int, after: String, filter: TracesFilterInput): TraceConnection!
+    tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
   }
 
   extend type Project {

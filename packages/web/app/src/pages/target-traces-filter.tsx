@@ -248,7 +248,7 @@ export const MultiSelectFilter = memo(function <$Value>(props: {
     return props.options.filter(option =>
       option.searchContent.toLowerCase().includes(lowerSearchPhrase),
     );
-  }, [searchPhrase]);
+  }, [searchPhrase, props.options]);
 
   return (
     <Filter name={props.name}>
