@@ -1,0 +1,139 @@
+---
+title: Webhooks as GraphQL Subscriptions using GraphQL Mesh
+authors: arda
+tags: [subscriptions, webhooks, graphql, mesh]
+date: 2020-10-05
+description:
+  Consume your legacy webhooks and subscriptions from any data source as GraphQL Subscriptions with
+  GraphQL Mesh.
+image: ./cover.png
+---
+
+GraphQL Mesh lets you query any data source and protocol with GraphQL by using powerful handlers
+(Swagger/OpenAPI, gRPC, SOAP and others...) Today we are happy to announce that GraphQL Mesh now
+allows you to consume your existing HTTP Webhooks as GraphQL Subscriptions!
+
+Not only that, but you could extend the GraphQL Subscriptions result, so you could subscribe to a
+webhook and get back an enriched data result, with data from other sources that don't have push
+communication abilities.
+
+And it's also possible even if your webhooks don't have any schema!
+
+Let's see how to create a GraphQL Subscription from a Webhook, once without a schema and once
+automatically from an OpenAPI schema.
+
+> We are already able to consume our existing REST APIs in GraphQL Mesh even if they don't have any
+> schema by using our JSON Schema Handler. [See more](/blog/migrating-from-rest)
+
+### Add a New Field to Our Existing Configuration for an HTTP Webhook
+
+In the following example configuration, we have a regular GraphQL Mesh configuration for schemaless
+REST API.
+
+```yaml
+sources:
+  - name: Example
+    handler:
+      jsonSchema:
+        baseUrl: http://localhost:4001
+        operationHeaders:
+          Content-Type: application/json
+        operations:
+          - type: Query
+            field: todos
+            path: /todos
+            method: GET
+            responseSample: ./todos.json
+          - type: Mutation
+            field: addTodo
+            path: /todo
+            method: POST
+            requestSample: ./addTodo.json
+            responseSample: ./todo.json
+            responseTypeName: Todo
+```
+
+Assume that we point our REST API to send HTTP requests to our Mesh server's `/webhooks/todo_added`
+path, so we need to configure Mesh to listen to that path.
+
+```yaml
+serve:
+  port: 4000
+  handlers:
+    - path: /webhooks/todo_added
+      pubsubTopic: todoAdded
+```
+
+Under `serve` we define the port we want Mesh to listen to and add a handler in a declarative way
+without a single line of code. `pubsubTopic` is the unique name for that webhook. This topic will
+receive upcoming HTTP requests so that JSON Schema handler will consume it as a GraphQL
+Subscription.
+
+Let's define a new field under `Subscription` field under `operations` in the handler level;
+
+```yaml
+operations:
+  - type: Subscription
+    field: todoAdded
+    pubsubTopic: todoAdded
+    responseSample: ./todo.json
+```
+
+Now we have a `todoAdded` field that listens to a webhook through Mesh's PubSub instance and this
+field has a return type generated based on `todo.json` sample response.
+
+You can start `mesh serve` and start listening for that webhook by the following GraphQL operation;
+
+```graphql
+subscription {
+  todoAdded {
+    id
+    title
+    content
+  }
+}
+```
+
+> [You can find a complete working example on GitHub](https://github.com/Urigo/graphql-mesh/tree/master/examples/subscriptions-example)
+
+### Other Methods for Subscriptions Such as RabbitMQ or Kafka
+
+It is possible to configure Mesh to handle other schemaless subscription solutions like RabbitMQ and
+Kafka using JSON Schema handler but this is the topic of another blog post.
+
+### Generating GraphQL Subscriptions from OpenAPI Callbacks
+
+Mesh can listen to webhooks through a PubSub engine easily. Mesh will generate the necessary typings
+and subscriptions fields connected to your PubSub engine from the OpenAPI schema. You only need Mesh
+to know what path the server should listen to like below;
+
+```yaml
+sources:
+  - name: OpenAPICallbackExample
+    handler:
+      openapi:
+        source: ./openapi.yml
+        baseUrl: http://localhost:4001
+
+serve:
+  port: 4000
+  handlers:
+    - path: /callback
+      pubsubTopic: http://localhost:4000/callback
+```
+
+In this example configuration, we assume that we have an API server running on 4001 port and it has
+a webhook that will forward requests from `/callback` path to `http://localhost:4000/callback` topic
+because OpenAPI Handler uses callback url as PubSub topic name. If you want to have a more
+customized way of handling incoming webhook requests, you can always write your own Express handler
+and define it instead of `pubsubTopic`. You will find Mesh's PubSub engine under the `request`
+object as `request.pubsub`.
+
+You can check
+[this example for more](https://github.com/Urigo/graphql-mesh/tree/master/examples/openapi-subscriptions)
+
+### Now You
+
+We would love to hear your use cases and feedback to make Mesh better and more powerful! Feel free
+to submit issues on GitHub to share your ideas or you can also join our community channel on
+Discord!

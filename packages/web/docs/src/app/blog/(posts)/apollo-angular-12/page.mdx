@@ -1,0 +1,207 @@
+---
+title: Apollo-Angular 1.2 - using GraphQL in your apps just got a lot easier!
+tags: [graphql, angular, apollo-angular]
+authors: kamil
+date: 2018-08-21
+description:
+  Check what's new in Apollo Angular and how to get the full potential benefits of using Angular +
+  GraphQL + TypeScript combined thanks to GraphQL-Code-Generator
+image: ./351c722f184845c0b6f792f4da534e96.png
+---
+
+_Check what's new in Apollo Angular and how to get the full potential benefits of using Angular +
+GraphQL + TypeScript combined thanks to GraphQL-Code-Generator._
+
+We are very excited to announce a new version of Apollo Angular that dramatically improves and
+simplifies the usage of GraphQL with Angular.
+
+This version also adds production and scale related features, that our large Enterprise and
+production users had been asking for.
+
+## TL;DR
+
+- [Code generation for Apollo Angular](https://graphql-code-generator.com/docs/plugins/typescript-apollo-angular)
+- Query, Mutation, Subscription as an Angular service
+- [Apollo Angular Boost](https://npmjs.com/package/apollo-angular-boost)
+- Testing tools
+
+---
+
+<Video
+  src="https://youtube.com/embed/KGBPODrjtKA"
+  title="GraphQL Code Generator  -  Angular Apollo Template"
+/>
+
+---
+
+## Introducing Query, Mutation and Subscription as an Angular Services
+
+Through almost two years of using GraphQL in Angular we gained a lot of experience, and learned how
+people use the library.
+
+With the current API, having `query` and `watchQuery` methods sometimes confused a lot of
+developers. For people who use Apollo for long time it's obvious but we often get asked about
+differences between them and many newcomers are surprised.
+
+> We decided to add a new approach of working with GraphQL in Angular.
+
+```ts
+import { Injectable } from '@angular/core';
+import { Query } from 'apollo-angular';
+import gql from 'graphql-tag';
+
+@Injectable({...})
+export class FeedGQL extends Query {
+  document = gql`
+    query Feed {
+      posts {
+        id
+        title
+      }
+    }
+  `
+}
+```
+
+There are now 3 new simpler APIs: `Query`, `Mutation` and `Subscription`. Each of them allows to
+define the shape of a result & variables.
+
+The only thing you need to do is to set the `document` property, That's it, and now you use it as a
+regular Angular service:
+
+```ts
+import { Component } from '@angular/core'
+import { FeedGQL } from './feed-gql.ts'
+
+@Component({
+  /* … */
+})
+export class FeedComponent {
+  constructor(feedGQL: FeedGQL) {
+    feedGQL.watch().valueChanges.subscribe(result => {
+      // ...
+    })
+  }
+}
+```
+
+In our opinion, the new API is more intuitive and documents feels now like a first class-citizens.
+
+> But it also opens up the doors for something wayyyyy cooler!
+
+## Taking It to the Next Level
+
+As an Angular developer, you already understand how much power Typescript adds to your development —
+the Angular community took those capabilities to the next level with code generation, through things
+like schematics.
+
+The GraphQL community also took the concept of static type capabilities into new places — over the
+API and managing data automatically at runtime with the query language.
+
+While using GraphQL, Typescript and Angular and maintaining `apollo-angular` in the past 2 years we
+always keep thinking how can we get all those technologies closer to create something that is more
+powerful than the sum of its parts.
+
+<Video
+  src="./861767ce574bfae276f842a1c7046ec4.webm"
+  title="Ever wondered how GraphQL Code Generator works?"
+/>
+
+## GraphQL Code Generator for Apollo Angular
+
+We are pleased to announce a new set of tools that takes the GraphQL schema from the server and the
+query from the Angular component and generate everything in the middle for you!
+
+Just by consuming a static GraphQL schema and defining the data you need and its structure in a
+GraphQL Query, there is no need for you to write any Typescript! You already defined it, why writing
+it again?
+
+We will generate a strongly typed Angular service, for every defined query, mutation or
+subscription, ready to use in your components!
+
+## How It Works
+
+You create a `.graphql` file with a document that you want to use in a component:
+
+```graphql
+query Feed {
+  posts {
+    id
+    title
+  }
+}
+```
+
+Next, you run the
+[**GraphQL Code Generator — Angular Apollo Plugin**](https://graphql-code-generator.com/docs/plugins/typescript-apollo-angular)
+to generate types and angular services.
+
+Then you simply import and use it as a regular, Angular service.
+
+```js
+import { FeedGQL } from './generated'
+```
+
+> GraphQL Code Generator takes query's name, makes it PascalCased and adds GQL suffix to it. An
+> example, “myFeed” becomes “MyFeedGQL”.
+
+See it here in action and play with it:
+
+<StackBlitz stackBlitzId="apollo-angular-code-generator-example" file="app/list.component.ts" />
+
+To play with code generator try to clone this repository:
+
+<LinkPreview link="https://github.com/kamilkisiela/apollo-angular-services" />
+
+Using Angular, Typescript and GraphQL in a coordinated way, gives us new level of simplicity and
+power for our developer experience:
+
+- **Less code to write** — no need to create a network call, no need to create Typescript typings,
+  no need to create a dedicated Angular service
+- **Strongly typed out of the box** — all types are being generated, no need to write any Typescript
+  definitions and struggle to keep them updated
+- **Full developer experience of tools and IDEs** — development time autocomplete and error
+  checking, not only across your frontend app but also with your API teams!
+- **Tree-shakable** thanks to Angular 6
+
+## More Thanks to GraphQL
+
+We believe GraphQL is a game changer in how you plan and create your frontend apps.
+
+The vision that guides us is that you should be able to sketch a list of data types your backend can
+provide, sketch components and their data dependencies — and all the rest of the plumbing can be
+generated for you.
+
+Once you'll write an app like that, you will ask yourself why did you write all the other
+boilerplate code by yourself before.
+
+But we've just talked about one new feature in apollo-angular. there is more:
+
+- **Testing utilities** There were a lot of questions about testing Apollo components, so we decided
+  to finally release something with a similar API to the one Angular's `HttpClient` uses.
+  [Sergey Fetiskin](https://medium.com/@sergeyfetiskin?source=post_header_lockup) wrote
+  [an article about it](https://medium.com/@sergeyfetiskin/testing-apollo-graphql-in-your-angular-application-595f0a04aad3).
+- **Apollo Angular Boost** It's hard for newcomers to get started with Apollo Angular. Inspired by
+  Apollo Boost we decided to create an Angular version of it. Here's
+  [an interactive example](https://stackblitz.com/edit/simple-apollo-angular-boost-example).
+- **Create Apollo on DI level** There is now an extra way to create Apollo Client. Instead of using
+  `Apollo.create` inside of a constructor, you can provide settings on Dependency Injection level.
+  Read the
+  [“Using Dependency Injection”](https://apollographql.com/docs/angular/basics/setup.html#using-dependency-injection)
+  chapter in docs.
+- **GraphQL Subscription outside NgZone** Apollo.subscribe accepts now a second argument in which
+  you can enable running subscription's callback outside NgZone.
+- **Automatic Persisted Queries for Angular** It's now possible to use APQ with Angular's
+  HttpClient, just install apollo-angular-link-persisted.
+
+---
+
+- Query and Mutation as a service on
+  [StackBlitz](https://stackblitz.com/edit/apollo-angular-services) and
+  [GitHub](https://github.com/kamilkisiela/apollo-angular-services)
+- Query and Mutation —
+  [Step by step tutorial](https://github.com/kamilkisiela/apollo-angular-introduction)
+- Example:
+  [Apollo Angular Boost on StackBlitz](https://stackblitz.com/edit/basic-apollo-angular-app)
+- [Apollo Angular repository](https://github.com/apollographql/apollo-angular)
+- [Documentation](https://apollographql.com/docs/angular/basics/services.html)
