@@ -1,0 +1,244 @@
+---
+title: GraphQL - Use case and Architecture
+authors: tvvignesh
+tags: [graphql, graphql-federation]
+date: 2020-12-02
+description:
+  Architecting for GraphQL and its ecosystem. Looking at how your architecture can look like when
+  working with GraphQL.
+image: ./cover.png
+thumbnail: ./cover.png
+---
+
+_This blog is a part of a series on GraphQL where we will dive deep into GraphQL and its ecosystem
+one piece at a time_
+
+- Part 1: [**Diving Deep**](/blog/graphql-deep-dive-1)
+- Part 2: [**The Usecase & Architecture**](/blog/graphql-deep-dive-2)
+- Part 3: [**The Stack #1**](/blog/graphql-deep-dive-3)
+- Part 4: [**The Stack #2**](/blog/graphql-deep-dive-4)
+- Part 5: [**The Stack #3**](/blog/graphql-deep-dive-5)
+- Part 6: [**The Workflow**](/blog/graphql-deep-dive-6)
+
+In the [**last blog post**](/blog/graphql-deep-dive-1), we explored the various questions one might
+have when starting off or working with the GraphQL ecosystem and answered them. Now that justice has
+been done to clear the clouded thoughts you might have, let's dive into the next important step in
+this blog.
+
+In this blog, we will start looking at how your architecture can look like when working with GraphQL
+and its ecosystem.
+
+**The Architecture**
+
+Your architecture hugely revolves around your usecase, and you have to be very careful in getting it
+right and take proper consultation if needed from experts. While it is very important to get it
+right before you start, mistakes can happen, and with a lot of research happening these days, you
+can often find any revolution happen any day which can make your old way of thinking obsolete.
+
+That is why, I would highly recommend you to **Architect for Change** and make your architecture as
+**Modular** as possible so that you have the flexibility to do incremental changes in the future if
+needed. Let's just talk about architecture in context with GraphQL here. We will explore more deeper
+into the rest of the architecture in an another blog post.
+
+**The Basics**
+
+There are some things you would have to think of before starting your journey.
+
+- Am I building a monolith or am I working on microservices? Remember that monoliths still have a
+  huge place in today's world given the complexity which comes with Microservices as long as your
+  project is small.
+- What does my deployment target going to look like? VM, Containers or Bare Metal?
+- What is going to be my orchestration layer? Kubernetes, Mesos, Swarm or OpenStack?
+- What are my scaling needs?
+- What is the performance that I expect?
+- Do I need Offline support?
+- Cloud or On-Premise?
+- What is the programming language which makes sense for my usecase?
+
+This list is incomplete. There are more questions like these which you might want to answer yourself
+and answering this can give you a lot of clarity as you start building your architecture.
+
+**The Ingress / Load Balancer**
+
+This is the first layer that any client would typically hit before making requests to your GraphQL
+service. This acts as the single entry point for all traffic (it can be regional as well depending
+on your use case).
+
+This would be the first thing you would have to setup before getting started and this is also the
+layer which handles things like SSL termination, caching (in case you have a CDN setup) and so on.
+
+If you are in the Kubernetes world, you also have a lot of ingress controllers like
+[**Nginx Ingress**](https://kubernetes.github.io/ingress-nginx),
+[**Ambassador**](https://getambassador.io), [**Kong**](https://konghq.com),
+[**Contour**](https://projectcontour.io) and so on which can help.
+
+**The API Gateway**
+
+The first thing would be the entry point of all your GraphQL requests. Since GraphQL exposes a
+single endpoint e.g. `/graphql` this becomes the single entry point for all your operations.
+
+But, I highly wouldn't recommend directly exposing your service to client since it can be unsecure,
+difficult to manage things like rate-limiting, load balancing and so on.
+
+Rather, it is always recommended to expose it via an API Gateway of your choice. Be it Ambassador,
+Kong, WSO2, Apigee or anything else for that matter. This can also act as sort of kill switch or can
+also be used for things like filtering and moderating traffic whenever needed.
+
+**The GraphQL Gateway**
+
+As you evolve, you might end up having multiple services or might even move to the microservices
+world to enable scale. Now, this means multiple services with its own GraphQL schema, logic and so
+on.
+
+But unlike REST, GraphQL exposes a single endpoint irrespective of the underlying services. This is
+where a Gateway plays a major role and comes in at the next layer of our architecture. The role of
+orchestrating or composing (both are different) multiple services and schemas together, delegating
+queries and mutations to the respective microservices and all of this without the client having to
+worry about the complexity underneath.
+
+While you may choose to go for different architectures like
+[**Schema Stitching**](https://graphql-tools.com/docs/schema-stitching) or
+[**Federation**](https://the-guild.dev/graphql/hive/federation) depending on your use case, do
+remember that sometimes, this may be an overkill. You might not even need a GraphQL Gateway to start
+with if you are building something small and this can reduce a lot of complexity.
+
+**The GraphQL Service**
+
+The next thing to think of would be the GraphQL service itself (be it a monolith or microservice).
+Each service would be responsible for a part of the complete data graph as seen in
+[**Federated Implementation**](https://principledgraphql.com/integrity#2-federated-implementation)
+and this will make things easier to scale. Note that the way you implement it can be different as
+discussed (Schema Stitching or Federation).
+
+You might also want to modularize your project structure and code within the service and this is
+applicable irrespective of whether you use a monolith or microservice to maintain clear separation
+of concerns, make everything composable and modular as possible.
+
+While you can end up discovering your own way to do it (I initially went down this path), but what
+is the use of re-inventing the wheel when you have something like
+[**GraphQL Modules**](https://graphql-modules.com) which can help you with this.
+
+You might also want to get your tooling right to reduce as much work you do as possible. Be it
+linting and validation, code generation, testing, and so on so that you automate most of your
+workflow, and you stay productive while working on any part of the service.
+
+**The Mode of Communication**
+
+Now that you have thought about the service(s), you might also want to think about the mode of
+communication in between them which is essential to pass data to and fro, synchronously and
+asynchronously. This also presents some questions which you might want to answer first before
+starting.
+
+- https ([**1.1**](https://tools.ietf.org/html/rfc2616),
+  [**2**](https://tools.ietf.org/html/rfc7540) or
+  [**3**](https://tools.ietf.org/html/draft-ietf-quic-http-32)) or [**grpc**](https://grpc.io) (over
+  http/2) or [**Thrift**](https://thrift.apache.org) or
+  [**Websockets**](https://tools.ietf.org/html/rfc6455)?
+- Do you need a [**Service Mesh**](https://smi-spec.io)?
+- Is GraphQL going to be used for communicating between services?
+- Do I need something like [**MTLS**](https://linkerd.io/2/features/automatic-mtls) for securing
+  inter-service communication?
+- How do I do asynchronous communication? Do I use event queues like
+  [**Kafka**](https://kafka.apache.org), [**RabbitMQ**](https://rabbitmq.com) or
+  [**NATS**](https://nats.io) ?
+
+Again, all of these depend on your use case and hence, there is no definite answer to this. But, try
+to go for a protocol which offers you less latency, great compatibility with built-in support for
+things like compression, encryption and so on.
+
+These matters cause while all the clients would communicate with the GraphQL endpoint you expose,
+you still would have to have some sort of efficient way to do inter-service communication.
+
+Even if you are going to communicate between your service with GraphQL (which is what I do), you
+still have to decide how you transmit the GraphQL queries and mutations in between them.
+
+**Authentication & Control**
+
+Like we discussed in the [**previous blog post**](/blog/graphql-deep-dive-1)**,** there are various
+ways to do authentication and authorization. You might want to consider them as well while
+architecting cause this will decide how chatty your services will be when doing operations, how
+secure will it be, and so on. There are various ways as we spoke about, both stateful and stateless.
+While stateless would be better for scalability, you might want to choose what works best for you.
+
+Depending on your use case, you might also want to decide if you need something like persisted
+queries or not. This can prevent clients from sending queries which are not authorized, prevent huge
+amounts of GraphQL data from being passed over the wire, and so on.
+
+**The Backend**
+
+And then comes the backend which you are going to use to store/retrieve data from. There are a huge
+number of options out there and to be honest, there is no one database which fits all use-cases. And
+they even come with different variants — SQL, NoSQL, Search, Time Series and even Graph Databases.
+You can refer [**DBEngines**](https://db-engines.com/en/ranking) for a complete list.
+
+And you can even put a GraphQL layer or ORM on top of all of them if you want and take the
+complexity away from the services (e.g. with [**Prisma 2**](https://prisma.io) or
+[**GraphQL Mesh**](https://the-guild.dev/graphql/mesh)).
+
+You might also want to look at how you minimize the amount of calls you make to the main database.
+Do you need caching and have it setup? Have you addressed the N+1 problem with
+[**Dataloader**](https://github.com/graphql/dataloader)?
+
+**More Exploration**
+
+Now, there are a lot of other things you might want to have in your architecture like Hybrid Cloud
+support, CI/CD pipelines, caching and so on. We will probably explore them in future blog posts as
+we go along.
+
+Remember to keep your stack as simple as possible, and you can incrementally have them setup as you
+go along.
+
+**Some Tips**
+
+- When architecting applications, I try to use the
+  [**Black Box model**](https://medium.com/timecampus/the-power-of-black-box-a7d8a320e557) as much
+  as possible. This simplifies a lot of things for me.
+- I try to go for the Zero Trust Security Model when building my architecture popularized by
+  [**Beyondcorp**](https://cloud.google.com/beyondcorp) from Google and while this will create a lot
+  of friction at start, this makes life a lot better for you in the future.
+- There are some questions I ask based on the principles like
+  [**YAGNI**](https://en.wikipedia.org/wiki/You_aren't_gonna_need_it)**,**
+  [**DRY**](https://en.wikipedia.org/wiki/Don't_repeat_yourself)**,**
+  [**KISS**](https://en.wikipedia.org/wiki/KISS_principle), and they play a huge role in making sure
+  that you don't overwhelm yourself with things you don't want to do right now and prioritize things
+  right.
+- I try to refer case studies and see how others are already solving the same problem and this can
+  help me save a lot of my time. Avoiding to re-invent the wheel. For GraphQL, you may find them
+  [**here**](https://graphql.com/case-studies)
+
+**Deciding the “Right” Stack for “You”**
+
+Before I pick any tool or technology as part of my tech stack, I do ask a set of questions which
+help me better judge and make an informed decision on what I want. Probably it might help you too.
+This applies not just to the GraphQL ecosystem, but anything you choose for that matter.
+
+- Does this tool/library solve my problem well?
+- What is the Licensing model? Is it Open Source? If so, is it MIT/Apache/BSD/GPL
+- Does it have community support or backed by a Foundation/Enterprise? When was the last commit? How
+  many contributors? Does it have a clear path to becoming contributors?
+- How many people use it in production? What are their experiences? At what scale are they using it?
+- What do the stats look like? Stars, Forks, Downloads?
+- Is it bloated? Or does it do just one thing well?
+- Does it have a clear roadmap for the future? If so, what are the milestones?
+- What are the other alternatives? How does it compare to them?
+- How is the documentation? Does it have tests? Does it have examples which I can refer to?
+- Does it follow standards and is free of Vendor Lockin?
+- Are there any security concerns which this tool or library might create?
+
+While not all of these questions might have been addressed by the library or tool well, what I see
+is at least the intent to address them in near-time.
+
+While most of the things in this blog may not be related to GraphQL itself, these are some things
+which you need to keep in mind before starting your journey with GraphQL. In the next blog, I will
+show you how my GraphQL Tech Stack looks like as I use it to build
+[Timecampus](https://twitter.com/timecampus), and we will dive deeper into each layer of the stack,
+one piece at a time.
+
+Hope this was informative. Do let us know how you prefer to architect with GraphQL in the comments
+below, and we will be happy to know more about it.
+
+If you have any questions or are looking for help, feel free to reach out to me
+[@techahoy](https://twitter.com/techahoy) anytime.
+
+And if this helped, do share this across with your friends, do hang around and follow us for more
+like this every week. See you all soon.

@@ -1,0 +1,312 @@
+---
+title: Announcing GraphQL Yoga 2.0!
+tags: [server, graphql-federation, envelop, node, graphql]
+authors: [charlypoly, arda, laurin, saihaj]
+date: 2022-03-29
+description:
+  Fully-featured GraphQL Server with focus on easy setup, performance and great developer experience
+image: ./cover.png
+thumbnail: ./thumbnail.png
+---
+
+Today we are incredibly excited to share with you the new GraphQL Yoga! This release was made
+possible with your contributions, issues, and feedback.
+
+[The Guild](/about-us) took over the development of [GraphQL Yoga](https://graphql-yoga.com) from
+[Prisma](https://prisma.io) in early 2021, and with the growing community of tools in the GraphQL
+space, most recently [Envelop](https://envelop.dev), we were able to rewrite GraphQL Yoga 2.0 from
+scratch with easy setup, performance, and developer experience at the core.
+
+GraphQL Yoga continues to boast a "convention over configuration" approach and the freedom to use
+your favorite libraries, from HTTP to schema-building.
+
+You are no longer required to install dozens of dependencies to get features such as subscriptions,
+file uploads, CORS, error masking, and more.
+
+Building a GraphQL Yoga server requires a single import and only a few lines of code to start
+serving an API. And you also get [GraphiQL](https://github.com/graphql/graphiql) for making
+development even easier.
+
+```js
+// 1. Import GraphQL Yoga
+import { createServer } from '@graphql-yoga/node'
+
+// 2. Create your server
+const server = createServer({
+  schema: {
+    typeDefs: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+    resolvers: {
+      Query: {
+        hello: () => 'Hello Hello Hello'
+      }
+    }
+  }
+})
+
+// 3. Serve the API and GraphiQL
+server.start()
+```
+
+## The Yoga V2 Experience
+
+### Your Stack and Habits
+
+The main goal of Yoga v2 is to **allow you to leverage all the GraphQL ecosystem** by being
+compatible with most of the existing schema-design, HTTP server libraries, and deployment
+environments.
+
+Built on top of a **modular and extendable GraphQL Server**, Yoga v2 allows you to use your
+preferred schema design approach and HTTP server library.
+
+For example, Yoga v2 is fully compatible with Express and Nexus, with no additional packages:
+
+```ts
+import express from 'express'
+import { makeSchema, queryType } from 'nexus'
+import { createServer } from '@graphql-yoga/node'
+
+const Query = queryType({
+  definition(t) {
+    t.string('hello', { resolve: () => 'hello world!' })
+  }
+})
+const schema = makeSchema({
+  types: [Query]
+})
+
+const graphQLServer = createServer({ schema })
+
+const app = express()
+
+// Bind GraphQL Yoga to the `/graphql` endpoint
+// Here it takes the request and response objects and handles them internally
+app.use('/graphql', graphQLServer)
+
+app.listen(4000, () => {
+  console.log('Running a GraphQL API server at http://localhost:4000/graphql')
+})
+```
+
+The same applies to **GraphQL Tools, Pothos, Nexus, TypeGraphQL, SDL first schema-design approaches,
+graphql-js, Apollo Tools, Fastify, Koa, Next.js, SvelteKit, and Deno**.
+
+Beyond the compatibility of schema-design and HTTP server libraries, Yoga v2 makes **deploying a
+GraphQL API to any environment seamless** (Vercel Functions, Cloudflare Workers, AWS Lambda and
+more).
+
+Here, a GraphQL API built with GraphQL Modules, deployed on Cloudflare Workers:
+
+```tsx
+import { createApplication } from 'graphql-modules'
+import { createServer } from '@graphql-yoga/common'
+import { helloWorldModule } from './helloWorld'
+
+const application = createApplication({
+  modules: [helloWorldModule]
+})
+
+const server = createServer({ schema: application.schema })
+
+server.start()
+```
+
+## Productivity at Your Fingertips
+
+### Batteries-Included
+
+Yoga v2 comes with **sensible defaults to make development faster**, all with **complete TypeScript
+support**.
+
+**Features common to modern GraphQL APIs** such as file-uploads, subscription support, advanced
+error handling, or CORS **come built-in with Yoga**:
+
+```ts
+import { createServer, GraphQLYogaError } from '@graphql-yoga/node'
+
+// Provide your schema
+const server = createServer({
+  schema: {
+    typeDefs: /* GraphQL */ `
+      # adding this custom scalar enables file upload support
+      scalar Upload
+
+      type Query {
+        hello: String
+      }
+
+      type Subscription {
+        countdown(from: Int!): Int!
+      }
+
+      type Mutation {
+        readTextFile(file: Upload!): String
+      }
+    `,
+    resolvers: {
+      Query: {
+        hello: () => 'world'
+      },
+      Subscription: {
+        countdown: {
+          // This will return the value on every 1 sec until it reaches 0
+          subscribe: async function* (_, { from }) {
+            for (let i = from; i >= 0; i--) {
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              yield { countdown: i }
+            }
+          }
+        }
+      },
+      Mutation: {
+        readTextFile: async (_, { file }: { file: File }) => {
+          let textContent = null
+          try {
+            textContent = await file.text()
+          } catch (e) {
+            // return an error visible by the client
+            throw new GraphQLYogaError(`Failed to parse file`)
+          }
+          return textContent
+        }
+      }
+    }
+  }
+})
+
+// We now serve a GraphQL API with Subscriptions (over SSE), CORS,
+// and File uploads support!
+server.start()
+```
+
+Yoga v2 also provides APIs to handle **logging, advanced Subscriptions** use-cases (over WS,
+Pub/Sub), [**Apollo Federation**](https://the-guild.dev/graphql/hive/federation) Support,
+[and more](https://graphql-yoga.com/docs/quick-start).
+
+### Easily Extend Your API with Envelop Plugins
+
+GraphQL Yoga supports [Envelop](https://envelop.dev) out of the box, which gives you greater
+control, and the ability to hook into the GraphQL execution phases.
+
+Here, we are building a full-featured GraphQL API with security rules, a response cache and sentry
+error reporting with only a few lines of code:
+
+```ts
+import { useDepthLimit } from '@envelop/depth-limit'
+import { useResponseCache } from '@envelop/response-cache'
+import { useSentry } from '@envelop/sentry'
+import { createServer } from '@graphql-yoga/node'
+
+const server = createServer({
+  schema: {
+    typeDefs: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+    resolvers: {
+      Query: {
+        hello: () => 'Hello Hello Hello'
+      }
+    }
+  },
+  plugins: [
+    useDepthLimit({
+      // set up some security rules
+      maxDepth: 10
+    }),
+    useResponseCache(), // speed up our server with a response cache
+    useSentry() // report unexpected errors to sentry
+  ]
+})
+
+// Start the server and explore http://localhost:4000/graphql
+server.start()
+```
+
+The Envelop Plugin currently [proposes more than 35+ plugins](https://envelop.dev/plugins) covering
+most of the standard GraphQL APIs features you need in production.
+
+Ultimately, you can [develop custom Envelop plugins](https://envelop.dev/docs/plugins/custom-plugin)
+to create reusable behaviors that hook on to the GraphQL lifecycle.
+
+## Production-Ready
+
+GraphQL Yoga v2 has been built in production for production usage.
+
+Built-in real-world conditions within our projects (e.g. [GraphQL Mesh](https://graphql-mesh.com))
+and with some of [our clients](/#services), performance was highly prioritised. The core of Yoga is
+as performant as possible, and we continuously keep track and improve it.
+
+Also, the Yoga V2 repository runs performance checks on every commit and Pull Request, so we can
+always capture any performance regression.
+
+Last but not least, every commit is ensured to run on all deployment targets such as AWS Lambda or
+Cloudflare workers through an End-To-End testing suite!
+
+We continue our effort of pushing GraphQL Yoga to more production environments with the imminent
+release of [Redwood 1.0](https://redwoodjs.com) that uses Yoga 2.0 as its default GraphQL server.
+
+## A Standards-Compliant GraphQL Server
+
+In the same way that TypeScript aims to stay aligned with ECMAScript, GraphQL Yoga is based on
+several official and recognized specs:
+
+- [GraphQL-spec](https://spec.graphql.org/October2021),
+  [GraphQL-over-HTTP](https://github.com/graphql/graphql-over-http): guarantees your GraphQL API to
+  work with all existing GraphQL clients (Apollo, Relay, urql, and more)
+- [GraphQL-Multipart-Request](https://github.com/jaydenseric/graphql-multipart-request-spec):
+  enables great file upload support
+- [W3C Fetch API](https://fetch.spec.whatwg.org): we embrace the future of Node.js and provide the
+  same developer experience on all platforms
+
+## GraphQL Features from the Future
+
+Yoga v2 supports some experimental GraphQL features such as
+[`@defer` and `@stream`](https://github.com/graphql/graphql-js/pull/2839), allowing you to get a
+taste of the future of GraphQL (with compatible clients such as
+[urql](https://formidable.com/open-source/urql/docs/comparison/#core-features)).
+
+Also, thanks to the Envelop plugin system, Yoga v2 can also act as "Babel for GraphQL", giving you
+the option to use features that are not yet in the GraphQL spec but are very useful in production
+today, like `@defer`, `@stream` and
+[`@oneOf`](https://envelop.dev/docs/guides/using-graphql-features-from-the-future).
+
+## Get Started with Yoga V2
+
+Yoga v2 provides the best GraphQL experience while giving you the freedom to use your preferred
+stack and tools.
+
+### Get Started from Scratch with Our New Tutorial
+
+**Want to try it?** Give
+[our brand-new tutorial](https://graphql-yoga.com/tutorial/basic/00-introduction) a try! It will
+guide you in building a full-featured, modern API with GraphQL Yoga.
+
+[Episode #36 of `graphql.wtf`](https://graphql.wtf/episodes/36-graphql-yoga-2) is also great
+introduction to GraphQL Yoga 2.0:
+
+<Video src="https://youtube.com/embed/_-B6QIFSSwo" title="GraphQL Yoga 2" />
+
+### ... or Migrate Your Existing GraphQL Server to Yoga
+
+All Yoga v2's features
+[are well documented on the website](https://graphql-yoga.com/docs/quick-start), and we also have
+[some migration guides](https://graphql-yoga.com/docs/migration/migration-from-apollo-server) (from
+v1, Apollo Server and Express GraphQL).
+
+## What's Next
+
+Yoga v2 is the biggest and most important project we released to date; still, it is just the
+beginning of our GraphQL server vision.
+
+We can't wait to get your
+[questions, user feedback, and feature requests/PRs](https://github.com/dotansimha/graphql-yoga),
+and we already plan for new features such as an Enhanced Plugin System that will provide features
+similar to Envelop but at the request level.
+
+Don't hesitate to reach out to us on Twitter and support us by
+[sharing this article!](<https://twitter.com/intent/tweet?text=GraphQL%20Yoga%20is%20out%202.0%20%F0%9F%8E%89%0A%0ABuild%20fast%2C%20extensible%2C%20and%20spec-compliant%20GraphQL%20APIs%20in%20Node.js%20with%20Subscriptions%2C%20Serverless%2C%20File%20uploads%20support%20(and%20more!)%20%F0%9F%9A%80%0A%0A%0Ahttps%3A%2F%2Fthe-guild.dev%2Fblog%2Fannouncing-graphql-yoga-2>)
