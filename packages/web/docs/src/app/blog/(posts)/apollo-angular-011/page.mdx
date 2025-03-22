@@ -1,0 +1,313 @@
+---
+title: Apollo Angular Version 0.11
+authors: kamil
+tags: [graphql, apollo-angular]
+date: 2017-03-01
+description: New name, AoT support, TypeScript improvements, and Angular 4 readiness
+image: ./cc2b3a84ee2ef485ffad79881a284b9a.png
+---
+
+## New Name, AoT Support, TypeScript Improvements, and Angular 4 Readiness
+
+We recently released version `0.11.0` of
+[apollo-angular](https://github.com/apollographql/apollo-angular) and a lot of things have changed
+and improved since our last update blog!
+
+First, here is an overview list of the main changes:
+
+- New name
+- Support for Apollo Client 0.8+
+- AoT support
+- Multiple Apollo Client instances in a single app
+- TypeScript improvements and TypeScript codegen
+- Apollo Client Developer Tools
+- ES6 Modules and Tree Shaking
+- Support for Angular 4
+
+So let's dive into it!
+
+---
+
+## New Name
+
+![](./3b47588c7a195cbb887dad8db7fb8c7f.png 'After years of research we discovered a secret formula')
+
+As you all know, the term “Angular 2” is
+[no longer a thing](https://angularjs.blogspot.com/2017/01/branding-guidelines-for-angular-and.html),
+now it's just “Angular”, without the version suffix (#justAngular). So we renamed the package to be
+**“apollo-angular”**. We really wanted “angular-apollo” to match up with `react-apollo`, but it was
+already taken. That means that from now on the “angular2-apollo” package is deprecated.
+
+We've applied this rule to the service as well, so there is no “Angular2Apollo” anymore. It's just
+**Apollo**. Simpler and more convenient. The migration process is very simple:
+
+```ts
+import { Angular2Apollo } from 'angular2-apollo'
+
+class AppComponent {
+  constructor(apollo: Angular2Apollo) {}
+}
+```
+
+```typescript
+import { Apollo } from 'apollo-angular'
+
+class AppComponent {
+  constructor(apollo: Apollo) {}
+}
+```
+
+---
+
+## Apollo Client 0.8
+
+We've updated our dependency to apollo-client 0.8 which includes a lot of improvements in size and
+performance. check out the full list
+[here](https://dev-blog.apollodata.com/apollo-client-0-8-e8db5efc75fb).
+
+---
+
+## Ahead-Of-Time Compilation
+
+![](./9eb65f486aae61db008b4b6f5bea90e3.png 'Ahead-of-Time Compilation')
+
+One of the most interesting features of Angular is Ahead-of-Time compilation. Angular's compiler
+converts the application, components, and templates to executable JavaScript code at build time. AoT
+compilation improves the size of the app as well as the performance and stability thanks to
+static-code analysis at build time.
+
+![](./063a3d092340209bd6e454e2fee4ac41.png 'Just-In-Time Compilation')
+
+To support this feature, we had to change the way of providing ApolloClient to ApolloModule. Instead
+of using an instance of ApolloClient directly, it has to be wrapped with a function. Here's an
+example:
+
+```ts
+import { ApolloModule } from 'apollo-angular'
+import { ApolloClient } from 'apollo-client'
+
+const client = new ApolloClient()
+
+function provideClient() {
+  return client
+}
+
+ApolloModule.withClient(provideClient)
+```
+
+---
+
+## Multiple Clients
+
+![](./251fe78b9075dac4e8088a4e174427e1.png 'Apollo service')
+
+We're happy to introduce a support for multiple clients. Yes, it's now possible to use many
+instances of the ApolloClient inside of the ApolloModule, meaning you can call multiple GraphQL
+endpoints from your single client app.
+
+The use case for this feature came from some of our enterprise users. Some common use cases are when
+working with a server endpoint as well as a 3rd party API, or in case you are calling multiple
+microservices GraphQL endpoints from on client app. While it's always better to have all of your
+data in one GraphQL service to be able to get all of the data you need in one request, sometimes
+it's unavoidable to have to call multiple APIs.
+
+We decided to make it as an optional feature and to implement it in a way that doesn't break your
+existing app. Let me explain how it works. First thing, you need to define a function to return a
+map of clients:
+
+```ts
+function provideClients() {
+  return {
+    default: defaultClient,
+    extra: extraClient
+  }
+}
+```
+
+Then, you can use a new method of ApolloModule called **forRoot** to provide clients, so you can use
+it in your app:
+
+```
+ApolloModule.forRoot(provideClients)
+```
+
+The `Apollo` service has now two new methods: `use()` and `default()`. First one takes a key of a
+client you want to use, second one returns the default client.
+
+```typescript
+
+class AppComponent {
+  apollo: Apollo;
+
+  ngOnInit() {
+    // uses the defaultClient
+    this.apollo.watchQuery({...}).subscribe(() => {});
+
+    // works the same as the one above
+    this.apollo.default().watchQuery({...}).subscribe(() => {});
+    // uses the extraClient
+    this.apollo.use('extra').watchQuery({...}).subscribe(() => {});
+  }
+}
+
+```
+
+> It's important to know that if you want to have a default client, you need to use `default` as a
+> key.
+
+---
+
+## More Control
+
+![](./26d1e2f5199df372a39ca801d9ce936b.png 'We improved integration between frameworks')
+
+Apollo-Client and Apollo-Angular both are written in TypeScript, but we still had room for
+improvements for our users, here are some of them.
+
+Thanks to [the recent change](https://github.com/apollographql/apollo-client/pull/914) we were able
+to take advantage of TypeScript's feature called **Generic Types**. It's now possible to easily
+define an interface of the “data” property in methods like _watchQuery_, _query_, _mutation_ and
+many more.
+
+This gives you **more control** over the code, making it **more predictable** and easier to
+**prevent bugs.** Take a look at an example.
+
+```ts
+const query = gql`
+  query currentUser {
+    currentUser {
+      name
+    }
+  }
+`
+
+interface User {
+  name: string
+}
+
+interface Data {
+  currentUser: User
+}
+
+class AppComponent {
+  apollo: Apollo
+  currentUser: User
+
+  ngOnInit() {
+    this.apollo.watchQuery<Data>({ query }).subscribe(result => {
+      this.currentUser = result.data.currentUser
+    })
+  }
+}
+```
+
+It's very helpful and convenient, especially when used with RxJS operators. You gain more control
+over the result modifications. But there are even more improvements!
+
+## Let's Talk about Observables
+
+In Angular world, we commonly use RxJS. Unfortunately, Apollo's standard observable shim is not
+compatible with RxJS, so to have the best developer experience, we created the
+ApolloQueryObservable. They both behave the same, containing the same methods (like refetch for
+example), except the RxJS support.
+
+We recently changed the logic of the ApolloQueryObservable's generic type. Here's an example to see
+how to migrate:
+
+```typescript
+class AppComponent {
+  user: ApolloQueryObservable<ApolloQueryResult<Data>>
+
+  getUser() {
+    this.user.subscribe(result => {
+      // result is of type ApolloQueryResult<Data>
+    })
+  }
+}
+```
+
+```ts
+class AppComponent {
+  user: ApolloQueryObservable<Data>
+
+  getUser() {
+    this.user.subscribe(result => {
+      // result is of type ApolloQueryResult<Data>
+    })
+  }
+}
+```
+
+## It Is Human Nature to Be Lazy
+
+![](./1600bc44b918bf784039061e9895496f.png)
+
+We love automation, just to avoid keep repeating the same things on and on again. I have great news
+for you!
+
+As we know, GraphQL is strongly typed, so we have created a tool to **generate API code or type
+annotations based on a GraphQL schema and query documents**. This tool is called
+[“apollo-codegen”](https://github.com/apollographql/apollo-codegen).
+
+Thanks to Robin Ricard's work, Apollo Codegen now supports TypeScript, so Angular developers no
+longer have to define types for their queries manually.
+
+## Better Developer Experience
+
+![](./c6953c9d535f0c4ab8a02f8019954e99.png)
+
+We are happy to announce that Angular integration works great with the
+[**Apollo Client Developer Tools**](https://dev-blog.apollodata.com/apollo-client-developer-tools-ff89181ebcf).
+
+It's a Chrome DevTools extension for Apollo Client which has 3 main features:
+
+- A built-in GraphiQL console that allows you to make queries against your GraphQL server using your
+  app's network interface directly (no configuration necessary).
+- A query watcher that shows you which queries are being watched by the current page, when those
+  queries are loading, and what variables those queries are using.
+- A cache inspector that displays your client-side Redux store in an Apollo-Client-friendly way. You
+  can explore the state of the store through a tree-like interface, and search through the store for
+  specific field keys and values.
+
+Try the dev tools in your Angular Apollo app today!
+
+---
+
+## ES6 Modules and Tree Shaking
+
+![](./8356f13d18d0ff7af35920e4bf73f854.png 'UMD bundle and ES6 Modules')
+
+App load time is an important part of the overall user experience. Earlier, I talked about AoT
+compilation, which radically improves performance, but there is still room to speed things up.
+
+To make our app even smaller we can use a process called **Tree Shaking**. It basically follows the
+trail of import and export statements by statically analyzing the code. This way we get rid of
+unused parts of the application.
+
+As you know, every angular package has a **UMD bundle** (to support **CommonJS** and **AMD**) and a
+separate space for **ES6 Modules**. Thanks to recent changes in the
+[apollo-client](https://github.com/apollographql/apollo-client/pull/1069) and
+[apollo-client-rxjs](https://github.com/kamilkisiela/apollo-client-rxjs/pull/16), we do the same, so
+you can use tree shaking in your app!
+
+---
+
+## Ready for the Future
+
+![](./250a232da3f4667a2feba74895729d19.png 'Coming out in March 2017')
+
+With the first stable version of Angular, the core team announced a predictable release schedule. It
+means that every 6 months there's going to be a new major version of the framework.
+
+We have good news!
+
+**Angular 4.0.0** is now still in beta, but it's **fully compatible with Apollo**, so you don't have
+to worry about any breaking changes.
+
+## Keep Improving
+
+We are working hard to give Angular developers the best developer experience we can. We want to hear
+more from you — what should we do next, what can we improve?
+
+And if you are really interested in GraphQL, Did you know
+[Apollo is hiring](https://meteor.com/careers#open-source-engineer)?

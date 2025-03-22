@@ -1,0 +1,117 @@
+---
+title: GraphQL as a best practice for modern Angular apps?
+authors: uri
+tags: [graphql, angular]
+date: 2016-07-28
+description:
+  In this post, I'll make the case for why Angular needs a best practice for communicating with the
+  server, and why GraphQL should be that best practice.
+image: ./723af25d23534dd3f801257126be159b.png
+---
+
+In this post, I'll make the case for why Angular needs a best practice for communicating with the
+server, and why GraphQL should be that best practice.
+
+## Best Practices
+
+The Angular community is establishing best practices so that we all can benefit from making our apps
+more performant, easier to maintain, and more modern.
+
+Some current best practices include composing everything into
+[Components](https://docs.angularjs.org/guide/component), using one-way data binding, lazy loading,
+having an immutable global state management (Redux & ng-rx), and more…
+
+That is all great, and means that if we will follow those best practices our apps will behave better
+and will look more modern…
+
+…until we get to data fetching from the server.
+
+## Data Fetching
+
+Today, whether we are developing in a large company, consulting, or writing our own app, when we
+fetch data from the server we are often left with old practices that don't address the needs of a
+modern app.
+
+Also, we are kind of powerless and unable to decide how the data will be supplied to our apps by the
+server, even though the way we fetch the data to our app is at least as meaningful to the way our
+app behaves as how we present it.
+
+**We should come up with best practices for data fetching that is more in line with the modern way
+we write our apps. These should take into consideration the following needs: data documentation,
+network latency, server side rendering and faster initial loading, real time communication patterns,
+latency compensation, and optimistic UI.**
+
+## REST
+
+REST is the current protocol we go around when we're talking about app data fetching. REST has its
+benefits, but it was evolved in a time when the web was very different from today, when everything
+was about static HTML and forms and not about apps.
+
+Here are the areas where REST is currently lacking:
+
+- **self documentation** — when you send a request to a REST endpoint, there is nothing in the
+  protocol that tells you what you are going to get (and not everyone has the resources to create a
+  nice, updated documentation like Twitter)
+
+- REST doesn't support **real time data** fetching
+
+- tough choices when designing your REST endpoint, which I'll elaborate on below
+
+**Over-fetching** — When one endpoint serves all the data, each Component calls it again and again.
+This means it serves more fields than the component needed _and_ we call it many times, creating
+more load on the server
+
+**Under-fetching** — When many endpoints serve multiple resources and fields. This creates many
+round trips for one Component as well as complex joins on the client.
+
+![](./12f2b64cfbbc9231d1e2b4c201368eda.png 'The Discourse REST API — look on the links at the bottom on the GraphQL version of this')
+
+## Rethinking Data Fetching
+
+So it looks like we need to rethink data fetching, just like we rethought web apps.
+
+Luckily, Facebook ran into the same problem in 2012 when they needed to rethink the way they fetch
+data as they wrote their mobile apps on top of their existing stack.
+
+They developed a solution, and open sourced it as [GraphQL](https://graphql.org).
+
+## GraphQL
+
+GraphQL is the new data communication protocol for modern apps.
+
+The server communicates what data it can provide and the client specifies what data it needs in a
+**simple, graph-like structure**, in **one round trip**, no matter how deep, how complex, or how
+many resources the data contains.
+
+<Video
+  src="./dd41f415fc7dbf8e115c2bae6f0ceae5.webm"
+  title="GraphQL has built in documentation so any server can use the GraphiQL editor without the need of setup"
+/>
+
+This means: one request to get exactly the information the app needs, when it needs it. **No
+over-fetching and under-fetching.**
+
+With that, each component needs to specify its data dependencies and a client library will merge
+them into one request. There's no need for a shared service with prepared fetching functions.
+
+GraphQL is also not a storage engine! You can connect it to an existing REST endpoint or SQL and
+NoSql databases.
+
+## Shared Best Practices between Frameworks
+
+For all the reasons above, GraphQL is already the best practice for fetching data with React. Also,
+all the Facebook apps and clients use GraphQL.
+
+If the Angular community embraces GraphQL as a best practice, it would open the door to sharing more
+tools and knowledge with the React community.
+
+---
+
+To start learning about GraphQL, take a look at these sources:
+
+- [Why GraphQL is the future](https://medium.com/apollo-stack/why-graphql-is-the-future-3bec28193807#.3wpy7r34b)
+- [The basics of GraphQL in 5 minutes](https://medium.com/apollo-stack/the-basics-of-graphql-in-5-links-9e1dc4cac055#.uvh5c43kt)
+- [Replacing Discourse REST API with GraphQL](https://medium.com/apollo-stack/discourse-in-graphql-part-1-ee1ffd8a22df#.ehvb5vgl1)
+- [Angular-Apollo Docs](https://docs.apollostack.com/apollo-client/angular2.html) and
+  [GitHub Repo](https://github.com/apollostack/angular2-apollo)
+- [Building faster modern apps with Angular and GraphQL](https://graphql.com/articles/angular-graphql-faster-modern-apps)

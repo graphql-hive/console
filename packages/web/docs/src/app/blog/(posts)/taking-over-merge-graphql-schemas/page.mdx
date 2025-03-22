@@ -1,0 +1,156 @@
+---
+title: The Guild is taking over maintenance of merge-graphql-schemas
+authors: uri
+tags: [graphql, merge-graphql-schemas]
+date: 2019-06-18
+description:
+  The Guild is taking over maintenance of merge-graphql-schemas, so let's talk about GraphQL Schema
+  management
+image: ./0a4d55d345d123fa0b0c131d55ea903b.png
+---
+
+How stitching, [GraphQL federation](https://the-guild.dev/graphql/hive/federation) and modules all
+fit together?
+
+## TL;DR
+
+- After many years of supporting the community, the OK-GROW! Team is transferring ownership and
+  maintenance of [**merge-graphql-schemas**](https://github.com/urigo/merge-graphql-schemas) to The
+  Guild
+- [merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas) will be added to the
+  existing Schema management tools already created by
+  [**The Guild**](https://github.com/the-guild-org)
+  ([GraphQL-Toolkit](https://github.com/ardatan/graphql-toolkit),
+  [GraphQL Modules](https://github.com/urigo/graphql-modules),
+  [GraphQL Inspector](https://github.com/kamilkisiela/graphql-inspector) and
+  [graphql-code-generator](https://graphql-code-generator.com))
+- This is a continuation of making order in the schema management tools across the ecosystem
+- If you are at GraphQL-Conf this week, come say hi
+
+[merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas) is a popular library in the
+GraphQL Ecosystem.
+
+It's one of the first tools people encounter once they went through their first GraphQL
+implementation and start to wonder how to organize their GraphQL server code.
+
+The OK-GROW! Team has been maintaining that library for years, filling a needed gap in the
+ecosystem.
+
+At the same time, [The Guild](https://github.com/the-guild-org) has been working on
+[similar tools](https://github.com/the-guild-org/Stack) around GraphQL schema and module management.
+
+Today we are happy to announce that we are joining forces and merging our efforts to create open
+source, easy and scalable solutions for GraphQL servers.
+
+In a couple of days of work we've refactored the underlying implementation of
+[merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas) to use
+[GraphQL-Toolkit](https://github.com/ardatan/graphql-toolkit) under the hood, we can close around
+90% of the open issues on the library while making sure all existing tests are passing!
+
+We are happy to announce a new beta release (1.6.0-beta) is out!
+
+If you are a user of [merge-graphql-schemas](https://github.com/urigo/merge-graphql-schemas) please
+give the new version a try before we make a full release.
+
+```bash
+yarn add merge-graphql-schemas@next
+```
+
+## What's Next?
+
+The Guild has been busy for a while creating scalable GraphQL solutions around schema and modules
+management for large teams.
+
+The main issue we see today in the ecosystem is that there is no clear overview of which tools solve
+which problem area.
+
+In order to make sure we solve the right issues in the right place, we need clear boundaries between
+the different libraries and solutions.
+
+Let's try to break down the different areas of solutions needed when splitting GraphQL schemas:
+
+- Building and executing GraphQL according to spec — **The Engine**
+- Structuring multiple building blocks of the same server into a single executable schema —
+  **GraphQL Tools and Frameworks**
+- Structuring multiple servers instances into a single executable schema — **Federation**
+
+Now we can gather all use cases from the community, put them as tests on the right library and make
+sure we solve each one of them.
+
+## The Engine
+
+The Engine (in the Javascript world the most popular one is
+[graphql.js](https://github.com/graphql/graphql-js)) should be responsible for taking a ready schema
+and resolvers, validate the objects, introspecting them and executing documents against them at
+runtime.
+
+That GraphQLSchema input must be strictly valid according to the GraphQL Spec.
+
+That's why manipulating a ready GraphQLSchema object can be hard. GraphQLSchema object should be the
+final object to input the engine.
+
+The Engine should not care or help you create that final schema or resolvers.
+
+## GraphQL Management Tooling
+
+We can think of the Engine like a Web Browser — It is responsible for taking a spec (Javascript and
+HTML) and execute it in a consistent way.
+
+But the browser doesn't care about how you create that Javascript and HTML bundle.
+
+That means that like we use babel, Typescript or frameworks for manipulating code to generate
+spec-compliant output, we can do the same for GraphQL with
+[graphql.js](https://github.com/graphql/graphql-js) as our target “browser”.
+
+Those tools should help you organize and manage your code in your preferred way, without needing to
+be bound by what [graphql.js](https://github.com/graphql/graphql-js) expects.
+
+One of the main things that those tools can provide us is an easy way to split the code and the
+schema into small chunks and later merge them with different merging strategies.
+
+Just like Javascript frameworks, using those tools can get you very far and make it easy to handle
+huge codebases with many different teams.
+
+## Federation
+
+In some scenarios you would want to run completely different servers and merge them somehow into a
+single GraphQL gateway.
+
+Schema stitching and [schema federation](https://the-guild.dev/graphql/hive/federation) are attempts
+to make that work less manual.
+
+There are some use cases where you might want those types of solutions, but they also add a lot of
+complexity, so it's important to understand very well why you really can't handle your use case in a
+build-tool type of solution, and to know if Federation is an end goal or a stepping point to get you
+further.
+
+## Breaking It All Down
+
+After years of working with GraphQL, from small applications to managing schemas across huge
+corporations, creating open source tools and best practices around those, we want to share it all
+with the community.
+
+In the next few weeks we will publish articles about each solution type, the tools around and when
+you should use what.
+
+Things like why you should split your schemas, why not, what are the existing solutions out there
+and when to use each one.
+
+We will also add examples of all those use cases into our
+[main tutorial](https://tortilla.academy/Urigo/WhatsApp-Clone-Tutorial).
+
+We need you to send us your questions, use cases and ideas — we want to make sure we cover as many
+use cases as possible across our libraries and other libraries we
+[contribute too](https://github.com/apollographql/graphql-tools/pull/1150) as well (some things
+might fit into graphql.js or Apollo for example).
+
+You can comment here or submit issues into any of
+[our repositories](https://github.com/the-guild-org/Stack).
+
+## Thank You OK-GROW!
+
+I want to personally thank the OK-GROW! Team and specifically Paul for being a very early adopter
+and supporter of the GraphQL community.
+
+The work you have done so far has been amazing and valuable and we are dedicated to continue to
+support our community in the best way possible.

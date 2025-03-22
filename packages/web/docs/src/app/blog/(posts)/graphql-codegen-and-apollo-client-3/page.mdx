@@ -1,0 +1,208 @@
+---
+title: What's new with Apollo Client v3 and GraphQL Codegen
+authors: dotan
+tags: [graphql, codegen, typescript, react, angular, apollo-client]
+date: 2020-11-30
+description:
+  All the new features GraphQL Codegen adds to your type-system with the new Apollo Client 3.
+image: ../graphql-code-generator/codegen-ac3.png
+---
+
+In recent weeks and months, we've been migrating many of our clients codebases, many at very large
+scale (over thousand developers on a single codebase), from Apollo Client 2 to Apollo Client 3.
+
+While doing all that work, we've improved many of the toolings we are maintaining and created a
+bunch of [new ones](/blog/introducing-graphql-eslint).
+
+A lot of those improvements were fed back into GraphQL Codegen, and we are happy to share all those
+new learnings and features with everyone in the community.
+
+> We've also found and fixed a lot of memory leaks in upstream Apollo Client, thanks
+> [@benjamn](https://github.com/benjamn) for the great corporation!
+
+We hope you would use those new features and improvements to quickly improve your workflow,
+type-safety and make your migrations easier.
+
+And as usual, we would love to hear your feedback and ideas on how we can further improve the
+experience of using GraphQL and Typescript in general!
+
+# `possibleTypes`
+
+If you are already familiar with GraphQL-Codegen and the plugins it offers, you probably know the
+`fragment-matcher` plugin.
+
+In Apollo-Client v3,
+[the structure for fragment matcher has been changed, and now it's called `possibleTypes`](https://apollographql.com/docs/react/data/fragments/#using-fragments-with-unions-and-interfaces).
+
+The `@graphql-codegen/fragment-matcher@2.0.0` now supports Apollo-Client v3 by default, and it
+generates type signature and the `possibleTypes` object automatically based on your GraphQL schema.
+
+Here's an example of using it with a codegen.yml file:
+
+```yaml
+schema: my-schema.graphql
+generates:
+  ./src/possible-types.ts:
+    plugins:
+      - fragment-matcher
+```
+
+Then, when you create your Apollo Client cache instance, use the generated variable:
+
+```ts
+import introspection from './src/possible-types'
+
+export default new ApolloClient({
+  uri: 'https://countries.trevorblades.com',
+  cache: new InMemoryCache({ possibleTypes: introspection.possibleTypes })
+})
+```
+
+Without this, you'll have to define and maintain the `possibleTypes` object manually, which might
+lead to an incorrect or invalid setup that might effect Apollo-Client runtime.
+
+## Type Policies
+
+If you are using an
+[advanced configuration for your Apollo-Client cache](https://apollographql.com/docs/react/caching/cache-configuration/#data-normalization),
+you can customize the behaviour of your cache.
+
+The configuration you pass to Apollo depends on your GraphQL types and their fields, and instead of
+having an arbitrary object, you can have a fully-typed signature generated based on your GraphQL
+schema. That would make it much easier to customize, and you will catch errors in advance! (during
+build-time, instead during runtime)
+
+You can use `@graphql-codegen/typescript-apollo-client-helpers` plugin to generate that.
+
+```yaml
+schema: my-schema.graphql
+generates:
+  ./src/type-policies.ts:
+    plugins:
+      - typescript-apollo-client-helpers
+```
+
+Then, use the generated `TypedTypePolicies` to type your object:
+
+```ts
+import { TypedTypePolicies } from './apollo-helpers'
+
+const typePolicies: TypedTypePolicies = {
+  // Keys in this object will be validated against the typed on your schema
+  Product: {
+    keyFields: ['id'] // Values in this field will be validated against the available fields from the Product type
+  },
+  Person: {
+    keyFields: ['name', 'email']
+  },
+  Book: {
+    // This entire definition is typed, based on available types and fields
+    fields: {
+      tags: {
+        merge: false
+      }
+    }
+  }
+}
+
+const cache = new InMemoryCache({
+  typePolicies
+})
+```
+
+## `TypedDocumentNode`
+
+Apollo-Client also supports `TypedDocumentNode` now natively (since `v3.2`,
+[you can read more about it here](/blog/typed-document-node)).
+
+You can use it to generate a fully-typed `DocumentNode` you can use with Apollo-Client, and it will
+automatically type your variables and responses.
+
+You can use `@graphql-codegen/typed-document-node` with the following setup to get that:
+
+```yaml
+schema: schema.graphql
+documents: query.graphql
+generates:
+  ./typed-document-nodes.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typed-document-node
+```
+
+Later, in your code, you can just import the generated `TypedDocumentNode` objects from
+`typed-document-nodes` (based on your GraphQL operations), and it will be automatically typed:
+
+```tsx
+import { useQuery } from '@apollo/client'
+import { RatesDocument } from './typed-document-nodes'
+
+export const MyComponent: React.FC = () => {
+  // We now have types support and auto complete for the
+  // result type, just by passing `RatesDocument` as `query` to apollo client.
+  const result = useQuery(RatesDocument, {
+    variables: {
+      currency: 'USD'
+    }
+  })
+
+  const rates = result.data.rates
+
+  return <div>Rates: {rates}</div>
+}
+```
+
+## Ready-To-Use Hooks / HOC / Components
+
+One of the most powerful features of GraphQL-Codegen is the ability to generate flexible code based
+on your GraphQL schema and your GraphQL operations.
+
+We generate TypeScript types, but that's not all - we can also generate code for you.
+
+You can generate a fully-typed React Hooks:
+
+```yaml
+schema: schema.graphql
+documents: query.graphql
+generates:
+  ./hooks.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
+```
+
+Then, just use it directly in your components:
+
+```tsx
+import { useRatesQuery } from './hooks'
+
+export const MyComponent: React.FC = () => {
+  // We now have types support and auto complete for the
+  // result type, just by passing `RatesDocument` as `query` to apollo client.
+  const result = useRatesQuery(RatesDocument, {
+    variables: {
+      currency: 'USD'
+    }
+  })
+
+  const rates = result.data.rates
+
+  return <div>Rates: {rates}</div>
+}
+```
+
+> Note: This is an alternative for `TypedDocumentNode`.
+
+## More!
+
+You can also generate [Svelte-Apollo](https://github.com/ticruz38/graphql-codegen-svelte-apollo),
+[apollo-angular](https://apollo-angular.com) types,
+[Vue-Apollo](https://graphql-code-generator.com/docs/plugins/typescript-vue-apollo),
+[Stencil-Apollo](https://graphql-code-generator.com/docs/plugins/typescript-stencil-apollo) and
+other view layers working with Apollo Client 3...
+
+[You can find a list of all available plugins here](https://graphql-code-generator.com/docs/plugins/index),
+and
+[here you can find a list of tips for integrating codegen with your frontend applications](/blog/graphql-codegen-best-practices).

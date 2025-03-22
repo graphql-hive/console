@@ -1,0 +1,136 @@
+---
+title: Audit of GraphQL Gateways Supporting Apollo Federation
+tags: [graphql, graphql-federation]
+authors: kamil
+date: 2024-09-10
+description:
+  Set of tests to evaluate and compare the compatibility of different GraphQL gateways with Apollo
+  Federation.
+image: ./cover.png
+thumbnail: ./thumbnail.png
+---
+
+import NextImage from 'next/image'
+
+The Apollo Federation spec is a hot topic, we must admit. The adoption of it keeps increasing,
+especially over past two years. There's a reason! It's a fantastic piece of technology, but also a
+complex piece of tech.
+
+> If you're curious about the results,
+> [visit the audit page](https://the-guild.dev/graphql/hive/federation-gateway-audit)
+
+## Complexity Is Not Obvious{/* eslint-disable-line mdx/remark */}
+
+**As a user** of Apollo Federation, you might not see the full spectrum of
+[Apollo Federation](https://the-guild.dev/graphql/hive/federation).
+
+When building subgraphs, you might occasionally encounter composition errors, but ultimately,
+everything works and you query data. The real complexity lies in tooling, starting with the
+composition library, and ending on the gateway and it's query planning.
+
+**As maintainers** of [Hive Gateway](https://the-guild.dev/graphql/hive/docs/gateway)
+([previously part of GraphQL Mesh](/blog/graphql-mesh-v1-hive-gateway-v1)) and creators of GraphQL
+Hive (our Schema Registry for GraphQL Federation), we've seen a wide range of supergraphs. Over the
+past few years, we've been working with companies adopting or already using Apollo Federation in
+production.
+
+We learned something, actually quite a lot!
+
+Today, we're even collaborating with creators of Apollo Federation and the
+[ChilliCream](https://chillicream.com/) teams (who built
+[GraphQL Fusion](https://chillicream.com/blog/2023/08/15/graphql-fusion/)) on
+[the new specification for federated GraphQL APIs](https://graphql.org/blog/2024-05-16-composite-schemas-announcement/),
+as proud members of GraphQL Foundation.
+
+We've seen Apollo Federation's complexity, we understood the rules of it very well, and we have
+something incredibly interesting to share!
+
+Before we get to that, let's first discuss what does it mean to "support Apollo Federation" on a
+gateway.
+
+## What Does "Apollo Federation Support" Really Mean?{/* eslint-disable-line mdx/remark */}
+
+As you know, the spec contains a lot of directives, and these can be used in various ways, resulting
+in **many** combinations. Sometimes weird at first glance, but when you really think about them,
+they make sense.
+
+In a lot of cases, the spec is abused, but hey… what's allowed, has to work!
+
+Most of the time you will see “Apollo Federation support” phrase or a list of supported directives,
+and this is fine, but it tells only a part of the story.
+
+If a gateway supports the `@key` directive, it may or may not support it on an Interface type, for
+example. You simply don't know until you try it!
+
+Did you know that in Apollo Federation v1, a field that is annotated with `@external`, that is also
+part of key fields, and is not defined anywhere else, is still resolvable?
+
+```graphql
+extend type Product @key(fields: "id name") @key(fields: "upc") {
+  id: ID @external
+  name: String @external
+  upc: String @external
+  price: Float!
+}
+```
+
+Not everyone knows that key fields of extension types in Federation v1, must be annotated with
+@external , and these are still resolvable by the subgraph. That's why we built the audit!
+
+![CLI output](./cli-not-compatible.png)
+
+> Here's how the auditing tool looks like. It's a simple CLI and we're going to release it on NPM
+> and as a binary soon. As of today, you need to clone the repository.
+
+## The Apollo Federation Audit!{/* eslint-disable-line mdx/remark */}
+
+As you know, The Guild has open source nature in its core. What we do we share, we open source, we
+give away for free. It was always like that, it won't ever change.
+
+Over the years we encountered a lot of aspects of Apollo Federation when working on query planning
+for Hive Gateway (previously GraphQL Mesh, just a reminder that it's not a new project, but rather
+well established).
+
+We spent quite a few months, writing down our knowledge about Apollo Federation, in form of 40
+supergraphs, covering wide range, if not all, of the spec.
+
+Each of those supergraphs, have a set of subgraphs running as real GraphQL APIs, with real runtime
+and real data.
+
+We have created 170 tests in total so far…
+
+All that effort to measure how compatible our gateway is with Apollo Federation... and now we give
+it away to everyone, even our “competitors”, for free, no strings attached!
+
+> We never had a tool to measure gateway's compatibility with Apollo Federation, but now we have one
+> — and we've put it to the test!
+
+![Screenshot of results](./results.png)
+
+Visit the audit page and see the results:
+[https://the-guild.dev/graphql/hive/federation-gateway-audit](https://the-guild.dev/graphql/hive/federation-gateway-audit)
+
+The main reason behind building such tool, was to improve our Hive Gateway, have a set of tests we
+can use for various of ways. We were also curious how well the rest of the GraphQL gateways perform,
+how compatible they are, how good their query planning understands Apollo Federation. The results
+are interesting.
+
+## About the Audit{/* eslint-disable-line mdx/remark */}
+
+The existing GraphQL Gateway benchmarks focus on performance, pure speed, query planning overhead
+and related factors. You only care about performance, if the gateway can query data correctly. Who
+wants a fast, but partially broken gateway? All the gateway implementors knows that, and they work
+hard to improve their gateway every day.
+
+We wanted to push the community forward, by giving them a chance to make a giant jump.
+
+That's why the auditing tool is fully open-source (MIT license), and available for everyone.
+
+Visit the repository:
+[https://github.com/the-guild-org/graphql-federation-gateway-audit](https://github.com/the-guild-org/graphql-federation-gateway-audit)
+
+We want to turn our effort into helping potential users of GraphQL gateways to better understand
+what Apollo Federation support means, but also the maintainers of those gateways to improve their
+score and learn from our experience.
+
+We aim to make it a shared effort, an "official" auditing tool for Apollo Federation gateways.

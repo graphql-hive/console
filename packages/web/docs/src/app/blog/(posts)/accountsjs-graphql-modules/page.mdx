@@ -1,0 +1,562 @@
+---
+title: Authentication with accounts-js & GraphQL Modules
+description: How to implement server-side using accounts-js, GraphQL-Modules and Apollo-Server
+date: 2018-11-16
+authors: arda
+tags: [graphql, graphql-modules, authentication]
+image: ./39e75508d22dbe737fad027dd23819b8.png
+---
+
+import { Callout } from '@theguild/components'
+
+When starting a backend project, two of the biggest concerns will usually be the right structure of
+the project and authentication. If you could skip thinking and planning about these two, starting a
+new backend project can be much easier.
+
+<Callout>
+  If you haven't checked out our [blog post about authentication and authorization in GraphQL
+  Modules](/blog/graphql-modules-auth), please read that before!
+</Callout>
+
+Internally, we use [GraphQL-Modules](https://graphql-modules.com) and
+[accounts-js](https://github.com/accounts-js/accounts) to help us with those two decisions,
+GraphQL-Modules helps us solve our architectural problems in modular, schema-first approaches with
+the power of GraphQL and accounts-js helps us create our authentication solutions by providing a
+simple API together with client and server libraries that saves us a lot of the groundwork around
+authentication.
+
+If you haven't heard about [accounts-js](https://github.com/accounts-js/accounts) before, it is a
+set of libraries to provide a full-stack authentication and accounts-management solutions for
+Javascript.
+
+It is really customizable; so you can write any plugins for your own authentication methods or use
+the already existing email-password or the Facebook and Twitter OAuth integration packages.
+
+accounts-js has connector libraries for MongoDB and Redis, but you can write your own database
+handler by implementing a simple interface.
+
+accounts-js provides a ready to use GraphQL API if you install their GraphQL library, and **we are
+happy to announce that the GraphQL library is now internally built using GraphQL-Modules**!
+
+It doesn't affect people who are not using GraphQL Modules, but it helps the maintainers of
+accounts-js and simplifies the integration for GraphQL-Modules-based projects.
+
+## How to Implement Server-Side Using accounts-js, GraphQL Modules and Apollo Server
+
+First install required dependencies from npm or yarn:
+
+```sh
+yarn add mongodb @accounts/server @accounts/password @accounts/database-manager @accounts/mongo @accounts/graphql-api @graphql-modules/core apollo-server graphql-import-node
+```
+
+Let's assume that we're using MongoDB as our database, password-based authentication and
+ApolloServer:
+
+```ts
+import 'graphql-import-node'
+import { ApolloServer } from 'apollo-server'
+import { MongoClient } from 'mongodb'
+import { DatabaseManager } from '@accounts/database-manager'
+import { AccountsModule } from '@accounts/graphql-api'
+import MongoDBInterface from '@accounts/mongo'
+import { AccountsPassword } from '@accounts/password'
+import { AccountsServer } from '@accounts/server'
+import { resolvers } from './resolvers'
+import * as typeDefs from './typeDefs.graphql'
+
+const PORT = process.env.MONGO_URI || 4000
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/myDb'
+const TOKEN_SECRET = process.env.TOKEN_SECRET || 'myTokenSecret'
+
+async function main() {
+  const mongoClient = await MongoClient.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    native_parser: true
+  })
+  const db = mongoClient.db()
+  const userStorage = new MongoDBInterface(db, {
+    convertUserIdToMongoObjectId: false
+  })
+  // Create database manager (create user, find users, sessions etc) for accounts-js
+  const accountsDb = new DatabaseManager({
+    sessionStorage: userStorage,
+    userStorage
+  })
+  // Create accounts server that holds a lower level of all accounts operations
+  const accountsServer = new AccountsServer(
+    {
+      db: accountsDb,
+      tokenSecret: TOKEN_SECRET
+    },
+    {
+      password: new AccountsPassword()
+    }
+  )
+  const { schema } = new GraphQLModule({
+    typeDefs,
+    resolvers,
+    imports: [AccountsModule.forRoot({ accountsServer })],
+    providers: [
+      {
+        provide: Db,
+        useValue: db // Use MongoDB's instance inside DI
+      }
+    ]
+  })
+  const apolloServer = new ApolloServer({
+    schema,
+    context: session => session,
+    introspection: true
+  })
+  const { url } = await apolloServer.listen(PORT)
+  console.log(`Server listening: ${url}`)
+}
+
+main()
+```
+
+And we can extend User type with custom fields in our schema, and add a mutation which is restricted
+to authenticated clients.
+
+```graphql
+type Query {
+  allPosts: [Post]
+}
+
+type Mutation {
+  addPost(title: String, content: String): ID @auth
+}
+
+type User {
+  posts: [Post]
+}
+
+type Post {
+  id: ID
+  title: String
+  content: String
+  author: User
+}
+```
+
+Finally, let's define some resolvers for it:
+
+```ts
+export const resolvers = {
+  User: {
+    posts({ _id }, args, { injector }) {
+      const db = injector.get(Db)
+      const Posts = db.collection('posts')
+      return Posts.find({ userId: _id }).toArray()
+    }
+  },
+  Post: {
+    id: ({ _id }) => _id,
+    author({ userId }, args, { injector }) {
+      const accountsServer = injector.get(AccountsServer)
+      return accountsServer.findUserById(userId)
+    }
+  },
+  Query: {
+    allPosts(root, args, { injector }) {
+      const db = injector.get(Db)
+      const Posts = db.collection('posts')
+      return Posts.find().toArray()
+    }
+  },
+  Mutation: {
+    addPost(root, { title, content }, { injector, userId }: ModuleContext<AccountsContext>) {
+      const db = injector.get(Db)
+      const Posts = db.collection('posts')
+      const { insertedId } = Posts.insertOne({ title, content, userId })
+      return insertedId
+    }
+  }
+}
+```
+
+When you print the whole app's schema, you would see something like above:
+
+```graphql
+type TwoFactorSecretKey {
+  ascii: String
+  base32: String
+  hex: String
+  qr_code_ascii: String
+  qr_code_hex: String
+  qr_code_base32: String
+  google_auth_qr: String
+  otpauth_url: String
+}
+
+input TwoFactorSecretKeyInput {
+  ascii: String
+  base32: String
+  hex: String
+  qr_code_ascii: String
+  qr_code_hex: String
+  qr_code_base32: String
+  google_auth_qr: String
+  otpauth_url: String
+}
+
+input CreateUserInput {
+  username: String
+  email: String
+  password: String
+}
+
+type Query {
+  twoFactorSecret: TwoFactorSecretKey
+  getUser: User
+  allPosts: [Post]
+}
+
+type Mutation {
+  createUser(user: CreateUserInput!): ID
+  verifyEmail(token: String!): Boolean
+  resetPassword(token: String!, newPassword: String!): Boolean
+  sendVerificationEmail(email: String!): Boolean
+  sendResetPasswordEmail(email: String!): Boolean
+  changePassword(oldPassword: String!, newPassword: String!): Boolean
+  twoFactorSet(secret: TwoFactorSecretKeyInput!, code: String!): Boolean
+  twoFactorUnset(code: String!): Boolean
+  impersonate(accessToken: String!, username: String!): ImpersonateReturn
+  refreshTokens(accessToken: String!, refreshToken: String!): LoginResult
+  logout: Boolean
+  authenticate(serviceName: String!, params: AuthenticateParamsInput!): LoginResult
+  addPost(title: String, content: String): Post
+}
+
+type Tokens {
+  refreshToken: String
+  accessToken: String
+}
+
+type LoginResult {
+  sessionId: String
+  tokens: Tokens
+}
+
+type ImpersonateReturn {
+  authorized: Boolean
+  tokens: Tokens
+  user: User
+}
+
+type EmailRecord {
+  address: String
+  verified: Boolean
+}
+
+type User {
+  id: ID!
+  emails: [EmailRecord!]
+  username: String
+  posts: [Post]
+}
+
+input UserInput {
+  id: ID
+  email: String
+  username: String
+}
+
+input AuthenticateParamsInput {
+  access_token: String
+  access_token_secret: String
+  provider: String
+  password: String
+  user: UserInput
+  code: String
+}
+type Post {
+  id: ID
+  title: String
+  content: String
+  author: User
+}
+```
+
+## How to Implement Client-Side Using accounts-js, React and Apollo-Client
+
+Now we can create a simple frontend app by using Apollo-Client and accounts-js client for this
+backend app. The example below shows some example code that works on these two.
+
+```tsx
+import React, { Component } from 'react'
+import { render } from 'react-dom'
+import ApolloClient from 'apollo-boost'
+import gql from 'graphql-tag'
+import { ApolloProvider, Mutation, Query } from 'react-apollo'
+import { AccountsClient } from '@accounts/client'
+import { AccountsClientPassword } from '@accounts/client-password'
+import GraphQLClient from '@accounts/graphql-client'
+
+const apolloClient = new ApolloClient({
+  async request(operation) {
+    const tokens = await accountsClient.getTokens()
+    if (tokens) {
+      operation.setContext({
+        headers: {
+          'accounts-access-token': tokens.accessToken
+        }
+      })
+    }
+  },
+  uri: 'http://localhost:4000/graphql'
+})
+
+const accountsGraphQL = new GraphQLClient({ graphQLClient: apolloClient })
+const accountsClient = new AccountsClient({}, accountsGraphQL)
+const accountsPassword = new AccountsClientPassword(accountsClient)
+
+const ALL_POSTS_QUERY = gql`
+  query AllPosts {
+    allPosts {
+      id
+      title
+      content
+      author {
+        username
+      }
+    }
+  }
+`
+
+const ADD_POST_MUTATION = gql`
+  mutation AddPost($title: String, $content: String) {
+    addPost(title: $title, content: $content)
+  }
+`
+
+class App extends Component {
+  state = {
+    credentials: {
+      username: '',
+      password: ''
+    },
+    newPost: {
+      title: '',
+      content: ''
+    },
+    user: null
+  }
+  componentDidMount() {
+    return this.updateUserState()
+  }
+  async updateUserState() {
+    const tokens = await accountsClient.refreshSession()
+    if (tokens) {
+      const user = await accountsGraphQL.getUser()
+      await this.setState({ user })
+    }
+  }
+  renderAllPosts() {
+    return (
+      <Query query={ALL_POSTS_QUERY}>
+        {({ data, loading, error }) => {
+          if (loading) {
+            return <p>Loading...</p>
+          }
+          if (error) {
+            return <p>Error: {error}</p>
+          }
+          return data.allPosts.map((post: any) => (
+            <li>
+              <p>{post.title}</p>
+              <p>{post.content}</p>
+              <p>Author: {post.author.username}</p>
+            </li>
+          ))
+        }}
+      </Query>
+    )
+  }
+  renderLoginRegister() {
+    return (
+      <fieldset>
+        <legend>Login - Register</legend>
+        <form>
+          <p>
+            <label>
+              Username:
+              <input
+                value={this.state.credentials.username}
+                onChange={e =>
+                  this.setState({
+                    credentials: {
+                      ...this.state.credentials,
+                      username: e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
+          </p>
+          <p>
+            <label>
+              Password:
+              <input
+                value={this.state.credentials.password}
+                onChange={e =>
+                  this.setState({
+                    credentials: {
+                      ...this.state.credentials,
+                      password: e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
+          </p>
+          <p>
+            <button
+              onClick={e => {
+                e.preventDefault()
+                accountsPassword
+                  .login({
+                    password: this.state.credentials.password,
+                    user: {
+                      username: this.state.credentials.username
+                    }
+                  })
+                  .then(() => this.updateUserState())
+              }}
+            >
+              Login
+            </button>
+          </p>
+          <p>
+            <button
+              onClick={e => {
+                e.preventDefault()
+                accountsPassword
+                  .createUser({
+                    password: this.state.credentials.password,
+                    username: this.state.credentials.username
+                  })
+                  .then(() => {
+                    alert('Please login with your new credentials')
+                    this.setState({
+                      credentials: {
+                        username: '',
+                        password: ''
+                      }
+                    })
+                  })
+              }}
+            >
+              Register
+            </button>
+          </p>
+        </form>
+      </fieldset>
+    )
+  }
+  renderAddPost() {
+    return (
+      <Mutation mutation={ADD_POST_MUTATION}>
+        {addPost => (
+          <fieldset>
+            <legend>Add Post</legend>
+            <form>
+              <p>
+                <label>
+                  Title:
+                  <input
+                    value={this.state.newPost.title}
+                    onChange={e => {
+                      this.setState({
+                        newPost: {
+                          ...this.state.newPost,
+                          title: e.target.value
+                        }
+                      })
+                    }}
+                  />
+                </label>
+              </p>
+              <p>
+                <label>
+                  Content:
+                  <input
+                    value={this.state.newPost.content}
+                    onChange={e => {
+                      this.setState({
+                        newPost: {
+                          ...this.state.newPost,
+                          content: e.target.value
+                        }
+                      })
+                    }}
+                  />
+                </label>
+              </p>
+              <p>
+                <input
+                  type="submit"
+                  onClick={e => {
+                    e.preventDefault()
+                    addPost({
+                      variables: {
+                        title: this.state.newPost.title,
+                        content: this.state.newPost.content
+                      }
+                    })
+                  }}
+                />
+              </p>
+            </form>
+          </fieldset>
+        )}
+      </Mutation>
+    )
+  }
+  render() {
+    return (
+      <div>
+        <h2>All Posts</h2>
+        {this.renderAllPosts()}
+        {this.state.user ? this.renderAddPost() : this.renderLoginRegister()}
+      </div>
+    )
+  }
+}
+
+render(
+  <ApolloProvider client={apolloClient}>
+    <App />
+  </ApolloProvider>,
+  document.getElementById('root')
+)
+```
+
+As you can see from the example, it can be really easy to create an application that has
+authentication in modular and future-proof approach.
+
+You can learn more about accounts-js from the
+[docs](https://accounts-js.netlify.com/docs/getting-started.html) of this great library for more
+features such as Two-Factor Authentication and Facebook and Twitter integration using OAuth.
+
+Also, you can learn more about GraphQL-Modules on the [website](https://graphql-modules.com) and see
+how you can add GraphQL Modules features into your system in a gradual and selective way.
+
+If you want strict types based on GraphQL Schema, for each module, GraphQL Code Generator has
+built-in support for GraphQL-Modules based projects.
+[See the docs](https://github.com/Urigo/graphql-modules#graphql-code-generator-integration) for more
+details.
+
+You can check out our example about this integration
+[https://github.com/ardatan/graphql-modules-accountsjs-boilerplate](https://github.com/ardatan/graphql-modules-accountsjs-boilerplate).
+
+## All Posts about GraphQL Modules
+
+- [GraphQL Modules — Feature based GraphQL Modules at scale](/blog/graphql-modules)
+- [Why is True Modular Encapsulation So Important in Large-Scale GraphQL Projects?](/blog/modular-encapsulation-graphql-modules)
+- [Why did we implement our own Dependency Injection library for GraphQL-Modules?](/blog/dependency-injection-library-in-graphql-modules)
+- [Scoped Providers in GraphQL-Modules Dependency Injection](/blog/graphql-modules-scoped-providers)
+- [Writing a GraphQL TypeScript project w/ GraphQL-Modules and GraphQL-Code-Generator](/blog/graphql-typescript-modules-codegen)
+- [Authentication and Authorization in GraphQL (and how GraphQL-Modules can help)](/blog/graphql-modules-auth)
+- [Authentication with accounts-js & GraphQL Modules](/blog/accountsjs-graphql-modules)
+- [Manage Circular Imports Hell with GraphQL-Modules](/blog/manage-circular-imports-hell-in-graphql-modules)

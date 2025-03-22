@@ -1,0 +1,135 @@
+---
+title: Stencil-Apollo - Stencil meets GraphQL
+authors: arda
+tags: [graphql, stencil, stencil-apollo]
+date: 2019-03-06
+description: Stencil-Apollo lets you easily use GraphQL in Web Components.
+image: ./de2fef916d1624b5a70599ef50687bf6.png
+---
+
+## Stencil-Apollo Lets You Easily Use GraphQL in Web Components
+
+**GraphQL** is everywhere! Together with **Typescript** it is one of those technologies **everyone
+wants to get their hands on** in 2019.
+
+When using GraphQL on the client, the most popular library is the powerful Apollo Client. Today,
+[Apollo](https://github.com/apollographql/apollo-client) currently has an official support for
+leading Web Frameworks like React and Angular.
+
+But what if you don't have to use those frameworks to create a really powerful and performant apps?
+Or what if you want to expose Web Components with shared logic like GraphQL data fetching to
+developers who use different frameworks?
+
+## Web Components and GraphQL
+
+That's where [Stencil](https://stenciljs.com) come in. It's a Web Components compiler that combines
+some of the best features from Angular, React and Vue to create web applications or re-usable
+platform-agnostic UI libraries based on Web Components.
+
+But what if you want to use GraphQL in your Stencil projects or expose that power to your Web
+Components users?
+
+## The Solution!
+
+Today, I am happy to announce the release of a new open source library
+
+> [stencil-apollo](https://github.com/ardatan/stencil-apollo)
+
+Now it is much easier to use StencilJS and create GraphQL-based applications. **Stencil-Apollo has
+the same functionalities as its React sibling** React-Apollo, and the usage is really simple.
+
+```tsx
+<apollo-query
+  query={gql`
+    query allPosts {
+      posts {
+        title
+        votes
+      }
+    }
+  `}
+  renderer={({ data, loading }) => {
+    if (loading) return 'Loading...'
+    return (
+      <ul>
+        {data.posts.map(post => (
+          <li>
+            {post.title}({post.votes} votes)
+          </li>
+        ))}
+      </ul>
+    )
+  }}
+/>
+```
+
+## Stencil and Apollo
+
+Because [Stencil-Apollo](https://github.com/ardatan/stencil-apollo) uses Apollo-Client, you're still
+able to take advantage of **an entire ecosystem of Apollo Links and Cache implementations**.
+
+> Everything in Stencil-Apollo is based on Web Components
+
+There are exactly 4 of them:
+
+- `apollo-provider` defines an Apollo-Client so other
+  [Stencil-Apollo](https://github.com/ardatan/stencil-apollo) components can use it (same as
+  React-Apollo's `ApolloProvider`).
+
+As you know in GraphQL there are three kinds of operations and
+[Stencil-Apollo](https://github.com/ardatan/stencil-apollo) got all them covered:
+
+- `apollo-query` lets you fetch data
+- `apollo-mutation` is responsible to call mutations
+- `apollo-subscription` handles subscription for you
+
+As you can see, their names are pretty easy to remember!
+
+[Stencil-Apollo](https://github.com/ardatan/stencil-apollo) combines the change detection mechanism
+of Apollo Client and StencilJS's Virtual DOM, like React-Apollo does for React's VDOM.
+
+To start using Stencil-Apollo check out our examples and docs:
+
+[https://github.com/ardatan/stencil-apollo/](https://github.com/ardatan/stencil-apollo/ 'ardatan/stencil-apollo
+Stencil Apollo Library. Contribute to ardatan/stencil-apollo development by creating an account on GitHub.github.com')
+
+[Stencil-Apollo](https://github.com/ardatan/stencil-apollo) works quite well with Ionic 4, and we're
+planning to give support for all other frameworks, the same way as Ionic 4 does by using the power
+of Web Components.
+
+## Ready-To-Use and Strongly Typed GraphQL Components
+
+The [GraphQL Code Generator](https://graphql-code-generator.com) can be used to generate TypeScript
+typings for both server and client.
+
+This tool also generates strongly typed
+[React-Apollo components](/blog/codegen-typescript-react-apollo) and
+[Apollo-Angular services](/blog/apollo-angular-12) to improve the development experience. It turns
+your GraphQL operations into ready to use elements.
+
+> Now it also supports Stencil-Apollo!
+
+<Video
+  src="./9ad57bf147ea578815342c2f5fc1b1b5.webm"
+  title="How Stencil-Apollo works with GraphQL-Code-Generator"
+/>
+
+> [Check out our example](https://github.com/ardatan/stencil-apollo/tree/master/example-with-codegen)
+> with GraphQL-Code-Generator
+
+## WhatsApp PWA Clone Using Stencil and Ionic 4
+
+We're also working on an example Stencil PWA project that uses
+[Stencil-Apollo](https://github.com/ardatan/stencil-apollo) which will be another variation of our
+[WhatsApp Clone](/blog/whatsapp-clone-react-hooks-graphql-typescript-and-postgresql).
+
+Follow the process here:
+
+[https://github.com/Urigo/WhatsApp-Clone-Client-React/issues/158](https://github.com/Urigo/WhatsApp-Clone-Client-React/issues/158 'Another Clone using Stencil & Ionic 4 🚀 · Issue #158 · Urigo/WhatsApp-Clone-Client-React
+Pure Progressive Web Application Example using Stencil and Ionic 4 with; PWA Support / 100% Lighthouse Audit Result HMR…github.com')
+
+---
+
+- [Stencil-Apollo repository](https://github.com/ardatan/stencil-apollo)
+- [Documentation](https://github.com/ardatan/stencil-apollo)
+- [An example of code generation](https://github.com/ardatan/stencil-apollo/tree/master/example-with-codegen)

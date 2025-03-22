@@ -1,0 +1,181 @@
+---
+title: The New GraphQL Modules
+authors: kamil
+tags: [graphql, graphql-modules]
+date: 2020-12-21
+description:
+  GraphQL Modules showed up on NPM almost 3 years ago, but now we decided to rewrite it from
+  scratch.
+image: ./cover.png
+---
+
+## History Lesson
+
+[GraphQL Modules](https://graphql-modules.com) showed up on NPM almost **3 years ago**, but now we
+decided to rewrite it from scratch. Throughout those years the library improved by a lot of thanks
+to the community and the companies we as The Guild worked with.
+
+> We tried to implement new ideas and revamp the library without touching the core.
+
+That was until now, we decided to finally change the fundamentals of GraphQL Modules according to
+the collected feedback from our users.
+
+## New Major Version
+
+We were planning a new major release from quite some time now and after few months of work, it's
+finally available!
+
+- Much richer error messages
+- More advanced and much more flexible Dependency Injection
+- Flat structure - one application, many modules
+- Testing utilities
+- Functions instead of classes
+- Better performance
+- Simpler codebase
+- In general, better Developer Experience
+- GraphQL Codegen support with GraphQL Modules preset
+
+We know those are just words, but we've been using it for a while, and we love it!
+
+### Single Package
+
+We decided to merge two existing packages `@graphql-modules/core` and `@graphql-modules/di` into a
+single package `graphql-modules`. There's no regression in terms of bundle size, because `core` was
+importing `di` anyway.
+
+```sh
+yarn remove @graphql-modules/core @graphql-modules/di
+yarn add graphql-modules
+```
+
+Making GraphQL Modules a single package should improve the developer experience.
+
+### Flat Structure
+
+In `1.0`, we changed the structure of GraphQL Modules to be flat. We also added `Application` level
+that represents the root of your GraphQL API.
+
+![Flat structure](./flat-structure.png)
+
+You no longer need to define imports and strict dependencies between modules, since they are all
+flatten and merged together by the Application.
+
+### Improved Dependency Injection
+
+The previous version was lacking proper abstraction, it was extremely hard to test and in general
+very strict.
+
+Thanks to the flat structure of GraphQL Modules we were able to rethink the implementation of
+Dependency Injection. What are the benefits?
+
+- [Sharing Services](https://graphql-modules.com/docs/di/providers#global-providers-and-token) is
+  now easier than ever, all you need to do is to set `global: true` flag in `@Injectable` decorator.
+- There's a space for abstraction.
+  [Each Module has its own Injector that has Injector of an application as a parent](https://graphql-modules.com/docs/di/introduction).
+- [Only two kinds of scope: `Singleton` and `Operation`](https://graphql-modules.com/docs/di/scopes).
+  We think it's simpler this way and the naming is much more intuitive.
+- [Richer error messages](https://github.com/Urigo/graphql-modules/blob/master/packages/graphql-modules/tests/di-errors.spec.ts),
+  new DI gives you more details about what went wrong.
+
+![Dependency Injection hierarchy](./di-hierarchy.png)
+
+### Stronger Type-Safety
+
+GraphQL Modules expose a global namespace called `GraphQLModules`, so there's no need to pass the
+same signature over and over again as part of generic types of different APIs.
+
+Context is global and shared across modules and application which means you can define it once, and
+it applies automatically everywhere.
+
+Use and extend `GraphQLModules.GlobalContext` like this:
+
+```typescript
+declare global {
+  namespace GraphQLModules {
+    interface GlobalContext {
+      request: any
+    }
+  }
+}
+```
+
+We created a special **GraphQL-Code-Generator preset for GraphQL Modules**.
+
+It generates a complete, unified, type signature for your schema, and sub-files per each module,
+containing only the GraphQL types declared/extended in your specific module.
+
+To get started,
+[follow the instructions in graphql-code-generator.com website](https://graphql-code-generator.com/docs/presets/graphql-modules).
+
+### Shared Context
+
+In v0, you could create a context per each module. In v1, context is external for GraphQL-Modules,
+and it's not directly in use. You can do whatever you want with that, and just access it in
+GraphQL-Modules if you need, but we no longer require you to do specific things with your context.
+
+### Dynamic Singletons - `@ExecutionContext`
+
+Execution Context means the context of execution of GraphQL Operation. In short, it's the context
+value created by your GraphQL server.
+
+Singletons can't directly access Operation scoped services, meaning they probably can't also
+directly access the context object created per each operation. Directly.
+
+Thanks to @ExecutionContext decorator, every Singleton provider gets access to the GraphQL Context
+and the Operation scoped Injector.
+
+```typescript
+import { ExecutionContext, Injectable } from 'graphql-modules'
+import { Config } from './config'
+
+@Injectable()
+export class Data {
+  constructor(private config: Config) {}
+
+  @ExecutionContext()
+  private context: ExecutionContext
+
+  someMethod() {
+    console.log('Environment', this.config.env)
+
+    const value = this.context.injector.get(SOME_TOKEN)
+  }
+}
+```
+
+You gain a lot in terms of performance, because the `Data` class is instantiated only once and used
+in many operations.
+
+### Testing Kit
+
+GraphQL Modules provides
+[a set of utilities for testing](https://graphql-modules.com/docs/essentials/testing) your modules
+and also for more granular testing of module's smaller units, like providers and middlewares.
+
+To access the testing utilities, import `testkit` object from `graphql-modules` package:
+
+```ts
+import { testkit } from 'graphql-modules'
+```
+
+The testkit object and its API will grow over time, we expect to implement more and more useful
+features in upcoming releases.
+
+## Migration
+
+The v1.0 is a total rewrite, there are of course breaking changes.
+
+We prepared an entire chapter in documentation that covers pretty much all breaking changes and new
+features. Please read ["Migration from v0.X"](https://graphql-modules.com/docs/recipes/migration)
+chapter and give us a feedback.
+
+The documentation of `0.x` version of GraphQL Modules
+[is available under legacy name](https://graphql-modules.com/docs/legacy/introduction/getting-started).
+The same applies to the codebase, there's the
+[`legacy` branch](https://github.com/Urigo/graphql-modules/tree/legacy) on the repository.
+
+---
+
+## Oh, and Happy New Year!
+
+![Happy New Year](./new-year.png)

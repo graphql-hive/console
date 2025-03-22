@@ -1,0 +1,203 @@
+---
+title: 'Introducing: GraphQL Inspector'
+authors: kamil
+tags: [graphql, graphql-inspector]
+date: 2019-01-18
+description:
+  Prevent breaking changes. Find broken operations. Get Schema Coverage. Check deprecated usage and
+  type duplicates. All as part of your CI process.
+image: ./f2f4b5ebdecf4640a2cbc79f7560ec88.png
+---
+
+**Prevent breaking changes. Find broken operations. Get Schema Coverage. Check deprecated usage and
+type duplicates. All as part of your CI process**
+
+Throughout almost three years of working with GraphQL, me and [The Guild](/) introduced solutions
+that changed the way we write our projects today.
+
+In order to use GraphQL in our Angular applications, we created
+[Angular Apollo](https://github.com/apollographql/apollo-angular). To automate and increase
+type-safety, we open-sourced
+[GraphQL Code Generator](https://github.com/dotansimha/graphql-code-generator). Most recent thing
+was [GraphQL Modules](https://github.com/Urigo/graphql-modules) that helped us to separate a server
+into smaller, reusable, feature based parts. All of that was developed based on the experience and
+used with huge success by our clients.
+
+Today, I'm happy to introduce another piece of our tech stack, we call it
+
+> GraphQL Inspector!
+
+**GraphQL inspector** is a tool that's main purpose is to make sure your GraphQL API and all its
+clients are well-developed.
+
+<Video src="./b716ba07f58b635b07edad6e3765e1d1.webm" title="GraphQL Inspector CLI" />
+
+---
+
+## Key Features
+
+- [**Finds breaking, dangerous and safe changes**](https://graphql-inspector.com/docs/essentials/diff)
+  when modifying a GraphQL API
+- [**GitHub Application**](https://graphql-inspector.com/install) +
+  [GitHub Action](https://graphql-inspector.com/docs/recipies/github) _(Bitbucket integration soon)_
+- **Command Line Interface**
+- **Completely free and open-source** — host your own GraphQL Inspector
+- [**Schema coverage**](https://graphql-inspector.com/docs/essentials/coverage) **—**see unused
+  parts of Schema based on all your clients' fragments and operations
+- [**Validates operations**](https://graphql-inspector.com/docs/essentials/validate) against a
+  GraphQL Schema — you notice errors before run-time!
+- [**Find duplicates or similar types**](https://graphql-inspector.com/docs/essentials/similar)
+
+---
+
+## Use It in GitHub
+
+We offer GraphQL Inspector as a [GitHub Application](https://graphql-inspector.com/install) that you
+can install in any of your repositories within a single click. That's the easiest way possible to
+start using Inspector.
+
+![](./e448298f70d03901ed6d7f913684fff6.jpeg 'GraphQL Inspector annotates every change in your GraphQL Schema')
+
+## Inspector as Part of Your Workflow
+
+In order to use GraphQL Inspector, you need to make sure you write an entire GraphQL Schema to a
+file so Inspector could see it. Git hooks fits well here. Whenever there's a new commit, the file
+will be updated.
+
+Next, you configure GraphQL Inspector in `package.json` :
+
+```json
+{
+  "name": "my-app",
+  "scripts": {
+    "graphql:write": "graphql-inspector introspect src/schema.js --write schema.graphql"
+  },
+  "graphql-inspector": {
+    "diff": true,
+    "schema": {
+      "ref": "head/master",
+      "path": "schema.graphql"
+    }
+  }
+}
+```
+
+> You can read more about that in
+> [“Github Application” chapter](https://graphql-inspector.com/docs/recipies/github#usage) on
+> [our website](https://graphql-inspector.com).
+
+Now, whenever someone submits a Pull Request the GraphQL Inspector will compare schemas and fail if
+there are breaking changes.
+
+![](./97a878e053408c9aac2989f102fae5b2.png 'Prevents from merging the Pull Request')
+
+## GitHub Actions
+
+I know GitHub Actions are not yet publicly available but if you're lucky enough, you can use them to
+host your own GraphQL Inspector that is deployed and live per each commit or a pull request. Because
+an Action is temporarily executed with Docker, you won't use any Cloud service or any other paid
+resources.
+
+![](./ca013c71cd929edd8b85fd8d5aaf473c.jpeg 'An example workflow. Check your API on every pull request or commit.')
+
+Right now, Actions are not the most enjoyable thing but because it's free and super easy to setup we
+highly recommend to take advantage of it if you don't want to use hosted by us GraphQL Inspector.
+
+We don't store any data, the code is open-sourced and deployed with Netlify Functions.
+
+> Because we strongly believe in open-source, **you can also have your own instance of GraphQL
+> Inspector up and running.**
+
+## Bitbucket Integration
+
+GraphQL Inspector doesn't support Bitbucket yet, but it's on top of our roadmap, and we're starting
+working on it. If you need it, please reach out or comment on
+[the open issue](https://github.com/kamilkisiela/graphql-inspector/issues/54).
+
+## Prevent Breaking Changes
+
+GraphQL Inspector compares an old and a new GraphQL Schema in order to alert you about breaking
+changes. It also tracks other changes, dangerous to implement and those that are entirely safe.
+
+This way you have a clear vision of how your Schema is developed.
+
+![](./db3ebe4655f21fadd3d68d71bb0342ef.jpeg 'Schema Comparison in GraphQL Inspector CLI')
+
+## Schema Coverage
+
+The idea behind it is to see which part of your schema is used, how many times and by which
+operation. It only applies to documents that can be statically analyzed.
+
+Inspector is able to extract every fragment or operation from your TypeScript and JavaScript files.
+It supports any kind of template literal tag but also `.graphql` files.
+
+![](./c7f0f0866d7bb5684a766eff7108fe1f.jpeg 'Shows you how many times each field is used by all fragments and operations')
+
+## Validate Documents and Find Deprecated Usage
+
+In order to find out that your operation or fragment is broken you need to run an app and execute a
+query or mutation. Thanks to GraphQL Inspector, you can easily check for errors or deprecated usage
+at any point of time.
+
+![](./53cb02616ee279f3774e7ccf2b2c00ae.jpeg)
+
+> I recommend to make it as part of your CI or even git hooks.
+
+## Find Duplicates
+
+Another interesting feature of Inspector allows you to find similar types and maybe even duplicates.
+It's not something everyone might want to use but we found it really helpful when we were migrating
+few separate GraphQL APIs to a monorepo and merging them into a single server at
+[**Air France — KLM**](https://medium.com/airfrance-klm). The person who could say more about that
+would be Mart Ganzevles, who's the father of that particular feature, and it was his first ever
+open-source contribution. Amazing work Mart!
+
+![](./ff95930cdd17aff41491ea78c724bcf5.jpeg)
+
+## Desktop Application
+
+We are going to work on a Desktop version of GraphQL Inspector to boost the whole experience even
+further. Imagine exploring everything in a nicely done and interactive application. You could click
+on things in order to see them in details, just amazing!
+
+## Other Features
+
+- Runs a GraphQL Server with faked data within a single command
+- Writes an introspection result of GraphQL Schema to a file
+
+## How Does It Compare to Other Tools
+
+**Apollo Engine** GraphQL Inspector tries to solve a bit of a different use-case. The main idea
+behind Apollo Engine is to get insights of how a GraphQL server behaves in production.
+
+It supports schema comparison too but the main difference is that we **don't store any of your
+data** and in order to track changes, **we simply take advantage of Git**. Each change is available
+in git history, so the workflow is straightforward, and it's something you're already familiar with.
+
+Because of that, Apollo's advantage is that it takes into account production data and not only your
+code. But if that is important to you, you can gather this data from your GraphQL servers today,
+store it wherever you want, and we can add a feature to add this data into one of our reports.
+
+**GraphQL Doctor** and our tool have in common only the Schema Comparison feature, but Inspector
+tracks also changes that are safe to introduce. Doctor's main goal is to run within GitHub and
+prevent from breaking an API. We would love to collaborate with them, make sure we truly covered all
+their use cases and maybe merge their library into ours.
+
+## Open-Source Community
+
+In [The Guild](/), we love open-source, our whole careers were possible because of that. We also
+found out each other through Open-Source :)
+
+That's why I encourage you to help us develop GraphQL Inspector and **let's build it together**.
+
+Smallest piece of code, bug fix, documentation improvement or even a simplest suggestion counts as
+contribution!
+
+## Links
+
+- [Website](https://graphql-inspector.com) and [documentation](https://graphql-inspector.com/docs)
+- Visit the [repository](https://github.com/kamilkisiela/graphql-inspector) on GitHub
+- CLI available — `yarn global add @graphql-inspector/cli`
+- Checkout the [GitHub Application](https://graphql-inspector.com/install)
+- See an [example](https://github.com/kamilkisiela/graphql-inspector-example/pull/3) app that uses
+  GraphQL Inspector

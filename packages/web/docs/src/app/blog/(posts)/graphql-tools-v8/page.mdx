@@ -1,0 +1,178 @@
+---
+title: GraphQL Tools V8 - Stitch Federation Services
+authors: arda
+tags: [graphql, graphql-tools, schema-stitching, relay, graphql-federation]
+date: 2021-07-28
+description: GraphQL Tools - Faster and more flexible Schema Stitching!
+image: /blog-assets/graphql-tools-v6/cover.webm
+thumbnail: ../graphql-tools-v6/cover.png
+---
+
+Ever since [The Guild has taken over GraphQL Tools](/blog/graphql-tools-v6), we kept our promise and
+like every open source library we maintain,
+[we keep improving and supporting](/blog/tag/graphql-tools) it on a daily basis.
+
+Many things are continuously happening and improving with the library, and now, as we are releasing
+a new major version, we wanted to share some new things we've added.
+
+It's important for us to say thank you to all our users and open source contributors. The driving
+force behind this tremendous amount of work is you!
+
+TL;DR
+
+- We significantly improved GraphQL Stitching Performance
+- You can now manage [GraphQL federation](https://the-guild.dev/graphql/hive/federation) services
+  using Schema Stitching Gateway
+- You can consume Relay services in the Gateway
+- We support upcoming graphql-js features like `@defer` and `@stream`
+- Many more improvements in the release notes
+
+## Faster Schema Stitching
+
+We heavily worked on improving the performance of Schema Stitching by refactoring some parts of the
+query planner, schema delegation and more. So we got much better performance than before. Please
+check the release notes to make sure you are good to start using v8 to benefit from all these
+improvements!
+
+## More Flexible Schema Stitching
+
+The modern Schema Stitching is fairly comparable to Apollo Federation with automated query planning,
+merged types, and declarative schema directives.
+
+But it is also more configurable. You can configure your gateway and services in service level using
+Stitching Directives or in the gateway level using Type Merging configuration.
+
+### Manage Apollo Federation Services with Schema Stitching Gateway
+
+You can even consume your existing Apollo Federation services inside Schema Stitching without any
+changes by using the `federationToStitchingSDL` utility function from
+`@graphql-tools/stitching-directives`. Please check the Stitching Handbook to learn more.
+
+[Federation Services - Stitching Handbook](https://github.com/gmac/schema-stitching-handbook/tree/master/federation-services)
+
+### Relay-Based Gateway Possible?
+
+If you have multiple services using
+[Relay Specification](https://relay.dev/docs/guides/graphql-server-specification/#schema), you can
+easily combine them with the `handleRelaySubschemas` utility function from `@graphql-tools/stitch`
+package, and your unified schema will handle `Node` interface and `node` operation automatically
+using Type Merging.
+
+[You can check the unit tests to see the complete usage](https://github.com/ardatan/graphql-tools/blob/master/packages/stitch/tests/relay.spec.ts)
+
+It is pretty new, and we will improve the documentation for this use case gradually.
+
+### What Is Type Merging?
+
+Type merging allows partial definitions of a type to exist in any subschema, all of which are merged
+into one unified type in the gateway schema. When querying for a merged type, the gateway smartly
+delegates portions of a request to each relevant subschema in dependency order, and then combines
+all results for the final return.
+
+Type merging is now the preferred method of including GraphQL types across subschemas, replacing the
+need for schema extensions (though does not preclude their use). To migrate from schema extensions,
+simply enable type merging and then start replacing extensions one by one with merges.
+
+![Type Merging Flow](./type-merging-flow.png)
+
+Check out our documentation and stitching handbook to learn more about Type Merging!
+
+- [Type Merging Docs](https://graphql-tools.com/docs/stitch-type-merging)
+- [Stitching Handbook](https://github.com/gmac/schema-stitching-handbook)
+
+Also, please watch this great presentation from Greg MacWilliam!
+
+<Video src="https://youtube.com/embed/hOdGL3DepDM" title="Reintroducing Schema Stitching in 2021" />
+
+### Future-Proof Schema Delegation
+
+GraphQL Tools v8 is getting prepared for incoming GraphQL-js features. With defer and stream,
+GraphQL execution will return Async Iterables even for `query` and `mutation` operations like
+`subscription` ones. So we decided to remove `Subscriber` because we will need to handle Async
+Iterables in `Executor` eventually.
+
+You can easily merge your existing `Executor` and `Subscriber` functions by checking the
+`operationType` of `ExecutionParams`;
+
+```ts
+function myExecutor({ document, variables, operationType }) {
+  if (operationType === 'subscription') {
+    return callWSClient(...);
+  }
+  return callHTTPClient(...);
+}
+```
+
+### Create `GraphQLSchema` Instances for Your Remote APIs
+
+URL Loader from `@graphql-tools/url-loader` package creates executable GraphQLSchema instances for
+you to call your remote GraphQL APIs by using different protocols;
+
+- Server Sent Events ✔️
+- New [GraphQL-WS](https://github.com/enisdenjo/graphql-ws) ✔️
+- Legacy subscriptions-transport-ws ✔️
+- [Multipart File Uploads](https://github.com/jaydenseric/graphql-multipart-request-spec) ✔️
+
+```ts
+import { loadSchema } from '@graphql-tools/load'
+import { UrlLoader } from '@graphql-tools/url-loader'
+
+const schema = await loadSchema(`https://my-graphql-api.com`, {
+  loaders: [new UrlLoader()],
+  // Enable File Uploads
+  multipart: true,
+  // Choose your Subscription protocol
+  subscriptionProtocol: SubscriptionProtocol.SSE
+})
+```
+
+#### Create Executors for Schema Stitching / Delegation
+
+You can easily create executors for subschemas like below:
+
+```ts
+import { stitchSchemas } from '@graphql-tools/stitch'
+import { UrlLoader } from '@graphql-tools/url-loader'
+import { introspectSchema } from '@graphql-tools/wrap'
+
+const urlLoader = new UrlLoader()
+const executor = urlLoader.getExecutorAsync(`https://my-graphql-api.com`, {})
+
+const mySubschema = {
+  schema: await introspectSchema(executor),
+  executor
+}
+
+const stitchedSchema = await stitchSchemas([mySubschema, myOtherSubschema])
+```
+
+## And More...
+
+- Git Loader now supports glob patterns
+  - GraphQL Tools is used by GraphQL Config, GraphQL Code Generator, GraphQL Inspector and more to
+    download the type definitions and operation documents from the different sources with GraphQL
+    Tools Loaders.
+  - For example to compare your schema against the master, you need to dump your schema into a
+    single “schema.graphql” file and point the GraphQL Inspector to that file. But now you can use
+    glob patterns to point multiple files on your Git repo, and you don't need to have a generated
+    `schema.graphql` in the codebase.
+- No more a huge `graphql-tools` package;
+  - GraphQL Tools has a lot of packages for different use cases and previously we were publishing
+    `graphql-tools` package to the npm that includes all scoped packages we have in the repo. Let's
+    say when someone only needs `makeExecutableSchema`, NPM installs every single package with a lot
+    of unused dependencies together with those. From now on, we decided to deprecate `graphql-tools`
+    and encourage the users to migrate to the scoped packages. For example, you should install
+    `@graphql-tools/schema` for `makeExecutableSchema`. You can check API Reference and the rest of
+    the documentation to find what packages you need.
+- We have removed some functions, methods and stuff that are not widely used by the community;
+  - `makeRemoteExecutableSchema`
+    - In the new GraphQL Tools, you don't need this at all. You can write your own executor by
+      following the documentation and use wrapSchema instead. Or you can use UrlLoader directly
+      without the need of writing all the remote execution logic.
+    - This was already being deprecated after v4 in favor of `wrapSchema`.
+      [You can find the new usage in the docs.](https://graphql-tools.com/docs/stitch-combining-schemas#stitching-remote-schemas)
+  - Legacy Schema Directives, `visitSchema` and `directiveResolvers`
+    - We suggest you to
+      [check the new approach for schema directives and schema visiting in the documentation instead of these old approaches.](https://graphql-tools.com/docs/schema-directives#full-mapschema-api)
+  - And there are some other utility functions you might have been using from GraphQL Tools. You can
+    check CHANGELOG to see rest of them.

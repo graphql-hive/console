@@ -1,0 +1,148 @@
+---
+title: Open source FPS with Apollo GraphQL — GeoStrike (Alpha)
+authors: david
+tags: [cesium, graphql, angular]
+date: 2018-02-15
+description: A GeoReferenced Multiplayer First-Person Shooter Game.
+image: ./cover.png
+---
+
+**TLDR:** We've built a multiplayer shooter and used Apollo's GraphQL subscriptions to keep game
+state in sync at a very high frequency. Here's our impressions! **Tools used:**
+[Angular-cesium](https://angular-cesium.com),
+[Apollo Angular](https://github.com/kamilkisiela/apollo-angular), [CesiumJS](https://cesiumjs.org),
+[Angular](https://angular.io) **Go Play:** [geo-strike.com](https://geo-strike.com)
+
+## First, Why?
+
+Well, to put it simply, because we can!
+
+Instead of working hard on creating a special serializable, efficient but also unreadable, strict
+and esoteric binary protocol, we decided on going with the well-defined, readable and flexible
+GraphQL based API, and improve on it, if needed.
+
+Turns out we can manage synchronization of player positions, state and actions across all clients
+quite easily!
+
+## The Game
+
+There are two ways you can understand our challenges:
+
+- [Go and play the game](https://geo-strike.com) — Feel free to open the network tab on the dev
+  tools and look at the `subscriptions` websocket frames.
+- Read what our game is all about.
+
+<Video src="/blog-assets/graphql-geo-strike/gameplay.webm" />
+
+For those of you that have not played the game (yet!) I'll explain a bit what it is.
+
+Our game is a multiplayer shooting game that is taking place in the vicinity of the Times Square.
+The game mode is a "team deathmatch" battle where you spawn on the map with your team, and you need
+to find and shoot the other team's players. The winning team is the one that stayed alive while the
+other team's players are dead. If you die, you can only view the rest of the game from a bird's eye
+view.
+
+<Video src="/blog-assets/graphql-geo-strike/map.webm" />
+
+We use CesiumJS — a Google Earth like, open source, mapping engine — as our scene, so when I say the
+game takes place in the Times Square, It's an actual representation of the Times Square with the
+buildings being streamed to the client using Cesium's 3d Tiles. As a matter of fact, there is
+nothing keeping you at the Times Square only, you can wonder off to anywhere on earth. Keep in mind
+that you will be able to see buildings only in Manhattan.
+
+## Real-Time State Synchronization
+
+Because the game is a multiplayer shooter, we need to synchronize the multiple players position,
+orientation and state at a rate that the user would not feel “lag”.
+
+In order to do just that, we decided that our game server will be the only source of truth. It keeps
+each game in a simple map in memory so resolving this data whenever asked should be as quick as it
+gets. Next we wrote a small GraphQL schema that defines our Game entity.
+
+It ended up looking like so:
+
+![](./structure.png)
+
+Some parts of this graph will change very rapidly (~10 times a sec) and some parts of it will change
+rarely. Getting to this realization we decided to expose this graph with both Query type for less
+frequently changed data and Subscription type for higher rate changes.
+
+This gives the client the flexibility to decide what parts of the data graph he needs to be steamed
+to it.
+
+In our game, this subscription query turned out to be the only parts we need updated frequently:
+
+![](./game-state.png)
+
+At the beginning we went with the naive implementation and set things up so that we will get any
+change made by any client as it happens. Basically publish on the mutation resolver. But we quickly
+realized this is not a good approach as this is not very scalable and we, quickly over-stress our
+graphql server.
+
+The approach we decided on taking is usually referred to as “game tick”. We set up a timer that
+triggers every 200ms and publishes the game state to the gameData subscription. This was one of the
+most significant changes we made to allow for low latency, in our state synchronization process, and
+it was done with a couple lines of code, thanks to the way GraphQL subscriptions work.
+
+![](./game-flow.png)
+
+Not only that we were able to reduce latency, we were also able to scale the number of players quite
+easily.
+
+## Reflecting State Changes on the Map
+
+All we had left is handle those high frequency events on the client and have it work well (e.g.
+without conflicting or lagging) with the other of the data operations.
+
+But for those challenges, Apollo and `angular-apollo` had us covered! Apollo client handled the
+state subscription and updated the normalized client store seamlessly.
+
+`angular-apollo` exposes the state as a Rx Observable which allowed us to plug that stream to our
+amazing angular-cesium framework and have the players magically move and update on a 3d scene
+rendered with CesiumJS!
+
+![](./game-client.png)
+
+## Not Just One Subscription
+
+As I've mentioned above, we are publishing the game state every 200ms which is quite good for
+positioning players, but there are events on our game that cannot tolerate this kind of delay and
+still feel good to the user.
+
+After analyzing our graph, we determined that there are two such events. Shooting (obviously) and
+game state notifications. To handle those subscriptions on a ASAP manner, we've simply added two
+different subscriptions that the client should subscribe to. This makes sure that as soon as someone
+shoots, we will play the shooting sound according to his relative location on all other clients, and
+as soon a player is killed, all other players will get a notification indicating that.
+
+## Further Improvements
+
+![](./pov.png)
+
+As our game is played on the same size scene as our own earth, we cannot help but thinking of future
+game modes where whole armies could play one against the other to take over / save the world!
+
+This kind of massive multiplayer online game calls for some next level optimizations.
+
+For instance:
+
+- Optimize the amount of data sent to each client by filtering players state based on the player's
+  current position in the world.
+- Optimize the payload size by converting GraphQL responses to
+  [Google's Binary ProtoBuff](https://developers.google.com/protocol-buffers).
+- Use Apollo Engine's dynamic persistent queries to optimize the data that should be sent to our
+  game server.
+
+## Who Are We, You Ask?
+
+This game is the product of a collaboration between [Webiks](https://webiks.com), a software
+development company that specialize in high-end data analysis and real time situational awareness
+web based applications. And [The Guild](/), a group of freelance developers, open source
+contributors and the creators of [angular-cesium](https://angular-cesium.com).
+
+If you are interested in other non-graphql challenges we faced in this project, Omer, the CEO of
+Webiks wrote a [blog post that showcases all of it](https://webiks.com/introducing-geostrike-alpha).
+
+Oh, and it's all open source! Come over, [star and contribute](https://github.com/Webiks/GeoStrike)!
+
+Thanks for Reading!

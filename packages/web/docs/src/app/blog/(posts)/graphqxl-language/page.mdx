@@ -1,0 +1,181 @@
+---
+title: GraphQXL - The Missing GraphQL Language Extension?
+tags: [graphql]
+authors: gabotechs
+date: 2022-12-12
+description: GraphQXL, a new language for building big and scalable GraphQL server-side schemas
+image: ./cover.png
+thumbnail: ./thumbnail.png
+---
+
+import { Comparison } from '#components/comparison'
+
+When building GraphQL APIs following a schema-first approach and the project goes big, people
+usually find themselves repeating almost identical structures across the schema and copy-pasting
+common fields across the different types and inputs.
+
+## The Need of a New Language
+
+The GraphQL schema definition language (commonly referred to as SDL) is really nice for writing API
+schemas, but it tends to fall short on features as it is not a programming language (and it is not
+meant to be).
+
+With a code-first approach it is very easy to autogenerate repetitive graphql code as it is the
+programming language of choice the one that does all the hard work, but with a schema-first approach
+the limits are set by the capabilities of vanilla GraphQL.
+
+There are points in favor of the schema-first approach:
+
+- Non-programmers can contribute to new features by just touching the GraphQL schema.
+- The GraphQL schema itself serves like a blueprint for developers who will implement the API.
+- Frontend developers can start the work as long as the schema definition is complete, even before
+  the backend team has finished implementing it.
+- For customer facing APIs, it makes sense to give more importance to the schema definition, as it's
+  what the customers will directly interact with.
+
+GraphQXL is directed for people that want to keep using a schema-first approach but also want to
+benefit from the code re-usability, consistency and maintainability that a programming language
+would provide.
+
+## Some Interesting Features
+
+It is very common to reuse a subset of fields across many types, for example:
+
+```graphql
+type Product {
+  id: ID!
+  name: String!
+  createdAt: Date
+  modifiedAt: Date
+  # ...
+}
+
+type User {
+  id: ID!
+  name: String!
+  createdAt: Date
+  modifiedAt: Date
+  # ...
+}
+```
+
+This pattern can be repeated in a lot of types in the same schema, leading to code duplication and
+potential inconsistencies.
+
+In GraphQXL this would look something like:
+
+<Comparison>
+```graphql filename="Source GraphQXL" copy=false
+type _CommonFields {
+  id: ID!
+  name: String!
+  createdAt: Date
+  modifiedAt: Date
+}
+
+type Product { ...\_CommonFields }
+
+type User { ...\_CommonFields }
+
+````
+```graphql filename="Compiled GraphQL" copy=false
+type Product {
+  id: ID!
+  name: String!
+  createdAt: Date
+  modifiedAt: Date
+}
+
+type User {
+  id: ID!
+  name: String!
+  createdAt: Date
+  modifiedAt: Date
+}
+````
+
+</Comparison>
+
+The idea is not only to reuse code instead of copy-pasting, but also to enforce consistency across
+resources in the schema.
+
+## Added Syntax for Enforcing Reusability
+
+[Pagination based on cursors and connections](https://relay.dev/graphql/connections.htm) is one of
+the most common and standard ways for providing pagination. This, implemented in a good number of
+types, would lead to a bunch of verbose types with pretty much the same structure.
+
+For example, this vanilla GraphQL code:
+
+```graphql
+"The Product's Edge object for pagination"
+type ProductEdge {
+  "The Product's cursor that refers to the current node"
+  cursor: String!
+  "The Product itself"
+  node: Product!
+}
+
+"The Connection object for paginating across the ProductEdges"
+type ProductConnection {
+  "Metadata with the current page info"
+  pageInfo: PageInfo!
+  "List of ProductEdges for the current page"
+  edges: [ProductEdge!]!
+}
+
+"The User's Edge object for pagination"
+type UserEdge {
+  "The User's cursor that refers to the current node"
+  cursor: String!
+  "The User itself"
+  node: User!
+}
+
+"The Connection object for paginating across the UserEdges"
+type UserConnection {
+  "Metadata with the current page info"
+  pageInfo: PageInfo!
+  "List of UserEdges for the current page"
+  edges: [UserEdge!]!
+}
+```
+
+Verbose right? and this is just for a couple of resources, there is usually a lot more in a GraphQL
+schema.
+
+How could this be written using GraphQXL?
+
+```graphql
+"The ${{ variables.T }}'s Edge object for pagination"
+type Edge<T> {
+  "The ${{ variables.T }}'s cursor that refers to the current node"
+  cursor: String!
+  "The ${{ variables.T }} itself"
+  node: T!
+}
+
+"The Connection object for paginating across the ${{ variables.T }}s"
+type Connection<T> {
+  "Metadata with the current page info"
+  pageInfo: PageInfo!
+  "List of ${{ variables.T }}s for the current page"
+  edges: [T!]!
+}
+
+type ProductEdge = Edge<Product>
+type ProductConnection = Connection<ProductEdge>
+type UserEdge = Edge<User>
+type UserConnection = Connection<UserEdge>
+```
+
+## Is There Something Else?
+
+Of course! There is a lot more things that you can check in the
+[GitHub repository](https://github.com/gabotechs/graphqxl), or in the
+[GraphQXL Book](https://gabotechs.github.io/graphqxl).
+
+You can also play around with it in the [GraphQXL explorer](https://graphqxl-explorer.vercel.app).
+
+It would be awesome to hear opinions from the community and new feature requests that could solve
+other challenges when defining GraphQL schemas.
