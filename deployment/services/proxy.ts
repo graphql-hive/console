@@ -100,5 +100,15 @@ export function deployProxy({
         service: usage.service,
         retriable: true,
       },
+    ])
+    .registerService({ record: environment.apiDns }, [
+      {
+        name: 'graphql-api',
+        path: '/graphql',
+        customRewrite: '/graphql-public',
+        service: graphql.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
     ]);
 }
