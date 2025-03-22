@@ -1,8 +1,9 @@
-import { Fragment, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { AlertTriangle, ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
+import { useQuery } from 'urql';
 import { z } from 'zod';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
@@ -15,6 +16,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Meta } from '@/components/ui/meta';
+import { QueryError } from '@/components/ui/query-error';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -40,6 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -237,7 +240,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-function Traffic() {
+const Traffic = memo(function Traffic() {
+  const data = chartData;
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   const [_, setZoomedData] = useState<typeof data | null>(null);
@@ -284,21 +288,10 @@ function Traffic() {
       [left, right] = [right, left];
     }
 
-    // Filter data to the selected range
-    const filteredData = data.filter(
-      entry =>
-        entry.timestamp >= parseDate(left, 'yyyy-MM-dd', now).getTime() &&
-        entry.timestamp <= parseDate(right, 'yyyy-MM-dd', now).getTime(),
-    );
-
-    if (filteredData.length > 0) {
-      setZoomedData(filteredData);
-    }
-
     setRefAreaLeft(null);
     setRefAreaRight(null);
     setIsSelecting(false);
-  }, [refAreaLeft, refAreaRight, data]);
+  }, [refAreaLeft, refAreaRight]);
 
   return (
     <ChartContainer
@@ -350,7 +343,7 @@ function Traffic() {
       </BarChart>
     </ChartContainer>
   );
-}
+});
 
 type Trace = {
   id: string;
@@ -367,626 +360,6 @@ type Trace = {
   httpUrl: string;
   subgraphNames: string[];
 };
-
-const now = new Date();
-function generateTraceId() {
-  return [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-}
-const data: Trace[] = [
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime(),
-    status: 'ok',
-    duration: 6019,
-    kind: 'query',
-    operationName: 'FetchProducts',
-    operationHash: '3h1s',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['link', 'products', 'prices'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 120000,
-    status: 'ok',
-    duration: 6019,
-    kind: 'query',
-    operationName: 'FetchProducts',
-    operationHash: '3h1s',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['link', 'products', 'prices'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 240000,
-    status: 'error',
-    duration: 10045,
-    kind: 'mutation',
-    operationName: 'UpdateProduct',
-    operationHash: '8f2b',
-    httpStatus: 500,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['products'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 360000,
-    status: 'ok',
-    duration: 3045,
-    kind: 'query',
-    operationName: 'GetUser',
-    operationHash: 'a7g4',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 480000,
-    status: 'ok',
-    duration: 4521,
-    kind: 'query',
-    operationName: 'ListOrders',
-    operationHash: 'c9h2',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders', 'users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 600000,
-    status: 'error',
-    duration: 7890,
-    kind: 'mutation',
-    operationName: 'CancelOrder',
-    operationHash: 'd1k8',
-    httpStatus: 400,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 720000,
-    status: 'ok',
-    duration: 2156,
-    kind: 'subscription',
-    operationName: 'OrderStatusUpdated',
-    operationHash: 'e4m7',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 840000,
-    status: 'ok',
-    duration: 5092,
-    kind: 'query',
-    operationName: 'FetchCart',
-    operationHash: 'f2p9',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['cart', 'products'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 960000,
-    status: 'ok',
-    duration: 6820,
-    kind: 'mutation',
-    operationName: 'AddToCart',
-    operationHash: 'g7r5',
-    httpStatus: 201,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['cart'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-];
-
-export const columns: ColumnDef<Trace>[] = [
-  {
-    accessorKey: 'id',
-    header: () => <div className="pl-2 text-left">Trace ID</div>,
-    cell: ({ row }) => {
-      const targetRef = useTargetReference();
-      const traceId = row.getValue('id') as string;
-
-      return (
-        <div className="px-2 text-left font-mono text-xs font-medium">
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-            params={{
-              organizationSlug: targetRef.organizationSlug,
-              projectSlug: targetRef.projectSlug,
-              targetSlug: targetRef.targetSlug,
-              traceId,
-            }}
-            className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
-          >
-            <span>
-              <span className="underline decoration-gray-800 decoration-2 underline-offset-2 group-hover:decoration-white">
-                {traceId.substring(0, 8)}
-              </span>
-              <span
-                style={{
-                  color: 'transparent',
-                  pointerEvents: 'none',
-                  textDecoration: 'none',
-                }}
-              >
-                {traceId.substring(8)}
-              </span>
-            </span>
-          </Link>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'timestamp',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="link"
-          className="text-muted-foreground"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Timestamp
-          <ArrowUpDown className="ml-2 size-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const timestamp = row.getValue('timestamp') as number;
-
-      return (
-        <TooltipProvider>
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <div className="px-4 font-mono text-xs uppercase">
-                {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
-              onClick={e => {
-                // Prevent the click event from bubbling up to the row,
-                // which would trigger the sheet with trace details to open
-                e.stopPropagation();
-              }}
-            >
-              <GridTable
-                rows={[
-                  {
-                    key: 'Local',
-                    value: formatDate(timestamp, 'MMM dd HH:mm:ss'),
-                  },
-                  {
-                    key: 'UTC',
-                    value: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
-                  },
-                  {
-                    key: 'Unix',
-                    value: timestamp,
-                  },
-                  {
-                    key: 'ISO',
-                    value: formatISO(toZonedTime(timestamp, 'UTC')),
-                  },
-                ]}
-              />
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
-  },
-  {
-    accessorKey: 'operationName',
-    header: ({ column }) => {
-      return (
-        <div>
-          <Button
-            variant="link"
-            className="text-muted-foreground"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Operation Name
-            <ArrowUpDown className="ml-2 size-4" />
-          </Button>
-        </div>
-      );
-    },
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip disableHoverableContent delayDuration={100}>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-4 text-xs">
-              <span className="text-muted-foreground font-mono">
-                {row.original.operationHash.substring(0, 4)}
-              </span>
-              <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-                {row.original.kind.substring(0, 1).toUpperCase()}
-              </span>
-              <span>{row.getValue('operationName')}</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent
-            side="bottom"
-            className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
-          >
-            <GridTable
-              rows={[
-                {
-                  key: 'Name',
-                  value: row.getValue('operationName'),
-                },
-                {
-                  key: 'Kind',
-                  value: row.original.kind,
-                },
-                {
-                  key: 'Hash',
-                  value: row.original.operationHash,
-                },
-              ]}
-            />
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
-  },
-  {
-    accessorKey: 'duration',
-    header: ({ column }) => {
-      return (
-        <div>
-          <Button
-            variant="link"
-            className="text-muted-foreground"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Duration
-            <ArrowUpDown className="ml-2 size-4" />
-          </Button>
-        </div>
-      );
-    },
-    cell: ({ row }) => {
-      const duration = formatDuration(row.getValue('duration'), true);
-      return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
-    },
-  },
-  {
-    accessorKey: 'status',
-    header: () => <div className="text-center">Status</div>,
-    cell: ({ row }) => {
-      const status = row.getValue('status');
-
-      return (
-        <div className="text-center">
-          <Badge
-            variant="outline"
-            className={cn(
-              'rounded-sm border-0 px-1 text-xs font-medium uppercase',
-              status === 'ok' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-            )}
-          >
-            {status}
-          </Badge>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'subgraphNames',
-    sortingFn(a, b, isAsc) {
-      // sort a.original.subgraphNames.length and b.original.subgraphNames.length
-      const aValue = a.original.subgraphNames.length;
-      const bValue = b.original.subgraphNames.length;
-
-      if (isAsc) {
-        return aValue - bValue;
-      }
-
-      return bValue - aValue;
-    },
-    header: ({ column }) => (
-      <div className="text-center">
-        <Button
-          variant="link"
-          className="text-muted-foreground"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Subgraphs
-          <ArrowUpDown className="ml-2 size-4" />
-        </Button>
-      </div>
-    ),
-    cell: ({ row }) => {
-      return (
-        <div className="text-center font-mono text-xs font-medium">
-          {row.getValue('subgraphNames').length}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'httpMethod',
-    header: () => <div className="text-center">HTTP Method</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-center font-mono text-xs font-medium">
-          {row.getValue('httpMethod')}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'httpStatus',
-    header: () => <div className="text-center">HTTP Status</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-center font-mono text-xs font-medium">
-          {row.getValue('httpStatus')}
-        </div>
-      );
-    },
-  },
-];
 
 const TargetTracesSortShape = z
   .array(
@@ -1022,18 +395,41 @@ type PaginationProps = {
   pagination: PaginationState;
 };
 
-function TracesList(props: SortProps & PaginationProps) {
-  // const [sorting, setSorting] = useState<SortingState>([]);
-  // const [pagination, setPagination] = useState({
-  //   pageIndex: 0,
-  //   pageSize: 20,
-  // });
+const TracesList_Trace = graphql(`
+  fragment TracesList_Trace on Trace {
+    id
+    timestamp
+    operationName
+    operationType
+    duration
+    subgraphs
+    success
+    clientName
+    clientVersion
+    httpStatusCode
+    httpMethod
+    httpHost
+    httpRoute
+    httpUrl
+  }
+`);
+
+const TracesList = memo(function TracesList(
+  props: SortProps &
+    PaginationProps & {
+      traces: FragmentType<typeof TracesList_Trace>[];
+    },
+) {
   const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
   const router = useRouter();
+  const data = useFragment(TracesList_Trace, props.traces);
 
   const onSortingChange = useCallback<OnChangeFn<SortState>>(
     updater => {
       const value = typeof updater === 'function' ? updater(props.sorting) : updater;
+      if (JSON.stringify(value) === JSON.stringify(props.sorting)) {
+        return;
+      }
 
       void router.navigate({
         search(params) {
@@ -1051,6 +447,10 @@ function TracesList(props: SortProps & PaginationProps) {
     updater => {
       const value = typeof updater === 'function' ? updater(props.pagination) : updater;
 
+      if (JSON.stringify(value) === JSON.stringify(props.pagination)) {
+        return;
+      }
+
       void router.navigate({
         search(params) {
           return {
@@ -1065,7 +465,257 @@ function TracesList(props: SortProps & PaginationProps) {
 
   const table = useReactTable({
     data,
-    columns,
+    columns: [
+      {
+        accessorKey: 'id',
+        header: () => <div className="pl-2 text-left">Trace ID</div>,
+        cell: ({ row }) => {
+          const targetRef = useTargetReference();
+          const traceId = row.getValue('id') as string;
+
+          return (
+            <div className="px-2 text-left font-mono text-xs font-medium">
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                params={{
+                  organizationSlug: targetRef.organizationSlug,
+                  projectSlug: targetRef.projectSlug,
+                  targetSlug: targetRef.targetSlug,
+                  traceId,
+                }}
+                className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
+              >
+                <span>
+                  <span className="underline decoration-gray-800 decoration-2 underline-offset-2 group-hover:decoration-white">
+                    {traceId.substring(0, 8)}
+                  </span>
+                  <span
+                    style={{
+                      color: 'transparent',
+                      pointerEvents: 'none',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    {traceId.substring(8)}
+                  </span>
+                </span>
+              </Link>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'timestamp',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="link"
+              className="text-muted-foreground"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              Timestamp
+              <ArrowUpDown className="ml-2 size-4" />
+            </Button>
+          );
+        },
+        cell: ({ row }) => {
+          const timestamp = row.getValue('timestamp') as number;
+
+          return (
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <div className="px-4 font-mono text-xs uppercase">
+                    {formatDate(row.getValue('timestamp'), 'MMM dd HH:mm:ss')}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                  onClick={e => {
+                    // Prevent the click event from bubbling up to the row,
+                    // which would trigger the sheet with trace details to open
+                    e.stopPropagation();
+                  }}
+                >
+                  <GridTable
+                    rows={[
+                      {
+                        key: 'Local',
+                        value: formatDate(timestamp, 'MMM dd HH:mm:ss'),
+                      },
+                      {
+                        key: 'UTC',
+                        value: formatInTimeZone(timestamp, 'UTC', 'MMM dd HH:mm:ss'),
+                      },
+                      {
+                        key: 'Unix',
+                        value: timestamp,
+                      },
+                      {
+                        key: 'ISO',
+                        value: formatISO(toZonedTime(timestamp, 'UTC')),
+                      },
+                    ]}
+                  />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        },
+      },
+      {
+        accessorKey: 'operationName',
+        header: ({ column }) => {
+          return (
+            <div>
+              <Button
+                variant="link"
+                className="text-muted-foreground"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              >
+                Operation Name
+                <ArrowUpDown className="ml-2 size-4" />
+              </Button>
+            </div>
+          );
+        },
+        cell: ({ row }) => (
+          <TooltipProvider>
+            <Tooltip disableHoverableContent delayDuration={100}>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 px-4 text-xs">
+                  <span className="text-muted-foreground font-mono">
+                    {Math.random().toString(16).substring(2, 6)}
+                  </span>
+                  <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                    {row.original.operationType.substring(0, 1).toUpperCase()}
+                  </span>
+                  <span>{row.getValue('operationName')}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+              >
+                <GridTable
+                  rows={[
+                    {
+                      key: 'Name',
+                      value: row.getValue('operationName'),
+                    },
+                    {
+                      key: 'Kind',
+                      value: row.original.operationType,
+                    },
+                    {
+                      key: 'Hash',
+                      value: Math.random().toString(16).substring(2),
+                    },
+                  ]}
+                />
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ),
+      },
+      {
+        accessorKey: 'duration',
+        header: ({ column }) => {
+          return (
+            <div>
+              <Button
+                variant="link"
+                className="text-muted-foreground"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              >
+                Duration
+                <ArrowUpDown className="ml-2 size-4" />
+              </Button>
+            </div>
+          );
+        },
+        cell: ({ row }) => {
+          const duration = formatDuration(row.getValue('duration') / 1000000, true);
+          return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
+        },
+      },
+      {
+        accessorKey: 'success',
+        header: () => <div className="text-center">Status</div>,
+        cell: ({ row }) => {
+          const status = row.getValue('success');
+
+          return (
+            <div className="text-center">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'rounded-sm border-0 px-1 text-xs font-medium uppercase',
+                  status ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
+                )}
+              >
+                {status ? 'Ok' : 'Error'}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'subgraphs',
+        sortingFn(a, b, isAsc) {
+          const aValue = a.original.subgraphs.length;
+          const bValue = b.original.subgraphs.length;
+
+          if (isAsc) {
+            return aValue - bValue;
+          }
+
+          return bValue - aValue;
+        },
+        header: ({ column }) => (
+          <div className="text-center">
+            <Button
+              variant="link"
+              className="text-muted-foreground"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              Subgraphs
+              <ArrowUpDown className="ml-2 size-4" />
+            </Button>
+          </div>
+        ),
+        cell: ({ row }) => {
+          return (
+            <div className="text-center font-mono text-xs font-medium">
+              {row.getValue('subgraphs').length}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'httpMethod',
+        header: () => <div className="text-center">HTTP Method</div>,
+        cell: ({ row }) => {
+          return (
+            <div className="text-center font-mono text-xs font-medium">
+              {row.getValue('httpMethod')}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'httpStatusCode',
+        header: () => <div className="text-center">HTTP Status</div>,
+        cell: ({ row }) => {
+          return (
+            <div className="text-center font-mono text-xs font-medium">
+              {row.getValue('httpStatusCode')}
+            </div>
+          );
+        },
+      },
+    ],
     onSortingChange,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -1128,7 +778,7 @@ function TracesList(props: SortProps & PaginationProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={table.options.columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -1159,7 +809,7 @@ function TracesList(props: SortProps & PaginationProps) {
       <TraceSheet trace={traceInSheet} />
     </Sheet>
   );
-}
+});
 
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
@@ -1421,8 +1071,13 @@ const filterOptions = {
   ],
 };
 
-function Filters(props: FilterProps) {
+function Filters(
+  props: FilterProps & {
+    options: typeof filterOptions;
+  },
+) {
   const filters = props.filter;
+  const filterOptions = props.options;
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
   const router = useRouter();
@@ -1664,6 +1319,8 @@ function TraceSheet(props: { trace: Trace | null }) {
   const targetRef = useTargetReference();
   const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
   const trace = props.trace;
+
+  return null;
 
   if (!trace) {
     return null;
@@ -1927,8 +1584,181 @@ function SearchBar(props: { onFiltersOpenChange: () => void }) {
   // );
 }
 
-function TargetInsightsNewPageContent(props: SortProps & PaginationProps & FilterProps) {
+const TargetTracesPageQuery = graphql(`
+  query TargetTracesPageQuery(
+    $targetRef: TargetSelectorInput!
+    $first: Int!
+    $filter: TracesFilterInput
+    $filterTopN: Int!
+  ) {
+    target(reference: { bySelector: $targetRef }) {
+      id
+      traces(first: $first, filter: $filter) {
+        edges {
+          node {
+            ...TracesList_Trace
+          }
+          cursor
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+      tracesFilterOptions(filter: $filter) {
+        success {
+          value
+          count
+        }
+        operationType {
+          value
+          count
+        }
+        operationName(top: $filterTopN) {
+          value
+          count
+        }
+        httpStatusCode(top: $filterTopN) {
+          value
+          count
+        }
+        httpMethod(top: $filterTopN) {
+          value
+          count
+        }
+        httpHost(top: $filterTopN) {
+          value
+          count
+        }
+        httpRoute(top: $filterTopN) {
+          value
+          count
+        }
+        httpUrl(top: $filterTopN) {
+          value
+          count
+        }
+        subgraphs(top: $filterTopN) {
+          value
+          count
+        }
+      }
+    }
+  }
+`);
+
+function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const targetRef = useTargetReference();
+  const [query] = useQuery({
+    query: TargetTracesPageQuery,
+    variables: {
+      targetRef: {
+        organizationSlug: targetRef.organizationSlug,
+        projectSlug: targetRef.projectSlug,
+        targetSlug: targetRef.targetSlug,
+      },
+      filterTopN: 5,
+      filter: {
+        id: props.filter['trace.id'],
+        operationName: props.filter['graphql.operation'],
+        operationType: props.filter['graphql.kind'] as any,
+        success: props.filter['graphql.status'].map(s => s === 'ok'),
+        httpStatusCode: props.filter['http.status'].map(Number),
+        httpMethod: props.filter['http.method'],
+        httpHost: props.filter['http.host'],
+        httpRoute: props.filter['http.route'],
+        httpUrl: props.filter['http.url'],
+        subgraphs: props.filter['graphql.subgraph'],
+      },
+      first: props.pagination.pageSize,
+    },
+  });
+
+  const traces = useMemo(
+    () => query.data?.target?.traces.edges.map(e => e.node),
+    [query.data?.target?.traces.edges],
+  );
+
+  const filterOptions = useMemo(() => {
+    const options = query.data?.target?.tracesFilterOptions;
+
+    return {
+      'graphql.status':
+        options?.success.map(option => ({
+          value: option.value ? 'ok' : 'error',
+          searchContent: option.value ? 'ok' : 'error',
+          label: option.value ? 'Ok' : 'Error',
+          count: option.count,
+        })) ?? [],
+      'graphql.kind':
+        options?.operationType.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'graphql.name':
+        options?.operationName.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'http.status':
+        options?.httpStatusCode.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'http.method':
+        options?.httpMethod.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'http.host':
+        options?.httpHost.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'http.route':
+        options?.httpRoute.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'http.url':
+        options?.httpUrl.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'graphql.subgraph':
+        options?.subgraphs.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'graphql.client': [],
+    };
+  }, [query.data?.target?.tracesFilterOptions]);
+
+  if (query.error) {
+    return (
+      <QueryError
+        organizationSlug={targetRef.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
+  }
 
   return (
     <div className="py-6">
@@ -1936,7 +1766,7 @@ function TargetInsightsNewPageContent(props: SortProps & PaginationProps & Filte
         {filtersOpen ? (
           <Sidebar collapsible="none" className="bg-transparent">
             <SidebarContent>
-              <Filters filter={props.filter} />
+              <Filters filter={props.filter} options={filterOptions} />
             </SidebarContent>
           </Sidebar>
         ) : null}
@@ -1946,7 +1776,11 @@ function TargetInsightsNewPageContent(props: SortProps & PaginationProps & Filte
               <SearchBar onFiltersOpenChange={() => setFiltersOpen(isOpen => !isOpen)} />
               <Traffic />
             </div>
-            <TracesList sorting={props.sorting} pagination={props.pagination} />
+            <TracesList
+              sorting={props.sorting}
+              pagination={props.pagination}
+              traces={traces ?? []}
+            />
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -1972,7 +1806,7 @@ export function TargetTracesPage(
         targetSlug={props.targetSlug}
         page={Page.Traces}
       >
-        <TargetInsightsNewPageContent
+        <TargetTracesPageContent
           sorting={props.sorting}
           pagination={props.pagination}
           filter={props.filter}
