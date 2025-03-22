@@ -1,5 +1,20 @@
 # @graphql-hive/cli
 
+## 0.50.0
+
+### Minor Changes
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show dangerous changes as a separate list in
+  schema:check
+
+### Patch Changes
+
+- Updated dependencies
+  [[`5130fc1`](https://github.com/graphql-hive/console/commit/5130fc1db8c50ac0eb35d901623594749772c550)]:
+  - @graphql-hive/core@0.11.0
+
 ## 0.49.1
 
 ### Patch Changes
