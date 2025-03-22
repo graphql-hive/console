@@ -1315,12 +1315,10 @@ function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
   );
 }
 
-function TraceSheet(props: { trace: Trace | null }) {
+function TraceSheet(props: { trace: DocumentType<typeof TracesList_Trace> | null }) {
   const targetRef = useTargetReference();
   const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
   const trace = props.trace;
-
-  return null;
 
   if (!trace) {
     return null;
@@ -1329,12 +1327,12 @@ function TraceSheet(props: { trace: Trace | null }) {
   const attributes: Array<TraceAttribute> = [
     {
       name: 'graphql.operationKind',
-      value: trace.kind,
+      value: trace.operationType,
       category: 'GraphQL',
     },
     {
       name: 'graphql.subgraphs',
-      value: trace.subgraphNames.join(', '),
+      value: trace.subgraphs.join(', '),
       category: 'GraphQL',
     },
     {
@@ -1359,7 +1357,7 @@ function TraceSheet(props: { trace: Trace | null }) {
     },
     {
       name: 'http.status',
-      value: trace.httpStatus,
+      value: trace.httpStatusCode,
       category: 'HTTP',
     },
   ];
@@ -1373,7 +1371,7 @@ function TraceSheet(props: { trace: Trace | null }) {
           <SheetTitle className="text-lg font-medium text-white">
             {trace.operationName}
             <span className="text-muted-foreground ml-2 font-mono font-normal">
-              {trace.operationHash.substring(0, 4)}
+              {trace.id.substring(0, 4)}
             </span>
           </SheetTitle>
         </div>
@@ -1389,12 +1387,10 @@ function TraceSheet(props: { trace: Trace | null }) {
             variant="outline"
             className={cn(
               'rounded-sm border-0 px-1 font-medium uppercase',
-              trace.status === 'ok'
-                ? 'bg-green-900/30 text-green-400'
-                : 'bg-red-900/30 text-red-400',
+              trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
             )}
           >
-            {trace.status}
+            {trace.success ? 'Ok' : 'Error'}
           </Badge>
           <span className="font-mono uppercase text-gray-300">
             {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
