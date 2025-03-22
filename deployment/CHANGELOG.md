@@ -1,5 +1,31 @@
 # hive
 
+## 6.1.0
+
+### Minor Changes
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add target breaking change setting to turn
+  dangerous changes into breaking changes
+
+- [#6614](https://github.com/graphql-hive/console/pull/6614)
+  [`c1d9c05`](https://github.com/graphql-hive/console/commit/c1d9c0568d5a4b4671aceb831883d348db5f9a55)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add new route `/graphql-public` to the `server`
+  service which contains the public GraphQL API (fields and types will follow).
+
+### Patch Changes
+
+- [#6602](https://github.com/graphql-hive/console/pull/6602)
+  [`df3e5a2`](https://github.com/graphql-hive/console/commit/df3e5a23e5cd505d346a6d5719a4a7308aba208d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added directions for publishing on no schema
+  component
+
+- [#6632](https://github.com/graphql-hive/console/pull/6632)
+  [`9b2bec6`](https://github.com/graphql-hive/console/commit/9b2bec6185f939b378aa898215c56bb82119d0b6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Capture Stripe.js load error to avoid raising an
+  unhandled error
+
 ## 6.0.0
 
 ### Major Changes
