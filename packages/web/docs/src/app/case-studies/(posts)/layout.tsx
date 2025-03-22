@@ -1,5 +1,5 @@
 import { GetYourAPIGameWhite } from '#components/get-your-api-game-white';
-import { cn } from '@theguild/components';
+import { cn, HiveLayoutConfig } from '@theguild/components';
 import { CaseStudiesHeader } from '../case-studies-header';
 import { MoreStoriesSection } from '../more-stories-section';
 import '../case-studies-styles.css';
@@ -14,6 +14,7 @@ const MAIN_CONTENT = 'main-content';
 export default function CaseStudiesLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={cn(ONE_OFF_CLASS_CASE_STUDIES, 'mx-auto box-content max-w-[90rem]')}>
+      <HiveLayoutConfig widths="landing-narrow" />
       <CaseStudiesHeader className="mx-auto max-w-[--nextra-content-width] pl-6 sm:my-12 md:pl-12 lg:my-24" />
       <div className={cn(MAIN_CONTENT, 'mx-auto flex')}>
         {children}

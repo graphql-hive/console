@@ -1,3 +1,4 @@
+import type { StaticImageData } from 'next/image';
 import { AuthorId } from '../../authors';
 import { MdxFile, PageMapItem } from '../case-studies/case-study-types';
 
@@ -7,9 +8,11 @@ export interface BlogFrontmatter {
   date: string;
   tags: string | string[];
   featured?: boolean;
-  image?: string;
-  thumbnail?: string;
+  image?: VideoPath | StaticImageData;
+  thumbnail?: StaticImageData;
 }
+
+type VideoPath = `${string}.${'webm' | 'mp4'}`;
 
 export type BlogPostFile = Required<MdxFile<BlogFrontmatter>>;
 

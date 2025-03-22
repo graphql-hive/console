@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
+import { cn } from '@theguild/components';
 import { useFrontmatter } from '../../../../components/use-frontmatter';
 import type { BlogFrontmatter } from '../../blog-types';
 
-export function BlogPostPicture() {
+export function BlogPostPicture({ className }: { className?: string }) {
   const { frontmatter } = useFrontmatter<BlogFrontmatter>();
   const image = frontmatter.image;
 
@@ -11,18 +13,13 @@ export function BlogPostPicture() {
     return null;
   }
 
-  if (image.endsWith('.webm')) {
-    return <video className="h-[324px] w-full" src={image} autoPlay muted loop playsInline />;
+  className = cn('h-[324px] rounded-3xl overflow-hidden object-cover', className);
+
+  if (typeof image === 'string' && (image.endsWith('.webm') || image.endsWith('.mp4'))) {
+    return <video className={className} src={image} autoPlay muted loop playsInline />;
   }
 
-  return image;
-  // <Image
-  //   className="h-[324px] w-full"
-  //   width={1440}
-  //   height={324}
-  //   src={image}
-  //   alt=""
-  //   placeholder="blur"
-
-  // />
+  return (
+    <Image width={1392} height={324} className={className} src={image} alt="" placeholder="blur" />
+  );
 }
