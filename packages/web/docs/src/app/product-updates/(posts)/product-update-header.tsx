@@ -6,13 +6,13 @@ import { AuthorId, authors } from '../../../authors';
 import { SocialAvatar } from '../../../components/social-avatar';
 
 type Meta = {
-  authors: string[];
+  authors: AuthorId[];
   date: string;
   title: string;
   description: string;
 };
 
-const Authors = ({ meta }: { meta: Meta }) => {
+export const ProductUpdateAuthors = ({ meta }: { meta: Pick<Meta, 'authors' | 'date'> }) => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
   if (meta.authors.length === 1) {
@@ -78,7 +78,7 @@ export const ProductUpdateHeader = () => {
   return (
     <div className="x:max-w-[90rem] mx-auto">
       <h1 className="mt-12 text-center text-4xl">{metadata.title}</h1>
-      <Authors meta={metadata} />
+      <ProductUpdateAuthors meta={metadata} />
     </div>
   );
 };
