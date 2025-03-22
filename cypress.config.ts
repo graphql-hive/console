@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 // eslint-disable-next-line import/no-extraneous-dependencies -- cypress SHOULD be a dev dependency
 import { defineConfig } from 'cypress';
+import cypressPluginLocalStorageCommands from 'cypress-localstorage-commands/plugin';
 import { initSeed } from './integration-tests/testkit/seed';
 
 if (!process.env.RUN_AGAINST_LOCAL_SERVICES) {
@@ -23,9 +24,11 @@ export default defineConfig({
   video: isCI,
   screenshotOnRunFailure: isCI,
   defaultCommandTimeout: 15_000, // sometimes the app takes longer to load, especially in the CI
-  retries: 2,
+  retries: isCI ? 2 : 0,
   e2e: {
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      cypressPluginLocalStorageCommands(on, config);
+
       on('task', {
         async seedTarget() {
           const owner = await seed.createOwner();
@@ -33,6 +36,11 @@ export default defineConfig({
           const project = await org.createProject();
           const slug = `${org.organization.slug}/${project.project.slug}/${project.target.slug}`;
           return {
+            targets: {
+              production: project.targets.find(_ => _.name === 'production'),
+              staging: project.targets.find(_ => _.name === 'staging'),
+              development: project.targets.find(_ => _.name === 'development'),
+            },
             slug,
             refreshToken: owner.ownerRefreshToken,
             email: owner.ownerEmail,
