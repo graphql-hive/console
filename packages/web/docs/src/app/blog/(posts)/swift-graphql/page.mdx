@@ -1,0 +1,142 @@
+---
+title: SwiftGraphQL - A GraphQL client for Swift lovers.
+authors: maticzav
+tags: [graphql, swift, client, swift-graphql]
+date: 2021-08-02
+description:
+  SwiftGraphQL lets you use all the power Swift gives you to query your data. It feels like magic.
+image: ./thumbnail.png
+thumbnail: ./thumbnail.png
+---
+
+I love Swift, you love Swift, we want to do everything we can in Swift. It has a fantastic
+type-system and a robust compiler. We also like GraphQL. It's a neat way to construct a type-safe
+bridge from your server to the client. Its syntax isn't as rich as Swift's, but who cares, right?
+[SwiftGraphQL](https://swift-graphql.com) aims to make the best of both worlds, here's how we do it.
+
+I started working on [SwiftGraphQL](https://swift-graphql.com) because no other client sufficed my
+needs for building iOS applications.
+
+## Goals
+
+Firstly, I wanted to keep the application's state separated from the GraphQL schema. Keeping it
+separate has a couple of benefits: We don't have to turn the whole application upside down whenever
+a field name or a type changes in the schema. That might happen if you generate types right from the
+queries and reuse the same query in multiple places. Swift's type-system is richer than GraphQL's.
+By separating the state from the schema, we can implement enum types with parameters, create new
+structures and nest them. We can add logic to the model and verify the data when converting query
+results to the state. We can implement structures that represent custom scalar types and treat them
+as first-person citizens in our codebase.
+
+Secondly, my apps usually consist of hundreds of types. I want my client to scale as my app scales,
+meaning it should be as easy to handle hundred schema types as ten. Additionally, I want to use
+everything that Swift's ecosystem offers without my client restricting me.
+
+Lastly, there are nuances in my queries that I want to modify using code. Ideally, I want to
+dynamically generate my queries and still get the type-safety that GraphQL promises. This way, I can
+write recursive queries and fine-tune return types for specific use cases.
+
+To sum it up, I wanted a flexible, scalable and robust GraphQL client.
+
+## Checking Out Existing Solutions
+
+With goals in mind, I started considering existing GraphQL clients.
+
+[Graphaello](https://graphaello.dev) seemed like a viable option; it is type-safe, I can
+programmatically make selections, and it looks like it could scale well. However, Graphaello tightly
+binds me to my schema, and I can only use structures to represent my data.
+
+https://graphaello.dev
+
+[Apollo iOS](https://apollographql.com/docs/ios), on the other hand, generates Swift types from
+queries in our "queries.graphql" files and supports caching out of the box. Generating types from
+the SDL is not per se a problem, but it becomes cumbersome and error-prone with large nested
+queries. Apollo iOS also strongly-binds the generated structures to your queries, making it almost
+impossible to translate fetched data into an internal state.
+
+https://apollographql.com/docs/ios/
+
+## SwiftGraphQL
+
+Now, let's turn to [SwiftGraphQL](https://swift-graphql.com). Consider a typical StarWars API
+example with the following schema.
+
+```graphql
+type Query {
+  humans: [Human!]!
+}
+
+type Human {
+  id: ID!
+  name: String!
+  home: String
+}
+```
+
+I will show a trivial example, but with [SwiftGraphQL](https://swift-graphql.com), you'll handle
+even more complex scenarios just as easily. We want to separate our model from the schema; that's
+why we create a Person type.
+
+```swift
+struct Person {
+  var id: String
+  var name: String
+}
+```
+
+To make a selection, we use `Selection.` followed by the name of the type that we want to use to
+make a selection. In our case, that would be `Selection.Human`.
+
+```swift
+let human = Selection.Human {
+  Person(
+    id: try $0.id(),
+    name: try $0.name()
+  )
+}
+```
+
+There's a great deal more happening behind the scenes to make sure you only select fields in the
+schema, but for now, let's remember that we make a selection this way.
+
+Once you have your types covered, you can construct and perform a query using the `send` method.
+
+```swift
+let query = Selection.Query {
+    $0.human(id: "1000", selection: human)
+}
+
+send(query, to: "https://swapi.graphql.com") { result in
+    if let data = try? result.get() {
+        print(data.human)
+    }
+}
+```
+
+Easy, right?
+
+## Final Words
+
+The example above only scratched the surface of what is possible with
+[SwiftGraphQL](https://swift-graphql.com). To sum it up, [SwiftGraphQL](https://swift-graphql.com)
+is a code generator and a lightweight GraphQL client. It comes with a set of neat features like
+
+- You only have to generate code once (i.e. every time your schema changes),
+- It ensures that every query you can send is valid,
+- You can write queries programmatically,
+- It supports queries, mutations as well as subscriptions.
+
+And the best part? It's super easy to get started.
+
+1. Install the generator using `brew install swift-graphql`,
+1. Generate the API by running `swift-graphql <endpoint> --output ./file.swift`,
+1. Start querying your data.
+
+[SwiftGraphQL](https://swift-graphql.com) is a young, slowly evolving library. I want to make it the
+best Swift GraphQL client; that's why I'd love to hear how you use it. To support its development,
+make sure you leave a star on GitHub and connect with me on Twitter. And if you are actively using
+it, consider becoming my sponsor on GitHub.
+
+PS.: There's a new post coming up that explains in-depth how
+[SwiftGraphQL](https://swift-graphql.com) works under the hood. Make sure to subscribe to our
+mailing list and check our blog to see when it comes out.

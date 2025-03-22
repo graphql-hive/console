@@ -1,0 +1,363 @@
+---
+title: Collecting GraphQL Live Query Resource Identifier with GraphQL Tools
+tags: [graphql, graphql-tools, real-time, live-query]
+authors: laurin
+date: 2021-07-01
+description:
+  GraphQL Tools can help to solve a variety of problems. Lean how it can be used for live queries.
+image: ./cover.jpg
+---
+
+Photo by [Łukasz Nieścioruk](https://unsplash.com/@luki90pl) on
+[Unsplash](https://unsplash.com/photos/BMVzvCYTlvU")
+
+<Callout type="info">
+  **Note:** This article showcases technical details for implementing a Live Query engine with
+  graphql-tools. If you are new to Live Queries you might want to check out [Subscriptions and Live
+  Queries - Real Time with GraphQL](/blog/subscriptions-and-live-queries-real-time-with-graphql)
+  first.
+</Callout>
+
+GraphQL live queries can solve real-time updates in a more elegant way than GraphQL subscriptions.
+
+Instead of subscribing to events live queries primarily subscribe to data changes.
+
+Instead of updating the client store manually a live query updates the client store _magically_
+without redundant cache update logic on the client.
+
+[You can learn more about the differences here](https://medium.com/open-graphql/graphql-subscriptions-vs-live-queries-e38302c7ab8e).
+
+All those benefits, however, come with the drawback of the server having to become stateful, in
+particular, being aware of all the data the client operation consumes and re-executing those query
+operations for a specific client once the underlying data changes.
+
+As I first started experimenting with GraphQL live queries the easiest solution was to simply
+trigger live query re-executions based on the `Query` object type root fields. E.g. a query with a
+selection set selection on the `Query.viewer` field could be re-executed by emitting the
+`Query.viewer` event through the live query store event emitter. However, the viewer could be a
+completely different record/resource for each client that consumes the given query operation.
+
+To be more clear here is the corresponding schema:
+
+```graphql
+type User {
+  id: ID!
+  login: String!
+}
+
+type Query {
+  """
+  Returns the authenticated user. Returns null in case the user is not authenticated.
+  """
+  viewer: User
+  """
+  List of the users that are currently online.
+  """
+  onlineUsers: [User!]!
+}
+
+type Mutation {
+  updateLogin(newLogin: String!): Boolean!
+}
+```
+
+```graphql
+query viewer @live {
+  viewer {
+    id
+    login
+  }
+}
+```
+
+Let's see how the implementation for this could look like:
+
+```tsx
+const Query = {
+  viewer: (source, args, context) => {
+    return context.viewer
+  }
+}
+
+const Mutation = {
+  updateLogin: async (source, args, context) => {
+    await context.db.updateUser(context.viewer.id, args.newLogin)
+
+    context.liveQueryStore.triggerUpdate(`Query.viewer`)
+    return true
+  }
+}
+```
+
+If a specific user updates his login we shouldn't invalidate and re-execute any live query operation
+that has a viewer selection set for any connected user who might not even be affected by that
+change!
+
+![All queries are invalidated](https://dev-to-uploads.s3.amazonaws.com/i/f5s5de59uvkbjwbuwrou.png)
+
+At the same time, the user could also be referenced in another operation e.g. a list of all
+available users (`Query.onlineUsers`). The `Query.viewer` event would not cover and schedule a
+re-execution for operations that select the user via that field.
+
+## There Must Be a Better Solution for Uniquely Identifying the Selection Set Data
+
+As you probably noticed the user has an `id` field of the `ID!` (nonnull id) type. This is a
+commonly used field for uniquely identifying a resource on the client-side. Apollo-client uses the
+`__typename` field in combination with the `id` field as the default resource cache key (`User:1`),
+Relay goes a step further and already assumes that the resource type is already encoded (e.g.
+`base64("User:1")` Note:
+[You are not forced to use base64 🤔](https://dev.to/daniel15/comment/np0o)) inside the id and
+therefore only uses the id field.
+
+What if we could also use such an identifier on the server-side in our live query store
+implementation?
+
+My current implementation just traversed the AST of the query operation and extracted the
+[schema coordinates](https://github.com/graphql/graphql-spec/pull/746) on the root query type. E.g.
+`Query.viewer` for the `viewer` live query operation from above.
+
+![Live Query Store with schema coordinates on operation context](https://dev-to-uploads.s3.amazonaws.com/i/ft60prjse6pcqnlin4qv.png)
+
+However, in case we would want to identify the user via the id we must also add something like
+`User:1` to the set of resources the live query operation selects. This requires schema knowledge as
+the live query store needs to know which type has an id field and if included in the selection set,
+gather the corresponding resource identifier.
+
+![Live Query Store with resource identifiers and schema coordinates on operation context](https://dev-to-uploads.s3.amazonaws.com/i/cdicogp30k34ml9o3ccg.png)
+
+As mentioned above this allows more granular query invalidations.
+
+![More granular updates are now possible](https://dev-to-uploads.s3.amazonaws.com/i/sde19ha6upubo0ofyg8a.png)
+
+The first drawback I had in mind is that if an operation does not specify the `id` field on the
+selection set, the resource cannot be tracked by the live query store.
+
+However, most operations will probably select the `id` field as it is most likely used on the client
+for the cache keys.
+
+Furthermore, it could be possible to simply transform the query in such a way that the `id` field is
+added to the selection set (similar to how apollo-client is by default adding a `__typename`
+selection to each object type).
+
+For keeping things simple I decided to push the responsibility for selecting the id field to the
+client that sends the live query operation. I also could not find a use-case in my existing
+application where there was no `id` selection for a resource 👍.
+
+## Implementing the Resource Identifier Collector
+
+The next obstacle is to decide how the ids are extracted and I had two options in mind.
+
+### 1. Traversing the GraphQL Execution Result Tree
+
+This simply seemed complicated to me as I would need to traverse the whole result while somehow
+guessing/checking the type of each leaf based on the operation AST and the schema. I quickly dropped
+that idea.
+
+### 2. Manually Register the Resource Identifier by Calling a Function That Is Injected via the Context
+
+The goal of my live query store implementation is to add live query support to any schema with
+minimal effort. Passing something along-side the context that a library user must call inside a
+query resolver seemed wrong and all this should be an implementation detail the library user should
+not care about.
+
+Imagine if we had to register a resource manually in each resolver that returns an object type.
+
+```tsx
+const Query = {
+  viewer: (source, args, context) => {
+    const viewer = context.viewer
+    context.registerResource(`User:${viewer.id}`)
+    return viewer
+  }
+}
+```
+
+It might seem quite simple for a single resolver, however, it can quickly clutter and lead to bugs
+if we have to manually do that for any resource in any resolver.
+
+Ideally a library user will just have to add a `context.liveQueryStore.triggerUpdate("User:1")` line
+to the `updateLogin` mutation field resolver in order to _magically_ schedule an operation
+re-execution, without the overhead of adding an additional function call to each resolver.
+
+```tsx
+const Query = {
+  viewer: (source, args, context) => {
+    // No tracking registration code here.
+    return context.viewer
+  }
+}
+
+const Mutation = {
+  updateLogin: async (source, args, context) => {
+    await context.db.updateUser(context.viewer.id, args.newLogin)
+
+    context.liveQueryStore.triggerUpdate(`User:${context.viewer.id}`)
+    return true
+  }
+}
+```
+
+So, I thought more about how this could be implemented in a less verbose way.
+
+As any other field, the `id` field has a resolver (either the default resolver provided by GraphQL
+or a user-defined resolver), so if there was a way to wrap each `id` field resolver with a function
+that could solve the issue. The wrapper could call the actual resolver, register the resource, and
+then return the value. The user won't have to care about anything (besides adding the `id` field to
+the selection set of the query).
+
+The best library for transforming and modifying GraphQL Schemas is
+[`graphql-tools`](https://github.com/ardatan/graphql-tools). Fortunately, it is now maintained by
+The Guild, as apollo abandoned it and was maintained pretty poorly.
+
+So I dug a bit into the fancy documentation and found `@graphql-tools/wrap`.
+
+A quick excerpt from the documentation:
+
+> Schema wrapping is a method of making modified copies of GraphQLSchema objects, without changing
+> the original schema implementation.
+
+Looks perfect, but since in this specific case I could potentially modify/map an existing schema, I
+digged a bit further, chatted with [@yaacovCR](https://github.com/yaacovCR) and learned about
+`mapSchema` from `@graphql-tools/utils`. It maps an existing schema into a new schema while applying
+some rules (kind of similar how `Array.map()` works 🤔).
+
+Using `mapSchema` might be slightly faster as there will be no delegation to a second schema.
+
+So the final plan is the following: We map the existing schema and warp the resolver fields append
+the resource identifiers to a Set.
+
+```ts
+import {
+  defaultFieldResolver,
+  execute,
+  GraphQLOutputType,
+  GraphQLScalarType,
+  GraphQLSchema,
+  isNonNullType,
+  isScalarType
+} from 'graphql'
+import { MapperKind, mapSchema } from '@graphql-tools/utils'
+
+const ORIGINAL_CONTEXT_SYMBOL = Symbol('ORIGINAL_CONTEXT_SYMBOL')
+
+const isNonNullIDScalarType = (type: GraphQLOutputType): type is GraphQLScalarType => {
+  if (isNonNullType(type)) {
+    return isScalarType(type.ofType) && type.ofType.name === 'ID'
+  }
+  return false
+}
+
+// invokes the callback with the resolved or sync input. Handy when you don't know whether the input is a Promise or the actual value you want.
+export const runWith = <T>(input: T | Promise<T>, callback: (value: T) => void) => {
+  if (input instanceof Promise) {
+    input.then(callback, () => undefined)
+  } else {
+    callback(input)
+  }
+}
+
+const addResourceIdentifierCollectorToSchema = (
+  schema: GraphQLSchema,
+  idFieldName: string
+): GraphQLSchema =>
+  mapSchema(schema, {
+    [MapperKind.OBJECT_FIELD]: (fieldConfig, fieldName, typename) => {
+      const newFieldConfig = { ...fieldConfig }
+
+      let isIDField = fieldName === idFieldName && isNonNullIDScalarType(fieldConfig.type)
+      let resolve = fieldConfig.resolve ?? defaultFieldResolver
+
+      newFieldConfig.resolve = (src, args, context, info) => {
+        if (!context || ORIGINAL_CONTEXT_SYMBOL in context === false) {
+          return resolve(src, args, context, info)
+        }
+
+        const collectResourceIdentifier: ResourceIdentifierCollectorFunction =
+          context.collectResourceIdentifier
+        context = context[ORIGINAL_CONTEXT_SYMBOL]
+        const result = resolve(src, args, context, info)
+
+        if (isIDField) {
+          runWith(result, (id: string) => collectResourceIdentifier({ typename, id }))
+        }
+        return result
+      }
+
+      return newFieldConfig
+    }
+  })
+```
+
+The implementation for executing the operation is similar to the following:
+
+```ts
+const newIdentifier = new Set(rootFieldIdentifier)
+const collectResourceIdentifier: ResourceGatherFunction = ({ typename, id }) =>
+  // for a relay spec conform server the typename could even be omitted :)
+  newIdentifier.add(`${typename}:${id}`)
+
+// You definitely wanna cache the wrapped schema as you don't want to re-create it for each operation :)
+const wrappedSchema = addResourceIdentifierCollectorToSchema(schema)
+
+const result = execute({
+  schema: wrappedSchema,
+  document: operationDocument,
+  operationName,
+  rootValue,
+  contextValue: {
+    [ORIGINAL_CONTEXT_SYMBOL]: contextValue,
+    collectResourceIdentifier
+  },
+  variableValues: operationVariables
+})
+```
+
+I had to wrap the "user" context in a context (context-ception 🤯) on which I also attached the
+function for adding the resource identifier to the resource identifier set. I got inspired for this
+by the apollo-server source code, as I knew it has a way for measuring resolver execution time,
+which must be done on a request/operation basis similar to the resource identifier collection. This
+method allows using a new function/context for each execution. Inside the field resolver, the
+correct user context is then passed into the actual (user) field resolver.
+
+Now after the operation has been executed against the schema the `newIdentifier` Set should contain
+the identifiers of all the resources that were resolved during the operation execution.
+
+The live query store can now use that information for re-executing queries once a resource
+identifier event is emitted 👌.
+
+## Conclusion
+
+Identifying resources and invalidating queries based on a resource basis rather than a query root
+field basis allows more efficient query re-executions and can avoid pushing unnecessary updates to
+clients.
+
+GraphQL Tools is a super handy library that can be used for solving a huge variety of problems. I am
+glad it got such a huge update and good documentation!
+
+The implementation probably won't cover all use-cases. What if a client is not authenticated and the
+`Query.viewer` resolver returns `null`. There is no `User:ID` string available on the live query
+store operation context once the user has authenticated. Either a `Query.viewer` update must be
+emitted through the live query store emitter (which will affect ANY client operation that selects
+the `viewer`), the client must re-execute the operation after login or the live query store must
+somehow be notified to re-execute all operations of the user that just authenticated.
+
+In case you are interested in the source code for the implementation
+[check it out on GitHub](https://github.com/n1ru4l/graphql-live-query/blob/7674745b441201448feb7043290bd2ac7dbdd11c/packages/in-memory-live-query-store/src/InMemoryLiveQueryStore.ts#L44-L87)
+
+**There is still more to discover and build in live query land!**
+
+We still need to manually notify the live query store that a resource must be invalidated. An
+abstraction for doing this behind the scenes could vastly differ for different stacks.
+
+Maybe the ORM/database store layer could emit the events or a proxy could emit those events based on
+database operations such as `INSERT`, `DELETE`, and `UPDATE`.
+
+Re-executing a query operation is nice and smart, but not the most efficient solution. What if we
+could only re-execute certain resolvers? I already have some ideas in mind, and I will probably
+write about that as well!
+
+[Check out this super cool talk about live queries @ Facebook!](https://youtube.com/watch?v=BSw05rJaCpA)
+
+[Check out this super cool talk about live queries @ Samsara!](https://youtube.com/watch?v=g-asVW9JFPw)
+
+[I also wrote an article about my Socket.io GraphQL Server Engine implementation!](https://dev.to/n1ru4l/graphql-live-queries-with-socket-io-4mh6)
