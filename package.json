@@ -28,7 +28,7 @@
     "docker:override-up": "docker compose -f ./docker/docker-compose.override.yml up -d --remove-orphans",
     "env:sync": "tsx scripts/sync-env-files.ts",
     "generate": "pnpm --filter @hive/storage db:generate && pnpm graphql:generate",
-    "graphql:generate": "graphql-codegen --config codegen.mts",
+    "graphql:generate": "VERBOSE=1 graphql-codegen --config codegen.mts",
     "integration:prepare": "cd integration-tests && ./local.sh",
     "lint": "eslint --cache --ignore-path .gitignore \"{packages,cypress}/**/*.{ts,tsx,graphql}\"",
     "lint:env-template": "tsx scripts/check-env-template.ts",

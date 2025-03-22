@@ -1,5 +1,8 @@
+import type Dataloader from 'dataloader';
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
+
+// import { SqlValue } from './providers/sql';
 
 type Connection<TNode> = {
   pageInfo: PageInfo;
@@ -41,3 +44,17 @@ export interface DurationValuesMapper {
   p95: number | null;
   p99: number | null;
 }
+
+export type TracesFilterOptionsMapper = {
+  // ANDs: readonly SqlValue[];
+  loader: Dataloader<
+    {
+      key: string;
+      columnExpression: string;
+      limit: number | null;
+      arrayJoinColumn: string | null;
+    },
+    { value: string; count: number }[],
+    string
+  >;
+};
