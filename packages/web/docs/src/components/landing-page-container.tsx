@@ -9,7 +9,7 @@ export function LandingPageContainer(props: { children: ReactNode; className?: s
   return (
     <Tooltip.Provider>
       <div className={cn('flex h-full flex-col', props.className)}>{props.children}</div>
-    <CookiesConsent />
+      <CookiesConsent />
     </Tooltip.Provider>
   );
 }
