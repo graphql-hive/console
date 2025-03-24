@@ -24,9 +24,14 @@ export function PostsByTag(props: { posts: BlogPostFile[]; tag?: string; classNa
     (a, b) => new Date(b.frontMatter.date).getTime() - new Date(a.frontMatter.date).getTime(),
   );
 
+  let categories = TOP_10_TAGS;
+  if (tag && !TOP_10_TAGS.includes(tag)) {
+    categories = [tag, ...TOP_10_TAGS];
+  }
+
   return (
     <section className={cn('px-4 sm:px-6', props.className)}>
-      <CategorySelect tag={tag} categories={TOP_10_TAGS} />
+      <CategorySelect tag={tag} categories={categories} />
       <FeaturedPosts posts={posts} className="sm:mb-12" tag={tag} />
       <LatestPosts posts={posts} tag={tag} />
     </section>

@@ -6,6 +6,9 @@ export function prettyPrintTag(tag: string) {
   if (text === 'css') {
     text = 'CSS';
   }
+  if (text === 'rest') {
+    text = 'REST';
+  }
   text = text.replace('graphql', 'GraphQL');
   text = text.replace(/-js$/, ' JS');
   text = text[0].toUpperCase() + text.slice(1);
