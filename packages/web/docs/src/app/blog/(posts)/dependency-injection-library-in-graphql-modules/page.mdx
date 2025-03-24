@@ -45,9 +45,10 @@ provide complete Modular approach, and make everything module. Now Each module h
 valid schema and context which is independent from its parent modules. Also, each module is
 constructed by using the imported modules' DI containers, schema contents and context builders.
 
-If you want to know more about **_encapsulation_** see the blog post about it;
+{/* prettier-ignore */}
+If you want to know more about **_encapsulation_** see the
 
-<LinkPreview link="/blog/modular-encapsulation-graphql-modules" />
+<a href="/blog/modular-encapsulation-graphql-modules">blog post about it</a>.
 
 For example, if you have a **_DatabaseModule_** in your application that has to be shared across the
 whole application, and it needs to take a custom provider that will be defined by the user. What you
@@ -137,9 +138,8 @@ manage scoped providers if you use existing DI libraries like **_Inversify_**.
 > scope\`**. We think this session scope should be able to have its own providers and DI logic
 > outside the application scope.
 
-You can read more about the different scopes that we have in GraphQL-Modules here:
-
-<LinkPreview link="/blog/graphql-modules-scoped-providers" />
+You can read more about the different scopes that we have in GraphQL Modules in the blog post
+{/* prettier-ignore */} about <a href="/blog/graphql-modules-scoped-providers">Scoped Providers</a>.
 
 ## Comparisons with Other DI Implementations of Frameworks
 
