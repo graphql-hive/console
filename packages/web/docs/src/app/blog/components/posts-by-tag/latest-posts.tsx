@@ -5,7 +5,7 @@ import { prettyPrintTag } from '../pretty-print-tag';
 
 export function LatestPosts({ posts, tag }: { posts: BlogPostFile[]; tag: string | null }) {
   return (
-    <section className="sm:pt-12">
+    <section className="pt-6 sm:pt-12">
       <Heading size="md" as="h2" className="text-center">
         Latest posts
         {tag ? (

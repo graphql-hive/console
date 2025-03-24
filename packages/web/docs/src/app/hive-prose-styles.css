@@ -8,7 +8,7 @@
     max-width: 100%;
 
     & > div {
-      @apply ml-0 pl-6 md:pl-12;
+      @apply ml-0 pl-6 max-sm:pr-6 md:pl-12;
     }
 
     & > div > article {
@@ -64,5 +64,11 @@
 
   & li > p {
     @apply mt-2;
+  }
+}
+
+@media (max-width: 768px) {
+  .hive-prose {
+    --article-max-width: 100%;
   }
 }

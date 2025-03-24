@@ -32,7 +32,7 @@ export function PostsByTag(props: { posts: BlogPostFile[]; tag?: string; classNa
   return (
     <section className={cn('px-4 sm:px-6', props.className)}>
       <CategorySelect tag={tag} categories={categories} />
-      <FeaturedPosts posts={posts} className="sm:mb-12" tag={tag} />
+      <FeaturedPosts posts={posts} className="sm:mb-12 md:mt-16" tag={tag} />
       <LatestPosts posts={posts} tag={tag} />
     </section>
   );
