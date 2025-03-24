@@ -1,0 +1,13 @@
+diff --git a/dist/components/breadcrumb.js b/dist/components/breadcrumb.js
+index 598b5bbc14e9521edfa53956555e57f36a821f1d..352907a9b299267559615e333f6a4884867658eb 100644
+--- a/dist/components/breadcrumb.js
++++ b/dist/components/breadcrumb.js
+@@ -29,7 +29,7 @@ const Breadcrumb = (t0) => {
+ };
+ function _temp(item, index, arr) {
+   const nextItem = arr[index + 1];
+-  const href = nextItem ? "frontMatter" in item ? item.route : item.children[0].route === nextItem.route ? "" : item.children[0].route : "";
++  const href = nextItem ? "frontMatter" in item ? item.route : item.children[0]?.route === nextItem.route ? "" : item.children[0]?.route : "";
+   const ComponentToUse = href ? NextLink : "span";
+   return /* @__PURE__ */ jsxs(Fragment, { children: [
+     index > 0 && /* @__PURE__ */ jsx(ArrowRightIcon, { height: "14", className: "x:shrink-0 x:rtl:rotate-180" }),
