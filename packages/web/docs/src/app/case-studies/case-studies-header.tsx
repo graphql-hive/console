@@ -2,12 +2,12 @@
 
 import { cn, DecorationIsolation, Heading } from '@theguild/components';
 import { SmallAvatar } from '../../components/small-avatar';
-import { CaseStudyAuthor } from './case-study-types';
+import { useFrontmatter } from '../../components/use-frontmatter';
+import { CaseStudyAuthor, CaseStudyFrontmatter } from './case-study-types';
 import { companyLogos } from './company-logos';
-import { useFrontmatter } from './use-frontmatter';
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
-  const { name, frontmatter } = useFrontmatter();
+  const { name, frontmatter } = useFrontmatter<CaseStudyFrontmatter>();
 
   if (!name) {
     throw new Error('unexpected');
