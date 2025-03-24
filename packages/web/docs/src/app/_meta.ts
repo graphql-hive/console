@@ -82,7 +82,10 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
   blog: {
     title: 'Blog',
     type: 'page',
-    href: 'https://the-guild.dev/blog',
+    theme: {
+      breadcrumb: false,
+      sidebar: false,
+    },
   },
   github: {
     title: 'GitHub',
