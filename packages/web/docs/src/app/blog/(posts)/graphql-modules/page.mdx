@@ -6,7 +6,6 @@ date: 2018-11-05
 description:
   Today we are happy to announce that we are open sourcing a framework we've been using for the past
   couple of months in production, GraphQL Modules!
-image: ./a4a2c4f56993a801a7ffe394fc0f95f1.png
 ---
 
 Today we are happy to announce that we are open sourcing a framework we've been using for the past
@@ -364,8 +363,7 @@ type User {
 }
 
 type Mutation {
-  uploadProfilePicture(image: File!): User
-}
+  uploadProfilePicture(}
 ```
 
 This way, GraphQL Modules will merge the fields from this `User` type into the complete `User` type,
@@ -393,8 +391,7 @@ export const UserProfileModule = new GraphQLModule<IUserProfileModuleConfig>({
       profilePicture: String
     }
     type Mutation {
-      uploadProfilePicture(image: File!): User
-    }
+      uploadProfilePicture(    }
   `,
   resolvers: config => ({
     User: {
@@ -407,8 +404,7 @@ export const UserProfileModule = new GraphQLModule<IUserProfileModuleConfig>({
     Mutation: {
       uploadProfilePicture: async (
         root: never,
-        { image }: { image: any },
-        { injector, currentUser }: ModuleContext
+        { image }: {         { injector, currentUser }: ModuleContext
       ) => {
         // using https://apollographql.com/docs/guides/file-uploads.html
         const { stream } = await image
