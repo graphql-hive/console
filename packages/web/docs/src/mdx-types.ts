@@ -9,7 +9,6 @@ export type MdxFile<FrontMatterType> = {
   frontMatter?: FrontMatterType;
 };
 
-
 /**
  * TODO: This should be exported from `nextra` and `@theguild/components`
  */
