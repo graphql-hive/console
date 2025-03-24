@@ -24,6 +24,7 @@
     "react-countup": "6.5.3",
     "react-dom": "19.0.0",
     "react-icons": "5.4.0",
+    "rehype-frontmatter-mdx-imports": "0.1.1",
     "tailwind-merge": "2.6.0"
   },
   "devDependencies": {

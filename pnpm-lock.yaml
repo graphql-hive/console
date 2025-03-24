@@ -55,6 +55,12 @@ patchedDependencies:
   mjml-core@4.14.0:
     hash: 52f1e476e154edea0222aa95e55676888525198d882becc3b362511b77fd7e7f
     path: patches/mjml-core@4.14.0.patch
+  nextra:
+    hash: c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1
+    path: patches/nextra.patch
+  nextra-theme-docs:
+    hash: 38956679ac61493f4dbc6862445316e9909dd989c221357f4b21ce70d8c8fd5b
+    path: patches/nextra-theme-docs.patch
   oclif:
     hash: 0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6
     path: patches/oclif.patch
@@ -2069,6 +2075,9 @@ importers:
       react-icons:
         specifier: 5.4.0
         version: 5.4.0(react@19.0.0)
+      rehype-frontmatter-mdx-imports:
+        specifier: 0.1.1
+        version: 0.1.1(typescript@5.7.3)
       tailwind-merge:
         specifier: 2.6.0
         version: 2.6.0
@@ -3515,6 +3524,7 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
+    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -14118,6 +14128,11 @@ packages:
     resolution: {integrity: sha512-qx+xQGZVsy55CH0a1hiVwHmqjLryfh7wQyF5HO07XJ9f7dQMY/gPQHhlyDkIzJKC+x2fUCpCcUODUUUFrm7SHA==}
     hasBin: true
 
+  rehype-frontmatter-mdx-imports@0.1.1:
+    resolution: {integrity: sha512-1fkGdtwxjojoA2TDy/swedxpDR8IGB+seKnp7RyKvsthdGU68AckH1G+mSgqBWdaWbr6om6W1rkiE4QXCAqZrg==}
+    peerDependencies:
+      typescript: ^5.0.0
+
   rehype-katex@7.0.0:
     resolution: {integrity: sha512-h8FPkGE00r2XKU+/acgqwWUlyzve1IiOKwsEkg4pDL3k48PiE0Pt+/uLtVHDVkN1yA4iurZN6UES8ivHVEQV6Q==}
 
@@ -24122,8 +24137,8 @@ snapshots:
       clsx: 2.1.1
       fuzzy: 0.1.3
       next: 15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      nextra: 4.0.5(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
-      nextra-theme-docs: 4.0.5(@types/react@18.3.18)(immer@10.1.1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0))
+      nextra: 4.0.5(patch_hash=c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+      nextra-theme-docs: 4.0.5(patch_hash=38956679ac61493f4dbc6862445316e9909dd989c221357f4b21ce70d8c8fd5b)(@types/react@18.3.18)(immer@10.1.1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(patch_hash=c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0))
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       react-paginate: 8.2.0(react@19.0.0)
@@ -30523,13 +30538,13 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextra-theme-docs@4.0.5(@types/react@18.3.18)(immer@10.1.1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0)):
+  nextra-theme-docs@4.0.5(patch_hash=38956679ac61493f4dbc6862445316e9909dd989c221357f4b21ce70d8c8fd5b)(@types/react@18.3.18)(immer@10.1.1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(nextra@4.0.5(patch_hash=c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.2.0(react@19.0.0)):
     dependencies:
       '@headlessui/react': 2.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       clsx: 2.1.1
       next: 15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-themes: 0.4.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      nextra: 4.0.5(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+      nextra: 4.0.5(patch_hash=c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       react: 19.0.0
       react-compiler-runtime: 0.0.0-experimental-22c6e49-20241219(react@19.0.0)
       react-dom: 19.0.0(react@19.0.0)
@@ -30542,7 +30557,7 @@ snapshots:
       - immer
       - use-sync-external-store
 
-  nextra@4.0.5(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3):
+  nextra@4.0.5(patch_hash=c1d11430a02e4d51d69b615df3f615fd6dfbccfd71b122bcf781a8a35208fbc1)(next@15.2.3(@babel/core@7.22.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.5
       '@headlessui/react': 2.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -31997,6 +32012,10 @@ snapshots:
   regjsparser@0.10.0:
     dependencies:
       jsesc: 0.5.0
+
+  rehype-frontmatter-mdx-imports@0.1.1(typescript@5.7.3):
+    dependencies:
+      typescript: 5.7.3
 
   rehype-katex@7.0.0:
     dependencies:
