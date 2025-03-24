@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Anchor, useConfig } from '@theguild/components';
+import { Anchor, cn, useConfig } from '@theguild/components';
 import { AuthorId, authors } from '../../../authors';
 import { SocialAvatar } from '../../../components/social-avatar';
 
@@ -12,7 +12,13 @@ type Meta = {
   description: string;
 };
 
-export const ProductUpdateAuthors = ({ meta }: { meta: Pick<Meta, 'authors' | 'date'> }) => {
+export const ProductUpdateAuthors = ({
+  meta,
+  className,
+}: {
+  meta: Pick<Meta, 'authors' | 'date'>;
+  className?: string;
+}) => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
   if (meta.authors.length === 1) {
@@ -22,7 +28,12 @@ export const ProductUpdateAuthors = ({ meta }: { meta: Pick<Meta, 'authors' | 'd
     }
 
     return (
-      <div className="has-[a:hover]:bg-beige-900/5 dark:has[a:hover]:bg-neutral-50/5 my-4 -mb-1 flex flex-row items-center justify-center rounded-xl py-1 pl-1 pr-3">
+      <div
+        className={cn(
+          'has-[a:hover]:bg-beige-900/5 dark:has[a:hover]:bg-neutral-50/5 my-4 -mb-1 flex flex-row items-center justify-center rounded-xl py-1 pl-1 pr-3',
+          className,
+        )}
+      >
         <Anchor href={author.link} title={author.name}>
           <SocialAvatar author={author} />
         </Anchor>
@@ -37,7 +48,7 @@ export const ProductUpdateAuthors = ({ meta }: { meta: Pick<Meta, 'authors' | 'd
           <time
             dateTime={date.toISOString()}
             title={`Posted ${format(date, 'EEEE, LLL do y')}`}
-            className="text-xs text-[#777]"
+            className="text-green-1000 text-xs dark:text-neutral-200"
           >
             {format(date, 'EEEE, LLL do y')}
           </time>

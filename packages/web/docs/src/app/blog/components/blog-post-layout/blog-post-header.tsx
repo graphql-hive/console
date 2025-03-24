@@ -31,7 +31,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
       <Heading
         as="h1"
         size="md"
-        className="mb-[18px] mt-4 w-[--article-max-width] text-pretty text-center"
+        className="mb-0 mt-4 w-[--article-max-width] text-pretty text-center"
       >
         {frontmatter.title}
       </Heading>
@@ -40,6 +40,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
           authors: Array.isArray(frontmatter.authors) ? frontmatter.authors : [frontmatter.authors],
           date: frontmatter.date,
         }}
+        className="mt-4"
       />
     </header>
   );
