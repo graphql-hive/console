@@ -390,7 +390,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     $targetsSelector: ProjectSelectorInput!
     $organizationSelector: OrganizationSelectorInput!
   ) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       failDiffOnDangerousChange
       validationSettings {

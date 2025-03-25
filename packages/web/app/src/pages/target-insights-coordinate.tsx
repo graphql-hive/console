@@ -55,7 +55,7 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
         }
       }
     }
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
     }

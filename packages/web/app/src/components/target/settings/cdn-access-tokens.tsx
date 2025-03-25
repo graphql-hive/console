@@ -296,7 +296,7 @@ function DeleteCDNAccessTokenModal(props: {
 
 const CDNAccessTokensQuery = graphql(`
   query CDNAccessTokensQuery($selector: TargetSelectorInput!, $first: Int!, $after: String) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       cdnAccessTokens(first: $first, after: $after) {
         edges {

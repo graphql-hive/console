@@ -41,7 +41,7 @@ const Operation_View_OperationBodyQuery = graphql(`
     $selector: TargetSelectorInput!
     $hash: String!
   ) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       operation(hash: $hash) {
         type

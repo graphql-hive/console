@@ -631,7 +631,7 @@ export function readTargetInfo(
   return execute({
     document: graphql(`
       query readTargetInfo($selector: TargetSelectorInput!) {
-        target(selector: $selector) {
+        target(reference: { bySelector: $selector }) {
           id
           slug
         }
@@ -1085,7 +1085,7 @@ export function readOperationBody(
   return execute({
     document: graphql(`
       query readOperationBody($selector: TargetSelectorInput!, $hash: String!) {
-        target(selector: $selector) {
+        target(reference: { bySelector: $selector }) {
           id
           operation(hash: $hash) {
             body
@@ -1195,7 +1195,7 @@ export function fetchVersions(selector: TargetSelectorInput, first: number, toke
   return execute({
     document: graphql(`
       query schemaVersions($first: Int!, $selector: TargetSelectorInput!) {
-        target(selector: $selector) {
+        target(reference: { bySelector: $selector }) {
           schemaVersions(first: $first) {
             edges {
               node {
@@ -1261,10 +1261,12 @@ export function compareToPreviousVersion(
         $version: ID!
       ) {
         target(
-          selector: {
-            organizationSlug: $organizationSlug
-            projectSlug: $projectSlug
-            targetSlug: $targetSlug
+          reference: {
+            bySelector: {
+              organizationSlug: $organizationSlug
+              projectSlug: $projectSlug
+              targetSlug: $targetSlug
+            }
           }
         ) {
           id
