@@ -180,12 +180,10 @@ const ChecksPageQuery = graphql(`
     $targetSlug: String!
     $filters: SchemaChecksFilter
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
     }
     target(

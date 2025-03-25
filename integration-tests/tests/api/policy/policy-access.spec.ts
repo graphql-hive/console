@@ -134,11 +134,9 @@ describe('Policy Access', () => {
   describe('Organization', () => {
     const query = graphql(`
       query OrganizationSchemaPolicyAccess($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            schemaPolicy {
-              id
-            }
+        organization(reference: { bySelector: $selector }) {
+          schemaPolicy {
+            id
           }
         }
       }
@@ -259,7 +257,7 @@ describe('Policy Access', () => {
           },
           authToken: memberToken,
         }).then(r => r.expectNoGraphQLErrors());
-        expect(result.organization?.organization.schemaPolicy?.id).not.toBeNull();
+        expect(result.organization?.schemaPolicy?.id).not.toBeNull();
       },
     );
   });

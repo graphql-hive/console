@@ -403,12 +403,10 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
         slug
       }
     }
-    organization(selector: $organizationSelector) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
+    organization(reference: { bySelector: $organizationSelector }) {
+      id
+      rateLimit {
+        retentionInDays
       }
     }
   }
@@ -548,7 +546,7 @@ const BreakingChanges = (props: {
       }),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;
@@ -782,9 +780,7 @@ const BreakingChanges = (props: {
                 disabled={isSubmitting}
                 type="number"
                 min="1"
-                max={
-                  targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30
-                }
+                max={targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30}
                 className="mx-2 !inline-flex w-16"
               />
               days.
@@ -1234,11 +1230,9 @@ const TargetSettingsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-      }
+    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+      id
+      slug
     }
     project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
       id
@@ -1289,7 +1283,7 @@ function TargetSettingsContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const currentProject = query.data?.project;
   const currentTarget = query.data?.target;
 
