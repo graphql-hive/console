@@ -87,18 +87,16 @@ export function getOrganization(organizationSlug: string, authToken: string) {
   return execute({
     document: graphql(`
       query getOrganization($organizationSlug: String!) {
-        organization(selector: { organizationSlug: $organizationSlug }) {
-          organization {
-            id
-            slug
-            getStarted {
-              creatingProject
-              publishingSchema
-              checkingSchema
-              invitingMembers
-              reportingOperations
-              enablingUsageBasedBreakingChanges
-            }
+        organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+          id
+          slug
+          getStarted {
+            creatingProject
+            publishingSchema
+            checkingSchema
+            invitingMembers
+            reportingOperations
+            enablingUsageBasedBreakingChanges
           }
         }
       }
@@ -205,20 +203,18 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
   return execute({
     document: graphql(`
       query getOrganizationMembers($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            members {
-              nodes {
+        organization(reference: { bySelector: $selector }) {
+          members {
+            nodes {
+              id
+              user {
                 id
-                user {
-                  id
-                  email
-                }
-                role {
-                  id
-                  name
-                  permissions
-                }
+                email
+              }
+              role {
+                id
+                name
+                permissions
               }
             }
           }
@@ -236,14 +232,12 @@ export function getOrganizationProjects(selector: OrganizationSelectorInput, aut
   return execute({
     document: graphql(`
       query getOrganizationProjects($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            projects {
-              nodes {
-                id
-                slug
-                name
-              }
+        organization(reference: { bySelector: $selector }) {
+          projects {
+            nodes {
+              id
+              slug
+              name
             }
           }
         }
@@ -590,11 +584,9 @@ export function readOrganizationInfo(
   return execute({
     document: graphql(`
       query readOrganizationInfo($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            id
-            slug
-          }
+        organization(reference: { bySelector: $selector }) {
+          id
+          slug
         }
       }
     `),

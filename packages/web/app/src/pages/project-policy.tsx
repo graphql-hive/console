@@ -11,10 +11,8 @@ import { graphql } from '@/gql';
 
 const ProjectPolicyPageQuery = graphql(`
   query ProjectPolicyPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
     }
     project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
       id
@@ -73,7 +71,7 @@ function ProjectPolicyContent(props: { organizationSlug: string; projectSlug: st
   });
   const { toast } = useToast();
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const currentProject = query.data?.project;
 
   if (query.error) {

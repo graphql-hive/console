@@ -324,14 +324,12 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
+      slug
     }
     hasCollectedOperations(
       selector: {
@@ -367,7 +365,7 @@ function ExplorerDeprecatedSchemaPageContent(props: {
     );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   if (!currentOrganization) {
     return null;

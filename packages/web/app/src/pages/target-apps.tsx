@@ -44,10 +44,8 @@ const TargetAppsViewQuery = graphql(`
     $targetSlug: String!
     $after: String
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
     }
     target(
       selector: {

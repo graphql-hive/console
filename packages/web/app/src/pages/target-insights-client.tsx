@@ -346,13 +346,11 @@ const ClientInsightsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      rateLimit {
+        retentionInDays
       }
     }
     hasCollectedOperations(
@@ -390,7 +388,7 @@ function ClientInsightsPageContent(props: {
     );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   if (!currentOrganization) {
     return null;

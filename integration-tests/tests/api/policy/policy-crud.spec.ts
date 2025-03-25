@@ -27,9 +27,9 @@ describe('Policy CRUD', () => {
           authToken: ownerToken,
         }).then(r => r.expectNoGraphQLErrors());
 
-        expect(result.organization?.organization.schemaPolicy).toBe(null);
-        expect(result.organization?.organization.projects.nodes).toHaveLength(1);
-        expect(result.organization?.organization.projects.nodes[0].schemaPolicy).toBeNull();
+        expect(result.organization?.schemaPolicy).toBe(null);
+        expect(result.organization?.projects.nodes).toHaveLength(1);
+        expect(result.organization?.projects.nodes[0].schemaPolicy).toBeNull();
       },
     );
 
@@ -123,8 +123,8 @@ describe('Policy CRUD', () => {
           authToken: ownerToken,
         }).then(r => r.expectNoGraphQLErrors());
 
-        expect(result.organization?.organization.projects.nodes).toHaveLength(1);
-        expect(result.organization?.organization.projects.nodes[0].schemaPolicy).toBeNull();
+        expect(result.organization?.projects.nodes).toHaveLength(1);
+        expect(result.organization?.projects.nodes[0].schemaPolicy).toBeNull();
       },
     );
 
@@ -178,9 +178,9 @@ describe('Policy CRUD', () => {
         authToken: ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
 
-      expect(result.organization?.organization.schemaPolicy).toBe(null);
-      expect(result.organization?.organization.projects.nodes).toHaveLength(1);
-      expect(result.organization?.organization.projects.nodes[0].schemaPolicy).toBeNull();
+      expect(result.organization?.schemaPolicy).toBe(null);
+      expect(result.organization?.projects.nodes).toHaveLength(1);
+      expect(result.organization?.projects.nodes[0].schemaPolicy).toBeNull();
 
       const upsertResult = await setOrganizationSchemaPolicy(VALID_POLICY, true);
 

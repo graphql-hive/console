@@ -102,14 +102,12 @@ const TargetExplorerPageQuery = graphql(`
     $targetSlug: String!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
+      slug
     }
     target(
       selector: {
@@ -170,7 +168,7 @@ function ExplorerPageContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
 
   useEffect(() => {

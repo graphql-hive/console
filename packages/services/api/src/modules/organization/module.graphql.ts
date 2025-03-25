@@ -2,7 +2,12 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Query {
-    organization(selector: OrganizationSelectorInput!): OrganizationPayload
+    organization(
+      """
+      Reference to the organization that should be fetched.
+      """
+      reference: OrganizationReferenceInput! @tag(name: "public")
+    ): Organization @tag(name: "public")
     organizationByInviteCode(code: String!): OrganizationByInviteCodePayload
     organizations: OrganizationConnection!
     organizationTransferRequest(
@@ -44,8 +49,8 @@ export default gql`
   }
 
   input OrganizationReferenceInput @oneOf {
-    bySelector: OrganizationSelectorInput
-    byId: ID
+    bySelector: OrganizationSelectorInput @tag(name: "public")
+    byId: ID @tag(name: "public")
   }
 
   input CreateOrganizationAccessTokenInput {
@@ -204,7 +209,7 @@ export default gql`
   }
 
   input OrganizationSelectorInput {
-    organizationSlug: String!
+    organizationSlug: String! @tag(name: "public")
   }
 
   type OrganizationSelector {
@@ -266,8 +271,14 @@ export default gql`
   }
 
   type Organization {
-    id: ID!
-    slug: String!
+    """
+    Unique UUID of the organization
+    """
+    id: ID! @tag(name: "public")
+    """
+    The slug of the organization.
+    """
+    slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member!
