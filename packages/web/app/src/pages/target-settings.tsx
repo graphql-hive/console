@@ -1230,31 +1230,25 @@ const TargetSettingsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
-      slug
-      type
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        type
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          slug
+          graphqlEndpointUrl
+          viewerCanAccessSettings
+          baseSchema
+          viewerCanModifySettings
+          viewerCanModifyCDNAccessToken
+          viewerCanModifyTargetAccessToken
+          viewerCanDelete
+        }
       }
-    ) {
-      id
-      slug
-      graphqlEndpointUrl
-      viewerCanAccessSettings
-      baseSchema
-      viewerCanModifySettings
-      viewerCanModifyCDNAccessToken
-      viewerCanModifyTargetAccessToken
-      viewerCanDelete
     }
   }
 `);
@@ -1284,8 +1278,8 @@ function TargetSettingsContent(props: {
   });
 
   const currentOrganization = query.data?.organization;
-  const currentProject = query.data?.project;
-  const currentTarget = query.data?.target;
+  const currentProject = currentOrganization?.project;
+  const currentTarget = currentProject?.target;
 
   useRedirect({
     canAccess: currentTarget?.viewerCanAccessSettings === true,

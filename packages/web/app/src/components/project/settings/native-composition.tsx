@@ -117,7 +117,7 @@ const NativeCompositionSettings_ProjectFragment = graphql(`
 
 const NativeCompositionSettings_ProjectQuery = graphql(`
   query NativeCompositionSettings_ProjectQuery($selector: ProjectSelectorInput!) {
-    project(selector: $selector) {
+    project(reference: { bySelector: $selector }) {
       id
       nativeFederationCompatibility
       experimental_nativeCompositionPerTarget

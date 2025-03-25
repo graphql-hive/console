@@ -607,7 +607,7 @@ export function readProjectInfo(
   return execute({
     document: graphql(`
       query readProjectInfo($selector: ProjectSelectorInput!) {
-        project(selector: $selector) {
+        project(reference: { bySelector: $selector }) {
           id
           slug
         }

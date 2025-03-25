@@ -551,22 +551,18 @@ const ActiveSchemaVersion_SchemaVersionQuery = graphql(`
     $targetSlug: String!
     $versionId: ID!
   ) {
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
       id
-      schemaVersion(id: $versionId) {
-        id
-        ...SchemaVersionView_SchemaVersionFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
       type
+      target: targetBySlug(targetSlug: $targetSlug) {
+        id
+        schemaVersion(id: $versionId) {
+          id
+          ...SchemaVersionView_SchemaVersionFragment
+        }
+      }
     }
   }
 `);
@@ -590,8 +586,9 @@ function ActiveSchemaVersion(props: {
   const { error } = query;
 
   const isLoading = query.fetching || query.stale;
-  const schemaVersion = query?.data?.target?.schemaVersion;
-  const projectType = query?.data?.project?.type;
+  const project = query.data?.project;
+  const schemaVersion = project?.target?.schemaVersion;
+  const projectType = query.data?.project?.type;
 
   if (isLoading || !schemaVersion || !projectType) {
     return (

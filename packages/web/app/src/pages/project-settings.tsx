@@ -331,9 +331,9 @@ const ProjectSettingsPageQuery = graphql(`
   query ProjectSettingsPageQuery($organizationSlug: String!, $projectSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...ProjectSettingsPage_OrganizationFragment
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...ProjectSettingsPage_ProjectFragment
+      project: projectBySlug(projectSlug: $projectSlug) {
+        ...ProjectSettingsPage_ProjectFragment
+      }
     }
     isGitHubIntegrationFeatureEnabled
   }
@@ -351,7 +351,7 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
   });
 
   const currentOrganization = query.data?.organization;
-  const currentProject = query.data?.project;
+  const currentProject = currentOrganization?.project;
 
   const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
   const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);

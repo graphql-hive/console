@@ -1430,6 +1430,11 @@ export async function createStorage(
         });
       },
     ),
+    getProjectById(projectId) {
+      return this.findProjectsByIds({ projectIds: [projectId] }).then(
+        map => map.get(projectId) ?? null,
+      );
+    },
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
         const projectSlugExists = await t.exists(

@@ -8,7 +8,7 @@ describe('Policy Access', () => {
   describe('Project', () => {
     const query = graphql(`
       query ProjectSchemaPolicyAccess($selector: ProjectSelectorInput!) {
-        project(selector: $selector) {
+        project(reference: { bySelector: $selector }) {
           schemaPolicy {
             id
           }

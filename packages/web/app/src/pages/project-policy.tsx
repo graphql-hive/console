@@ -13,25 +13,25 @@ const ProjectPolicyPageQuery = graphql(`
   query ProjectPolicyPageQuery($organizationSlug: String!, $projectSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
-      schemaPolicy {
+      project: projectBySlug(projectSlug: $projectSlug) {
         id
-        updatedAt
-        ...PolicySettings_SchemaPolicyFragment
-      }
-      parentSchemaPolicy {
-        id
-        updatedAt
-        allowOverrides
-        rules {
-          rule {
-            id
+        schemaPolicy {
+          id
+          updatedAt
+          ...PolicySettings_SchemaPolicyFragment
+        }
+        parentSchemaPolicy {
+          id
+          updatedAt
+          allowOverrides
+          rules {
+            rule {
+              id
+            }
           }
         }
+        viewerCanModifySchemaPolicy
       }
-      viewerCanModifySchemaPolicy
     }
   }
 `);
@@ -72,7 +72,7 @@ function ProjectPolicyContent(props: { organizationSlug: string; projectSlug: st
   const { toast } = useToast();
 
   const currentOrganization = query.data?.organization;
-  const currentProject = query.data?.project;
+  const currentProject = currentOrganization?.project;
 
   if (query.error) {
     return (

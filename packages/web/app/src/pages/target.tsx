@@ -254,17 +254,13 @@ const TargetSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...SchemaView_ProjectFragment
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
-      ...SchemaView_TargetFragment
+      ...SchemaView_ProjectFragment
+      target: targetBySlug(targetSlug: $targetSlug) {
+        ...SchemaView_TargetFragment
+      }
     }
   }
 `);
@@ -288,7 +284,7 @@ function TargetSchemaPage(props: {
   }
 
   const currentProject = query.data?.project;
-  const target = query.data?.target;
+  const target = currentProject?.target;
 
   return (
     <TargetLayout
