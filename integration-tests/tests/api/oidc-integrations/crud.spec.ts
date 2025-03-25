@@ -115,12 +115,10 @@ describe('create', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: {
-              id: result.createOIDCIntegration.ok!.createdOIDCIntegration.id,
-              oidcUserAccessOnly: true,
-            },
+          id: organization.id,
+          oidcIntegration: {
+            id: result.createOIDCIntegration.ok!.createdOIDCIntegration.id,
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -458,12 +456,10 @@ describe('delete', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: {
-              id: oidcIntegrationId,
-              oidcUserAccessOnly: true,
-            },
+          id: organization.id,
+          oidcIntegration: {
+            id: oidcIntegrationId,
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -497,10 +493,8 @@ describe('delete', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: null,
-          },
+          id: organization.id,
+          oidcIntegration: null,
         },
       });
     });
