@@ -6,6 +6,8 @@ date: 2018-02-15
 description: A GeoReferenced Multiplayer First-Person Shooter Game.
 ---
 
+import { VideoEmbed } from '#components/video-embed'
+
 **TLDR:** We've built a multiplayer shooter and used Apollo's GraphQL subscriptions to keep game
 state in sync at a very high frequency. Here's our impressions! **Tools used:**
 [Angular-cesium](https://angular-cesium.com),
@@ -31,7 +33,7 @@ There are two ways you can understand our challenges:
   tools and look at the `subscriptions` websocket frames.
 - Read what our game is all about.
 
-<Video src="/blog-assets/graphql-geo-strike/gameplay.webm" />
+<VideoEmbed src="/blog-assets/graphql-geo-strike/gameplay.webm" />
 
 For those of you that have not played the game (yet!) I'll explain a bit what it is.
 
@@ -41,7 +43,7 @@ to find and shoot the other team's players. The winning team is the one that sta
 other team's players are dead. If you die, you can only view the rest of the game from a bird's eye
 view.
 
-<Video src="/blog-assets/graphql-geo-strike/map.webm" />
+<VideoEmbed src="/blog-assets/graphql-geo-strike/map.webm" />
 
 We use CesiumJS — a Google Earth like, open source, mapping engine — as our scene, so when I say the
 game takes place in the Times Square, It's an actual representation of the Times Square with the

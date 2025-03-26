@@ -27,5 +27,15 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "plugins": [
+    {
+      // makes go to definition work, but doesn't raise errors on
+      // undefined components yet
+      "name": "@mdx-js/typescript-plugin"
+    }
+  ],
+  "mdx": {
+    "checkMdx": true
+  }
 }
