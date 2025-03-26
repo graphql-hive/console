@@ -25,6 +25,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
         </li>
         <li>
           <BlogCard
+            variant="featured"
             post={{
               route: '/blog/stellate-acquisition',
               frontMatter: {
@@ -39,6 +40,7 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
         </li>
         <li>
           <BlogCard
+            variant="featured"
             post={{
               route: 'https://the-guild.dev/blog/rebranding-in-open-source',
               frontMatter: {
