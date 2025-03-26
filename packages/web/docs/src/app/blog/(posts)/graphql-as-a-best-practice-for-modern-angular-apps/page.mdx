@@ -63,7 +63,7 @@ more load on the server
 **Under-fetching** — When many endpoints serve multiple resources and fields. This creates many
 round trips for one Component as well as complex joins on the client.
 
-![](./12f2b64cfbbc9231d1e2b4c201368eda.png 'The Discourse REST API — look on the links at the bottom on the GraphQL version of this')
+![](./discourse-api.png 'The Discourse REST API — look on the links at the bottom on the GraphQL version of this')
 
 ## Rethinking Data Fetching
 
@@ -82,8 +82,10 @@ The server communicates what data it can provide and the client specifies what d
 **simple, graph-like structure**, in **one round trip**, no matter how deep, how complex, or how
 many resources the data contains.
 
-<Video
-  src="./dd41f415fc7dbf8e115c2bae6f0ceae5.webm"
+import { VideoEmbed } from '#components/video-embed'
+
+<VideoEmbed
+  src="/blog-assets/graphql-as-a-best-practice-for-modern-angular-apps/graphiql.webm"
   title="GraphQL has built in documentation so any server can use the GraphiQL editor without the need of setup"
 />
 
