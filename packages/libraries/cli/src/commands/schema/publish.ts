@@ -56,10 +56,7 @@ const schemaPublishMutation = graphql(/* GraphQL */ `
           ...RenderChanges_schemaChanges
         }
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
       }
       ... on SchemaPublishMissingServiceError @skip(if: $usesGitHubApp) {

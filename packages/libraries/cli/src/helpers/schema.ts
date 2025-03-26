@@ -5,7 +5,7 @@ import { JsonFileLoader } from '@graphql-tools/json-file-loader';
 import { loadTypedefs } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
 import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
-import { CriticalityLevel, SchemaErrorConnection, SchemaWarningConnection } from '../gql/graphql';
+import { CriticalityLevel, SchemaWarningConnection } from '../gql/graphql';
 import { Texture } from './texture/texture';
 
 const criticalityMap: Record<CriticalityLevel, string> = {

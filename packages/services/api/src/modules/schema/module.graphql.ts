@@ -518,16 +518,16 @@ export default gql`
   }
 
   type BreakingChangeMetadataTarget {
-    name: String!
-    slug: String!
-    target: Target
+    slug: String! @tag(name: "public")
+    id: ID! @tag(name: "public")
+    target: Target @tag(name: "public")
   }
 
   type SchemaCheckConditionalBreakingChangeMetadataSettings {
     retentionInDays: Int! @tag(name: "public")
     percentage: Float! @tag(name: "public")
     excludedClientNames: [String!] @tag(name: "public")
-    targets: [BreakingChangeMetadataTarget!]!
+    targets: [BreakingChangeMetadataTarget!]! @tag(name: "public")
   }
 
   type SchemaCheckConditionalBreakingChangeMetadataUsage {

@@ -48,7 +48,7 @@ const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphq
     settings {
       retentionInDays
       targets {
-        name
+        slug
         target {
           id
           slug
@@ -280,7 +280,7 @@ function ChangeItem(props: {
                                           }}
                                           target="_blank"
                                         >
-                                          {target.name}
+                                          {target.slug}
                                         </Link>{' '}
                                         <span className="text-white">target</span>
                                       </p>
@@ -329,7 +329,7 @@ function ChangeItem(props: {
                         {!target.target ? (
                           <TooltipProvider key={index}>
                             <Tooltip>
-                              <TooltipTrigger>{target.name}</TooltipTrigger>
+                              <TooltipTrigger>{target.slug}</TooltipTrigger>
                               <TooltipContent>Target does no longer exist.</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -346,7 +346,7 @@ function ChangeItem(props: {
                             }}
                             target="_blank"
                           >
-                            {target.name}
+                            {target.slug}
                           </Link>
                         )}
                         {index === arr.length - 1

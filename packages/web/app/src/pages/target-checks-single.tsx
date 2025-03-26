@@ -225,7 +225,7 @@ const ConditionalBreakingChangesMetadataSection_SchemaCheckFragment = graphql(`
         percentage
         excludedClientNames
         targets {
-          name
+          slug
           target {
             id
           }
@@ -282,7 +282,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {allTargets.map((target, index) => (
               <>
-                <span className="text-white">{target.name}</span>
+                <span className="text-white">{target.slug}</span>
                 {index === allTargets.length - 1 ? null : ', '}
               </>
             ))}
@@ -292,7 +292,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {truncatedTargets.map((target, index) => (
               <>
-                <span className="text-white">{target.name}</span>
+                <span className="text-white">{target.slug}</span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
               </>
             ))}
@@ -310,7 +310,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
                     <div className="grid grid-cols-1 divide-y divide-gray-800">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="line-clamp-3 text-sm text-gray-400">{target.name}</div>
+                          <div className="line-clamp-3 text-sm text-gray-400">{target.slug}</div>
                         </div>
                       ))}
                     </div>

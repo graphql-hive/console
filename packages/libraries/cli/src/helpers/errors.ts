@@ -1,12 +1,12 @@
 import { extname } from 'node:path';
 import { env } from 'node:process';
 import { GraphQLError } from 'graphql';
-import { FragmentType, makeFragmentData } from 'src/gql';
 import { InvalidDocument } from '@graphql-inspector/core';
 import { CLIError } from '@oclif/core/lib/errors';
 import { CompositionFailure } from '@theguild/federation-composition';
+import { FragmentType, makeFragmentData } from '../gql/index';
 import { renderErrors, RenderErrors_SchemaErrorConnectionFragment } from './schema';
-import { Texture } from './texture/texture';
+import { Texture } from './texture/texture.js';
 
 export enum ExitCode {
   // The command execution succeeded.
