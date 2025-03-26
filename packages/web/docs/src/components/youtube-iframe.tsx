@@ -2,10 +2,12 @@ import { cn } from '@theguild/components';
 
 export function YoutubeIframe({
   src,
+  id,
   title,
   className,
 }: {
-  src: string;
+  src?: string;
+  id?: string;
   title: string;
   className?: string;
 }) {
@@ -15,7 +17,7 @@ export function YoutubeIframe({
     // eslint-disable-next-line react/iframe-missing-sandbox
     <iframe
       className={cn('mt-6 h-[400px] w-full', className)}
-      src={src}
+      src={src || `https://www.youtube.com/embed/${id}`}
       title={title}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
