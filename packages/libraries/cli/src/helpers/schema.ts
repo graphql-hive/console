@@ -4,7 +4,7 @@ import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
 import { loadTypedefs } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
-import { FragmentType, graphql, useFragment as unmaskFragment } from '../gql';
+import { FragmentType, graphql, useFragment as unmaskFragment, useFragment } from '../gql';
 import { CriticalityLevel, SchemaErrorConnection, SchemaWarningConnection } from '../gql/graphql';
 import { Texture } from './texture/texture';
 
@@ -14,11 +14,22 @@ const criticalityMap: Record<CriticalityLevel, string> = {
   [CriticalityLevel.Dangerous]: Texture.colors.green('-'),
 };
 
-export const renderErrors = (errors: SchemaErrorConnection) => {
+export const RenderErrors_SchemaErrorConnectionFragment = graphql(`
+  fragment RenderErrors_SchemaErrorConnectionFragment on SchemaErrorConnection {
+    nodes {
+      message
+    }
+  }
+`);
+
+export const renderErrors = (
+  errors: FragmentType<typeof RenderErrors_SchemaErrorConnectionFragment>,
+) => {
+  const e = useFragment(RenderErrors_SchemaErrorConnectionFragment, errors);
   const t = Texture.createBuilder();
-  t.failure(`Detected ${errors.total} error${errors.total > 1 ? 's' : ''}`);
+  t.failure(`Detected ${e.nodes.length} error${e.nodes.length > 1 ? 's' : ''}`);
   t.line();
-  errors.nodes.forEach(error => {
+  e.nodes.forEach(error => {
     t.indent(Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message));
   });
   return t.state.value;

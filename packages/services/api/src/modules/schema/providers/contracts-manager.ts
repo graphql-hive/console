@@ -226,9 +226,9 @@ export class ContractsManager {
     });
   }
 
-  public async getAllChangesForContractVersion(schemaVersion: SchemaVersion) {
+  public async getAllChangesForContractVersion(contractVersion: ContractVersion) {
     return await this.contracts.getAllChangesForContractVersion({
-      contractVersionId: schemaVersion.id,
+      contractVersionId: contractVersion.id,
     });
   }
 

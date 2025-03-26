@@ -81,10 +81,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
         schemaCheck {
           webUrl
