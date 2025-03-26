@@ -25,7 +25,9 @@ and compare the differences between the two solutions for real-time.
 
 **Note:** This blog post is also available as a YouTube video.
 
-<Video
+import { YoutubeIframe } from '#components/youtube-iframe'
+
+<YoutubeIframe
   src="https://www.youtube.com/watch?v=gHkCbqK0kk4"
   title="Subscriptions and Live Queries - Real Time with GraphQL"
 />
@@ -1085,8 +1087,6 @@ inMemoryLiveQueryStore.invalidate(`Query.todos`)
 
 When using an ORM such as Prisma, we can simply add a middleware for automatically invalidating
 resources.
-
-import { YoutubeIframe } from '#components/youtube-iframe'
 
 <YoutubeIframe
   src="https://youtube.com/embed/iamn8fZSEXc"

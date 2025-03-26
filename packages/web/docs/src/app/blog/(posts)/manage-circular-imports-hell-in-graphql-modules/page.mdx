@@ -6,7 +6,6 @@ date: 2019-03-18
 description:
   Designing and building modular GraphQL API may not look straight-forward. It is hard to keep a
   perfect modularity with standalone and encapsulated modules.
-image: ./e057400fd0eccf986e581abce77dd3d5.png
 ---
 
 Designing and building modular GraphQL API may not look straight-forward the first time you start.
@@ -27,7 +26,7 @@ modularity** we mentioned in previous blog-posts of our GraphQL-Modules series.
 Finally, we decided to **remove this** support; then **force** people to have **strict modularity**
 in their projects.
 
-<LinkPreview link="/blog/modular-encapsulation-graphql-modules" />
+_Read more about [modular encapsulation](/blog/modular-encapsulation-graphql-modules)._
 
 Forcing people out of a way of developing is always hard, and we've got
 [questions from you](https://github.com/Urigo/graphql-modules/issues/317) about how to solve some
@@ -81,7 +80,9 @@ You might ask if this is the only way to implement modules for these entities; b
 there is no point to have different modules for those schemas. Having circular dependency is the
 same situtation with having a single large module.
 
-<Video src="./ae9bf1b1b35e64c8839b3508064f3115.webm" />
+import { VideoEmbed } from '#components/video-embed'
+
+<VideoEmbed src="/blog-assets/manage-circular-imports-hell-in-graphql-modules/math.webm" />
 
 ## How to Solve
 
