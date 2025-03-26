@@ -3,13 +3,14 @@ import { BlogCard } from './blog-card';
 
 export function CompanyNewsAndPressSection({ className }: { className?: string }) {
   return (
-    <section className={cn('py-6 lg:p-24', className)}>
+    <section className={cn('py-6 lg:py-24', className)}>
       <Heading as="h3" size="md" className="text-balance text-center">
         Company News and Press
       </Heading>
       <ul className="mt-6 flex items-stretch gap-4 *:flex-1 max-md:flex-col sm:gap-6 lg:mt-16">
         <li>
           <BlogCard
+            variant="featured"
             post={{
               route: '/blog/understanding-the-differences-between-graphql-and-rest-api-gateways',
               frontMatter: {

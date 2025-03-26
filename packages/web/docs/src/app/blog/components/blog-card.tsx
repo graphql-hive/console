@@ -7,7 +7,7 @@ import { BlogTagChip } from './blog-tag-chip';
 export interface BlogCardProps {
   post: Pick<BlogPostFile, 'frontMatter' | 'route'>;
   className?: string;
-  colorScheme?: 'default' | 'featured';
+  variant?: 'default' | 'featured';
   /**
    * The tag to display on the card. If not provided, the first tag will be used.
    * Used for tag index page, where we want to show all cards with the same tag.
@@ -15,7 +15,7 @@ export interface BlogCardProps {
   tag?: string | null;
 }
 
-export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
+export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
   const frontmatter = post.frontMatter;
   const { title, tags } = frontmatter;
   const date = new Date(frontmatter.date);
@@ -48,13 +48,13 @@ export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
       <article
         className={cn(
           'text-green-1000 flex h-full flex-col gap-6 rounded-2xl p-6 lg:gap-10 dark:text-white',
-          colorScheme === 'featured'
+          variant === 'featured'
             ? 'bg-beige-200 group-hover/card:bg-beige-300/70 dark:bg-neutral-700/70 dark:hover:bg-neutral-700'
             : 'group-hover/card:bg-beige-200/70 bg-beige-100 dark:bg-neutral-800/70 dark:hover:bg-neutral-800',
         )}
       >
         <header className="flex items-center justify-between gap-1 text-sm/5 font-medium">
-          <BlogTagChip tag={tag ?? tags[0]} colorScheme={colorScheme || 'default'} inert />
+          <BlogTagChip tag={tag ?? tags[0]} colorScheme={variant || 'default'} inert />
           <time
             dateTime={date.toISOString()}
             className="text-beige-800 whitespace-pre text-sm/5 font-medium"
@@ -65,7 +65,7 @@ export function BlogCard({ post, className, colorScheme, tag }: BlogCardProps) {
         <h3
           className={cn(
             'text-xl/7 lg:min-h-[172px]',
-            colorScheme === 'featured' ? 'text-2xl/8' : 'xl:min-h-[120px]',
+            variant === 'featured' ? 'text-2xl/8' : 'xl:min-h-[120px]',
           )}
         >
           {title}

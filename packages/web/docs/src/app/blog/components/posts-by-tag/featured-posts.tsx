@@ -26,7 +26,7 @@ export function FeaturedPosts({
     >
       {featuredPosts.map(post => (
         <li key={post.route}>
-          <BlogCard post={post} className="h-full" colorScheme="featured" tag={tag} />
+          <BlogCard post={post} className="h-full" variant="featured" tag={tag} />
         </li>
       ))}
     </ul>
