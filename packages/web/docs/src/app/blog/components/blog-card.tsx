@@ -64,8 +64,10 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
         </header>
         <h3
           className={cn(
-            'text-xl/7 lg:min-h-[172px]',
-            variant === 'featured' ? 'text-2xl/8' : 'xl:min-h-[120px]',
+            'text-xl/7',
+            variant === 'featured'
+              ? 'text-2xl/8 lg:min-h-[120px]'
+              : 'lg:min-h-[172px] xl:min-h-[120px]',
           )}
         >
           {title}
