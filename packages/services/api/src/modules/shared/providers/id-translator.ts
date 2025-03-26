@@ -107,7 +107,7 @@ export class IdTranslator {
       targetId: string;
     };
 
-    if (!!args.reference?.bySelector) {
+    if (args.reference?.bySelector != null) {
       try {
         const [organizationId, projectId, targetId] = await Promise.all([
           this.translateOrganizationId(args.reference.bySelector),
@@ -131,7 +131,7 @@ export class IdTranslator {
         this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
         return null;
       }
-    } else if (!!args.reference?.byId) {
+    } else if (args.reference?.byId != null) {
       if (!isUUID(args.reference.byId)) {
         this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
         return null;
