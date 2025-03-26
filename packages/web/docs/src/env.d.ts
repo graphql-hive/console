@@ -5,5 +5,5 @@ interface Window {
 }
 
 declare global {
-  type MDXProvidedComponents = ReturnType<typeof import('../mdx-components').useMDXComponents>
+  type MDXProvidedComponents = ReturnType<typeof import('../mdx-components').useMDXComponents>;
 }
