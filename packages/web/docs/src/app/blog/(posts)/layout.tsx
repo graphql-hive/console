@@ -10,7 +10,12 @@ export default function BlogPostLayout({ children }: { children: React.ReactNode
     <LandingPageContainer className="hive-prose text-green-1000 mx-auto max-w-[90rem] overflow-hidden dark:text-white">
       <HiveLayoutConfig widths="landing-narrow" />
       <BlogPostHeader className="mx-auto" />
-      <div className={cn(MAIN_CONTENT, 'mx-auto flex [&_main>p:first-of-type]:text-2xl/8')}>
+      <div
+        className={cn(
+          MAIN_CONTENT,
+          'mx-auto flex max-xl:*:!pl-2 sm:max-xl:*:!ml-auto [&_main>p:first-of-type]:text-2xl/8',
+        )}
+      >
         {children}
       </div>
     </LandingPageContainer>
