@@ -153,7 +153,7 @@ export class SchemaVersionHelper {
     return supergraphAst;
   }
 
-  @traceFn('SchemaVersionHelper.getSchemaChanges', {
+  @traceFn('SchemaVersionHelper._getSchemaChanges', {
     initAttributes: input => ({
       'hive.target.id': input.targetId,
       'hive.organization.id': input.organizationId,
@@ -166,7 +166,7 @@ export class SchemaVersionHelper {
     }),
   })
   @cache<SchemaVersion>(version => version.id)
-  private async getSchemaChanges(schemaVersion: SchemaVersion) {
+  private async _getSchemaChanges(schemaVersion: SchemaVersion) {
     if (!schemaVersion.isComposable) {
       return null;
     }
@@ -190,6 +190,7 @@ export class SchemaVersionHelper {
       return {
         breaking: breakingChanges.length ? breakingChanges : null,
         safe: safeChanges.length ? safeChanges : null,
+        all: changes ?? null,
       };
     }
 
@@ -272,17 +273,22 @@ export class SchemaVersionHelper {
   }
 
   async getBreakingSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return changes?.breaking ?? null;
   }
 
   async getSafeSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return changes?.safe ?? null;
   }
 
+  async getAllSchemaChanges(schemaVersion: SchemaVersion) {
+    const changes = await this._getSchemaChanges(schemaVersion);
+    return changes?.all ?? null;
+  }
+
   async getHasSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this.getSchemaChanges(schemaVersion);
+    const changes = await this._getSchemaChanges(schemaVersion);
     return !!changes?.breaking?.length || !!changes?.safe?.length;
   }
 

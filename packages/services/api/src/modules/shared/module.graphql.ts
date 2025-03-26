@@ -1,7 +1,7 @@
 import { gql } from 'graphql-modules';
 
 export default gql`
-  scalar DateTime
+  scalar DateTime @tag(name: "public")
   scalar Date
   scalar JSON
   scalar JSONSchemaObject
@@ -26,9 +26,9 @@ export default gql`
   }
 
   type PageInfo {
-    hasNextPage: Boolean!
-    hasPreviousPage: Boolean!
-    startCursor: String!
-    endCursor: String!
+    hasNextPage: Boolean! @tag(name: "public")
+    hasPreviousPage: Boolean! @tag(name: "public")
+    startCursor: String! @tag(name: "public")
+    endCursor: String! @tag(name: "public")
   }
 `;
