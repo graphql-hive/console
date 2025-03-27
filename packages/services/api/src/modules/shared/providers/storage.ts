@@ -205,6 +205,8 @@ export interface Storage {
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
 
+  getProjectById(projectId: string): Promise<Project | null>;
+
   findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
 
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<

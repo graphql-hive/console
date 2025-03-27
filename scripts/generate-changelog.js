@@ -34,6 +34,7 @@ for (const file of files) {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
+        calendar: 'gregory',
       }),
       href: `https://the-guild.dev/graphql/hive/product-updates/${pathname}`,
       title: data.title,

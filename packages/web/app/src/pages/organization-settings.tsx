@@ -471,13 +471,11 @@ const SettingsPageRenderer = (props: {
 };
 
 const OrganizationSettingsPageQuery = graphql(`
-  query OrganizationSettingsPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        ...SettingsPageRenderer_OrganizationFragment
-        viewerCanAccessSettings
-        viewerCanManageAccessTokens
-      }
+  query OrganizationSettingsPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...SettingsPageRenderer_OrganizationFragment
+      viewerCanAccessSettings
+      viewerCanManageAccessTokens
     }
   }
 `);
@@ -493,13 +491,11 @@ function SettingsPageContent(props: {
   const [query] = useQuery({
     query: OrganizationSettingsPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   const subPages = useMemo(() => {
     const pages: Array<{

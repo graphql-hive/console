@@ -35,7 +35,7 @@ const GetAppDeployment = graphql(`
     $appDeploymentName: String!
     $appDeploymentVersion: String!
   ) {
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       appDeployment(appName: $appDeploymentName, appVersion: $appDeploymentVersion) {
         id
         lastUsed
@@ -112,7 +112,7 @@ const GetPaginatedPersistedDocuments = graphql(`
     $first: Int
     $cursor: String
   ) {
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       appDeployment(appName: $appDeploymentName, appVersion: $appDeploymentVersion) {
         id
         documents(first: $first, after: $cursor) {

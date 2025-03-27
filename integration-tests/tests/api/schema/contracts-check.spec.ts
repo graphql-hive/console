@@ -300,7 +300,7 @@ const ApproveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
 
 const SchemaCheckQuery = graphql(/* GraphQL */ `
   query SchemaCheckContractsQuery($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       schemaCheck(id: $id) {
         __typename
         id

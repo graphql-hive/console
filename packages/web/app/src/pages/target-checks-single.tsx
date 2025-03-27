@@ -1008,21 +1008,17 @@ const ActiveSchemaCheckQuery = graphql(`
     $targetSlug: String!
     $schemaCheckId: ID!
   ) {
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
       id
-      schemaCheck(id: $schemaCheckId) {
-        ...ActiveSchemaCheck_SchemaCheckFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
       type
+      target: targetBySlug(targetSlug: $targetSlug) {
+        id
+        schemaCheck(id: $schemaCheckId) {
+          ...ActiveSchemaCheck_SchemaCheckFragment
+        }
+      }
     }
   }
 `);
@@ -1048,7 +1044,7 @@ const ActiveSchemaCheck = (props: {
 
   const schemaCheck = useFragment(
     ActiveSchemaCheck_SchemaCheckFragment,
-    query.data?.target?.schemaCheck,
+    query.data?.project?.target?.schemaCheck,
   );
 
   if (!schemaCheckId) {

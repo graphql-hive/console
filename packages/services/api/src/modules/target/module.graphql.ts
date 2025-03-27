@@ -2,7 +2,7 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Query {
-    target(selector: TargetSelectorInput!): Target
+    target(reference: TargetReferenceInput! @tag(name: "public")): Target @tag(name: "public")
     targets(selector: ProjectSelectorInput!): TargetConnection!
   }
 
@@ -120,9 +120,9 @@ export default gql`
   }
 
   input TargetSelectorInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
+    organizationSlug: String! @tag(name: "public")
+    projectSlug: String! @tag(name: "public")
+    targetSlug: String! @tag(name: "public")
   }
 
   """
@@ -132,11 +132,11 @@ export default gql`
     """
     Reference to a target using it's ID (see "Target.id" field).
     """
-    byId: ID
+    byId: ID @tag(name: "public")
     """
     Reference to a target using it's slug parts (see "Organization.slug", "Project.slug", "Target.slug").
     """
-    bySelector: TargetSelectorInput
+    bySelector: TargetSelectorInput @tag(name: "public")
   }
 
   input UpdateTargetValidationSettingsInput {
@@ -195,8 +195,8 @@ export default gql`
   }
 
   type Target {
-    id: ID!
-    slug: String!
+    id: ID! @tag(name: "public")
+    slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     project: Project!

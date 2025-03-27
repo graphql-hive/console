@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as zod from 'zod';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
@@ -164,6 +165,15 @@ export class TargetManager {
       },
     });
     return this.storage.getTarget(selector);
+  }
+
+  async getTargetByReferenceInput(reference: TargetReferenceInput) {
+    const selector = await this.idTranslator.resolveTargetReference({ reference });
+
+    if (!selector) {
+      this.session.raise('project:describe');
+    }
+    return this.getTarget(selector);
   }
 
   async getTargetBySlugForProject(project: Project, targetSlug: string) {

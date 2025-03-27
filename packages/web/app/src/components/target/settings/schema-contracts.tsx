@@ -46,7 +46,7 @@ import { InfoCircledIcon } from '@radix-ui/react-icons';
 
 const SchemaContractsQuery = graphql(`
   query SchemaContractsQuery($selector: TargetSelectorInput!, $after: String) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       ...CreateContractDialogContentTargetFragment
       contracts(after: $after) {

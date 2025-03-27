@@ -2095,7 +2095,7 @@ test.concurrent(
 
 const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
   query SubscriptionSchemaCheck($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       schemaCheck(id: $id) {
         __typename
         id

@@ -42,14 +42,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
 const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
-  query getGitHubIntegrationDetails($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        id
-        gitHubIntegration {
-          repositories {
-            nameWithOwner
-          }
+  query getGitHubIntegrationDetails($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      gitHubIntegration {
+        repositories {
+          nameWithOwner
         }
       }
     }
@@ -75,9 +73,7 @@ function GitHubIntegration(props: {
   const [integrationQuery] = useQuery({
     query: GithubIntegration_GithubIntegrationDetailsQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
@@ -89,7 +85,7 @@ function GitHubIntegration(props: {
     return null;
   }
 
-  const githubIntegration = integrationQuery.data?.organization?.organization.gitHubIntegration;
+  const githubIntegration = integrationQuery.data?.organization?.gitHubIntegration;
 
   if (!githubIntegration) {
     return null;
@@ -333,13 +329,11 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
 
 const ProjectSettingsPageQuery = graphql(`
   query ProjectSettingsPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...ProjectSettingsPage_OrganizationFragment
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...ProjectSettingsPage_OrganizationFragment
+      project: projectBySlug(projectSlug: $projectSlug) {
+        ...ProjectSettingsPage_ProjectFragment
       }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...ProjectSettingsPage_ProjectFragment
     }
     isGitHubIntegrationFeatureEnabled
   }
@@ -356,8 +350,8 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const currentProject = query.data?.project;
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
 
   const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
   const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);

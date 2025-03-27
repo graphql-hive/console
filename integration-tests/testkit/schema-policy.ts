@@ -3,18 +3,16 @@ import { RuleInstanceSeverityLevel, SchemaPolicyInput } from './gql/graphql';
 
 export const OrganizationAndProjectsWithSchemaPolicy = graphql(`
   query OrganizationAndProjectsWithSchemaPolicy($organization: String!) {
-    organization(selector: { organizationSlug: $organization }) {
-      organization {
+    organization(reference: { bySelector: { organizationSlug: $organization } }) {
+      id
+      schemaPolicy {
         id
-        schemaPolicy {
+      }
+      projects {
+        nodes {
           id
-        }
-        projects {
-          nodes {
+          schemaPolicy {
             id
-            schemaPolicy {
-              id
-            }
           }
         }
       }
