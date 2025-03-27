@@ -82,6 +82,7 @@ npm i winston @graphql-hive/winston
 
 ```ts
 import { createLogger, format, transports } from 'winston'
+import { defineConfig } from '@graphql-hive/gateway'
 import { createLoggerFromWinston } from '@graphql-hive/winston'
 
 // Create a Winston logger
@@ -94,6 +95,21 @@ const winstonLogger = createLogger({
 export const gatewayConfig = defineConfig({
   // Create an adapter for Winston
   logging: createLoggerFromWinston(winstonLogger)
+})
+```
+
+### Integration with Pino (only Node.js)
+
+Like Winston, you can also use [Pino](https://getpino.io/) with Hive Gateway on Node.js
+environments.
+
+```ts
+import pino from 'pino'
+import { defineConfig } from '@graphql-hive/gateway'
+import { createLoggerFromPino } from '@graphql-hive/logger-pino'
+
+export const gatewayConfig = defineConfig({
+  logging: createLoggerFromPino(pino({ level: 'info' }))
 })
 ```
 
