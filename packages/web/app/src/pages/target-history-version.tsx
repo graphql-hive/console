@@ -327,7 +327,7 @@ function DefaultSchemaVersionView(props: {
             {schemaVersion.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaVersion.schemaCompositionErrors} />
             )}
-            {schemaVersion.breakingSchemaChanges?.nodes.length && (
+            {schemaVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -336,11 +336,11 @@ function DefaultSchemaVersionView(props: {
                   schemaCheckId=""
                   title="Breaking Changes"
                   criticality={CriticalityLevel.Breaking}
-                  changes={schemaVersion.breakingSchemaChanges.nodes}
+                  changes={schemaVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {schemaVersion.safeSchemaChanges?.nodes?.length && (
+            {schemaVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -349,7 +349,7 @@ function DefaultSchemaVersionView(props: {
                   schemaCheckId=""
                   title="Safe Changes"
                   criticality={CriticalityLevel.Safe}
-                  changes={schemaVersion.safeSchemaChanges.nodes}
+                  changes={schemaVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
@@ -505,7 +505,7 @@ function ContractVersionView(props: {
                 compositionErrors={contractVersion.schemaCompositionErrors}
               />
             )}
-            {contractVersion.breakingSchemaChanges?.nodes.length && (
+            {contractVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -514,11 +514,11 @@ function ContractVersionView(props: {
                   schemaCheckId=""
                   title="Breaking Changes"
                   criticality={CriticalityLevel.Breaking}
-                  changes={contractVersion.breakingSchemaChanges.nodes}
+                  changes={contractVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {contractVersion.safeSchemaChanges?.nodes?.length && (
+            {contractVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -527,7 +527,7 @@ function ContractVersionView(props: {
                   schemaCheckId=""
                   title="Safe Changes"
                   criticality={CriticalityLevel.Safe}
-                  changes={contractVersion.safeSchemaChanges.nodes}
+                  changes={contractVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}

@@ -309,8 +309,10 @@ export class LocalCompositionError extends HiveCLIError {
     const message = renderErrors(
       makeFragmentData(
         {
-          nodes: compositionResult.errors.map(error => ({
-            message: error.message,
+          edges: compositionResult.errors.map(error => ({
+            node: {
+              message: error.message,
+            },
           })),
         },
         RenderErrors_SchemaErrorConnectionFragment,
