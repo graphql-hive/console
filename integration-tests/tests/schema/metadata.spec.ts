@@ -1,3 +1,4 @@
+import { normalizeSupergraph } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
 import type { SchemaBuilderApi } from '@hive/schema';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -71,95 +72,54 @@ describe('schema service can process metadata', async () => {
   });
 
   test('@meta does not need to be in supergraph', () => {
-    expect(result.supergraph).toMatchInlineSnapshot(`
-      schema
-        @link(url: "https://specs.apollo.dev/link/v1.0")
-        @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
-        
-        
-        
-        
-        
-        @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"]) 
-      {
-        query: Query
-        
-        
-      }
+    expect(result.supergraph).toBeDefined();
+    expect(normalizeSupergraph(result.supergraph!)).toMatchInlineSnapshot(`
+      directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
 
+      directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-        directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+      directive @join__graph(name: String!, url: String!) on ENUM_VALUE
 
-        directive @join__field(
-          graph: join__Graph
-          requires: join__FieldSet
-          provides: join__FieldSet
-          type: String
-          external: Boolean
-          override: String
-          usedOverridden: Boolean
-        ) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+      directive @join__implements(graph: join__Graph!, interface: String!) repeatable on INTERFACE | OBJECT
 
-        directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+      directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on ENUM | INPUT_OBJECT | INTERFACE | OBJECT | SCALAR | UNION
 
-        directive @join__implements(
-          graph: join__Graph!
-          interface: String!
-        ) repeatable on OBJECT | INTERFACE
+      directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
 
-        directive @join__type(
-          graph: join__Graph!
-          key: join__FieldSet
-          extension: Boolean! = false
-          resolvable: Boolean! = true
-          isInterfaceObject: Boolean! = false
-        ) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
-
-        directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
-
-        scalar join__FieldSet
-
-
-        directive @link(
-          url: String
-          as: String
-          for: link__Purpose
-          import: [link__Import]
-        ) repeatable on SCHEMA
-
-        scalar link__Import
-
-        enum link__Purpose {
-          """
-          \`SECURITY\` features provide metadata necessary to securely resolve fields.
-          """
-          SECURITY
-
-          """
-          \`EXECUTION\` features provide metadata necessary for operation execution.
-          """
-          EXECUTION
-        }
-
-
-
-
-
-
+      directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
       enum join__Graph {
-        FOO_GRAPHQL @join__graph(name: "foo.graphql", url: "") 
-        USER_GRAPHQL @join__graph(name: "user.graphql", url: "") 
+        FOO_GRAPHQL @join__graph(name: "foo.graphql", url: "")
+        USER_GRAPHQL @join__graph(name: "user.graphql", url: "")
       }
 
-      type Query @join__type(graph: FOO_GRAPHQL)  @join__type(graph: USER_GRAPHQL)  {
-        foo: String @join__field(graph: FOO_GRAPHQL) 
-        user: User @join__field(graph: USER_GRAPHQL) 
+      enum link__Purpose {
+        """
+        \`EXECUTION\` features provide metadata necessary for operation execution.
+        """
+        EXECUTION
+        """
+        \`SECURITY\` features provide metadata necessary to securely resolve fields.
+        """
+        SECURITY
       }
 
-      type User @join__type(graph: USER_GRAPHQL)  {
+      type Query @join__type(graph: FOO_GRAPHQL) @join__type(graph: USER_GRAPHQL) {
+        foo: String @join__field(graph: FOO_GRAPHQL)
+        user: User @join__field(graph: USER_GRAPHQL)
+      }
+
+      type User @join__type(graph: USER_GRAPHQL) {
         id: ID!
         name: String
+      }
+
+      scalar join__FieldSet
+
+      scalar link__Import
+
+      schema @link(for: EXECUTION, url: "https://specs.apollo.dev/join/v0.3") @link(import: ["@meta"], url: "https://specs.graphql-hive.com/hive/v1.0") @link(url: "https://specs.apollo.dev/link/v1.0") {
+        query: Query
       }
     `);
   });
