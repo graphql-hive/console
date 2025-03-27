@@ -6,7 +6,7 @@ import { CLIError } from '@oclif/core/lib/errors';
 import { CompositionFailure } from '@theguild/federation-composition';
 import { FragmentType, makeFragmentData } from '../gql/index';
 import { renderErrors, RenderErrors_SchemaErrorConnectionFragment } from './schema';
-import { Texture } from './texture/texture.js';
+import { Texture } from './texture/texture';
 
 export enum ExitCode {
   // The command execution succeeded.
