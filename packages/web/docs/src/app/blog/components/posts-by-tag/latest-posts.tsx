@@ -1,4 +1,4 @@
-import { CallToAction, Heading } from '@theguild/components';
+import { Heading } from '@theguild/components';
 import { BlogPostFile } from '../../blog-types';
 import { BlogCard } from '../blog-card';
 import { prettyPrintTag } from '../pretty-print-tag';
