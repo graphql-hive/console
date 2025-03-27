@@ -14,11 +14,11 @@ import {
   visit,
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 import type { ContractsInputType } from './api';
 import type { Cache } from './cache';
 import { addInaccessibleToUnreachableTypes } from './lib/add-inaccessible-to-unreachable-types';

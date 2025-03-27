@@ -1,5 +1,5 @@
 import { parse } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 import { addInaccessibleToUnreachableTypes } from '../add-inaccessible-to-unreachable-types';
 import { composeFederationV2 } from '../compose';
 

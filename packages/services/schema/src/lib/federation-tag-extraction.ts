@@ -17,7 +17,7 @@ import {
   type ScalarTypeDefinitionNode,
   type UnionTypeDefinitionNode,
 } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 
 type TagExtractionStrategy = (directiveNode: DirectiveNode) => string | null;
 

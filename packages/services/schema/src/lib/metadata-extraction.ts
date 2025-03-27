@@ -7,7 +7,7 @@ import {
   visit,
   type DocumentNode,
 } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 
 export type SubgraphMetadata = Map<
   string,
