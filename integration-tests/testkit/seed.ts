@@ -52,8 +52,6 @@ import {
 import * as GraphQLSchema from './gql/graphql';
 import {
   BreakingChangeFormula,
-  OrganizationAccessScope,
-  ProjectAccessScope,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -62,6 +60,12 @@ import { execute } from './graphql';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique } from './utils';
+
+export interface Target {
+  id: string;
+  path: string;
+  slug: string;
+}
 
 export function initSeed() {
   function createConnectionPool() {
@@ -234,9 +238,12 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const targets = projectResult.createProject.ok!.createdTargets;
-              const target = targets[0];
               const project = projectResult.createProject.ok!.createdProject;
+              const targets = projectResult.createProject.ok!.createdTargets.map(target => ({
+                ...target,
+                path: `/${organization.slug}/${project.slug}/${target.slug}`,
+              }));
+              const target = targets[0];
 
               return {
                 project,
