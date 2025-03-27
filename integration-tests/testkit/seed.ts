@@ -175,7 +175,7 @@ export function initSeed() {
                 r.expectNoGraphQLErrors(),
               );
 
-              return result.organization!.organization;
+              return result.organization!;
             },
             async inviteMember(
               email = 'some@email.com',
@@ -202,7 +202,7 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const members = membersResult.organization?.organization.members?.nodes;
+              const members = membersResult.organization?.members?.nodes;
 
               if (!members) {
                 throw new Error(`Could not get members for org ${organization.slug}`);
@@ -216,7 +216,7 @@ export function initSeed() {
                 token,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const projects = projectsResult.organization?.organization.projects.nodes;
+              const projects = projectsResult.organization?.projects.nodes;
 
               if (!projects) {
                 throw new Error(`Could not get projects for org ${organization.slug}`);

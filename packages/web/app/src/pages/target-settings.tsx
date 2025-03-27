@@ -390,7 +390,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     $targetsSelector: ProjectSelectorInput!
     $organizationSelector: OrganizationSelectorInput!
   ) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       failDiffOnDangerousChange
       validationSettings {
@@ -403,12 +403,10 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
         slug
       }
     }
-    organization(selector: $organizationSelector) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
+    organization(reference: { bySelector: $organizationSelector }) {
+      id
+      rateLimit {
+        retentionInDays
       }
     }
   }
@@ -548,7 +546,7 @@ const BreakingChanges = (props: {
       }),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;
@@ -782,9 +780,7 @@ const BreakingChanges = (props: {
                 disabled={isSubmitting}
                 type="number"
                 min="1"
-                max={
-                  targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30
-                }
+                max={targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30}
                 className="mx-2 !inline-flex w-16"
               />
               days.
@@ -1234,33 +1230,25 @@ const TargetSettingsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
+        type
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          slug
+          graphqlEndpointUrl
+          viewerCanAccessSettings
+          baseSchema
+          viewerCanModifySettings
+          viewerCanModifyCDNAccessToken
+          viewerCanModifyTargetAccessToken
+          viewerCanDelete
+        }
       }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
-      slug
-      type
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
-    ) {
-      id
-      slug
-      graphqlEndpointUrl
-      viewerCanAccessSettings
-      baseSchema
-      viewerCanModifySettings
-      viewerCanModifyCDNAccessToken
-      viewerCanModifyTargetAccessToken
-      viewerCanDelete
     }
   }
 `);
@@ -1289,9 +1277,9 @@ function TargetSettingsContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const currentProject = query.data?.project;
-  const currentTarget = query.data?.target;
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
+  const currentTarget = currentProject?.target;
 
   useRedirect({
     canAccess: currentTarget?.viewerCanAccessSettings === true,

@@ -165,7 +165,9 @@ function Alerts(props: {
 
 const ProjectAlertsPageQuery = graphql(`
   query ProjectAlertsPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
       id
       targets {
         nodes {

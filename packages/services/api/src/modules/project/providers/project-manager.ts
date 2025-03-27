@@ -1,7 +1,9 @@
 import { Injectable, Scope } from 'graphql-modules';
+import type { ProjectReferenceInput } from '../../../__generated__/types';
 import type { Organization, Project, ProjectType } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
@@ -25,6 +27,7 @@ export class ProjectManager {
     private session: Session,
     private tokenStorage: TokenStorage,
     private auditLog: AuditLogRecorder,
+    private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
@@ -122,6 +125,16 @@ export class ProjectManager {
       },
     });
     return this.storage.getProject(selector);
+  }
+
+  async getProjectByRereference(reference: ProjectReferenceInput): Promise<Project | null> {
+    const selector = await this.idTranslator.resolveProjectReference({ reference });
+
+    if (selector === null) {
+      this.session.raise('project:describe');
+    }
+
+    return await this.getProject(selector);
   }
 
   async getProjectBySlugForOrganization(

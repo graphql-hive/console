@@ -229,11 +229,9 @@ const OrganizationProjectsPageQuery = graphql(`
     $chartResolution: Int!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
     }
     projects(selector: { organizationSlug: $organizationSlug }) {
       total
@@ -295,7 +293,7 @@ function OrganizationPageContent(
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const projectsConnection = query.data?.projects;
 
   const highestNumberOfRequests = useMemo(() => {

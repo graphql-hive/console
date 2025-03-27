@@ -4,7 +4,7 @@ import { useOperationFromQueryString } from './useOperationFromQueryString';
 
 const OperationQuery = graphql(`
   query Operation($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollectionOperation(id: $id) {
         id

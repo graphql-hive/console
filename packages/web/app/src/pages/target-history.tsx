@@ -22,10 +22,12 @@ const HistoryPage_VersionsPageQuery = graphql(`
     $after: String
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -170,10 +172,12 @@ const TargetHistoryPageQuery = graphql(`
     $targetSlug: String!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       project {

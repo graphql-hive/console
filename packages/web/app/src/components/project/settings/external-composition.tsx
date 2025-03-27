@@ -307,7 +307,7 @@ const ExternalComposition_DisableMutation = graphql(`
 
 const ExternalComposition_ProjectConfigurationQuery = graphql(`
   query ExternalComposition_ProjectConfigurationQuery($selector: ProjectSelectorInput!) {
-    project(selector: $selector) {
+    project(reference: { bySelector: $selector }) {
       id
       slug
       isNativeFederationEnabled

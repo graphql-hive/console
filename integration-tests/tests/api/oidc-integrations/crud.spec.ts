@@ -5,13 +5,11 @@ import { initSeed } from '../../../testkit/seed';
 
 const OrganizationWithOIDCIntegration = graphql(`
   query OrganizationWithOIDCIntegration($organizationSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
+    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+      id
+      oidcIntegration {
         id
-        oidcIntegration {
-          id
-          oidcUserAccessOnly
-        }
+        oidcUserAccessOnly
       }
     }
   }
@@ -19,10 +17,8 @@ const OrganizationWithOIDCIntegration = graphql(`
 
 const OrganizationReadTest = graphql(`
   query OrganizationReadTest($organizationSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-      }
+    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+      id
     }
   }
 `);
@@ -119,12 +115,10 @@ describe('create', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: {
-              id: result.createOIDCIntegration.ok!.createdOIDCIntegration.id,
-              oidcUserAccessOnly: true,
-            },
+          id: organization.id,
+          oidcIntegration: {
+            id: result.createOIDCIntegration.ok!.createdOIDCIntegration.id,
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -462,12 +456,10 @@ describe('delete', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: {
-              id: oidcIntegrationId,
-              oidcUserAccessOnly: true,
-            },
+          id: organization.id,
+          oidcIntegration: {
+            id: oidcIntegrationId,
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -501,10 +493,8 @@ describe('delete', () => {
 
       expect(refetchedOrg).toEqual({
         organization: {
-          organization: {
-            id: organization.id,
-            oidcIntegration: null,
-          },
+          id: organization.id,
+          oidcIntegration: null,
         },
       });
     });
@@ -805,9 +795,7 @@ describe('restrictions', () => {
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(refetchedOrg.organization?.organization.oidcIntegration?.oidcUserAccessOnly).toEqual(
-      true,
-    );
+    expect(refetchedOrg.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(true);
 
     const invitation = await inviteMember('example@example.com');
     const invitationCode = invitation.ok?.code;
@@ -847,9 +835,7 @@ describe('restrictions', () => {
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(orgAfterOidc.organization?.organization.oidcIntegration?.oidcUserAccessOnly).toEqual(
-      true,
-    );
+    expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(true);
 
     const restrictionsUpdateResult = await execute({
       document: UpdateOIDCRestrictionsMutation,
@@ -875,8 +861,7 @@ describe('restrictions', () => {
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(
-      orgAfterDisablingOidcRestrictions.organization?.organization.oidcIntegration
-        ?.oidcUserAccessOnly,
+      orgAfterDisablingOidcRestrictions.organization?.oidcIntegration?.oidcUserAccessOnly,
     ).toEqual(false);
 
     const invitation = await inviteMember('example@example.com');
@@ -929,7 +914,7 @@ describe('restrictions', () => {
         authToken: ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
 
-      expect(readAccessCheck.organization?.organization.id).toEqual(organization.id);
+      expect(readAccessCheck.organization?.id).toEqual(organization.id);
     },
   );
 });
@@ -969,7 +954,7 @@ test.concurrent(
       authToken: memberToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result.organization!.organization.oidcIntegration).toEqual(null);
+    expect(result.organization!.oidcIntegration).toEqual(null);
 
     await updateMemberRole(role, ['oidc:modify']);
 
@@ -981,6 +966,6 @@ test.concurrent(
       authToken: memberToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result.organization!.organization.oidcIntegration).not.toEqual(null);
+    expect(result.organization!.oidcIntegration).not.toEqual(null);
   },
 );

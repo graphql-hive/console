@@ -2,7 +2,7 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Query {
-    project(selector: ProjectSelectorInput!): Project
+    project(reference: ProjectReferenceInput! @tag(name: "public")): Project @tag(name: "public")
     projects(selector: OrganizationSelectorInput!): ProjectConnection!
   }
 
@@ -66,8 +66,8 @@ export default gql`
   }
 
   input ProjectSelectorInput {
-    organizationSlug: String!
-    projectSlug: String!
+    organizationSlug: String! @tag(name: "public")
+    projectSlug: String! @tag(name: "public")
   }
 
   type ProjectSelector {
@@ -87,9 +87,14 @@ export default gql`
     projectBySlug(projectSlug: String!): Project
   }
 
+  input ProjectReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+    bySelector: ProjectSelectorInput @tag(name: "public")
+  }
+
   type Project {
-    id: ID!
-    slug: String!
+    id: ID! @tag(name: "public")
+    slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     type: ProjectType!

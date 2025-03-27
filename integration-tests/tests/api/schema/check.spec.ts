@@ -120,7 +120,7 @@ test.concurrent('should match indentation of previous description', async ({ exp
 
 const SchemaCheckQuery = graphql(/* GraphQL */ `
   query SchemaCheckOnTargetQuery($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       schemaCheck(id: $id) {
         __typename
         id

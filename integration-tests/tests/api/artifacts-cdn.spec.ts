@@ -433,7 +433,7 @@ runArtifactsCDNTests('API Mirror', { service: 'server', port: 8082, path: '/arti
 describe('CDN token', () => {
   const TargetCDNAccessTokensQuery = graphql(`
     query TargetCDNAccessTokens($selector: TargetSelectorInput!, $after: String, $first: Int = 2) {
-      target(selector: $selector) {
+      target(reference: { bySelector: $selector }) {
         cdnAccessTokens(first: $first, after: $after) {
           pageInfo {
             hasNextPage

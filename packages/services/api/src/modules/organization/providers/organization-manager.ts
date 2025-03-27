@@ -1,4 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
+import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -49,6 +50,17 @@ export class OrganizationManager {
     private idTranslator: IdTranslator,
   ) {
     this.logger = logger.child({ source: 'OrganizationManager' });
+  }
+
+  async getOrganizationByReference(reference: OrganizationReferenceInput): Promise<Organization> {
+    const selector = await this.idTranslator.resolveOrganizationReference({
+      reference,
+      onError: () => {
+        this.session.raise('organization:describe');
+      },
+    });
+
+    return this.getOrganization(selector);
   }
 
   async getOrganization(selector: OrganizationSelector): Promise<Organization> {

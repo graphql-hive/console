@@ -413,12 +413,11 @@ function Inner(props: {
 }
 
 const ManageSubscriptionPageQuery = graphql(`
-  query ManageSubscriptionPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        slug
-        ...ManageSubscriptionInner_OrganizationFragment
-      }
+  query ManageSubscriptionPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      ...ManageSubscriptionInner_OrganizationFragment
     }
     billingPlans {
       ...ManageSubscriptionInner_BillingPlansFragment
@@ -430,13 +429,11 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   const [query] = useQuery({
     query: ManageSubscriptionPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const billingPlans = query.data?.billingPlans;
 
   if (query.error) {

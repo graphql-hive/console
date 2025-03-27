@@ -285,7 +285,7 @@ export const TargetLayout = ({
 
 const ConnectSchemaModalQuery = graphql(`
   query ConnectSchemaModal($targetSelector: TargetSelectorInput!) {
-    target(selector: $targetSelector) {
+    target(reference: { bySelector: $targetSelector }) {
       id
       project {
         id
