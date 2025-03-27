@@ -12,12 +12,12 @@ export function CompanyNewsAndPressSection({ className }: { className?: string }
           <BlogCard
             variant="featured"
             post={{
-              route: '/blog/understanding-the-differences-between-graphql-and-rest-api-gateways',
+              route: '/blog/hive-platform-achieves-soc2-certification',
               frontMatter: {
-                title: 'Understanding the Differences Between GraphQL and REST API Gateways',
-                authors: ['saihaj'],
-                tags: ['graphql'],
-                date: '2024-12-03',
+                title: 'Hive Platform Achieves SOC-2 Type II Certification',
+                authors: ['dotan'],
+                tags: ['security'],
+                date: '2025-03-25',
               },
             }}
             className="h-full"
