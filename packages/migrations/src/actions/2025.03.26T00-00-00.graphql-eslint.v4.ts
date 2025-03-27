@@ -1,68 +1,97 @@
-import type { MigrationExecutor } from '../pg-migrator';
+import { z } from 'zod';
+import { type MigrationExecutor } from '../pg-migrator';
+
+const ESLintRuleSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
+const RuleStructSchema = z.union([
+  z.tuple([ESLintRuleSchema]),
+  z.tuple([ESLintRuleSchema, z.any()]),
+]);
+const V3ConfigSchema = z.record(z.string(), RuleStructSchema);
+
+const QUERY_RESULT = z.array(
+  z.object({
+    resourceType: z.string(),
+    resourceId: z.string(),
+    jsonConfig: V3ConfigSchema,
+  }),
+);
+
+type RuleStruct = z.infer<typeof RuleStructSchema>;
+type V3Config = z.infer<typeof V3ConfigSchema>;
+type V4Config = z.infer<typeof V3ConfigSchema>; // same really here, just for semantics
 
 export default {
   name: '2025.03.26T00-00-00.graphql-eslint.v4.ts',
   noTransaction: true,
   run: async ({ sql, connection }) => {
+    console.log('Looking for existing schema_policy_config objects...');
+
     const existingV3Configs = await connection.query(
-      sql`SELECT resource_type, resource_id, config FROM schema_policy_config`,
+      sql`
+        SELECT
+          resource_type as "resourceType",
+          resource_id as "resourceId",
+          config as "jsonConfig"
+        FROM schema_policy_config`,
     );
 
-    await Promise.all(
-      existingV3Configs.rows.map(async config => {
-        const { resource_type, resource_id, config: v3Config } = config;
+    if (existingV3Configs.rowCount === 0) {
+      console.log('No records found for schema_policy_config.');
+      return;
+    }
 
-        if (v3Config && typeof v3Config === 'object') {
-          const v4Config = migrateConfig(v3Config as any as Record<string, RuleStruct>);
+    const rows = QUERY_RESULT.parse(existingV3Configs.rows);
+
+    for (const config of rows) {
+      try {
+        const { resourceType, resourceId, jsonConfig } = config;
+
+        if (jsonConfig && typeof jsonConfig === 'object') {
+          const v4Config = migrateConfig(jsonConfig);
 
           await connection.query(
-            sql`UPDATE schema_policy_config SET config = ${sql.json(v4Config)} WHERE resource_type = ${resource_type} AND resource_id = ${resource_id}`,
+            sql`UPDATE schema_policy_config SET config = ${sql.json(v4Config)} WHERE resource_type = ${resourceType} AND resource_id = ${resourceId}`,
           );
-          return { resource_type, resource_id, config: v4Config };
+          console.log(`Migrated config for ${resourceType}:${resourceId}`);
+        } else {
+          console.log(`Invalid config for ${resourceType}:${resourceId}, skipping...`);
         }
-
-        return null;
-      }),
-    );
+      } catch (e) {
+        console.error('Error migrating config', config, e);
+      }
+    }
   },
 } satisfies MigrationExecutor;
 
-function migrateConfig(v3Config: Record<string, RuleStruct>): Record<string, any> {
-  return Object.keys(v3Config).reduce(
-    (acc, ruleName) => {
-      const ruleConfig = v3Config[ruleName];
+function migrateConfig(v3Config: V3Config): V4Config {
+  return Object.keys(v3Config).reduce((acc, ruleName) => {
+    const ruleConfig = v3Config[ruleName];
 
-      if (Array.isArray(ruleConfig)) {
-        const [severity, options] = ruleConfig;
-        const newConfig = migrateRuleConfig(ruleName, options);
-        const newOptions =
-          newConfig.options && Object.keys(newConfig.options).length > 0 ? newConfig.options : null;
+    if (Array.isArray(ruleConfig)) {
+      const [severity, options] = ruleConfig;
+      const newConfig = migrateRuleConfig(ruleName, options);
 
-        if (options || newOptions) {
-          return {
-            ...acc,
-            [newConfig.ruleName]: [severity, newOptions],
-          };
-        }
-
+      if (newConfig.options) {
         return {
           ...acc,
-          [newConfig.ruleName]: [severity],
+          [newConfig.ruleName]: [severity, newConfig.options],
         };
       }
 
       return {
         ...acc,
-        [ruleName]: ruleConfig,
+        [newConfig.ruleName]: [severity],
       };
-    },
-    {} as Record<string, any>,
-  );
+    }
+
+    return {
+      ...acc,
+      [ruleName]: ruleConfig,
+    };
+  }, {} as V4Config);
 }
 
-type RuleStruct = [0 | 1 | 2] | [0 | 1 | 2, any];
-
-function migrateRuleConfig(ruleName: string, options: any) {
+function migrateRuleConfig(ruleName: string, options: RuleStruct) {
   switch (ruleName) {
     case 'alphabetize': {
       return {
@@ -70,6 +99,7 @@ function migrateRuleConfig(ruleName: string, options: any) {
         options: alphabetize(options),
       };
     }
+    // the only change here is the name of the rule.
     case 'no-case-insensitive-enum-values-duplicates': {
       return {
         ruleName: 'unique-enum-value-names',
@@ -89,7 +119,7 @@ function migrateRuleConfig(ruleName: string, options: any) {
  * "alphabetize" changed "values" to a boolean instead of an array. If the array has value (can be only 1), we replace it with "true".
  * Otherwise, "false".
  */
-function alphabetize(cfgSource: any) {
+function alphabetize(cfgSource: RuleStruct): RuleStruct {
   const cfg = JSON.parse(JSON.stringify(cfgSource));
 
   if ('values' in cfg) {
