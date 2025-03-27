@@ -225,7 +225,7 @@ const ConditionalBreakingChangesMetadataSection_SchemaCheckFragment = graphql(`
         percentage
         excludedClientNames
         targets {
-          name
+          slug
           target {
             id
           }
@@ -282,7 +282,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {allTargets.map((target, index) => (
               <>
-                <span className="text-white">{target.name}</span>
+                <span className="text-white">{target.slug}</span>
                 {index === allTargets.length - 1 ? null : ', '}
               </>
             ))}
@@ -292,7 +292,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {truncatedTargets.map((target, index) => (
               <>
-                <span className="text-white">{target.name}</span>
+                <span className="text-white">{target.slug}</span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
               </>
             ))}
@@ -310,7 +310,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
                     <div className="grid grid-cols-1 divide-y divide-gray-800">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="line-clamp-3 text-sm text-gray-400">{target.name}</div>
+                          <div className="line-clamp-3 text-sm text-gray-400">{target.slug}</div>
                         </div>
                       ))}
                     </div>
@@ -369,13 +369,17 @@ const DefaultSchemaView_SchemaCheckFragment = graphql(`
       }
     }
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeWithUsageFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeWithUsageFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     schemaPolicyWarnings {
@@ -486,14 +490,14 @@ function DefaultSchemaView(props: {
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
-              !schemaCheck.safeSchemaChanges?.nodes?.length &&
-              !schemaCheck.breakingSchemaChanges?.nodes?.length &&
+              !schemaCheck.safeSchemaChanges?.edges?.length &&
+              !schemaCheck.breakingSchemaChanges?.edges?.length &&
               !schemaCheck.schemaPolicyErrors?.edges?.length &&
               !schemaCheck.hasSchemaCompositionErrors && <NoGraphChanges />}
             {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.compositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
             )}
-            {schemaCheck.breakingSchemaChanges?.nodes.length ? (
+            {schemaCheck.breakingSchemaChanges?.edges.length ? (
               <div className="mb-5">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -502,7 +506,7 @@ function DefaultSchemaView(props: {
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
                   criticality={CriticalityLevel.Breaking}
-                  changesWithUsage={schemaCheck.breakingSchemaChanges.nodes}
+                  changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
               </div>
@@ -516,7 +520,7 @@ function DefaultSchemaView(props: {
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
                   criticality={CriticalityLevel.Safe}
-                  changes={schemaCheck.safeSchemaChanges.nodes}
+                  changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             ) : null}
@@ -588,13 +592,17 @@ const ContractCheckView_ContractCheckFragment = graphql(`
       ...CompositionErrorsSection_SchemaErrorConnection
     }
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeWithUsageFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeWithUsageFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     compositeSchemaSDL
@@ -688,7 +696,7 @@ function ContractCheckView(props: {
             {contractCheck.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
             )}
-            {contractCheck.breakingSchemaChanges?.nodes.length && (
+            {contractCheck.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -697,7 +705,9 @@ function ContractCheckView(props: {
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
                   criticality={CriticalityLevel.Breaking}
-                  changesWithUsage={contractCheck.breakingSchemaChanges.nodes}
+                  changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
+                    edge => edge.node,
+                  )}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
               </div>
@@ -711,7 +721,7 @@ function ContractCheckView(props: {
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
                   criticality={CriticalityLevel.Safe}
-                  changes={contractCheck.safeSchemaChanges.nodes}
+                  changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}

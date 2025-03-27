@@ -135,9 +135,11 @@ const SchemaView_TargetFragment = graphql(`
     latestSchemaVersion {
       id
       schemas {
-        nodes {
-          __typename
-          ...SchemaView_SchemaFragment
+        edges {
+          node {
+            __typename
+            ...SchemaView_SchemaFragment
+          }
         }
       }
     }
@@ -172,11 +174,14 @@ function SchemaView(props: {
     return <NoSchemaVersion recommendedAction="publish" projectType={project.type} />;
   }
 
-  if (!latestSchemaVersion.schemas.nodes.length) {
+  if (!latestSchemaVersion.schemas.edges.length) {
     return noSchema;
   }
 
-  const schemas = useFragment(SchemaView_SchemaFragment, target.latestSchemaVersion?.schemas.nodes);
+  const schemas = useFragment(
+    SchemaView_SchemaFragment,
+    target.latestSchemaVersion?.schemas?.edges?.map(edge => edge.node),
+  );
   const compositeSchemas = schemas?.filter(isCompositeSchema) as CompositeSchema[];
   const singleSchema = schemas?.filter(schema => !isCompositeSchema(schema))[0] as
     | SingleSchema

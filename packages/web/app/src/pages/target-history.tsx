@@ -36,7 +36,7 @@ const HistoryPage_VersionsPageQuery = graphql(`
           node {
             id
             date
-            valid
+            isValid
             log {
               ... on PushedSchemaLog {
                 id
@@ -123,9 +123,12 @@ function ListPage(props: {
             ) : null}
             <div className="mb-1.5 mt-2.5 flex align-middle text-xs font-medium text-[#c4c4c4]">
               <div
-                className={cn(!version.valid && 'text-red-500', 'flex flex-row items-center gap-1')}
+                className={cn(
+                  !version.isValid && 'text-red-500',
+                  'flex flex-row items-center gap-1',
+                )}
               >
-                <BadgeRounded color={version.valid ? 'green' : 'red'} /> Published
+                <BadgeRounded color={version.isValid ? 'green' : 'red'} /> Published
                 <TimeAgo date={version.date} />
               </div>
 

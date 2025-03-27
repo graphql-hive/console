@@ -4,8 +4,8 @@ import { GraphQLError } from 'graphql';
 import { InvalidDocument } from '@graphql-inspector/core';
 import { CLIError } from '@oclif/core/lib/errors';
 import { CompositionFailure } from '@theguild/federation-composition';
-import { SchemaErrorConnection } from '../gql/graphql';
-import { renderErrors } from './schema';
+import { FragmentType, makeFragmentData } from '../gql/index';
+import { renderErrors, RenderErrors_SchemaErrorConnectionFragment } from './schema';
 import { Texture } from './texture/texture';
 
 export enum ExitCode {
@@ -306,18 +306,24 @@ export class ServiceAndUrlLengthMismatch extends HiveCLIError {
 
 export class LocalCompositionError extends HiveCLIError {
   constructor(compositionResult: CompositionFailure) {
-    const message = renderErrors({
-      total: compositionResult.errors.length,
-      nodes: compositionResult.errors.map(error => ({
-        message: error.message,
-      })),
-    });
+    const message = renderErrors(
+      makeFragmentData(
+        {
+          edges: compositionResult.errors.map(error => ({
+            node: {
+              message: error.message,
+            },
+          })),
+        },
+        RenderErrors_SchemaErrorConnectionFragment,
+      ),
+    );
     super(ExitCode.ERROR, errorCode(ErrorCategory.DEV, 1), `Local composition failed:\n${message}`);
   }
 }
 
 export class RemoteCompositionError extends HiveCLIError {
-  constructor(errors: SchemaErrorConnection) {
+  constructor(errors: FragmentType<typeof RenderErrors_SchemaErrorConnectionFragment>) {
     const message = renderErrors(errors);
     super(
       ExitCode.ERROR,

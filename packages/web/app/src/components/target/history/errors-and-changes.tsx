@@ -48,7 +48,7 @@ const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphq
     settings {
       retentionInDays
       targets {
-        name
+        slug
         target {
           id
           slug
@@ -280,7 +280,7 @@ function ChangeItem(props: {
                                           }}
                                           target="_blank"
                                         >
-                                          {target.name}
+                                          {target.slug}
                                         </Link>{' '}
                                         <span className="text-white">target</span>
                                       </p>
@@ -329,7 +329,7 @@ function ChangeItem(props: {
                         {!target.target ? (
                           <TooltipProvider key={index}>
                             <Tooltip>
-                              <TooltipTrigger>{target.name}</TooltipTrigger>
+                              <TooltipTrigger>{target.slug}</TooltipTrigger>
                               <TooltipContent>Target does no longer exist.</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -346,7 +346,7 @@ function ChangeItem(props: {
                             }}
                             target="_blank"
                           >
-                            {target.name}
+                            {target.slug}
                           </Link>
                         )}
                         {index === arr.length - 1
@@ -424,8 +424,10 @@ function SchemaChangeApproval(props: {
 
 const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
-    nodes {
-      message
+    edges {
+      node {
+        message
+      }
     }
   }
 `);
@@ -463,9 +465,9 @@ export function CompositionErrorsSection(props: {
         </Heading>
       </TooltipProvider>
       <ul>
-        {compositionErrors?.nodes.map((change, index) => (
+        {compositionErrors?.edges?.map((edge, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={change.message} />
+            <CompositionError message={edge.node.message} />
           </li>
         ))}
       </ul>

@@ -179,7 +179,6 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
         explorer {
           metadataAttributes {
             name

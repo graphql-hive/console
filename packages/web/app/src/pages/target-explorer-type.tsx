@@ -151,7 +151,6 @@ const TargetExplorerTypenamePageQuery = graphql(`
       latestSchemaVersion {
         __typename
         id
-        valid
         explorer(usage: { period: $period }) {
           metadataAttributes {
             name
