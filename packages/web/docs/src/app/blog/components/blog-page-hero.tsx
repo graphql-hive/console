@@ -43,7 +43,7 @@ export function BlogPageHero({ className }: { className?: string }) {
         size="xl"
         className="text-green-1000 z-0 mx-auto max-w-3xl text-center max-md:!text-5xl dark:text-white"
       >
-        GraphQL Stories
+        Blog
       </Heading>
       <p className="z-0 mx-auto max-w-[80%] text-center leading-6 text-green-800 dark:text-white/80">
         Explore insights on managing and optimizing your GraphQL APIs
