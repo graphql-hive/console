@@ -206,7 +206,7 @@ export default gql`
   type SchemaConnection {
     nodes: [Schema!]! @deprecated(reason: "Use 'SchemaConnection.edges' instead.")
     total: Int! @deprecated(reason: "This field will be removed.")
-    edges: [SchemaEdge] @tag(name: "public")
+    edges: [SchemaEdge!]! @tag(name: "public")
     pageInfo: PageInfo! @tag(name: "public")
   }
 

@@ -34,12 +34,9 @@ const schemaPublishMutation = graphql(/* GraphQL */ `
         successMessage: message
         linkToWebsite
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
       }
@@ -47,12 +44,9 @@ const schemaPublishMutation = graphql(/* GraphQL */ `
         valid
         linkToWebsite
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
         errors {
@@ -321,7 +315,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
             this.logSuccess('Published initial schema.');
           } else if (result.schemaPublish.successMessage) {
             this.logSuccess(result.schemaPublish.successMessage);
-          } else if (changes && changes.total === 0) {
+          } else if (changes?.edges?.length === 0) {
             this.logSuccess('No changes. Skipping.');
           } else {
             if (changes) {
@@ -346,7 +340,7 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
           const errors = result.schemaPublish.errors;
           this.log(renderErrors(errors));
 
-          if (changes && changes.total) {
+          if (changes?.edges.length) {
             this.log('');
             this.log(renderChanges(changes));
           }

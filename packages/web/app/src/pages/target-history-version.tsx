@@ -202,13 +202,17 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     }
     isFirstComposableVersion
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableSchemaVersion {
@@ -390,13 +394,17 @@ const ContractVersionView_ContractVersionFragment = graphql(`
       ...CompositionErrorsSection_SchemaErrorConnection
     }
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableContractVersion {

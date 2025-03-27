@@ -424,8 +424,10 @@ function SchemaChangeApproval(props: {
 
 const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
-    nodes {
-      message
+    edges {
+      node {
+        message
+      }
     }
   }
 `);
@@ -463,9 +465,9 @@ export function CompositionErrorsSection(props: {
         </Heading>
       </TooltipProvider>
       <ul>
-        {compositionErrors?.nodes.map((change, index) => (
+        {compositionErrors?.edges?.map((edge, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={change.message} />
+            <CompositionError message={edge.node.message} />
           </li>
         ))}
       </ul>

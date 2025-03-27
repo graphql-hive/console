@@ -42,18 +42,19 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
-            approval {
-              approvedBy {
-                id
-                displayName
+          edges {
+            node {
+              message(withSafeBasedOnUsageNote: false)
+              criticality
+              isSafeBasedOnUsage
+              approval {
+                approvedBy {
+                  id
+                  displayName
+                }
               }
             }
           }
-          total
           ...RenderChanges_schemaChanges
         }
         schemaCheck {
@@ -63,12 +64,13 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
       ... on SchemaCheckError {
         valid
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
+          edges {
+            node {
+              message(withSafeBasedOnUsageNote: false)
+              criticality
+              isSafeBasedOnUsage
+            }
           }
-          total
           ...RenderChanges_schemaChanges
         }
         warnings {
@@ -287,7 +289,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         if (result.schemaCheck.initial) {
           this.logSuccess('Schema registry is empty, nothing to compare your schema with.');
-        } else if (!changes?.total) {
+        } else if (!changes?.edges.length) {
           this.logSuccess('No changes');
         } else {
           this.log(renderChanges(changes));
@@ -311,7 +313,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           this.log(renderWarnings(warnings));
         }
 
-        if (changes && changes.total) {
+        if (changes?.edges.length) {
           this.log(renderChanges(changes));
         }
 

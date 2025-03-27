@@ -16,8 +16,10 @@ const criticalityMap: Record<CriticalityLevel, string> = {
 
 export const RenderErrors_SchemaErrorConnectionFragment = graphql(`
   fragment RenderErrors_SchemaErrorConnectionFragment on SchemaErrorConnection {
-    nodes {
-      message
+    edges {
+      node {
+        message
+      }
     }
   }
 `);
@@ -27,24 +29,25 @@ export const renderErrors = (
 ) => {
   const e = useFragment(RenderErrors_SchemaErrorConnectionFragment, errors);
   const t = Texture.createBuilder();
-  t.failure(`Detected ${e.nodes.length} error${e.nodes.length > 1 ? 's' : ''}`);
+  t.failure(`Detected ${e.edges.length} error${e.edges.length > 1 ? 's' : ''}`);
   t.line();
-  e.nodes.forEach(error => {
-    t.indent(Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(error.message));
+  e.edges.forEach(edge => {
+    t.indent(Texture.colors.red('-') + ' ' + Texture.boldQuotedWords(edge.node.message));
   });
   return t.state.value;
 };
 
 const RenderChanges_SchemaChanges = graphql(`
   fragment RenderChanges_schemaChanges on SchemaChangeConnection {
-    total
-    nodes {
-      criticality
-      isSafeBasedOnUsage
-      message(withSafeBasedOnUsageNote: false)
-      approval {
-        approvedBy {
-          displayName
+    edges {
+      node {
+        criticality
+        isSafeBasedOnUsage
+        message(withSafeBasedOnUsageNote: false)
+        approval {
+          approvedBy {
+            displayName
+          }
         }
       }
     }
@@ -54,7 +57,7 @@ const RenderChanges_SchemaChanges = graphql(`
 export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_SchemaChanges>) => {
   const t = Texture.createBuilder();
   const changes = unmaskFragment(RenderChanges_SchemaChanges, maskedChanges);
-  type ChangeType = (typeof changes)['nodes'][number];
+  type ChangeType = (typeof changes)['edges'][number]['node'];
 
   const writeChanges = (changes: ChangeType[]) => {
     changes.forEach(change => {
@@ -78,41 +81,41 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
     });
   };
 
-  t.info(`Detected ${changes.total} change${changes.total > 1 ? 's' : ''}`);
+  t.info(`Detected ${changes.edges.length} change${changes.edges.length > 1 ? 's' : ''}`);
   t.line();
 
-  const breakingChanges = changes.nodes.filter(
-    change => change.criticality === CriticalityLevel.Breaking,
+  const breakingChanges = changes.edges.filter(
+    edge => edge.node.criticality === CriticalityLevel.Breaking,
   );
-  const dangerousChanges = changes.nodes.filter(
-    change => change.criticality === CriticalityLevel.Dangerous,
+  const dangerousChanges = changes.edges.filter(
+    edge => edge.node.criticality === CriticalityLevel.Dangerous,
   );
-  const safeChanges = changes.nodes.filter(change => change.criticality === CriticalityLevel.Safe);
+  const safeChanges = changes.edges.filter(edge => edge.node.criticality === CriticalityLevel.Safe);
 
-  const otherChanges = changes.nodes.filter(
-    change => !Object.keys(CriticalityLevel).includes(change.criticality),
+  const otherChanges = changes.edges.filter(
+    edge => !Object.keys(CriticalityLevel).includes(edge.node.criticality),
   );
 
   if (breakingChanges.length) {
     t.indent(`Breaking changes:`);
-    writeChanges(breakingChanges);
+    writeChanges(breakingChanges.map(edge => edge.node));
   }
 
   if (dangerousChanges.length) {
     t.indent(`Dangerous changes:`);
-    writeChanges(dangerousChanges);
+    writeChanges(dangerousChanges.map(edge => edge.node));
   }
 
   if (safeChanges.length) {
     t.indent(`Safe changes:`);
-    writeChanges(safeChanges);
+    writeChanges(safeChanges.map(edge => edge.node));
   }
 
   // For backwards compatibility in case more criticality levels are added.
   // This is unlikely to happen.
   if (otherChanges.length) {
     t.indent(`Other changes: (Current CLI version does not support these CriticalityLevels)`);
-    writeChanges(otherChanges);
+    writeChanges(otherChanges.map(edge => edge.node));
   }
 
   return t.state.value;

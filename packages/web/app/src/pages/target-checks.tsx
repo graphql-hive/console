@@ -45,12 +45,6 @@ const SchemaChecks_NavigationQuery = graphql(`
               commit
               author
             }
-            breakingSchemaChanges {
-              total
-            }
-            safeSchemaChanges {
-              total
-            }
             githubRepository
           }
         }
