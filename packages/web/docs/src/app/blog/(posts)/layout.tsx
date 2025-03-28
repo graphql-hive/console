@@ -1,7 +1,8 @@
-import { cn, HiveLayoutConfig } from '@theguild/components';
+import { cn, GetYourAPIGameRightSection, HiveLayoutConfig } from '@theguild/components';
 import { LandingPageContainer } from '../../../components/landing-page-container';
-import '../../hive-prose-styles.css';
 import { BlogPostHeader } from '../components/blog-post-layout/blog-post-header';
+import { SimilarPosts } from '../components/blog-post-layout/similar-posts';
+import '../../hive-prose-styles.css';
 
 const MAIN_CONTENT = 'main-content';
 
@@ -13,11 +14,13 @@ export default function BlogPostLayout({ children }: { children: React.ReactNode
       <div
         className={cn(
           MAIN_CONTENT,
-          'mx-auto flex *:!pl-2 sm:*:!ml-auto sm:*:!pl-0 [&>div>:first-child]:hidden [&_main>p:first-of-type]:text-xl/6 md:[&_main>p:first-of-type]:text-2xl/8',
+          'mx-auto flex *:!pl-2 sm:*:!ml-auto sm:*:!pl-0 [&>div>:first-child]:hidden [&_main>p:first-of-type]:text-xl/8 md:[&_main>p:first-of-type]:text-2xl/8',
         )}
       >
         {children}
       </div>
+      <SimilarPosts className="mx-4 md:mx-6" />
+      <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
   );
 }
