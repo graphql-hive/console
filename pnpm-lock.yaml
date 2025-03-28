@@ -317,8 +317,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/services/storage
       '@theguild/federation-composition':
-        specifier: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928
-        version: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928(graphql@16.9.0)
+        specifier: 0.16.0
+        version: 0.16.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -445,8 +445,8 @@ importers:
         specifier: 4.2.13
         version: 4.2.13
       '@theguild/federation-composition':
-        specifier: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928
-        version: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928(graphql@16.9.0)
+        specifier: 0.16.0
+        version: 0.16.0(graphql@16.9.0)
       colors:
         specifier: 1.4.0
         version: 1.4.0
@@ -747,8 +747,8 @@ importers:
         specifier: 7.8.0
         version: 7.8.0
       '@theguild/federation-composition':
-        specifier: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928
-        version: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928(graphql@16.9.0)
+        specifier: 0.16.0
+        version: 0.16.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -1144,8 +1144,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@theguild/federation-composition':
-        specifier: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928
-        version: 0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928(graphql@16.9.0)
+        specifier: 0.16.0
+        version: 0.16.0(graphql@16.9.0)
       '@trpc/server':
         specifier: 10.45.2
         version: 10.45.2
@@ -7543,8 +7543,8 @@ packages:
       eslint: ^8 || ^9
       typescript: ^5
 
-  '@theguild/federation-composition@0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928':
-    resolution: {integrity: sha512-GtkiSOkFAyOcFoq7PIiV8kAERXfR36iz3S4SH77GMbRtHCll3nsY5nTILp8VWkPvX/4Hu6KhWWKostyoqFIexA==}
+  '@theguild/federation-composition@0.16.0':
+    resolution: {integrity: sha512-2JFQWlcmrJnnq1HOcuOgz6mkh2HmgdIxnj7J+VAKtdm+1eJur1yJBkjVFth0SdXkMahfBBfRIQM8tRTBGj7t2A==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.0.0
@@ -16390,8 +16390,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16498,11 +16498,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16541,6 +16541,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -16674,11 +16675,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16717,7 +16718,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -16831,7 +16831,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16950,7 +16950,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -17125,7 +17125,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -24067,7 +24067,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  '@theguild/federation-composition@0.16.0-alpha-20250327145011-00366c9d9e0e2a8066253470651fff8f75f7d928(graphql@16.9.0)':
+  '@theguild/federation-composition@0.16.0(graphql@16.9.0)':
     dependencies:
       constant-case: 3.0.4
       debug: 4.3.4
