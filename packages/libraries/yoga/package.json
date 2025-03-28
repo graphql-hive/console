@@ -51,7 +51,7 @@
     "@graphql-yoga/plugin-persisted-operations": "^3.9.0"
   },
   "devDependencies": {
-    "@graphql-tools/schema": "10.0.16",
+    "@graphql-tools/schema": "10.0.23",
     "@graphql-yoga/plugin-defer-stream": "3.7.0",
     "@graphql-yoga/plugin-disable-introspection": "2.7.0",
     "@graphql-yoga/plugin-graphql-sse": "3.7.0",
