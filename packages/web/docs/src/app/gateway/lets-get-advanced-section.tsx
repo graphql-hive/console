@@ -15,6 +15,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
       <div className="nextra-scrollbar overflow-auto max-sm:-m-4 max-sm:p-4">
         <ul className="mt-6 flex gap-6 *:flex *:flex-col *:rounded-3xl max-sm:*:w-80 max-sm:*:shrink-0 sm:grid sm:grid-cols-2 md:mt-8 md:*:p-8 lg:mt-12 xl:mt-16 xl:grid-cols-4 [&>*>:last-child]:contents [&>*>h3]:mb-4">
           <InfoCard
+            as="li"
             icon={<ArrowRightWallIcon />}
             heading="GraphQL Subscriptions"
             // moved to the last place, because it's the shortest
@@ -33,7 +34,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
               Documentation
             </CallToAction>
           </InfoCard>
-          <InfoCard icon={<CogIcon />} heading="@defer and @stream Support">
+          <InfoCard as="li" icon={<CogIcon />} heading="@defer and @stream Support">
             Allows more efficient data loading patterns, improving user interface responsiveness and
             system performance.
             <div className="grow" />
@@ -45,7 +46,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
               Documentation
             </CallToAction>
           </InfoCard>
-          <InfoCard icon={<StackIcon />} heading="Request Batching">
+          <InfoCard as="li" icon={<StackIcon />} heading="Request Batching">
             Reduces network overhead by enabling multiple GraphQL operations in a single HTTP
             request, enhancing data retrieval efficiency.
             <div className="grow" />
@@ -57,7 +58,7 @@ export function LetsGetAdvancedSection({ className, ...rest }: React.HTMLAttribu
               Documentation
             </CallToAction>
           </InfoCard>
-          <InfoCard icon={<TargetIcon />} heading="Demand Control">
+          <InfoCard as="li" icon={<TargetIcon />} heading="Demand Control">
             Facilitates efficient management of API resources by setting limits on query complexity
             and execution depth, tailored for high-demand cloud environments.
             <div className="grow" />
