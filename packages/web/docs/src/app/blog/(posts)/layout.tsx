@@ -13,7 +13,7 @@ export default function BlogPostLayout({ children }: { children: React.ReactNode
       <div
         className={cn(
           MAIN_CONTENT,
-          'mx-auto flex *:!pl-2 sm:*:!ml-auto sm:*:!pl-0 [&>div>:first-child]:hidden [&_main>p:first-of-type]:text-2xl/8',
+          'mx-auto flex *:!pl-2 sm:*:!ml-auto sm:*:!pl-0 [&>div>:first-child]:hidden [&_main>p:first-of-type]:text-xl/6 md:[&_main>p:first-of-type]:text-2xl/8',
         )}
       >
         {children}
