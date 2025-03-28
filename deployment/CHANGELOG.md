@@ -1,5 +1,54 @@
 # hive
 
+## 6.1.0
+
+### Minor Changes
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add target breaking change setting to turn
+  dangerous changes into breaking changes
+
+- [#6658](https://github.com/graphql-hive/console/pull/6658)
+  [`e6a970f`](https://github.com/graphql-hive/console/commit/e6a970f790b388ff29f97709acdd73136a79dfb7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Adjust GraphQL schema according to schema design
+  policies.
+
+- [#6662](https://github.com/graphql-hive/console/pull/6662)
+  [`2b220a5`](https://github.com/graphql-hive/console/commit/2b220a560c4e4777a20ec0cf5f6ee68032055022)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support federation composition validation for
+  `IMPLEMENTED_BY_INACCESSIBLE`.
+
+- [#6614](https://github.com/graphql-hive/console/pull/6614)
+  [`c1d9c05`](https://github.com/graphql-hive/console/commit/c1d9c0568d5a4b4671aceb831883d348db5f9a55)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add new route `/graphql-public` to the `server`
+  service which contains the public GraphQL API (fields and types will follow).
+
+- [#6665](https://github.com/graphql-hive/console/pull/6665)
+  [`cb41478`](https://github.com/graphql-hive/console/commit/cb41478829e41695df686e47dd7673a9601d6008)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to `v0.16.0`.
+
+  - Support Apollo Federation `v2.7`, but without the progressive `@override`.
+  - Support Apollo Federation `v2.8`, but without the `@context` and `@fromContext` directives.
+  - Support Apollo Federation `v2.9`, including `@cost` and `@listSize` directives.
+
+### Patch Changes
+
+- [#6602](https://github.com/graphql-hive/console/pull/6602)
+  [`df3e5a2`](https://github.com/graphql-hive/console/commit/df3e5a23e5cd505d346a6d5719a4a7308aba208d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added directions for publishing on no schema
+  component
+
+- [#6660](https://github.com/graphql-hive/console/pull/6660)
+  [`5ff2aaa`](https://github.com/graphql-hive/console/commit/5ff2aaa624a6b9f6fe2a3633105ec7ce5ce188d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix schedule a meeting link
+
+- [#6632](https://github.com/graphql-hive/console/pull/6632)
+  [`9b2bec6`](https://github.com/graphql-hive/console/commit/9b2bec6185f939b378aa898215c56bb82119d0b6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Capture Stripe.js load error to avoid raising an
+  unhandled error
+
 ## 6.0.0
 
 ### Major Changes

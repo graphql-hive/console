@@ -1,5 +1,30 @@
 # @graphql-hive/cli
 
+## 0.50.0
+
+### Minor Changes
+
+- [#6658](https://github.com/graphql-hive/console/pull/6658)
+  [`e6a970f`](https://github.com/graphql-hive/console/commit/e6a970f790b388ff29f97709acdd73136a79dfb7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Internal adjustments for using non-deprecated API
+  fields.
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show dangerous changes as a separate list in
+  schema:check
+
+- [#6662](https://github.com/graphql-hive/console/pull/6662)
+  [`2b220a5`](https://github.com/graphql-hive/console/commit/2b220a560c4e4777a20ec0cf5f6ee68032055022)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support federation composition validation for
+  `IMPLEMENTED_BY_INACCESSIBLE`.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`5130fc1`](https://github.com/graphql-hive/console/commit/5130fc1db8c50ac0eb35d901623594749772c550)]:
+  - @graphql-hive/core@0.11.0
+
 ## 0.49.1
 
 ### Patch Changes
