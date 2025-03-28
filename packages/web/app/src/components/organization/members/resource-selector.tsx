@@ -66,10 +66,12 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
           latestValidSchemaVersion {
             id
             schemas {
-              nodes {
-                ... on CompositeSchema {
-                  id
-                  service
+              edges {
+                node {
+                  ... on CompositeSchema {
+                    id
+                    service
+                  }
                 }
               }
             }
@@ -421,8 +423,9 @@ export function ResourceSelector(props: {
     if (
       organizationProjectTarget.data.organization.project.target?.latestValidSchemaVersion?.schemas
     ) {
-      for (const schema of organizationProjectTarget.data.organization.project.target
-        .latestValidSchemaVersion.schemas.nodes) {
+      for (const edge of organizationProjectTarget.data.organization.project.target
+        .latestValidSchemaVersion.schemas.edges) {
+        const schema = edge.node;
         if (
           schema.__typename === 'CompositeSchema' &&
           schema.service &&
