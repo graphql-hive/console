@@ -77,6 +77,7 @@ const UserMenu_MeFragment = graphql(`
 
 const UserMenu_MemberFragment = graphql(`
   fragment UserMenu_MemberFragment on Member {
+    id
     canLeaveOrganization
   }
 `);
