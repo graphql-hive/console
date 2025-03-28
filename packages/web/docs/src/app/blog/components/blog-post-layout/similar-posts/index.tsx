@@ -1,6 +1,5 @@
-import { ArrowIcon, cn, GetYourAPIGameRightSection, Heading } from '@theguild/components';
+import { ArrowIcon, cn, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
-import { GetYourAPIGameRightList } from '../../../../../components/get-your-api-game-right-list';
 import { isBlogPost } from '../../../blog-types';
 import { SimilarPostsClient } from './client';
 
