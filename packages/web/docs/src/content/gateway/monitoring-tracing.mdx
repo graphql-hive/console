@@ -1804,7 +1804,7 @@ You can use `@graphql-mesh/plugin-statsd` plugin to collect and send metrics to 
 and InfluxDB's Telegraf StatsD services.
 
 ```sh npm2yarn
-npm i @graphql-mesh/plugin-statsd hot-shots
+npm i @graphql-mesh/plugin-statsd
 ```
 
 Compatible with:
@@ -1834,7 +1834,6 @@ Available metrics:
 <Tabs.Tab>
 
 ```ts filename="gateway.config.ts"
-import { StatsD } from 'hot-shots'
 import { defineConfig } from '@graphql-hive/gateway'
 import useStatsD from '@graphql-mesh/plugin-statsd'
 
@@ -1843,9 +1842,9 @@ export const gatewayConfig = defineConfig({
     useStatsD({
       ...pluginCtx,
       // Configure `hot-shots` if only you need. You don't need to pass this if you don't need to configure it.
-      client: new StatsD({
+      client: {
         port: 8020
-      }),
+      },
       // results in `my-graphql-gateway.operations.count` instead of `graphql.operations.count`
       prefix: 'my-graphql-gateway',
       // If you wish to disable introspection logging
