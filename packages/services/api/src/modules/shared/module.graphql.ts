@@ -21,9 +21,14 @@ export default gql`
 
   extend schema
     @link(url: "https://specs.apollo.dev/link/v1.0")
-    @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+    @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag", "@composeDirective"])
+    @link(url: "https://github.com/graphql/graphql-spec/pull/825/v0.1", import: ["@oneOf"])
+    @composeDirective(name: "@oneOf")
+
+  directive @oneOf on INPUT_OBJECT
 
   directive @link(url: String!, import: [String!]) repeatable on SCHEMA
+  directive @composeDirective(name: String!) repeatable on SCHEMA
 
   directive @tag(
     name: String!
