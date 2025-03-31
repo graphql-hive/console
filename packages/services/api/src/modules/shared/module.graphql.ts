@@ -21,7 +21,7 @@ export default gql`
 
   extend schema
     @link(url: "https://specs.apollo.dev/link/v1.0")
-    @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag", "@composeDirective"])
+    @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@tag", "@composeDirective"])
     @link(url: "https://github.com/graphql/graphql-spec/pull/825/v0.1", import: ["@oneOf"])
     @composeDirective(name: "@oneOf")
 
@@ -32,7 +32,7 @@ export default gql`
 
   directive @tag(
     name: String!
-  ) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION | SCHEMA
+  ) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
   type Query {
     _: Boolean @tag(name: "public")
