@@ -317,8 +317,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/services/storage
       '@theguild/federation-composition':
-        specifier: 0.16.0
-        version: 0.16.0(graphql@16.9.0)
+        specifier: 0.18.0
+        version: 0.18.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -445,8 +445,8 @@ importers:
         specifier: 4.2.13
         version: 4.2.13
       '@theguild/federation-composition':
-        specifier: 0.16.0
-        version: 0.16.0(graphql@16.9.0)
+        specifier: 0.18.0
+        version: 0.18.0(graphql@16.9.0)
       colors:
         specifier: 1.4.0
         version: 1.4.0
@@ -747,8 +747,8 @@ importers:
         specifier: 7.8.0
         version: 7.8.0
       '@theguild/federation-composition':
-        specifier: 0.16.0
-        version: 0.16.0(graphql@16.9.0)
+        specifier: 0.18.0
+        version: 0.18.0(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -1144,8 +1144,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@theguild/federation-composition':
-        specifier: 0.16.0
-        version: 0.16.0(graphql@16.9.0)
+        specifier: 0.18.0
+        version: 0.18.0(graphql@16.9.0)
       '@trpc/server':
         specifier: 10.45.2
         version: 10.45.2
@@ -3508,6 +3508,7 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
+    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -7536,8 +7537,8 @@ packages:
       eslint: ^8 || ^9
       typescript: ^5
 
-  '@theguild/federation-composition@0.16.0':
-    resolution: {integrity: sha512-2JFQWlcmrJnnq1HOcuOgz6mkh2HmgdIxnj7J+VAKtdm+1eJur1yJBkjVFth0SdXkMahfBBfRIQM8tRTBGj7t2A==}
+  '@theguild/federation-composition@0.18.0':
+    resolution: {integrity: sha512-nJY3nEhO2N1WrScQBVFLE7lG6qQgi8Pr/Ys8hjStwinFrxmCfZDGzkpNBO18DabnXrf0jkWYvdbJLV67B1Wt+Q==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.0.0
@@ -9365,15 +9366,6 @@ packages:
 
   debug@3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
-  debug@4.3.4:
-    resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
-    engines: {node: '>=6.0'}
     peerDependencies:
       supports-color: '*'
     peerDependenciesMeta:
@@ -12575,9 +12567,6 @@ packages:
 
   ms@2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
-
-  ms@2.1.2:
-    resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -24066,10 +24055,10 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  '@theguild/federation-composition@0.16.0(graphql@16.9.0)':
+  '@theguild/federation-composition@0.18.0(graphql@16.9.0)':
     dependencies:
       constant-case: 3.0.4
-      debug: 4.3.4
+      debug: 4.4.0(supports-color@8.1.1)
       graphql: 16.9.0
       json5: 2.2.3
       lodash.sortby: 4.7.0
@@ -26177,10 +26166,6 @@ snapshots:
       ms: 2.1.3
     optionalDependencies:
       supports-color: 8.1.1
-
-  debug@4.3.4:
-    dependencies:
-      ms: 2.1.2
 
   debug@4.3.7(supports-color@8.1.1):
     dependencies:
@@ -30332,8 +30317,6 @@ snapshots:
   mrmime@2.0.0: {}
 
   ms@2.0.0: {}
-
-  ms@2.1.2: {}
 
   ms@2.1.3: {}
 
