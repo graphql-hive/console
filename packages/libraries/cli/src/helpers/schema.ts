@@ -95,7 +95,7 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
   );
 
   const otherChanges = changes.edges.filter(
-    edge => !Object.keys(SeverityLevelType).includes(edge.node.severityLevel),
+    edge => !Object.values(SeverityLevelType).includes(edge.node.severityLevel),
   );
 
   if (breakingChanges.length) {
