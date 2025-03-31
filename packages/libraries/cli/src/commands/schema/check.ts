@@ -43,17 +43,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
         }
         changes {
           edges {
-            node {
-              message(withSafeBasedOnUsageNote: false)
-              criticality
-              isSafeBasedOnUsage
-              approval {
-                approvedBy {
-                  id
-                  displayName
-                }
-              }
-            }
+            __typename
           }
           ...RenderChanges_schemaChanges
         }
@@ -65,11 +55,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
         valid
         changes {
           edges {
-            node {
-              message(withSafeBasedOnUsageNote: false)
-              criticality
-              isSafeBasedOnUsage
-            }
+            __typename
           }
           ...RenderChanges_schemaChanges
         }
