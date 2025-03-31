@@ -24,6 +24,13 @@ export default {
   name: '2025.03.26T00-00-00.graphql-eslint.v4.ts',
   noTransaction: true,
   run: async ({ sql, connection }) => {
+    console.log('Preparing policy config table with a new column (config_v4)...');
+    await connection.query(
+      sql`ALTER TABLE
+            schema_policy_config
+          ADD COLUMN IF NOT EXISTS "config_v4" jsonb`,
+    );
+
     console.log('Looking for existing schema_policy_config objects...');
 
     const existingV3Configs = await connection.query(
@@ -50,7 +57,7 @@ export default {
           const v4Config = migrateConfig(jsonConfig);
 
           await connection.query(
-            sql`UPDATE schema_policy_config SET config = ${sql.json(v4Config)} WHERE resource_type = ${resourceType} AND resource_id = ${resourceId}`,
+            sql`UPDATE schema_policy_config SET config_v4 = ${sql.json(v4Config)} WHERE resource_type = ${resourceType} AND resource_id = ${resourceId}`,
           );
           console.log(`Migrated config for ${resourceType}:${resourceId}`);
         } else {

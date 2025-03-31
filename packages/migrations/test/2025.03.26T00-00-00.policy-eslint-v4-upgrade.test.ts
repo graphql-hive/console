@@ -246,10 +246,11 @@ await describe('migration: policy upgrade: graphql-eslint v3 -> v4', async () =>
         await runTo('2025.03.26T00-00-00.graphql-eslint.v4.ts');
 
         // assert scopes are still in place and identical
-        const newRecord = await db.oneFirst(sql`
-          SELECT config FROM schema_policy_config WHERE resource_id = ${organization.id}`);
+        const newRecord = await db.one(sql`
+          SELECT config, config_v4 FROM schema_policy_config WHERE resource_id = ${organization.id}`);
 
-        assert.deepStrictEqual(newRecord, testCase.out);
+        assert.deepStrictEqual(newRecord.config, testCase.in);
+        assert.deepStrictEqual(newRecord.config_v4, testCase.out);
 
         await complete();
       } finally {
