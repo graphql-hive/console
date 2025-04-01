@@ -341,7 +341,7 @@ export class CompositeModel {
       target: target.id,
       date: Date.now(),
       service_name: input.service || '',
-      service_url: input.url || '',
+      service_url: input.url || null,
       action: 'PUSH',
       metadata: input.metadata ?? null,
     };
@@ -349,6 +349,10 @@ export class CompositeModel {
     const latestVersion = latest;
     const schemaSwapResult = latestVersion ? swapServices(latestVersion.schemas, incoming) : null;
     const previousService = schemaSwapResult?.existing;
+
+    // default to previous service url if not provided.
+    incoming.service_url = incoming.service_url ?? previousService?.service_url ?? '';
+
     const schemas = schemaSwapResult?.schemas ?? [incoming];
     schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
     const compareToLatestComposable = shouldUseLatestComposableVersion(

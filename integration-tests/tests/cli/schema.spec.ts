@@ -385,6 +385,71 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         },
       );
 
+    test
+      .skipIf(projectType !== ProjectType.Federation)
+      .concurrent(
+        'can update a service without providing a url if previously published',
+        async ({ expect }) => {
+          const { createOrg } = await initSeed().createOwner();
+          const { inviteAndJoinMember, createProject } = await createOrg();
+          await inviteAndJoinMember();
+          const { createTargetAccessToken, compareToPreviousVersion, fetchVersions } =
+            await createProject(projectType);
+          const { secret } = await createTargetAccessToken({});
+          const cli = createCLI({
+            readonly: secret,
+            readwrite: secret,
+          });
+
+          const sdl = /* GraphQL */ `
+            type Query {
+              users: [User!]
+            }
+
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+            }
+          `;
+
+          await expect(
+            cli.publish({
+              sdl,
+              commit: 'push1',
+              serviceName,
+              serviceUrl,
+              expect: 'latest-composable',
+            }),
+          ).resolves.toMatchSnapshot('schema publish initial');
+
+          await expect(
+            cli.publish({
+              sdl,
+              commit: 'push2',
+              serviceName,
+              expect: 'ignored',
+            }),
+          ).resolves.toMatchSnapshot('schema publish same url');
+
+          const versions = await fetchVersions(3);
+          expect(versions).toHaveLength(1);
+
+          const versionWithNewServiceUrl = versions[0];
+
+          expect(await compareToPreviousVersion(versionWithNewServiceUrl.id)).toEqual(
+            expect.objectContaining({
+              target: expect.objectContaining({
+                schemaVersion: expect.objectContaining({
+                  safeSchemaChanges: null,
+                  schemaCompositionErrors: null,
+                }),
+              }),
+            }),
+          );
+        },
+      );
+
     test.concurrent(
       'schema:fetch can fetch a schema with target:registry:read access',
       async ({ expect }) => {
