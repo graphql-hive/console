@@ -149,7 +149,7 @@ function Input({ error, ...props }: InputProps) {
     <input
       {...props}
       className={cn(
-        'hover:placeholder:text-green-1000/60 w-full rounded-lg border border-blue-400 bg-white py-3 indent-4 font-medium placeholder:text-green-800 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)] autofill:first-line:font-sans focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-800/40 focus-visible:ring-0',
+        'hover:placeholder:text-green-1000/60 w-full rounded-lg border border-blue-400 bg-white py-3 indent-4 font-medium placeholder:text-green-800 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)] autofill:[-webkit-text-fill-color:theme(colors.green.1000)] autofill:first-line:font-sans focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-800/40 focus-visible:ring-0',
         props.className,
         error && 'border-critical-dark/20 !outline-critical-dark',
       )}
