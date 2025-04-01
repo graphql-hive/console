@@ -375,9 +375,18 @@ export default gql`
   }
 
   enum CriticalityLevel {
-    Breaking @deprecated(reason: "Use 'SeverityLevelType' instead.")
-    Dangerous @deprecated(reason: "Use 'SeverityLevelType' instead.")
-    Safe @deprecated(reason: "Use 'SeverityLevelType' instead.")
+    Breaking
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
+    Dangerous
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
+    Safe
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
   }
 
   """
@@ -403,8 +412,14 @@ export default gql`
   Describes a schema change for either a schema version (\`SchemaVersion\`) or schema check (\`SchemaCheck\`).
   """
   type SchemaChange {
-    criticality: CriticalityLevel! @deprecated(reason: "Use 'SchemaChange.severityLevel' instead.")
-    criticalityReason: String @deprecated(reason: "Use 'SchemaChange.severityReason' instead.")
+    criticality: CriticalityLevel!
+      @deprecated(
+        reason: "Use 'SchemaChange.severityLevel' instead. This field will be removed once it is no longer in use by a client."
+      )
+    criticalityReason: String
+      @deprecated(
+        reason: "Use 'SchemaChange.severityReason' instead. This field will be removed once it is no longer in use by a client."
+      )
     """
     The severity level of this schema change.
     Note: A schema change with the impact \`SeverityLevelType.BREAKING\` can still be safe based on the usage (\`SchemaChange.isSafeBasedOnUsage\`).
