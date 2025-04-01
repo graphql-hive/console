@@ -34,7 +34,6 @@ import {
   applyTagFilterOnSubgraphs,
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
-  Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
 import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
 import { SetMap } from './lib/setmap';
