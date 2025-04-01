@@ -98,7 +98,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
               children: 'Case Studies',
             },
             {
-              href: 'https://the-guild.dev/graphql/hive/blog',
+              href: '/blog',
               icon: <PencilIcon />,
               children: 'Blog',
             },
