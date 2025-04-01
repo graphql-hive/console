@@ -25,8 +25,8 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
       <form className="relative z-10 p-6">
         {/* todo: add this to theguild/components */}
         <input
-          placeholder="Email"
-          className="hive-focus w-full rounded-lg border-blue-400 bg-white py-3 indent-4 font-medium"
+          placeholder="E-mail"
+          className="hive-focus hover:placeholder:text-green-1000/60 w-full rounded-lg border border-blue-400 bg-white py-3 indent-4 font-medium placeholder:text-green-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-800/40 focus-visible:ring-0"
         />
         <CallToAction type="submit" variant="secondary-inverted" className="mt-2 !w-full">
           Subscribe
