@@ -385,7 +385,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         },
       );
 
-      test
+    test
       .skipIf(projectType !== ProjectType.Federation)
       .concurrent(
         'can update a service without providing a url if previously published',
