@@ -69,6 +69,7 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
 
             if (e instanceof Error && e.message !== 'Failed to fetch') {
               setState({ status: 'error', message: e.message });
+              return;
             }
 
             setState({ status: 'error', message: 'Something went wrong. Please let us know.' });
