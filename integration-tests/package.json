@@ -21,7 +21,7 @@
     "@hive/schema": "workspace:*",
     "@hive/server": "workspace:*",
     "@hive/storage": "workspace:*",
-    "@theguild/federation-composition": "0.18.0",
+    "@theguild/federation-composition": "0.18.1",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@types/async-retry": "1.4.8",
