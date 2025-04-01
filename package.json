@@ -137,7 +137,8 @@
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
       "nextra": "patches/nextra.patch",
-      "nextra-theme-docs": "patches/nextra-theme-docs.patch"
+      "nextra-theme-docs": "patches/nextra-theme-docs.patch",
+      "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch"
     }
   }
 }
