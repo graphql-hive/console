@@ -76,6 +76,24 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`FEDERATION > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`FEDERATION > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+
+exports[`FEDERATION > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`FEDERATION > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
@@ -337,6 +355,24 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`SINGLE > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`SINGLE > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+
+exports[`SINGLE > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`SINGLE > check validates the service name > onlyNumbers 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
@@ -580,6 +616,24 @@ http://__URL__
 `;
 
 exports[`STITCHING > can publish and check a schema with target:registry:read access > schemaPublish 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`STITCHING > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`STITCHING > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+
+exports[`STITCHING > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
 stdout--------------------------------------------:
