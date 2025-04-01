@@ -74,7 +74,7 @@ export function publishAppDeployment(args: {
           `docker run --rm --name "publish-app-deployment-${args.appName}"` +
           ` ${dockerImage}` +
           ` app:publish` +
-          ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target} --service graphql --url https://api.graphql-hive.com/graphql` +
+          ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target}` +
           ` --name ${args.appName} --version ${args.version.commit}`,
       ),
     },
