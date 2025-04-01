@@ -3,6 +3,15 @@ import type { SupportTicketResolvers } from './../../../__generated__/types';
 
 export const SupportTicket: SupportTicketResolvers = {
   comments: async (ticket, _args, { injector }) => {
+    return {
+      edges: [],
+      pageInfo: {
+        endCursor: '',
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: '',
+      },
+    };
     const response = await injector.get(SupportManager).getTicketComments(ticket.id);
 
     return {

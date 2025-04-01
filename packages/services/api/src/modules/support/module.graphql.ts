@@ -30,6 +30,9 @@ export default gql`
 
   input SupportTicketCreateInput {
     organizationSlug: String!
+    project: String
+    target: String
+    category: SupportCategory!
     subject: String!
     description: String!
     priority: SupportTicketPriority!
@@ -71,6 +74,9 @@ export default gql`
     id: ID!
     status: SupportTicketStatus!
     priority: SupportTicketPriority!
+    category: SupportCategory!
+    project: String
+    target: String
     createdAt: DateTime!
     updatedAt: DateTime!
     subject: String!
@@ -93,6 +99,13 @@ export default gql`
     createdAt: DateTime!
     body: String!
     fromSupport: Boolean!
+  }
+
+  enum SupportCategory {
+    TECHNICAL_ISSUE
+    BILLING
+    COMPLIANCE
+    OTHER
   }
 
   enum SupportTicketPriority {
