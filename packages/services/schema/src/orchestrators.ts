@@ -31,7 +31,7 @@ import {
 } from './lib/compose';
 import { CompositionErrorSource, errorWithSource, toValidationError } from './lib/errors';
 import {
-  applyTagFilterToInaccessibleTransformOnSubgraphSchema,
+  applyTagFilterOnSubgraphs,
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
   Federation2SubgraphDocumentNodeByTagsFilter,
@@ -348,20 +348,9 @@ const createFederation: (
       const contractResults = await Promise.all(
         contracts.map(async contract => {
           // apply contracts to replace tags with inaccessible directives
-          const filteredSubgraphs = subgraphs.map(subgraph => {
-            const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
-              include: new Set(contract.filter.include),
-              exclude: new Set(contract.filter.exclude),
-            };
-            const filteredSubgraph = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
-              subgraph.typeDefs,
-              filter,
-            );
-            return {
-              // @note Although it can differ from the supergraph's, ignore metadata on contracts.
-              ...subgraph,
-              typeDefs: filteredSubgraph.typeDefs,
-            };
+          const filteredSubgraphs = applyTagFilterOnSubgraphs(subgraphs, {
+            include: new Set(contract.filter.include),
+            exclude: new Set(contract.filter.exclude),
           });
 
           // attempt to compose the contract filtered subgraph
