@@ -42,6 +42,10 @@ export default gql`
     _: Boolean @tag(name: "public")
   }
 
+  type Subscription {
+    _: Boolean @tag(name: "public")
+  }
+
   type PageInfo {
     hasNextPage: Boolean! @tag(name: "public")
     hasPreviousPage: Boolean! @tag(name: "public")
