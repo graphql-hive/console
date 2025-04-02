@@ -5,6 +5,7 @@ import * as GraphQLSchema from 'testkit/gql/graphql';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
+import type { CompositeSchema } from '@hive/api/__generated__/types';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
@@ -423,25 +424,45 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
             }),
           ).resolves.toMatchSnapshot('schema publish initial');
 
+          const sdl2 = /* GraphQL */ `
+          type Query {
+            users: [User!]
+          }
+
+          type User {
+            id: ID!
+            name: String!
+            email: String!
+            phone: String
+          }
+        `;
+
           await expect(
             cli.publish({
-              sdl,
+              sdl: sdl2,
               commit: 'push2',
               serviceName,
-              expect: 'ignored',
+              serviceUrl: undefined,
+              expect: 'latest-composable',
             }),
           ).resolves.toMatchSnapshot('schema publish same url');
 
           const versions = await fetchVersions(3);
-          expect(versions).toHaveLength(1);
+          expect(versions).toHaveLength(2);
 
           const versionWithNewServiceUrl = versions[0];
+
+          const schema = versionWithNewServiceUrl.schemas.nodes?.[0];
+          expect(schema.__typename).toBe('CompositeSchema');
+          expect((schema as CompositeSchema).url).toBe('http://localhost:4000');
 
           expect(await compareToPreviousVersion(versionWithNewServiceUrl.id)).toEqual(
             expect.objectContaining({
               target: expect.objectContaining({
                 schemaVersion: expect.objectContaining({
-                  safeSchemaChanges: null,
+                  safeSchemaChanges: {
+                    nodes: expect.anything(),
+                  },
                   schemaCompositionErrors: null,
                 }),
               }),
