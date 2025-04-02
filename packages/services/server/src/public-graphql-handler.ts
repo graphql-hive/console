@@ -26,12 +26,21 @@ type CreatePublicGraphQLHandlerArgs = {
   tracing?: TracingInstance;
 };
 
+const defaultQuery = `#
+# Welcome to the Hive Console GraphQL API.
+#
+`;
+
 export const createPublicGraphQLHandler = (
   args: CreatePublicGraphQLHandlerArgs,
 ): RouteHandlerMethod => {
   const publicSchema = createPublicGraphQLSchema<Context>(args.registry);
   const server = createYoga<Context>({
     logging: args.logger,
+    graphiql: {
+      title: 'Hive Console - GraphQL API',
+      defaultQuery,
+    },
     plugins: [
       useArmor(),
       useHiveSentry(),

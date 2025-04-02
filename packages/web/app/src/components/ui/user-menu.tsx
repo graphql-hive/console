@@ -186,7 +186,7 @@ export function UserMenu(props: {
               </DropdownMenuSub>
               <DropdownMenuItem asChild>
                 <a
-                  href="https://cal.com/team/the-guild/graphql-hive-15m"
+                  href="https://cal.com/team/the-guild/hive?duration=15"
                   target="_blank"
                   rel="noreferrer"
                 >

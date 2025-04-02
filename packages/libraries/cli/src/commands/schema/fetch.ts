@@ -30,20 +30,21 @@ const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
       sdl @include(if: $includeSDL)
       supergraph @include(if: $includeSupergraph)
       schemas @include(if: $includeSubgraphs) {
-        nodes {
-          __typename
-          ... on SingleSchema {
-            id
-            date
-          }
-          ... on CompositeSchema {
-            id
-            date
-            url
-            service
+        edges {
+          node {
+            __typename
+            ... on SingleSchema {
+              id
+              date
+            }
+            ... on CompositeSchema {
+              id
+              date
+              url
+              service
+            }
           }
         }
-        total
       }
     }
   }
@@ -62,20 +63,21 @@ const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
       sdl @include(if: $includeSDL)
       supergraph @include(if: $includeSupergraph)
       schemas @include(if: $includeSubgraphs) {
-        nodes {
-          __typename
-          ... on SingleSchema {
-            id
-            date
-          }
-          ... on CompositeSchema {
-            id
-            date
-            url
-            service
+        edges {
+          node {
+            __typename
+            ... on SingleSchema {
+              id
+              date
+            }
+            ... on CompositeSchema {
+              id
+              date
+              url
+              service
+            }
           }
         }
-        total
       }
     }
   }
@@ -217,17 +219,15 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }
 
     if (schemaVersion.schemas) {
-      const { total, nodes } = schemaVersion.schemas;
       const tableData = [
         ['service', 'url', 'date'],
-        ...nodes.map(node => [
-          /** @ts-expect-error: If service is undefined then use id. */
-          node.service ?? node.id,
-          node.__typename === 'CompositeSchema' ? node.url : 'n/a',
-          node.date as string,
+        ...schemaVersion.schemas.edges.map(edge => [
+          'service' in edge.node && edge.node.service != null ? edge.node.service : edge.node.id,
+          'url' in edge.node && edge.node.url != null ? edge.node.url : 'n/a',
+          edge.node.date as string,
         ]),
       ];
-      const stats = `subgraphs length: ${total}`;
+      const stats = `subgraphs length: ${schemaVersion.schemas.edges.length}`;
       const printed = `${Texture.table(tableData)}\n\r${stats}`;
 
       if (flags.write) {

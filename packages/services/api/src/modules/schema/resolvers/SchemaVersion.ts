@@ -75,6 +75,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
   safeSchemaChanges: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSafeSchemaChanges(version);
   },
+  schemaChanges: async (version, _, { injector }) => {
+    return injector.get(SchemaVersionHelper).getAllSchemaChanges(version);
+  },
   supergraph: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSupergraphSdl(version);
   },
@@ -191,6 +194,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return injector.get(SchemaManager).getGitHubMetadata(version);
   },
   valid: (version, _, { injector }) => {
+    return injector.get(SchemaVersionHelper).getIsValid(version);
+  },
+  isValid: (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getIsValid(version);
   },
   previousDiffableSchemaVersion: (version, _, { injector }) => {

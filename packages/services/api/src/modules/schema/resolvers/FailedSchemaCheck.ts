@@ -46,4 +46,7 @@ export const FailedSchemaCheck: FailedSchemaCheckResolvers = {
   conditionalBreakingChangeMetadata: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getConditionalBreakingChangeMetadata(schemaCheck);
   },
+  schemaChanges: (schemaCheck, _, { injector }) => {
+    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
+  },
 };

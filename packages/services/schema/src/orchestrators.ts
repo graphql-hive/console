@@ -14,11 +14,11 @@ import {
   visit,
 } from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import type { ServiceLogger } from '@hive/service-common';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 import type { ContractsInputType } from './api';
 import type { Cache } from './cache';
 import { addInaccessibleToUnreachableTypes } from './lib/add-inaccessible-to-unreachable-types';
@@ -31,10 +31,9 @@ import {
 } from './lib/compose';
 import { CompositionErrorSource, errorWithSource, toValidationError } from './lib/errors';
 import {
-  applyTagFilterToInaccessibleTransformOnSubgraphSchema,
+  applyTagFilterOnSubgraphs,
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
-  Federation2SubgraphDocumentNodeByTagsFilter,
 } from './lib/federation-tag-extraction';
 import { extractMetadata, mergeMetadata } from './lib/metadata-extraction';
 import { SetMap } from './lib/setmap';
@@ -348,20 +347,9 @@ const createFederation: (
       const contractResults = await Promise.all(
         contracts.map(async contract => {
           // apply contracts to replace tags with inaccessible directives
-          const filteredSubgraphs = subgraphs.map(subgraph => {
-            const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
-              include: new Set(contract.filter.include),
-              exclude: new Set(contract.filter.exclude),
-            };
-            const filteredSubgraph = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
-              subgraph.typeDefs,
-              filter,
-            );
-            return {
-              // @note Although it can differ from the supergraph's, ignore metadata on contracts.
-              ...subgraph,
-              typeDefs: filteredSubgraph.typeDefs,
-            };
+          const filteredSubgraphs = applyTagFilterOnSubgraphs(subgraphs, {
+            include: new Set(contract.filter.include),
+            exclude: new Set(contract.filter.exclude),
           });
 
           // attempt to compose the contract filtered subgraph

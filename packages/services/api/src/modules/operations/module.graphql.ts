@@ -52,8 +52,8 @@ export default gql`
   }
 
   type DateRange {
-    from: DateTime!
-    to: DateTime!
+    from: DateTime! @tag(name: "public")
+    to: DateTime! @tag(name: "public")
   }
 
   input FieldStatsInput {

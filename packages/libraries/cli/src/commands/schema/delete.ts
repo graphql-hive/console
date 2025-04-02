@@ -20,26 +20,21 @@ const schemaDeleteMutation = graphql(/* GraphQL */ `
       ... on SchemaDeleteSuccess {
         valid
         changes {
-          nodes {
-            criticality
-            message
+          edges {
+            node {
+              criticality
+              message
+            }
           }
-          total
         }
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
       }
       ... on SchemaDeleteError {
         valid
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
       }
     }

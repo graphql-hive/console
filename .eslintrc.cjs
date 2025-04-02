@@ -231,6 +231,7 @@ module.exports = {
             'nextra-scrollbar',
             'no-scrollbar', // from Nextra
             'hive-slider',
+            'hive-prose',
             'subheader',
           ],
           config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),

@@ -1,0 +1,125 @@
+---
+title: Introducing GraphQL-ESLint!
+authors: dotan
+tags: [graphql, graphql-eslint, eslint]
+date: 2020-10-03
+description:
+  A new tool by The Guild, for making your GraphQL schema and GraphQL operations more standard and
+  robust!
+---
+
+**We are super excited to introduce a new development tool by The Guild!**
+
+While working on very large codebases (hundreds of developers on a single codebase), we've noticed a
+gap in the current state-of-the-art development flow for GraphQL developers: it's very hard to
+maintain standards in GraphQL schemas and GraphQL operations.
+
+Those could be standards that are specific for a single codebase or shared in the community. As the
+GraphQL ecosystem is growing quickly, we decided it's important to create a modern integration
+between GraphQL and ESLint, that supports all the modern needs of a GraphQL developer:
+[`graphql-eslint`](https://github.com/dimaMachina/graphql-eslint).
+
+> Special thanks to [ilyavolodin](https://github.com/ilyavolodin) for his work on a similar project.
+> We've joined forces to bring a new exiting tool for you!
+
+## TL;DR
+
+```
+yarn add -D @graphql-eslint/eslint-plugin
+```
+
+- [`graphql-eslint` in GitHub](https://github.com/dimaMachina/graphql-eslint)
+- [List of available rules](https://the-guild.dev/graphql/eslint/rules) (and
+  [planned rules](https://github.com/dimaMachina/graphql-eslint/issues?q=is%3Aissue+is%3Aopen+label%3Anew-rule))
+
+* 🚀 Validates, lints, prettifies and checks for best practices across GraphQL schema and GraphQL
+  operations.
+* 🚀 Integrates with ESLint core (as a ESTree parser).
+* 🚀 Works on `.graphql` files, `gql` usages in code files, and `/* GraphQL */` magic comments.
+* 🚀 Lints both GraphQL schema and GraphQL operations.
+* 🚀 Extended type-info for more advanced use-cases and sophisticated validations
+* 🚀 Supports ESLint directives (for example: `# disable-next-line`)
+* 🚀 Easily extendable - supports custom rules based on GraphQL's AST and ESLint API.
+* 🚀 Integrates with `graphql-config`
+* 🚀 Integrates and visualizes lint issues in popular IDEs (VSCode / WebStorm)
+
+## What It Does?
+
+With `graphql-eslint` you can easily validate and lint your GraphQL schema and your GraphQL
+operations, enforce coding-style, best practices, and avoid runtime issues.
+
+![GraphQL-ESLint](./1.png 'GraphQL ESLint in action')
+
+It can run as a syntax validation tool (without a GraphQL schema), or as a complete validation
+solution for your GraphQL operations (with a schema loaded into it).
+
+`graphql-eslint` works on your `.graphql` files, but also on your code-files that uses `gql`
+(graphql template literal tag) or `/* GraphQL */` magic comments.
+
+It is fully integrated with VSCode for visualizing the reported issues, and allows you to customize
+the rules, and easily add new custom ones.
+
+## How Does It Work?
+
+This package acts as a ESLint parser, and a plugin with rules.
+
+The parser we wrote transforms the [GraphQL AST](https://graphql.org/graphql-js/language) into
+[ESTree structure](https://github.com/estree/estree), so it allows you to travel the GraphQL AST
+tree easily.
+
+If you wish to read more about
+[how it works, please refer to the docs' directory in the repo](https://github.com/dimaMachina/graphql-eslint/blob/master/docs/README.md).
+
+## Writing Your Own Rules
+
+Since it's running as a real ESLint parser,
+[you can easily customize it and write your own rules](https://github.com/dimaMachina/graphql-eslint/blob/master/docs/custom-rules.md),
+based on your project's needs and preferences.
+
+If you are familiar with the GraphQL AST structure, you can write custom rules very quickly, since
+our solution comes with a wrapper that makes it easier to write and test new rules, and have full
+TypeScript support.
+
+Need a new custom rule? Just create a file in your project, and travel the AST to make sure it
+matches your needs.
+
+Think that rule might be valuable for others?
+[Create a PR!](https://github.com/dimaMachina/graphql-eslint#contributing)
+
+```ts
+import { GraphQLESLintRule } from '@graphql-eslint/eslint-plugin'
+
+const rule: GraphQLESLintRule = {
+  create(context) {
+    return {
+      OperationDefinition(node) {
+        if (!node.name || node.name.value === '') {
+          context.report({
+            node: node,
+            message: `Oops, name is required on GraphQL operations!`
+          })
+        }
+      }
+    }
+  }
+}
+```
+
+## Compared to Similar Tools
+
+There are other solutions that offer GraphQL linting. We decided to write a modern library that fits
+our clients' needs, integrates with IDEs and is easily customizable by anyone.
+
+- `apollographql/eslint-plugin-graphql` - offers a similar solution, but is designed in a different
+  architecture and unfortunately, it's not customizable and extendable, and doesn't work on some
+  modern solution.
+- `cjoudrey/graphql-schema-linter` - works as a standalone tool (without ESLint) and offers rules
+  for linting GraphQL schemas only.
+
+## Summary
+
+We hope GraphQL-ESLint becomes a central place for the community to collaborate on best practices
+and bring them into your team in an automated and easy way.
+
+We already use it in companies like Microsoft on a very large codebases, and it helped us share our
+practices across thousands of developers!

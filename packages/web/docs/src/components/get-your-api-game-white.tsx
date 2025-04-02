@@ -30,7 +30,7 @@ export function GetYourAPIGameWhite(props: React.HTMLAttributes<HTMLDivElement>)
         </div>
       </div>
       <DecorationIsolation>
-        <ArchDecoration className="top-6" />
+        <ArchDecoration className="top-6 max-sm:hidden" />
         <ArchDecoration className="right-0 top-6 rotate-180" />
         <GradientDefs />
       </DecorationIsolation>

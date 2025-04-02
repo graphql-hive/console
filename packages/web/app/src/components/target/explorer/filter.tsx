@@ -50,7 +50,7 @@ const TypeFilter_AllTypes = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
+        isValid
         explorer(usage: { period: $period }) {
           types {
             __typename
