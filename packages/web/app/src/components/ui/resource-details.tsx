@@ -11,10 +11,10 @@ export function ResourceDetails(props: { id: string }): ReactElement {
         Resource ID
       </div>
       <InputCopy value={props.id} className="rounded-l-none" />
-      <TooltipProvider>
+      <TooltipProvider delayDuration={0}>
         <Tooltip>
           <TooltipTrigger>
-            <InfoCircledIcon className="ml-2 size-4" />
+            <InfoCircledIcon className="ml-2 size-4 cursor-default" />
           </TooltipTrigger>
           <TooltipContent className="max-w-sm text-pretty">
             This UUID can be used in API calls or CLI commands to Hive instead of passing the full
