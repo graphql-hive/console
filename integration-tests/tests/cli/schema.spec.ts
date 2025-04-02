@@ -2,10 +2,10 @@
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
+import type { CompositeSchema } from '@hive/api/__generated__/types';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
-import type { CompositeSchema } from '@hive/api/__generated__/types';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
@@ -425,17 +425,17 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
           ).resolves.toMatchSnapshot('schema publish initial');
 
           const sdl2 = /* GraphQL */ `
-          type Query {
-            users: [User!]
-          }
+            type Query {
+              users: [User!]
+            }
 
-          type User {
-            id: ID!
-            name: String!
-            email: String!
-            phone: String
-          }
-        `;
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+              phone: String
+            }
+          `;
 
           await expect(
             cli.publish({
