@@ -1,0 +1,26 @@
+diff --git a/cjs/validate/query-depth.js b/cjs/validate/query-depth.js
+index 6f4de1dc84d9214d8339195b6464013b039f7306..49da24e676859ccf8353616314bf0d84e93217c6 100644
+--- a/cjs/validate/query-depth.js
++++ b/cjs/validate/query-depth.js
+@@ -43,7 +43,7 @@ function calculateDepth({ node, currentDepth, maxDepth, getFragment, }) {
+             return Math.max(...node.selections.map(selection => {
+                 return calculateDepth({
+                     node: selection,
+-                    currentDepth,
++                    currentDepth: currentDepth + 1,
+                     maxDepth,
+                     getFragment,
+                 });
+diff --git a/esm/validate/query-depth.js b/esm/validate/query-depth.js
+index fea5ae72f925401ce1cd4c487ebd2ba3d0b9a8a9..1bc01a1c201725ada3e729922cb9635ba3bbb292 100644
+--- a/esm/validate/query-depth.js
++++ b/esm/validate/query-depth.js
+@@ -39,7 +39,7 @@ export function calculateDepth({ node, currentDepth, maxDepth, getFragment, }) {
+             return Math.max(...node.selections.map(selection => {
+                 return calculateDepth({
+                     node: selection,
+-                    currentDepth,
++                    currentDepth: currentDepth + 1,
+                     maxDepth,
+                     getFragment,
+                 });
