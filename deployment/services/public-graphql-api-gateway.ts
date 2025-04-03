@@ -40,7 +40,7 @@ export function deployPublicGraphQLAPIGateway(args: {
   const supergraphEndpoint = cdnEndpoint + '/contracts/public';
 
   // Note: The persisted documents access key is also valid for reading the supergraph
-  const persistedDocumentsSecret = new ServiceSecret('persisted-documents', {
+  const publicGraphQLAPISecret = new ServiceSecret('public-graphql-api-secret', {
     cdnAccessKeyId: apiConfig.requireSecret('hivePersistedDocumentsCdnAccessKeyId'),
   });
 
@@ -83,7 +83,7 @@ export function deployPublicGraphQLAPIGateway(args: {
     },
     [args.graphql.deployment],
   )
-    .withSecret('HIVE_CDN_ACCESS_TOKEN', persistedDocumentsSecret, 'cdnAccessKeyId')
+    .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
     .deploy();
 }
 
