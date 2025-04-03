@@ -17,6 +17,7 @@ import { deployObservability } from './services/observability';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
+import { deployPublicGraphQLAPIGateway } from './services/public-graphql-api-gateway';
 import { deployRedis } from './services/redis';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
@@ -285,12 +286,19 @@ const app = deployApp({
   sentry,
 });
 
+const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
+  environment,
+  graphql,
+  docker,
+});
+
 const proxy = deployProxy({
   observability,
   app,
   graphql,
   usage,
   environment,
+  publicGraphQLAPIGateway,
 });
 
 deployCloudFlareSecurityTransform({
