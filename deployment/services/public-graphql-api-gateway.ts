@@ -83,6 +83,15 @@ export function deployPublicGraphQLAPIGateway(args: {
           readOnly: true,
         },
       ],
+      readinessProbe: '/readiness',
+      livenessProbe: '/healthcheck',
+      startupProbe: {
+        endpoint: '/healthcheck',
+        initialDelaySeconds: 60,
+        failureThreshold: 10,
+        periodSeconds: 15,
+        timeoutSeconds: 15,
+      },
     },
     [args.graphql.deployment, args.graphql.service],
   )
