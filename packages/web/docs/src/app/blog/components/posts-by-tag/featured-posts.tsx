@@ -20,7 +20,7 @@ export function FeaturedPosts({
   return (
     <ul
       className={cn(
-        'grid grid-cols-1 gap-4 sm:grid sm:grid-cols-2 sm:gap-6 lg:grid-cols-3',
+        'mt-6 flex items-stretch gap-4 *:flex-1 max-md:flex-col sm:gap-6 lg:mt-16',
         className,
       )}
     >

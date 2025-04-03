@@ -1910,6 +1910,17 @@ export class SchemaPublisher {
 
     this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
 
+    const serviceName = input.service;
+    let serviceUrl = input.url;
+
+    if (
+      (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
+      serviceUrl == null &&
+      pushedSchema.kind === 'composite'
+    ) {
+      serviceUrl = pushedSchema.service_url;
+    }
+
     const schemaVersion = await this.schemaManager.createVersion({
       valid: composable,
       organizationId: organizationId,
@@ -1917,10 +1928,10 @@ export class SchemaPublisher {
       targetId: target.id,
       commit: input.commit,
       logIds: schemaLogIds,
-      service: input.service,
       schema: input.sdl,
       author: input.author,
-      url: input.url,
+      service: serviceName,
+      url: serviceUrl,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       projectType: project.type,

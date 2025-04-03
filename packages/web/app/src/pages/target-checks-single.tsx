@@ -26,7 +26,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { CriticalityLevel, ProjectType } from '@/gql/graphql';
+import { ProjectType, SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import {
   CheckIcon,
@@ -505,7 +505,7 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  criticality={CriticalityLevel.Breaking}
+                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={schemaCheck.breakingSchemaChanges.edges.map(edge => edge.node)}
                   conditionBreakingChangeMetadata={schemaCheck.conditionalBreakingChangeMetadata}
                 />
@@ -519,7 +519,7 @@ function DefaultSchemaView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
+                  severityLevel={SeverityLevelType.Safe}
                   changes={schemaCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
@@ -704,7 +704,7 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title={<BreakingChangesTitle />}
-                  criticality={CriticalityLevel.Breaking}
+                  severityLevel={SeverityLevelType.Breaking}
                   changesWithUsage={contractCheck.breakingSchemaChanges.edges.map(
                     edge => edge.node,
                   )}
@@ -720,7 +720,7 @@ function ContractCheckView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId={schemaCheck.id}
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
+                  severityLevel={SeverityLevelType.Safe}
                   changes={contractCheck.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
