@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as k8s from '@pulumi/kubernetes';
+import * as kx from '@pulumi/kubernetesx';
 import * as pulumi from '@pulumi/pulumi';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
@@ -21,6 +21,8 @@ const gatewayConfigDirectory = path.resolve(
   'public-graphql-api-gateway',
 );
 const gatewayConfigPath = path.join(gatewayConfigDirectory, 'gateway.config.ts');
+// On global scope to fail early in case of a read error
+const gwConfigFile = fs.readFileSync(gatewayConfigPath, 'utf-8');
 
 export function deployPublicGraphQLAPIGateway(args: {
   environment: Environment;
@@ -44,9 +46,9 @@ export function deployPublicGraphQLAPIGateway(args: {
     cdnAccessKeyId: apiConfig.requireSecret('hivePersistedDocumentsCdnAccessKeyId'),
   });
 
-  const configMap = new k8s.core.v1.ConfigMap('public-graphql-api-gateway-config', {
+  const configMap = new kx.ConfigMap('public-graphql-api-gateway-config', {
     data: {
-      'gateway.config.ts': fs.readFileSync(gatewayConfigPath, 'utf-8'),
+      'gateway.config.ts': gwConfigFile,
     },
   });
 
