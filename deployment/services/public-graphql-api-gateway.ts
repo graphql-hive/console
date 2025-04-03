@@ -77,7 +77,7 @@ export function deployPublicGraphQLAPIGateway(args: {
       ],
       volumeMounts: [
         {
-          mountPath: '/gateway/gateway.config.ts',
+          mountPath: '/gateway/',
           name: 'gateway-config',
           readOnly: true,
         },
