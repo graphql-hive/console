@@ -2,6 +2,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SelectValue } from '@radix-ui/react-select';
 import { Link, useRouter } from '@tanstack/react-router';
+import { SetStateAction } from 'react';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -22,15 +23,23 @@ export function ProjectSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
   organizations: FragmentType<typeof ProjectSelector_OrganizationConnectionFragment> | null;
-  onValueChange?: Function;
+  onValueChange?: (id: string) => void;
   optional?: boolean;
   showOrganization?: boolean;
 }) {
   const optional = typeof props.optional !== 'undefined' ? props.optional : false;
   const showOrganization =
     typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
-  const onValueChangeFunc =
-    typeof props.onValueChange !== undefined ? props.onValueChange : undefined;
+  const onValueChangeFunc: (id: string) => void =
+    typeof props.onValueChange !== 'undefined' ? props.onValueChange : (id: string) => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug',
+        params: {
+          organizationSlug: props.currentOrganizationSlug,
+          projectSlug: id,
+        },
+      })
+    };
   const router = useRouter();
 
   const organizations = useFragment(
@@ -65,29 +74,14 @@ export function ProjectSelector(props: {
 
       {(projects?.length && currentProject) || optional ? (
         <>
-          {showOrganization ? <div className="italic text-gray-500">/</div> : <></>}
+          {showOrganization ? <div className="italic text-gray-500">/</div> : null}
           <Select
             value={props.currentProjectSlug}
-            onValueChange={
-              onValueChangeFunc
-                ? id => {
-                    onValueChangeFunc(id);
-                  }
-                : id => {
-                    void router.navigate({
-                      to: '/$organizationSlug/$projectSlug',
-                      params: {
-                        organizationSlug: props.currentOrganizationSlug,
-                        projectSlug: id,
-                      },
-                    });
-                  }
-            }
+            onValueChange={onValueChangeFunc}
           >
             <SelectTrigger variant="default" data-cy="project-picker-trigger">
               <div className="font-medium" data-cy="project-picker-current">
-                {optional ? <SelectValue placeholder="Pick an option" /> : ''}
-                {currentProject && !optional ? currentProject.slug : ''}
+                {optional ? <SelectValue placeholder="Pick an option" /> : (currentProject?.slug ?? '')}  
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -99,9 +93,8 @@ export function ProjectSelector(props: {
                 >
                   Unassigned
                 </SelectItem>
-              ) : (
-                <></>
-              )}
+              ) : null
+              }
               {projects ? (
                 projects.map(project => (
                   <SelectItem
@@ -112,9 +105,8 @@ export function ProjectSelector(props: {
                     {project.slug}
                   </SelectItem>
                 ))
-              ) : (
-                <></>
-              )}
+              ) : null
+              }
             </SelectContent>
           </Select>
         </>

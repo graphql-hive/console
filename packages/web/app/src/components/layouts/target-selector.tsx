@@ -79,9 +79,8 @@ export function TargetSelector(props: {
         ) : (
           <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
         )
-      ) : (
-        <></>
-      )}
+      ) : null
+      }
       {showOrganization ? <div className="italic text-gray-500">/</div> : <></>}
       {showProject ? (
         currentOrganization && currentProject ? (
@@ -98,10 +97,9 @@ export function TargetSelector(props: {
         ) : (
           <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
         )
-      ) : (
-        <></>
-      )}
-      {showProject ? <div className="italic text-gray-500">/</div> : <></>}
+      ) : null
+      }
+      {showProject ? <div className="italic text-gray-500">/</div> : null}
       {(targets?.length && currentOrganization && currentProject && currentTarget) || isOptional ? (
         <>
           <Select
@@ -125,8 +123,7 @@ export function TargetSelector(props: {
           >
             <SelectTrigger variant="default" data-cy="target-picker-trigger">
               <div className="font-medium" data-cy="target-picker-current">
-                {isOptional ? <SelectValue placeholder="Pick an option" /> : ''}
-                {currentTarget && !isOptional ? currentTarget.slug : ''}{' '}
+                {isOptional ? <SelectValue placeholder="Pick an option" /> : (currentTarget?.slug ?? '')}  
               </div>
             </SelectTrigger>
             <SelectContent>

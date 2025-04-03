@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { SetStateAction, useCallback, useState } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -274,7 +274,7 @@ function NewTicketForm(props: {
                         <ProjectSelector
                           currentOrganizationSlug={props.organizationSlug}
                           currentProjectSlug={field.value ? field.value : ''}
-                          onValueChange={(value: any) => {
+                          onValueChange={(value: SetStateAction<string>) => {
                             field.onChange(value);
                             setProject(value);
                           }}

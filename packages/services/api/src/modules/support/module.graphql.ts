@@ -32,7 +32,7 @@ export default gql`
     organizationSlug: String!
     project: String
     target: String
-    category: SupportCategory!
+    category: SupportCategory
     subject: String!
     description: String!
     priority: SupportTicketPriority!
