@@ -67,7 +67,7 @@ export function deployPublicGraphQLAPIGateway(args: {
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
       },
       port: 4000,
-      command: ['supergraph'],
+      args: ['supergraph'],
       volumes: [
         {
           name: 'gateway-config',
