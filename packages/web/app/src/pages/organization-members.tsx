@@ -108,6 +108,7 @@ function PageContent(props: {
 const OrganizationMembersPageQuery = graphql(`
   query OrganizationMembersPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
       ...OrganizationMembersPage_OrganizationFragment
       viewerCanSeeMembers
     }

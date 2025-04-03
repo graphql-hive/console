@@ -289,6 +289,7 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       nodes {
         id
         user {
+          id
           displayName
         }
         role {
