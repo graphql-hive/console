@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as kx from '@pulumi/kubernetesx';
 import * as pulumi from '@pulumi/pulumi';
+import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
 import { type Docker } from './docker';
@@ -60,7 +61,7 @@ export function deployPublicGraphQLAPIGateway(args: {
       replicas: args.environment.isProduction ? 3 : 1,
       availabilityOnEveryNode: true,
       env: {
-        GRAPHQL_SERVICE_ENDPOINT: args.graphql.service.endpoint.apply(
+        GRAPHQL_SERVICE_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
           value => `${value}/public-graphql`,
         ),
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
@@ -83,7 +84,7 @@ export function deployPublicGraphQLAPIGateway(args: {
         },
       ],
     },
-    [args.graphql.deployment],
+    [args.graphql.deployment, args.graphql.service],
   )
     .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
     .deploy();
