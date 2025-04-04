@@ -67,7 +67,7 @@ export function deployPublicGraphQLAPIGateway(args: {
           value => `${value}/public-graphql`,
         ),
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
-        OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint,
+        OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint ?? '',
       },
       port: 4000,
       args: ['-c', '/config/gateway.config.ts', 'supergraph'],
