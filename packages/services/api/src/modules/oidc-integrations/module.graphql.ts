@@ -32,7 +32,7 @@ export default gql`
     ): UpdateOIDCDefaultMemberRoleResult!
   }
 
-  type Subscription {
+  extend type Subscription {
     """
     Subscribe to logs from the OIDC provider integration.
     Helpful for debugging failing logins.

@@ -84,7 +84,13 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`FEDERATION > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+exports[`FEDERATION > can update a service without providing a url if previously published > schema publish same url 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema published
+ℹ Available at http://__URL__
+`;
 
 exports[`FEDERATION > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::

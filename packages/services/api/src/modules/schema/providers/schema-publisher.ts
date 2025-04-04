@@ -1910,6 +1910,17 @@ export class SchemaPublisher {
 
     this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
 
+    const serviceName = input.service;
+    let serviceUrl = input.url;
+
+    if (
+      (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
+      serviceUrl == null &&
+      pushedSchema.kind === 'composite'
+    ) {
+      serviceUrl = pushedSchema.service_url;
+    }
+
     const schemaVersion = await this.schemaManager.createVersion({
       valid: composable,
       organizationId: organizationId,
@@ -1917,10 +1928,10 @@ export class SchemaPublisher {
       targetId: target.id,
       commit: input.commit,
       logIds: schemaLogIds,
-      service: input.service,
       schema: input.sdl,
       author: input.author,
-      url: input.url,
+      service: serviceName,
+      url: serviceUrl,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       projectType: project.type,
@@ -2462,7 +2473,12 @@ export class SchemaPublisher {
     const breakingChanges = changes.filter(
       change => change.criticality === CriticalityLevel.Breaking,
     );
-    const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
+    const dangerousChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.Dangerous,
+    );
+    const safeChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.NonBreaking,
+    );
 
     const lines: string[] = [
       `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
@@ -2473,12 +2489,17 @@ export class SchemaPublisher {
       lines.push(`Breaking: ${breakingChanges.length}`);
     }
 
+    if (dangerousChanges.length) {
+      lines.push(`Dangerous: ${dangerousChanges.length}`);
+    }
+
     if (safeChanges.length) {
       lines.push(`Safe: ${safeChanges.length}`);
     }
 
     if (printListOfChanges) {
       writeChanges('Breaking', breakingChanges, lines);
+      writeChanges('Dangrous', dangerousChanges, lines);
       writeChanges('Safe', safeChanges, lines);
     }
 

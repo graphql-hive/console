@@ -40,7 +40,7 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
   return (
     <Anchor
       className={cn(
-        'group/card hive-focus hover:ring-beige-400 block rounded-2xl dark:ring-neutral-600 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600',
+        'group/card @container/card hive-focus hover:ring-beige-400 block rounded-2xl dark:ring-neutral-600 hover:[&:not(:focus)]:ring dark:hover:[&:not(:focus)]:ring-neutral-600',
         className,
       )}
       href={post.route}
@@ -62,7 +62,12 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
             {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </time>
         </header>
-        <h3 className={cn('lg:min-h-[120px]', variant === 'featured' ? 'text-2xl/8' : 'text-xl/7')}>
+        <h3
+          className={cn(
+            'text-xl/7 lg:min-h-[120px]',
+            variant === 'featured' && '@[288px]/card:text-2xl/8', // todo: in Tailwind 4 `@[288px]:` is `@2xs:`
+          )}
+        >
           {title}
         </h3>
         <footer className="mt-auto flex items-center gap-3">
