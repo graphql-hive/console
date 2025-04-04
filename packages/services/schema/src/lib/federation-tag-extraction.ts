@@ -4,7 +4,6 @@ import {
   InterfaceTypeExtensionNode,
   Kind,
   ObjectTypeExtensionNode,
-  print,
   visit,
   type ConstDirectiveNode,
   type DirectiveNode,
