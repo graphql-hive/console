@@ -290,6 +290,7 @@ const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
   environment,
   graphql,
   docker,
+  observability,
 });
 
 const proxy = deployProxy({
