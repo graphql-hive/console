@@ -1,7 +1,26 @@
+'use client';
+
+// ^ todo: this "use client" is temporary until we test the newsletter card on prod
+import { useEffect, useState } from 'react';
 import { Heading } from '@theguild/components';
 import { BlogPostFile } from '../../blog-types';
 import { BlogCard } from '../blog-card';
 import { prettyPrintTag } from '../pretty-print-tag';
+
+// There's a CORS error from deploy previews and I'd rather test it before giving it to users.
+function useTemporaryFeatureFlag() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const flag = searchParams.get('newsletter-form-card');
+    if (flag === '1') {
+      setVisible(true);
+    }
+  }, []);
+
+  return visible;
+}
 
 export function LatestPosts({
   posts,
@@ -12,6 +31,11 @@ export function LatestPosts({
   tag: string | null;
   children?: React.ReactNode;
 }) {
+  // TODO: remove this once we test the newsletter card on prod
+  if (!useTemporaryFeatureFlag()) {
+    children = undefined;
+  }
+
   // it needs to be 12, because we have 2/3/4 column layouts
   const itemsInFirstSection = children ? 11 : 12;
   const firstTwelve = posts.slice(0, itemsInFirstSection);
