@@ -231,11 +231,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         }),
       } as ObjectLikeNode;
 
-      if (
-        !rootTypeNames.has(node.name.value) &&
-        filter.exclude.size &&
-        hasIntersection(tagsOnNode, filter.exclude)
-      ) {
+      if (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude)) {
         newNode = {
           ...newNode,
           directives: transformTagDirectives(
@@ -265,17 +261,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
       onSomeFieldsAccessible(typeName);
       continue;
     }
-
     onAllFieldsInaccessible(typeName);
-    // If all fields are inaccessible we need to add the `@inaccessible` directive on the first definition of the type
-    // BUT only if the type is not @inaccessible yet.
-    if (typesWithInaccessibleApplied.has(typeName) === false && firstReplacementTypeNodeRecord) {
-      replacementTypeNodes.set(firstReplacementTypeNodeRecord.key, {
-        ...firstReplacementTypeNodeRecord.value,
-        directives: transformTagDirectives(firstReplacementTypeNodeRecord.value, true),
-      });
-      typesWithInaccessibleApplied.add(typeName);
-    }
   }
 
   function fieldLikeObjectHandler(node: ObjectLikeNode) {
@@ -386,6 +372,8 @@ function makeTypesFromSetInaccessible(
   types: Set<string>,
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>,
 ) {
+  /** We can only apply @accessible once on each unique typename, otherwise we get a composition error */
+  const alreadyAppliedOnTypeNames = new Set<string>();
   function typeHandler(
     node:
       | ObjectTypeExtensionNode
@@ -397,9 +385,10 @@ function makeTypesFromSetInaccessible(
       | EnumTypeDefinitionNode
       | EnumTypeExtensionNode,
   ) {
-    if (types.has(node.name.value) === false) {
+    if (types.has(node.name.value) === false || alreadyAppliedOnTypeNames.has(node.name.value)) {
       return;
     }
+    alreadyAppliedOnTypeNames.add(node.name.value);
     return {
       ...node,
       directives: transformTagDirectives(node, true),
