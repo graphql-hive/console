@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { CallToAction, cn, Heading } from '@theguild/components';
+import { CallToAction, cn, Heading, Input } from '@theguild/components';
 
 export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
   type Idle = undefined;
@@ -12,8 +12,8 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
   const [state, setState] = useState<State>();
 
   // we don't want to blink a message on retries when request is pending
-  const lastMessage = useRef<string>();
-  lastMessage.current = state?.message || lastMessage.current;
+  const lastErrorMessage = useRef<string>();
+  lastErrorMessage.current = state?.message || lastErrorMessage.current;
 
   return (
     <article
@@ -31,13 +31,10 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
         >
           Stay in the loop
         </Heading>
-        <div className="relative mt-4">
-          <p style={{ opacity: lastMessage.current ? 0 : 1 }}>
-            Get the latest insights and best practices on GraphQL API management delivered straight
-            to your inbox.
-          </p>
-          {lastMessage.current && <p className="absolute inset-0">{lastMessage.current}</p>}
-        </div>
+        <p className="relative mt-4">
+          Get the latest insights and best practices on GraphQL API management delivered straight to
+          your inbox.
+        </p>
       </div>
       <form
         className="relative z-10 p-6"
@@ -58,7 +55,13 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
               method: 'POST',
             });
 
-            setState((await response.json()) as { status: 'success' | 'error'; message: string });
+            const json = await response.json();
+            if (json.status === 'success') {
+              lastErrorMessage.current = undefined;
+              setState({ status: 'success', message: json.message });
+            } else {
+              setState({ status: 'error', message: json.message });
+            }
           } catch (e: unknown) {
             if (!navigator.onLine) {
               setState({
@@ -76,7 +79,12 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
           }
         }}
       >
-        <Input name="email" placeholder="E-mail" error={state?.status === 'error'} />
+        <Input
+          name="email"
+          placeholder="E-mail"
+          severity={lastErrorMessage.current ? 'critical' : undefined}
+          message={lastErrorMessage.current}
+        />
         {!state || state.status === 'error' ? (
           <CallToAction type="submit" variant="secondary-inverted" className="mt-2 !w-full">
             Subscribe
@@ -136,23 +144,5 @@ function DecorationArch({ className, color }: { className?: string; color: strin
         </linearGradient>
       </defs>
     </svg>
-  );
-}
-
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: boolean;
-}
-
-function Input({ error, ...props }: InputProps) {
-  /* todo: add this to theguild/components */
-  return (
-    <input
-      {...props}
-      className={cn(
-        'hover:placeholder:text-green-1000/60 w-full rounded-lg border border-blue-400 bg-white py-3 indent-4 font-medium placeholder:text-green-800 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)] autofill:[-webkit-text-fill-color:theme(colors.green.1000)] autofill:first-line:font-sans focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-800/40 focus-visible:ring-0',
-        props.className,
-        error && 'border-critical-dark/20 !outline-critical-dark',
-      )}
-    />
   );
 }
