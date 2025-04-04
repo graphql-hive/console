@@ -26,7 +26,6 @@ jobs:
           fetch-depth: 2
 
       - name: setup environment
-        if: ${{ inputs.build }}
         uses: ./.github/actions/setup
         with:
           actor: graphql-schema-check
