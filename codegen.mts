@@ -12,7 +12,10 @@ const config: CodegenConfig = {
         typeDefsFilePath: false,
         mergeSchema: {
           path: '../../../../schema.graphql',
-          config: { includeDirectives: true },
+          config: {
+            includeDirectives: true,
+            append: '\n\n directive @oneOf on INPUT_OBJECT',
+          },
         },
         resolverGeneration: 'minimal',
         resolverMainFileMode: 'modules',

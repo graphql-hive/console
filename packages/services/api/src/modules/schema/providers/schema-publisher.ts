@@ -2473,7 +2473,12 @@ export class SchemaPublisher {
     const breakingChanges = changes.filter(
       change => change.criticality === CriticalityLevel.Breaking,
     );
-    const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
+    const dangerousChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.Dangerous,
+    );
+    const safeChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.NonBreaking,
+    );
 
     const lines: string[] = [
       `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
@@ -2484,12 +2489,17 @@ export class SchemaPublisher {
       lines.push(`Breaking: ${breakingChanges.length}`);
     }
 
+    if (dangerousChanges.length) {
+      lines.push(`Dangerous: ${dangerousChanges.length}`);
+    }
+
     if (safeChanges.length) {
       lines.push(`Safe: ${safeChanges.length}`);
     }
 
     if (printListOfChanges) {
       writeChanges('Breaking', breakingChanges, lines);
+      writeChanges('Dangrous', dangerousChanges, lines);
       writeChanges('Safe', safeChanges, lines);
     }
 
