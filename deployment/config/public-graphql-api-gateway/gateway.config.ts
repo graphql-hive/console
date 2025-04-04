@@ -25,6 +25,7 @@ export const gatewayConfig = defineConfig({
     fromClientToSubgraphs({ request }) {
       return {
         'x-request-id': request.headers.get('x-request-id'),
+        authorization: request.headers.get('authorization'),
       };
     },
   },
