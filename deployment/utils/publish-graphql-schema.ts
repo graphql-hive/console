@@ -15,7 +15,7 @@ export function publishGraphQLSchema(args: {
 }) {
   const command = (accessToken: string) =>
     `schema:publish` +
-    ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target}` +
+    ` --registry.endpoint ${args.registry.endpoint} --registry.accessToken ${accessToken} --target ${args.registry.target} --service graphql` +
     ` --commit ${args.version.commit} --author "Hive CD" ./schema.graphqls`;
 
   return new local.Command(

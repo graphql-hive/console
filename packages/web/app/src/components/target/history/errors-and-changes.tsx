@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { CriticalityLevel } from '@/gql/graphql';
+import { SeverityLevelType } from '@/gql/graphql';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
@@ -38,10 +38,10 @@ export function labelize(message: string) {
   });
 }
 
-const criticalityLevelMapping = {
-  [CriticalityLevel.Safe]: clsx('text-emerald-400'),
-  [CriticalityLevel.Dangerous]: clsx('text-yellow-400'),
-} as Record<CriticalityLevel, string>;
+const severityLevelMapping = {
+  [SeverityLevelType.Safe]: clsx('text-emerald-400'),
+  [SeverityLevelType.Dangerous]: clsx('text-yellow-400'),
+} as Record<SeverityLevelType, string>;
 
 const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
   fragment ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment on SchemaCheckConditionalBreakingChangeMetadata {
@@ -73,8 +73,8 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   fragment ChangesBlock_SchemaChangeWithUsageFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
-    criticality
-    criticalityReason
+    severityLevel
+    severityReason
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -99,8 +99,8 @@ const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
-    criticality
-    criticalityReason
+    severityLevel
+    severityReason
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -111,7 +111,7 @@ const ChangesBlock_SchemaChangeFragment = graphql(`
 export function ChangesBlock(
   props: {
     title: string | React.ReactElement;
-    criticality: CriticalityLevel;
+    severityLevel: SeverityLevelType;
     organizationSlug: string;
     projectSlug: string;
     targetSlug: string;
@@ -192,7 +192,7 @@ function ChangeItem(props: {
             <div
               className={clsx(
                 (change.approval && 'text-orange-500') ||
-                  (criticalityLevelMapping[change.criticality] ?? 'text-red-400'),
+                  (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
               <div className="inline-flex justify-start space-x-2">
@@ -361,8 +361,8 @@ function ChangeItem(props: {
                 )}
               </div>
             </div>
-          ) : change.criticality === CriticalityLevel.Breaking ? (
-            <>{change.criticalityReason ?? 'No details available for this breaking change.'}</>
+          ) : change.severityLevel === SeverityLevelType.Breaking ? (
+            <>{change.severityReason ?? 'No details available for this breaking change.'}</>
           ) : (
             <>No details available for this change.</>
           )}

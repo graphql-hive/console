@@ -376,13 +376,62 @@ export default gql`
 
   enum CriticalityLevel {
     Breaking
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
     Dangerous
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
     Safe
+      @deprecated(
+        reason: "Use 'SeverityLevelType' instead. This field will be removed once it is no longer in use by a client."
+      )
   }
 
+  """
+  Describes the impact of a schema change.
+  """
+  enum SeverityLevelType {
+    """
+    The change is safe and does not break existing clients.
+    """
+    SAFE @tag(name: "public")
+    """
+    The change might break existing clients that do not follow
+    best-practises such as future-proof enums or future-proof interface/union type usages.
+    """
+    DANGEROUS @tag(name: "public")
+    """
+    The change will definetly break GraphQL client users.
+    """
+    BREAKING @tag(name: "public")
+  }
+
+  """
+  Describes a schema change for either a schema version (\`SchemaVersion\`) or schema check (\`SchemaCheck\`).
+  """
   type SchemaChange {
     criticality: CriticalityLevel!
+      @deprecated(
+        reason: "Use 'SchemaChange.severityLevel' instead. This field will be removed once it is no longer in use by a client."
+      )
     criticalityReason: String
+      @deprecated(
+        reason: "Use 'SchemaChange.severityReason' instead. This field will be removed once it is no longer in use by a client."
+      )
+    """
+    The severity level of this schema change.
+    Note: A schema change with the impact \`SeverityLevelType.BREAKING\` can still be safe based on the usage (\`SchemaChange.isSafeBasedOnUsage\`).
+    """
+    severityLevel: SeverityLevelType! @tag(name: "public")
+    """
+    The reason for the schema changes severity level (\`SchemaChange.severityLevel\`)
+    """
+    severityReason: String @tag(name: "public")
+    """
+    Message describing the schema change.
+    """
     message(
       """
       Whether to include a note about the safety of the change based on usage data within the message.

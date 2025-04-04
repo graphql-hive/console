@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
+import type { CompositeSchema } from '@hive/api/__generated__/types';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
@@ -378,6 +379,91 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
                       }),
                     ]),
                   }),
+                }),
+              }),
+            }),
+          );
+        },
+      );
+
+    test
+      .skipIf(projectType !== ProjectType.Federation)
+      .concurrent(
+        'can update a service without providing a url if previously published',
+        async ({ expect }) => {
+          const { createOrg } = await initSeed().createOwner();
+          const { inviteAndJoinMember, createProject } = await createOrg();
+          await inviteAndJoinMember();
+          const { createTargetAccessToken, compareToPreviousVersion, fetchVersions } =
+            await createProject(projectType);
+          const { secret } = await createTargetAccessToken({});
+          const cli = createCLI({
+            readonly: secret,
+            readwrite: secret,
+          });
+
+          const sdl = /* GraphQL */ `
+            type Query {
+              users: [User!]
+            }
+
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+            }
+          `;
+
+          await expect(
+            cli.publish({
+              sdl,
+              commit: 'push1',
+              serviceName,
+              serviceUrl,
+              expect: 'latest-composable',
+            }),
+          ).resolves.toMatchSnapshot('schema publish initial');
+
+          const sdl2 = /* GraphQL */ `
+            type Query {
+              users: [User!]
+            }
+
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+              phone: String
+            }
+          `;
+
+          await expect(
+            cli.publish({
+              sdl: sdl2,
+              commit: 'push2',
+              serviceName,
+              serviceUrl: undefined,
+              expect: 'latest-composable',
+            }),
+          ).resolves.toMatchSnapshot('schema publish same url');
+
+          const versions = await fetchVersions(3);
+          expect(versions).toHaveLength(2);
+
+          const versionWithNewServiceUrl = versions[0];
+
+          const schema = versionWithNewServiceUrl.schemas.nodes?.[0];
+          expect(schema.__typename).toBe('CompositeSchema');
+          expect((schema as CompositeSchema).url).toBe('http://localhost:4000');
+
+          expect(await compareToPreviousVersion(versionWithNewServiceUrl.id)).toEqual(
+            expect.objectContaining({
+              target: expect.objectContaining({
+                schemaVersion: expect.objectContaining({
+                  safeSchemaChanges: {
+                    nodes: expect.anything(),
+                  },
+                  schemaCompositionErrors: null,
                 }),
               }),
             }),

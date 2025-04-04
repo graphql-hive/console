@@ -1,0 +1,66 @@
+diff --git a/cjs/index.js b/cjs/index.js
+index ed643f4440f514b0d933fea2d41d3fa456f99bd4..bcea9c4a71463bd46d20837a62d8b6d490b66c88 100644
+--- a/cjs/index.js
++++ b/cjs/index.js
+@@ -4,13 +4,14 @@ exports.transformSchemaAST = exports.validate = exports.plugin = void 0;
+ const path_1 = require("path");
+ const plugin_helpers_1 = require("@graphql-codegen/plugin-helpers");
+ const graphql_1 = require("graphql");
+-const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, }) => {
++const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, append = '' }) => {
+     const transformedSchemaAndAst = transformSchemaAST(schema, { sort, federation, includeIntrospectionTypes });
+     return [
+         includeIntrospectionTypes ? (0, graphql_1.printIntrospectionSchema)(transformedSchemaAndAst.schema) : null,
+         includeDirectives
+             ? (0, graphql_1.print)(transformedSchemaAndAst.ast)
+             : graphql_1.printSchema(transformedSchemaAndAst.schema, { commentDescriptions }),
++        append,
+     ]
+         .filter(Boolean)
+         .join('\n');
+diff --git a/esm/index.js b/esm/index.js
+index f386116b7c1931f84b7364ac6fcf743ccecafc5a..2d7e12c89722607ac62d64cd8fbbb5f3b332b297 100644
+--- a/esm/index.js
++++ b/esm/index.js
+@@ -1,13 +1,14 @@
+ import { extname } from 'path';
+ import { getCachedDocumentNodeFromSchema, removeFederation, } from '@graphql-codegen/plugin-helpers';
+ import { buildASTSchema, extendSchema, parse, print, printIntrospectionSchema, printSchema, visit, } from 'graphql';
+-export const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, }) => {
++export const plugin = async (schema, _documents, { commentDescriptions = false, includeDirectives = false, includeIntrospectionTypes = false, sort = false, federation, append = '' }) => {
+     const transformedSchemaAndAst = transformSchemaAST(schema, { sort, federation, includeIntrospectionTypes });
+     return [
+         includeIntrospectionTypes ? printIntrospectionSchema(transformedSchemaAndAst.schema) : null,
+         includeDirectives
+             ? print(transformedSchemaAndAst.ast)
+             : printSchema(transformedSchemaAndAst.schema, { commentDescriptions }),
++        append,
+     ]
+         .filter(Boolean)
+         .join('\n');
+diff --git a/typings/index.d.cts b/typings/index.d.cts
+index f2df25dbcbc5c7c0d0764452e06511dff8a1e896..083980b957de8b94ca9f77b801fcee34ef4189af 100644
+--- a/typings/index.d.cts
++++ b/typings/index.d.cts
+@@ -27,6 +27,8 @@ export interface SchemaASTConfig {
+      * ```
+      */
+     includeDirectives?: boolean;
++    /** Text to be appended at the end of the generated output. */
++    append?: string;
+     /**
+      * @description Include introspection types to Schema output.
+      * @default false
+diff --git a/typings/index.d.ts b/typings/index.d.ts
+index f2df25dbcbc5c7c0d0764452e06511dff8a1e896..083980b957de8b94ca9f77b801fcee34ef4189af 100644
+--- a/typings/index.d.ts
++++ b/typings/index.d.ts
+@@ -27,6 +27,8 @@ export interface SchemaASTConfig {
+      * ```
+      */
+     includeDirectives?: boolean;
++    /** Text to be appended at the end of the generated output. */
++    append?: string;
+     /**
+      * @description Include introspection types to Schema output.
+      * @default false

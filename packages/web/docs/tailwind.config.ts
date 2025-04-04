@@ -42,6 +42,7 @@ const config: Config = {
     },
   },
   plugins: [
+    ...baseConfig.plugins,
     tailwindcssRadix({ variantPrefix: 'rdx' }),
     tailwindcssAnimate,
     blockquotesPlugin(),

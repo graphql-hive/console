@@ -26,7 +26,7 @@ const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
   ) {
     schemaVersionForActionId(actionId: $actionId, target: $target) {
       id
-      valid
+      isValid
       sdl @include(if: $includeSDL)
       supergraph @include(if: $includeSupergraph)
       schemas @include(if: $includeSubgraphs) {
@@ -59,7 +59,7 @@ const LatestSchemaVersionQuery = graphql(/* GraphQL */ `
   ) {
     latestValidVersion(target: $target) {
       id
-      valid
+      isValid
       sdl @include(if: $includeSDL)
       supergraph @include(if: $includeSupergraph)
       schemas @include(if: $includeSubgraphs) {
@@ -214,7 +214,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       throw new SchemaNotFoundError(actionId);
     }
 
-    if (schemaVersion.valid === false) {
+    if (schemaVersion.isValid === false) {
       throw new InvalidSchemaError(actionId);
     }
 
