@@ -67,7 +67,7 @@ export function deployPublicGraphQLAPIGateway(args: {
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
       },
       port: 4000,
-      args: ['supergraph'],
+      args: ['-c', '/config/gateway.config.ts', 'supergraph'],
       volumes: [
         {
           name: 'gateway-config',
@@ -78,7 +78,7 @@ export function deployPublicGraphQLAPIGateway(args: {
       ],
       volumeMounts: [
         {
-          mountPath: '/gateway/',
+          mountPath: '/config/',
           name: 'gateway-config',
           readOnly: true,
         },
