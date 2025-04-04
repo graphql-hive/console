@@ -163,8 +163,8 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   const definitionsBySchemaCoordinate = new Map<string, Array<ObjectLikeNode>>();
 
   //
-  // A type can occur multiple times within a subgraph and we need to find all implementation of each type
-  // in order to determine whether type full type, or only some fields are part a contract
+  // A type can be defined multiple times within a subgraph and we need to find all implementations
+  // for determining whether the full type, or only some fields are part of the public contract schema
   //
   for (const definition of documentNode.definitions) {
     switch (definition.kind) {
