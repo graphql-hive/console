@@ -8,6 +8,7 @@ import { ServiceDeployment } from '../utils/service-deployment';
 import { type Docker } from './docker';
 import { type Environment } from './environment';
 import { type GraphQL } from './graphql';
+import { type Observability } from './observability';
 
 /**
  * Hive Gateway Docker Image Version
@@ -29,6 +30,7 @@ export function deployPublicGraphQLAPIGateway(args: {
   environment: Environment;
   graphql: GraphQL;
   docker: Docker;
+  observability: Observability;
 }) {
   const apiConfig = new pulumi.Config('api');
 
@@ -65,6 +67,7 @@ export function deployPublicGraphQLAPIGateway(args: {
           value => `${value}/public-graphql`,
         ),
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
+        OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint,
       },
       port: 4000,
       args: ['-c', '/config/gateway.config.ts', 'supergraph'],
