@@ -10,6 +10,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from './../../organization/providers/organization-manager';
 import { SUPPORT_MODULE_CONFIG, type SupportConfig } from './config';
+import { SupportCategory } from 'packages/libraries/core/src/client/__generated__/types';
 
 export const SupportTicketPriorityAPIModel = z.enum(['low', 'normal', 'high', 'urgent']);
 export const SupportTicketStatusAPIModel = z.enum([
@@ -23,6 +24,7 @@ export const SupportTicketStatusAPIModel = z.enum([
 
 export const SupportTicketPriorityModel = z.nativeEnum(SupportTicketPriority);
 export const SupportTicketStatusModel = z.nativeEnum(SupportTicketStatus);
+export const SupportTicketCategoryModel = z.nativeEnum(SupportCategory);
 
 const SupportTicketModel = z.object({
   id: z.number(),
@@ -45,6 +47,9 @@ const SupportTicketModel = z.object({
 
     return SupportTicketStatusModel.parse(value);
   }),
+  category: SupportTicketCategoryModel,
+  project: z.string().optional(),
+  target: z.string().optional(),
   created_at: z.string(),
   updated_at: z.string(),
   subject: z.string(),
@@ -80,6 +85,9 @@ const SupportTicketCommentListModel = z.object({
 
 const SupportTicketCreateRequestModel = z.object({
   organizationId: z.string(),
+  category: SupportTicketCategoryModel,
+  project: z.string().optional(),
+  target: z.string().optional(),
   subject: z.string().min(3),
   description: z.string().min(3),
   priority: SupportTicketPriorityModel,
