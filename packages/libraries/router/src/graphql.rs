@@ -5,7 +5,6 @@ use graphql_tools::ast::FieldByNameExtension;
 use graphql_tools::ast::TypeDefinitionExtension;
 use graphql_tools::ast::TypeExtension;
 use lru::LruCache;
-use md5;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -48,7 +47,7 @@ pub fn collect_schema_coordinates(
     let mut visit_context = OperationVisitorContext::new(document, schema);
     let mut visitor = SchemaCoordinatesVisitor {};
 
-    visit_document(&mut visitor, &document, &mut visit_context, &mut ctx);
+    visit_document(&mut visitor, document, &mut visit_context, &mut ctx);
 
     if let Some(error) = ctx.error {
         Err(error)
@@ -88,11 +87,11 @@ pub fn collect_schema_coordinates(
 struct SchemaCoordinatesVisitor {}
 
 impl SchemaCoordinatesVisitor {
-    fn resolve_type_name<'a>(&self, t: Type<'a, String>) -> String {
+    fn resolve_type_name(&self, t: Type<String>) -> String {
         match t {
-            Type::NamedType(value) => return value,
-            Type::ListType(t) => return self.resolve_type_name(*t),
-            Type::NonNullType(t) => return self.resolve_type_name(*t),
+            Type::NamedType(value) => value,
+            Type::ListType(t) => self.resolve_type_name(*t),
+            Type::NonNullType(t) => self.resolve_type_name(*t),
         }
     }
 
@@ -118,19 +117,13 @@ impl SchemaCoordinatesVisitor {
 
         visited_types.push(type_name.to_string());
 
-        let named_type = schema.type_by_name(&type_name);
+        let named_type = schema.type_by_name(type_name);
 
-        match named_type {
-            Some(named_type) => match named_type {
-                TypeDefinition::InputObject(input_type) => {
-                    for field in &input_type.fields {
-                        let field_type = self.resolve_type_name(field.value_type.clone());
-                        self._resolve_references(schema, &field_type, visited_types);
-                    }
-                }
-                _ => {}
-            },
-            None => {}
+        if let Some(TypeDefinition::InputObject(input_type)) = named_type {
+            for field in &input_type.fields {
+                let field_type = self.resolve_type_name(field.value_type.clone());
+                self._resolve_references(schema, &field_type, visited_types);
+            }
         }
     }
 }
@@ -143,7 +136,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         field: &Field<'static, String>,
     ) {
         if ctx.is_corrupted() {
-            return ();
+            return;
         }
 
         let field_name = field.name.to_string();
@@ -157,17 +150,14 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             if let Some(field_def) = parent_type.field_by_name(&field_name) {
                 // if field's type is an enum, we need to collect all possible values
                 let field_output_type = info.schema.type_by_name(field_def.field_type.inner_type());
-                match field_output_type {
-                    Some(TypeDefinition::Enum(enum_type)) => {
-                        for value in &enum_type.values {
-                            ctx.schema_coordinates.insert(format!(
-                                "{}.{}",
-                                enum_type.name.as_str(),
-                                value.name
-                            ));
-                        }
+                if let Some(TypeDefinition::Enum(enum_type)) = field_output_type {
+                    for value in &enum_type.values {
+                        ctx.schema_coordinates.insert(format!(
+                            "{}.{}",
+                            enum_type.name.as_str(),
+                            value.name
+                        ));
                     }
-                    _ => {}
                 }
             }
         } else {
@@ -185,22 +175,19 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         var: &graphql_tools::static_graphql::query::VariableDefinition,
     ) {
         if ctx.is_corrupted() {
-            return ();
+            return;
         }
 
         let type_name = self.resolve_type_name(var.var_type.clone());
         let type_def = info.schema.type_by_name(&type_name);
 
-        match type_def {
-            Some(TypeDefinition::Scalar(scalar_def)) => {
-                ctx.schema_coordinates
-                    .insert(format!("{}", scalar_def.name.as_str(),));
-                return ();
-            }
-            _ => {}
+        if let Some(TypeDefinition::Scalar(scalar_def)) = type_def {
+            ctx.schema_coordinates
+                .insert(scalar_def.name.as_str().to_string());
+            return;
         }
 
-        if let Some(inner_types) = self.resolve_references(&info.schema, &type_name) {
+        if let Some(inner_types) = self.resolve_references(info.schema, &type_name) {
             for inner_type in inner_types {
                 ctx.input_types_to_collect.insert(inner_type);
             }
@@ -216,7 +203,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         arg: &(String, Value<'static, String>),
     ) {
         if ctx.is_corrupted() {
-            return ();
+            return;
         }
 
         if info.current_parent_type().is_none() {
@@ -224,7 +211,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                 "Unable to find parent type of '{}' argument",
                 arg.0.clone()
             ));
-            return ();
+            return;
         }
 
         let type_name = info.current_parent_type().unwrap().name();
@@ -240,36 +227,33 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
 
             let arg_value = arg.1.clone();
 
-            match info.current_input_type() {
-                Some(input_type) => {
-                    match input_type {
-                        TypeDefinition::Scalar(scalar_def) => {
-                            ctx.schema_coordinates.insert(scalar_def.name.clone());
-                        }
-                        _ => {
-                            let input_type_name = input_type.name();
-                            match arg_value {
-                                Value::Enum(value) => {
-                                    let value_str = value.to_string();
-                                    ctx.schema_coordinates.insert(
-                                        format!("{input_type_name}.{value_str}").to_string(),
-                                    );
-                                }
-                                Value::List(_) => {
-                                    // handled by enter_list_value
-                                }
-                                Value::Object(_a) => {
-                                    // handled by enter_object_field
-                                }
-                                Value::Variable(_) => {
-                                    // handled by enter_variable_definition
-                                }
-                                _ => {}
+            if let Some(input_type) = info.current_input_type() {
+                match input_type {
+                    TypeDefinition::Scalar(scalar_def) => {
+                        ctx.schema_coordinates.insert(scalar_def.name.clone());
+                    }
+                    _ => {
+                        let input_type_name = input_type.name();
+                        match arg_value {
+                            Value::Enum(value) => {
+                                let value_str = value.to_string();
+                                ctx.schema_coordinates.insert(
+                                    format!("{input_type_name}.{value_str}").to_string(),
+                                );
                             }
+                            Value::List(_) => {
+                                // handled by enter_list_value
+                            }
+                            Value::Object(_a) => {
+                                // handled by enter_object_field
+                            }
+                            Value::Variable(_) => {
+                                // handled by enter_variable_definition
+                            }
+                            _ => {}
                         }
                     }
                 }
-                None => {}
             }
         }
     }
@@ -280,13 +264,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         ctx: &mut SchemaCoordinatesContext,
         _object_field: &(String, graphql_tools::static_graphql::query::Value),
     ) {
-        if let Some(input_type) = info.current_input_type() {
-            match input_type {
-                TypeDefinition::Scalar(scalar_def) => {
-                    ctx.schema_coordinates.insert(scalar_def.name.clone());
-                }
-                _ => {}
-            }
+        if let Some(TypeDefinition::Scalar(scalar_def)) = info.current_input_type() {
+            ctx.schema_coordinates.insert(scalar_def.name.clone());
         }
     }
 
@@ -297,7 +276,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         values: &Vec<Value<'static, String>>,
     ) {
         if ctx.is_corrupted() {
-            return ();
+            return;
         }
 
         if let Some(input_type) = info.current_input_type() {
@@ -487,7 +466,7 @@ impl<'s, T: Text<'s> + Clone> OperationTransformer<'s, T> for SortSelectionsTran
         directives: &[Directive<'s, T>],
     ) -> TransformedValue<Vec<Directive<'s, T>>> {
         let mut next_directives = self
-            .transform_list(&directives, Self::transform_directive)
+            .transform_list(directives, Self::transform_directive)
             .replace_or_else(|| directives.to_vec());
         next_directives.sort_unstable_by(|a, b| self.compare_directives(a, b));
         TransformedValue::Replace(next_directives)
@@ -498,7 +477,7 @@ impl<'s, T: Text<'s> + Clone> OperationTransformer<'s, T> for SortSelectionsTran
         arguments: &[(T::Value, Value<'s, T>)],
     ) -> TransformedValue<Vec<(T::Value, Value<'s, T>)>> {
         let mut next_arguments = self
-            .transform_list(&arguments, Self::transform_argument)
+            .transform_list(arguments, Self::transform_argument)
             .replace_or_else(|| arguments.to_vec());
         next_arguments.sort_unstable_by(|a, b| self.compare_arguments(a, b));
         TransformedValue::Replace(next_arguments)
@@ -509,7 +488,7 @@ impl<'s, T: Text<'s> + Clone> OperationTransformer<'s, T> for SortSelectionsTran
         variable_definitions: &Vec<VariableDefinition<'s, T>>,
     ) -> TransformedValue<Vec<VariableDefinition<'s, T>>> {
         let mut next_variable_definitions = self
-            .transform_list(&variable_definitions, Self::transform_variable_definition)
+            .transform_list(variable_definitions, Self::transform_variable_definition)
             .replace_or_else(|| variable_definitions.to_vec());
         next_variable_definitions.sort_unstable_by(|a, b| self.compare_variable_definitions(a, b));
         TransformedValue::Replace(next_variable_definitions)
@@ -527,11 +506,11 @@ impl<'s, T: Text<'s> + Clone> OperationTransformer<'s, T> for SortSelectionsTran
         Transformed::Replace(FragmentDefinition {
             selection_set: SelectionSet {
                 items: selections.replace_or_else(|| fragment.selection_set.items.clone()),
-                span: fragment.selection_set.span.clone(),
+                span: fragment.selection_set.span,
             },
             directives,
             name: fragment.name.clone(),
-            position: fragment.position.clone(),
+            position: fragment.position,
             type_condition: fragment.type_condition.clone(),
         })
     }
@@ -673,20 +652,16 @@ impl OperationProcessor {
             .into_static();
 
         let is_introspection = parsed.definitions.iter().find(|def| match def {
-            Definition::Operation(op) => match op {
-                OperationDefinition::Query(query) => query
-                    .selection_set
-                    .items
-                    .iter()
-                    .find(|selection| match selection {
-                        Selection::Field(field) => {
-                            field.name == "__schema" || field.name == "__type"
-                        }
-                        _ => false,
-                    })
-                    .is_some(),
-                _ => false,
-            },
+            Definition::Operation(OperationDefinition::Query(query)) => query
+                .selection_set
+                .items
+                .iter()
+                .any(|selection| match selection {
+                    Selection::Field(field) => {
+                        field.name == "__schema" || field.name == "__type"
+                    }
+                    _ => false,
+                }),
             _ => false,
         });
 

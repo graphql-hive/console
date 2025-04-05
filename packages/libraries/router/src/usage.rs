@@ -139,7 +139,7 @@ impl UsagePlugin {
 
         let excluded_operation_names: HashSet<String> = config
             .exclude
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_default()
             .clone()
             .into_iter()
             .collect();
@@ -149,13 +149,10 @@ impl UsagePlugin {
         let mut dropped = !sampled;
 
         if !dropped {
-            match &operation_name {
-                Some(name) => {
-                    if excluded_operation_names.contains(name) {
-                        dropped = true;
-                    }
+            if let Some(name) = &operation_name {
+                if excluded_operation_names.contains(name) {
+                    dropped = true;
                 }
-                None => {}
             }
         }
 
@@ -190,7 +187,7 @@ impl Plugin for UsagePlugin {
             .clone()
             .or_else(|| env::var("HIVE_TOKEN").ok());
 
-        if let None = token {
+        if token.is_none() {
             return Err("Hive token is required".into());
         }
 
