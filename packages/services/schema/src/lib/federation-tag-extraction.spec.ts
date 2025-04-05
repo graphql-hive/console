@@ -1818,7 +1818,7 @@ describe('applyTagFilterOnSubgraphs', () => {
         field1: String! @inaccessible
       }
 
-      extend type Type1 @inaccessible {
+      extend type Type1 {
         field2: String! @inaccessible
       }
     `);
