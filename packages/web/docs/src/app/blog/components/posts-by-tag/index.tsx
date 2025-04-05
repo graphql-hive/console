@@ -17,7 +17,12 @@ const TOP_10_TAGS = [
   'graphql-tools',
 ];
 
-export function PostsByTag(props: { posts: BlogPostFile[]; tag?: string; className?: string }) {
+export function PostsByTag(props: {
+  posts: BlogPostFile[];
+  tag?: string;
+  className?: string;
+  children?: React.ReactNode;
+}) {
   const tag = props.tag ?? null;
 
   const posts = [...props.posts].sort(
@@ -33,7 +38,9 @@ export function PostsByTag(props: { posts: BlogPostFile[]; tag?: string; classNa
     <section className={cn('px-4 sm:px-6', props.className)}>
       <CategorySelect tag={tag} categories={categories} />
       <FeaturedPosts posts={posts} className="sm:mb-12 md:mt-16" tag={tag} />
-      <LatestPosts posts={posts} tag={tag} />
+      <LatestPosts posts={posts} tag={tag}>
+        {props.children}
+      </LatestPosts>
     </section>
   );
 }

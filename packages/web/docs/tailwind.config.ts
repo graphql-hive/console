@@ -91,6 +91,7 @@ function blockquotesPlugin() {
   });
 }
 
+// TODO: This should probably go to a shared Tailwind config
 function firefoxVariantPlugin() {
   return plugin((api: PluginAPI) => {
     const { addVariant, e, postcss } = api as PluginAPI & { postcss: any };

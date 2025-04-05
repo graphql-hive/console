@@ -11,7 +11,7 @@ export function BlogTagChip({ tag, colorScheme, inert }: BlogTagChipProps) {
   const className = cn(
     'rounded-full px-3 py-1 text-white text-sm',
     colorScheme === 'featured'
-      ? 'dark:bg-primary/80 dark:text-neutral-900 bg-green-800'
+      ? 'dark:bg-primary/90 dark:text-neutral-900 bg-green-800'
       : 'bg-beige-800 dark:bg-beige-800/40',
     !inert &&
       (colorScheme === 'featured'
