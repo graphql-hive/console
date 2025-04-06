@@ -93,6 +93,14 @@ function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
   return names;
 }
 
+type ObjectLikeNode =
+  | ObjectTypeExtensionNode
+  | ObjectTypeDefinitionNode
+  | InterfaceTypeDefinitionNode
+  | InterfaceTypeExtensionNode
+  | InputObjectTypeDefinitionNode
+  | InputObjectTypeExtensionNode;
+
 /**
  * Takes a subgraph document node and a set of tag filters and transforms the document node to contain `@inaccessible` directives on all fields not included by the applied filter.
  * Note: you probably want to use `filterSubgraphs` instead, as it also applies the correct post step required after applying this.
@@ -102,8 +110,11 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   filter: Federation2SubgraphDocumentNodeByTagsFilter,
 ): {
   typeDefs: DocumentNode;
+  /** Types within THIS subgraph where all fields are inaccessible */
   typesWithAllFieldsInaccessible: Map<string, boolean>;
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>;
+  /** Types in this subgraph that have the inaccessible directive applied */
+  typesWithInaccessibleApplied: Set<string>;
 } {
   const { resolveImportName } = extractLinkImplementations(documentNode);
   const inaccessibleDirectiveName = resolveImportName(
@@ -149,71 +160,119 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     };
   }
 
-  function fieldLikeObjectHandler(
-    node:
-      | ObjectTypeExtensionNode
-      | ObjectTypeDefinitionNode
-      | InterfaceTypeDefinitionNode
-      | InterfaceTypeExtensionNode
-      | InputObjectTypeDefinitionNode
-      | InputObjectTypeExtensionNode,
-  ) {
-    const tagsOnNode = getTagsOnNode(node);
+  const definitionsBySchemaCoordinate = new Map<string, Array<ObjectLikeNode>>();
 
-    let isAllFieldsInaccessible = true;
-
-    const newNode = {
-      ...node,
-      fields: node.fields?.map(node => {
-        const tagsOnNode = getTagsOnNode(node);
-
-        if (node.kind === Kind.FIELD_DEFINITION) {
-          node = {
-            ...node,
-            arguments: node.arguments?.map(fieldArgumentHandler),
-          } as FieldDefinitionNode;
+  //
+  // A type can be defined multiple times within a subgraph and we need to find all implementations
+  // for determining whether the full type, or only some fields are part of the public contract schema
+  //
+  for (const definition of documentNode.definitions) {
+    switch (definition.kind) {
+      case Kind.OBJECT_TYPE_DEFINITION:
+      case Kind.OBJECT_TYPE_EXTENSION:
+      case Kind.INTERFACE_TYPE_DEFINITION:
+      case Kind.INTERFACE_TYPE_EXTENSION:
+      case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+      case Kind.INPUT_OBJECT_TYPE_EXTENSION: {
+        let items = definitionsBySchemaCoordinate.get(definition.name.value);
+        if (!items) {
+          items = [];
+          definitionsBySchemaCoordinate.set(definition.name.value, items);
         }
+        items.push(definition);
+      }
+    }
+  }
 
-        if (
-          (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
-          (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
-        ) {
+  // Tracking for which type already has `@inaccessible` applied (can only occur once)
+  const typesWithInaccessibleApplied = new Set<string>();
+  // These are later used within the visitor to actually replace the nodes.
+  const replacementTypeNodes = new Map<ObjectLikeNode, ObjectLikeNode>();
+
+  for (const [typeName, nodes] of definitionsBySchemaCoordinate) {
+    /** After processing all nodes implementing a type, we know whether all or only some fields are inaccessible */
+    let isSomeFieldsAccessible = false;
+    /** First node occurance record as stored within the `replacementTypeNodes` map.  */
+    let firstReplacementTypeNodeRecord: {
+      key: ObjectLikeNode;
+      value: ObjectLikeNode;
+    } | null = null;
+
+    for (const node of nodes) {
+      const tagsOnNode = getTagsOnNode(node);
+      let newNode = {
+        ...node,
+        fields: node.fields?.map(node => {
+          const tagsOnNode = getTagsOnNode(node);
+
+          if (node.kind === Kind.FIELD_DEFINITION) {
+            node = {
+              ...node,
+              arguments: node.arguments?.map(fieldArgumentHandler),
+            } as FieldDefinitionNode;
+          }
+
+          if (
+            (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
+            (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
+          ) {
+            return {
+              ...node,
+              directives: transformTagDirectives(node, true),
+            };
+          }
+
+          isSomeFieldsAccessible = true;
+
           return {
             ...node,
-            directives: transformTagDirectives(node, true),
+            directives: transformTagDirectives(node),
           };
-        }
+        }),
+      } as ObjectLikeNode;
 
-        isAllFieldsInaccessible = false;
-
-        return {
-          ...node,
+      if (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude)) {
+        newNode = {
+          ...newNode,
+          directives: transformTagDirectives(
+            node,
+            typesWithInaccessibleApplied.has(typeName) ? false : true,
+          ),
+        } as ObjectLikeNode;
+        typesWithInaccessibleApplied.add(typeName);
+      } else {
+        newNode = {
+          ...newNode,
           directives: transformTagDirectives(node),
         };
-      }),
-    };
+      }
 
-    if (
-      !rootTypeNames.has(node.name.value) &&
-      filter.exclude.size &&
-      hasIntersection(tagsOnNode, filter.exclude)
-    ) {
-      return {
-        ...newNode,
-        directives: transformTagDirectives(node, true),
-      };
+      if (!firstReplacementTypeNodeRecord) {
+        firstReplacementTypeNodeRecord = {
+          key: node,
+          value: newNode,
+        };
+      }
+      replacementTypeNodes.set(node, newNode);
     }
 
-    if (isAllFieldsInaccessible) {
-      onAllFieldsInaccessible(node.name.value);
-    } else {
-      onSomeFieldsAccessible(node.name.value);
+    // If some fields are accessible, we continue with the next type
+    if (isSomeFieldsAccessible) {
+      onSomeFieldsAccessible(typeName);
+      continue;
+    }
+    onAllFieldsInaccessible(typeName);
+  }
+
+  function fieldLikeObjectHandler(node: ObjectLikeNode) {
+    const newNode = replacementTypeNodes.get(node);
+    if (!newNode) {
+      throw new Error(
+        `Found type without transformation mapping. ${node.name.value} ${node.name.kind}`,
+      );
     }
 
-    return {
-      ...newNode,
-      directives: transformTagDirectives(node),
-    };
+    return newNode;
   }
 
   function enumHandler(node: EnumTypeDefinitionNode | EnumTypeExtensionNode) {
@@ -304,6 +363,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     typeDefs,
     typesWithAllFieldsInaccessible: typesWithAllFieldsInaccessibleTracker,
     transformTagDirectives,
+    typesWithInaccessibleApplied,
   };
 }
 
@@ -312,6 +372,8 @@ function makeTypesFromSetInaccessible(
   types: Set<string>,
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>,
 ) {
+  /** We can only apply @accessible once on each unique typename, otherwise we get a composition error */
+  const alreadyAppliedOnTypeNames = new Set<string>();
   function typeHandler(
     node:
       | ObjectTypeExtensionNode
@@ -323,9 +385,10 @@ function makeTypesFromSetInaccessible(
       | EnumTypeDefinitionNode
       | EnumTypeExtensionNode,
   ) {
-    if (types.has(node.name.value) === false) {
+    if (types.has(node.name.value) === false || alreadyAppliedOnTypeNames.has(node.name.value)) {
       return;
     }
+    alreadyAppliedOnTypeNames.add(node.name.value);
     return {
       ...node,
       directives: transformTagDirectives(node, true),
@@ -392,10 +455,24 @@ export function applyTagFilterOnSubgraphs<
     ...subgraph,
     typeDefs: makeTypesFromSetInaccessible(
       subgraph.typeDefs,
-      intersectionOfTypesWhereAllFieldsAreInaccessible,
+      /** We exclude the types that are already marked as inaccessible within the subgraph as we want to avoid `@inaccessible` applied more than once. */
+      difference(
+        intersectionOfTypesWhereAllFieldsAreInaccessible,
+        subgraph.typesWithInaccessibleApplied,
+      ),
       subgraph.transformTagDirectives,
     ),
   }));
+}
+
+function difference<$Type>(set1: Set<$Type>, set2: Set<$Type>): Set<$Type> {
+  const result = new Set<$Type>();
+  set1.forEach(item => {
+    if (!set2.has(item)) {
+      result.add(item);
+    }
+  });
+  return result;
 }
 
 export const extractTagsFromDocument = (

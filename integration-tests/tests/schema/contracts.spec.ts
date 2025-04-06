@@ -392,3 +392,90 @@ test('type is marked as inaccessible if all fields are inaccessible and the type
     'type Brr @join__type(graph: FOO_GRAPHQL) @inaccessible {',
   );
 });
+
+test('inaccessible is only applied once per type', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "public")
+          }
+
+          type Brr {
+            a: String
+          }
+
+          extend type Brr {
+            b: String
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: true,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.contracts?.[0].errors).toEqual([]);
+});
+
+test('inaccessible is not applied on type if at least one type extension has a public field', async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@tag"])
+
+          type Query {
+            hello: String @tag(name: "public")
+          }
+
+          type Brr {
+            a: String
+          }
+
+          extend type Brr {
+            b: String @tag(name: "public")
+          }
+        `,
+        source: 'foo.graphql',
+        url: null,
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toContain('type Brr {');
+});

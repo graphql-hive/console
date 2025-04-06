@@ -20,7 +20,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
       {image && <BlogPostPicture image={image} />}
       <header
         className={cn(
-          'flex flex-col items-center rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 md:px-12 md:pb-12 md:pt-6 xl:w-[888px]',
+          'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-12 md:pt-6 xl:w-[888px]',
           image && '-mt-20 max-sm:mx-6',
           className,
         )}
@@ -38,7 +38,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
         <Heading
           as="h1"
           size="md"
-          className="mb-0 mt-4 w-[--article-max-width] text-pretty text-center"
+          className="mb-0 mt-4 w-[--article-max-width] text-pretty sm:text-center"
         >
           {title}
         </Heading>
@@ -47,7 +47,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
             authors: Array.isArray(authors) ? authors : [authors],
             date,
           }}
-          className="mt-4"
+          className="mt-4 max-sm:justify-start"
         />
       </header>
     </>
