@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
+import {
+  Organization,
+  SupportCategory,
+  SupportTicketPriority,
+  SupportTicketStatus,
+} from '../../../shared/entities';
 import { atomic } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
@@ -10,7 +15,6 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { OrganizationManager } from './../../organization/providers/organization-manager';
 import { SUPPORT_MODULE_CONFIG, type SupportConfig } from './config';
-import { SupportCategory } from 'packages/libraries/core/src/client/__generated__/types';
 
 export const SupportTicketPriorityAPIModel = z.enum(['low', 'normal', 'high', 'urgent']);
 export const SupportTicketStatusAPIModel = z.enum([
@@ -24,7 +28,7 @@ export const SupportTicketStatusAPIModel = z.enum([
 
 export const SupportTicketPriorityModel = z.nativeEnum(SupportTicketPriority);
 export const SupportTicketStatusModel = z.nativeEnum(SupportTicketStatus);
-export const SupportTicketCategoryModel = z.nativeEnum(SupportCategory);
+export const SupportTicketCategoryModel = z.nativeEnum(SupportCategory).optional();
 
 const SupportTicketModel = z.object({
   id: z.number(),
@@ -516,6 +520,9 @@ export class SupportManager {
     organizationId: string;
     subject: string;
     description: string;
+    category?: SupportCategory;
+    project?: string;
+    target?: string;
     priority: z.infer<typeof SupportTicketPriorityModel>;
   }) {
     this.logger.info(
@@ -557,6 +564,9 @@ export class SupportManager {
           subject: input.subject,
           description: input.description,
           priority: input.priority,
+          category: input.category,
+          project: input.project,
+          target: input.target,
           // version is here to cache bust the idempotency key.
           version: 'v2',
         }),
@@ -568,6 +578,12 @@ export class SupportManager {
     });
     const customerType = this.resolveCustomerType(organization);
 
+    const formattedBody = ` "Category: " + ${request.data.category ? request.data.category : null}\n\n
+        "Project: " + ${request.data.project ? request.data.project : null}\n\n
+        "Target: " + ${request.data.target ? request.data.target : null}\n\n
+        "Description: " + ${request.data.description}
+      `;
+
     const response = await this.httpClient
       .post(`https://${this.config.subdomain}.zendesk.com/api/v2/tickets`, {
         username: this.config.username,
@@ -578,7 +594,7 @@ export class SupportManager {
             submitter_id: parseInt(internalUserId, 10),
             requester_id: parseInt(internalUserId, 10),
             comment: {
-              body: request.data.description,
+              body: formattedBody,
             },
             priority: request.data.priority,
             subject: request.data.subject,
@@ -606,6 +622,9 @@ export class SupportManager {
       metadata: {
         ticketDescription: input.description,
         ticketPriority: input.priority,
+        ticketCategory: input.category ?? '',
+        ticketProject: input.project ?? '',
+        ticketTarget: input.target ?? '',
         ticketId: String(response.ticket.id),
         ticketSubject: input.subject,
       },
