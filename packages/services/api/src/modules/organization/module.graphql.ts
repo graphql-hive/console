@@ -97,8 +97,12 @@ export default gql`
     createdAt: DateTime! @tag(name: "public")
   }
 
-  input DeleteOrganizationAccessTokenInput @tag(name: "public") {
-    organizationAccessTokenId: ID! @tag(name: "public")
+  input DeleteOrganizationAccessTokenInput {
+    organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
+  }
+
+  input OrganizationAccessTokenReference @oneOf @tag(name: "public") {
+    byId: ID @tag(name: "public")
   }
 
   type DeleteOrganizationAccessTokenResult {

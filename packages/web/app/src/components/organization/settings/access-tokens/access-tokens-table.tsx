@@ -206,7 +206,9 @@ function DeleteAccessTokenConfirmationDialogue(props: DeleteAccessTokenConfirmat
             onClick={() =>
               mutate({
                 input: {
-                  organizationAccessTokenId: props.accessTokenId,
+                  organizationAccessToken: {
+                    byId: props.accessTokenId,
+                  },
                 },
               }).then(result => {
                 if (result.error) {
