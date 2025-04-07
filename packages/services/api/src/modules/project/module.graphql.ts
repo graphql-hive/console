@@ -75,10 +75,10 @@ export default gql`
     projectSlug: String!
   }
 
-  enum ProjectType @tag(name: "public") {
-    FEDERATION
-    STITCHING
-    SINGLE
+  enum ProjectType {
+    FEDERATION @tag(name: "public")
+    STITCHING @tag(name: "public")
+    SINGLE @tag(name: "public")
   }
 
   extend type Organization {
