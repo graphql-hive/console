@@ -64,7 +64,7 @@ export function deployPublicGraphQLAPIGateway(args: {
       availabilityOnEveryNode: true,
       env: {
         GRAPHQL_SERVICE_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
-          value => `${value}/public-graphql`,
+          value => `${value}/graphql-public`,
         ),
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
         OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint ?? '',
