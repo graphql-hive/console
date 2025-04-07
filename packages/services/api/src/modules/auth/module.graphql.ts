@@ -5,10 +5,6 @@ export default gql`
     me: User!
   }
 
-  interface Error {
-    message: String!
-  }
-
   extend type Mutation {
     updateMe(input: UpdateMeInput!): UpdateMeResult!
   }
@@ -97,19 +93,19 @@ export default gql`
     TOKENS_WRITE
   }
 
-  enum PermissionLevel {
-    organization
-    project
-    target
-    service
-    appDeployment
+  enum PermissionLevelType {
+    ORGANIZATION
+    PROJECT
+    TARGET
+    SERVICE
+    APP_DEPLOYMENT
   }
 
   type Permission {
     id: ID!
     title: String!
     description: String!
-    level: PermissionLevel!
+    level: PermissionLevelType!
     dependsOnId: ID
     isReadOnly: Boolean!
     warning: String

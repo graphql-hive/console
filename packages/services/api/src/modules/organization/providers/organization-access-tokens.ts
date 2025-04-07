@@ -137,7 +137,7 @@ export class OrganizationAccessTokens {
     const assignedResources =
       await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
         organizationId,
-        args.assignedResources ?? { mode: 'granular' },
+        args.assignedResources ?? { mode: 'GRANULAR' },
       );
 
     const permissions = Array.from(

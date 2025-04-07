@@ -1,4 +1,4 @@
-import { ProjectType, ResourceAssignmentMode } from 'testkit/gql/graphql';
+import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { updateProjectSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
@@ -217,7 +217,7 @@ test.concurrent('prevent access to projects with assigned resources on member', 
     roleId: member.role.id,
     userId: member.user.id,
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [],
     },
   });
@@ -246,11 +246,11 @@ test.concurrent('restrict access to single project with assigned resources on me
     roleId: member.role.id,
     userId: member.user.id,
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [
         {
           projectId: firstProject.id,
-          targets: { mode: ResourceAssignmentMode.All },
+          targets: { mode: ResourceAssignmentModeType.All },
         },
       ],
     },
