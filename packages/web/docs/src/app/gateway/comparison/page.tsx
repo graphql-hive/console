@@ -45,7 +45,7 @@ const logos = {
 };
 
 export const metadata: Metadata = {
-  title: 'Hive Gateway vs Apollo Router',
+  title: 'Hive Gateway vs. Apollo Router',
   description,
   alternates: {
     // to remove leading slash
@@ -68,7 +68,7 @@ export default function ComparisonPage(): ReactElement {
           </HeroLogo>
         }
         className="bg-beige-100 mx-4 max-sm:mt-2 md:mx-6"
-        heading={`Hive Gateway vs ${comparison.name}`}
+        heading={`Hive Gateway vs. ${comparison.name}`}
         checkmarks={['Fully open source', 'No vendor lock-in', 'Can be self-hosted!']}
         text={description}
       >
