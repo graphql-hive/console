@@ -75,7 +75,7 @@ export default gql`
     projectSlug: String!
   }
 
-  enum ProjectType {
+  enum ProjectType @tag(name: "public") {
     FEDERATION
     STITCHING
     SINGLE
@@ -97,7 +97,7 @@ export default gql`
     slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
-    type: ProjectType!
+    type: ProjectType! @tag(name: "public")
     buildUrl: String
     validationUrl: String
     experimental_nativeCompositionPerTarget: Boolean!
