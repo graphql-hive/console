@@ -91,9 +91,9 @@ checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
 
 [[package]]
 name = "apollo-compiler"
-version = "1.26.0"
+version = "1.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "615145d8c4b53ea4e6c15261adbb71cefad3a6834c4a12158f89a484f0769fb2"
+checksum = "1bb8a0d8a54b31d8a9efcc25d4be3d949d823e8105a710861d6d4a4ef811b5f2"
 dependencies = [
  "ahash",
  "apollo-parser",
@@ -105,7 +105,6 @@ dependencies = [
  "thiserror 1.0.62",
  "triomphe",
  "typed-arena",
- "uuid",
 ]
 
 [[package]]
@@ -121,9 +120,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-federation"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95e9c2cbf9174d265265f34aa4305613da20537d91d5d51a84e08778f505d409"
+checksum = "1b065a38fd7871b7c3f1fb30889e960be4a9a3317e6d6e671132328d0912a08a"
 dependencies = [
  "apollo-compiler",
  "derive_more",
@@ -131,7 +130,7 @@ dependencies = [
  "hashbrown 0.15.2",
  "http 1.2.0",
  "indexmap 2.7.1",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "line-col",
  "multimap 0.10.0",
  "nom",
@@ -164,16 +163,15 @@ dependencies = [
 
 [[package]]
 name = "apollo-router"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4374a5696708bfee4b915c71d9374d83583223d21d404e02e4dea9ad7e2859e7"
+checksum = "995b24f768879ac9ed9b7c51f92506b7c70e960b349cde0f850f49efbd185fb4"
 dependencies = [
  "ahash",
  "anyhow",
  "apollo-compiler",
  "apollo-environment-detector",
  "apollo-federation",
- "arc-swap",
  "async-channel 1.9.0",
  "async-compression",
  "async-trait",
@@ -222,7 +220,7 @@ dependencies = [
  "hyper-util",
  "hyperlocal",
  "indexmap 2.7.1",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "itoa",
  "jsonpath-rust",
  "jsonpath_lib",
@@ -1233,16 +1231,14 @@ dependencies = [
 
 [[package]]
 name = "buildstructor"
-version = "0.5.4"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3907aac66c65520545ae3cb3c195306e20d5ed5c90bfbb992e061cf12a104d0"
+checksum = "caabaaee17b2a78d7aa349a33edc9090c6bb47e6dfb25b0da281df57628bba68"
 dependencies = [
- "lazy_static",
  "proc-macro2",
  "quote",
  "str_inflector",
  "syn 2.0.87",
- "thiserror 1.0.62",
  "try_match",
 ]
 
@@ -3256,6 +3252,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5210,9 +5215,9 @@ dependencies = [
 
 [[package]]
 name = "schemars"
-version = "0.8.16"
+version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45a28f4c49489add4ce10783f7911893516f15afe45d015608d41faca6bc4d29"
+checksum = "3fbf2ae1b8bc8e02df939598064d22402220cd5bbcca1c76f7d6a310974d5615"
 dependencies = [
  "dyn-clone",
  "schemars_derive",
@@ -5223,14 +5228,14 @@ dependencies = [
 
 [[package]]
 name = "schemars_derive"
-version = "0.8.16"
+version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c767fd6fa65d9ccf9cf026122c1b555f2ef9a4f0cea69da4d7dbc3e258d30967"
+checksum = "32e265784ad618884abaea0600a9adf15393368d840e0222d101a072f3f7534d"
 dependencies = [
  "proc-macro2",
  "quote",
  "serde_derive_internals",
- "syn 1.0.109",
+ "syn 2.0.87",
 ]
 
 [[package]]
@@ -5325,13 +5330,13 @@ dependencies = [
 
 [[package]]
 name = "serde_derive_internals"
-version = "0.26.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
+checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.87",
 ]
 
 [[package]]
@@ -5349,9 +5354,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json_bytes"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ecd92a088fb2500b2f146c9ddc5da9950bb7264d3f00932cd2a6fb369c26c46"
+checksum = "a6a27c10711f94d1042b4c96d483556ec84371864e25d0e1cf3dc1024b0880b1"
 dependencies = [
  "ahash",
  "bytes",
@@ -5638,17 +5643,17 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
-version = "0.26.2"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d8cec3501a5194c432b2b7976db6b7d10ec95c253208b45f83f7136aa985e29"
+checksum = "f64def088c51c9510a8579e3c5d67c65349dcf755e5479ad3d010aa6454e2c32"
 
 [[package]]
 name = "strum_macros"
-version = "0.26.1"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a3417fc93d76740d974a01654a09777cb500428cc874ca9f45edfe0c4d4cd18"
+checksum = "c77a8c5abcaf0f9ce05d62342b7d298c346515365c36b673df4ebe3ced01fde8"
 dependencies = [
- "heck 0.4.1",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -6446,7 +6451,6 @@ checksum = "81dfa00651efa65069b0b6b651f4aaa31ba9e3c3ce0137aaad053604ee7e0314"
 dependencies = [
  "getrandom 0.2.10",
  "serde",
- "wasm-bindgen",
 ]
 
 [[package]]
