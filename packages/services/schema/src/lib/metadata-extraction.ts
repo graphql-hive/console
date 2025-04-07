@@ -62,7 +62,7 @@ export const extractMetadata = (documentAst: DocumentNode, source: string): Subg
           },
           [] as Array<{ name: string; content: string; source: string }>,
         );
-      if (metadata) {
+      if (metadata?.length) {
         schemaCoordinateMetadataMappings.set(schemaCoordinate, metadata);
       }
     }
