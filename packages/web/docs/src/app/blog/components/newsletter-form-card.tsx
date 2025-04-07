@@ -51,7 +51,7 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
 
           setState(s => ({
             status: 'pending',
-            message: s?.status === 'error' ? s.message : undefined,
+            message: s?.status === 'error' ? 'Retrying...' : undefined,
           }));
 
           try {
@@ -81,6 +81,9 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
 
             setState({ status: 'error', message: 'Something went wrong. Please let us know.' });
           }
+        }}
+        onReset={() => {
+          setState(undefined);
         }}
       >
         <Input
@@ -113,13 +116,6 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
             type="reset"
             variant="secondary-inverted"
             className="group/button mt-2 !w-full before:absolute"
-            onClick={() => {
-              // the default behavior of <button type="reset"> doesn't work here
-              // because it gets unmounted too fast
-              setTimeout(() => {
-                setState(undefined);
-              }, 0);
-            }}
           >
             <span className="group-hover/button:hidden group-focus/button:hidden">Subscribed</span>
             <span aria-hidden className="hidden group-hover/button:block group-focus/button:block">
