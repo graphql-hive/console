@@ -10,6 +10,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Describe organization',
         description: 'Fetch information about the specified organization.',
       },
+    ],
+  },
+  {
+    id: 'access-tokens',
+    title: 'Access Tokens',
+    permissions: [
       {
         id: 'accessToken:modify',
         title: 'Manage access tokens',
