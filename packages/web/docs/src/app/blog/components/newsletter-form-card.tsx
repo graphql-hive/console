@@ -13,7 +13,7 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
 
   // we don't want to blink a message on retries when request is pending
   const lastErrorMessage = useRef<string>();
-  lastErrorMessage.current = state?.message || lastErrorMessage.current;
+  lastErrorMessage.current = state?.status === 'error' ? state.message : lastErrorMessage.current;
 
   return (
     <article
@@ -58,7 +58,7 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
             const json = await response.json();
             if (json.status === 'success') {
               lastErrorMessage.current = undefined;
-              setState({ status: 'success', message: json.message });
+              setState({ status: 'success', message: 'Please check your email to confirm.' });
             } else {
               setState({ status: 'error', message: json.message });
             }
@@ -82,7 +82,13 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
         <Input
           name="email"
           placeholder="E-mail"
-          severity={lastErrorMessage.current ? 'critical' : undefined}
+          severity={
+            lastErrorMessage.current
+              ? 'critical'
+              : state?.status === 'success'
+                ? 'positive'
+                : undefined
+          }
           message={lastErrorMessage.current}
         />
         {!state || state.status === 'error' ? (
