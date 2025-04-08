@@ -287,8 +287,6 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    this.logger.debug('No validation errors');
-
     if (!result.sdl) {
       throw new Error('No SDL, but no errors either');
     }

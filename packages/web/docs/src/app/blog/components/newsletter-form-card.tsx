@@ -1,19 +1,21 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { CallToAction, cn, Heading, Input } from '@theguild/components';
 
 export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
   type Idle = undefined;
-  type Pending = { status: 'pending'; message?: never };
+  type Pending = {
+    status: 'pending';
+    /**
+     * potentially revious error message to reduce layout shift
+     */
+    message: string | undefined;
+  };
   type Success = { status: 'success'; message: string };
   type Error = { status: 'error'; message: string };
   type State = Idle | Pending | Success | Error;
   const [state, setState] = useState<State>();
-
-  // we don't want to blink a message on retries when request is pending
-  const lastErrorMessage = useRef<string>();
-  lastErrorMessage.current = state?.message || lastErrorMessage.current;
 
   return (
     <article
@@ -47,7 +49,10 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
             return;
           }
 
-          setState({ status: 'pending' });
+          setState(s => ({
+            status: 'pending',
+            message: s?.status === 'error' ? 'Retrying...' : undefined,
+          }));
 
           try {
             const response = await fetch('https://utils.the-guild.dev/api/newsletter-subscribe', {
@@ -57,8 +62,7 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
 
             const json = await response.json();
             if (json.status === 'success') {
-              lastErrorMessage.current = undefined;
-              setState({ status: 'success', message: json.message });
+              setState({ status: 'success', message: 'Please check your email to confirm.' });
             } else {
               setState({ status: 'error', message: json.message });
             }
@@ -78,12 +82,21 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
             setState({ status: 'error', message: 'Something went wrong. Please let us know.' });
           }
         }}
+        onReset={() => {
+          setState(undefined);
+        }}
       >
         <Input
           name="email"
           placeholder="E-mail"
-          severity={lastErrorMessage.current ? 'critical' : undefined}
-          message={lastErrorMessage.current}
+          severity={
+            state?.status === 'error'
+              ? 'critical'
+              : state?.status === 'success'
+                ? 'positive'
+                : undefined
+          }
+          message={state?.message}
         />
         {!state || state.status === 'error' ? (
           <CallToAction type="submit" variant="secondary-inverted" className="mt-2 !w-full">
@@ -103,13 +116,6 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
             type="reset"
             variant="secondary-inverted"
             className="group/button mt-2 !w-full before:absolute"
-            onClick={() => {
-              // the default behavior of <button type="reset"> doesn't work here
-              // because it gets unmounted too fast
-              setTimeout(() => {
-                setState(undefined);
-              }, 0);
-            }}
           >
             <span className="group-hover/button:hidden group-focus/button:hidden">Subscribed</span>
             <span aria-hidden className="hidden group-hover/button:block group-focus/button:block">
