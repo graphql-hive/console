@@ -50,9 +50,9 @@ patchedDependencies:
   eslint@8.57.1:
     hash: 08d9d41d21638cb74d0f9f34877a8839601a4e5a8263066ff23e7032addbcba0
     path: patches/eslint@8.57.1.patch
-  got@14.4.5:
+  got@14.4.7:
     hash: f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299
-    path: patches/got@14.4.5.patch
+    path: patches/got@14.4.7.patch
   graphiql:
     hash: 87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d
     path: patches/graphiql.patch
@@ -642,8 +642,8 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -796,8 +796,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1169,8 +1169,8 @@ importers:
         specifier: 4.29.0
         version: 4.29.0
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1283,8 +1283,8 @@ importers:
         specifier: 4.29.0
         version: 4.29.0
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1419,8 +1419,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       pg-promise:
         specifier: 11.10.2
         version: 11.10.2(pg-query-stream@4.7.0(pg@8.13.1))
@@ -1530,8 +1530,8 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1587,8 +1587,8 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1629,8 +1629,8 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       got:
-        specifier: 14.4.5
-        version: 14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+        specifier: 14.4.7
+        version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       ioredis:
         specifier: 5.4.2
         version: 5.4.2
@@ -10605,8 +10605,8 @@ packages:
     resolution: {integrity: sha512-XfBk1CxOOScDcMr9O1yKkNaQyy865NbYs+F7dr4H0LZMVgCj2Le59k6PqbNHoL5ToeaEQUYh6c6yMfVcc6SJxA==}
     engines: {node: '>=16'}
 
-  got@14.4.5:
-    resolution: {integrity: sha512-sq+uET8TnNKRNnjEOPJzMcxeI0irT8BBNmf+GtZcJpmhYsQM1DSKmCROUjPWKsXZ5HzwD5Cf5/RV+QD9BSTxJg==}
+  got@14.4.7:
+    resolution: {integrity: sha512-DI8zV1231tqiGzOiOzQWDhsBmncFW7oQDH6Zgy6pDPrqJuVZMtoSgPLLsBZQj8Jg4JFfwoOsDA8NGtLQLnIx2g==}
     engines: {node: '>=20'}
 
   graceful-fs@4.2.11:
@@ -16377,8 +16377,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16485,11 +16485,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
+  '@aws-sdk/client-sso-oidc@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16528,7 +16528,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -16662,11 +16661,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0':
+  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16705,6 +16704,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -16818,7 +16818,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16937,7 +16937,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -17112,7 +17112,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -27717,7 +27717,7 @@ snapshots:
       p-cancelable: 3.0.0
       responselike: 3.0.0
 
-  got@14.4.5(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299):
+  got@14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299):
     dependencies:
       '@sindresorhus/is': 7.0.1
       '@szmarczak/http-timer': 5.0.1
