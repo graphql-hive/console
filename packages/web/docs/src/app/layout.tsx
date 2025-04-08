@@ -21,6 +21,7 @@ import '../easing-functions.css';
 import '../mermaid.css';
 import { NarrowPages } from './narrow-pages';
 
+
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
   websiteName: 'Hive',
@@ -68,7 +69,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
     '/ecosystem',
     '/partners',
     '/gateway',
-    '/gateway/comparison/apollo-router',
+    '/compare/gateway/apollo-router',
   ];
 
   return (

@@ -1,6 +1,10 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { Metadata } from 'next';
+import { CommunitySection } from '#components/community-section';
+import { CompanyTestimonialsSection } from '#components/company-testimonials';
+import { ErrorBoundary } from '#components/error-boundary';
+import { LandingPageContainer } from '#components/landing-page-container';
+import { TrustedBySection } from '#components/trusted-by-section';
 import {
   CallToAction,
   GetYourAPIGameRightSection,
@@ -9,15 +13,10 @@ import {
   HiveGatewayIcon,
   NextPageProps,
 } from '@theguild/components';
-import { CommunitySection } from '../../../../components/community-section';
-import { CompanyTestimonialsSection } from '../../../../components/company-testimonials';
-import { ErrorBoundary } from '../../../../components/error-boundary';
-import { LandingPageContainer } from '../../../../components/landing-page-container';
-import { TrustedBySection } from '../../../../components/trusted-by-section';
+import { FederationCompatibleBenchmarksSection } from '../../../gateway/federation-compatible-benchmarks';
+import { GatewayHeroDecoration } from '../../../gateway/gateway-hero-decoration';
+import { otherLogos } from '../../../gateway/other-logos';
 import { metadata as rootMetadata } from '../../../layout';
-import { FederationCompatibleBenchmarksSection } from '../../federation-compatible-benchmarks';
-import { GatewayHeroDecoration } from '../../gateway-hero-decoration';
-import { otherLogos } from '../../other-logos';
 import { ComparisonSection, ComparisonTable } from '../comparison-table';
 
 const DESCRIPTION =
@@ -132,7 +131,7 @@ export async function generateMetadata({ params }: NextPageProps<'comparison'>) 
       // to remove leading slash
       canonical: '.',
     },
-    openGraph: rootMetadata.openGraph,
+    openGraph: rootMetadata!.openGraph,
   };
 }
 
