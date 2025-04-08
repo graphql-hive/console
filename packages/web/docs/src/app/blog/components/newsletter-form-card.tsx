@@ -97,6 +97,11 @@ export function NewsletterFormCard(props: React.HTMLAttributes<HTMLElement>) {
                 : undefined
           }
           message={state?.message}
+          onChange={() => {
+            if (state?.status === 'success') {
+              setState(undefined);
+            }
+          }}
         />
         {!state || state.status === 'error' ? (
           <CallToAction type="submit" variant="secondary-inverted" className="mt-2 !w-full">
