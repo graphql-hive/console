@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { dirname, join } from 'node:path';
 import { CommunitySection } from '#components/community-section';
 import { CompanyTestimonialsSection } from '#components/company-testimonials';
 import { ErrorBoundary } from '#components/error-boundary';
@@ -23,8 +23,10 @@ const DESCRIPTION =
   'See why teams choose a fully open-source gateway instead of other closed solutions';
 
 export default async function ComparisonPage(props: NextPageProps<'comparison'>) {
-  const dirname = import.meta.url.split('/').slice(2, -1).join('/');
-  const file = path.join(dirname, `${(await props.params).comparison}.json`);
+  const file = join(
+    dirname(new URL(import.meta.url).pathname),
+    `${(await props.params).comparison}.json`,
+  );
 
   const comparison = JSON.parse(
     await readFile(file, 'utf-8'),
@@ -110,15 +112,16 @@ export default async function ComparisonPage(props: NextPageProps<'comparison'>)
 }
 
 export async function generateStaticParams() {
-  const dirname = import.meta.url.split('/').slice(2, -1).join('/');
-  const dir = await readdir(dirname);
+  const dir = await readdir(dirname(new URL(import.meta.url).pathname));
   const jsonFiles = dir.filter(file => file.endsWith('.json'));
   return jsonFiles.map(file => ({ comparison: file.replace('.json', '') }));
 }
 
 export async function generateMetadata({ params }: NextPageProps<'comparison'>) {
-  const dirname = import.meta.url.split('/').slice(2, -1).join('/');
-  const file = path.join(dirname, `${(await params).comparison}.json`);
+  const file = join(
+    dirname(new URL(import.meta.url).pathname),
+    `${(await params).comparison}.json`,
+  );
 
   const comparison = JSON.parse(
     await readFile(file, 'utf-8'),

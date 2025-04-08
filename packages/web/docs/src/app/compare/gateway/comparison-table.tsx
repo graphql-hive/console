@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { Fragment, ReactNode } from 'react';
 import { cn, Heading, ComparisonTable as Table } from '@theguild/components';
 import { CheckmarkIcon, XIcon } from '../../../components/icons';
 import { NestedSticky } from '../../../components/nested-sticky';
@@ -77,15 +77,14 @@ export function ComparisonTable({ className, columns, sections }: ComparisonTabl
           </thead>
           <tbody>
             {sections.map((section, sectionIndex) => (
-              <>
+              <Fragment key={sectionIndex}>
                 <TableSubheaderRow
-                  key={`header-${sectionIndex}`}
                   icon={section.icon}
                   title={section.title}
                   description={section.description}
                 />
                 {section.rows.map((row, rowIndex) => (
-                  <tr key={`${sectionIndex}-${rowIndex}`}>
+                  <tr key={rowIndex}>
                     <ComparisonTableCell className="whitespace-pre">
                       {row.feature}
                     </ComparisonTableCell>
@@ -96,7 +95,7 @@ export function ComparisonTable({ className, columns, sections }: ComparisonTabl
                     ))}
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </Table>
