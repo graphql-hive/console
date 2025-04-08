@@ -47,14 +47,16 @@ export function ComparisonTable({ className, columns, sections }: ComparisonTabl
         <NestedSticky offsetTop={80} offsetBottom={90}>
           <div
             aria-hidden
-            className="bg-beige-100 [[data-sticky]>&]:border-beige-200 relative flex items-center rounded-3xl border border-transparent *:w-1/3 *:text-left [[data-sticky]>&]:rounded-t-none [[data-sticky]>&]:shadow-sm"
+            className="bg-beige-100 [[data-sticky]>&]:border-beige-200 relative flex items-center rounded-3xl border border-transparent *:text-left max-sm:-translate-y-4 sm:*:w-1/3 [[data-sticky]>&]:rounded-t-none [[data-sticky]>&]:shadow-sm"
           >
-            <div className="z-10 rounded-l-3xl p-6 text-xl/6 font-normal">Compare features</div>
+            <div className="z-10 flex-1 rounded-l-3xl p-6 text-xl/6 font-normal">
+              Compare features
+            </div>
             {columns.map(column => (
               <div className="py-6 last:rounded-r-3xl" key={column.name}>
                 <div className="border-beige-400 flex items-center justify-center gap-4 border-l px-6">
                   {column.icon && <div className="mr-2 *:size-10">{column.icon}</div>}
-                  <div className="text-xl/6 font-medium">{column.name}</div>
+                  <div className="text-xl/6 font-medium max-sm:sr-only">{column.name}</div>
                 </div>
               </div>
             ))}
@@ -107,7 +109,7 @@ function ComparisonTableCell({ children, className }: { children: ReactNode; cla
   return (
     <td
       className={cn(
-        'border-beige-400 border-b border-r p-4 first:border-l first:font-medium max-md:w-1/2 max-sm:text-sm sm:py-6 md:w-1/4 [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 md:[.subheader+tr>&:last-child]:rounded-tr-3xl max-md:[.subheader+tr>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl md:[tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl max-md:[tr:is(:has(+.subheader),:last-child)>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
+        'border-beige-400 border-b border-r p-4 first:border-l first:font-medium max-sm:min-w-[97px] max-sm:text-sm max-sm:first:w-full sm:w-1/3 sm:py-6 [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 [.subheader+tr>&:last-child]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl [tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
         className,
       )}
     >
