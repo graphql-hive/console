@@ -175,6 +175,7 @@ const createFederation: (
     async ({ schemas, external, native, contracts }) => {
       const subgraphs = schemas
         .map(schema => {
+          logger.debug(`Parsing subgraph schema SDL (name=%s)`, schema.source);
           return {
             typeDefs: trimDescriptions(parse(schema.raw)),
             name: schema.source,
@@ -182,10 +183,15 @@ const createFederation: (
           };
         })
         .map(subgraph => {
+          logger.debug(`Extracting link implementations from subgraph (name=%s)`, subgraph.name);
           const { matchesImplementation, resolveImportName } = extractLinkImplementations(
             subgraph.typeDefs,
           );
           if (matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0')) {
+            logger.debug(
+              `Found hive link in subgraph. Applying link logic. (name=%s)`,
+              subgraph.name,
+            );
             // if this subgraph implements the metadata spec
             // then copy metadata from the schema to all fields.
             // @note this is similar to how federation's compose copies join__ directives to fields based on the
