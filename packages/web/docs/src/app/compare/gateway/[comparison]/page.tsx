@@ -19,17 +19,16 @@ import { otherLogos } from '../../../gateway/other-logos';
 import { metadata as rootMetadata } from '../../../layout';
 import { ComparisonSection, ComparisonTable } from '../comparison-table';
 
+const __dirname = dirname(new URL(import.meta.url).pathname)
+  .replace('%5B', '[')
+  .replace('%5D', ']');
+
 const DESCRIPTION =
   'See why teams choose a fully open-source gateway instead of other closed solutions';
 
 export default async function ComparisonPage(props: NextPageProps<'comparison'>) {
-  const file = join(
-    dirname(new URL(import.meta.url).pathname),
-    `${(await props.params).comparison}.json`,
-  );
-
   const comparison = JSON.parse(
-    await readFile(file, 'utf-8'),
+    await readFile(join(__dirname, `${(await props.params).comparison}.json`), 'utf-8'),
   ) as Comparison; /* we don't really need to parse this because it's a static build */
 
   const Logo = otherLogos[comparison.logo as keyof typeof otherLogos];
@@ -112,16 +111,13 @@ export default async function ComparisonPage(props: NextPageProps<'comparison'>)
 }
 
 export async function generateStaticParams() {
-  const dir = await readdir(dirname(new URL(import.meta.url).pathname));
+  const dir = await readdir(__dirname);
   const jsonFiles = dir.filter(file => file.endsWith('.json'));
   return jsonFiles.map(file => ({ comparison: file.replace('.json', '') }));
 }
 
 export async function generateMetadata({ params }: NextPageProps<'comparison'>) {
-  const file = join(
-    dirname(new URL(import.meta.url).pathname),
-    `${(await params).comparison}.json`,
-  );
+  const file = join(__dirname, `${(await params).comparison}.json`);
 
   const comparison = JSON.parse(
     await readFile(file, 'utf-8'),
