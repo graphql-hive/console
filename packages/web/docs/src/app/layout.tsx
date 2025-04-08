@@ -21,7 +21,6 @@ import '../easing-functions.css';
 import '../mermaid.css';
 import { NarrowPages } from './narrow-pages';
 
-
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
   websiteName: 'Hive',

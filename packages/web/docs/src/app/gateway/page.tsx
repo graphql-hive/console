@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import {
   CallToAction,
-  DecorationIsolation,
   ExploreMainProductCards,
   FrequentlyAskedQuestions,
   Hero,
