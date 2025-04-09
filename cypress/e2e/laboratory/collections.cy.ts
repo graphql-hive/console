@@ -1,4 +1,4 @@
-import { laboratory } from '../support/testkit';
+import { cyLaboratory } from './_cy';
 
 beforeEach(() => {
   cy.clearAllLocalStorage().then(() => {
@@ -16,7 +16,7 @@ beforeEach(() => {
         .first()
         .click();
       cy.get('[aria-label="Show Operation Collections"]').click();
-      laboratory.closeTabsUntilOneLeft();
+      cyLaboratory.closeTabsUntilOneLeft();
     });
   });
 });
@@ -90,7 +90,7 @@ describe('Laboratory > Collections', () => {
       name: 'collection-1',
       description: 'Description 1',
     });
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
@@ -103,7 +103,7 @@ describe('Laboratory > Collections', () => {
       name: 'collection-1',
       description: 'Description 1',
     });
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
@@ -127,7 +127,7 @@ describe('Laboratory > Collections', () => {
       name: 'collection-1',
       description: 'Description 1',
     });
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
@@ -151,7 +151,7 @@ describe('Laboratory > Collections', () => {
       name: 'collection-1',
       description: 'Description 1',
     });
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
@@ -173,14 +173,14 @@ describe('Laboratory > Collections', () => {
       name: 'collection-1',
       description: 'Description 1',
     });
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
     });
 
-    laboratory.openNewTab();
-    laboratory.updateEditorValue(`query op2 { test }`);
+    cyLaboratory.openNewTab();
+    cyLaboratory.updateEditorValue(`query op2 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-2',
       collectionName: 'collection-1',
@@ -206,14 +206,14 @@ describe('Laboratory > Collections', () => {
       description: 'Description 2',
     });
     collections.clickCollectionButton('collection-1');
-    laboratory.updateEditorValue(`query op1 { test }`);
+    cyLaboratory.updateEditorValue(`query op1 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-1',
       collectionName: 'collection-1',
     });
 
-    laboratory.openNewTab();
-    laboratory.updateEditorValue(`query op2 { test }`);
+    cyLaboratory.openNewTab();
+    cyLaboratory.updateEditorValue(`query op2 { test }`);
     collections.saveCurrentOperationAs({
       name: 'operation-2',
       collectionName: 'collection-2',
@@ -243,7 +243,7 @@ describe('Laboratory > Collections', () => {
         return cy.visit(copiedUrl);
       });
 
-    laboratory.assertActiveTab('operation-1');
-    laboratory.getEditorValue().should('contain', 'op1');
+    cyLaboratory.assertActiveTab('operation-1');
+    cyLaboratory.getEditorValue().should('contain', 'op1');
   });
 });
