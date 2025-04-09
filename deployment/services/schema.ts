@@ -50,7 +50,7 @@ export function deploySchema({
       startupProbe: '/_health',
       exposesMetrics: true,
       replicas: environment.isProduction ? 3 : 1,
-      memoryLimit: '1Gi',
+      memoryLimit: environment.isProduction ? '1.5Gi' : '512Mi',
       pdb: true,
     },
     [redis.deployment, redis.service],
