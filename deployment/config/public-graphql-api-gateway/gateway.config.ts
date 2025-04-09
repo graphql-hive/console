@@ -41,4 +41,8 @@ export const gatewayConfig = defineConfig({
         ],
       }
     : false,
+  demandControl: {
+    maxCost: 1000,
+    includeExtensionMetadata: true,
+  },
 });
