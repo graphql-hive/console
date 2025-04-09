@@ -45,4 +45,6 @@ export const gatewayConfig = defineConfig({
     maxCost: 1000,
     includeExtensionMetadata: true,
   },
+  maxTokens: 1_000,
+  maxDepth: 20,
 });
