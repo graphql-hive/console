@@ -39,7 +39,7 @@ export function FederationCompatibleBenchmarksSection({
         </CallToAction>
       </div>
       <div className="hive-focus nextra-scrollbar border-beige-400 [&_:is(td,th)]:border-beige-400 overflow-x-auto rounded-2xl border [scrollbar-width:auto] max-sm:-mx-8">
-        <Table className="table w-full border-none max-sm:rounded-none max-sm:text-sm">
+        <Table className="table w-full border-none max-sm:rounded-none max-sm:text-sm max-md:[&_:is(td,th):first-of-type]:bg-white">
           <thead>
             <Table.Row className="*:text-left">
               <Table.Header className="whitespace-pre pl-6">

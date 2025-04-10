@@ -68,6 +68,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
     '/ecosystem',
     '/partners',
     '/gateway',
+    '/compare/gateway/apollo-router',
   ];
 
   return (
