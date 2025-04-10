@@ -88,7 +88,7 @@ export class PersistedDocumentScheduler {
 
     return async function batchProcess(data: BatchProcessEvent['data']) {
       const id = crypto.randomUUID();
-      const d = createDeferred<BatchProcessedEvent>();
+      const d = Promise.withResolvers<BatchProcessedEvent>();
       const timeout = setTimeout(() => {
         task.reject(new Error('Timeout, worker did not respond within time.'));
       }, 20_000);
@@ -131,19 +131,4 @@ export class PersistedDocumentScheduler {
   async processBatch(data: BatchProcessEvent['data']) {
     return this.getRandomWorker()(data);
   }
-}
-
-function createDeferred<T = void>() {
-  let resolve: (value: T) => void;
-  let reject: (error: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-
-  return {
-    resolve: (value: T) => resolve(value),
-    reject: (error: unknown) => reject(error),
-    promise,
-  };
 }
