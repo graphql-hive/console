@@ -118,7 +118,7 @@ export class FederationOrchestrator implements Orchestrator {
     );
 
     timeoutAbortSignal.removeEventListener('abort', onTimeout);
-    this.incomingRequestAbortSignal.removeEventListener('type', onIncomingRequestAbort);
+    this.incomingRequestAbortSignal.removeEventListener('abort', onIncomingRequestAbort);
 
     return result;
   }
