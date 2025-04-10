@@ -878,49 +878,6 @@ export async function createStorage(
 
       return total;
     },
-    getOrganizationMembers: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allMembers = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getOrganizationMembers */
-        SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
-          omr.scopes as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id = ANY(${sql.array(
-          organizations,
-          'uuid',
-        )}) ORDER BY u.created_at DESC`,
-      );
-
-      return organizations.map(organization => {
-        const members = allMembers.rows.filter(row => row.organization_id === organization);
-
-        if (members) {
-          return Promise.resolve(members.map(transformMember));
-        }
-
-        return Promise.reject(new Error(`Members not found (organization=${organization})`));
-      });
-    }),
     getOrganizationMember: batch(async selectors => {
       const membersResult = await pool.query<
         users &
