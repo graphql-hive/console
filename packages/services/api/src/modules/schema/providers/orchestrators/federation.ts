@@ -96,30 +96,32 @@ export class FederationOrchestrator implements Orchestrator {
     };
     this.incomingRequestAbortSignal.addEventListener('abort', onIncomingRequestAbort);
 
-    const result = await this.schemaService.composeAndValidate.mutate(
-      {
-        type: 'federation',
-        schemas: schemas.map(s => ({
-          raw: s.raw,
-          source: s.source,
-          url: s.url ?? null,
-        })),
-        external: this.createConfig(config.external),
-        native: config.native,
-        contracts: config.contracts,
-      },
-      {
-        // We want to abort composition if the request that does the composition is aborted
-        // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
-        //
-        // The reason for these is a potential dead-lock.
-        signal: AbortSignal.any([this.incomingRequestAbortSignal, timeoutAbortSignal]),
-      },
-    );
+    try {
+      const result = await this.schemaService.composeAndValidate.mutate(
+        {
+          type: 'federation',
+          schemas: schemas.map(s => ({
+            raw: s.raw,
+            source: s.source,
+            url: s.url ?? null,
+          })),
+          external: this.createConfig(config.external),
+          native: config.native,
+          contracts: config.contracts,
+        },
+        {
+          // We want to abort composition if the request that does the composition is aborted
+          // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
+          //
+          // The reason for these is a potential dead-lock.
+          signal: AbortSignal.any([this.incomingRequestAbortSignal, timeoutAbortSignal]),
+        },
+      );
 
-    timeoutAbortSignal.removeEventListener('abort', onTimeout);
-    this.incomingRequestAbortSignal.removeEventListener('abort', onIncomingRequestAbort);
-
-    return result;
+      return result;
+    } finally {
+      timeoutAbortSignal.removeEventListener('abort', onTimeout);
+      this.incomingRequestAbortSignal.removeEventListener('abort', onIncomingRequestAbort);
+    }
   }
 }
