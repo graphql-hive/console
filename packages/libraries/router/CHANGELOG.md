@@ -1,5 +1,15 @@
 # 16.10.2024
 
+## 2.1.1
+
+### Patch Changes
+
+- [#6714](https://github.com/graphql-hive/console/pull/6714)
+  [`3f823c9`](https://github.com/graphql-hive/console/commit/3f823c9e1f3bd5fd8fde4e375a15f54a9d5b4b4e)
+  Thanks [@github-actions](https://github.com/apps/github-actions)! - Updated internal Apollo crates
+  to get downstream fix for advisories. See
+  https://github.com/apollographql/router/releases/tag/v2.1.1
+
 ## 2.1.0
 
 ### Minor Changes
