@@ -204,16 +204,18 @@ export function getOrganizationMembers(selector: OrganizationSelectorInput, auth
       query getOrganizationMembers($selector: OrganizationSelectorInput!) {
         organization(reference: { bySelector: $selector }) {
           members {
-            nodes {
-              id
-              user {
+            edges {
+              node {
                 id
-                email
-              }
-              role {
-                id
-                name
-                permissions
+                user {
+                  id
+                  email
+                }
+                role {
+                  id
+                  name
+                  permissions
+                }
               }
             }
           }

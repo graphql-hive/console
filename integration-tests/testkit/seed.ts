@@ -203,7 +203,7 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const members = membersResult.organization?.members?.nodes;
+              const members = membersResult.organization?.members?.edges?.map(edge => edge.node);
 
               if (!members) {
                 throw new Error(`Could not get members for org ${organization.slug}`);

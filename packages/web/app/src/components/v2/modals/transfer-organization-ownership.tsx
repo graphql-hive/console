@@ -33,18 +33,19 @@ const TransferOrganizationOwnership_Members = graphql(`
       id
       slug
       members {
-        nodes {
-          id
-          isOwner
-          ...MemberFields
-          user {
+        edges {
+          node {
             id
-            fullName
-            displayName
-            email
+            isOwner
+            ...MemberFields
+            user {
+              id
+              fullName
+              displayName
+              email
+            }
           }
         }
-        total
       }
     }
   }
@@ -159,9 +160,9 @@ export const TransferOrganizationOwnershipModal = ({
     [setSelected, setFieldValue],
   );
 
-  const members = (query.data?.organization?.members?.nodes ?? []).filter(
-    member => !member.isOwner,
-  );
+  const members = (query.data?.organization?.members?.edges ?? [])
+    .map(edge => edge.node)
+    .filter(member => !member.isOwner);
 
   const filteredMembers = (
     searchPhrase === ''

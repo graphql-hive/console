@@ -274,6 +274,11 @@ export default gql`
     organization: Organization!
   }
 
+  input MemberReferenceInput @oneOf {
+    byId: ID
+    byEmail: String
+  }
+
   type Organization {
     """
     Unique UUID of the organization
@@ -287,7 +292,11 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member!
     me: Member!
-    members: MemberConnection
+    member(reference: MemberReferenceInput!): Member
+    members(
+      first: Int! @tag(name: "public")
+      after: String @tag(name: "public")
+    ): MemberConnection! @tag(name: "public")
     invitations: OrganizationInvitationConnection
     getStarted: OrganizationGetStarted!
     memberRoles: [MemberRole!]
@@ -585,8 +594,13 @@ export default gql`
   }
 
   type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
+    edges: [MemberEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type MemberEdge {
+    cursor: String! @tag(name: "public")
+    node: Member! @tag(name: "public")
   }
 
   input AppDeploymentResourceAssignmentInput {

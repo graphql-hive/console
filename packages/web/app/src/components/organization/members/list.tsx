@@ -61,9 +61,10 @@ const OrganizationMemberRow_DeleteMember = graphql(`
       organization {
         id
         members {
-          total
-          nodes {
-            ...OrganizationMemberRow_MemberFragment
+          edges {
+            node {
+              ...OrganizationMemberRow_MemberFragment
+            }
           }
         }
       }
@@ -286,18 +287,19 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       id
     }
     members {
-      nodes {
-        id
-        user {
-          displayName
-        }
-        role {
+      edges {
+        node {
           id
-          name
+          user {
+            displayName
+          }
+          role {
+            id
+            name
+          }
+          ...OrganizationMemberRow_MemberFragment
         }
-        ...OrganizationMemberRow_MemberFragment
       }
-      total
     }
     viewerCanManageInvitations
     ...MemberInvitationForm_OrganizationFragment
@@ -310,7 +312,7 @@ export function OrganizationMembers(props: {
   refetchMembers(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
-  const members = organization.members?.nodes;
+  const members = organization.members?.edges?.map(edge => edge.node);
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc' | null>(null);
   const [sortByKey, setSortByKey] = useState<'name' | 'role'>('name');
 
