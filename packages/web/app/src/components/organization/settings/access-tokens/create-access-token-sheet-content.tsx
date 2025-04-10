@@ -116,7 +116,7 @@ export function CreateAccessTokenSheetContent(
     props.organization,
   );
   const [resourceSelection, setResourceSelection] = useState<ResourceSelection>(() => ({
-    mode: GraphQLSchema.ResourceAssignmentMode.All,
+    mode: GraphQLSchema.ResourceAssignmentModeType.All,
     projects: [],
   }));
 

@@ -7,57 +7,57 @@ import type { ResourceSelection } from '../../members/resource-selector';
 export function resolveResources(
   organizationSlug: string,
   resources: ResourceSelection,
-): null | Record<GraphQLSchema.PermissionLevel, Array<string>> {
-  if (resources.mode === GraphQLSchema.ResourceAssignmentMode.All || !resources.projects) {
+): null | Record<GraphQLSchema.PermissionLevelType, Array<string>> {
+  if (resources.mode === GraphQLSchema.ResourceAssignmentModeType.All || !resources.projects) {
     return null;
   }
 
-  const resolvedResources: Record<GraphQLSchema.PermissionLevel, Array<string>> = {
-    [GraphQLSchema.PermissionLevel.Organization]: [organizationSlug],
-    [GraphQLSchema.PermissionLevel.Project]: [],
-    [GraphQLSchema.PermissionLevel.Target]: [],
-    [GraphQLSchema.PermissionLevel.AppDeployment]: [],
-    [GraphQLSchema.PermissionLevel.Service]: [],
+  const resolvedResources: Record<GraphQLSchema.PermissionLevelType, Array<string>> = {
+    [GraphQLSchema.PermissionLevelType.Organization]: [organizationSlug],
+    [GraphQLSchema.PermissionLevelType.Project]: [],
+    [GraphQLSchema.PermissionLevelType.Target]: [],
+    [GraphQLSchema.PermissionLevelType.AppDeployment]: [],
+    [GraphQLSchema.PermissionLevelType.Service]: [],
   };
 
   for (const project of resources.projects) {
-    resolvedResources[GraphQLSchema.PermissionLevel.Project].push(
+    resolvedResources[GraphQLSchema.PermissionLevelType.Project].push(
       `${organizationSlug}/${project.projectSlug}`,
     );
-    if (project.targets.mode === GraphQLSchema.ResourceAssignmentMode.All) {
-      resolvedResources[GraphQLSchema.PermissionLevel.Target].push(
+    if (project.targets.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
+      resolvedResources[GraphQLSchema.PermissionLevelType.Target].push(
         `${organizationSlug}/${project.projectSlug}/*`,
       );
-      resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+      resolvedResources[GraphQLSchema.PermissionLevelType.Service].push(
         `${organizationSlug}/${project.projectSlug}/*/service/*`,
       );
-      resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+      resolvedResources[GraphQLSchema.PermissionLevelType.AppDeployment].push(
         `${organizationSlug}/${project.projectSlug}/*/appDeployment/*`,
       );
       continue;
     }
     for (const target of project.targets.targets) {
-      resolvedResources[GraphQLSchema.PermissionLevel.Target].push(
+      resolvedResources[GraphQLSchema.PermissionLevelType.Target].push(
         `${organizationSlug}/${project.projectSlug}/${target.targetSlug}`,
       );
-      if (target.services.mode === GraphQLSchema.ResourceAssignmentMode.All) {
-        resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+      if (target.services.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
+        resolvedResources[GraphQLSchema.PermissionLevelType.Service].push(
           `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/service/*`,
         );
       } else if (target.services.services) {
         for (const service of target.services.services) {
-          resolvedResources[GraphQLSchema.PermissionLevel.Service].push(
+          resolvedResources[GraphQLSchema.PermissionLevelType.Service].push(
             `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/service/${service.serviceName}`,
           );
         }
       }
-      if (target.appDeployments.mode === GraphQLSchema.ResourceAssignmentMode.All) {
-        resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+      if (target.appDeployments.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
+        resolvedResources[GraphQLSchema.PermissionLevelType.AppDeployment].push(
           `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/appDeployment/*`,
         );
       } else if (target.appDeployments.appDeployments) {
         for (const appDeployment of target.appDeployments.appDeployments) {
-          resolvedResources[GraphQLSchema.PermissionLevel.AppDeployment].push(
+          resolvedResources[GraphQLSchema.PermissionLevelType.AppDeployment].push(
             `${organizationSlug}/${project.projectSlug}/${target.targetSlug}/appDeployment/${appDeployment.appDeployment}`,
           );
         }
@@ -68,21 +68,21 @@ export function resolveResources(
   return resolvedResources;
 }
 
-export function permissionLevelToResourceName(level: GraphQLSchema.PermissionLevel) {
+export function permissionLevelToResourceName(level: GraphQLSchema.PermissionLevelType) {
   switch (level) {
-    case GraphQLSchema.PermissionLevel.Organization: {
+    case GraphQLSchema.PermissionLevelType.Organization: {
       return 'organizations';
     }
-    case GraphQLSchema.PermissionLevel.Project: {
+    case GraphQLSchema.PermissionLevelType.Project: {
       return 'projects';
     }
-    case GraphQLSchema.PermissionLevel.Target: {
+    case GraphQLSchema.PermissionLevelType.Target: {
       return 'targets';
     }
-    case GraphQLSchema.PermissionLevel.Service: {
+    case GraphQLSchema.PermissionLevelType.Service: {
       return 'services';
     }
-    case GraphQLSchema.PermissionLevel.AppDeployment: {
+    case GraphQLSchema.PermissionLevelType.AppDeployment: {
       return 'app deployments';
     }
   }

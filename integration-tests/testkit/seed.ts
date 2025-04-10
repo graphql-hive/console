@@ -843,7 +843,7 @@ export function initSeed() {
                       userId: input.userId,
                       roleId: input.roleId,
                       resources: input.resources ?? {
-                        mode: GraphQLSchema.ResourceAssignmentMode.All,
+                        mode: GraphQLSchema.ResourceAssignmentModeType.All,
                         projects: [],
                       },
                     },

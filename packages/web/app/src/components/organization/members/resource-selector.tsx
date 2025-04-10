@@ -145,7 +145,7 @@ export function ResourceSelector(props: {
   const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
   const projectState = useMemo(() => {
-    if (props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All) {
+    if (props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
       return null;
     }
 
@@ -190,7 +190,7 @@ export function ResourceSelector(props: {
               projectId: item.id,
               projectSlug: item.slug,
               targets: {
-                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
                 targets: [],
               },
             });
@@ -235,7 +235,7 @@ export function ResourceSelector(props: {
 
     if (
       projectState.activeProject.projectSelection.targets.mode ===
-      GraphQLSchema.ResourceAssignmentMode.All
+      GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
         selection: '*',
@@ -244,7 +244,7 @@ export function ResourceSelector(props: {
             produce(props.selection, state => {
               const project = state.projects?.find(project => project.projectId === projectId);
               if (!project) return;
-              project.targets.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+              project.targets.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
             }),
           );
         },
@@ -311,15 +311,15 @@ export function ResourceSelector(props: {
               targetId: item.id,
               targetSlug: item.slug,
               appDeployments: {
-                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
                 appDeployments: [],
               },
               services: {
                 mode:
                   // for single projects we choose "All" by default as there is no granular selection available
                   projectType === GraphQLSchema.ProjectType.Single
-                    ? GraphQLSchema.ResourceAssignmentMode.All
-                    : GraphQLSchema.ResourceAssignmentMode.Granular,
+                    ? GraphQLSchema.ResourceAssignmentModeType.All
+                    : GraphQLSchema.ResourceAssignmentModeType.Granular,
                 services: [],
               },
             });
@@ -353,7 +353,7 @@ export function ResourceSelector(props: {
           produce(props.selection, state => {
             const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
-            project.targets.mode = GraphQLSchema.ResourceAssignmentMode.All;
+            project.targets.mode = GraphQLSchema.ResourceAssignmentModeType.All;
           }),
         );
         setBreadcrumb({ projectId });
@@ -397,7 +397,7 @@ export function ResourceSelector(props: {
 
     if (
       targetState.activeTarget.targetSelection.services.mode ===
-      GraphQLSchema.ResourceAssignmentMode.All
+      GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
         selection: '*' as const,
@@ -408,7 +408,7 @@ export function ResourceSelector(props: {
               if (!project) return;
               const target = project.targets.targets?.find(target => target.targetId === targetId);
               if (!target) return;
-              target.services.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+              target.services.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
             }),
           );
         },
@@ -449,7 +449,7 @@ export function ResourceSelector(props: {
             const target = project.targets.targets?.find(target => target.targetId === targetId);
 
             if (!target) return;
-            target.services.mode = GraphQLSchema.ResourceAssignmentMode.All;
+            target.services.mode = GraphQLSchema.ResourceAssignmentModeType.All;
           }),
         );
       },
@@ -512,7 +512,7 @@ export function ResourceSelector(props: {
 
     if (
       targetState.activeTarget.targetSelection.services.mode ===
-      GraphQLSchema.ResourceAssignmentMode.All
+      GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
         selection: '*' as const,
@@ -523,7 +523,7 @@ export function ResourceSelector(props: {
               if (!project) return;
               const target = project.targets.targets?.find(target => target.targetId === targetId);
               if (!target) return;
-              target.appDeployments.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+              target.appDeployments.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
             }),
           );
         },
@@ -549,7 +549,7 @@ export function ResourceSelector(props: {
             const target = project.targets.targets?.find(target => target.targetId === targetId);
 
             if (!target) return;
-            target.appDeployments.mode = GraphQLSchema.ResourceAssignmentMode.All;
+            target.appDeployments.mode = GraphQLSchema.ResourceAssignmentModeType.All;
           }),
         );
       },
@@ -603,7 +603,7 @@ export function ResourceSelector(props: {
     <Tabs
       defaultValue="granular"
       value={
-        props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All ? 'full' : 'granular'
+        props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All ? 'full' : 'granular'
       }
     >
       <TabsList variant="content" className="mt-1">
@@ -613,7 +613,7 @@ export function ResourceSelector(props: {
           onClick={() => {
             props.onSelectionChange({
               ...props.selection,
-              mode: GraphQLSchema.ResourceAssignmentMode.All,
+              mode: GraphQLSchema.ResourceAssignmentModeType.All,
             });
             setBreadcrumb(null);
           }}
@@ -626,7 +626,7 @@ export function ResourceSelector(props: {
           onClick={() => {
             props.onSelectionChange({
               ...props.selection,
-              mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+              mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
             });
           }}
         >
@@ -744,7 +744,7 @@ export function ResourceSelector(props: {
                         title={
                           selection.project.slug +
                           (selection.projectSelection.targets.mode ===
-                          GraphQLSchema.ResourceAssignmentMode.All
+                          GraphQLSchema.ResourceAssignmentModeType.All
                             ? ' (all targets, all services)'
                             : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
                         }
@@ -802,7 +802,7 @@ export function ResourceSelector(props: {
                                   GraphQLSchema.ProjectType.Single
                                     ? ' (full access)'
                                     : selection.targetSelection.services.mode ===
-                                        GraphQLSchema.ResourceAssignmentMode.All
+                                        GraphQLSchema.ResourceAssignmentModeType.All
                                       ? ' (all services)'
                                       : ` (${selection.targetSelection.services.services?.length ?? 0} service${selection.targetSelection.services?.services?.length === 1 ? '' : 's'})`)
                                 }
@@ -850,7 +850,7 @@ export function ResourceSelector(props: {
                 {serviceAppsState === ServicesAppsState.service && (
                   <div className="flex flex-1 flex-col border-y border-r pt-2">
                     {projectState.activeProject?.projectSelection.targets.mode ===
-                    GraphQLSchema.ResourceAssignmentMode.All ? (
+                    GraphQLSchema.ResourceAssignmentModeType.All ? (
                       <div className="text-muted-foreground px-2 text-xs">
                         Access to all services of projects targets granted.
                       </div>
@@ -927,7 +927,7 @@ export function ResourceSelector(props: {
                 {serviceAppsState === ServicesAppsState.apps && (
                   <div className="flex flex-1 flex-col border-y border-r pt-2">
                     {projectState.activeProject?.projectSelection.targets.mode ===
-                    GraphQLSchema.ResourceAssignmentMode.All ? (
+                    GraphQLSchema.ResourceAssignmentModeType.All ? (
                       <div className="text-muted-foreground px-2 text-xs">
                         Access to all apps of projects targets granted.
                       </div>

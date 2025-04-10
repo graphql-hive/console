@@ -52,4 +52,8 @@ export default gql`
     startCursor: String! @tag(name: "public")
     endCursor: String! @tag(name: "public")
   }
+
+  interface Error {
+    message: String!
+  }
 `;

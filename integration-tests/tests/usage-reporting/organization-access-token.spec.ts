@@ -1,5 +1,5 @@
 import { initSeed } from 'testkit/seed';
-import { ResourceAssignmentMode } from '../../testkit/gql/graphql';
+import { ResourceAssignmentModeType } from '../../testkit/gql/graphql';
 import { getServiceHost } from '../../testkit/utils';
 
 test('/:targetId > operation is accepted with wildcard access token', async () => {
@@ -12,7 +12,7 @@ test('/:targetId > operation is accepted with wildcard access token', async () =
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.All,
+      mode: ResourceAssignmentModeType.All,
     },
   });
 
@@ -71,12 +71,12 @@ test('/:targetId > operation is denied without access to target', async () => {
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [
         {
           projectId: project.id,
           targets: {
-            mode: ResourceAssignmentMode.Granular,
+            mode: ResourceAssignmentModeType.Granular,
             targets: [],
           },
         },
@@ -133,22 +133,22 @@ test('/:targetId > operation is accepted with specific access to target', async 
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [
         {
           projectId: project.id,
           targets: {
-            mode: ResourceAssignmentMode.Granular,
+            mode: ResourceAssignmentModeType.Granular,
             targets: [
               {
                 targetId: target.id,
                 services: {
                   services: [],
-                  mode: ResourceAssignmentMode.Granular,
+                  mode: ResourceAssignmentModeType.Granular,
                 },
                 appDeployments: {
                   appDeployments: [],
-                  mode: ResourceAssignmentMode.Granular,
+                  mode: ResourceAssignmentModeType.Granular,
                 },
               },
             ],
@@ -213,7 +213,7 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with wildcard a
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.All,
+      mode: ResourceAssignmentModeType.All,
     },
   });
 
@@ -275,12 +275,12 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is denied without access to
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [
         {
           projectId: project.id,
           targets: {
-            mode: ResourceAssignmentMode.Granular,
+            mode: ResourceAssignmentModeType.Granular,
             targets: [],
           },
         },
@@ -340,22 +340,22 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with specific a
   const accessToken = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
-      mode: ResourceAssignmentMode.Granular,
+      mode: ResourceAssignmentModeType.Granular,
       projects: [
         {
           projectId: project.id,
           targets: {
-            mode: ResourceAssignmentMode.Granular,
+            mode: ResourceAssignmentModeType.Granular,
             targets: [
               {
                 targetId: target.id,
                 services: {
                   services: [],
-                  mode: ResourceAssignmentMode.Granular,
+                  mode: ResourceAssignmentModeType.Granular,
                 },
                 appDeployments: {
                   appDeployments: [],
-                  mode: ResourceAssignmentMode.Granular,
+                  mode: ResourceAssignmentModeType.Granular,
                 },
               },
             ],

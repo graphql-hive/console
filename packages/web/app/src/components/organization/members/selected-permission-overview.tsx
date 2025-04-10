@@ -8,7 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { PermissionLevel } from '@/gql/graphql';
+import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
 
 export const SelectedPermissionOverview_PermissionGroupFragment = graphql(`
@@ -34,7 +34,7 @@ export type SelectedPermissionOverviewProps = {
   /** default: true */
   isExpanded?: boolean;
   /** option for injecting additional content within a permission group. */
-  additionalGroupContent?: (group: { level: PermissionLevel }) => React.ReactNode;
+  additionalGroupContent?: (group: { level: PermissionLevelType }) => React.ReactNode;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
@@ -49,23 +49,23 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
 
   return [
     {
-      level: PermissionLevel.Organization,
+      level: PermissionLevelType.Organization,
       title: 'Organization',
     },
     {
-      level: PermissionLevel.Project,
+      level: PermissionLevelType.Project,
       title: 'Project',
     },
     {
-      level: PermissionLevel.Target,
+      level: PermissionLevelType.Target,
       title: 'Target',
     },
     {
-      level: PermissionLevel.Service,
+      level: PermissionLevelType.Service,
       title: 'Service',
     },
     {
-      level: PermissionLevel.AppDeployment,
+      level: PermissionLevelType.AppDeployment,
       title: 'App Deployment',
     },
   ].map(group => (
@@ -90,7 +90,7 @@ type MembershipPermissionGroup = AvailableMembershipPermissions[number];
 
 function PermissionLevelGroup(props: {
   title: string;
-  permissionLevel: PermissionLevel;
+  permissionLevel: PermissionLevelType;
   memberPermissionGroups: AvailableMembershipPermissions;
   activePermissionIds: ReadonlySet<string>;
   /** whether only allowed permissions should be shown */

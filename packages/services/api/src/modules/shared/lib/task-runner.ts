@@ -63,7 +63,7 @@ const scheduleTask = (args: {
     args.logger.info(`Completed running task "${args.name}" to run at ${runsAt}.`);
     deferred.resolve();
   }, args.runInMilliSeconds);
-  const deferred = createDeferred();
+  const deferred = Promise.withResolvers<void>();
 
   return {
     done: deferred.promise,
@@ -73,17 +73,5 @@ const scheduleTask = (args: {
       }
       deferred.resolve();
     },
-  };
-};
-
-const createDeferred = () => {
-  let resolve: () => void;
-  const promise = new Promise<void>(r => {
-    resolve = r;
-  });
-
-  return {
-    resolve: () => resolve(),
-    promise,
   };
 };

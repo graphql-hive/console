@@ -1,6 +1,6 @@
 import {
   ProjectType,
-  ResourceAssignmentMode,
+  ResourceAssignmentModeType,
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -1370,7 +1370,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: member.role.id,
       userId: member.user.id,
-      resources: { mode: ResourceAssignmentMode.Granular, projects: [] },
+      resources: { mode: ResourceAssignmentModeType.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1448,7 +1448,7 @@ test.concurrent(
     await assignMemberRole({
       roleId: memberRole.id,
       userId: member.user.id,
-      resources: { mode: ResourceAssignmentMode.Granular, projects: [] },
+      resources: { mode: ResourceAssignmentModeType.Granular, projects: [] },
     });
 
     // Attempt approving the failed schema check
@@ -1529,12 +1529,12 @@ test.concurrent(
       roleId: memberRole.id,
       userId: member.user.id,
       resources: {
-        mode: ResourceAssignmentMode.Granular,
+        mode: ResourceAssignmentModeType.Granular,
         projects: [
           {
             projectId: project.id,
             targets: {
-              mode: ResourceAssignmentMode.Granular,
+              mode: ResourceAssignmentModeType.Granular,
               targets: [],
             },
           },
@@ -1618,17 +1618,17 @@ test.concurrent(
       roleId: memberRole.id,
       userId: member.user.id,
       resources: {
-        mode: ResourceAssignmentMode.Granular,
+        mode: ResourceAssignmentModeType.Granular,
         projects: [
           {
             projectId: project.id,
             targets: {
-              mode: ResourceAssignmentMode.Granular,
+              mode: ResourceAssignmentModeType.Granular,
               targets: [
                 {
                   targetId: target.id,
-                  appDeployments: { mode: ResourceAssignmentMode.All },
-                  services: { mode: ResourceAssignmentMode.All },
+                  appDeployments: { mode: ResourceAssignmentModeType.All },
+                  services: { mode: ResourceAssignmentModeType.All },
                 },
               ],
             },

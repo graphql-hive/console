@@ -41,11 +41,11 @@ export default gql`
     deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
     assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
     createOrganizationAccessToken(
-      input: CreateOrganizationAccessTokenInput!
-    ): CreateOrganizationAccessTokenResult!
+      input: CreateOrganizationAccessTokenInput! @tag(name: "public")
+    ): CreateOrganizationAccessTokenResult! @tag(name: "public")
     deleteOrganizationAccessToken(
-      input: DeleteOrganizationAccessTokenInput!
-    ): DeleteOrganizationAccessTokenResult!
+      input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
+    ): DeleteOrganizationAccessTokenResult! @tag(name: "public")
   }
 
   input OrganizationReferenceInput @oneOf {
@@ -54,64 +54,68 @@ export default gql`
   }
 
   input CreateOrganizationAccessTokenInput {
-    organization: OrganizationReferenceInput!
-    title: String!
-    description: String
-    permissions: [String!]!
-    resources: ResourceAssignmentInput!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    permissions: [String!]! @tag(name: "public")
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResult {
-    ok: CreateOrganizationAccessTokenResultOk
-    error: CreateOrganizationAccessTokenResultError
+    ok: CreateOrganizationAccessTokenResultOk @tag(name: "public")
+    error: CreateOrganizationAccessTokenResultError @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResultOk {
     createdOrganizationAccessToken: OrganizationAccessToken!
-    privateAccessKey: String!
+    privateAccessKey: String! @tag(name: "public")
   }
 
-  type CreateOrganizationAccessTokenResultError implements Error {
-    message: String!
-    details: CreateOrganizationAccessTokenResultErrorDetails
+  type CreateOrganizationAccessTokenResultError {
+    message: String! @tag(name: "public")
+    details: CreateOrganizationAccessTokenResultErrorDetails @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResultErrorDetails {
     """
     Error message for the input title.
     """
-    title: String
+    title: String @tag(name: "public")
     """
     Error message for the input description.
     """
-    description: String
+    description: String @tag(name: "public")
   }
 
   type OrganizationAccessToken {
-    id: ID!
-    title: String!
-    description: String
-    permissions: [String!]!
-    resources: ResourceAssignment!
-    firstCharacters: String!
-    createdAt: DateTime!
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    permissions: [String!]! @tag(name: "public")
+    resources: ResourceAssignment! @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
   }
 
   input DeleteOrganizationAccessTokenInput {
-    organizationAccessTokenId: ID!
+    organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
+  }
+
+  input OrganizationAccessTokenReference @oneOf @tag(name: "public") {
+    byId: ID @tag(name: "public")
   }
 
   type DeleteOrganizationAccessTokenResult {
-    ok: DeleteOrganizationAccessTokenResultOk
-    error: DeleteOrganizationAccessTokenResultError
+    ok: DeleteOrganizationAccessTokenResultOk @tag(name: "public")
+    error: DeleteOrganizationAccessTokenResultError @tag(name: "public")
   }
 
   type DeleteOrganizationAccessTokenResultOk {
-    deletedOrganizationAccessTokenId: ID!
+    deletedOrganizationAccessTokenId: ID! @tag(name: "public")
   }
 
-  type DeleteOrganizationAccessTokenResultError implements Error {
-    message: String!
+  type DeleteOrganizationAccessTokenResultError {
+    message: String! @tag(name: "public")
   }
 
   type UpdateOrganizationSlugResult {
@@ -338,21 +342,24 @@ export default gql`
     """
     Paginated organization access tokens.
     """
-    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+    accessTokens(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationAccessTokenConnection! @tag(name: "public")
     """
     Get organization access token by id.
     """
-    accessToken(id: ID!): OrganizationAccessToken
+    accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
   }
 
   type OrganizationAccessTokenEdge {
-    node: OrganizationAccessToken!
-    cursor: String!
+    node: OrganizationAccessToken! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type OrganizationAccessTokenConnection {
-    pageInfo: PageInfo!
-    edges: [OrganizationAccessTokenEdge!]!
+    pageInfo: PageInfo! @tag(name: "public")
+    edges: [OrganizationAccessTokenEdge!]! @tag(name: "public")
   }
 
   type OrganizationConnection {
@@ -566,9 +573,15 @@ export default gql`
     viewerCanRemove: Boolean!
   }
 
-  enum ResourceAssignmentMode {
-    all
-    granular
+  enum ResourceAssignmentModeType {
+    """
+    Apply to all subresouces of the resource.
+    """
+    ALL @tag(name: "public")
+    """
+    Apply to specific subresouces of the resource.
+    """
+    GRANULAR @tag(name: "public")
   }
 
   type MemberConnection {
@@ -577,98 +590,98 @@ export default gql`
   }
 
   input AppDeploymentResourceAssignmentInput {
-    appDeployment: String!
+    appDeployment: String! @tag(name: "public")
   }
 
   input TargetAppDeploymentsResourceAssignmentInput {
     """
     Whether the permissions should apply for all app deployments within the target.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific app deployments within the target for which the permissions should be applied.
     """
-    appDeployments: [AppDeploymentResourceAssignmentInput!]
+    appDeployments: [AppDeploymentResourceAssignmentInput!] @tag(name: "public")
   }
 
   input ServiceResourceAssignmentInput {
-    serviceName: String!
+    serviceName: String! @tag(name: "public")
   }
 
   input TargetServicesResourceAssignmentInput {
     """
     Whether the permissions should apply for all services within the target or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific services within the target for which the permissions should be applied.
     """
-    services: [ServiceResourceAssignmentInput!]
+    services: [ServiceResourceAssignmentInput!] @tag(name: "public")
   }
 
   input TargetResourceAssignmentInput {
-    targetId: ID!
-    services: TargetServicesResourceAssignmentInput!
-    appDeployments: TargetAppDeploymentsResourceAssignmentInput!
+    targetId: ID! @tag(name: "public")
+    services: TargetServicesResourceAssignmentInput! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput! @tag(name: "public")
   }
 
   input ProjectTargetsResourceAssignmentInput {
     """
     Whether the permissions should apply for all targets within the project or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific targets within the projects for which the permissions should be applied.
     """
-    targets: [TargetResourceAssignmentInput!]
+    targets: [TargetResourceAssignmentInput!] @tag(name: "public")
   }
 
   input ProjectResourceAssignmentInput {
-    projectId: ID!
-    targets: ProjectTargetsResourceAssignmentInput!
+    projectId: ID! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignmentInput! @tag(name: "public")
   }
 
   input ResourceAssignmentInput {
     """
     Whether the permissions should apply for all projects within the organization or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific projects within the organization for which the permissions should be applied.
     """
-    projects: [ProjectResourceAssignmentInput!]
+    projects: [ProjectResourceAssignmentInput!] @tag(name: "public")
   }
 
   type TargetServicesResourceAssignment {
-    mode: ResourceAssignmentMode!
-    services: [String!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    services: [String!] @tag(name: "public")
   }
 
   type TargetAppDeploymentsResourceAssignment {
-    mode: ResourceAssignmentMode!
-    appDeployments: [String!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    appDeployments: [String!] @tag(name: "public")
   }
 
   type TargetResouceAssignment {
-    targetId: ID!
-    target: Target!
-    services: TargetServicesResourceAssignment!
-    appDeployments: TargetAppDeploymentsResourceAssignment!
+    targetId: ID! @tag(name: "public")
+    target: Target! @tag(name: "public")
+    services: TargetServicesResourceAssignment! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignment! @tag(name: "public")
   }
 
   type ProjectTargetsResourceAssignment {
-    mode: ResourceAssignmentMode!
-    targets: [TargetResouceAssignment!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    targets: [TargetResouceAssignment!] @tag(name: "public")
   }
 
   type ProjectResourceAssignment {
-    projectId: ID!
-    project: Project!
-    targets: ProjectTargetsResourceAssignment!
+    projectId: ID! @tag(name: "public")
+    project: Project! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignment! @tag(name: "public")
   }
 
   type ResourceAssignment {
-    mode: ResourceAssignmentMode!
-    projects: [ProjectResourceAssignment!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    projects: [ProjectResourceAssignment!] @tag(name: "public")
   }
 `;

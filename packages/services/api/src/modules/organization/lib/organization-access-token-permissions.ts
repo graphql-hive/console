@@ -13,6 +13,17 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'access-tokens',
+    title: 'Access Tokens',
+    permissions: [
+      {
+        id: 'accessToken:modify',
+        title: 'Manage access tokens',
+        description: 'Fetch, create and delete access tokens.',
+      },
+    ],
+  },
+  {
     id: 'project',
     title: 'Project',
     permissions: [
