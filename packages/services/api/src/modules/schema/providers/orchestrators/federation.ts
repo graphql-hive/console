@@ -19,6 +19,7 @@ export class FederationOrchestrator implements Orchestrator {
   type = ProjectType.FEDERATION;
   private logger: Logger;
   private schemaService;
+  private incomingRequestAbortSignal: AbortSignal;
 
   constructor(
     logger: Logger,
@@ -37,6 +38,7 @@ export class FederationOrchestrator implements Orchestrator {
         }),
       ],
     });
+    this.incomingRequestAbortSignal = context.request.signal;
   }
 
   private createConfig(config: Project['externalComposition']): ExternalCompositionConfig {
@@ -82,17 +84,41 @@ export class FederationOrchestrator implements Orchestrator {
       'Composing and Validating Federated Schemas (method=%s)',
       config.native ? 'native' : config.external.enabled ? 'external' : 'v1',
     );
-    const result = await this.schemaService.composeAndValidate.mutate({
-      type: 'federation',
-      schemas: schemas.map(s => ({
-        raw: s.raw,
-        source: s.source,
-        url: s.url ?? null,
-      })),
-      external: this.createConfig(config.external),
-      native: config.native,
-      contracts: config.contracts,
-    });
+    const timeoutAbortSignal = AbortSignal.timeout(30_000);
+
+    const onTimeout = () => {
+      this.logger.debug('Composition HTTP request aborted due to timeout of 30 seconds.');
+    };
+    timeoutAbortSignal.addEventListener('abort', onTimeout);
+
+    const onIncomingRequestAbort = () => {
+      this.logger.debug('Composition HTTP request aborted due to incoming request being canceled.');
+    };
+    this.incomingRequestAbortSignal.addEventListener('abort', onIncomingRequestAbort);
+
+    const result = await this.schemaService.composeAndValidate.mutate(
+      {
+        type: 'federation',
+        schemas: schemas.map(s => ({
+          raw: s.raw,
+          source: s.source,
+          url: s.url ?? null,
+        })),
+        external: this.createConfig(config.external),
+        native: config.native,
+        contracts: config.contracts,
+      },
+      {
+        // We want to abort composition if the request that does the composition is aborted
+        // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
+        //
+        // The reason for these is a potential dead-lock.
+        signal: AbortSignal.any([this.incomingRequestAbortSignal, timeoutAbortSignal]),
+      },
+    );
+
+    timeoutAbortSignal.removeEventListener('abort', onTimeout);
+    this.incomingRequestAbortSignal.removeEventListener('type', onIncomingRequestAbort);
 
     return result;
   }
