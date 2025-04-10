@@ -690,6 +690,9 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../../libraries/core/dist
+      '@graphql-hive/signal':
+        specifier: 1.0.0
+        version: 1.0.0
       '@graphql-inspector/core':
         specifier: 5.1.0-alpha-20231208113249-34700c8a
         version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.9.0)
@@ -1234,15 +1237,12 @@ importers:
       '@graphql-tools/merge':
         specifier: 9.0.24
         version: 9.0.24(graphql@16.9.0)
-      '@graphql-yoga/plugin-persisted-operations':
-        specifier: 3.9.0
-        version: 3.9.0(@graphql-tools/utils@10.8.6(graphql@16.9.0))(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/plugin-response-cache':
-        specifier: 3.9.0
-        version: 3.9.0(@envelop/core@5.0.2)(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
+        specifier: 3.15.4
+        version: 3.15.4(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/redis-event-target':
-        specifier: 3.0.2
-        version: 3.0.2(ioredis@5.4.2)
+        specifier: 3.0.3
+        version: 3.0.3(ioredis@5.4.2)
       '@hive/api':
         specifier: workspace:*
         version: link:../api
@@ -3249,6 +3249,13 @@ packages:
       '@envelop/core': ^5.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
+  '@envelop/response-cache@7.1.3':
+    resolution: {integrity: sha512-Vqx0BhCXxxtT63ST+xbGXa+fWqluFckIxVSoDx6+1yY/dA+J86nwUcNuFf4BYQDtewehaxGJ8qs5kuZFPEhwuw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@envelop/core': ^5.2.3
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+
   '@envelop/sentry@7.1.1':
     resolution: {integrity: sha512-dNq56ZaMQSj7U9czMSdcL+HqBuJVTTYyzLrX2nBRukohdI+kvDi+ptfpfAKtOXT+1fuKTlzvLupXDMMVjPbB8Q==}
     engines: {node: '>=18.0.0'}
@@ -3702,6 +3709,10 @@ packages:
     engines: {node: '>=12'}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  '@graphql-hive/signal@1.0.0':
+    resolution: {integrity: sha512-RiwLMc89lTjvyLEivZ/qxAC5nBHoS2CtsWFSOsN35sxG9zoo5Z+JsFHM8MlvmO9yt+MJNIyC5MLE1rsbOphlag==}
+    engines: {node: '>=18.0.0'}
 
   '@graphql-inspector/audit-command@4.0.3':
     resolution: {integrity: sha512-cm4EtieIp9PUSDBze+Sn5HHF80jDF9V7sYyXqFa7+Vtw4Jlet98Ig48dFVtoLuFCPtCv2eZ22I8JOkBKL5WgVA==}
@@ -4199,6 +4210,13 @@ packages:
       graphql: ^15.2.0 || ^16.0.0
       graphql-yoga: ^5.9.0
 
+  '@graphql-yoga/plugin-response-cache@3.15.4':
+    resolution: {integrity: sha512-9FtSlyjzABm1ZbD1lpDIz2rh3IbbWAZmsQjn8kOU6w7edblZlt00ZT5J8mDIxnjAzufWjHFLf0DzlgcvDCcALg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      graphql: ^15.2.0 || ^16.0.0
+      graphql-yoga: ^5.13.3
+
   '@graphql-yoga/plugin-response-cache@3.9.0':
     resolution: {integrity: sha512-npuVvmPcgkh+kr7zdXjfenSNM0DgXYTG466YmiQ5/ygjDl1bnyCDxNwtss3CrLh5qDFzAn20gp72zuSHvwY0fg==}
     engines: {node: '>=18.0.0'}
@@ -4206,8 +4224,8 @@ packages:
       graphql: ^15.2.0 || ^16.0.0
       graphql-yoga: ^5.7.0
 
-  '@graphql-yoga/redis-event-target@3.0.2':
-    resolution: {integrity: sha512-IPvHcLjWwny9zBlcoNrukySl5MaePgvMiE90WVC/Rz77BFi9rTOFY3hXR4Dat36HLwKQy9sPYdcnaO/BSgZWkg==}
+  '@graphql-yoga/redis-event-target@3.0.3':
+    resolution: {integrity: sha512-OQcTdmRRfYiMr+RNbfmdqEFhHWB5jz5jgcJGXaOI0zR2+PLS1nm50MQGSZG+TQVo7s9eOP7aUVp/+g9qAi1eDA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       ioredis: ^5.0.6
@@ -4223,10 +4241,6 @@ packages:
   '@graphql-yoga/typed-event-target@2.0.0':
     resolution: {integrity: sha512-oA/VGxGmaSDym1glOHrltw43qZsFwLLjBwvh57B79UKX/vo3+UQcRgOyE44c5RP7DCYjkrC2tuArZmb6jCzysw==}
     engines: {node: '>=16.0.0'}
-
-  '@graphql-yoga/typed-event-target@3.0.1':
-    resolution: {integrity: sha512-SWVkyFivzlDqGTBrGTWTNg+aFGP/cIiotirUFnvwuUGt2gla6UJoKhII6aPoHNg3/5vpUAL1KzyoaXMK2PO0JA==}
-    engines: {node: '>=18.0.0'}
 
   '@graphql-yoga/typed-event-target@3.0.2':
     resolution: {integrity: sha512-ZpJxMqB+Qfe3rp6uszCQoag4nSw42icURnBRfFYSOmTgEeOe4rD0vYlbA8spvCu2TlCesNTlEN9BLWtQqLxabA==}
@@ -16438,8 +16452,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16546,11 +16560,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
+  '@aws-sdk/client-sso-oidc@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16589,7 +16603,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -16723,11 +16736,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0':
+  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -16766,6 +16779,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -16879,7 +16893,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -16998,7 +17012,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -17173,7 +17187,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -18103,9 +18117,9 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.8.1
 
-  '@envelop/response-cache@6.1.2(@envelop/core@5.0.2)(graphql@16.9.0)':
+  '@envelop/response-cache@6.1.2(@envelop/core@5.2.3)(graphql@16.9.0)':
     dependencies:
-      '@envelop/core': 5.0.2
+      '@envelop/core': 5.2.3
       '@graphql-tools/utils': 10.8.6(graphql@16.9.0)
       '@whatwg-node/fetch': 0.9.22
       fast-json-stable-stringify: 2.1.0
@@ -18113,11 +18127,12 @@ snapshots:
       lru-cache: 10.2.0
       tslib: 2.8.1
 
-  '@envelop/response-cache@6.1.2(@envelop/core@5.2.3)(graphql@16.9.0)':
+  '@envelop/response-cache@7.1.3(@envelop/core@5.2.3)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.2.3
       '@graphql-tools/utils': 10.8.6(graphql@16.9.0)
-      '@whatwg-node/fetch': 0.9.22
+      '@whatwg-node/fetch': 0.10.5
+      '@whatwg-node/promise-helpers': 1.3.0
       fast-json-stable-stringify: 2.1.0
       graphql: 16.9.0
       lru-cache: 10.2.0
@@ -18747,6 +18762,8 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
+
+  '@graphql-hive/signal@1.0.0': {}
 
   '@graphql-inspector/audit-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
@@ -19639,13 +19656,13 @@ snapshots:
       graphql: 16.9.0
       graphql-yoga: 5.13.3(graphql@16.9.0)
 
-  '@graphql-yoga/plugin-response-cache@3.9.0(@envelop/core@5.0.2)(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
+  '@graphql-yoga/plugin-response-cache@3.15.4(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
-      '@envelop/response-cache': 6.1.2(@envelop/core@5.0.2)(graphql@16.9.0)
+      '@envelop/core': 5.2.3
+      '@envelop/response-cache': 7.1.3(@envelop/core@5.2.3)(graphql@16.9.0)
+      '@whatwg-node/promise-helpers': 1.3.0
       graphql: 16.9.0
       graphql-yoga: 5.13.3(graphql@16.9.0)
-    transitivePeerDependencies:
-      - '@envelop/core'
 
   '@graphql-yoga/plugin-response-cache@3.9.0(@envelop/core@5.2.3)(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
@@ -19655,9 +19672,9 @@ snapshots:
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/redis-event-target@3.0.2(ioredis@5.4.2)':
+  '@graphql-yoga/redis-event-target@3.0.3(ioredis@5.4.2)':
     dependencies:
-      '@graphql-yoga/typed-event-target': 3.0.1
+      '@graphql-yoga/typed-event-target': 3.0.2
       '@whatwg-node/events': 0.1.1
       ioredis: 5.4.2
 
@@ -19676,11 +19693,6 @@ snapshots:
       tslib: 2.8.1
 
   '@graphql-yoga/typed-event-target@2.0.0':
-    dependencies:
-      '@repeaterjs/repeater': 3.0.6
-      tslib: 2.8.1
-
-  '@graphql-yoga/typed-event-target@3.0.1':
     dependencies:
       '@repeaterjs/repeater': 3.0.6
       tslib: 2.8.1

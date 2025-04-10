@@ -16,6 +16,7 @@
     "@bentocache/plugin-prometheus": "0.2.0",
     "@date-fns/utc": "2.1.0",
     "@graphql-hive/core": "workspace:*",
+    "@graphql-hive/signal": "1.0.0",
     "@graphql-inspector/core": "5.1.0-alpha-20231208113249-34700c8a",
     "@graphql-tools/merge": "9.0.24",
     "@hive/cdn-script": "workspace:*",

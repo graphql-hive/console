@@ -1,4 +1,5 @@
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
+import { abortSignalAny } from '@graphql-hive/signal';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -114,7 +115,10 @@ export class FederationOrchestrator implements Orchestrator {
           // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
           //
           // The reason for these is a potential dead-lock.
-          signal: AbortSignal.any([this.incomingRequestAbortSignal, timeoutAbortSignal]),
+          //
+          // Note: We are using `abortSignalAny` over `AbortSignal.any` because of leak issues.
+          // @source https://github.com/nodejs/node/issues/57584
+          signal: abortSignalAny([this.incomingRequestAbortSignal, timeoutAbortSignal]),
         },
       );
 
