@@ -58,7 +58,7 @@ export const watchEntryPlugin = () => {
     name: 'node-watch-entry',
     esbuildOptions(options) {
       const entries = (options.entryPoints as string[]) || [];
-      const entry = entries[0];
+      const entry = entries.find(entry => entry === 'src/dev.ts');
 
       if (!entry) {
         throw new Error('No entry point found');
