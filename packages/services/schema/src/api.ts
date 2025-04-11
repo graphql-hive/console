@@ -4,8 +4,11 @@ import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Cache } from './cache';
+import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
+import type { CompositionErrorType } from './composition/shared';
+import { composeSingle } from './composition/single';
+import { createComposeStitching } from './composition/stitching';
 import { composeAndValidateCounter } from './metrics';
-import { pickOrchestrator } from './orchestrators';
 
 export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
 
@@ -85,19 +88,94 @@ export const schemaBuilderApiRouter = t.router({
     )
     .mutation(async ({ ctx, input }) => {
       composeAndValidateCounter.inc({ type: input.type });
-      return await pickOrchestrator(input.type, ctx.cache, ctx.req, ctx.decrypt).composeAndValidate(
-        input.schemas,
-        'external' in input && input.external
-          ? {
-              ...input.external,
-              broker: ctx.broker,
-            }
-          : null,
-        'native' in input && input.native ? true : false,
-        'contracts' in input && input.contracts ? input.contracts : undefined,
-      );
+      try {
+        if (input.type === 'federation') {
+          return await ctx.cache.reuse(
+            'federation',
+            async (args: ComposeFederationArgs) => {
+              const composed = await createComposeFederation({
+                logger: ctx.req.log,
+                decrypt: ctx.decrypt,
+                requestTimeoutMs: ctx.cache.timeoutMs,
+              })({
+                ...args,
+                requestId: ctx.req.id,
+              });
+
+              return {
+                errors: composed.result.errors ?? [],
+                sdl: composed.result.sdl ?? null,
+                supergraph: composed.result.supergraph ?? null,
+                includesNetworkError: composed.result.includesNetworkError === true,
+                contracts:
+                  composed.result.contracts?.map(contract => ({
+                    id: contract.id,
+                    errors: 'errors' in contract.result.result ? contract.result.result.errors : [],
+                    sdl: contract.result.result.sdl ?? null,
+                    supergraph: contract.result.result.supergraph ?? null,
+                  })) ?? null,
+                tags: composed.result.tags ?? null,
+                schemaMetadata: composed.result.schemaMetadata ?? null,
+                metadataAttributes: composed.result.metadataAttributes ?? null,
+                includesException: composed.result.includesException === true,
+              };
+            },
+            result =>
+              result.includesNetworkError === true || result.includesException === true
+                ? 'short'
+                : 'long',
+          )({
+            schemas: input.schemas,
+            external:
+              'external' in input && input.external
+                ? {
+                    ...input.external,
+                    broker: ctx.broker,
+                  }
+                : null,
+            native: 'native' in input && input.native ? true : false,
+            contracts: 'contracts' in input && input.contracts ? input.contracts : undefined,
+            requestId: ctx.req.id,
+          });
+        }
+
+        if (input.type === 'stitching') {
+          return await ctx.cache.reuse('stitching', createComposeStitching())(input.schemas);
+        }
+
+        if (input.type === 'single') {
+          return await ctx.cache.reuse('single', composeSingle)({ schemas: input.schemas });
+        }
+
+        assertAllCasesExhausted(input);
+      } catch (error) {
+        if (ctx.cache.isTimeoutError(error)) {
+          return {
+            errors: [
+              {
+                message: error.message,
+                source: 'graphql',
+              },
+            ] satisfies Array<CompositionErrorType>,
+            sdl: null,
+            supergraph: null,
+            includesNetworkError: true,
+            contracts: null,
+            tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
+          };
+        }
+        throw error;
+      }
+
+      throw new Error('tRCP and TypeScript for the win.');
     }),
 });
 
 export type SchemaBuilderApi = typeof schemaBuilderApiRouter;
 export type SchemaBuilderApiInput = inferRouterInputs<SchemaBuilderApi>;
+
+function assertAllCasesExhausted(value: never) {
+  throw new Error(`Not all cases are exhaused. Value '${value}'.`);
+}
