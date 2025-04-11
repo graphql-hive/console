@@ -4,22 +4,24 @@ import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Cache } from './cache';
-import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
+import type { CompositionScheduler } from './composition-scheduler';
+import { type ComposeFederationArgs } from './composition/federation';
 import type { CompositionErrorType } from './composition/shared';
-import { composeSingle } from './composition/single';
-import { createComposeStitching } from './composition/stitching';
+import { ComposeSingleArgs } from './composition/single';
+import { ComposeStitchingArgs } from './composition/stitching';
 import { composeAndValidateCounter } from './metrics';
+import type { Metadata } from './types';
 
 export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
 
 export interface Context {
   req: FastifyRequest;
   cache: Cache;
-  decrypt(value: string): string;
   broker: {
     endpoint: string;
     signature: string;
   } | null;
+  compositionScheduler: CompositionScheduler;
 }
 
 const t = initTRPC.context<Context>().create();
@@ -86,39 +88,19 @@ export const schemaBuilderApiRouter = t.router({
         }),
       ]),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }): Promise<CompositionResponse> => {
       composeAndValidateCounter.inc({ type: input.type });
       try {
         if (input.type === 'federation') {
           return await ctx.cache.reuse(
             'federation',
             async (args: ComposeFederationArgs) => {
-              const composed = await createComposeFederation({
-                logger: ctx.req.log,
-                decrypt: ctx.decrypt,
+              const result = await ctx.compositionScheduler.process({
+                type: 'federation',
+                args,
                 requestTimeoutMs: ctx.cache.timeoutMs,
-              })({
-                ...args,
-                requestId: ctx.req.id,
               });
-
-              return {
-                errors: composed.result.errors ?? [],
-                sdl: composed.result.sdl ?? null,
-                supergraph: composed.result.supergraph ?? null,
-                includesNetworkError: composed.result.includesNetworkError === true,
-                contracts:
-                  composed.result.contracts?.map(contract => ({
-                    id: contract.id,
-                    errors: 'errors' in contract.result.result ? contract.result.result.errors : [],
-                    sdl: contract.result.result.sdl ?? null,
-                    supergraph: contract.result.result.supergraph ?? null,
-                  })) ?? null,
-                tags: composed.result.tags ?? null,
-                schemaMetadata: composed.result.schemaMetadata ?? null,
-                metadataAttributes: composed.result.metadataAttributes ?? null,
-                includesException: composed.result.includesException === true,
-              };
+              return result.result;
             },
             result =>
               result.includesNetworkError === true || result.includesException === true
@@ -140,11 +122,23 @@ export const schemaBuilderApiRouter = t.router({
         }
 
         if (input.type === 'stitching') {
-          return await ctx.cache.reuse('stitching', createComposeStitching())(input.schemas);
+          return await ctx.cache.reuse('stitching', async (args: ComposeStitchingArgs) => {
+            const result = await ctx.compositionScheduler.process({
+              type: 'stitching',
+              args,
+            });
+            return result.result;
+          })({ schemas: input.schemas });
         }
 
         if (input.type === 'single') {
-          return await ctx.cache.reuse('single', composeSingle)({ schemas: input.schemas });
+          return await ctx.cache.reuse('single', async (args: ComposeSingleArgs) => {
+            const result = await ctx.compositionScheduler.process({
+              type: 'single',
+              args,
+            });
+            return result.result;
+          })({ schemas: input.schemas });
         }
 
         assertAllCasesExhausted(input);
@@ -156,7 +150,7 @@ export const schemaBuilderApiRouter = t.router({
                 message: error.message,
                 source: 'graphql',
               },
-            ] satisfies Array<CompositionErrorType>,
+            ],
             sdl: null,
             supergraph: null,
             includesNetworkError: true,
@@ -164,7 +158,7 @@ export const schemaBuilderApiRouter = t.router({
             tags: null,
             schemaMetadata: null,
             metadataAttributes: null,
-          };
+          } satisfies CompositionResponse;
         }
         throw error;
       }
@@ -179,3 +173,19 @@ export type SchemaBuilderApiInput = inferRouterInputs<SchemaBuilderApi>;
 function assertAllCasesExhausted(value: never) {
   throw new Error(`Not all cases are exhaused. Value '${value}'.`);
 }
+
+export type CompositionResponse = {
+  errors: Array<CompositionErrorType>;
+  sdl: null | string;
+  supergraph: null | string;
+  contracts: Array<{
+    id: string;
+    errors: Array<CompositionErrorType>;
+    sdl: string | null;
+    supergraph: string | null;
+  }> | null;
+  schemaMetadata: Record<string, Metadata[]> | null;
+  metadataAttributes: Record<string, string[]> | null;
+  tags: Array<string> | null;
+  includesNetworkError?: boolean;
+};

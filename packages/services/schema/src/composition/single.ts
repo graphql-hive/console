@@ -7,7 +7,7 @@ import {
   print,
   validateSchema,
 } from 'graphql';
-import { validateSDL } from 'graphql/validation/validate';
+import { validateSDL } from 'graphql/validation/validate.js';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { errorWithSource, type CompositionErrorSource } from '../lib/errors';
 import { trimDescriptions } from '../lib/trim-descriptions';

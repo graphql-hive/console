@@ -1,5 +1,5 @@
 import { buildASTSchema, concatAST, DocumentNode, Kind, parse, printSchema } from 'graphql';
-import { validateSDL } from 'graphql/validation/validate';
+import { validateSDL } from 'graphql/validation/validate.js';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
 import { errorWithSource, toValidationError } from '../lib/errors';
@@ -54,36 +54,39 @@ function validateStitchedSchema(doc: DocumentNode) {
   return errors;
 }
 
-export const createComposeStitching = () =>
-  async function composeStitching(schemas: ComposeAndValidateInput) {
-    const parsed = schemas.map(s => parse(s.raw));
-    const errors: Array<CompositionErrorType> = parsed
-      .map(schema => validateStitchedSchema(schema))
-      .flat();
+export type ComposeStitchingArgs = {
+  schemas: ComposeAndValidateInput;
+};
 
-    let sdl: string | null = null;
-    try {
-      sdl = printSchema(
-        stitchSchemas({
-          subschemas: schemas.map(schema =>
-            buildASTSchema(trimDescriptions(parse(schema.raw)), {
-              assumeValid: true,
-              assumeValidSDL: true,
-            }),
-          ),
-        }),
-      );
-    } catch (error) {
-      errors.push(toValidationError(error, 'composition'));
-    }
+export async function composeStitching(args: ComposeStitchingArgs) {
+  const parsed = args.schemas.map(s => parse(s.raw));
+  const errors: Array<CompositionErrorType> = parsed
+    .map(schema => validateStitchedSchema(schema))
+    .flat();
 
-    return {
-      errors,
-      sdl,
-      supergraph: null,
-      contracts: null,
-      tags: null,
-      schemaMetadata: null,
-      metadataAttributes: null,
-    };
+  let sdl: string | null = null;
+  try {
+    sdl = printSchema(
+      stitchSchemas({
+        subschemas: args.schemas.map(schema =>
+          buildASTSchema(trimDescriptions(parse(schema.raw)), {
+            assumeValid: true,
+            assumeValidSDL: true,
+          }),
+        ),
+      }),
+    );
+  } catch (error) {
+    errors.push(toValidationError(error, 'composition'));
+  }
+
+  return {
+    errors,
+    sdl,
+    supergraph: null,
+    contracts: null,
+    tags: null,
+    schemaMetadata: null,
+    metadataAttributes: null,
   };
+}

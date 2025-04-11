@@ -1171,6 +1171,9 @@ importers:
       fastify:
         specifier: 4.29.0
         version: 4.29.0
+      fastq:
+        specifier: 1.19.1
+        version: 1.19.1
       got:
         specifier: 14.4.7
         version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
@@ -1189,6 +1192,9 @@ importers:
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -10235,8 +10241,8 @@ packages:
   fastify@4.29.0:
     resolution: {integrity: sha512-MaaUHUGcCgC8fXQDsDtioaCcag1fmPJ9j64vAKunqZF4aSub040ZGi/ag8NGE2714yREPOKZuHCfpPzuUD3UQQ==}
 
-  fastq@1.17.1:
-    resolution: {integrity: sha512-sRVD3lWVIXWg6By68ZN7vho9a1pQcN/WBFaAAsDDFzlJjvoGx0P8z7V1t72grFJfJhu3YPZBuu25f7Kaw2jN1w==}
+  fastq@1.19.1:
+    resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
 
   fault@2.0.1:
     resolution: {integrity: sha512-WtySTkS4OKev5JtpHXnib4Gxiurzh5NCGvWrFaZ34m6JehfTUhKZvn9njTfw48t6JumVQOmrKqpmGcdwxnhqBQ==}
@@ -18389,7 +18395,7 @@ snapshots:
       '@fastify/send': 2.1.0
       content-disposition: 0.5.4
       fastify-plugin: 4.5.1
-      fastq: 1.17.1
+      fastq: 1.19.1
       glob: 10.3.12
 
   '@fastify/vite@6.0.7(patch_hash=f5ce073a4db250ed3db1d9c19e2a253418454ee379530bdee25869570d7b500b)(@types/node@22.10.5)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)':
@@ -20259,7 +20265,7 @@ snapshots:
   '@nodelib/fs.walk@1.2.8':
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
-      fastq: 1.17.1
+      fastq: 1.19.1
 
   '@nodesecure/estree-ast-utils@1.5.0':
     dependencies:
@@ -25181,7 +25187,7 @@ snapshots:
   avvio@8.4.0:
     dependencies:
       '@fastify/error': 3.4.1
-      fastq: 1.17.1
+      fastq: 1.19.1
 
   aws-sign2@0.7.0: {}
 
@@ -27365,7 +27371,7 @@ snapshots:
       semver: 7.6.3
       toad-cache: 3.7.0
 
-  fastq@1.17.1:
+  fastq@1.19.1:
     dependencies:
       reusify: 1.0.4
 

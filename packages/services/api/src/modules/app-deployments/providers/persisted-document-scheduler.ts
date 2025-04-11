@@ -2,8 +2,7 @@ import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
-import { LogLevel } from 'graphql-yoga';
-import { Logger } from '../../shared/providers/logger';
+import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
 import { BatchProcessedEvent, BatchProcessEvent } from './persisted-document-ingester';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -48,32 +47,19 @@ export class PersistedDocumentScheduler {
       }
 
       this.logger.debug('Re-Creating worker %s', index);
+      this.workers[index] = this.createWorker(index);
 
+      this.logger.debug('Cancel pending tasks %s', index);
       for (const [, task] of tasks) {
         task.reject(new Error('Worker stopped.'));
       }
-
-      this.workers[index] = this.createWorker(index);
     });
+
+    registerWorkerLogging(this.logger, worker, name);
 
     worker.on(
       'message',
-      (
-        data:
-          | BatchProcessedEvent
-          | { event: 'error'; id: string; err: Error }
-          | {
-              event: 'log';
-              bindings: Record<string, unknown>;
-              level: LogLevel;
-              args: [string, ...unknown[]];
-            },
-      ) => {
-        if (data.event === 'log') {
-          this.logger.child(data.bindings)[data.level](...data.args);
-          return;
-        }
-
+      (data: BatchProcessedEvent | { event: 'error'; id: string; err: Error }) => {
         if (data.event === 'error') {
           tasks.get(data.id)?.reject(data.err);
         }
