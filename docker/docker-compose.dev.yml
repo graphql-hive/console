@@ -39,6 +39,8 @@ services:
       - '6379:6379'
     volumes:
       - './.hive-dev/redis/db:/bitnami/redis/data'
+    command: |
+      /opt/bitnami/scripts/redis/run.sh --maxmemory 50mb --maxmemory-policy allkeys-lru
 
   s3:
     image: quay.io/minio/minio:RELEASE.2022-11-29T23-40-49Z
