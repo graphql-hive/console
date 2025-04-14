@@ -109,7 +109,9 @@ export function createCompositionWorker(args: {
           return;
         }
         assertAllCasesExhausted(message.data);
+        return;
       }
+      assertAllCasesExhausted(message.event);
     } catch (err: unknown) {
       baseLogger.error(
         'unexpected error while processing message in worker (messageId=%s)',
