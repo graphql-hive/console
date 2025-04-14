@@ -71,32 +71,28 @@ export class CompositionScheduler {
       args: WorkerRunArgs;
     } | null = null;
 
-    const recreate = () => {
+    const recreate = (reason: Error) => {
       void worker.terminate().finally(() => {
         this.logger.debug('Re-Creating worker %s', index);
         this.workers[index] = this.createWorker(index);
 
         if (workerState) {
           this.logger.debug('Cancel pending task %s', index);
-          workerState.task.reject(new Error('Worker stopped.'));
+          workerState.task.reject(reason);
         }
       });
     };
 
     worker.on('error', error => {
+      console.error(error);
+      this.logger.error('Worker error %s', error);
       Sentry.captureException(error, {
         extra: {
           requestId: workerState?.args.requestId ?? '',
           compositionType: workerState?.args.data.type,
-          compositionArguments: workerState?.args.data.args,
-        },
-        tags: {
-          composition: 'TIMEOUT_OR_MEMORY_ERROR',
         },
       });
-      console.error(error);
-      this.logger.error('Worker error %s', error);
-      recreate();
+      recreate(error);
     });
 
     worker.on('exit', code => {
@@ -149,7 +145,7 @@ export class CompositionScheduler {
 
       function onAbort() {
         logger.error('Task aborted.');
-        recreate();
+        recreate(new Error('Task aborted'));
       }
 
       args.abortSignal.addEventListener('abort', onAbort);
