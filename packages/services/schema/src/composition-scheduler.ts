@@ -96,12 +96,8 @@ export class CompositionScheduler {
       recreate();
     });
 
-    let didAbortTask = false;
     worker.on('exit', code => {
       this.logger.error('Worker stopped with exit code %s', String(code));
-      if (didAbortTask) {
-        recreate();
-      }
     });
 
     registerWorkerLogging(this.logger, worker, name);
@@ -151,9 +147,8 @@ export class CompositionScheduler {
         };
 
         function onAbort() {
-          didAbortTask = true;
           logger.error('Task aborted.');
-          task.reject(new Error('Task was aborted'));
+          recreate();
         }
 
         queueData.abortSignal.addEventListener('abort', onAbort);
