@@ -130,11 +130,13 @@ export class CompositionScheduler {
         let task: Task = {
           resolve: data => {
             queueData.abortSignal.removeEventListener('abort', onAbort);
+            this.task = null;
             currentTask = null;
             d.resolve(data);
           },
           reject: err => {
             queueData.abortSignal.removeEventListener('abort', onAbort);
+            this.task = null;
             currentTask = null;
             void worker.terminate().finally(() => {
               d.reject(err);
@@ -145,6 +147,7 @@ export class CompositionScheduler {
           task,
           data: queueData,
         };
+        this.task = currentTask;
 
         function onAbort() {
           logger.error('Task aborted.');
