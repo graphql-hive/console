@@ -252,7 +252,7 @@ function MemberRole(props: {
   return (
     <>
       {member.role.name}
-      {member.resourceAssignment.mode === GraphQLSchema.ResourceAssignmentMode.All ? (
+      {member.resourceAssignment.mode === GraphQLSchema.ResourceAssignmentModeType.All ? (
         ' (all resources)'
       ) : member.resourceAssignment.projects?.length ? (
         <>

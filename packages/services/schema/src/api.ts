@@ -4,19 +4,24 @@ import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Cache } from './cache';
+import type { CompositionScheduler } from './composition-scheduler';
+import { type ComposeFederationArgs } from './composition/federation';
+import type { CompositionErrorType } from './composition/shared';
+import { ComposeSingleArgs } from './composition/single';
+import { ComposeStitchingArgs } from './composition/stitching';
 import { composeAndValidateCounter } from './metrics';
-import { pickOrchestrator } from './orchestrators';
+import type { Metadata } from './types';
 
 export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
 
 export interface Context {
   req: FastifyRequest;
   cache: Cache;
-  decrypt(value: string): string;
   broker: {
     endpoint: string;
     signature: string;
   } | null;
+  compositionScheduler: CompositionScheduler;
 }
 
 const t = initTRPC.context<Context>().create();
@@ -83,21 +88,121 @@ export const schemaBuilderApiRouter = t.router({
         }),
       ]),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }): Promise<CompositionResponse> => {
       composeAndValidateCounter.inc({ type: input.type });
-      return await pickOrchestrator(input.type, ctx.cache, ctx.req, ctx.decrypt).composeAndValidate(
-        input.schemas,
-        'external' in input && input.external
-          ? {
-              ...input.external,
-              broker: ctx.broker,
-            }
-          : null,
-        'native' in input && input.native ? true : false,
-        'contracts' in input && input.contracts ? input.contracts : undefined,
-      );
+
+      try {
+        if (input.type === 'federation') {
+          return await ctx.cache.reuse(
+            'federation',
+            async (args: ComposeFederationArgs, abortSignal) => {
+              const result = await ctx.compositionScheduler.process({
+                data: {
+                  type: 'federation',
+                  args,
+                  requestTimeoutMs: ctx.cache.timeoutMs,
+                },
+                abortSignal,
+                requestId: ctx.req.id,
+              });
+              return result.result;
+            },
+            result =>
+              result.includesNetworkError === true || result.includesException === true
+                ? 'short'
+                : 'long',
+          )({
+            schemas: input.schemas,
+            external:
+              'external' in input && input.external
+                ? {
+                    ...input.external,
+                    broker: ctx.broker,
+                  }
+                : null,
+            native: 'native' in input && input.native ? true : false,
+            contracts: 'contracts' in input && input.contracts ? input.contracts : undefined,
+            requestId: ctx.req.id,
+          });
+        }
+
+        if (input.type === 'stitching') {
+          return await ctx.cache.reuse(
+            'stitching',
+            async (args: ComposeStitchingArgs, abortSignal) => {
+              const result = await ctx.compositionScheduler.process({
+                data: {
+                  type: 'stitching',
+                  args,
+                },
+                abortSignal,
+                requestId: ctx.req.id,
+              });
+              return result.result;
+            },
+          )({ schemas: input.schemas });
+        }
+
+        if (input.type === 'single') {
+          return await ctx.cache.reuse('single', async (args: ComposeSingleArgs, abortSignal) => {
+            const result = await ctx.compositionScheduler.process({
+              data: {
+                type: 'single',
+                args,
+              },
+              abortSignal,
+              requestId: ctx.req.id,
+            });
+            return result.result;
+          })({ schemas: input.schemas });
+        }
+
+        assertAllCasesExhausted(input);
+      } catch (error) {
+        // Treat timeouts caused by external composition as "expected errors"
+        if (ctx.cache.isTimeoutError(error) && input.type === 'federation' && input.external) {
+          return {
+            errors: [
+              {
+                message: error.message,
+                source: 'graphql',
+              },
+            ],
+            sdl: null,
+            supergraph: null,
+            includesNetworkError: true,
+            contracts: null,
+            tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
+          } satisfies CompositionResponse;
+        }
+        throw error;
+      }
+
+      throw new Error('tRCP and TypeScript for the win.');
     }),
 });
 
 export type SchemaBuilderApi = typeof schemaBuilderApiRouter;
 export type SchemaBuilderApiInput = inferRouterInputs<SchemaBuilderApi>;
+
+function assertAllCasesExhausted(value: never) {
+  throw new Error(`Not all cases are exhaused. Value '${value}'.`);
+}
+
+export type CompositionResponse = {
+  errors: Array<CompositionErrorType>;
+  sdl: null | string;
+  supergraph: null | string;
+  contracts: Array<{
+    id: string;
+    errors: Array<CompositionErrorType>;
+    sdl: string | null;
+    supergraph: string | null;
+  }> | null;
+  schemaMetadata: Record<string, Metadata[]> | null;
+  metadataAttributes: Record<string, string[]> | null;
+  tags: Array<string> | null;
+  includesNetworkError?: boolean;
+};

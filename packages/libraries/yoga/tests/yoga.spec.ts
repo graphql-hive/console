@@ -882,7 +882,7 @@ describe('subscription usage reporting', () => {
             :
 
             event: next
-            data: {"errors":[{"message":"Unexpected error.","locations":[{"line":1,"column":1}]}]}
+            data: {"errors":[{"message":"Unexpected error.","locations":[{"line":1,"column":1}],"extensions":{"code":"INTERNAL_SERVER_ERROR"}}]}
 
             event: complete
             data:

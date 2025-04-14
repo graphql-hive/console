@@ -1,4 +1,4 @@
-import { getPermissionGroup } from '../lib/authz';
+import { getPermissionGroup, type ResourceLevel } from '../lib/authz';
 import type { PermissionResolvers } from './../../../__generated__/types';
 
 /*
@@ -18,9 +18,24 @@ export const Permission: PermissionResolvers = {
     return permission.isReadOnly ?? false;
   },
   level: async (permission, _arg, _ctx) => {
-    return getPermissionGroup(permission.id);
+    return resourceLevelToResourceLevelType(getPermissionGroup(permission.id));
   },
   warning: async (permission, _arg, _ctx) => {
     return permission.warning ?? null;
   },
 };
+
+function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
+  switch (resourceLevel) {
+    case 'target':
+      return 'TARGET' as const;
+    case 'service':
+      return 'SERVICE' as const;
+    case 'project':
+      return 'PROJECT' as const;
+    case 'organization':
+      return 'ORGANIZATION' as const;
+    case 'appDeployment':
+      return 'APP_DEPLOYMENT' as const;
+  }
+}

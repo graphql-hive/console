@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import stringify from 'fast-json-stable-stringify';
 import type { Redis } from 'ioredis';
-import pTimeout, { TimeoutError } from 'p-timeout';
+import { TimeoutError } from 'p-timeout';
 import type { ServiceLogger } from '@hive/service-common';
 import { externalCompositionCounter } from './metrics';
 
@@ -125,7 +125,7 @@ export function createCache(options: {
 
   async function runAction<I, O>(
     groupKey: string,
-    factory: (input: I) => Promise<O>,
+    factory: (input: I, signal: AbortSignal) => Promise<O>,
     pickCacheType: (output: O) => CacheTTLType,
     input: I,
     attempt: number,
@@ -179,10 +179,16 @@ export function createCache(options: {
 
     try {
       logger.debug('Executing action (id=%s)', id);
-      const result = await pTimeout(factory(input), {
-        milliseconds: timeoutMs,
-        message: `Timeout: took longer than ${timeoutMs}ms to complete`,
-      });
+      const timeoutSignal = AbortSignal.timeout(timeoutMs);
+      const result = await Promise.race([
+        factory(input, timeoutSignal),
+        new Promise<never>((_, reject) => {
+          timeoutSignal.addEventListener('abort', () => {
+            reject(new TimeoutError(`Timeout: took longer than ${timeoutMs}ms to complete`));
+          });
+        }),
+      ]);
+
       await completeAction(id, result, pickCacheType);
       externalCompositionCounter.inc({
         cache: 'miss',
@@ -206,7 +212,7 @@ export function createCache(options: {
     },
     reuse<I, O>(
       groupKey: string,
-      factory: (input: I) => Promise<O>,
+      factory: (input: I, signal: AbortSignal) => Promise<O>,
       pickCacheType: (output: O) => CacheTTLType = () => 'long',
     ): (input: I) => Promise<O> {
       return async input => runAction(groupKey, factory, pickCacheType, input, 1);

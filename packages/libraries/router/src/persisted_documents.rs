@@ -155,10 +155,10 @@ impl Plugin for PersistedDocumentsPlugin {
 
                         match payload.document_id.as_ref() {
                             None => {
-                                return Ok(ControlFlow::Break(
+                                Ok(ControlFlow::Break(
                                     PersistedDocumentsError::PersistedDocumentRequired
                                         .to_router_response(req.context),
-                                ));
+                                ))
                             }
                             Some(document_id) => match mgr.resolve_document(document_id).await {
                                 Ok(document) => {
@@ -186,9 +186,9 @@ impl Plugin for PersistedDocumentsPlugin {
                                     Ok(ControlFlow::Continue(roll_req))
                                 }
                                 Err(e) => {
-                                    return Ok(ControlFlow::Break(
+                                    Ok(ControlFlow::Break(
                                         e.to_router_response(req.context),
-                                    ));
+                                    ))
                                 }
                             },
                         }
@@ -311,7 +311,7 @@ impl PersistedDocumentsManager {
     fn extract_document_id(
         body: &hyper::body::Bytes,
     ) -> Result<ExpectedBodyStructure, PersistedDocumentsError> {
-        serde_json::from_slice::<ExpectedBodyStructure>(&body)
+        serde_json::from_slice::<ExpectedBodyStructure>(body)
             .map_err(PersistedDocumentsError::FailedToParseBody)
     }
 
@@ -323,7 +323,7 @@ impl PersistedDocumentsManager {
             Some(document) => {
                 debug!("Document {} found in cache: {}", document_id, document);
 
-                return Ok(document);
+                Ok(document)
             }
             None => {
                 debug!(
@@ -375,12 +375,12 @@ impl PersistedDocumentsManager {
                                 .unwrap_or_else(|_| "Unavailable".to_string())
                         );
 
-                        return Err(PersistedDocumentsError::DocumentNotFound);
+                        Err(PersistedDocumentsError::DocumentNotFound)
                     }
                     Err(e) => {
                         warn!("Failed to fetch document from CDN: {:?}", e);
 
-                        return Err(PersistedDocumentsError::FailedToFetchFromCDN(e));
+                        Err(PersistedDocumentsError::FailedToFetchFromCDN(e))
                     }
                 }
             }
@@ -413,7 +413,6 @@ mod hive_persisted_documents_tests {
     use futures::executor::block_on;
     use http::Method;
     use httpmock::{Method::GET, Mock, MockServer};
-    use hyper::body::Bytes;
     use serde_json::json;
 
     use super::*;

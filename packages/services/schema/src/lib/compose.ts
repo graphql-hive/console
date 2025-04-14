@@ -12,7 +12,6 @@ import {
   compositionHasErrors as nativeCompositionHasErrors,
   transformSupergraphToPublicSchema,
 } from '@theguild/federation-composition';
-import type { Cache } from '../cache';
 import type { ExternalComposition } from '../types';
 import { toValidationError } from './errors';
 
@@ -146,7 +145,7 @@ export async function composeExternalFederation(args: {
   subgraphs: Array<SubgraphInput>;
   decrypt: (value: string) => string;
   external: Exclude<ExternalComposition, null>;
-  cache: Cache;
+  requestTimeoutMs: number;
   requestId: string;
 }): Promise<ComposerMethodResult> {
   args.logger.debug(
@@ -189,10 +188,10 @@ export async function composeExternalFederation(args: {
           ...request,
         },
         args.logger,
-        args.cache.timeoutMs,
+        args.requestTimeoutMs,
         args.requestId,
       )
-    : callExternalService(request, args.logger, args.cache.timeoutMs));
+    : callExternalService(request, args.logger, args.requestTimeoutMs));
 
   args.logger.debug('Got response from external composition service, trying to safe parse');
   const parseResult = EXTERNAL_COMPOSITION_RESULT.safeParse(externalResponse);

@@ -770,7 +770,7 @@ test('schema:check without `--target` flag fails for organization access token',
   const privateKey = await createOrganizationAccessToken({
     permissions: ['schemaCheck:create', 'project:describe'],
     resources: {
-      mode: GraphQLSchema.ResourceAssignmentMode.All,
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
     },
   });
 
@@ -809,7 +809,7 @@ test('schema:check with `--target` flag succeeds for organization access token',
   const privateKey = await createOrganizationAccessToken({
     permissions: ['schemaCheck:create', 'project:describe'],
     resources: {
-      mode: GraphQLSchema.ResourceAssignmentMode.All,
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
     },
   });
 
@@ -841,7 +841,7 @@ test('schema:publish without `--target` flag fails for organization access token
   const privateKey = await createOrganizationAccessToken({
     permissions: ['project:describe', 'schemaVersion:publish'],
     resources: {
-      mode: GraphQLSchema.ResourceAssignmentMode.All,
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
     },
   });
 
@@ -881,7 +881,7 @@ test('schema:publish with `--target` flag succeeds for organization access token
   const privateKey = await createOrganizationAccessToken({
     permissions: ['project:describe', 'schemaVersion:publish'],
     resources: {
-      mode: GraphQLSchema.ResourceAssignmentMode.All,
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
     },
   });
 

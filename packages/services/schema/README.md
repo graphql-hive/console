@@ -1,7 +1,7 @@
 # `@hive/schema`
 
 Service for validating schemas or verifying whether a composite GraphQL schema can be composed out
-of subschemas.
+of subschemas. Supports Federation, Schema Stitching and Monolithic Schemas.
 
 ## Configuration
 
@@ -26,3 +26,53 @@ of subschemas.
 | `REQUEST_LOGGING`                   | No       | Log http requests                                                                                        | `1` (enabled) or `0` (disabled)                      |
 | `LOG_LEVEL`                         | No       | The verbosity of the service logs. One of `trace`, `debug`, `info`, `warn` ,`error`, `fatal` or `silent` | `info` (default)                                     |
 | `OPENTELEMETRY_COLLECTOR_ENDPOINT`  | No       | OpenTelemetry Collector endpoint. The expected traces transport is HTTP (port `4318`).                   | `http://localhost:4318/v1/traces`                    |
+
+## Documentation
+
+### Composition Request Handling
+
+The following diagram outlines how the service handles incoming composition requests via HTTP
+(tRPC). It details the decision-making process around caching with Redis, reuse of in-progress
+tasks, and task execution using a limited pool of worker threads.
+
+Each composition task runs in an isolated worker thread with memory limits to prevent a single
+malfunctioning task from affecting the stability of the entire service. This setup ensures robust
+and efficient processing by avoiding redundant computation, serving cached results when possible,
+and queuing tasks when resources are saturated.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Service
+    participant Redis
+    participant TaskManager
+    participant WorkerPool
+
+    Client->>Service: Composition HTTP request (tRPC)
+    Service->>Redis: Check for cached result
+    alt Cached result found
+        Redis-->>Service: Return result
+        Service-->>Client: Send cached result
+    else Not cached
+        Service->>TaskManager: Check if task in progress
+        alt Task in progress
+            TaskManager-->>Service: Return existing task
+            Service->>TaskManager: Wait for task completion
+            TaskManager-->>Service: Return result
+            Service-->>Client: Send result
+        else No task in progress
+            TaskManager->>WorkerPool: Check for available worker
+            alt Worker available
+                WorkerPool-->>TaskManager: Assign task
+            else No workers available
+                TaskManager->>TaskManager: Enqueue task in memory
+                TaskManager->>WorkerPool: Wait for available worker
+                WorkerPool-->>TaskManager: Assign task when ready
+            end
+            WorkerPool->>TaskManager: Task completed
+            TaskManager->>Redis: Cache result
+            TaskManager-->>Service: Return result to pending requests
+            Service-->>Client: Send result
+        end
+    end
+```

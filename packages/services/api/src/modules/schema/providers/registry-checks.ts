@@ -287,8 +287,6 @@ export class RegistryChecks {
       } satisfies CheckResult;
     }
 
-    this.logger.debug('No validation errors');
-
     if (!result.sdl) {
       throw new Error('No SDL, but no errors either');
     }
@@ -767,7 +765,7 @@ export function detectUrlChanges(
     const before = nameToCompositeSchemaMap.get(schema.service_name);
 
     if (before && before.service_url !== schema.service_url) {
-      if (before.service_url && schema.service_url) {
+      if (before.service_url != null && schema.service_url != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -778,7 +776,7 @@ export function detectUrlChanges(
             },
           },
         });
-      } else if (before.service_url && schema.service_url == null) {
+      } else if (before.service_url != null && schema.service_url == null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -789,7 +787,7 @@ export function detectUrlChanges(
             },
           },
         });
-      } else if (before.service_url == null && schema.service_url) {
+      } else if (before.service_url == null && schema.service_url != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -801,7 +799,9 @@ export function detectUrlChanges(
           },
         });
       } else {
-        throw new Error("This shouldn't happen.");
+        throw new Error(
+          `This shouldn't happen (before.service_url=${JSON.stringify(before.service_url)}, schema.service_url=${JSON.stringify(schema.service_url)}).`,
+        );
       }
     }
   }

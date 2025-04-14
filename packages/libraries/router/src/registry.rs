@@ -86,13 +86,10 @@ impl HiveRegistry {
         }
 
         // Resolve values
-        let mut endpoint = config.endpoint.unwrap_or_else(|| "".to_string());
-        let key = config.key.unwrap_or_else(|| "".to_string());
-        let poll_interval: u64 = match config.poll_interval {
-            Some(value) => value,
-            None => 10,
-        };
-        let accept_invalid_certs = config.accept_invalid_certs.unwrap_or_else(|| false);
+        let mut endpoint = config.endpoint.unwrap_or_default();
+        let key = config.key.unwrap_or_default();
+        let poll_interval: u64 = config.poll_interval.unwrap_or(10);
+        let accept_invalid_certs = config.accept_invalid_certs.unwrap_or(false);
         let logger = Logger::new();
 
         // In case of an endpoint and an key being empty, we don't start the polling and skip the registry
@@ -173,7 +170,7 @@ impl HiveRegistry {
         headers.insert(
             reqwest::header::USER_AGENT,
             reqwest::header::HeaderValue::from_str(
-                format!("hive-apollo-router/{}", COMMIT.unwrap_or_else(|| "local")).as_str(),
+                format!("hive-apollo-router/{}", COMMIT.unwrap_or("local")).as_str(),
             )
             .unwrap(),
         );
@@ -244,7 +241,7 @@ impl HiveRegistry {
                     }
                 }
             }
-            Err(e) => self.logger.error(&format!("{}", e)),
+            Err(e) => self.logger.error(&e.to_string()),
         }
     }
 }

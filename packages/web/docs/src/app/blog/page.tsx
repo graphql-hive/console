@@ -1,5 +1,6 @@
 import { getPageMap } from '@theguild/components/server';
 import { isBlogPost } from './blog-types';
+import { NewsletterFormCard } from './components/newsletter-form-card';
 import { PostsByTag } from './components/posts-by-tag';
 // We can't move this page to `(index)` dir together with `tag` page because Nextra crashes for
 // some reason. It will cause an extra rerender on first navigation to a tag page, which isn't
@@ -16,7 +17,9 @@ export default async function BlogPage() {
 
   return (
     <BlogPageLayout>
-      <PostsByTag posts={allPosts} />
+      <PostsByTag posts={allPosts}>
+        <NewsletterFormCard />
+      </PostsByTag>
     </BlogPageLayout>
   );
 }

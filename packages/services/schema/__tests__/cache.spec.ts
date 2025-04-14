@@ -258,7 +258,7 @@ test('run action again when the action expires', async ({ expect }) => {
 
   const actionId = randomString();
   async function actionFn() {
-    await waitFor(timeoutMs);
+    await waitFor(timeoutMs - 1);
     return 'foo';
   }
 

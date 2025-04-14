@@ -1,4 +1,5 @@
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
+import { abortSignalAny } from '@graphql-hive/signal';
 import type { SchemaBuilderApi } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -14,6 +15,7 @@ export class StitchingOrchestrator implements Orchestrator {
   type = ProjectType.STITCHING;
   private logger: Logger;
   private schemaService;
+  private incomingRequestAbortSignal: AbortSignal;
 
   constructor(
     logger: Logger,
@@ -32,6 +34,7 @@ export class StitchingOrchestrator implements Orchestrator {
         }),
       ],
     });
+    this.incomingRequestAbortSignal = context.request.signal;
   }
 
   @traceFn('StitchingOrchestrator.composeAndValidate', {
@@ -47,15 +50,43 @@ export class StitchingOrchestrator implements Orchestrator {
   async composeAndValidate(schemas: SchemaObject[]) {
     this.logger.debug('Composing and Validating Stitched Schemas');
 
-    const result = await this.schemaService.composeAndValidate.mutate({
-      type: 'stitching',
-      schemas: schemas.map(s => ({
-        raw: s.raw,
-        source: s.source,
-        url: s.url ?? null,
-      })),
-    });
+    const timeoutAbortSignal = AbortSignal.timeout(30_000);
 
-    return result;
+    const onTimeout = () => {
+      this.logger.debug('Composition HTTP request aborted due to timeout of 30 seconds.');
+    };
+    timeoutAbortSignal.addEventListener('abort', onTimeout);
+
+    const onIncomingRequestAbort = () => {
+      this.logger.debug('Composition HTTP request aborted due to incoming request being canceled.');
+    };
+    this.incomingRequestAbortSignal.addEventListener('abort', onIncomingRequestAbort);
+
+    try {
+      const result = await this.schemaService.composeAndValidate.mutate(
+        {
+          type: 'stitching',
+          schemas: schemas.map(s => ({
+            raw: s.raw,
+            source: s.source,
+            url: s.url ?? null,
+          })),
+        },
+        {
+          // We want to abort composition if the request that does the composition is aborted
+          // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
+          //
+          // The reason for these is a potential dead-lock.
+          //
+          // Note: We are using `abortSignalAny` over `AbortSignal.any` because of leak issues.
+          // @source https://github.com/nodejs/node/issues/57584
+          signal: abortSignalAny([this.incomingRequestAbortSignal, timeoutAbortSignal]),
+        },
+      );
+      return result;
+    } finally {
+      timeoutAbortSignal.removeEventListener('abort', onTimeout);
+      this.incomingRequestAbortSignal.removeEventListener('abort', onIncomingRequestAbort);
+    }
   }
 }
