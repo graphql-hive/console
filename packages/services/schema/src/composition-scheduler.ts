@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import fastq from 'fastq';
+import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
 import type { CompositionEvent, CompositionResultEvent } from './composition-worker';
 
@@ -10,8 +11,13 @@ type QueueData = {
   abortSignal: AbortSignal;
 };
 
+type Task = Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'>;
+
 type WWorker = {
-  state: 'idle' | 'processing';
+  task: null | {
+    task: Task;
+    data: QueueData;
+  };
   run: (input: QueueData) => Promise<CompositionResultEvent['data']>;
 };
 
@@ -34,7 +40,7 @@ export class CompositionScheduler {
 
     this.queue = fastq.promise(
       function queue(data) {
-        const worker = workers.find(worker => worker.state === 'idle');
+        const worker = workers.find(worker => worker.task === null);
         // Let's not process aborted requests
         if (data.abortSignal.aborted) {
           throw data.abortSignal.reason;
@@ -60,21 +66,31 @@ export class CompositionScheduler {
         maxOldGenerationSizeMb: this.maxOldGenerationSizeMb,
       },
     });
-    const tasks = new Map<string, Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'>>();
+    let currentTask: WWorker['task'] | null = null;
 
     const recreate = () => {
       void worker.terminate().finally(() => {
         this.logger.debug('Re-Creating worker %s', index);
         this.workers[index] = this.createWorker(index);
 
-        for (const [, task] of tasks) {
-          this.logger.debug('Cancel pending tasks %s', index);
-          task.reject(new Error('Worker stopped.'));
+        if (currentTask) {
+          this.logger.debug('Cancel pending task %s', index);
+          currentTask.task.reject(new Error('Worker stopped.'));
         }
       });
     };
 
     worker.on('error', error => {
+      Sentry.captureException(error, {
+        extra: {
+          requestId: currentTask?.data.requestId ?? '',
+          compositionType: currentTask?.data.data.type,
+          compositionArguments: currentTask?.data.data.args,
+        },
+        tags: {
+          composition: 'TIMEOUT_OR_MEMORY_ERROR',
+        },
+      });
       console.error(error);
       this.logger.error('Worker error %s', error);
       recreate();
@@ -94,11 +110,11 @@ export class CompositionScheduler {
       'message',
       (data: CompositionResultEvent | { event: 'error'; id: string; err: Error }) => {
         if (data.event === 'error') {
-          tasks.get(data.id)?.reject(data.err);
+          currentTask?.task.reject(data.err);
         }
 
         if (data.event === 'compositionResult') {
-          tasks.get(data.id)?.resolve(data);
+          currentTask?.task.resolve(data);
         }
       },
     );
@@ -106,29 +122,32 @@ export class CompositionScheduler {
     const { logger: baseLogger } = this;
 
     return {
-      state: 'idle' as const,
-      run({ data, requestId, abortSignal }: QueueData) {
-        if (this.state !== 'idle') {
+      task: null,
+      run(queueData: QueueData) {
+        if (this.task) {
           throw new Error('Can not run task in worker that is not idle.');
         }
-        this.state = 'processing';
         const taskId = crypto.randomUUID();
-        const logger = baseLogger.child({ taskId, reqId: requestId });
+        const logger = baseLogger.child({ taskId, reqId: queueData.requestId });
         const d = Promise.withResolvers<CompositionResultEvent>();
 
-        const task: Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'> = {
+        let task: Task = {
           resolve: data => {
-            abortSignal.removeEventListener('abort', onAbort);
-            tasks.delete(taskId);
+            queueData.abortSignal.removeEventListener('abort', onAbort);
+            currentTask = null;
             d.resolve(data);
           },
           reject: err => {
-            abortSignal.removeEventListener('abort', onAbort);
-            tasks.delete(taskId);
+            queueData.abortSignal.removeEventListener('abort', onAbort);
+            currentTask = null;
             void worker.terminate().finally(() => {
               d.reject(err);
             });
           },
+        };
+        currentTask = {
+          task,
+          data: queueData,
         };
 
         function onAbort() {
@@ -137,22 +156,21 @@ export class CompositionScheduler {
           task.reject(new Error('Task was aborted'));
         }
 
-        abortSignal.addEventListener('abort', onAbort);
+        queueData.abortSignal.addEventListener('abort', onAbort);
 
-        tasks.set(taskId, task);
         const time = process.hrtime();
 
         worker.postMessage({
           event: 'composition',
           id: taskId,
-          data,
+          data: queueData.data,
           taskId,
-          requestId,
+          requestId: queueData.requestId,
         } satisfies CompositionEvent);
 
         return d.promise
           .finally(() => {
-            this.state = 'idle';
+            this.task = null;
             const endTime = process.hrtime(time);
             logger.debug('Time taken: %ds:%dms', endTime[0], endTime[1] / 1000000);
           })
