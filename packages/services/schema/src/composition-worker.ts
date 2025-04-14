@@ -38,7 +38,14 @@ export function createCompositionWorker(args: {
   });
 
   args.port.on('message', async (message: CompositionEvent) => {
-    baseLogger.debug('processing message', message.id, message.event);
+    const logger = baseLogger.child({
+      taskId: message.taskId,
+      reqId: message.requestId,
+      messageId: message.id,
+      event: message.event,
+    });
+    logger.debug('processing message');
+
     try {
       if (message.event === 'composition') {
         if (message.data.type === 'federation') {
@@ -125,6 +132,8 @@ export function createCompositionWorker(args: {
 export type CompositionEvent = {
   id: string;
   event: 'composition';
+  requestId: string;
+  taskId: string;
   data:
     | {
         type: 'federation';

@@ -53,7 +53,11 @@ async function main() {
     bodyLimit: env.http.bodyLimit,
   });
 
-  const compositionScheduler = new CompositionScheduler(server.log, 4);
+  const compositionScheduler = new CompositionScheduler(
+    server.log,
+    env.compositionWorker.count,
+    env.compositionWorker.maxOldGenerationSizeMb,
+  );
 
   if (tracing) {
     await server.register(...tracing.instrumentFastify());

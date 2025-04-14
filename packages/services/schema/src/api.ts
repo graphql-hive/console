@@ -90,15 +90,20 @@ export const schemaBuilderApiRouter = t.router({
     )
     .mutation(async ({ ctx, input }): Promise<CompositionResponse> => {
       composeAndValidateCounter.inc({ type: input.type });
+
       try {
         if (input.type === 'federation') {
           return await ctx.cache.reuse(
             'federation',
-            async (args: ComposeFederationArgs) => {
+            async (args: ComposeFederationArgs, abortSignal) => {
               const result = await ctx.compositionScheduler.process({
-                type: 'federation',
-                args,
-                requestTimeoutMs: ctx.cache.timeoutMs,
+                data: {
+                  type: 'federation',
+                  args,
+                  requestTimeoutMs: ctx.cache.timeoutMs,
+                },
+                abortSignal,
+                requestId: ctx.req.id,
               });
               return result.result;
             },
@@ -122,20 +127,31 @@ export const schemaBuilderApiRouter = t.router({
         }
 
         if (input.type === 'stitching') {
-          return await ctx.cache.reuse('stitching', async (args: ComposeStitchingArgs) => {
-            const result = await ctx.compositionScheduler.process({
-              type: 'stitching',
-              args,
-            });
-            return result.result;
-          })({ schemas: input.schemas });
+          return await ctx.cache.reuse(
+            'stitching',
+            async (args: ComposeStitchingArgs, abortSignal) => {
+              const result = await ctx.compositionScheduler.process({
+                data: {
+                  type: 'stitching',
+                  args,
+                },
+                abortSignal,
+                requestId: ctx.req.id,
+              });
+              return result.result;
+            },
+          )({ schemas: input.schemas });
         }
 
         if (input.type === 'single') {
-          return await ctx.cache.reuse('single', async (args: ComposeSingleArgs) => {
+          return await ctx.cache.reuse('single', async (args: ComposeSingleArgs, abortSignal) => {
             const result = await ctx.compositionScheduler.process({
-              type: 'single',
-              args,
+              data: {
+                type: 'single',
+                args,
+              },
+              abortSignal,
+              requestId: ctx.req.id,
             });
             return result.result;
           })({ schemas: input.schemas });
@@ -143,7 +159,8 @@ export const schemaBuilderApiRouter = t.router({
 
         assertAllCasesExhausted(input);
       } catch (error) {
-        if (ctx.cache.isTimeoutError(error)) {
+        // Treat timeouts caused by external composition as "expected errors"
+        if (ctx.cache.isTimeoutError(error) && input.type === 'federation' && input.external) {
           return {
             errors: [
               {

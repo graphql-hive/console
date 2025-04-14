@@ -4,29 +4,42 @@ import fastq from 'fastq';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
 import type { CompositionEvent, CompositionResultEvent } from './composition-worker';
 
+type QueueData = {
+  data: CompositionEvent['data'];
+  requestId: string;
+  abortSignal: AbortSignal;
+};
+
 type WWorker = {
   state: 'idle' | 'processing';
-  run: (input: CompositionEvent['data']) => Promise<CompositionResultEvent['data']>;
+  run: (input: QueueData) => Promise<CompositionResultEvent['data']>;
 };
 
 export class CompositionScheduler {
   private logger: Logger;
   /** The amount of parallel workers */
-  private size: number;
+  private workerCount: number;
+  private maxOldGenerationSizeMb: number;
   /** List of all workers */
   private workers: Array<WWorker>;
 
-  private queue: fastq.queueAsPromised<CompositionEvent['data'], CompositionResultEvent['data']>;
+  private queue: fastq.queueAsPromised<QueueData, CompositionResultEvent['data']>;
 
-  constructor(logger: Logger, size: number) {
-    this.size = size;
+  constructor(logger: Logger, workerCount: number, maxOldGenerationSizeMb: number) {
+    this.workerCount = workerCount;
+    this.maxOldGenerationSizeMb = maxOldGenerationSizeMb;
     this.logger = logger.child({ source: 'CompositionScheduler' });
-    const workers = Array.from({ length: this.size }, (_, i) => this.createWorker(i));
+    const workers = Array.from({ length: this.workerCount }, (_, i) => this.createWorker(i));
     this.workers = workers;
 
     this.queue = fastq.promise(
       function queue(data) {
         const worker = workers.find(worker => worker.state === 'idle');
+        // Let's not process aborted requests
+        if (data.abortSignal.aborted) {
+          throw data.abortSignal.reason;
+        }
+
         if (!worker) {
           throw new Error('No idle worker found.');
         }
@@ -34,7 +47,7 @@ export class CompositionScheduler {
       },
       // The size needs to be the same as the length of `this.workers`.
       // Otherwise a worker would process more than a single task at a time.
-      this.size,
+      this.workerCount,
     );
   }
 
@@ -43,28 +56,35 @@ export class CompositionScheduler {
     const name = `composition-worker-${index}`;
     const worker = new Worker(path.join(__dirname, 'composition-worker-main.js'), {
       name,
-      // TODO: Provide resource limits
-      resourceLimits: {},
+      resourceLimits: {
+        maxOldGenerationSizeMb: this.maxOldGenerationSizeMb,
+      },
     });
     const tasks = new Map<string, Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'>>();
+
+    const recreate = () => {
+      void worker.terminate().finally(() => {
+        this.logger.debug('Re-Creating worker %s', index);
+        this.workers[index] = this.createWorker(index);
+
+        for (const [, task] of tasks) {
+          this.logger.debug('Cancel pending tasks %s', index);
+          task.reject(new Error('Worker stopped.'));
+        }
+      });
+    };
 
     worker.on('error', error => {
       console.error(error);
       this.logger.error('Worker error %s', error);
+      recreate();
     });
 
+    let didAbortTask = false;
     worker.on('exit', code => {
       this.logger.error('Worker stopped with exit code %s', String(code));
-      if (code === 0) {
-        return;
-      }
-
-      this.logger.debug('Re-Creating worker %s', index);
-      this.workers[index] = this.createWorker(index);
-
-      this.logger.debug('Cancel pending tasks %s', index);
-      for (const [, task] of tasks) {
-        task.reject(new Error('Worker stopped.'));
+      if (didAbortTask) {
+        recreate();
       }
     });
 
@@ -83,48 +103,58 @@ export class CompositionScheduler {
       },
     );
 
-    const { logger } = this;
+    const { logger: baseLogger } = this;
 
     return {
       state: 'idle' as const,
-      run(data: CompositionEvent['data']) {
+      run({ data, requestId, abortSignal }: QueueData) {
         if (this.state !== 'idle') {
           throw new Error('Can not run task in worker that is not idle.');
         }
         this.state = 'processing';
-        const id = crypto.randomUUID();
+        const taskId = crypto.randomUUID();
+        const logger = baseLogger.child({ taskId, reqId: requestId });
         const d = Promise.withResolvers<CompositionResultEvent>();
-        const timeout = setTimeout(() => {
-          task.reject(new Error('Timeout, worker did not respond within time.'));
-        }, 30_000);
 
         const task: Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'> = {
           resolve: data => {
-            tasks.delete(id);
-            clearTimeout(timeout);
+            abortSignal.removeEventListener('abort', onAbort);
+            tasks.delete(taskId);
             d.resolve(data);
           },
           reject: err => {
-            tasks.delete(id);
-            clearTimeout(timeout);
-            d.reject(err);
+            abortSignal.removeEventListener('abort', onAbort);
+            tasks.delete(taskId);
+            void worker.terminate().finally(() => {
+              d.reject(err);
+            });
           },
         };
 
-        tasks.set(id, task);
+        function onAbort() {
+          didAbortTask = true;
+          logger.error('Task aborted.');
+          task.reject(new Error('Task was aborted'));
+        }
+
+        abortSignal.addEventListener('abort', onAbort);
+
+        tasks.set(taskId, task);
         const time = process.hrtime();
 
         worker.postMessage({
           event: 'composition',
-          id,
+          id: taskId,
           data,
+          taskId,
+          requestId,
         } satisfies CompositionEvent);
 
         return d.promise
           .finally(() => {
             this.state = 'idle';
             const endTime = process.hrtime(time);
-            logger.debug('Time taken: %ds %dms', endTime[0], endTime[1] / 1000000);
+            logger.debug('Time taken: %ds:%dms', endTime[0], endTime[1] / 1000000);
           })
           .then(result => result.data);
       },
@@ -132,7 +162,7 @@ export class CompositionScheduler {
   }
 
   /** Process a composition task in a worker (once the next worker is free). */
-  process(data: CompositionEvent['data']): Promise<CompositionResultEvent['data']> {
+  process(data: QueueData): Promise<CompositionResultEvent['data']> {
     return this.queue.push(data);
   }
 }

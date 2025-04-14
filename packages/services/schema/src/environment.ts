@@ -25,6 +25,8 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: zod.string(),
+  COMPOSITION_WORKER_COUNT: zod.number().min(1).default(4),
+  COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: zod.number().min(256).default(512),
 });
 
 const RequestBrokerModel = zod.union([
@@ -182,4 +184,8 @@ export const env = {
           signature: requestBroker.REQUEST_BROKER_SIGNATURE,
         }
       : null,
+  compositionWorker: {
+    count: base.COMPOSITION_WORKER_COUNT,
+    maxOldGenerationSizeMb: base.COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB,
+  },
 } as const;
