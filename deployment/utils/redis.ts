@@ -111,7 +111,7 @@ export class Redis {
           name: 'redis-exporter',
           image: REDIS_EXPORTER_IMAGE,
           env: exporterEnv,
-          ports: [{ containerPort: METRICS_PORT, protocol: 'TCP' }],
+          ports: [{ containerPort: METRICS_PORT, protocol: 'TCP', name: 'metrics' }],
           resources: {
             limits: {
               cpu: '200m',
@@ -138,7 +138,6 @@ export class Redis {
           annotations: {
             'prometheus.io/scrape': 'true',
             'prometheus.io/port': String(METRICS_PORT),
-            'prometheus.io/scheme': 'http',
             'prometheus.io/path': '/metrics',
           },
         },
