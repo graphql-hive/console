@@ -213,7 +213,9 @@ export function PlanCard({
               </button>
             )}
           </header>
-          <div className="mt-4 h-6 text-[#4F6C6A]">{startingFrom && 'Starting from'}</div>
+          <div className={cn('mt-4 h-6 text-[#4F6C6A]', !startingFrom && 'max-sm:h-0')}>
+            {startingFrom && 'Starting from'}
+          </div>
           <div className="text-5xl font-medium leading-[56px] tracking-[-0.48px]">{price}</div>
           <div className="mt-4 flex *:grow">{callToAction}</div>
 
