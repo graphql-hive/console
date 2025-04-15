@@ -122,17 +122,14 @@ export class Redis {
       ],
     });
 
-    const metadata: k8s.types.input.meta.v1.ObjectMeta = {
-      annotations: {
-        'prometheus.io/scrape': 'true',
-        'prometheus.io/port': String(METRICS_PORT),
-        'prometheus.io/path': '/metrics',
-      },
-    };
-
     const deployment = new kx.Deployment(name, {
       metadata: {
-        annotations: metadata.annotations,
+        annotations: {
+          'prometheus.io/scrape': 'true',
+          'prometheus.io/port': String(METRICS_PORT),
+          'prometheus.io/scheme': 'http',
+          'prometheus.io/path': '/metrics',
+        },
       },
       spec: pb.asExtendedDeploymentSpec(
         {
@@ -145,9 +142,7 @@ export class Redis {
             },
           },
         },
-        {
-          annotations: metadata.annotations,
-        },
+        {},
       ),
     });
 
@@ -158,22 +153,7 @@ export class Redis {
       },
     });
 
-    const service = deployment.createService({
-      ports: [
-        {
-          name: 'redis',
-          port: REDIS_PORT,
-          targetPort: REDIS_PORT,
-          protocol: 'TCP',
-        },
-        {
-          name: 'metrics',
-          port: METRICS_PORT,
-          targetPort: METRICS_PORT,
-          protocol: 'TCP',
-        },
-      ],
-    });
+    const service = deployment.createService({});
 
     return { deployment, service, redisPort: REDIS_PORT, metricsPort: METRICS_PORT };
   }
