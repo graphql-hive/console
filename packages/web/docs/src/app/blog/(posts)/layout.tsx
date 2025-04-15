@@ -20,7 +20,7 @@ export default function BlogPostLayout({ children }: { children: React.ReactNode
         {children}
       </div>
       <SimilarPosts className="mx-4 md:mx-6" />
-      <GetYourAPIGameRightSection className="mx-4 sm:mb-6 md:mx-6" />
+      <GetYourAPIGameRightSection className="light text-green-1000 dark:bg-primary/95 mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
   );
 }
