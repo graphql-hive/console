@@ -41,11 +41,10 @@ export const gatewayConfig = defineConfig({
         ],
       }
     : false,
-  // TODO: this causes runtime errors
-  // demandControl: {
-  //   maxCost: 1000,
-  //   includeExtensionMetadata: true,
-  // },
+  demandControl: {
+    maxCost: 1000,
+    includeExtensionMetadata: true,
+  },
   maxTokens: 1_000,
   maxDepth: 20,
 });
