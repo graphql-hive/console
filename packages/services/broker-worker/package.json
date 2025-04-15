@@ -10,7 +10,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "4.20241230.0",
     "@types/service-worker-mock": "2.0.4",
-    "@whatwg-node/server": "0.10.3",
+    "@whatwg-node/server": "0.10.5",
     "esbuild": "0.25.0",
     "itty-router": "4.2.2",
     "toucan-js": "4.1.0",

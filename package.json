@@ -107,6 +107,7 @@
     "overrides.ip": "There is no update with fix for ip package, we use fork https://github.com/indutny/node-ip/issues/150#issuecomment-2325961380",
     "overrides.miniflare": "To address CVE: https://github.com/graphql-hive/console/security/dependabot/245",
     "overrides.tar-fs": "https://github.com/graphql-hive/console/security/dependabot/290",
+    "overrides.@whatwg-node/fetch": "@graphql-eslint/eslint-plugin and @theguild/editor overrides to address CVE",
     "overrides": {
       "esbuild": "0.25.0",
       "csstype": "3.1.2",
@@ -117,7 +118,8 @@
       "cookie@<0.7.0": "0.7.2",
       "tar-fs": "2.1.2",
       "ip": "npm:neoip@2.1.0",
-      "miniflare@3>undici": "5.28.5"
+      "miniflare@3>undici": "5.28.5",
+      "@whatwg-node/fetch": "0.10.6"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
