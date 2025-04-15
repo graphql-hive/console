@@ -123,14 +123,6 @@ export class Redis {
     });
 
     const deployment = new kx.Deployment(name, {
-      metadata: {
-        annotations: {
-          'prometheus.io/scrape': 'true',
-          'prometheus.io/port': String(METRICS_PORT),
-          'prometheus.io/scheme': 'http',
-          'prometheus.io/path': '/metrics',
-        },
-      },
       spec: pb.asExtendedDeploymentSpec(
         {
           replicas: 1,
@@ -142,7 +134,14 @@ export class Redis {
             },
           },
         },
-        {},
+        {
+          annotations: {
+            'prometheus.io/scrape': 'true',
+            'prometheus.io/port': String(METRICS_PORT),
+            'prometheus.io/scheme': 'http',
+            'prometheus.io/path': '/metrics',
+          },
+        },
       ),
     });
 
