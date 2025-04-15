@@ -4,7 +4,9 @@ import { Output } from '@pulumi/pulumi';
 import { getLocalComposeConfig } from './local-config';
 import { normalizeEnv, PodBuilder } from './pod-builder';
 
-const PORT = 6379;
+const REDIS_PORT = 6379;
+const METRICS_PORT = 9121;
+const REDIS_EXPORTER_IMAGE = 'oliver006/redis_exporter:v1.70.0-alpine';
 
 export class Redis {
   constructor(
@@ -37,7 +39,7 @@ export class Redis {
       data: {
         'readiness.sh': this.options.password.apply(
           p => `#!/bin/bash
-        response=$(timeout -s SIGTERM 3 $1 redis-cli -h localhost -a ${p} -p ${PORT} ping)
+        response=$(timeout -s SIGTERM 3 $1 redis-cli -h localhost -a ${p} -p ${REDIS_PORT} ping)
         if [ "$response" != "PONG" ]; then
           echo "$response"
           exit 1
@@ -46,7 +48,7 @@ export class Redis {
         ),
         'liveness.sh': this.options.password.apply(
           p => `#!/bin/bash
-        response=$(timeout -s SIGTERM 3 $1 redis-cli -h localhost -a ${p} -p ${PORT} ping)
+        response=$(timeout -s SIGTERM 3 $1 redis-cli -h localhost -a ${p} -p ${REDIS_PORT} ping)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
           echo "$response"
           exit 1
@@ -58,6 +60,22 @@ export class Redis {
 
     const volumeMounts = [cm.mount('/scripts')];
 
+    // Redis Exporter container environment variables
+    const exporterEnv: k8s.types.input.core.v1.EnvVar[] = [
+      {
+        name: 'REDIS_ADDR',
+        value: `redis://localhost:${REDIS_PORT}`,
+      },
+      {
+        name: 'REDIS_PASSWORD',
+        value: this.options.password,
+      },
+      {
+        name: 'REDIS_EXPORTER_LOG_FORMAT',
+        value: 'json',
+      },
+    ];
+
     const pb = new PodBuilder({
       restartPolicy: 'Always',
       containers: [
@@ -66,7 +84,7 @@ export class Redis {
           image: redisService.image,
           env,
           volumeMounts,
-          ports: [{ containerPort: PORT, protocol: 'TCP' }],
+          ports: [{ containerPort: REDIS_PORT, protocol: 'TCP' }],
           resources: {
             limits,
           },
@@ -89,14 +107,33 @@ export class Redis {
             },
           },
         },
+        {
+          name: 'redis-exporter',
+          image: REDIS_EXPORTER_IMAGE,
+          env: exporterEnv,
+          ports: [{ containerPort: METRICS_PORT, protocol: 'TCP' }],
+          resources: {
+            limits: {
+              cpu: '200m',
+              memory: '200Mi',
+            },
+          },
+        },
       ],
     });
 
     const metadata: k8s.types.input.meta.v1.ObjectMeta = {
-      annotations: {},
+      annotations: {
+        'prometheus.io/scrape': 'true',
+        'prometheus.io/port': String(METRICS_PORT),
+        'prometheus.io/path': '/metrics',
+      },
     };
 
     const deployment = new kx.Deployment(name, {
+      metadata: {
+        annotations: metadata.annotations,
+      },
       spec: pb.asExtendedDeploymentSpec(
         {
           replicas: 1,
@@ -121,8 +158,23 @@ export class Redis {
       },
     });
 
-    const service = deployment.createService({});
+    const service = deployment.createService({
+      ports: [
+        {
+          name: 'redis',
+          port: REDIS_PORT,
+          targetPort: REDIS_PORT,
+          protocol: 'TCP',
+        },
+        {
+          name: 'metrics',
+          port: METRICS_PORT,
+          targetPort: METRICS_PORT,
+          protocol: 'TCP',
+        },
+      ],
+    });
 
-    return { deployment, service, port: PORT };
+    return { deployment, service, redisPort: REDIS_PORT, metricsPort: METRICS_PORT };
   }
 }

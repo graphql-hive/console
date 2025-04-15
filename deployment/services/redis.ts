@@ -21,7 +21,7 @@ export function deployRedis(input: { environment: Environment }) {
   }).deploy({
     limits: input.environment.isProduction
       ? {
-          memory: `${3 * 1024}Mi`,
+          memory: '3Gi',
           cpu: '1000m',
         }
       : {
@@ -31,7 +31,8 @@ export function deployRedis(input: { environment: Environment }) {
   });
 
   const host = serviceLocalHost(redisApi.service);
-  const port = String(redisApi.port);
+  const port = String(redisApi.redisPort);
+
   const secret = new RedisSecret('redis', {
     password: redisConfig.requireSecret('password'),
     host,
