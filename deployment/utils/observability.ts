@@ -303,6 +303,12 @@ export class Observability {
                       regex: true,
                     },
                     {
+                      source_labels: ['__meta_kubernetes_pod_name'],
+                      action: 'replace',
+                      target_label: 'instance',
+                      regex: '(.*redis.*)',
+                    },
+                    {
                       source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scheme'],
                       action: 'replace',
                       target_label: '__scheme__',
