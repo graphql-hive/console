@@ -276,9 +276,11 @@ export class Observability {
               },
               scrape_configs: [
                 {
+                  job_name: 'service-metrics',
+                  scheme: 'http',
                   honor_labels: true,
                   honor_timestamps: true,
-                  job_name: 'service-metrics',
+                  metrics_path: '/metrics',
                   kubernetes_sd_configs: [
                     {
                       role: 'pod',
@@ -287,17 +289,24 @@ export class Observability {
                       },
                     },
                   ],
-                  metrics_path: '/metrics',
                   relabel_configs: [
+                    // compares the name of the port to == "metrics"
                     {
                       source_labels: ['__meta_kubernetes_pod_container_port_name'],
                       action: 'keep',
                       regex: 'metrics',
                     },
+                    // compares "scrape" label to "true"
                     {
                       source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scrape'],
                       action: 'keep',
                       regex: true,
+                    },
+                    {
+                      source_labels: ['__meta_kubernetes_pod_name'],
+                      action: 'replace',
+                      target_label: 'instance',
+                      regex: '(.*redis.*)',
                     },
                     {
                       source_labels: ['__meta_kubernetes_pod_annotation_prometheus_io_scheme'],
@@ -336,7 +345,6 @@ export class Observability {
                       target_label: 'kubernetes_node',
                     },
                   ],
-                  scheme: 'http',
                 },
               ],
             },

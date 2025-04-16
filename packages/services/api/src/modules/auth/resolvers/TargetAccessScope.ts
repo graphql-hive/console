@@ -1,4 +1,4 @@
-import { TargetAccessScope as TargetAccessScopeEnum } from '../providers/target-access';
+import { TargetAccessScope as TargetAccessScopeEnum } from '../providers/scopes';
 import type { TargetAccessScopeResolvers } from './../../../__generated__/types';
 
 export const TargetAccessScope: TargetAccessScopeResolvers = {

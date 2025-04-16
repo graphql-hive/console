@@ -34,9 +34,11 @@ import type {
   TargetSettings,
   User,
 } from '../../../shared/entities';
-import type { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import type { ProjectAccessScope } from '../../auth/providers/project-access';
-import type { TargetAccessScope } from '../../auth/providers/target-access';
+import type {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from '../../auth/providers/scopes';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
