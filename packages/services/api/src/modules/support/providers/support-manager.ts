@@ -578,9 +578,9 @@ export class SupportManager {
     });
     const customerType = this.resolveCustomerType(organization);
 
-    const formattedBody = ` "Category: " + ${request.data.category ? request.data.category : null}\n\n
-        "Project: " + ${request.data.project ? request.data.project : null}\n\n
-        "Target: " + ${request.data.target ? request.data.target : null}\n\n
+    const formattedBody = ` "Category: " + ${request.data.category ? request.data.category : "Not Selected"}\n\n
+        "Project: " + ${request.data.project ? request.data.project : "Not Selected"}\n\n
+        "Target: " + ${request.data.target ? request.data.target : "Not Selected"}\n\n
         "Description: " + ${request.data.description}
       `;
 
@@ -622,9 +622,9 @@ export class SupportManager {
       metadata: {
         ticketDescription: input.description,
         ticketPriority: input.priority,
-        ticketCategory: input.category ?? '',
-        ticketProject: input.project ?? '',
-        ticketTarget: input.target ?? '',
+        ...(input.category ? { ticketCategory: input.category } : {}),
+        ...(input.project ? { ticketProject: input.project } : {}),
+        ...(input.target ? { ticketTarget: input.target } : {}),
         ticketId: String(response.ticket.id),
         ticketSubject: input.subject,
       },
