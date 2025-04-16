@@ -39,6 +39,7 @@ async function main() {
       enabled: !!env.sentry,
       environment: env.environment,
       dsn: env.sentry.dsn,
+      beforeSend: (event, hint) => (hint?.mechanism?.handled ? null : event),
       release: env.release,
     });
   }

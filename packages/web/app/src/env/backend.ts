@@ -242,6 +242,7 @@ Sentry.init({
   dsn: env.sentry?.dsn,
   release: env.release,
   environment: env.environment,
+  beforeSend: (event, hint) => (hint?.mechanism?.handled ? null : event),
   integrations: [
     // HTTP integration is only available on the server
     new Integrations.Http({

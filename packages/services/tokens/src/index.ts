@@ -54,6 +54,7 @@ export async function main() {
       environment: env.environment,
       dsn: env.sentry.dsn,
       release: env.release,
+      beforeSend: (event, hint) => (hint?.mechanism?.handled ? null : event),
     });
   }
 
