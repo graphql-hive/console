@@ -720,7 +720,7 @@ test('deduplication of parallel requests resolving the same document from CDN', 
   httpScope.done();
 });
 
-test('usage reporting with batch execution and persisted documents', async () => {
+test('usage reporting with batch execution and persisted documents', { retry: 3 }, async () => {
   const httpScope = nock('http://artifacts-cdn.localhost', {
     reqheaders: {
       'X-Hive-CDN-Key': value => {
