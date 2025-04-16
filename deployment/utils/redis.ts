@@ -105,7 +105,8 @@ export class Redis {
               command: ['/bin/sh', '/scripts/liveness.sh'],
             },
           },
-          command: ['/opt/bitnami/scripts/redis/run.sh', '--maxmemory', `${memoryInMegabytes}mb`],
+          command: ['/opt/bitnami/scripts/redis/run.sh'],
+          args: ['--maxmemory', `${memoryInMegabytes}mb`],
           readinessProbe: {
             initialDelaySeconds: 5,
             periodSeconds: 8,
