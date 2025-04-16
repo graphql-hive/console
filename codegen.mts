@@ -36,10 +36,9 @@ const config: CodegenConfig = {
             ProjectType: '../shared/entities#ProjectType',
             NativeFederationCompatibilityStatus:
               '../shared/entities#NativeFederationCompatibilityStatus',
-            TargetAccessScope: '../modules/auth/providers/target-access#TargetAccessScope',
-            ProjectAccessScope: '../modules/auth/providers/project-access#ProjectAccessScope',
-            OrganizationAccessScope:
-              '../modules/auth/providers/organization-access#OrganizationAccessScope',
+            TargetAccessScope: '../modules/auth/providers/scopes#TargetAccessScope',
+            ProjectAccessScope: '../modules/auth/providers/scopes#ProjectAccessScope',
+            OrganizationAccessScope: '../modules/auth/providers/scopes#OrganizationAccessScope',
             SupportTicketPriority: '../shared/entities#SupportTicketPriority',
             SupportTicketStatus: '../shared/entities#SupportTicketStatus',
           },

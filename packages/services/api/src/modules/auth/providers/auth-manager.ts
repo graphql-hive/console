@@ -2,14 +2,8 @@ import { Injectable, Scope } from 'graphql-modules';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Session } from '../lib/authz';
-import { TargetAccessTokenSession } from '../lib/target-access-token-strategy';
-import {
-  OrganizationAccess,
-  OrganizationAccessScope,
-  OrganizationUserScopesSelector,
-} from './organization-access';
-import { ProjectAccess, ProjectAccessScope, ProjectUserScopesSelector } from './project-access';
-import { TargetAccess, TargetAccessScope, TargetUserScopesSelector } from './target-access';
+import { OrganizationAccess, OrganizationAccessScope } from './organization-access';
+import { ProjectAccessScope, TargetAccessScope } from './scopes';
 import { UserManager } from './user-manager';
 
 export interface OrganizationAccessSelector {
@@ -41,51 +35,20 @@ export interface TargetAccessSelector {
 export class AuthManager {
   constructor(
     private organizationAccess: OrganizationAccess,
-    private projectAccess: ProjectAccess,
-    private targetAccess: TargetAccess,
     private userManager: UserManager,
     private session: Session,
   ) {}
 
-  async ensureOrganizationAccess(selector: OrganizationAccessSelector): Promise<void | never> {
-    if (this.session instanceof TargetAccessTokenSession) {
-      await this.organizationAccess.ensureAccessForToken({
-        ...selector,
-        token: this.session.token,
-      });
-    } else {
-      const user = await this.session.getViewer();
-
-      // If a user is an admin, we can allow access for all data
-      if (user.isAdmin) {
-        return;
-      }
-
-      await this.organizationAccess.ensureAccessForUser({
-        ...selector,
-        userId: user.id,
-      });
-    }
-  }
-
-  async checkOrganizationAccess(selector: OrganizationAccessSelector): Promise<boolean> {
-    if (this.session instanceof TargetAccessTokenSession) {
-      throw new Error('checkOrganizationAccess for token is not implemented yet');
-    }
-
-    const user = await this.session.getViewer();
-
-    return this.organizationAccess.checkAccessForUser({
-      ...selector,
-      userId: user.id,
-    });
-  }
-
   async ensureOrganizationOwnership(selector: { organization: string }): Promise<void | never> {
-    const user = await this.session.getViewer();
+    const actor = await this.session.getActor();
+
+    if (actor.type !== 'user') {
+      throw new AccessError('Action can only be performed by user.');
+    }
+
     const isOwner = await this.organizationAccess.checkOwnershipForUser({
       organizationId: selector.organization,
-      userId: user.id,
+      userId: actor.user.id,
     });
 
     if (!isOwner) {
@@ -93,54 +56,15 @@ export class AuthManager {
     }
   }
 
-  async getCurrentUserAccessScopes(organizationId: string) {
-    const user = await this.session.getViewer();
-
-    if (!user) {
-      throw new AccessError('User not found');
+  async updateCurrentUser(input: { displayName: string; fullName: string }): Promise<User> {
+    const actor = await this.session.getActor();
+    if (actor.type !== 'user') {
+      throw new AccessError('Action can only be performed by user.');
     }
 
-    const [organizationScopes, projectScopes, targetScopes] = await Promise.all([
-      this.getMemberOrganizationScopes({
-        organizationId: organizationId,
-        userId: user.id,
-      }),
-      this.getMemberProjectScopes({
-        organizationId: organizationId,
-        userId: user.id,
-      }),
-      this.getMemberTargetScopes({
-        organizationId: organizationId,
-        userId: user.id,
-      }),
-    ]);
-
-    return [...organizationScopes, ...projectScopes, ...targetScopes];
-  }
-
-  async updateCurrentUser(input: { displayName: string; fullName: string }): Promise<User> {
-    const user = await this.session.getViewer();
     return this.userManager.updateUser({
-      id: user.id,
+      id: actor.user.id,
       ...input,
     });
-  }
-
-  getMemberOrganizationScopes(selector: OrganizationUserScopesSelector) {
-    return this.organizationAccess.getMemberScopes(selector);
-  }
-
-  getMemberProjectScopes(selector: ProjectUserScopesSelector) {
-    return this.projectAccess.getMemberScopes(selector);
-  }
-
-  getMemberTargetScopes(selector: TargetUserScopesSelector) {
-    return this.targetAccess.getMemberScopes(selector);
-  }
-
-  resetAccessCache() {
-    this.organizationAccess.resetAccessCache();
-    this.projectAccess.resetAccessCache();
-    this.targetAccess.resetAccessCache();
   }
 }
