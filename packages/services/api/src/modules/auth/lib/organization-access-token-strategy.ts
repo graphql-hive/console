@@ -1,10 +1,16 @@
 import * as crypto from 'node:crypto';
 import { type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import * as OrganizationAccessKey from '../../organization/lib/organization-access-key';
+import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
 import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationAccessTokenValidationCache } from '../providers/organization-access-token-validation-cache';
-import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
+import {
+  AuthNStrategy,
+  AuthorizationPolicyStatement,
+  OrganizationAccessTokenActor,
+  Session,
+} from './authz';
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -13,6 +19,7 @@ function hashToken(token: string) {
 export class OrganizationAccessTokenSession extends Session {
   public readonly organizationId: string;
   private policies: Array<AuthorizationPolicyStatement>;
+  private organizationAccessToken: OrganizationAccessToken;
   readonly id: string;
 
   constructor(
@@ -20,6 +27,7 @@ export class OrganizationAccessTokenSession extends Session {
       id: string;
       organizationId: string;
       policies: Array<AuthorizationPolicyStatement>;
+      organizationAccessToken: OrganizationAccessToken;
     },
     deps: {
       logger: Logger;
@@ -29,6 +37,14 @@ export class OrganizationAccessTokenSession extends Session {
     this.id = args.id;
     this.organizationId = args.organizationId;
     this.policies = args.policies;
+    this.organizationAccessToken = args.organizationAccessToken;
+  }
+
+  public async getActor(): Promise<OrganizationAccessTokenActor> {
+    return {
+      type: 'organizationAccessToken',
+      organizationAccessToken: this.organizationAccessToken,
+    };
   }
 
   protected loadPolicyStatementsForOrganization(
@@ -112,6 +128,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
         id: organizationAccessToken.id,
         organizationId: organizationAccessToken.organizationId,
         policies: organizationAccessToken.authorizationPolicyStatements,
+        organizationAccessToken,
       },
       {
         logger: args.req.log,

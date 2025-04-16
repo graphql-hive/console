@@ -188,7 +188,6 @@ export class OrganizationManager {
     });
 
     // Because we checked the access before, it's stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     return {
@@ -329,7 +328,6 @@ export class OrganizationManager {
     await this.tokenStorage.invalidateTokens(deletedOrganization.tokens);
 
     // Because we checked the access before, it's stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     await this.auditLog.record({
@@ -609,7 +607,6 @@ export class OrganizationManager {
     });
 
     // Because we checked the access before, it's stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     await Promise.all([
@@ -791,7 +788,6 @@ export class OrganizationManager {
     });
 
     // Because we checked the access before, it's stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     await this.auditLog.record({
@@ -994,7 +990,6 @@ export class OrganizationManager {
     });
 
     // Access cache is stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     const previousMemberRole = previousMembership.assignedRole.role ?? null;
@@ -1109,7 +1104,6 @@ export class OrganizationManager {
     });
 
     // Access cache is stale by now
-    this.authManager.resetAccessCache();
     this.session.reset();
 
     await this.auditLog.record({

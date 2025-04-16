@@ -5,6 +5,7 @@ import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
+import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
 import { Logger } from '../../shared/providers/logger';
 
 export type AuthorizationPolicyStatement = {
@@ -47,6 +48,18 @@ function parseResourceIdentifier(resource: string) {
   return { organizationId, resourceId: parts[2] };
 }
 
+export type UserActor = {
+  type: 'user';
+  user: User;
+};
+
+export type OrganizationAccessTokenActor = {
+  type: 'organizationAccessToken';
+  organizationAccessToken: OrganizationAccessToken;
+};
+
+type Actor = UserActor | OrganizationAccessTokenActor;
+
 /**
  * Abstract session class that is implemented by various ways to identify a session.
  * A session is a way to identify a user and their permissions for a specific organization.
@@ -75,8 +88,21 @@ export abstract class Session {
   abstract readonly id: string;
 
   /** Retrieve the current viewer. Implementations of the session need to implement this function */
-  public getViewer(): Promise<User> {
-    throw new AccessError('Authorization token is missing', 'UNAUTHENTICATED');
+  public abstract getActor(): Promise<Actor>;
+
+  /**
+   * Retrieve the Viewer of the session.
+   * A viewer can only be a {User} aka {SuperTokensSessions{}.
+   * If the session does not have a user an exception is raised.
+   */
+  public async getViewer(): Promise<User> {
+    const actor = await this.getActor();
+
+    if (actor.type !== 'user') {
+      throw new AccessError('Only authenticated users can perform this action.');
+    }
+
+    return actor.user;
   }
 
   public isViewer(): boolean {
@@ -498,6 +524,10 @@ class UnauthenticatedSession extends Session {
     return [];
   }
   id = 'noop';
+
+  public getActor(): Promise<Actor> {
+    throw new AccessError('Authorization token is missing', 'UNAUTHENTICATED');
+  }
 }
 
 /**

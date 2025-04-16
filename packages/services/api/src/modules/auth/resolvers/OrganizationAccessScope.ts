@@ -1,4 +1,4 @@
-import { OrganizationAccessScope as OrganizationAccessScopeEnum } from '../providers/organization-access';
+import { OrganizationAccessScope as OrganizationAccessScopeEnum } from '../providers/scopes';
 import type { OrganizationAccessScopeResolvers } from './../../../__generated__/types';
 
 export const OrganizationAccessScope: OrganizationAccessScopeResolvers = {

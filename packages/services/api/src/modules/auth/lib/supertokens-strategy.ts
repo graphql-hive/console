@@ -2,13 +2,12 @@ import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
-import type { User } from '../../../shared/entities';
 import { AccessError, HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
-import { AuthNStrategy, AuthorizationPolicyStatement, Session } from './authz';
+import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
@@ -32,7 +31,7 @@ export class SuperTokensCookieBasedSession extends Session {
   protected async loadPolicyStatementsForOrganization(
     organizationId: string,
   ): Promise<Array<AuthorizationPolicyStatement>> {
-    const user = await this.getViewer();
+    const { user } = await this.getActor();
 
     this.logger.debug(
       'Loading policy statements for organization. (userId=%s, organizationId=%s)',
@@ -97,7 +96,7 @@ export class SuperTokensCookieBasedSession extends Session {
     return organizationMembership.assignedRole.authorizationPolicyStatements;
   }
 
-  public async getViewer(): Promise<User> {
+  public async getActor(): Promise<UserActor> {
     const user = await this.storage.getUserBySuperTokenId({
       superTokensUserId: this.superTokensUserId,
     });
@@ -106,7 +105,10 @@ export class SuperTokensCookieBasedSession extends Session {
       throw new AccessError('User not found');
     }
 
-    return user;
+    return {
+      type: 'user',
+      user,
+    };
   }
 
   public isViewer() {

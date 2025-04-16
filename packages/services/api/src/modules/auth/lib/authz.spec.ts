@@ -15,6 +15,10 @@ class TestSession extends Session {
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {
     return this.policyStatements;
   }
+
+  getActor(): Promise<never> {
+    throw new Error('Not implemented');
+  }
 }
 
 describe('Session.assertPerformAction', () => {
