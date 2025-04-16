@@ -1,7 +1,6 @@
 import { createModule } from 'graphql-modules';
 import { AuditLogManager } from '../audit-logs/providers/audit-logs-manager';
 import { AuthManager } from './providers/auth-manager';
-import { OrganizationAccess } from './providers/organization-access';
 import { OrganizationAccessTokenValidationCache } from './providers/organization-access-token-validation-cache';
 import { UserManager } from './providers/user-manager';
 import { resolvers } from './resolvers.generated';
@@ -12,11 +11,5 @@ export const authModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [
-    AuthManager,
-    UserManager,
-    OrganizationAccess,
-    AuditLogManager,
-    OrganizationAccessTokenValidationCache,
-  ],
+  providers: [AuthManager, UserManager, AuditLogManager, OrganizationAccessTokenValidationCache],
 });

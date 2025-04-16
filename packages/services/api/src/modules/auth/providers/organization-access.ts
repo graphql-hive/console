@@ -7,10 +7,7 @@ import { OrganizationAccessScope } from './scopes';
 
 export { OrganizationAccessScope } from './scopes';
 
-export interface OrganizationOwnershipSelector {
-  userId: string;
-  organizationId: string;
-}
+
 
 export interface OrganizationUserScopesSelector {
   userId: string;
@@ -28,13 +25,7 @@ export interface OrganizationUserAccessSelector {
 })
 export class OrganizationAccess {
   private logger: Logger;
-  ownership: DataLoader<
-    {
-      organizationId: string;
-    },
-    string | null,
-    string
-  >;
+
 
   constructor(
     logger: Logger,
@@ -44,32 +35,8 @@ export class OrganizationAccess {
     this.logger = logger.child({
       source: 'OrganizationAccess',
     });
-    this.ownership = new DataLoader(
-      async selectors => {
-        const ownerPerSelector = await Promise.all(
-          selectors.map(selector => this.storage.getOrganizationOwnerId(selector)),
-        );
 
-        return selectors.map((_, i) => ownerPerSelector[i]);
-      },
-      {
-        cacheKeyFn(selector) {
-          return JSON.stringify({
-            type: 'OrganizationAccess:ownership',
-            organization: selector.organizationId,
-          });
-        },
-      },
-    );
   }
 
-  async checkOwnershipForUser(selector: OrganizationOwnershipSelector) {
-    const owner = await this.ownership.load(selector);
 
-    if (!owner) {
-      return false;
-    }
-
-    return owner === selector.userId;
-  }
 }
