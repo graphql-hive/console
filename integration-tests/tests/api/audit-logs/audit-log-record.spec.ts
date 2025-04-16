@@ -96,7 +96,15 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
   const rows = bodyStream?.split('\n');
   expect(rows?.length).toBeGreaterThan(1); // At least header and one row
   const header = rows?.[0].split(',');
-  const expectedHeader = ['id', 'created_at', 'event_type', 'user_id', 'user_email', 'metadata'];
+  const expectedHeader = [
+    'id',
+    'created_at',
+    'event_type',
+    'user_id',
+    'user_email',
+    'access_token_id',
+    'metadata',
+  ];
   expect(header).toEqual(expectedHeader);
   // Sometimes the order of the rows is not guaranteed, so we need to check if the expected rows are present
   expect(rows?.find(row => row.includes('ORGANIZATION_CREATED'))).toBeDefined();
