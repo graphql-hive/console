@@ -265,6 +265,8 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             url: flags.url,
           },
         },
+        // extend timeout from 20s to 65s for checks since they can take longer for massive schema
+        timeout: 65_000,
       });
 
       if (flags.experimentalJsonFile) {
