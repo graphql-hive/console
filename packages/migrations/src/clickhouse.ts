@@ -174,6 +174,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/011-audit-logs'),
     import('./clickhouse-actions/012-coordinates-typename-index'),
     import('./clickhouse-actions/013-apply-ttl'),
+    import('./clickhouse-actions/014-audit-logs-access-token'),
   ]);
 
   async function actionRunner(action: Action, index: number) {
