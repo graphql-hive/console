@@ -1,6 +1,7 @@
 import * as k8s from '@pulumi/kubernetes';
 import * as kx from '@pulumi/kubernetesx';
 import { Output } from '@pulumi/pulumi';
+import { memoryParser } from './k8s';
 import { getLocalComposeConfig } from './local-config';
 import { normalizeEnv, PodBuilder } from './pod-builder';
 
@@ -16,9 +17,13 @@ export class Redis {
     },
   ) {}
 
-  deploy({ limits }: { limits: k8s.types.input.core.v1.ResourceRequirements['limits'] }) {
+  deploy(input: { limits: { memory: string; cpu: string } }) {
     const redisService = getLocalComposeConfig().service('redis');
     const name = 'redis-store';
+    const limits: k8s.types.input.core.v1.ResourceRequirements['limits'] = {
+      memory: input.limits.memory,
+      cpu: input.limits.cpu,
+    };
 
     const env: k8s.types.input.core.v1.EnvVar[] = normalizeEnv(this.options.env ?? {}).concat([
       {
@@ -76,6 +81,9 @@ export class Redis {
       },
     ];
 
+    const memoryInBytes = memoryParser(input.limits.memory) * 0.8; // Redis recommends 80%
+    const memoryInMegabytes = Math.floor(memoryInBytes / 1024 / 1024);
+
     const pb = new PodBuilder({
       restartPolicy: 'Always',
       containers: [
@@ -97,6 +105,10 @@ export class Redis {
               command: ['/bin/sh', '/scripts/liveness.sh'],
             },
           },
+          // Note: this is needed, otherwise local config is not loaded at all
+          command: ['/opt/bitnami/scripts/redis/entrypoint.sh'],
+          // This is where we can pass actual flags to the bitnami/redis runtime
+          args: ['/opt/bitnami/scripts/redis/run.sh', `--maxmemory ${memoryInMegabytes}mb`],
           readinessProbe: {
             initialDelaySeconds: 5,
             periodSeconds: 8,
