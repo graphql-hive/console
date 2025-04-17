@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import {
   CallToAction,
-  DecorationIsolation,
   ExploreMainProductCards,
   FrequentlyAskedQuestions,
   Hero,
@@ -15,6 +14,7 @@ import { metadata as rootMetadata } from '../layout';
 import { CloudNativeSection } from './cloud-native-section';
 import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
+import { GatewayHeroDecoration } from './gateway-hero-decoration';
 import GatewayLandingFAQ from './gateway-landing-faq.mdx';
 import { LetsGetAdvancedSection } from './lets-get-advanced-section';
 import { OrchestrateYourWay } from './orchestrate-your-way';
@@ -50,7 +50,25 @@ export default function HiveGatewayPage() {
         <CallToAction variant="secondary-inverted" href="https://github.com/graphql-hive/gateway">
           GitHub
         </CallToAction>
-        <GatewayHeroDecoration />
+        <GatewayHeroDecoration>
+          <defs>
+            <linearGradient id="gateway-hero-gradient" gradientTransform="rotate(139)">
+              <stop offset="11.66%" stopColor="rgba(255, 255, 255, 0.1)" />
+              <stop offset="74.87%" stopColor="rgba(255, 255, 255, 0.3)" />
+            </linearGradient>
+            <linearGradient
+              id="gateway-hero-gradient-mobile"
+              x1="35.3488"
+              y1="15.0697"
+              x2="224.372"
+              y2="229.023"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="white" stopOpacity="0.2" />
+              <stop offset="80%" stopColor="white" />
+            </linearGradient>
+          </defs>
+        </GatewayHeroDecoration>
       </Hero>
       <GatewayFeatureTabs className="relative mt-6 sm:mt-[-72px] sm:bg-blue-100" />
       <OrchestrateYourWay className="mx-4 mt-6 sm:mx-8" />
@@ -73,38 +91,5 @@ export default function HiveGatewayPage() {
       </FrequentlyAskedQuestions>
       <GetYourAPIGameRightList className="mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
-  );
-}
-
-function GatewayHeroDecoration() {
-  return (
-    <DecorationIsolation className="-z-10">
-      <HiveGatewayIcon className="absolute left-[-268px] top-[-8px] size-[520px] fill-[url(#gateway-hero-gradient)] max-lg:hidden" />
-      <HiveGatewayIcon className="absolute right-[-144px] top-[-64px] size-[320px] fill-[url(#gateway-hero-gradient-mobile)] md:bottom-[-64px] md:right-[-268px] md:top-auto md:size-[520px] md:fill-[url(#gateway-hero-gradient)] lg:bottom-[-8px]" />
-      <svg
-        className="pointer-events-none -z-50 size-0"
-        width="192"
-        height="296"
-        viewBox="0 0 192 296"
-      >
-        <defs>
-          <linearGradient id="gateway-hero-gradient" gradientTransform="rotate(139)">
-            <stop offset="11.66%" stopColor="rgba(255, 255, 255, 0.1)" />
-            <stop offset="74.87%" stopColor="rgba(255, 255, 255, 0.3)" />
-          </linearGradient>
-          <linearGradient
-            id="gateway-hero-gradient-mobile"
-            x1="35.3488"
-            y1="15.0697"
-            x2="224.372"
-            y2="229.023"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="white" stopOpacity="0.2" />
-            <stop offset="80%" stopColor="white" />
-          </linearGradient>
-        </defs>
-      </svg>
-    </DecorationIsolation>
   );
 }
