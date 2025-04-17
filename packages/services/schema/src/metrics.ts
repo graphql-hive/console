@@ -28,7 +28,7 @@ export const compositionWorkerDurationMS = new metrics.Histogram({
   labelNames: ['type' /* single, federation or stitching */],
 });
 
-export const compositionCacheValueSize = new metrics.Histogram({
-  name: 'composition_cache_value_size',
+export const compositionCacheValueSizeBytes = new metrics.Histogram({
+  name: 'composition_cache_value_size_bytes',
   help: 'The size of the cache entries.',
 });

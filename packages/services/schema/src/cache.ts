@@ -3,7 +3,7 @@ import stringify from 'fast-json-stable-stringify';
 import type { Redis } from 'ioredis';
 import { TimeoutError } from 'p-timeout';
 import type { ServiceLogger } from '@hive/service-common';
-import { compositionCacheValueSize, schemaCompositionCounter } from './metrics';
+import { compositionCacheValueSizeBytes, schemaCompositionCounter } from './metrics';
 
 function createChecksum<TInput>(input: TInput): string {
   return createHash('sha256').update(stringify(input)).digest('hex');
@@ -107,7 +107,7 @@ export function createCache(options: {
     });
 
     const sizeInBytes = Buffer.byteLength(encodedData, 'utf8');
-    compositionCacheValueSize.observe(sizeInBytes);
+    compositionCacheValueSizeBytes.observe(sizeInBytes);
 
     await redis.psetex(
       id,
