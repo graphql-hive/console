@@ -108,7 +108,12 @@ export class Redis {
           // Note: this is needed, otherwise local config is not loaded at all
           command: ['/opt/bitnami/scripts/redis/entrypoint.sh'],
           // This is where we can pass actual flags to the bitnami/redis runtime
-          args: ['/opt/bitnami/scripts/redis/run.sh', `--maxmemory ${memoryInMegabytes}mb`],
+          args: [
+            '/opt/bitnami/scripts/redis/run.sh',
+            `--maxmemory ${memoryInMegabytes}mb`,
+            // This disables snapshotting to save cpu and reduce latency spikes
+            '--save ""',
+          ],
           readinessProbe: {
             initialDelaySeconds: 5,
             periodSeconds: 8,
