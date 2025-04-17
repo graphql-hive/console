@@ -32,8 +32,9 @@ export function deployRedis(input: { environment: Environment }) {
       // When maxmemory is exceeded, the maxmemory-policy is applied.
       // This maxmemory should be 60-70% of the available memory.
       '--maxmemory', input.environment.isProduction ? '2048mb' : '32m',
-      // This keeps the most recently used keys. AKA Act like a cache!
-      '--maxmemory-policy', 'allkeys-lru',
+      // This expires the records with the shorted remaining ttl. AKA Act like a cache!
+      // The default setting for the image used is noeviction
+      '--maxmemory-policy', 'volatile-ttl',
       // Lazy memory eviction is more performant, but could cause memory
       // to exceed available space if not enough room is given. This is why
       // the 60-70% is crucial.
