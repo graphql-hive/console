@@ -246,12 +246,16 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
       mod plugins;
 
       use anyhow::Result;
+    + use apollo_router::register_plugin;
     + use hive_apollo_router_plugin::registry;
-    + use hive_apollo_router_plugin::usage;
+    + use hive_apollo_router_plugin::usage::UsagePlugin;
 
       fn main() -> Result<()> {
     -   apollo_router::main()
-    +   usage::register();
+
+    + // Register the Hive usage_reporting plugin
+    + register_plugin!("hive", "usage", UsagePlugin);
+
     +   match registry::HiveRegistry::new(None).and(apollo_router::main()) {
     +     Ok(_) => {}
     +     Err(e) => {
@@ -366,6 +370,45 @@ plugins:
     # Default: 1000
     cache_size: 1000
 ```
+
+### Use as library
+
+You may also add the persisted-documents plugin:
+
+```toml filename="Cargo.toml"
+[dependencies]
+# You can use a "branch", or commit id with "rev" key
+hive_apollo_router_plugin = { git = "https://github.com/graphql-hive/console", branch = "main" }
+```
+
+Next, update `src/main.rs` file with the following content to add GraphQL Hive:
+
+```diff filename="src/main.rs"
+  mod plugins;
+
+  use anyhow::Result;
++ use apollo_router::register_plugin;
++ use hive_apollo_router_plugin::registry;
++ use hive_apollo_router_plugin::persisted_documents::PersistedDocumentsPlugin;
+
+  fn main() -> Result<()> {
+-   apollo_router::main()
+
++ // Register the persisted documents plugin, if needed
++ register_plugin!("hive", "persisted_documents", PersistedDocumentsPlugin);
+
++   match registry::HiveRegistry::new(None).and(apollo_router::main()) {
++     Ok(_) => {}
++     Err(e) => {
++         eprintln!("{}", e);
++         std::process::exit(1);
++     }
++   }
+  }
+```
+
+If you are using both plugins (usage and persisted operations), you'll need to have a
+`register_plugin!` call to both plugins.
 
 ## Additional Resources
 
