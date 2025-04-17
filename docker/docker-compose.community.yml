@@ -90,7 +90,7 @@ services:
     volumes:
       - './.hive/redis/db:/bitnami/redis/data'
     command: |
-      /opt/bitnami/scripts/redis/run.sh --maxmemory 1300mb --maxmemory-policy allkeys-lru
+      /opt/bitnami/scripts/redis/run.sh --maxmemory 1300mb --maxmemory-policy volatile-ttl
 
   supertokens:
     image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3
