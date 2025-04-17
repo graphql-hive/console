@@ -81,7 +81,7 @@ export class Redis {
       },
     ];
 
-    const memoryInBytes = memoryParser(input.limits.memory) * 0.8; // Redis recommends 80%
+    const memoryInBytes = memoryParser(input.limits.memory) * 0.9; // Redis recommends 80%
     const memoryInMegabytes = Math.floor(memoryInBytes / 1024 / 1024);
 
     const pb = new PodBuilder({
