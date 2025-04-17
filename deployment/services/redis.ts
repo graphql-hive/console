@@ -21,7 +21,7 @@ export function deployRedis(input: { environment: Environment }) {
   }).deploy({
     limits: input.environment.isProduction
       ? {
-          memory: '4Gi',
+          memory: '6Gi',
           cpu: '1000m',
         }
       : {
