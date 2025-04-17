@@ -89,8 +89,6 @@ services:
       REDIS_DISABLE_COMMANDS: 'FLUSHDB,FLUSHALL'
     volumes:
       - './.hive/redis/db:/bitnami/redis/data'
-    command: |
-      /opt/bitnami/scripts/redis/run.sh --maxmemory 1300mb --maxmemory-policy volatile-ttl
 
   supertokens:
     image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3
