@@ -110,8 +110,18 @@ export class Redis {
           // This is where we can pass actual flags to the bitnami/redis runtime
           args: [
             '/opt/bitnami/scripts/redis/run.sh',
+            // When maxmemory is exceeded, the maxmemory-policy is applied.
+            // This maxmemory should be 60-80% of the available memory.
             `--maxmemory ${memoryInMegabytes}mb`,
+            // This expires the records with the shortest remaining ttl. AKA Act like a cache!
+            // The default setting for the image used is noeviction
             '--maxmemory-policy volatile-ttl',
+            // Lazy memory eviction is more performant, but could cause memory
+            // to exceed available space if not enough room is given. This is why
+            // the 60-80% is crucial.
+            '--lazyfree-lazy-eviction yes',
+            // This disables snapshotting to save cpu and reduce latency spikes
+            '--save ""',
           ],
           readinessProbe: {
             initialDelaySeconds: 5,
