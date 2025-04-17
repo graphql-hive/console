@@ -144,6 +144,14 @@ export const enum PreflightWorkerState {
   ready,
 }
 
+export const environmentVariablesStorageKey = {
+  // todo: optional target effectively gives this the possibility of being silently global
+  // which feels subtle and thus likely to introduce hard to trace defects. Should we abort instead?
+  scoped: (targetId?: string) =>
+    `hive/targetId:${targetId ?? '__null__'}/laboratory/environment-variables`,
+  global: 'hive:laboratory:environment',
+};
+
 export function usePreflight(args: {
   target: FragmentType<typeof PreflightScript_TargetFragment> | null;
 }) {
@@ -152,13 +160,14 @@ export function usePreflight(args: {
 
   const target = useFragment(PreflightScript_TargetFragment, args.target);
   const [isEnabled, setIsEnabled] = useLocalStorageJson(
-    // todo: ability to pass historical keys for seamless gradual migration to new key names.
-    // 'hive:laboratory:isPreflightEnabled',
     'hive:laboratory:isPreflightScriptEnabled',
     z.boolean().default(false),
   );
   const [environmentVariables, setEnvironmentVariables] = useLocalStorage(
-    'hive:laboratory:environment',
+    [
+      { key: environmentVariablesStorageKey.scoped(target?.id) },
+      { key: environmentVariablesStorageKey.global },
+    ],
     '',
   );
   const latestEnvironmentVariablesRef = useRef(environmentVariables);
