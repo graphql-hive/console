@@ -7,7 +7,6 @@ import type { Cache } from './cache';
 import type { CompositionScheduler } from './composition-scheduler';
 import { type ComposeFederationArgs } from './composition/federation';
 import type { CompositionErrorType } from './composition/shared';
-import { ComposeSingleArgs } from './composition/single';
 import { ComposeStitchingArgs } from './composition/stitching';
 import { composeAndValidateCounter } from './metrics';
 import type { Metadata } from './types';
@@ -144,17 +143,15 @@ export const schemaBuilderApiRouter = t.router({
         }
 
         if (input.type === 'single') {
-          return await ctx.cache.reuse('single', async (args: ComposeSingleArgs, abortSignal) => {
-            const result = await ctx.compositionScheduler.process({
-              data: {
-                type: 'single',
-                args,
-              },
-              abortSignal,
-              requestId: ctx.req.id,
-            });
-            return result.result;
-          })({ schemas: input.schemas });
+          const result = await ctx.compositionScheduler.process({
+            data: {
+              type: 'single',
+              args: { schemas: input.schemas },
+            },
+            abortSignal: new AbortSignal(),
+            requestId: ctx.req.id,
+          });
+          return result.result;
         }
 
         assertAllCasesExhausted(input);
