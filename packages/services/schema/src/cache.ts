@@ -3,7 +3,7 @@ import stringify from 'fast-json-stable-stringify';
 import type { Redis } from 'ioredis';
 import { TimeoutError } from 'p-timeout';
 import type { ServiceLogger } from '@hive/service-common';
-import { externalCompositionCounter } from './metrics';
+import { compositionCacheValueSize, schemaCompositionCounter } from './metrics';
 
 function createChecksum<TInput>(input: TInput): string {
   return createHash('sha256').update(stringify(input)).digest('hex');
@@ -101,13 +101,18 @@ export function createCache(options: {
     pickCacheType: (data: T) => CacheTTLType,
   ): Promise<void> {
     logger.debug('Completing action (id=%s)', id);
+    const encodedData = JSON.stringify({
+      status: 'completed',
+      result: data,
+    });
+
+    const sizeInBytes = Buffer.byteLength(encodedData, 'utf8');
+    compositionCacheValueSize.observe(sizeInBytes);
+
     await redis.psetex(
       id,
       pickCacheType(data) === 'long' ? ttlMs.success : ttlMs.failure,
-      JSON.stringify({
-        status: 'completed',
-        result: data,
-      }),
+      encodedData,
     );
   }
 
@@ -152,13 +157,13 @@ export function createCache(options: {
         if (cached.status === 'failed') {
           logger.debug('Rejecting action from cache (id=%s)', id);
           if (cached.error.startsWith('TimeoutError:')) {
-            externalCompositionCounter.inc({
+            schemaCompositionCounter.inc({
               cache: 'hit',
               type: 'timeout',
             });
             throw new TimeoutError(cached.error.replace('TimeoutError:', ''));
           }
-          externalCompositionCounter.inc({
+          schemaCompositionCounter.inc({
             cache: 'hit',
             type: 'failure',
           });
@@ -166,7 +171,7 @@ export function createCache(options: {
         }
 
         logger.debug('Resolving action from cache (id=%s)', id);
-        externalCompositionCounter.inc({
+        schemaCompositionCounter.inc({
           cache: 'hit',
           type: 'success',
         });
@@ -190,13 +195,13 @@ export function createCache(options: {
       ]);
 
       await completeAction(id, result, pickCacheType);
-      externalCompositionCounter.inc({
+      schemaCompositionCounter.inc({
         cache: 'miss',
         type: 'success',
       });
       return result;
     } catch (error) {
-      externalCompositionCounter.inc({
+      schemaCompositionCounter.inc({
         cache: 'miss',
         type: error instanceof TimeoutError ? 'timeout' : 'failure',
       });

@@ -4,6 +4,11 @@ import fastq from 'fastq';
 import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
 import type { CompositionEvent, CompositionResultEvent } from './composition-worker';
+import {
+  compositionQueueDurationMS,
+  compositionTotalDurationMS,
+  compositionWorkerDurationMS,
+} from './metrics';
 
 type WorkerRunArgs = {
   data: CompositionEvent['data'];
@@ -20,6 +25,11 @@ type WorkerInterface = {
   run: (args: WorkerRunArgs) => Promise<CompositionResultEvent['data']>;
 };
 
+type QueueData = {
+  args: WorkerRunArgs;
+  addedToQueueTime: number;
+};
+
 export class CompositionScheduler {
   private logger: Logger;
   /** The amount of parallel workers */
@@ -28,7 +38,7 @@ export class CompositionScheduler {
   /** List of all workers */
   private workers: Array<WorkerInterface>;
 
-  private queue: fastq.queueAsPromised<WorkerRunArgs, CompositionResultEvent['data']>;
+  private queue: fastq.queueAsPromised<QueueData, CompositionResultEvent['data']>;
 
   constructor(logger: Logger, workerCount: number, maxOldGenerationSizeMb: number) {
     this.workerCount = workerCount;
@@ -38,17 +48,26 @@ export class CompositionScheduler {
     this.workers = workers;
 
     this.queue = fastq.promise(
-      function queue(data) {
+      async function queue(data) {
         // Let's not process aborted requests
-        if (data.abortSignal.aborted) {
-          throw data.abortSignal.reason;
+        if (data.args.abortSignal.aborted) {
+          throw data.args.abortSignal.reason;
         }
+        const startProcessingTime = now();
+        compositionQueueDurationMS.observe(startProcessingTime - data.addedToQueueTime);
         const worker = workers.find(worker => worker.isIdle);
-
         if (!worker) {
           throw new Error('No idle worker found.');
         }
-        return worker.run(data);
+
+        const result = await worker.run(data.args);
+        const finishedTime = now();
+        compositionWorkerDurationMS.observe(
+          { type: data.args.data.type },
+          finishedTime - startProcessingTime,
+        );
+        compositionTotalDurationMS.observe(finishedTime - data.addedToQueueTime);
+        return result;
       },
       // The size needs to be the same as the length of `this.workers`.
       // Otherwise a worker would process more than a single task at a time.
@@ -179,6 +198,10 @@ export class CompositionScheduler {
 
   /** Process a composition task in a worker (once the next worker is free). */
   process(args: WorkerRunArgs): Promise<CompositionResultEvent['data']> {
-    return this.queue.push(args);
+    return this.queue.push({ args, addedToQueueTime: now() });
   }
+}
+
+function now() {
+  return new Date().getTime();
 }
