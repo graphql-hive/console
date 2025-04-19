@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ import { Switch } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useNotifications } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckIcon, Cross2Icon, UpdateIcon } from '@radix-ui/react-icons';
+import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
 
 const ExternalCompositionStatus_TestQuery = graphql(`
   query ExternalCompositionStatus_TestQuery($selector: TestExternalSchemaCompositionInput!) {
@@ -73,6 +73,12 @@ const ExternalCompositionForm_ProjectFragment = graphql(`
   }
 `);
 
+enum TestState {
+  LOADING,
+  ERROR,
+  SUCCESS,
+}
+
 const ExternalCompositionStatus = ({
   projectSlug,
   organizationSlug,
@@ -80,7 +86,7 @@ const ExternalCompositionStatus = ({
   projectSlug: string;
   organizationSlug: string;
 }) => {
-  const [query] = useQuery({
+  const [{ data, error: gqlError, fetching }, executeTestQuery] = useQuery({
     query: ExternalCompositionStatus_TestQuery,
     variables: {
       selector: {
@@ -90,33 +96,84 @@ const ExternalCompositionStatus = ({
     },
     requestPolicy: 'network-only',
   });
+  const error = gqlError?.message ?? data?.testExternalSchemaComposition?.error?.message;
+  const testState = fetching
+    ? TestState.LOADING
+    : error
+      ? TestState.ERROR
+      : data?.testExternalSchemaComposition?.ok?.externalSchemaComposition?.endpoint
+        ? TestState.SUCCESS
+        : null;
 
-  const error = query.error?.message ?? query.data?.testExternalSchemaComposition?.error?.message;
+  const [hidden, setHidden] = useState<boolean>();
+
+  useEffect(() => {
+    // only hide the success icon after the duration
+    if (testState !== TestState.SUCCESS) return;
+    const timerId = setTimeout(() => {
+      if (testState === TestState.SUCCESS) {
+        setHidden(false);
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [testState]);
 
   return (
     <TooltipProvider delayDuration={100}>
-      {query.fetching ? (
+      {testState === TestState.LOADING ? (
         <Tooltip>
           <TooltipTrigger>
-            <UpdateIcon className="size-5 animate-spin text-gray-500" />
+            <UpdateIcon
+              className="size-5 animate-spin cursor-default text-gray-500"
+              onClick={e => e.preventDefault()}
+            />
           </TooltipTrigger>
-          <TooltipContent side="right">Connecting...</TooltipContent>
+          <TooltipContent side="left">Connecting...</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger>
+            <ReloadIcon
+              className="size-5"
+              onClick={e => {
+                e.preventDefault();
+                setHidden(true);
+                executeTestQuery();
+              }}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="mr-1">
+            Execute test
+          </TooltipContent>
+        </Tooltip>
+      )}
+      {testState === TestState.ERROR ? (
+        <Tooltip defaultOpen>
+          <TooltipTrigger>
+            <Cross2Icon
+              className="size-5 cursor-default text-red-500"
+              onClick={e => e.preventDefault()}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-sm">
+            {error}
+          </TooltipContent>
         </Tooltip>
       ) : null}
-      {error ? (
+      {testState === TestState.SUCCESS && !hidden ? (
         <Tooltip>
           <TooltipTrigger>
-            <Cross2Icon className="size-5 text-red-500" />
+            <CheckIcon
+              className="size-5 cursor-default text-green-500"
+              onClick={e => e.preventDefault()}
+            />
           </TooltipTrigger>
-          <TooltipContent side="right">{error}</TooltipContent>
-        </Tooltip>
-      ) : null}
-      {query.data?.testExternalSchemaComposition?.ok?.externalSchemaComposition?.endpoint ? (
-        <Tooltip>
-          <TooltipTrigger>
-            <CheckIcon className="size-5 text-green-500" />
-          </TooltipTrigger>
-          <TooltipContent side="right">Service is available</TooltipContent>
+          <TooltipContent side="right" className="max-w-sm">
+            Service is available
+          </TooltipContent>
         </Tooltip>
       ) : null}
     </TooltipProvider>
@@ -148,6 +205,8 @@ const ExternalCompositionForm = ({
   project: FragmentType<typeof ExternalCompositionForm_ProjectFragment>;
   organization: FragmentType<typeof ExternalCompositionForm_OrganizationFragment>;
   endpoint?: string;
+  isNativeCompositionEnabled?: boolean;
+  onClickDisable?: () => void;
 }) => {
   const project = useFragment(ExternalCompositionForm_ProjectFragment, props.project);
   const organization = useFragment(
@@ -176,9 +235,10 @@ const ExternalCompositionForm = ({
       },
     }).then(result => {
       if (result.data?.enableExternalSchemaComposition?.ok) {
-        notify('External composition enabled', 'success');
         const endpoint =
           result.data?.enableExternalSchemaComposition?.ok.externalSchemaComposition?.endpoint;
+
+        notify('External composition enabled.', 'success');
 
         if (endpoint) {
           form.reset(
@@ -230,10 +290,10 @@ const ExternalCompositionForm = ({
               <FormItem>
                 <FormLabel>HTTP Endpoint</FormLabel>
                 <FormDescription>A POST request will be sent to that endpoint</FormDescription>
-                <div className="flex w-full max-w-sm items-center space-x-2">
+                <div className="flex w-full items-center space-x-2">
                   <FormControl>
                     <Input
-                      className="w-96 shrink-0"
+                      className="max-w-md shrink-0"
                       placeholder="Endpoint"
                       type="text"
                       autoComplete="off"
@@ -265,7 +325,7 @@ const ExternalCompositionForm = ({
                 </FormDescription>
                 <FormControl>
                   <Input
-                    className="w-96"
+                    className="w-full max-w-md"
                     placeholder="Secret"
                     type="password"
                     autoComplete="off"
@@ -279,10 +339,26 @@ const ExternalCompositionForm = ({
           {mutation.error && (
             <div className="mt-2 text-xs text-red-500">{mutation.error.message}</div>
           )}
-          <div>
+          {props.isNativeCompositionEnabled ? (
+            <DocsNote warn className="mt-0 max-w-2xl">
+              Native Federation v2 composition is currently enabled. Until native composition is
+              disabled, External Schema Composition won't have any effect.
+            </DocsNote>
+          ) : null}
+          <div className="flex flex-row items-center gap-x-8">
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              Save
+              Save Configuration
             </Button>
+            {props.onClickDisable ? (
+              <Button
+                variant="destructive"
+                type="button"
+                disabled={mutation.fetching || form.formState.isSubmitting}
+                onClick={props.onClickDisable}
+              >
+                Disable External Composition
+              </Button>
+            ) : null}
           </div>
         </form>
       </Form>
@@ -403,27 +479,25 @@ export const ExternalCompositionSettings = (props: {
             )}
           </div>
         </CardTitle>
+        <CardDescription className="max-w-2xl">
+          For advanced users, you can configure an endpoint for external schema compositions. This
+          can be used to implement custom composition logic.
+        </CardDescription>
         <CardDescription>
-          <ProductUpdatesLink href="#native-composition">
-            Enable native Apollo Federation v2 support in Hive
+          <ProductUpdatesLink href="https://the-guild.dev/graphql/hive/docs/features/external-schema-composition">
+            Read about external schema composition in our documentation.
           </ProductUpdatesLink>
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        {isNativeCompositionEnabled && isEnabled ? (
-          <DocsNote warn className={isFormVisible ? 'mb-6 mt-0' : ''}>
-            It appears that Native Federation v2 Composition is activated and will be used instead.
-            <br />
-            External composition won't have any effect.
-          </DocsNote>
-        ) : null}
-
         {isFormVisible ? (
           <ExternalCompositionForm
             project={project}
             organization={organization}
             endpoint={externalCompositionConfig?.endpoint}
+            isNativeCompositionEnabled={isNativeCompositionEnabled}
+            onClickDisable={() => handleSwitch(false)}
           />
         ) : (
           <Button disabled={mutation.fetching} onClick={() => handleSwitch(true)}>

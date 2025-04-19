@@ -171,6 +171,7 @@ export class CompositionScheduler {
 
       const time = process.hrtime();
 
+      // starts the composition for this task
       worker.postMessage({
         event: 'composition',
         id: taskId,
