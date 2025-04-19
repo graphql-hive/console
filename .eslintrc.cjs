@@ -5,13 +5,6 @@ const guildConfig = require('@theguild/eslint-config/base');
 const { REACT_RESTRICTED_SYNTAX, RESTRICTED_SYNTAX } = require('@theguild/eslint-config/constants');
 const path = require('path');
 
-const SCHEMA_PATH = './packages/services/api/src/modules/*/module.graphql.ts';
-const OPERATIONS_PATHS = [
-  './packages/web/app/**/*.ts',
-  './packages/web/app/**/*.tsx',
-  './packages/web/app/**/*.graphql',
-];
-
 const rulesToExtends = Object.fromEntries(
   Object.entries(guildConfig.rules).filter(([key]) =>
     [
@@ -70,20 +63,25 @@ module.exports = {
       parser: '@graphql-eslint/eslint-plugin',
       plugins: ['@graphql-eslint'],
       parserOptions: {
-        schema: SCHEMA_PATH,
-        operations: OPERATIONS_PATHS,
+        graphQLConfig: {
+          schema: './packages/services/api/src/modules/*/module.graphql.ts',
+          documents: [
+            './packages/web/app/**/*.ts',
+            './packages/web/app/**/*.tsx',
+            './packages/web/app/**/*.graphql',
+          ],
+        },
       },
     },
     {
       // Setup processor for operations/fragments definitions on code-files
-      files: ['packages/web/app/**/*.tsx', 'packages/web/app/**/*.ts'],
+      files: ['packages/web/app/**/*.{ts,tsx}'],
       processor: '@graphql-eslint/graphql',
     },
     {
       files: ['packages/web/app/**/*.graphql'],
-      plugins: ['@graphql-eslint'],
       rules: {
-        '@graphql-eslint/require-id-when-available': 'error',
+        '@graphql-eslint/require-selections': 'error',
         '@graphql-eslint/no-deprecated': 'error',
       },
     },

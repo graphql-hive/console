@@ -64,10 +64,10 @@ export const schemaPolicyApiRouter = t.router({
   availableRules: procedure.query(() => {
     return RELEVANT_RULES.map(([name, rule]) => ({
       name,
-      description: rule.meta.docs?.description || '',
-      recommended: rule.meta.docs?.recommended ?? false,
-      url: rule.meta.docs?.url,
-      schema: normalizeAjvSchema(rule.meta.schema) as object | null,
+      description: rule.meta?.docs?.description || '',
+      recommended: rule.meta?.docs?.recommended ?? false,
+      url: rule.meta?.docs?.url,
+      schema: rule.meta?.schema ? normalizeAjvSchema(rule.meta?.schema) : undefined,
     }));
   }),
   validateConfig: procedure.input(CONFIG_CHECK_INPUT_VALIDATION).query(() => {

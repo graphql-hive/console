@@ -310,6 +310,7 @@ export interface schema_log {
 export interface schema_policy_config {
   allow_overriding: boolean;
   config: any;
+  config_v4: any | null;
   created_at: Date;
   resource_id: string;
   resource_type: schema_policy_resource;
