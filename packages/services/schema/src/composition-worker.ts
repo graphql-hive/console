@@ -57,6 +57,7 @@ export function createCompositionWorker(args: {
             requestTimeoutMs: message.data.requestTimeoutMs,
           });
           const composed = await composeFederation(message.data.args);
+
           args.port.postMessage({
             event: 'compositionResult',
             id: message.id,

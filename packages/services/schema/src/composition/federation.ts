@@ -134,7 +134,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
     if (args.native) {
       deps.logger.debug(
         'Using built-in Federation v2 composition service (schemas=%s)',
-        subgraphs.length,
+        args.schemas.length,
       );
       compose = subgraphs => Promise.resolve(composeFederationV2(subgraphs, deps.logger));
     } else if (args.external) {
@@ -151,7 +151,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
     } else {
       deps.logger.debug(
         'Using built-in Federation v1 composition service (schemas=%s)',
-        subgraphs.length,
+        args.schemas.length,
       );
       compose = subgraphs => Promise.resolve(composeFederationV1(subgraphs));
     }

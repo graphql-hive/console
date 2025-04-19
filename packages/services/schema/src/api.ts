@@ -105,7 +105,6 @@ export const schemaBuilderApiRouter = t.router({
                 abortSignal,
                 requestId: ctx.req.id,
               });
-
               return result.result;
             },
             result =>
