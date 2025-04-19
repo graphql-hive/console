@@ -227,7 +227,9 @@ export function NativeCompositionSettings(props: {
         <CardTitle>
           <a id="native-composition">Native Federation v2 Composition</a>
         </CardTitle>
-        <CardDescription>Native Apollo Federation v2 support for your project.</CardDescription>
+        <CardDescription>
+          Recommended for most users. Use native Apollo Federation v2 composition for your project.
+        </CardDescription>
 
         {display !== 'enabled' ? (
           <CardDescription>

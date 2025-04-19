@@ -275,18 +275,18 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
               </DocsLink>
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
+          <CardContent>
             <FormField
               control={slugForm.control}
               name="slug"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex items-center">
-                      <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                    <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
+                      <div className="border-input text-muted-foreground h-10 overflow-auto text-nowrap rounded-md border bg-gray-900 px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                       </div>
-                      <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
+                      <Input placeholder="slug" className="rounded-l-none" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />

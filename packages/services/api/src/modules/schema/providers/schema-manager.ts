@@ -447,15 +447,10 @@ export class SchemaManager {
       },
     });
 
-    const [project, organization] = await Promise.all([
-      this.storage.getProject({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-      }),
-      this.storage.getOrganization({
-        organizationId: selector.organizationId,
-      }),
-    ]);
+    const project = await this.storage.getProject({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+    });
 
     if (project.type !== ProjectType.FEDERATION) {
       throw new HiveError(
@@ -481,11 +476,8 @@ export class SchemaManager {
         ],
         {
           external: project.externalComposition,
-          native: this.checkProjectNativeFederationSupport({
-            project,
-            organization,
-            targetId: null,
-          }),
+          // when testing external composition, do not use native composition during the check
+          native: false,
           contracts: null,
         },
       );
