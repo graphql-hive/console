@@ -185,7 +185,7 @@ test.concurrent('export audit log for schema policy', async () => {
 
 test.concurrent('access token actions are stored within the audit log', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, organization, createOrganizationAccessToken } = await createOrg();
+  const { organization, createOrganizationAccessToken } = await createOrg();
   // First we create an access token with the organization owner token
   const accessToken = await createOrganizationAccessToken({
     permissions: ['organization:describe', 'project:describe', 'accessToken:modify'],
