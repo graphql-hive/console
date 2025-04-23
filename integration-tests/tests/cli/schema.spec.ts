@@ -767,7 +767,7 @@ test('schema:check without `--target` flag fails for organization access token',
 }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createOrganizationAccessToken } = await createOrg();
-  const privateKey = await createOrganizationAccessToken({
+  const { privateAccessKey } = await createOrganizationAccessToken({
     permissions: ['schemaCheck:create', 'project:describe'],
     resources: {
       mode: GraphQLSchema.ResourceAssignmentModeType.All,
@@ -777,7 +777,7 @@ test('schema:check without `--target` flag fails for organization access token',
   await expect(
     schemaCheck([
       '--registry.accessToken',
-      privateKey,
+      privateAccessKey,
       '--author',
       'Kamil',
       'fixtures/init-schema.graphql',
@@ -806,7 +806,7 @@ test('schema:check with `--target` flag succeeds for organization access token',
   const { createOrg } = await initSeed().createOwner();
   const { createOrganizationAccessToken, createProject, organization } = await createOrg();
   const { project, target } = await createProject();
-  const privateKey = await createOrganizationAccessToken({
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
     permissions: ['schemaCheck:create', 'project:describe'],
     resources: {
       mode: GraphQLSchema.ResourceAssignmentModeType.All,
@@ -838,7 +838,7 @@ test('schema:publish without `--target` flag fails for organization access token
 }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createOrganizationAccessToken } = await createOrg();
-  const privateKey = await createOrganizationAccessToken({
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
     permissions: ['project:describe', 'schemaVersion:publish'],
     resources: {
       mode: GraphQLSchema.ResourceAssignmentModeType.All,
@@ -878,7 +878,7 @@ test('schema:publish with `--target` flag succeeds for organization access token
   const { createOrg } = await initSeed().createOwner();
   const { createOrganizationAccessToken, organization, createProject } = await createOrg();
   const { project, target } = await createProject();
-  const privateKey = await createOrganizationAccessToken({
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
     permissions: ['project:describe', 'schemaVersion:publish'],
     resources: {
       mode: GraphQLSchema.ResourceAssignmentModeType.All,

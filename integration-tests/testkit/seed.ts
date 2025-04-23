@@ -52,8 +52,6 @@ import {
 import * as GraphQLSchema from './gql/graphql';
 import {
   BreakingChangeFormula,
-  OrganizationAccessScope,
-  ProjectAccessScope,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -111,10 +109,14 @@ export function initSeed() {
 
           return {
             organization,
-            async createOrganizationAccessToken(args: {
-              permissions: Array<string>;
-              resources: GraphQLSchema.ResourceAssignmentInput;
-            }) {
+            async createOrganizationAccessToken(
+              args: {
+                permissions: Array<string>;
+                resources: GraphQLSchema.ResourceAssignmentInput;
+              },
+              /** Override the used access token. */
+              accessToken?: string,
+            ) {
               const result = await createOrganizationAccessToken(
                 {
                   title: 'A Access Token',
@@ -125,14 +127,14 @@ export function initSeed() {
                   permissions: args.permissions,
                   resources: args.resources,
                 },
-                ownerToken,
+                accessToken ?? ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
               if (result.createOrganizationAccessToken.error) {
                 throw new Error(result.createOrganizationAccessToken.error.message);
               }
 
-              return result.createOrganizationAccessToken.ok!.privateAccessKey;
+              return result.createOrganizationAccessToken.ok!;
             },
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
