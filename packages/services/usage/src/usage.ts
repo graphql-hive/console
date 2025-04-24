@@ -35,7 +35,7 @@ const retryOptions = {
   initialRetryTime: 500,
   factor: 0.2,
   multiplier: 2,
-  retries: 10,
+  retries: 5,
 } satisfies RetryOptions; // why satisfies? To be able to use `retryOptions.retries` and get `number` instead of `number | undefined`
 
 export function splitReport(report: RawReport, numOfChunks: number) {
@@ -165,7 +165,7 @@ export function createUsage(config: {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
-      logger.info('Splitting into %s', numOfChunks);
+      logger.info('Splitting report into %s (id=%s)', numOfChunks, report.id);
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {
@@ -186,6 +186,7 @@ export function createUsage(config: {
       try {
         bufferFlushes.inc();
         const stopTimer = kafkaDuration.startTimer();
+
         const meta = await producer
           .send({
             topic: config.kafka.topic,
@@ -212,21 +213,11 @@ export function createUsage(config: {
           rawOperationWrites.inc(numOfOperations);
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
         }
-
-        changeStatus(Status.Ready);
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
         changeStatus(Status.Unhealthy);
-        logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
-        Sentry.setTags({
-          batchId,
-          message: error.message,
-          numOfOperations,
-        });
-        Sentry.captureException(error);
-
-        logger.info('Adding to fallback queue (id=%s)', batchId);
+        logger.error(`Failed to flush. Adding to fallback queue (id=%s, error=%s)`, batchId, error.message);
         fallback.add(value, numOfOperations);
 
         throw error;
@@ -254,6 +245,11 @@ export function createUsage(config: {
         throw error;
       } finally {
         stopTimer();
+      }
+
+      if (fallback.size() === 0) {
+        logger.info('Fallback queue flushed')
+        changeStatus(Status.Ready);
       }
     },
     logger: logger.child({ component: 'fallback' }),
@@ -306,7 +302,7 @@ export function createUsage(config: {
       },
     ),
     readiness() {
-      return status === Status.Ready && fallback.size() === 0;
+      return status === Status.Ready;
     },
     async start() {
       logger.info('Starting Kafka producer');
