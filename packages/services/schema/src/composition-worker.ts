@@ -22,21 +22,7 @@ export function createCompositionWorker(args: {
 
   process.on('unhandledRejection', function (err) {
     console.error('unhandledRejection', err);
-    console.error(err);
-    args.port.postMessage({
-      code: 'ERROR',
-      err,
-    });
-    process.exit(1);
-  });
-
-  process.on('uncaughtException', function (err) {
-    console.error('uncaughtException', err);
-    args.port.postMessage({
-      code: 'ERROR',
-      err,
-    });
-    process.exit(1);
+    throw err;
   });
 
   args.port.on('message', async (message: CompositionEvent) => {

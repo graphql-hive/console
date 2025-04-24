@@ -102,8 +102,8 @@ export class CompositionScheduler {
       });
     };
 
+    // catch uncaught exception from worker thread. Worker thread gets terminated.
     worker.on('error', error => {
-      console.error(error);
       this.logger.error('Worker error %s', error);
       Sentry.captureException(error, {
         extra: {
