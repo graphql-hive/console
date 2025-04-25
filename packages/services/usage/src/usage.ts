@@ -216,7 +216,11 @@ export function createUsage(config: {
         rawOperationFailures.inc(numOfOperations);
 
         changeStatus(Status.Unhealthy);
-        logger.error(`Failed to flush. Adding to fallback queue (id=%s, error=%s)`, batchId, error.message);
+        logger.error(
+          `Failed to flush. Adding to fallback queue (id=%s, error=%s)`,
+          batchId,
+          error.message,
+        );
         fallback.add(value, numOfOperations);
 
         throw error;
@@ -247,7 +251,7 @@ export function createUsage(config: {
       }
 
       if (fallback.size() === 0) {
-        logger.info('Fallback queue flushed')
+        logger.info('Fallback queue flushed');
         changeStatus(Status.Ready);
       }
     },
