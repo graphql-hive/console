@@ -186,7 +186,6 @@ export function createUsage(config: {
       try {
         bufferFlushes.inc();
         const stopTimer = kafkaDuration.startTimer();
-
         const meta = await producer
           .send({
             topic: config.kafka.topic,
