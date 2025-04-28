@@ -271,21 +271,33 @@ export class TargetManager {
     return this.storage.getTargetSettings(selector);
   }
 
-  async updateTargetDangerousChangeClassification(
-    input: Pick<TargetSettings, 'failDiffOnDangerousChange'> & TargetSelector,
-  ): Promise<TargetSettings> {
-    this.logger.debug('Updating target dangerous change classification (input=%o)', input);
+  async updateTargetDangerousChangeClassification(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    failDiffOnDangerousChange: boolean;
+  }): Promise<Target> {
+    this.logger.debug('Updating target dangerous change classification (target=%o)', args.target);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
     await this.session.assertPerformAction({
       action: 'target:modifySettings',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
-    return this.storage.updateTargetDangerousChangeClassification(input);
+    await this.storage.updateTargetDangerousChangeClassification({
+      ...selector,
+      failDiffOnDangerousChange: args.failDiffOnDangerousChange,
+    });
+
+    return this.getTarget(selector);
   }
 
   async updateTargetConditionalBreakingChangeConfiguration(args: {
@@ -445,18 +457,21 @@ export class TargetManager {
   }
 
   async updateTargetGraphQLEndpointUrl(args: {
-    organizationId: string;
-    projectId: string;
-    targetId: string;
+    target: GraphQLSchema.TargetReferenceInput;
     graphqlEndpointUrl: string | null;
   }) {
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
     await this.session.assertPerformAction({
       action: 'target:modifySettings',
-      organizationId: args.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-        targetId: args.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
@@ -470,8 +485,8 @@ export class TargetManager {
     }
 
     const target = await this.storage.updateTargetGraphQLEndpointUrl({
-      organizationId: args.organizationId,
-      targetId: args.targetId,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       graphqlEndpointUrl: graphqlEndpointUrl.data,
     });
 
@@ -484,10 +499,10 @@ export class TargetManager {
 
     await this.auditLog.record({
       eventType: 'TARGET_GRAPHQL_ENDPOINT_URL_UPDATED',
-      organizationId: args.organizationId,
+      organizationId: selector.organizationId,
       metadata: {
-        projectId: args.projectId,
-        targetId: args.targetId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         graphqlEndpointUrl: args.graphqlEndpointUrl,
       },
     });

@@ -957,9 +957,13 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             slug: data.slug,
           },
         });
@@ -1089,9 +1093,13 @@ function GraphQLEndpointUrl(props: {
       onSubmit: values =>
         mutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
           },
         }).then(result => {

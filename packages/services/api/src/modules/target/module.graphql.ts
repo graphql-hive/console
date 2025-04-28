@@ -17,6 +17,9 @@ export default gql`
     """
     deleteTarget(input: DeleteTargetInput! @tag(name: "public")): DeleteTargetResult!
       @tag(name: "public")
+    """
+    Update the slug of a traget.
+    """
     updateTargetSlug(input: UpdateTargetSlugInput!): UpdateTargetSlugResult!
     """
     Update the conditional breaking change configuration of a target.
@@ -28,11 +31,15 @@ export default gql`
     Updates the target's explorer endpoint url.
     """
     updateTargetGraphQLEndpointUrl(
-      input: UpdateTargetGraphQLEndpointUrlInput!
-    ): UpdateTargetGraphQLEndpointUrlResult!
+      input: UpdateTargetGraphQLEndpointUrlInput! @tag(name: "public")
+    ): UpdateTargetGraphQLEndpointUrlResult! @tag(name: "public")
+    """
+    Update the targets dangerous change classification settings.
+    This allows dangerous changes fail schema checks.
+    """
     updateTargetDangerousChangeClassification(
-      input: UpdateTargetDangerousChangeClassificationInput!
-    ): UpdateTargetDangerousChangeClassificationResult!
+      input: UpdateTargetDangerousChangeClassificationInput! @tag(name: "public")
+    ): UpdateTargetDangerousChangeClassificationResult! @tag(name: "public")
     """
     Overwrites project's schema composition library.
     Works only for Federation projects with native composition enabled.
@@ -52,62 +59,58 @@ export default gql`
   }
 
   input UpdateTargetGraphQLEndpointUrlInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    graphqlEndpointUrl: String
+    target: TargetReferenceInput! @tag(name: "public")
+    graphqlEndpointUrl: String @tag(name: "public")
   }
 
   input UpdateTargetDangerousChangeClassificationInput {
-    target: TargetReferenceInput!
-    failDiffOnDangerousChange: Boolean!
+    target: TargetReferenceInput! @tag(name: "public")
+    failDiffOnDangerousChange: Boolean! @tag(name: "public")
   }
 
-  type UpdateTargetDangerousChangeClassificationOk {
-    target: Target!
+  type UpdateTargetDangerousChangeClassificationResultOk {
+    target: Target! @tag(name: "public")
   }
 
-  type UpdateTargetDangerousChangeClassificationError {
-    message: String!
+  type UpdateTargetDangerousChangeClassificationResultError {
+    message: String! @tag(name: "public")
   }
 
   type UpdateTargetDangerousChangeClassificationResult {
-    ok: UpdateTargetDangerousChangeClassificationOk
-    error: UpdateTargetDangerousChangeClassificationError
+    ok: UpdateTargetDangerousChangeClassificationResultOk
+    error: UpdateTargetDangerousChangeClassificationResultError
   }
 
-  type UpdateTargetGraphQLEndpointUrlOk {
-    target: Target!
+  type UpdateTargetGraphQLEndpointUrlResultOk {
+    target: Target! @tag(name: "public")
   }
 
-  type UpdateTargetGraphQLEndpointUrlError {
-    message: String!
+  type UpdateTargetGraphQLEndpointUrlResultError {
+    message: String! @tag(name: "public")
   }
 
   type UpdateTargetGraphQLEndpointUrlResult {
-    ok: UpdateTargetGraphQLEndpointUrlOk
-    error: UpdateTargetGraphQLEndpointUrlError
+    ok: UpdateTargetGraphQLEndpointUrlResultOk @tag(name: "public")
+    error: UpdateTargetGraphQLEndpointUrlResultError @tag(name: "public")
   }
 
   input UpdateTargetSlugInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    slug: String!
+    target: TargetReferenceInput! @tag(name: "public")
+    slug: String! @tag(name: "public")
   }
 
   type UpdateTargetSlugResult {
-    ok: UpdateTargetSlugOk
-    error: UpdateTargetSlugError
+    ok: UpdateTargetSlugResultOk @tag(name: "public")
+    error: UpdateTargetSlugResultError @tag(name: "public")
   }
 
-  type UpdateTargetSlugOk {
-    selector: TargetSelector!
-    target: Target!
+  type UpdateTargetSlugResultOk {
+    selector: TargetSelector! @tag(name: "public")
+    target: Target! @tag(name: "public")
   }
 
-  type UpdateTargetSlugError implements Error {
-    message: String!
+  type UpdateTargetSlugResultError {
+    message: String! @tag(name: "public")
   }
 
   type CreateTargetResult {
@@ -262,7 +265,10 @@ export default gql`
     The endpoint url of the target's explorer instance.
     """
     graphqlEndpointUrl: String
-    failDiffOnDangerousChange: Boolean!
+    """
+    Whether a dangerous change fails a schema check and requires a manual approval.
+    """
+    failDiffOnDangerousChange: Boolean! @tag(name: "public")
     """
     Configuration for conditional breaking change detection.
     """
