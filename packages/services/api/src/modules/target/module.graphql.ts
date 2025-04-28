@@ -259,6 +259,9 @@ export default gql`
     """
     graphqlEndpointUrl: String
     failDiffOnDangerousChange: Boolean!
+    """
+    Configuration for conditional breaking change detection.
+    """
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration!
       @tag(name: "public")
     experimental_forcedLegacySchemaComposition: Boolean!
