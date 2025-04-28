@@ -77,8 +77,8 @@ export default gql`
   }
 
   type UpdateTargetDangerousChangeClassificationResult {
-    ok: UpdateTargetDangerousChangeClassificationResultOk
-    error: UpdateTargetDangerousChangeClassificationResultError
+    ok: UpdateTargetDangerousChangeClassificationResultOk @tag(name: "public")
+    error: UpdateTargetDangerousChangeClassificationResultError @tag(name: "public")
   }
 
   type UpdateTargetGraphQLEndpointUrlResultOk {
