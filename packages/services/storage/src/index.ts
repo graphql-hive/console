@@ -1824,52 +1824,6 @@ export async function createStorage(
 
       return transformTargetSettings(row);
     },
-    async setTargetValidation({ targetId: target, projectId: project, enabled }) {
-      return transformTargetSettings(
-        await tracedTransaction('setTargetValidation', pool, async trx => {
-          const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
-            SELECT 1 FROM target_validation WHERE target_id = ${target}
-          `);
-
-          if (!targetValidationRowExists) {
-            await trx.query(sql`/* insertTargetValidation */
-              INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
-            `);
-          }
-
-          return trx.one<
-            Pick<
-              targets,
-              | 'validation_enabled'
-              | 'validation_percentage'
-              | 'validation_period'
-              | 'validation_excluded_clients'
-              | 'validation_breaking_change_formula'
-              | 'validation_request_count'
-              | 'fail_diff_on_dangerous_change'
-            > & {
-              targets: target_validation['destination_target_id'][];
-            }
-          >(sql`/* setTargetValidation */
-          UPDATE targets as t
-          SET validation_enabled = ${enabled}
-          FROM
-            (
-              SELECT
-                  it.id,
-                  array_agg(tv.destination_target_id) as targets
-              FROM targets AS it
-              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
-              WHERE it.id = ${target} AND it.project_id = ${project}
-              GROUP BY it.id
-              LIMIT 1
-            ) ret
-          WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
-        `);
-        }),
-      ).validation;
-    },
     async updateTargetDangerousChangeClassification({
       targetId: target,
       projectId: project,
@@ -1905,6 +1859,7 @@ export async function createStorage(
       excludedClients,
       breakingChangeFormula,
       requestCount,
+      isEnabled,
     }) {
       return transformTargetSettings(
         await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
@@ -1928,6 +1883,16 @@ export async function createStorage(
               )
               ON CONFLICT (target_id, destination_target_id) DO NOTHING
             `);
+          } else {
+            const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
+              SELECT 1 FROM target_validation WHERE target_id = ${target}
+            `);
+
+            if (!targetValidationRowExists) {
+              await trx.query(sql`/* insertTargetValidation */
+                INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
+              `);
+            }
           }
 
           return trx.one(sql`/* updateTargetValidationSettings */
@@ -1939,6 +1904,7 @@ export async function createStorage(
               , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
               , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
               , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
+              , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
             FROM (
               SELECT
                 it.id
