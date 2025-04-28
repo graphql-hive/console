@@ -2,13 +2,16 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
+    """
+    Create a CDN access token for a target.
+    """
     createCdnAccessToken(input: CreateCdnAccessTokenInput!): CdnAccessTokenCreateResult!
+      @tag(name: "public")
+    """
+    Delete a CDN access token.
+    """
     deleteCdnAccessToken(input: DeleteCdnAccessTokenInput!): DeleteCdnAccessTokenResult!
-  }
-
-  type CdnTokenResult {
-    token: String!
-    url: String!
+      @tag(name: "public")
   }
 
   extend type Query {
@@ -26,7 +29,10 @@ export default gql`
     """
     A paginated connection of CDN tokens for accessing this target's artifacts.
     """
-    cdnAccessTokens(first: Int, after: String): TargetCdnAccessTokenConnection!
+    cdnAccessTokens(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): TargetCdnAccessTokenConnection! @tag(name: "public")
   }
 
   extend type Contract {
@@ -37,64 +43,70 @@ export default gql`
   }
 
   type CdnAccessToken {
-    id: ID!
-    alias: String!
-    firstCharacters: String!
-    lastCharacters: String!
-    createdAt: DateTime!
+    id: ID! @tag(name: "public")
+    alias: String! @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    lastCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
   }
 
   type TargetCdnAccessTokenConnection {
-    edges: [TargetCdnAccessTokenEdge!]!
-    pageInfo: PageInfo!
+    edges: [TargetCdnAccessTokenEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type TargetCdnAccessTokenEdge {
-    node: CdnAccessToken!
-    cursor: String!
+    node: CdnAccessToken! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   input DeleteCdnAccessTokenInput {
-    selector: TargetSelectorInput!
-    cdnAccessTokenId: ID!
+    target: TargetReferenceInput! @tag(name: "public")
+    cdnAccessTokenId: ID! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type DeleteCdnAccessTokenResult {
-    ok: DeleteCdnAccessTokenOk
-    error: DeleteCdnAccessTokenError
+    ok: DeleteCdnAccessTokenResultOk @tag(name: "public")
+    error: DeleteCdnAccessTokenResultError @tag(name: "public")
   }
 
-  type DeleteCdnAccessTokenOk {
-    deletedCdnAccessTokenId: ID!
+  type DeleteCdnAccessTokenResultOk {
+    deletedCdnAccessTokenId: ID! @tag(name: "public")
   }
 
-  type DeleteCdnAccessTokenError implements Error {
-    message: String!
+  type DeleteCdnAccessTokenResultError {
+    message: String! @tag(name: "public")
   }
 
   input CreateCdnAccessTokenInput {
-    selector: TargetSelectorInput!
-    alias: String!
+    """
+    The target for which the access token should be created for.
+    """
+    target: TargetReferenceInput! @tag(name: "public")
+    """
+    Alias describing the purpose of the access token.
+    """
+    alias: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type CdnAccessTokenCreateResult {
-    ok: CdnAccessTokenCreateOk
-    error: CdnAccessTokenCreateError
+    ok: CdnAccessTokenCreateResultOk @tag(name: "public")
+    error: CdnAccessTokenCreateResultError @tag(name: "public")
   }
 
-  type CdnAccessTokenCreateOk {
-    createdCdnAccessToken: CdnAccessToken!
-    secretAccessToken: String!
-    cdnUrl: String!
+  type CdnAccessTokenCreateResultOk {
+    createdCdnAccessToken: CdnAccessToken! @tag(name: "public")
+    secretAccessToken: String! @tag(name: "public")
+    cdnUrl: String! @tag(name: "public")
   }
 
-  type CdnAccessTokenCreateError implements Error {
-    message: String!
+  type CdnAccessTokenCreateResultError {
+    message: String! @tag(name: "public")
   }
 `;

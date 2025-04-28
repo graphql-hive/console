@@ -61,10 +61,12 @@ function CreateCDNAccessTokenModal(props: {
     onSubmit: async values => {
       await mutate({
         input: {
-          selector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+            },
           },
           alias: values.alias,
         },
@@ -229,10 +231,12 @@ function DeleteCDNAccessTokenModal(props: {
           onClick={() =>
             mutate({
               input: {
-                selector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                target: {
+                  bySelector: {
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                  },
                 },
                 cdnAccessTokenId: props.cdnAccessTokenId,
               },
