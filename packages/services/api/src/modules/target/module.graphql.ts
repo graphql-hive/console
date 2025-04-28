@@ -176,7 +176,7 @@ export default gql`
     """
     Update whethe the conditional breaking change detection is enabled or disabled.
     """
-    isEnabled: Boolean
+    isEnabled: Boolean @tag(name: "public")
     """
     The period in days. Operations of the last x days will be used for the conditional breaking change detection.
     The maximum value depends on the organizations data retention limits.
@@ -209,7 +209,7 @@ export default gql`
     The target on which the settings are adjusted.
     """
     target: TargetReferenceInput! @tag(name: "public")
-    configuration: ConditionalBreakingChangeConfigurationInput!
+    configuration: ConditionalBreakingChangeConfigurationInput! @tag(name: "public")
   }
 
   type UpdateTargetConditionalBreakingChangeConfigurationResult {

@@ -686,7 +686,7 @@ const BreakingChanges = (props: {
               <Switch
                 className="shrink-0"
                 checked={isEnabled}
-                onCheckedChange={async enabled => {
+                onCheckedChange={async isEnabled => {
                   await updateValidation({
                     input: {
                       target: {
