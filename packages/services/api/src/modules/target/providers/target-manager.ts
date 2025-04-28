@@ -397,63 +397,89 @@ export class TargetManager {
     };
   }
 
-  async updateSlug(
-    input: {
-      slug: string;
-    } & TargetSelector,
-  ): Promise<
+  async updateSlug(args: { target: GraphQLSchema.TargetReferenceInput; slug: string }): Promise<
     | {
         ok: true;
         target: Target;
+        selector: GraphQLSchema.TargetSelectorInput;
       }
     | {
         ok: false;
         message: string;
       }
   > {
-    const { slug, organizationId: organization, projectId: project, targetId: target } = input;
-    this.logger.info('Updating a target slug (input=%o)', input);
+    this.logger.info('Updating a target slug (input=%o)', args);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
     await this.session.assertPerformAction({
       action: 'target:modifySettings',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const user = await this.session.getViewer();
 
-    if (reservedSlugs.includes(slug)) {
+    if (reservedSlugs.includes(args.slug)) {
       return {
         ok: false,
         message: 'Slug is reserved',
       };
     }
 
+    const slugParseResult = TargetSlugModel.safeParse(args.slug);
+    if (!slugParseResult.success) {
+      return {
+        ok: false,
+        message: slugParseResult.error.formErrors.formErrors?.[0] ?? 'Please check your input.',
+      };
+    }
+
     const result = await this.storage.updateTargetSlug({
-      slug,
-      organizationId: organization,
-      projectId: project,
-      targetId: target,
+      slug: slugParseResult.data,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
       userId: user.id,
     });
 
-    if (result.ok) {
-      await this.auditLog.record({
-        eventType: 'TARGET_SLUG_UPDATED',
-        organizationId: organization,
-        metadata: {
-          projectId: project,
-          targetId: target,
-          newSlug: result.target.slug,
-          previousSlug: slug,
-        },
-      });
+    if (!result.ok) {
+      return result;
     }
 
-    return result;
+    await this.auditLog.record({
+      eventType: 'TARGET_SLUG_UPDATED',
+      organizationId: selector.organizationId,
+      metadata: {
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+        newSlug: result.target.slug,
+        previousSlug: slugParseResult.data,
+      },
+    });
+
+    const [project, organization] = await Promise.all([
+      this.storage.getProjectById(selector.projectId),
+      this.storage.getOrganization({ organizationId: selector.organizationId }),
+    ]);
+
+    if (!project) {
+      throw new Error('This should not happen.');
+    }
+
+    return {
+      ...result,
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: slugParseResult.data,
+      },
+    };
   }
 
   async updateTargetGraphQLEndpointUrl(args: {
