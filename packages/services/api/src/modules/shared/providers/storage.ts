@@ -317,10 +317,6 @@ export interface Storage {
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
   getTargetSettings(_: TargetSelector): Promise<TargetSettings | never>;
 
-  setTargetValidation(
-    _: TargetSelector & { enabled: boolean },
-  ): Promise<TargetSettings['validation'] | never>;
-
   updateTargetValidationSettings(
     _: TargetSelector & Partial<TargetSettings['validation']>,
   ): Promise<TargetSettings['validation'] | never>;
