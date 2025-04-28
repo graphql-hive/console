@@ -52,7 +52,7 @@ const CreateAccessTokenSheetContent_OrganizationFragment = graphql(`
   fragment CreateAccessTokenSheetContent_OrganizationFragment on Organization {
     id
     slug
-    availableOrganizationPermissionGroups {
+    availableOrganizationAccessTokenPermissionGroups {
       ...PermissionSelector_PermissionGroupsFragment
       ...SelectedPermissionOverview_PermissionGroupFragment
     }
@@ -250,7 +250,7 @@ export function CreateAccessTokenSheetContent(
                               <Form.FormControl>
                                 <PermissionSelector
                                   permissionGroups={
-                                    organization.availableOrganizationPermissionGroups
+                                    organization.availableOrganizationAccessTokenPermissionGroups
                                   }
                                   selectedPermissionIds={new Set(form.getValues()['permissions'])}
                                   onSelectedPermissionsChange={selectedPermissionIds => {
@@ -301,7 +301,9 @@ export function CreateAccessTokenSheetContent(
                         ) : (
                           <SelectedPermissionOverview
                             activePermissionIds={form.getValues().permissions}
-                            permissionsGroups={organization.availableOrganizationPermissionGroups}
+                            permissionsGroups={
+                              organization.availableOrganizationAccessTokenPermissionGroups
+                            }
                             showOnlyAllowedPermissions
                             isExpanded
                             additionalGroupContent={group => (

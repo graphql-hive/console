@@ -12,7 +12,7 @@ export const Organization: Pick<
   | 'accessToken'
   | 'accessTokens'
   | 'availableMemberPermissionGroups'
-  | 'availableOrganizationPermissionGroups'
+  | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
   | 'getStarted'
   | 'id'
@@ -202,7 +202,7 @@ export const Organization: Pick<
   availableMemberPermissionGroups: () => {
     return OrganizationMemberPermissions.permissionGroups;
   },
-  availableOrganizationPermissionGroups: () => {
+  availableOrganizationAccessTokenPermissionGroups: () => {
     return OrganizationAccessTokensPermissions.permissionGroups;
   },
   accessTokens: async (organization, args, { injector }) => {

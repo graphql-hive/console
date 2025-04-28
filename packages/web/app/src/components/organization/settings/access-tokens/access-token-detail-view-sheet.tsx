@@ -46,7 +46,7 @@ const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
           }
         }
       }
-      availableOrganizationPermissionGroups {
+      availableOrganizationAccessTokenPermissionGroups {
         ...SelectedPermissionOverview_PermissionGroupFragment
       }
     }
@@ -93,7 +93,7 @@ export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProp
           <SelectedPermissionOverview
             activePermissionIds={query.data?.organization?.accessToken?.permissions ?? []}
             permissionsGroups={
-              query.data?.organization?.availableOrganizationPermissionGroups ?? []
+              query.data?.organization?.availableOrganizationAccessTokenPermissionGroups ?? []
             }
             showOnlyAllowedPermissions={false}
             isExpanded
