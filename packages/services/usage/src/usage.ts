@@ -270,7 +270,7 @@ export function createUsage(config: {
 
   producer.on(producer.events.CONNECT, () => {
     logger.info(`Kafka producer: connected`);
-  })
+  });
 
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
     logger.info('Kafka producer: request timeout');
@@ -278,7 +278,7 @@ export function createUsage(config: {
 
   producer.on(producer.events.DISCONNECT, () => {
     logger.info(`Kafka producer: disconnected`);
-  })
+  });
 
   async function stop() {
     logger.info('Started Usage shutdown...');
