@@ -105,7 +105,7 @@ export default gql`
   }
 
   type UpdateTargetSlugResultOk {
-    selector: TargetSelector! @tag(name: "public")
+    selector: TargetSelector!
     target: Target! @tag(name: "public")
   }
 
