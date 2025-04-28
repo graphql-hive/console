@@ -6,6 +6,7 @@ import type { TargetResolvers } from './../../../__generated__/types';
 export const Target: Pick<
   TargetResolvers,
   | 'cleanId'
+  | 'conditionalBreakingChangeConfiguration'
   | 'experimental_forcedLegacySchemaComposition'
   | 'failDiffOnDangerousChange'
   | 'graphqlEndpointUrl'
@@ -13,7 +14,6 @@ export const Target: Pick<
   | 'name'
   | 'project'
   | 'slug'
-  | 'validationSettings'
   | 'viewerCanAccessSettings'
   | 'viewerCanDelete'
   | 'viewerCanModifyCDNAccessToken'
@@ -26,28 +26,6 @@ export const Target: Pick<
       projectId: target.projectId,
       organizationId: target.orgId,
     }),
-  validationSettings: async (target, _args, { injector }) => {
-    const targetManager = injector.get(TargetManager);
-
-    const settings = await targetManager.getTargetSettings({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-    });
-
-    return {
-      ...settings.validation,
-      targets: await Promise.all(
-        settings.validation.targets.map(tid =>
-          targetManager.getTarget({
-            organizationId: target.orgId,
-            projectId: target.projectId,
-            targetId: tid,
-          }),
-        ),
-      ),
-    };
-  },
   experimental_forcedLegacySchemaComposition: (target, _, { injector }) => {
     return injector
       .get(OrganizationManager)
@@ -131,5 +109,27 @@ export const Target: Pick<
         targetId: target.id,
       },
     });
+  },
+  conditionalBreakingChangeConfiguration: async (target, _arg, { injector }) => {
+    const targetManager = injector.get(TargetManager);
+
+    const settings = await targetManager.getTargetSettings({
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+    });
+
+    return {
+      ...settings.validation,
+      targets: await Promise.all(
+        settings.validation.targets.map(tid =>
+          targetManager.getTarget({
+            organizationId: target.orgId,
+            projectId: target.projectId,
+            targetId: tid,
+          }),
+        ),
+      ),
+    };
   },
 };

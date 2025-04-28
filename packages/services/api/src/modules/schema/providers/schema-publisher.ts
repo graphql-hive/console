@@ -178,7 +178,7 @@ export class SchemaPublisher {
     try {
       const settings = await this.storage.getTargetSettings(selector);
 
-      if (!settings.validation.enabled) {
+      if (!settings.validation.isEnabled) {
         this.logger.debug('Usage validation disabled');
         this.logger.debug('Mark all as used');
         return {
@@ -187,7 +187,7 @@ export class SchemaPublisher {
         };
       }
 
-      if (settings.validation.enabled && settings.validation.targets.length === 0) {
+      if (settings.validation.isEnabled && settings.validation.targets.length === 0) {
         this.logger.debug('Usage validation enabled but no targets to check against');
         this.logger.debug('Mark all as used');
         return {

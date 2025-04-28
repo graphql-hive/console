@@ -1,6 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import * as zod from 'zod';
+import { z } from 'zod';
+import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project, Target, TargetSettings } from '../../../shared/entities';
 import { share } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
@@ -9,7 +11,7 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { ProjectSelector, Storage, TargetSelector } from '../../shared/providers/storage';
 import { TokenStorage } from '../../token/providers/token-storage';
-import { HiveError } from './../../../shared/errors';
+import { PercentageModel, TargetSlugModel } from '../validation';
 import { TargetsByIdCache } from './targets-by-id-cache';
 
 const reservedSlugs = ['view', 'new'];
@@ -37,107 +39,164 @@ export class TargetManager {
     this.logger = logger.child({ source: 'TargetManager' });
   }
 
-  async createTarget({
-    slug,
-    projectId: project,
-    organizationId: organization,
-  }: {
-    slug: string;
-  } & ProjectSelector): Promise<
+  async createTarget(args: { project: GraphQLSchema.ProjectReferenceInput; slug: string }): Promise<
     | {
         ok: true;
         target: Target;
+        selector: {
+          organizationSlug: string;
+          projectSlug: string;
+          targetSlug: string;
+        };
       }
     | {
         ok: false;
         message: string;
+        inputErrors?: {
+          slug?: string | null;
+        } | null;
       }
   > {
-    this.logger.info(
-      'Creating a target (slug=%s, project=%s, organization=%s)',
-      slug,
-      project,
-      organization,
-    );
+    this.logger.info('Creating a target (slug=%s, project=%o)', args.slug, args.project);
+
+    const selector = await this.idTranslator.resolveProjectReference({
+      reference: args.project,
+    });
+
+    if (!selector) {
+      this.session.raise('target:create');
+    }
+
     await this.session.assertPerformAction({
       action: 'target:create',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: organization,
-        projectId: project,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
       },
     });
 
-    if (reservedSlugs.includes(slug)) {
+    if (reservedSlugs.includes(args.slug)) {
       return {
         ok: false,
         message: 'Slug is reserved',
+        inputErrors: {
+          slug: 'Slug is reserved',
+        },
+      };
+    }
+
+    const inputParseResult = TargetSlugModel.safeParse(args.slug);
+    if (!inputParseResult.success) {
+      return {
+        ok: false,
+        message: 'Check your input.',
+        inputErrors: {
+          slug: inputParseResult.error.issues[0].message ?? null,
+        },
       };
     }
 
     // create target
     const result = await this.storage.createTarget({
-      slug,
-      projectId: project,
-      organizationId: organization,
+      slug: args.slug,
+      projectId: selector.projectId,
+      organizationId: selector.organizationId,
     });
 
-    if (result.ok) {
-      await this.auditLog.record({
-        eventType: 'TARGET_CREATED',
-        organizationId: result.target.orgId,
-        metadata: {
-          projectId: result.target.projectId,
-          targetId: result.target.id,
-          targetSlug: result.target.slug,
-        },
-      });
+    if (!result.ok) {
+      return result;
     }
 
-    return result;
+    await this.auditLog.record({
+      eventType: 'TARGET_CREATED',
+      organizationId: result.target.orgId,
+      metadata: {
+        projectId: result.target.projectId,
+        targetId: result.target.id,
+        targetSlug: result.target.slug,
+      },
+    });
+
+    const [project, organization] = await Promise.all([
+      this.storage.getProjectById(selector.projectId),
+      this.storage.getOrganization({ organizationId: selector.organizationId }),
+    ]);
+
+    if (!project) {
+      throw new Error('This should not happen.');
+    }
+
+    return {
+      ...result,
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: inputParseResult.data,
+      },
+    };
   }
 
-  async deleteTarget({
-    organizationId: organization,
-    projectId: project,
-    targetId: target,
-  }: TargetSelector): Promise<Target> {
-    this.logger.info(
-      'Deleting a target (target=%s, project=%s, organization=%s)',
-      target,
-      project,
-      organization,
-    );
+  async deleteTarget(args: { target: GraphQLSchema.TargetReferenceInput }): Promise<{
+    deletedTarget: Target;
+    selector: {
+      organizationSlug: string;
+      projectSlug: string;
+      targetSlug: string;
+    };
+  }> {
+    this.logger.info('Deleting a target (target=%o)', args.target);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:delete');
+    }
+
     await this.session.assertPerformAction({
       action: 'target:delete',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: organization,
-        projectId: project,
-        targetId: target,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
     const deletedTarget = await this.storage.deleteTarget({
-      targetId: target,
-      projectId: project,
-      organizationId: organization,
+      targetId: selector.targetId,
+      projectId: selector.projectId,
+      organizationId: selector.organizationId,
     });
     await this.tokenStorage.invalidateTokens(deletedTarget.tokens);
 
     await this.auditLog.record({
       eventType: 'TARGET_DELETED',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       metadata: {
-        targetId: target,
+        targetId: selector.targetId,
         targetSlug: deletedTarget.slug,
-        projectId: project,
+        projectId: selector.projectId,
       },
     });
 
     await this.targetsCache.purge(deletedTarget);
 
-    return deletedTarget;
+    const [project, organization] = await Promise.all([
+      this.storage.getProjectById(selector.projectId),
+      this.storage.getOrganization({ organizationId: selector.organizationId }),
+    ]);
+
+    if (!project) {
+      throw new Error('This should not happen.');
+    }
+
+    return {
+      deletedTarget,
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: deletedTarget.slug,
+      },
+    };
   }
 
   async getTargets(selector: ProjectSelector): Promise<readonly Target[]> {
@@ -212,30 +271,6 @@ export class TargetManager {
     return this.storage.getTargetSettings(selector);
   }
 
-  async setTargetValidation(
-    input: {
-      enabled: boolean;
-    } & TargetSelector,
-  ): Promise<TargetSettings['validation']> {
-    this.logger.debug('Setting target validation (input=%o)', input);
-    await this.session.assertPerformAction({
-      action: 'target:modifySettings',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
-      },
-    });
-
-    await this.storage.completeGetStartedStep({
-      organizationId: input.organizationId,
-      step: 'enablingUsageBasedBreakingChanges',
-    });
-
-    return this.storage.setTargetValidation(input);
-  }
-
   async updateTargetDangerousChangeClassification(
     input: Pick<TargetSettings, 'failDiffOnDangerousChange'> & TargetSelector,
   ): Promise<TargetSettings> {
@@ -253,25 +288,101 @@ export class TargetManager {
     return this.storage.updateTargetDangerousChangeClassification(input);
   }
 
-  async updateTargetValidationSettings(
-    input: Omit<TargetSettings['validation'], 'enabled'> & TargetSelector,
-  ): Promise<TargetSettings['validation']> {
-    this.logger.debug('Updating target validation settings (input=%o)', input);
+  async updateTargetConditionalBreakingChangeConfiguration(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    configuration: GraphQLSchema.ConditionalBreakingChangeConfigurationInput;
+  }): Promise<
+    | {
+        ok: true;
+        target: Target;
+      }
+    | {
+        ok: false;
+        error: {
+          message: string;
+          inputErrors: {
+            period?: string;
+            percentage?: string;
+            requestCount?: string;
+            targets?: string;
+          };
+        };
+      }
+  > {
+    this.logger.debug(
+      'Updating target validation settings (target=%o, configuration=%o)',
+      args.target,
+      args.configuration,
+    );
+
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
     await this.session.assertPerformAction({
       action: 'target:modifySettings',
-      organizationId: input.organizationId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-        targetId: input.targetId,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
       },
     });
 
-    if (input.targets.length === 0) {
-      throw new HiveError(`No targets specified. Required at least one target`);
+    const org = await this.storage.getOrganization({ organizationId: selector.organizationId });
+
+    const validationResult = BreakingChangeConfigurationModel.extend({
+      period: z
+        .number()
+        .min(1)
+        .max(org.monthlyRateLimit.retentionInDays)
+        .int()
+        .nullable()
+        .optional(),
+    }).safeParse(args.configuration);
+
+    if (validationResult.success === false) {
+      return {
+        ok: false,
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            period: validationResult.error.formErrors.fieldErrors.period?.[0],
+            percentage: validationResult.error.formErrors.fieldErrors.percentage?.[0],
+            requestCount: validationResult.error.formErrors.fieldErrors.requestCount?.[0],
+            targets: validationResult.error.formErrors.fieldErrors.targets?.[0],
+          },
+        },
+      };
     }
 
-    return this.storage.updateTargetValidationSettings(input);
+    if (args.configuration.isEnabled === true) {
+      await this.storage.completeGetStartedStep({
+        organizationId: selector.organizationId,
+        step: 'enablingUsageBasedBreakingChanges',
+      });
+    }
+
+    await this.storage.updateTargetValidationSettings({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+      period: validationResult.data.period ?? undefined,
+      percentage: validationResult.data.percentage ?? undefined,
+      requestCount: validationResult.data.requestCount ?? undefined,
+      breakingChangeFormula: args.configuration.breakingChangeFormula ?? undefined,
+      excludedClients: args.configuration.excludedClients?.length
+        ? Array.from(args.configuration.excludedClients)
+        : undefined,
+      targets: validationResult.data.targets ?? undefined,
+      isEnabled: args.configuration.isEnabled ?? undefined,
+    });
+
+    return {
+      ok: true,
+      target: await this.getTargetById({ targetId: selector.targetId }),
+    };
   }
 
   async updateSlug(
@@ -461,3 +572,13 @@ const TargetGraphQLEndpointUrlModel = zod
   })
   .url()
   .nullable();
+
+const BreakingChangeConfigurationModel = z.object({
+  percentage: PercentageModel.nullable().optional(),
+  requestCount: z.number().min(1, 'Request count must be at least 1.').nullable().optional(),
+  targets: z
+    .array(z.string().uuid('Incorrect UUID provided.'))
+    .min(1, 'At least one target must be provided.')
+    .nullable()
+    .optional(),
+});

@@ -367,7 +367,7 @@ export interface Member {
 
 export interface TargetSettings {
   validation: {
-    enabled: boolean;
+    isEnabled: boolean;
     period: number;
     percentage: number;
     requestCount: number;

@@ -44,14 +44,13 @@ import {
   readOperationBody,
   readOperationsStats,
   readTokenInfo,
-  setTargetValidation,
   updateBaseSchema,
   updateMemberRole,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
-  BreakingChangeFormula,
+  BreakingChangeFormulaType,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -641,20 +640,30 @@ export function initSeed() {
                     },
                   };
                 },
-                async toggleTargetValidation(enabled: boolean, ttarget: TargetOverwrite = target) {
-                  const result = await setTargetValidation(
+                async toggleTargetValidation(
+                  isEnabled: boolean,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const result = await updateTargetValidationSettings(
                     {
-                      enabled,
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      configuration: {
+                        isEnabled,
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result;
+                  return result.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+                    .conditionalBreakingChangeConfiguration;
                 },
                 async updateTargetValidationSettings({
                   excludedClients,
@@ -662,31 +671,33 @@ export function initSeed() {
                   target: ttarget = target,
                   requestCount,
                   breakingChangeFormula,
-                }: {
-                  excludedClients?: string[];
-                  percentage: number;
-                  requestCount?: number;
-                  breakingChangeFormula?: BreakingChangeFormula;
+                }: GraphQLSchema.ConditionalBreakingChangeConfigurationInput & {
                   target?: TargetOverwrite;
                 }) {
                   const result = await updateTargetValidationSettings(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      excludedClients,
-                      percentage,
-                      requestCount,
-                      breakingChangeFormula,
-                      period: 2,
-                      targetIds: [target.id],
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      configuration: {
+                        excludedClients,
+                        percentage,
+                        requestCount,
+                        breakingChangeFormula,
+                        period: 2,
+                        targetIds: [target.id],
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result.updateTargetValidationSettings;
+                  return result.updateTargetConditionalBreakingChangeConfiguration;
                 },
                 async compareToPreviousVersion(version: string, ttarget: TargetOverwrite = target) {
                   return (
@@ -784,8 +795,12 @@ export function initSeed() {
                 async createTarget(args?: { slug?: string; accessToken?: string }) {
                   return createTarget(
                     {
-                      organizationSlug: orgSlug,
-                      projectSlug: project.slug,
+                      project: {
+                        bySelector: {
+                          organizationSlug: orgSlug,
+                          projectSlug: project.slug,
+                        },
+                      },
                       slug: args?.slug ?? generateUnique(),
                     },
                     args?.accessToken ?? ownerToken,

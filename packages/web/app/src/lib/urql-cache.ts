@@ -157,12 +157,14 @@ const deleteTarget: TypedDocumentNodeUpdateResolver<typeof DeleteTargetMutation>
   _args,
   cache,
 ) => {
-  const target = deleteTarget.deletedTarget;
+  const targetId = deleteTarget.ok?.deletedTargetId;
 
-  cache.invalidate({
-    __typename: target.__typename,
-    id: target.id,
-  });
+  if (targetId) {
+    cache.invalidate({
+      __typename: 'Target',
+      id: targetId,
+    });
+  }
 };
 
 const createToken: TypedDocumentNodeUpdateResolver<typeof CreateAccessToken_CreateTokenMutation> = (

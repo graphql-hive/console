@@ -322,7 +322,7 @@ export interface Storage {
   ): Promise<TargetSettings['validation'] | never>;
 
   updateTargetValidationSettings(
-    _: TargetSelector & Omit<TargetSettings['validation'], 'enabled'>,
+    _: TargetSelector & Partial<TargetSettings['validation']>,
   ): Promise<TargetSettings['validation'] | never>;
 
   updateTargetDangerousChangeClassification(
