@@ -5,13 +5,15 @@ export default gql`
     """
     Create a CDN access token for a target.
     """
-    createCdnAccessToken(input: CreateCdnAccessTokenInput!): CdnAccessTokenCreateResult!
-      @tag(name: "public")
+    createCdnAccessToken(
+      input: CreateCdnAccessTokenInput! @tag(name: "public")
+    ): CdnAccessTokenCreateResult! @tag(name: "public")
     """
     Delete a CDN access token.
     """
-    deleteCdnAccessToken(input: DeleteCdnAccessTokenInput!): DeleteCdnAccessTokenResult!
-      @tag(name: "public")
+    deleteCdnAccessToken(
+      input: DeleteCdnAccessTokenInput! @tag(name: "public")
+    ): DeleteCdnAccessTokenResult! @tag(name: "public")
   }
 
   extend type Query {
