@@ -653,7 +653,7 @@ export function initSeed() {
                           targetSlug: ttarget.slug,
                         },
                       },
-                      configuration: {
+                      conditionalBreakingChangeConfiguration: {
                         isEnabled,
                       },
                     },
@@ -683,7 +683,7 @@ export function initSeed() {
                           targetSlug: ttarget.slug,
                         },
                       },
-                      configuration: {
+                      conditionalBreakingChangeConfiguration: {
                         excludedClients,
                         percentage,
                         requestCount,

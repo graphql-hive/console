@@ -399,7 +399,7 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
           targetSlug: staging.slug,
         },
       },
-      configuration: {
+      conditionalBreakingChangeConfiguration: {
         percentage: 50, // Out of 3 requests, 1 is for Query.me, 2 are done for Query.me so it's 1/3 = 33.3%
         period: 2,
         targetIds: [productionTarget.id, staging.id],
@@ -553,7 +553,7 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
           targetSlug: target.slug,
         },
       },
-      configuration: {
+      conditionalBreakingChangeConfiguration: {
         percentage: 0,
         period: 2,
         targetIds: [target.id],
@@ -598,7 +598,7 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
           targetSlug: target.slug,
         },
       },
-      configuration: {
+      conditionalBreakingChangeConfiguration: {
         percentage: 0,
         period: 2,
         targetIds: [target.id],
@@ -3054,7 +3054,7 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
           targetSlug: target.slug,
         },
       },
-      configuration: {
+      conditionalBreakingChangeConfiguration: {
         percentage: 2,
         period: 2,
         targetIds: [target.id],
@@ -3090,7 +3090,7 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
           targetSlug: target.slug,
         },
       },
-      configuration: {
+      conditionalBreakingChangeConfiguration: {
         percentage: 1.99,
         period: 2,
         targetIds: [target.id],

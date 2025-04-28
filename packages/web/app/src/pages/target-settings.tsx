@@ -563,7 +563,7 @@ const BreakingChanges = (props: {
               targetSlug: props.targetSlug,
             },
           },
-          configuration: {
+          conditionalBreakingChangeConfiguration: {
             ...values,
             /**
              * In case the input gets messed up, fallback to default values in cases
@@ -696,7 +696,7 @@ const BreakingChanges = (props: {
                           projectSlug: props.projectSlug,
                         },
                       },
-                      configuration: {
+                      conditionalBreakingChangeConfiguration: {
                         isEnabled,
                       },
                     },

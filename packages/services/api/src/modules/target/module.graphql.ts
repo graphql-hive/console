@@ -23,7 +23,7 @@ export default gql`
     """
     updateTargetConditionalBreakingChangeConfiguration(
       input: UpdateTargetConditionalBreakingChangeConfigurationInput!
-    ): UpdateTargetConditionalBreakingChangeConfigurationResult!
+    ): UpdateTargetConditionalBreakingChangeConfigurationResult! @tag(name: "public")
     """
     Updates the target's explorer endpoint url.
     """
@@ -209,7 +209,11 @@ export default gql`
     The target on which the settings are adjusted.
     """
     target: TargetReferenceInput! @tag(name: "public")
-    configuration: ConditionalBreakingChangeConfigurationInput! @tag(name: "public")
+    """
+    Updates to the conditional breaking change configuration.
+    """
+    conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfigurationInput!
+      @tag(name: "public")
   }
 
   type UpdateTargetConditionalBreakingChangeConfigurationResult {

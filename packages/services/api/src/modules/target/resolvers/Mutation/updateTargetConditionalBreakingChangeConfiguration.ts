@@ -8,7 +8,7 @@ export const updateTargetConditionalBreakingChangeConfiguration: NonNullable<
     .get(TargetManager)
     .updateTargetConditionalBreakingChangeConfiguration({
       target: input.target,
-      configuration: input.configuration,
+      configuration: input.conditionalBreakingChangeConfiguration,
     });
 
   if (result.ok) {
