@@ -39,7 +39,7 @@ export const Organization: Pick<
     return !!organization.id;
   },
   owner: async (organization, _, { injector }) => {
-    const owner = await injector.get(OrganizationMembers).findOrganizationOwner(organization);
+    const owner = await injector.get(OrganizationManager).findOrganizationOwner(organization);
     if (!owner) {
       throw new Error('Not found.');
     }
@@ -78,12 +78,31 @@ export const Organization: Pick<
     }
 
     return {
-      total: invitations.length,
-      nodes: invitations,
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+      edges: invitations.map(node => ({
+        node,
+        cursor: '',
+      })),
     };
   },
-  memberRoles: (organization, _, { injector }) => {
-    return injector.get(OrganizationMemberRoles).getMemberRolesForOrganizationId(organization.id);
+  memberRoles: async (organization, _, { injector }) => {
+    const roles = await injector
+      .get(OrganizationMemberRoles)
+      .getMemberRolesForOrganizationId(organization.id);
+    return {
+      edges: roles.map(node => ({ node, cursor: node.id })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {

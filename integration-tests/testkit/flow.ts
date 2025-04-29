@@ -56,9 +56,13 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                   }
                 }
                 memberRoles {
-                  id
-                  name
-                  locked
+                  edges {
+                    node {
+                      id
+                      name
+                      locked
+                    }
+                  }
                 }
                 rateLimit {
                   retentionInDays
@@ -655,11 +659,15 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
               id
               slug
               memberRoles {
-                id
-                name
-                description
-                locked
-                permissions
+                edges {
+                  node {
+                    id
+                    name
+                    description
+                    locked
+                    permissions
+                  }
+                }
               }
             }
           }
@@ -713,11 +721,15 @@ export function deleteMemberRole(input: DeleteMemberRoleInput, authToken: string
               id
               slug
               memberRoles {
-                id
-                name
-                description
-                locked
-                permissions
+                edges {
+                  node {
+                    id
+                    name
+                    description
+                    locked
+                    permissions
+                  }
+                }
               }
             }
           }

@@ -150,9 +150,10 @@ const OrganizationInvitationsQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       invitations {
-        total
-        nodes {
-          id
+        edges {
+          node {
+            id
+          }
         }
       }
     }

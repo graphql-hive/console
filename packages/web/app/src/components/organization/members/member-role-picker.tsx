@@ -19,8 +19,12 @@ const MemberRolePicker_OrganizationFragment = graphql(`
     id
     slug
     memberRoles {
-      id
-      permissions
+      edges {
+        node {
+          id
+          permissions
+        }
+      }
     }
     ...ResourceSelector_OrganizationFragment
     ...MemberRoleSelector_OrganizationFragment
@@ -142,7 +146,8 @@ export function MemberRolePicker(props: {
   const [assignRoleState, assignRole] = useMutation(MemberRolePicker_AssignRoleMutation);
   const { toast } = useToast();
 
-  const selectedRole = organization.memberRoles?.find(role => role.id === selectedRoleId) ?? null;
+  const selectedRole =
+    organization.memberRoles?.edges?.find(edge => edge.node.id === selectedRoleId)?.node ?? null;
 
   return (
     <Sheet.SheetContent className="flex max-h-screen min-w-[800px] flex-col overflow-y-scroll">

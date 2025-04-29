@@ -61,11 +61,15 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
     id
     slug
     memberRoles {
-      id
-      name
-      description
-      locked
-      canInvite
+      edges {
+        node {
+          id
+          name
+          description
+          locked
+          canInvite
+        }
+      }
     }
   }
 `);
@@ -94,7 +98,9 @@ function MemberInvitationForm(props: {
   const { toast } = useToast();
   const organization = useFragment(MemberInvitationForm_OrganizationFragment, props.organization);
   const [invitation, invite] = useMutation(MemberInvitationForm_InviteByEmail);
-  const viewerRole = organization.memberRoles?.find(r => r.name === 'Viewer');
+  const viewerRole = organization.memberRoles?.edges.find(
+    edge => edge.node.name === 'Viewer',
+  )?.node;
 
   const form = useForm<MemberInvitationFormValues>({
     resolver: zodResolver(memberInvitationFormSchema),
@@ -204,9 +210,10 @@ function MemberInvitationForm(props: {
                   <FormItem>
                     <FormControl>
                       <RoleSelector
-                        roles={organization.memberRoles ?? []}
+                        roles={organization.memberRoles?.edges.map(edge => edge.node) ?? []}
                         defaultRole={
-                          organization.memberRoles?.find(r => r.id === field.value) ?? viewerRole
+                          organization.memberRoles?.edges.find(edge => edge.node.id === field.value)
+                            ?.node ?? viewerRole
                         }
                         isRoleActive={role => ({
                           active: role.canInvite,
@@ -407,9 +414,11 @@ const OrganizationInvitations_OrganizationFragment = graphql(`
     id
     slug
     invitations {
-      nodes {
-        id
-        ...Members_Invitation
+      edges {
+        node {
+          id
+          ...Members_Invitation
+        }
       }
     }
     ...MemberInvitationForm_OrganizationFragment
@@ -440,7 +449,7 @@ export function OrganizationInvitations(props: {
           organization={organization}
         />
       </SubPageLayoutHeader>
-      {organization.invitations.nodes.length > 0 ? (
+      {organization.invitations.edges.length > 0 ? (
         <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
           <thead>
             <tr>
@@ -451,10 +460,10 @@ export function OrganizationInvitations(props: {
             </tr>
           </thead>
           <tbody className="divide-y-[1px] divide-gray-500/20">
-            {organization.invitations.nodes.map(node => (
+            {organization.invitations.edges.map(edge => (
               <Invitation
-                key={node.id}
-                invitation={node}
+                key={edge.node.id}
+                invitation={edge.node}
                 organizationSlug={organization.slug}
                 refetchInvitations={props.refetchInvitations}
               />

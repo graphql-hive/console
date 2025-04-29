@@ -274,6 +274,16 @@ export default gql`
     organization: Organization!
   }
 
+  type MemberRoleEdge {
+    node: MemberRole! @tag(name: "public")
+    cursor: String!
+  }
+
+  type MemberRoleConnection {
+    edges: [MemberRoleEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
+  }
+
   type Organization {
     """
     Unique UUID of the organization
@@ -285,13 +295,13 @@ export default gql`
     slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
-    owner: Member!
+    owner: Member! @tag(name: "public")
     me: Member!
     members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
       @tag(name: "public")
-    invitations: OrganizationInvitationConnection
+    invitations: OrganizationInvitationConnection @tag(name: "public")
     getStarted: OrganizationGetStarted!
-    memberRoles: [MemberRole!]
+    memberRoles: MemberRoleConnection @tag(name: "public")
     """
     Whether the viewer should be able to access the settings page within the app
     """
@@ -331,7 +341,7 @@ export default gql`
     """
     List of available permission groups that can be assigned to users.
     """
-    availableMemberPermissionGroups: [PermissionGroup!]!
+    availableMemberPermissionGroups: [PermissionGroup!]! @tag(name: "public")
     """
     List of available permission groups that can be assigned to organization access tokens.
     """
@@ -368,9 +378,14 @@ export default gql`
     total: Int!
   }
 
+  type OrganizationInvitationEdge {
+    node: OrganizationInvitation! @tag(name: "public")
+    cursor: String!
+  }
+
   type OrganizationInvitationConnection {
-    nodes: [OrganizationInvitation!]!
-    total: Int!
+    edges: [OrganizationInvitationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
   }
 
   type OrganizationInvitation {
@@ -422,9 +437,9 @@ export default gql`
   }
 
   type MemberRole {
-    id: ID!
-    name: String!
-    description: String!
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
     """
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
@@ -448,7 +463,7 @@ export default gql`
     """
     List of permissions attached to this member role.
     """
-    permissions: [String!]!
+    permissions: [String!]! @tag(name: "public")
   }
 
   input CreateMemberRoleInput {
@@ -563,11 +578,11 @@ export default gql`
 
   type Member {
     id: ID!
-    user: User!
-    isOwner: Boolean!
+    user: User! @tag(name: "public")
+    isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
-    role: MemberRole!
-    resourceAssignment: ResourceAssignment!
+    role: MemberRole! @tag(name: "public")
+    resourceAssignment: ResourceAssignment! @tag(name: "public")
     """
     Whether the viewer can remove this member from the organization.
     """

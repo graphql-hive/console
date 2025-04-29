@@ -329,8 +329,12 @@ const OrganizationMemberRoleCreator_CreateMemberRoleMutation = graphql(`
         updatedOrganization {
           id
           memberRoles {
-            id
-            ...OrganizationMemberRoleRow_MemberRoleFragment
+            edges {
+              node {
+                id
+                ...OrganizationMemberRoleRow_MemberRoleFragment
+              }
+            }
           }
         }
       }
@@ -740,15 +744,21 @@ const OrganizationMemberRoles_DeleteMemberRole = graphql(`
         updatedOrganization {
           id
           memberRoles {
-            id
-            name
-            ...OrganizationMemberRoleRow_MemberRoleFragment
+            edges {
+              node {
+                id
+                name
+                ...OrganizationMemberRoleRow_MemberRoleFragment
+              }
+            }
           }
           invitations {
-            nodes {
-              id
-              role {
+            edges {
+              node {
                 id
+                role {
+                  id
+                }
               }
             }
           }
@@ -766,9 +776,13 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
     id
     slug
     memberRoles {
-      id
-      name
-      ...OrganizationMemberRoleRow_MemberRoleFragment
+      edges {
+        node {
+          id
+          name
+          ...OrganizationMemberRoleRow_MemberRoleFragment
+        }
+      }
     }
     me {
       id
@@ -798,7 +812,9 @@ export function OrganizationMemberRoles(props: {
     props.organization,
   );
 
-  type Role = Exclude<typeof organization.memberRoles, null | undefined>[number] | null;
+  type Role =
+    | Exclude<typeof organization.memberRoles, null | undefined>['edges'][number]['node']
+    | null;
 
   const [deleteRoleState, deleteRole] = useMutation(OrganizationMemberRoles_DeleteMemberRole);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
@@ -917,7 +933,7 @@ export function OrganizationMemberRoles(props: {
             </tr>
           </thead>
           <tbody className="divide-y-[1px] divide-gray-500/20">
-            {organization.memberRoles?.map(role => (
+            {organization.memberRoles?.edges.map(({ node: role }) => (
               <OrganizationMemberRoleRow
                 organizationSlug={organization.slug}
                 isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}

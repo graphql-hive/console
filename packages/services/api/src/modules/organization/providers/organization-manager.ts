@@ -1191,4 +1191,16 @@ export class OrganizationManager {
 
     return this.organizationMemberRoles.findViewerRoleByOrganizationId(selector.organizationId);
   }
+
+  async findOrganizationOwner(organization: Organization) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+
+    return this.organizationMembers.findOrganizationOwner(organization);
+  }
 }
