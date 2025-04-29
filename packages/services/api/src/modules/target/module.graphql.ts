@@ -228,6 +228,7 @@ export default gql`
     percentage: String
     period: String
     requestCount: String
+    targetIds: String
   }
 
   type UpdateTargetConditionalBreakingChangeConfigurationResultError {

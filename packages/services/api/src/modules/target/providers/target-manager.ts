@@ -316,7 +316,7 @@ export class TargetManager {
             period?: string;
             percentage?: string;
             requestCount?: string;
-            targets?: string;
+            targetIds?: string;
           };
         };
       }
@@ -363,7 +363,7 @@ export class TargetManager {
             period: validationResult.error.formErrors.fieldErrors.period?.[0],
             percentage: validationResult.error.formErrors.fieldErrors.percentage?.[0],
             requestCount: validationResult.error.formErrors.fieldErrors.requestCount?.[0],
-            targets: validationResult.error.formErrors.fieldErrors.targets?.[0],
+            targetIds: validationResult.error.formErrors.fieldErrors.targetIds?.[0],
           },
         },
       };
@@ -387,7 +387,7 @@ export class TargetManager {
       excludedClients: args.configuration.excludedClients?.length
         ? Array.from(args.configuration.excludedClients)
         : undefined,
-      targets: validationResult.data.targets ?? undefined,
+      targets: validationResult.data.targetIds ?? undefined,
       isEnabled: args.configuration.isEnabled ?? undefined,
     });
 
@@ -617,7 +617,7 @@ const TargetGraphQLEndpointUrlModel = zod
 const BreakingChangeConfigurationModel = z.object({
   percentage: PercentageModel.nullable().optional(),
   requestCount: z.number().min(1, 'Request count must be at least 1.').nullable().optional(),
-  targets: z
+  targetIds: z
     .array(z.string().uuid('Incorrect UUID provided.'))
     .min(1, 'At least one target must be provided.')
     .nullable()
