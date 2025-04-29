@@ -501,7 +501,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id)
+            (organization_id, user_id, role_id, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -513,7 +513,8 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
-              )
+              ),
+              now()
             )
           ON CONFLICT DO NOTHING
           RETURNING *
@@ -730,9 +731,9 @@ export async function createStorage(
         await t.query<organization_member>(
           sql`/* assignAdminRole */
             INSERT INTO organization_member
-              ("organization_id", "user_id", "role_id")
+              ("organization_id", "user_id", "role_id", "created_at")
             VALUES
-              (${org.id}, ${input.userId}, ${adminRole.id})
+              (${org.id}, ${input.userId}, ${adminRole.id}, now())
           `,
         );
 
@@ -1123,9 +1124,9 @@ export async function createStorage(
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
             INSERT INTO organization_member
-              (organization_id, user_id, role_id)
+              (organization_id, user_id, role_id, created_at)
             VALUES
-              (${organization}, ${user}, ${roleId})
+              (${organization}, ${user}, ${roleId}, now())
           `,
         );
       });

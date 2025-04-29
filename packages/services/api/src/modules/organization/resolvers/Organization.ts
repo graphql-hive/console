@@ -60,8 +60,13 @@ export const Organization: Pick<
 
     return member;
   },
-  members: (organization, _, { injector }) => {
-    return injector.get(OrganizationMembers).findOrganizationMembersForOrganization(organization);
+  members: (organization, args, { injector }) => {
+    return injector
+      .get(OrganizationManager)
+      .getPaginatedOrganizationMembersForOrganization(organization, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
   },
   invitations: async (organization, _, { injector }) => {
     const invitations = await injector.get(OrganizationManager).getInvitations({

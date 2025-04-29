@@ -274,11 +274,6 @@ export default gql`
     organization: Organization!
   }
 
-  input MemberReferenceInput @oneOf {
-    byId: ID
-    byEmail: String
-  }
-
   type Organization {
     """
     Unique UUID of the organization
@@ -292,11 +287,8 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member!
     me: Member!
-    member(reference: MemberReferenceInput!): Member
-    members(
-      first: Int! @tag(name: "public")
-      after: String @tag(name: "public")
-    ): MemberConnection! @tag(name: "public")
+    members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
+      @tag(name: "public")
     invitations: OrganizationInvitationConnection
     getStarted: OrganizationGetStarted!
     memberRoles: [MemberRole!]

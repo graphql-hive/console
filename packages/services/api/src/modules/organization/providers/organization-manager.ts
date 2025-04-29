@@ -1127,6 +1127,24 @@ export class OrganizationManager {
     };
   }
 
+  async getPaginatedOrganizationMembersForOrganization(
+    organization: Organization,
+    args: { first: number | null; after: string | null },
+  ) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+
+    return this.organizationMembers.getPaginatedOrganizationMembersForOrganization(
+      organization,
+      args,
+    );
+  }
+
   async getMemberRoles(selector: { organizationId: string }) {
     await this.session.assertPerformAction({
       action: 'member:describe',
