@@ -3,9 +3,7 @@ import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
-  decodeHashBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
-  encodeHashBasedCursor,
 } from '@hive/storage';
 import { type Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
