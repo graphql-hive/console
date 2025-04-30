@@ -197,11 +197,12 @@ export interface Organization {
 }
 
 export interface OrganizationInvitation {
-  organization_id: string;
+  id: string;
+  organizationId: string;
   code: string;
   email: string;
-  created_at: string;
-  expires_at: string;
+  createdAt: string;
+  expiresAt: string;
   roleId: string;
 }
 

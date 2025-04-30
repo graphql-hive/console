@@ -24,11 +24,11 @@ export default gql`
     joinOrganization(code: String!): JoinOrganizationPayload!
     leaveOrganization(input: OrganizationSelectorInput!): LeaveOrganizationResult!
     inviteToOrganizationByEmail(
-      input: InviteToOrganizationByEmailInput!
-    ): InviteToOrganizationByEmailResult!
+      input: InviteToOrganizationByEmailInput! @tag(name: "public")
+    ): InviteToOrganizationByEmailResult! @tag(name: "public")
     deleteOrganizationInvitation(
-      input: DeleteOrganizationInvitationInput!
-    ): DeleteOrganizationInvitationResult!
+      input: DeleteOrganizationInvitationInput! @tag(name: "public")
+    ): DeleteOrganizationInvitationResult! @tag(name: "public")
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
@@ -244,34 +244,38 @@ export default gql`
   }
 
   input InviteToOrganizationByEmailInput {
-    organizationSlug: String!
-    roleId: ID
+    organization: OrganizationReferenceInput!
+    memberRoleId: ID
     email: String!
   }
 
   input DeleteOrganizationInvitationInput {
-    organizationSlug: String!
+    organization: OrganizationReferenceInput!
     email: String!
   }
 
-  type InviteToOrganizationByEmailError implements Error {
-    message: String!
+  type InviteToOrganizationByEmailResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: InviteToOrganizationByEmailInputErrors!
+    inputErrors: InviteToOrganizationByEmailInputErrors! @tag(name: "public")
+  }
+
+  type InviteToOrganizationByEmailResultOk {
+    createdOrganizationInvitation: OrganizationInvitation! @tag(name: "public")
   }
 
   type InviteToOrganizationByEmailInputErrors {
-    email: String
+    email: String @tag(name: "public") @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type InviteToOrganizationByEmailResult {
-    ok: OrganizationInvitation
-    error: InviteToOrganizationByEmailError
+    ok: InviteToOrganizationByEmailResultOk @tag(name: "public")
+    error: InviteToOrganizationByEmailResultError @tag(name: "public")
   }
 
   type OrganizationTransfer {
@@ -393,12 +397,12 @@ export default gql`
   }
 
   type OrganizationInvitation {
-    id: ID!
-    createdAt: DateTime!
-    expiresAt: DateTime!
-    email: String!
+    id: ID! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    expiresAt: DateTime! @tag(name: "public")
+    email: String! @tag(name: "public")
     code: String!
-    role: MemberRole!
+    role: MemberRole! @tag(name: "public")
   }
 
   type OrganizationInvitationError {
@@ -432,12 +436,16 @@ export default gql`
   @oneOf
   """
   type DeleteOrganizationInvitationResult {
-    ok: OrganizationInvitation
-    error: DeleteOrganizationInvitationError
+    ok: DeleteOrganizationInvitationResultOk @tag(name: "public")
+    error: DeleteOrganizationInvitationResultError @tag(name: "public")
   }
 
-  type DeleteOrganizationInvitationError implements Error {
-    message: String!
+  type DeleteOrganizationInvitationResultOk {
+    deletedOrganizationInvitationId: ID! @tag(name: "public")
+  }
+
+  type DeleteOrganizationInvitationResultError {
+    message: String! @tag(name: "public")
   }
 
   type MemberRole {
@@ -560,7 +568,7 @@ export default gql`
   }
 
   input AssignMemberRoleInput {
-    organization: OrganizationReferenceInput!
+    organization: OrganizationReferenceInput! @tag(name: "public")
     userId: ID! @tag(name: "public")
     memberRoleId: ID! @tag(name: "public")
     resources: ResourceAssignmentInput! @tag(name: "public")

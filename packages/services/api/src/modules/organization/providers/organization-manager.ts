@@ -1,5 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
+import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -11,6 +12,7 @@ import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
+import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { Logger } from '../../shared/providers/logger';
 import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
@@ -46,6 +48,7 @@ export class OrganizationManager {
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
     private resourceAssignments: ResourceAssignments,
+    private inMemoryRateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -471,25 +474,71 @@ export class OrganizationManager {
     return result;
   }
 
-  async deleteInvitation(input: { email: string; organizationId: string }) {
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
+  async deleteInvitation(args: {
+    email: string;
+    organization: GraphQLSchema.OrganizationReferenceInput;
+  }) {
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
       },
     });
-    return this.storage.deleteOrganizationInvitationByEmail(input);
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+    return this.storage.deleteOrganizationInvitationByEmail({
+      organizationId,
+      email: args.email,
+    });
   }
 
-  async inviteByEmail(input: { email: string; organization: string; role?: string | null }) {
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId: input.organization,
-      params: {
-        organizationId: input.organization,
+  async inviteByEmail(input: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    email: string;
+    role?: string | null;
+  }) {
+    await this.inMemoryRateLimiter.check(
+      'inviteToOrganizationByEmail',
+      5_000, // 5 seconds
+      6, // 6 invites
+      `Exceeded rate limit for inviting to organization by email.`,
+    );
+
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: input.organization,
+      onError: () => {
+        this.session.raise('member:modify');
       },
     });
+
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+
+    const InputModel = z.object({
+      email: z.string().email().max(128, 'Email must be at most 128 characters long'),
+    });
+    const result = InputModel.safeParse(input);
+
+    if (!result.success) {
+      return {
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            email: result.error.formErrors.fieldErrors.email?.[0],
+          },
+        },
+      };
+    }
 
     const { email } = input;
     this.logger.info(
@@ -499,7 +548,7 @@ export class OrganizationManager {
       input.role,
     );
     const organization = await this.getOrganization({
-      organizationId: input.organization,
+      organizationId,
     });
 
     const existingMember = await this.organizationMembers.findOrganizationMembershipByEmail(
@@ -518,7 +567,7 @@ export class OrganizationManager {
 
     const role = input.role
       ? await this.organizationMemberRoles.findMemberRoleById(input.role)
-      : await this.organizationMemberRoles.findViewerRoleByOrganizationId(input.organization);
+      : await this.organizationMemberRoles.findViewerRoleByOrganizationId(organizationId);
 
     if (!role) {
       throw new HiveError(`Role not found`);
@@ -544,7 +593,7 @@ export class OrganizationManager {
       }),
       // schedule an email
       this.emails.api?.sendOrganizationInviteEmail.mutate({
-        organizationId: invitation.organization_id,
+        organizationId: invitation.organizationId,
         organizationName: organization.name,
         email,
         code: invitation.code,

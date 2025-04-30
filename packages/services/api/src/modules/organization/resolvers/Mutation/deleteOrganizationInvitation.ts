@@ -5,14 +5,15 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const deleteOrganizationInvitation: NonNullable<
   MutationResolvers['deleteOrganizationInvitation']
 > = async (_, { input }, { injector }) => {
-  const organizationId = await injector.get(IdTranslator).translateOrganizationId(input);
   const invitation = await injector
     .get(OrganizationManager)
-    .deleteInvitation({ organizationId: organizationId, email: input.email });
+    .deleteInvitation({ organization: input.organization, email: input.email });
 
   if (invitation) {
     return {
-      ok: invitation,
+      ok: {
+        deletedOrganizationInvitationId: invitation.id,
+      },
     };
   }
 

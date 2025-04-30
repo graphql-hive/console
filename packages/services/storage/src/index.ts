@@ -222,11 +222,16 @@ export async function createStorage(
     },
   ): OrganizationInvitation {
     return {
+      get id() {
+        return Buffer.from(
+          [invitation.organization_id, invitation.email, invitation.code].join(':'),
+        ).toString('hex');
+      },
       email: invitation.email,
-      organization_id: invitation.organization_id,
+      organizationId: invitation.organization_id,
       code: invitation.code,
-      created_at: invitation.created_at as any,
-      expires_at: invitation.expires_at as any,
+      createdAt: invitation.created_at as any,
+      expiresAt: invitation.expires_at as any,
       roleId: invitation.role.id,
     };
   }

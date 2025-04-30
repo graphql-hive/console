@@ -176,7 +176,7 @@ test.concurrent('organization member user can create a target', async ({ expect 
   }
 
   const joinMemberUsingCodeResult = await joinMemberUsingCode(
-    inviteMemberResult.ok.code,
+    inviteMemberResult.ok.createdOrganizationInvitation.code,
     orgMemberToken,
   ).then(r => r.expectNoGraphQLErrors());
 

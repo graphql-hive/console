@@ -42,9 +42,11 @@ const MemberInvitationForm_InviteByEmail = graphql(`
   mutation MemberInvitationForm_InviteByEmail($input: InviteToOrganizationByEmailInput!) {
     inviteToOrganizationByEmail(input: $input) {
       ok {
-        ...Members_Invitation
-        email
-        id
+        createdOrganizationInvitation {
+          ...Members_Invitation
+          email
+          id
+        }
       }
       error {
         message
@@ -126,9 +128,13 @@ function MemberInvitationForm(props: {
     try {
       const result = await invite({
         input: {
-          organizationSlug: organization.slug,
+          organization: {
+            bySelector: {
+              organizationSlug: organization.slug,
+            },
+          },
           email: data.email,
-          roleId: data.role,
+          memberRoleId: data.role,
         },
       });
 
@@ -141,10 +147,10 @@ function MemberInvitationForm(props: {
         return;
       }
 
-      if (result.data?.inviteToOrganizationByEmail?.ok?.email) {
+      if (result.data?.inviteToOrganizationByEmail?.ok?.createdOrganizationInvitation.email) {
         toast({
           title: 'Invitation sent',
-          description: `${result.data.inviteToOrganizationByEmail.ok.email} should receive an invitation email shortly.`,
+          description: `${result.data.inviteToOrganizationByEmail.ok.createdOrganizationInvitation.email} should receive an invitation email shortly.`,
         });
         form.reset({ email: '', role: '' });
         props.close();
@@ -280,7 +286,7 @@ const InvitationDeleteButton_DeleteInvitation = graphql(`
   mutation InvitationDeleteButton_DeleteInvitation($input: DeleteOrganizationInvitationInput!) {
     deleteOrganizationInvitation(input: $input) {
       ok {
-        ...Members_Invitation
+        deletedOrganizationInvitationId
       }
       error {
         message
@@ -342,7 +348,11 @@ function Invitation(props: {
                   try {
                     const result = await deleteInvitation({
                       input: {
-                        organizationSlug: props.organizationSlug,
+                        organization: {
+                          bySelector: {
+                            organizationSlug: props.organizationSlug,
+                          },
+                        },
                         email: invitation.email,
                       },
                     });

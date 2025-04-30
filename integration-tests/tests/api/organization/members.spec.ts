@@ -104,7 +104,7 @@ test.concurrent('email invitation', async ({ expect }) => {
 
   const inviteEmail = seed.generateEmail();
   const invitationResult = await inviteMember(inviteEmail);
-  const inviteCode = invitationResult.ok?.code;
+  const inviteCode = invitationResult.ok?.createdOrganizationInvitation.code;
   expect(inviteCode).toBeDefined();
 
   const sentEmails = await history();
@@ -120,7 +120,7 @@ test.concurrent(
 
     // Invite
     const invitationResult = await inviteMember();
-    const inviteCode = invitationResult.ok!.code;
+    const inviteCode = invitationResult.ok!.createdOrganizationInvitation.code;
     expect(inviteCode).toBeDefined();
 
     // Join

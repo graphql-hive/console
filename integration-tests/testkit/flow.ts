@@ -117,11 +117,13 @@ export function inviteToOrganization(input: InviteToOrganizationByEmailInput, au
       mutation inviteToOrganization($input: InviteToOrganizationByEmailInput!) {
         inviteToOrganizationByEmail(input: $input) {
           ok {
-            id
-            createdAt
-            expiresAt
-            email
-            code
+            createdOrganizationInvitation {
+              id
+              createdAt
+              expiresAt
+              email
+              code
+            }
           }
           error {
             message

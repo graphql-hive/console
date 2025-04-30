@@ -181,13 +181,17 @@ export function initSeed() {
             async inviteMember(
               email = 'some@email.com',
               inviteToken = ownerToken,
-              roleId?: string,
+              memberRoleId?: string,
             ) {
               const inviteResult = await inviteToOrganization(
                 {
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   email,
-                  organizationSlug: organization.slug,
-                  roleId,
+                  memberRoleId,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
@@ -814,13 +818,18 @@ export function initSeed() {
 
               const invitationResult = await inviteToOrganization(
                 {
-                  organizationSlug: organization.slug,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   email: memberEmail,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const code = invitationResult.inviteToOrganizationByEmail.ok?.code;
+              const code =
+                invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation.code;
 
               if (!code) {
                 throw new Error(
