@@ -244,14 +244,14 @@ export default gql`
   }
 
   input InviteToOrganizationByEmailInput {
-    organization: OrganizationReferenceInput!
-    memberRoleId: ID
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
+    memberRoleId: ID @tag(name: "public")
   }
 
   input DeleteOrganizationInvitationInput {
-    organization: OrganizationReferenceInput!
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
   }
 
   type InviteToOrganizationByEmailResultError {
