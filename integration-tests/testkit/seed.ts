@@ -856,9 +856,13 @@ export function initSeed() {
                 ) {
                   const memberRoleAssignmentResult = await assignMemberRole(
                     {
-                      organizationSlug: organization.slug,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
                       userId: input.userId,
-                      roleId: input.roleId,
+                      memberRoleId: input.roleId,
                       resources: input.resources ?? {
                         mode: GraphQLSchema.ResourceAssignmentModeType.All,
                         projects: [],

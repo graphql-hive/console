@@ -205,8 +205,12 @@ export function MemberRolePicker(props: {
             try {
               const result = await assignRole({
                 input: {
-                  organizationSlug: organization.slug,
-                  roleId: selectedRoleId,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
+                  memberRoleId: selectedRoleId,
                   userId: member.user.id,
                   resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
                 },

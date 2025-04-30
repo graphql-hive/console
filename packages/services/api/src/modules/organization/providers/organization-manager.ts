@@ -945,13 +945,18 @@ export class OrganizationManager {
     };
   }
 
-  async assignMemberRole(input: {
-    organizationSlug: string;
+  async assignMemberRole(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
     userId: string;
-    roleId: string;
+    memberRoleId: string;
     resources: GraphQLSchema.ResourceAssignmentInput;
   }) {
-    const organizationId = await this.idTranslator.translateOrganizationId(input);
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
+      },
+    });
 
     await this.session.assertPerformAction({
       action: 'member:modify',
@@ -968,14 +973,14 @@ export class OrganizationManager {
     // Ensure selected member is part of the organization
     const previousMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
-      userId: input.userId,
+      userId: args.userId,
     });
 
     if (!previousMembership) {
       throw new Error(`Member is not part of the organization`);
     }
 
-    const newRole = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
+    const newRole = await this.organizationMemberRoles.findMemberRoleById(args.memberRoleId);
 
     if (!newRole) {
       return {
@@ -988,14 +993,14 @@ export class OrganizationManager {
     const resourceAssignmentGroup =
       await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
         organization.id,
-        input.resources,
+        args.resources,
       );
 
     // Assign the role to the member
     await this.organizationMembers.assignOrganizationMemberRole({
       organizationId,
-      userId: input.userId,
-      roleId: input.roleId,
+      userId: args.userId,
+      roleId: args.memberRoleId,
       resourceAssignmentGroup,
     });
 
@@ -1005,7 +1010,7 @@ export class OrganizationManager {
     const previousMemberRole = previousMembership.assignedRole.role ?? null;
     const updatedMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
-      userId: input.userId,
+      userId: args.userId,
     });
 
     if (!updatedMembership) {
@@ -1031,7 +1036,7 @@ export class OrganizationManager {
           previousMemberRole: previousMemberRole ? previousMemberRole.name : null,
           roleId: newRole.id,
           updatedMember: user.email,
-          userIdAssigned: input.userId,
+          userIdAssigned: args.userId,
         },
       });
     }

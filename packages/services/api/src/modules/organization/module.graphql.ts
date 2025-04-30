@@ -36,10 +36,14 @@ export default gql`
     answerOrganizationTransferRequest(
       input: AnswerOrganizationTransferRequestInput!
     ): AnswerOrganizationTransferRequestResult!
-    createMemberRole(input: CreateMemberRoleInput!): CreateMemberRoleResult!
-    updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
-    deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
-    assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
+    createMemberRole(input: CreateMemberRoleInput! @tag(name: "public")): CreateMemberRoleResult!
+      @tag(name: "public")
+    updateMemberRole(input: UpdateMemberRoleInput! @tag(name: "public")): UpdateMemberRoleResult!
+      @tag(name: "public")
+    deleteMemberRole(input: DeleteMemberRoleInput! @tag(name: "public")): DeleteMemberRoleResult!
+      @tag(name: "public")
+    assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
+      @tag(name: "public")
     createOrganizationAccessToken(
       input: CreateOrganizationAccessTokenInput! @tag(name: "public")
     ): CreateOrganizationAccessTokenResult! @tag(name: "public")
@@ -475,7 +479,7 @@ export default gql`
 
   type CreateMemberRoleResultOk {
     updatedOrganization: Organization! @tag(name: "public")
-    createdMemberRole: MemberRole!
+    createdMemberRole: MemberRole! @tag(name: "public")
   }
 
   type CreateMemberRoleInputErrors {
@@ -556,27 +560,27 @@ export default gql`
   }
 
   input AssignMemberRoleInput {
-    organizationSlug: String!
-    userId: ID!
-    roleId: ID!
-    resources: ResourceAssignmentInput!
+    organization: OrganizationReferenceInput!
+    userId: ID! @tag(name: "public")
+    memberRoleId: ID! @tag(name: "public")
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
-  type AssignMemberRoleOk {
-    updatedMember: Member!
-    previousMemberRole: MemberRole
+  type AssignMemberRoleResultOk {
+    updatedMember: Member! @tag(name: "public")
+    previousMemberRole: MemberRole @tag(name: "public")
   }
 
-  type AssignMemberRoleError implements Error {
-    message: String!
+  type AssignMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type AssignMemberRoleResult {
-    ok: AssignMemberRoleOk
-    error: AssignMemberRoleError
+    ok: AssignMemberRoleResultOk @tag(name: "public")
+    error: AssignMemberRoleResultError @tag(name: "public")
   }
 
   type Member {
