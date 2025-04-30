@@ -37,7 +37,7 @@ import { Avatar } from '@/components/v2';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AuthProvider } from '@/gql/graphql';
+import { AuthProviderType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useNotifications } from '@/lib/hooks/use-notifications';
@@ -137,9 +137,9 @@ export function UserMenu(props: {
                   </div>
                 </div>
                 <div>
-                  {me?.provider === AuthProvider.Google ? (
+                  {me?.provider === AuthProviderType.Google ? (
                     <FaGoogle title="Signed in using Google" />
-                  ) : me?.provider === AuthProvider.Github ? (
+                  ) : me?.provider === AuthProviderType.Github ? (
                     <FaGithub title="Signed in using Github" />
                   ) : (
                     <FaKey title="Signed in using username and password" />

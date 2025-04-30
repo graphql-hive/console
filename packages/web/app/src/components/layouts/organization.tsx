@@ -25,7 +25,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
 import { graphql, useFragment } from '@/gql';
-import { AuthProvider, ProjectType } from '@/gql/graphql';
+import { AuthProviderType, ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
@@ -118,7 +118,7 @@ export function OrganizationLayout({
           <div className="flex flex-row items-center gap-4">
             <HiveLink className="size-8" />
             <OrganizationSelector
-              isOIDCUser={query.data?.me.provider === AuthProvider.Oidc}
+              isOIDCUser={query.data?.me.provider === AuthProviderType.Oidc}
               currentOrganizationSlug={props.organizationSlug}
               organizations={query.data?.organizations ?? null}
             />

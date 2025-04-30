@@ -31,25 +31,25 @@ import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
 export const authProviderToIconAndTextMap: Record<
-  GraphQLSchema.AuthProvider,
+  GraphQLSchema.AuthProviderType,
   {
     icon: IconType;
     text: string;
   }
 > = {
-  [GraphQLSchema.AuthProvider.Google]: {
+  [GraphQLSchema.AuthProviderType.Google]: {
     icon: FaGoogle,
     text: 'Google OAuth 2.0',
   },
-  [GraphQLSchema.AuthProvider.Github]: {
+  [GraphQLSchema.AuthProviderType.Github]: {
     icon: FaGithub,
     text: 'GitHub OAuth 2.0',
   },
-  [GraphQLSchema.AuthProvider.Oidc]: {
+  [GraphQLSchema.AuthProviderType.Oidc]: {
     icon: FaOpenid,
     text: 'OpenID Connect',
   },
-  [GraphQLSchema.AuthProvider.UsernamePassword]: {
+  [GraphQLSchema.AuthProviderType.UsernamePassword]: {
     icon: FaUserLock,
     text: 'Email & Password',
   },

@@ -499,7 +499,7 @@ export default gql`
   }
 
   input UpdateMemberRoleInput {
-    organizationSlug: String!
+    organization: OrganizationReferenceInput!
     roleId: ID!
     name: String!
     description: String!
