@@ -279,7 +279,7 @@ export interface Storage {
       }
   >;
 
-  updateTargetSlug(_: TargetSelector & { slug: string; userId: string }): Promise<
+  updateTargetSlug(_: TargetSelector & { slug: string }): Promise<
     | {
         ok: true;
         target: Target;

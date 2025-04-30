@@ -423,8 +423,6 @@ export class TargetManager {
       },
     });
 
-    const user = await this.session.getViewer();
-
     if (reservedSlugs.includes(args.slug)) {
       return {
         ok: false,
@@ -445,7 +443,6 @@ export class TargetManager {
       organizationId: selector.organizationId,
       projectId: selector.projectId,
       targetId: selector.targetId,
-      userId: user.id,
     });
 
     if (!result.ok) {
