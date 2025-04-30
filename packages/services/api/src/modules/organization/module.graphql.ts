@@ -443,7 +443,7 @@ export default gql`
     """
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
-    locked: Boolean!
+    isLocked: Boolean! @tag(name: "public")
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -467,89 +467,92 @@ export default gql`
   }
 
   input CreateMemberRoleInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type CreateMemberRoleOk {
-    updatedOrganization: Organization!
+  type CreateMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    createdMemberRole: MemberRole!
   }
 
   type CreateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type CreateMemberRoleError implements Error {
-    message: String!
+  type CreateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: CreateMemberRoleInputErrors
+    inputErrors: CreateMemberRoleInputErrors @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type CreateMemberRoleResult {
-    ok: CreateMemberRoleOk
-    error: CreateMemberRoleError
+    ok: CreateMemberRoleResultOk @tag(name: "public")
+    error: CreateMemberRoleResultError @tag(name: "public")
   }
 
   input UpdateMemberRoleInput {
-    organization: OrganizationReferenceInput!
-    roleId: ID!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    """
+    Id of the role that should be udpated.
+    """
+    memberRoleId: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type UpdateMemberRoleOk {
-    updatedRole: MemberRole!
+  type UpdateMemberRoleResultOk {
+    updatedRole: MemberRole! @tag(name: "public")
   }
 
   type UpdateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type UpdateMemberRoleError implements Error {
-    message: String!
+  type UpdateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: UpdateMemberRoleInputErrors
+    inputErrors: UpdateMemberRoleInputErrors @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type UpdateMemberRoleResult {
-    ok: UpdateMemberRoleOk
-    error: UpdateMemberRoleError
+    ok: UpdateMemberRoleResultOk @tag(name: "public")
+    error: UpdateMemberRoleResultError @tag(name: "public")
   }
 
   input DeleteMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
+    memberRoleId: ID! @tag(name: "public")
   }
 
-  type DeleteMemberRoleOk {
-    updatedOrganization: Organization!
+  type DeleteMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    deletedMemberRoleId: ID! @tag(name: "public")
   }
 
-  type DeleteMemberRoleError implements Error {
-    message: String!
+  type DeleteMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type DeleteMemberRoleResult {
-    ok: DeleteMemberRoleOk
-    error: DeleteMemberRoleError
+    ok: DeleteMemberRoleResultOk @tag(name: "public")
+    error: DeleteMemberRoleResultError @tag(name: "public")
   }
 
   input AssignMemberRoleInput {

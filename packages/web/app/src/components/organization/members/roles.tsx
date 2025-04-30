@@ -144,8 +144,7 @@ function OrganizationMemberRoleEditor(props: {
     try {
       const result = await updateMemberRole({
         input: {
-          organizationSlug: organization.slug,
-          roleId: role.id,
+          memberRoleId: role.id,
           name: data.name,
           description: data.description,
           selectedPermissions: data.selectedPermissions,
@@ -399,7 +398,11 @@ function OrganizationMemberRoleCreator(props: {
     try {
       const result = await createMemberRole({
         input: {
-          organizationSlug: organization.slug,
+          organization: {
+            bySelector: {
+              organizationSlug: organization.slug,
+            },
+          },
           name: data.name,
           description: data.description,
           selectedPermissions: data.selectedPermissions,
@@ -595,7 +598,7 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
     id
     name
     description
-    locked
+    isLocked
     canDelete
     canUpdate
     membersCount
@@ -618,7 +621,7 @@ function OrganizationMemberRoleRow(props: {
       <td className="py-3 text-sm font-medium">
         <div className="flex flex-row items-center">
           <div>{role.name}</div>
-          {role.locked ? (
+          {role.isLocked ? (
             <div className="ml-2">
               <TooltipProvider>
                 <Tooltip delayDuration={100}>
@@ -882,8 +885,7 @@ export function OrganizationMemberRoles(props: {
                   try {
                     const result = await deleteRole({
                       input: {
-                        organizationSlug: organization.slug,
-                        roleId: roleToDelete.id,
+                        memberRoleId: roleToDelete.id,
                       },
                     });
 

@@ -66,7 +66,7 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
           id
           name
           description
-          locked
+          isLocked
           canInvite
         }
       }

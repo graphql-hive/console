@@ -874,15 +874,14 @@ export function initSeed() {
                   return memberRoleAssignmentResult.assignMemberRole.ok?.updatedMember;
                 },
                 async deleteMemberRole(
-                  roleId: string,
+                  memberRoleId: string,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
                 ) {
                   const memberRoleDeletionResult = await deleteMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId,
+                      memberRoleId,
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -907,7 +906,11 @@ export function initSeed() {
                   });
                   const memberRoleCreationResult = await createMemberRole(
                     {
-                      organizationSlug: organization.slug,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
                       name,
                       description: 'some description',
                       selectedPermissions: permissions,
@@ -931,9 +934,9 @@ export function initSeed() {
                   }
 
                   const createdRole =
-                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles?.find(
-                      r => r.name === name,
-                    );
+                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles?.edges.find(
+                      e => e.node.name === name,
+                    )?.node;
 
                   if (!createdRole) {
                     throw new Error(
@@ -956,8 +959,7 @@ export function initSeed() {
                 ) {
                   const memberRoleUpdateResult = await updateMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId: role.id,
+                      memberRoleId: role.id,
                       name: role.name,
                       description: role.description,
                       selectedPermissions: permissions,

@@ -60,7 +60,7 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                     node {
                       id
                       name
-                      locked
+                      isLocked
                     }
                   }
                 }
@@ -664,7 +664,7 @@ export function createMemberRole(input: CreateMemberRoleInput, authToken: string
                     id
                     name
                     description
-                    locked
+                    isLocked
                     permissions
                   }
                 }
@@ -726,7 +726,7 @@ export function deleteMemberRole(input: DeleteMemberRoleInput, authToken: string
                     id
                     name
                     description
-                    locked
+                    isLocked
                     permissions
                   }
                 }
@@ -756,7 +756,7 @@ export function updateMemberRole(input: UpdateMemberRoleInput, authToken: string
               id
               name
               description
-              locked
+              isLocked
               permissions
             }
           }

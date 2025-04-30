@@ -7,7 +7,7 @@ import type { schema_policy_resource } from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
-  AuthProvider,
+  AuthProviderType,
   OrganizationAccessScope,
   ProjectAccessScope,
   TargetAccessScope,
@@ -339,7 +339,7 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProvider;
+  provider: AuthProviderType;
   superTokensUserId: string | null;
   isAdmin: boolean;
   oidcIntegrationId: string | null;

@@ -15,7 +15,7 @@ const MemberRoleSelector_OrganizationFragment = graphql(`
           id
           name
           description
-          locked
+          isLocked
         }
       }
     }

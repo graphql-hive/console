@@ -168,7 +168,7 @@ test.concurrent('organization member user can create a target', async ({ expect 
   const inviteMemberResult = await inviteMember(
     orgMemberEmail,
     undefined,
-    organization.memberRoles?.find(role => role.name === 'Admin')?.id,
+    organization.memberRoles?.edges?.find(edge => edge.node.name === 'Admin')?.node.id,
   );
 
   if (inviteMemberResult.ok == null) {
