@@ -7,6 +7,6 @@ export const deleteMemberRole: NonNullable<MutationResolvers['deleteMemberRole']
   { injector },
 ) => {
   return injector.get(OrganizationManager).deleteMemberRole({
-    memberRoleId: input.memberRoleId,
+    memberRoleId: input.memberRole.byId,
   });
 };

@@ -8,8 +8,8 @@ export const assignMemberRole: NonNullable<MutationResolvers['assignMemberRole']
 ) => {
   return injector.get(OrganizationManager).assignMemberRole({
     organization: input.organization,
-    userId: input.userId,
-    memberRoleId: input.memberRoleId,
+    userId: input.member.byId,
+    memberRoleId: input.memberRole.byId,
     resources: input.resources,
   });
 };

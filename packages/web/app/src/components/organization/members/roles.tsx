@@ -144,7 +144,9 @@ function OrganizationMemberRoleEditor(props: {
     try {
       const result = await updateMemberRole({
         input: {
-          memberRoleId: role.id,
+          memberRole: {
+            byId: role.id,
+          },
           name: data.name,
           description: data.description,
           selectedPermissions: data.selectedPermissions,
@@ -885,7 +887,9 @@ export function OrganizationMemberRoles(props: {
                   try {
                     const result = await deleteRole({
                       input: {
-                        memberRoleId: roleToDelete.id,
+                        memberRole: {
+                          byId: roleToDelete.id,
+                        },
                       },
                     });
 

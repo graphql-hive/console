@@ -870,8 +870,12 @@ export function initSeed() {
                           organizationSlug: organization.slug,
                         },
                       },
-                      userId: input.userId,
-                      memberRoleId: input.roleId,
+                      member: {
+                        byId: input.userId,
+                      },
+                      memberRole: {
+                        byId: input.roleId,
+                      },
                       resources: input.resources ?? {
                         mode: GraphQLSchema.ResourceAssignmentModeType.All,
                         projects: [],
@@ -894,7 +898,9 @@ export function initSeed() {
                 ) {
                   const memberRoleDeletionResult = await deleteMemberRole(
                     {
-                      memberRoleId,
+                      memberRole: {
+                        byId: memberRoleId,
+                      },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -972,7 +978,9 @@ export function initSeed() {
                 ) {
                   const memberRoleUpdateResult = await updateMemberRole(
                     {
-                      memberRoleId: role.id,
+                      memberRole: {
+                        byId: role.id,
+                      },
                       name: role.name,
                       description: role.description,
                       selectedPermissions: permissions,

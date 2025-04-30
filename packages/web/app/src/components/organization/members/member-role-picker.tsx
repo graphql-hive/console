@@ -210,8 +210,12 @@ export function MemberRolePicker(props: {
                       organizationSlug: organization.slug,
                     },
                   },
-                  memberRoleId: selectedRoleId,
-                  userId: member.user.id,
+                  memberRole: {
+                    byId: selectedRoleId,
+                  },
+                  member: {
+                    byId: member.user.id,
+                  },
                   resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
                 },
               });

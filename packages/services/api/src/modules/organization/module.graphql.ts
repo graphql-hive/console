@@ -513,9 +513,9 @@ export default gql`
 
   input UpdateMemberRoleInput {
     """
-    Id of the role that should be udpated.
+    The member role that should be udpated.
     """
-    memberRoleId: ID! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
     name: String! @tag(name: "public")
     description: String! @tag(name: "public")
     selectedPermissions: [String!]! @tag(name: "public")
@@ -538,6 +538,14 @@ export default gql`
     inputErrors: UpdateMemberRoleInputErrors @tag(name: "public")
   }
 
+  input MemberRoleReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
+  input MemberReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
   """
   @oneOf
   """
@@ -547,7 +555,7 @@ export default gql`
   }
 
   input DeleteMemberRoleInput {
-    memberRoleId: ID! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
   }
 
   type DeleteMemberRoleResultOk {
@@ -569,8 +577,8 @@ export default gql`
 
   input AssignMemberRoleInput {
     organization: OrganizationReferenceInput! @tag(name: "public")
-    userId: ID! @tag(name: "public")
-    memberRoleId: ID! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    member: MemberReferenceInput! @tag(name: "public")
     resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
