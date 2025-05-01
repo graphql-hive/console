@@ -5,7 +5,7 @@ import { subHours } from 'date-fns/subHours';
 import { buildASTSchema, buildSchema, parse, print, TypeInfo } from 'graphql';
 import { createLogger } from 'graphql-yoga';
 import { graphql } from 'testkit/gql';
-import { BreakingChangeFormula, ProjectType } from 'testkit/gql/graphql';
+import { BreakingChangeFormulaType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
 import { UTCDate } from '@date-fns/utc';
@@ -69,9 +69,9 @@ test.concurrent(
     expect((schemaPublishResult.schemaPublish as any).valid).toEqual(true);
 
     const targetValidationResult = await toggleTargetValidation(true);
-    expect(targetValidationResult.setTargetValidation.validationSettings.enabled).toEqual(true);
-    expect(targetValidationResult.setTargetValidation.validationSettings.percentage).toEqual(0);
-    expect(targetValidationResult.setTargetValidation.validationSettings.period).toEqual(30);
+    expect(targetValidationResult.isEnabled).toEqual(true);
+    expect(targetValidationResult.percentage).toEqual(0);
+    expect(targetValidationResult.period).toEqual(30);
 
     // should not be breaking because the field is unused
     const unusedCheckResult = await readToken
@@ -308,8 +308,12 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   const productionTargetResult = await createTarget(
     {
       slug: 'target2',
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
+      project: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+        },
+      },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
@@ -334,9 +338,9 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   expect((schemaPublishResult.schemaPublish as any).valid).toEqual(true);
 
   const targetValidationResult = await toggleTargetValidation(true);
-  expect(targetValidationResult.setTargetValidation.validationSettings.enabled).toEqual(true);
-  expect(targetValidationResult.setTargetValidation.validationSettings.percentage).toEqual(0);
-  expect(targetValidationResult.setTargetValidation.validationSettings.period).toEqual(30);
+  expect(targetValidationResult.isEnabled).toEqual(true);
+  expect(targetValidationResult.percentage).toEqual(0);
+  expect(targetValidationResult.period).toEqual(30);
 
   const collectResult = await productionToken.collectLegacyOperations([
     {
@@ -388,27 +392,38 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   // Now switch to using checking both staging and production
   const updateValidationResult = await updateTargetValidationSettings(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: staging.slug,
-      percentage: 50, // Out of 3 requests, 1 is for Query.me, 2 are done for Query.me so it's 1/3 = 33.3%
-      period: 2,
-      targetIds: [productionTarget.id, staging.id],
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: staging.slug,
+        },
+      },
+      conditionalBreakingChangeConfiguration: {
+        percentage: 50, // Out of 3 requests, 1 is for Query.me, 2 are done for Query.me so it's 1/3 = 33.3%
+        period: 2,
+        targetIds: [productionTarget.id, staging.id],
+      },
     },
     {
       authToken: ownerToken,
     },
   ).then(r => r.expectNoGraphQLErrors());
 
-  expect(updateValidationResult.updateTargetValidationSettings.error).toBeNull();
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings.percentage,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.error,
+  ).toBeNull();
+  expect(
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.percentage,
   ).toEqual(50);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings.period,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.period,
   ).toEqual(2);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings.targets,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.targets,
   ).toHaveLength(2);
 
   // should be non-breaking because the field is used in production and we are checking staging and production now
@@ -444,9 +459,9 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
   expect((schemaPublishResult.schemaPublish as any).valid).toEqual(true);
 
   const targetValidationResult = await toggleTargetValidation(true);
-  expect(targetValidationResult.setTargetValidation.validationSettings.enabled).toEqual(true);
-  expect(targetValidationResult.setTargetValidation.validationSettings.percentage).toEqual(0);
-  expect(targetValidationResult.setTargetValidation.validationSettings.period).toEqual(30);
+  expect(targetValidationResult.isEnabled).toEqual(true);
+  expect(targetValidationResult.percentage).toEqual(0);
+  expect(targetValidationResult.period).toEqual(30);
 
   const collectResult = await token.collectLegacyOperations([
     {
@@ -531,30 +546,39 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
   // Exclude app from the check (tests partial, incomplete exclusion)
   let updateValidationResult = await updateTargetValidationSettings(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
-      percentage: 0,
-      period: 2,
-      targetIds: [target.id],
-      excludedClients: ['app'],
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      conditionalBreakingChangeConfiguration: {
+        percentage: 0,
+        period: 2,
+        targetIds: [target.id],
+        excludedClients: ['app'],
+      },
     },
     {
       authToken: ownerToken,
     },
   ).then(r => r.expectNoGraphQLErrors());
 
-  expect(updateValidationResult.updateTargetValidationSettings.error).toBeNull();
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings.enabled,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.error,
+  ).toBeNull();
+  expect(
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.isEnabled,
   ).toBe(true);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings
-      .excludedClients,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.excludedClients,
   ).toHaveLength(1);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings
-      .excludedClients,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.excludedClients,
   ).toContainEqual('app');
 
   // should be unsafe because though we excluded 'app', 'cli' still uses this
@@ -567,25 +591,31 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
   // Exclude BOTH 'app' and 'cli' (tests multi client covering exclusion)
   updateValidationResult = await updateTargetValidationSettings(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
-      percentage: 0,
-      period: 2,
-      targetIds: [target.id],
-      excludedClients: ['app', 'cli'],
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      conditionalBreakingChangeConfiguration: {
+        percentage: 0,
+        period: 2,
+        targetIds: [target.id],
+        excludedClients: ['app', 'cli'],
+      },
     },
     {
       authToken: ownerToken,
     },
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings
-      .excludedClients,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.excludedClients,
   ).toContainEqual('app');
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok!.target.validationSettings
-      .excludedClients,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+      .conditionalBreakingChangeConfiguration.excludedClients,
   ).toContainEqual('cli');
 
   // should be safe because the field was not used by the non-excluded clients
@@ -645,9 +675,9 @@ describe('changes with usage data', () => {
       ).resolves.toBe(input.expectedSchemaCheckTypename.beforeReportedOperation);
 
       const targetValidationResult = await toggleTargetValidation(true);
-      expect(targetValidationResult.setTargetValidation.validationSettings.enabled).toEqual(true);
-      expect(targetValidationResult.setTargetValidation.validationSettings.percentage).toEqual(0);
-      expect(targetValidationResult.setTargetValidation.validationSettings.period).toEqual(30);
+      expect(targetValidationResult.isEnabled).toEqual(true);
+      expect(targetValidationResult.percentage).toEqual(0);
+      expect(targetValidationResult.period).toEqual(30);
 
       let fields: string[] = [];
 
@@ -2360,7 +2390,7 @@ test.concurrent(
       excludedClients: [],
       requestCount: 2,
       percentage: 0,
-      breakingChangeFormula: BreakingChangeFormula.RequestCount,
+      breakingChangeFormula: BreakingChangeFormulaType.RequestCount,
     });
 
     const sdl = /* GraphQL */ `
@@ -2522,7 +2552,7 @@ test.concurrent(
       excludedClients: [],
       requestCount: 2,
       percentage: 0,
-      breakingChangeFormula: BreakingChangeFormula.RequestCount,
+      breakingChangeFormula: BreakingChangeFormulaType.RequestCount,
     });
 
     const sdl = /* GraphQL */ `
@@ -3012,18 +3042,24 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
   );
 
   const targetValidationResult = await toggleTargetValidation(true);
-  expect(targetValidationResult.setTargetValidation.validationSettings.enabled).toEqual(true);
+  expect(targetValidationResult.isEnabled).toEqual(true);
 
   // should accept a breaking change when percentage is 2%
   let updateValidationResult = await updateTargetValidationSettings(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
-      percentage: 2,
-      period: 2,
-      targetIds: [target.id],
-      excludedClients: [],
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      conditionalBreakingChangeConfiguration: {
+        percentage: 2,
+        period: 2,
+        targetIds: [target.id],
+        excludedClients: [],
+      },
     },
     {
       token: ownerToken,
@@ -3031,10 +3067,12 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
   ).then(r => r.expectNoGraphQLErrors());
 
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok?.target.validationSettings.enabled,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok?.target
+      .conditionalBreakingChangeConfiguration.isEnabled,
   ).toBe(true);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok?.target.validationSettings.percentage,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok?.target
+      .conditionalBreakingChangeConfiguration.percentage,
   ).toBe(2);
 
   const unusedCheckResult2 = await token
@@ -3045,13 +3083,19 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
   // should reject a breaking change when percentage is 1.99%
   updateValidationResult = await updateTargetValidationSettings(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
-      percentage: 1.99,
-      period: 2,
-      targetIds: [target.id],
-      excludedClients: [],
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      conditionalBreakingChangeConfiguration: {
+        percentage: 1.99,
+        period: 2,
+        targetIds: [target.id],
+        excludedClients: [],
+      },
     },
     {
       token: ownerToken,
@@ -3059,10 +3103,12 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
   ).then(r => r.expectNoGraphQLErrors());
 
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok?.target.validationSettings.enabled,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok?.target
+      .conditionalBreakingChangeConfiguration.isEnabled,
   ).toBe(true);
   expect(
-    updateValidationResult.updateTargetValidationSettings.ok?.target.validationSettings.percentage,
+    updateValidationResult.updateTargetConditionalBreakingChangeConfiguration.ok?.target
+      .conditionalBreakingChangeConfiguration.percentage,
   ).toBe(1.99);
 
   const unusedCheckResult199 = await token

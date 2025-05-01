@@ -44,16 +44,13 @@ import {
   readOperationBody,
   readOperationsStats,
   readTokenInfo,
-  setTargetValidation,
   updateBaseSchema,
   updateMemberRole,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
-  BreakingChangeFormula,
-  OrganizationAccessScope,
-  ProjectAccessScope,
+  BreakingChangeFormulaType,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -111,10 +108,14 @@ export function initSeed() {
 
           return {
             organization,
-            async createOrganizationAccessToken(args: {
-              permissions: Array<string>;
-              resources: GraphQLSchema.ResourceAssignmentInput;
-            }) {
+            async createOrganizationAccessToken(
+              args: {
+                permissions: Array<string>;
+                resources: GraphQLSchema.ResourceAssignmentInput;
+              },
+              /** Override the used access token. */
+              accessToken?: string,
+            ) {
               const result = await createOrganizationAccessToken(
                 {
                   title: 'A Access Token',
@@ -125,14 +126,14 @@ export function initSeed() {
                   permissions: args.permissions,
                   resources: args.resources,
                 },
-                ownerToken,
+                accessToken ?? ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
               if (result.createOrganizationAccessToken.error) {
                 throw new Error(result.createOrganizationAccessToken.error.message);
               }
 
-              return result.createOrganizationAccessToken.ok!.privateAccessKey;
+              return result.createOrganizationAccessToken.ok!;
             },
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
@@ -639,20 +640,30 @@ export function initSeed() {
                     },
                   };
                 },
-                async toggleTargetValidation(enabled: boolean, ttarget: TargetOverwrite = target) {
-                  const result = await setTargetValidation(
+                async toggleTargetValidation(
+                  isEnabled: boolean,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const result = await updateTargetValidationSettings(
                     {
-                      enabled,
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result;
+                  return result.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+                    .conditionalBreakingChangeConfiguration;
                 },
                 async updateTargetValidationSettings({
                   excludedClients,
@@ -660,31 +671,33 @@ export function initSeed() {
                   target: ttarget = target,
                   requestCount,
                   breakingChangeFormula,
-                }: {
-                  excludedClients?: string[];
-                  percentage: number;
-                  requestCount?: number;
-                  breakingChangeFormula?: BreakingChangeFormula;
+                }: GraphQLSchema.ConditionalBreakingChangeConfigurationInput & {
                   target?: TargetOverwrite;
                 }) {
                   const result = await updateTargetValidationSettings(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      excludedClients,
-                      percentage,
-                      requestCount,
-                      breakingChangeFormula,
-                      period: 2,
-                      targetIds: [target.id],
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        excludedClients,
+                        percentage,
+                        requestCount,
+                        breakingChangeFormula,
+                        period: 2,
+                        targetIds: [target.id],
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result.updateTargetValidationSettings;
+                  return result.updateTargetConditionalBreakingChangeConfiguration;
                 },
                 async compareToPreviousVersion(version: string, ttarget: TargetOverwrite = target) {
                   return (
@@ -782,8 +795,12 @@ export function initSeed() {
                 async createTarget(args?: { slug?: string; accessToken?: string }) {
                   return createTarget(
                     {
-                      organizationSlug: orgSlug,
-                      projectSlug: project.slug,
+                      project: {
+                        bySelector: {
+                          organizationSlug: orgSlug,
+                          projectSlug: project.slug,
+                        },
+                      },
                       slug: args?.slug ?? generateUnique(),
                     },
                     args?.accessToken ?? ownerToken,

@@ -45,7 +45,7 @@ import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
-import { BreakingChangeFormula, ProjectType } from '@/gql/graphql';
+import { BreakingChangeFormulaType, ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
@@ -369,9 +369,9 @@ function ClientExclusion(
   );
 }
 
-const TargetSettings_TargetValidationSettingsFragment = graphql(`
-  fragment TargetSettings_TargetValidationSettingsFragment on TargetValidationSettings {
-    enabled
+const TargetSettings_ConditionalBreakingChangeConfigurationFragment = graphql(`
+  fragment TargetSettings_ConditionalBreakingChangeConfigurationFragment on ConditionalBreakingChangeConfiguration {
+    isEnabled
     period
     percentage
     requestCount
@@ -393,8 +393,8 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     target(reference: { bySelector: $selector }) {
       id
       failDiffOnDangerousChange
-      validationSettings {
-        ...TargetSettings_TargetValidationSettingsFragment
+      conditionalBreakingChangeConfiguration {
+        ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
       }
     }
     targets(selector: $targetsSelector) {
@@ -412,28 +412,17 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
   }
 `);
 
-const SetTargetValidationMutation = graphql(`
-  mutation Settings_SetTargetValidation($input: SetTargetValidationInput!) {
-    setTargetValidation(input: $input) {
-      id
-      validationSettings {
-        ...TargetSettings_TargetValidationSettingsFragment
-      }
-    }
-  }
-`);
-
-const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
-  mutation TargetSettingsPage_UpdateTargetValidationSettings(
-    $input: UpdateTargetValidationSettingsInput!
+const TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation(
+    $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
   ) {
-    updateTargetValidationSettings(input: $input) {
+    updateTargetConditionalBreakingChangeConfiguration(input: $input) {
       ok {
         target {
           id
           failDiffOnDangerousChange
-          validationSettings {
-            ...TargetSettings_TargetValidationSettingsFragment
+          conditionalBreakingChangeConfiguration {
+            ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
           }
         }
       }
@@ -477,9 +466,8 @@ const BreakingChanges = (props: {
   projectSlug: string;
   targetSlug: string;
 }) => {
-  const [targetValidation, setValidation] = useMutation(SetTargetValidationMutation);
   const [mutation, updateValidation] = useMutation(
-    TargetSettingsPage_UpdateTargetValidationSettingsMutation,
+    TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation,
   );
   const [dangerousAsBreaking, updateTargetDangerousChangeClassification] = useMutation(
     TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation,
@@ -502,14 +490,14 @@ const BreakingChanges = (props: {
     },
   });
 
-  const settings = useFragment(
-    TargetSettings_TargetValidationSettingsFragment,
-    targetSettings.data?.target?.validationSettings,
+  const configuration = useFragment(
+    TargetSettings_ConditionalBreakingChangeConfigurationFragment,
+    targetSettings.data?.target?.conditionalBreakingChangeConfiguration,
   );
 
   const considerDangerousAsBreaking =
     targetSettings?.data?.target?.failDiffOnDangerousChange || false;
-  const isEnabled = settings?.enabled || false;
+  const isEnabled = configuration?.isEnabled || false;
   const possibleTargets = targetSettings.data?.targets.nodes;
   const { toast } = useToast();
 
@@ -526,12 +514,13 @@ const BreakingChanges = (props: {
   } = useFormik({
     enableReinitialize: true,
     initialValues: {
-      percentage: settings?.percentage || 0,
-      requestCount: settings?.requestCount || 1,
-      period: settings?.period || 0,
-      breakingChangeFormula: settings?.breakingChangeFormula ?? BreakingChangeFormula.Percentage,
-      targetIds: settings?.targets.map(t => t.id) || [],
-      excludedClients: settings?.excludedClients ?? [],
+      percentage: configuration?.percentage || 0,
+      requestCount: configuration?.requestCount || 1,
+      period: configuration?.period || 0,
+      breakingChangeFormula:
+        configuration?.breakingChangeFormula ?? BreakingChangeFormulaType.Percentage,
+      targetIds: configuration?.targets.map(t => t.id) || [],
+      excludedClients: configuration?.excludedClients ?? [],
     },
     validationSchema: Yup.object().shape({
       percentage: Yup.number().when('breakingChangeFormula', {
@@ -557,9 +546,9 @@ const BreakingChanges = (props: {
           return Number(num.toFixed(2)) === num;
         })
         .required(),
-      breakingChangeFormula: Yup.string().oneOf<BreakingChangeFormula>([
-        BreakingChangeFormula.Percentage,
-        BreakingChangeFormula.RequestCount,
+      breakingChangeFormula: Yup.string().oneOf<BreakingChangeFormulaType>([
+        BreakingChangeFormulaType.Percentage,
+        BreakingChangeFormulaType.RequestCount,
       ]),
       targetIds: Yup.array().of(Yup.string()).min(1),
       excludedClients: Yup.array().of(Yup.string()),
@@ -567,32 +556,39 @@ const BreakingChanges = (props: {
     onSubmit: values =>
       updateValidation({
         input: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-          ...values,
-          /**
-           * In case the input gets messed up, fallback to default values in cases
-           * where it won't matter based on the selected formula.
-           */
-          requestCount:
-            values.breakingChangeFormula === BreakingChangeFormula.Percentage &&
-            (typeof values.requestCount !== 'number' || values.requestCount < 1)
-              ? 1
-              : values.requestCount,
-          percentage:
-            values.breakingChangeFormula === BreakingChangeFormula.RequestCount &&
-            (typeof values.percentage !== 'number' || values.percentage < 0)
-              ? 0
-              : values.percentage,
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+            },
+          },
+          conditionalBreakingChangeConfiguration: {
+            ...values,
+            /**
+             * In case the input gets messed up, fallback to default values in cases
+             * where it won't matter based on the selected formula.
+             */
+            requestCount:
+              values.breakingChangeFormula === BreakingChangeFormulaType.Percentage &&
+              (typeof values.requestCount !== 'number' || values.requestCount < 1)
+                ? 1
+                : values.requestCount,
+            percentage:
+              values.breakingChangeFormula === BreakingChangeFormulaType.RequestCount &&
+              (typeof values.percentage !== 'number' || values.percentage < 0)
+                ? 0
+                : values.percentage,
+          },
         },
       }).then(result => {
-        if (result.error || result.data?.updateTargetValidationSettings.error) {
+        if (result.error || result.data?.updateTargetConditionalBreakingChangeConfiguration.error) {
           toast({
             variant: 'destructive',
             title: 'Error',
             description:
-              result.error?.message || result.data?.updateTargetValidationSettings.error?.message,
+              result.error?.message ||
+              result.data?.updateTargetConditionalBreakingChangeConfiguration.error?.message,
           });
         } else {
           toast({
@@ -690,17 +686,23 @@ const BreakingChanges = (props: {
               <Switch
                 className="shrink-0"
                 checked={isEnabled}
-                onCheckedChange={async enabled => {
-                  await setValidation({
+                onCheckedChange={async isEnabled => {
+                  await updateValidation({
                     input: {
-                      targetSlug: props.targetSlug,
-                      projectSlug: props.projectSlug,
-                      organizationSlug: props.organizationSlug,
-                      enabled,
+                      target: {
+                        bySelector: {
+                          organizationSlug: props.organizationSlug,
+                          targetSlug: props.targetSlug,
+                          projectSlug: props.projectSlug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                      },
                     },
                   });
                 }}
-                disabled={targetValidation.fetching}
+                disabled={mutation.fetching}
               />
             )}
           </SubPageLayoutHeader>
@@ -789,30 +791,37 @@ const BreakingChanges = (props: {
               {touched.percentage && errors.percentage && (
                 <div className="text-red-500">{errors.percentage}</div>
               )}
-              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.percentage && (
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .percentage && (
                 <div className="text-red-500">
-                  {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.percentage
+                  }
                 </div>
               )}
               {touched.requestCount && errors.requestCount && (
                 <div className="text-red-500">{errors.requestCount}</div>
               )}
-              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.requestCount && (
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .requestCount && (
                 <div className="text-red-500">
-                  {mutation.data.updateTargetValidationSettings.error.inputErrors.requestCount}
-                </div>
-              )}
-              {targetValidation.error && (
-                <div className="text-red-500">
-                  Something went wrong: {targetValidation.error.message}
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.requestCount
+                  }
                 </div>
               )}
               {touched.period && errors.period && (
                 <div className="text-red-500">{errors.period}</div>
               )}
-              {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .period && (
                 <div className="text-red-500">
-                  {mutation.data.updateTargetValidationSettings.error.inputErrors.period}
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.period
+                  }
                 </div>
               )}
             </div>
@@ -831,7 +840,7 @@ const BreakingChanges = (props: {
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
                         selectedTargetIds={values.targetIds}
-                        clientsFromSettings={settings?.excludedClients ?? []}
+                        clientsFromSettings={configuration?.excludedClients ?? []}
                         name="excludedClients"
                         value={values.excludedClients}
                         onBlur={() => setFieldTouched('excludedClients')}
@@ -948,9 +957,13 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             slug: data.slug,
           },
         });
@@ -1080,9 +1093,13 @@ function GraphQLEndpointUrl(props: {
       onSubmit: values =>
         mutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
           },
         }).then(result => {
@@ -1507,10 +1524,9 @@ export function TargetSettingsPage(props: {
 
 export const DeleteTargetMutation = graphql(`
   mutation deleteTarget($selector: TargetSelectorInput!) {
-    deleteTarget(selector: $selector) {
-      deletedTarget {
-        __typename
-        id
+    deleteTarget(input: { target: { bySelector: $selector } }) {
+      ok {
+        deletedTargetId
       }
     }
   }

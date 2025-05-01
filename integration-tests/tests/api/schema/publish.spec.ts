@@ -498,8 +498,12 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
       .then(r => r.expectNoGraphQLErrors());
     const createTargetResult = await createTarget(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'target2',
       },
       ownerToken,

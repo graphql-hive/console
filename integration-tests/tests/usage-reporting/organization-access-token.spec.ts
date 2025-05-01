@@ -9,7 +9,7 @@ test('/:targetId > operation is accepted with wildcard access token', async () =
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.All,
@@ -68,7 +68,7 @@ test('/:targetId > operation is denied without access to target', async () => {
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.Granular,
@@ -130,7 +130,7 @@ test('/:targetId > operation is accepted with specific access to target', async 
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.Granular,
@@ -210,7 +210,7 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with wildcard a
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.All,
@@ -272,7 +272,7 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is denied without access to
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.Granular,
@@ -337,7 +337,7 @@ test('/:orgSlug/:projectSlug/:targetSlug > operation is accepted with specific a
 
   const usageAddress = await getServiceHost('usage', 8081);
 
-  const accessToken = await createOrganizationAccessToken({
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
     permissions: ['usage:report'],
     resources: {
       mode: ResourceAssignmentModeType.Granular,

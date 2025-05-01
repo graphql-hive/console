@@ -35,6 +35,33 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'target',
+    title: 'Target',
+    permissions: [
+      {
+        id: 'target:create',
+        title: 'Create target',
+        description: 'Create new targets.',
+      },
+      {
+        id: 'target:delete',
+        title: 'Create target',
+        description: 'Delete targets',
+      },
+      {
+        id: 'target:modifySettings',
+        title: 'Modify settings',
+        description:
+          'Member can modify settings such as the conditional breaking change configuration.',
+      },
+      {
+        id: 'cdnAccessToken:modify',
+        title: 'Manage CDN access tokens',
+        description: 'Allow managing access tokens for the CDN.',
+      },
+    ],
+  },
+  {
     id: 'usage-reporting',
     title: 'Usage Reporting',
     permissions: [

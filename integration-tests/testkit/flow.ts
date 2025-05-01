@@ -24,14 +24,13 @@ import type {
   SchemaCheckInput,
   SchemaDeleteInput,
   SchemaPublishInput,
-  SetTargetValidationInput,
   TargetSelectorInput,
   UpdateBaseSchemaInput,
   UpdateMemberRoleInput,
   UpdateOrganizationSlugInput,
   UpdateProjectSlugInput,
+  UpdateTargetConditionalBreakingChangeConfigurationInput,
   UpdateTargetSlugInput,
-  UpdateTargetValidationSettingsInput,
 } from './gql/graphql';
 import { execute } from './graphql';
 
@@ -910,39 +909,8 @@ export function deleteSchema(
   });
 }
 
-export function setTargetValidation(
-  input: SetTargetValidationInput,
-  access:
-    | {
-        token: string;
-      }
-    | {
-        authToken: string;
-      },
-) {
-  return execute({
-    document: graphql(`
-      mutation setTargetValidation($input: SetTargetValidationInput!) {
-        setTargetValidation(input: $input) {
-          id
-          validationSettings {
-            enabled
-            period
-            percentage
-            excludedClients
-          }
-        }
-      }
-    `),
-    ...access,
-    variables: {
-      input,
-    },
-  });
-}
-
 export function updateTargetValidationSettings(
-  input: UpdateTargetValidationSettingsInput,
+  input: UpdateTargetConditionalBreakingChangeConfigurationInput,
   access:
     | {
         token: string;
@@ -953,13 +921,15 @@ export function updateTargetValidationSettings(
 ) {
   return execute({
     document: graphql(`
-      mutation updateTargetValidationSettings($input: UpdateTargetValidationSettingsInput!) {
-        updateTargetValidationSettings(input: $input) {
+      mutation updateTargetConditionalBreakingChangeConfiguration(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
           ok {
             target {
               id
-              validationSettings {
-                enabled
+              conditionalBreakingChangeConfiguration {
+                isEnabled
                 period
                 percentage
                 targets {
@@ -1362,7 +1332,7 @@ export function createCdnAccess(selector: TargetSelectorInput, token: string) {
     `),
     token,
     variables: {
-      input: { selector, alias: 'CDN Access Token' },
+      input: { target: { bySelector: selector }, alias: 'CDN Access Token' },
     },
   });
 }

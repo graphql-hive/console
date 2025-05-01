@@ -591,10 +591,12 @@ describe('CDN token', () => {
       document: DeleteCDNAccessTokenMutation,
       variables: {
         input: {
-          selector: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-            targetSlug: target.slug,
+          target: {
+            bySelector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+              targetSlug: target.slug,
+            },
           },
           cdnAccessTokenId: paginatedResult.target!.cdnAccessTokens.edges[0].node.id,
         },
@@ -648,10 +650,12 @@ describe('CDN token', () => {
       document: DeleteCDNAccessTokenMutation,
       variables: {
         input: {
-          selector: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-            targetSlug: target.slug,
+          target: {
+            bySelector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+              targetSlug: target.slug,
+            },
           },
           cdnAccessTokenId: paginatedResult.target!.cdnAccessTokens.edges[0].node.id,
         },

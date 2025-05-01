@@ -32,24 +32,21 @@ const EXTERNAL_COMPOSITION_RESULT = z.union([
       supergraph: z.string(),
       sdl: z.string(),
     }),
-    includesNetworkError: z.boolean().optional().default(false),
+    includesNetworkError: z.boolean().default(false),
   }),
   z.object({
     type: z.literal('failure'),
     result: z.object({
-      supergraph: z.string().optional(),
-      sdl: z.string().optional(),
+      supergraph: z.string().nullish(),
+      sdl: z.string().nullish(),
       errors: z.array(
         z.object({
           message: z.string(),
-          source: z
-            .union([z.literal('composition'), z.literal('graphql')])
-            .optional()
-            .transform(value => value ?? 'graphql'),
+          source: z.union([z.literal('composition'), z.literal('graphql')]).default('graphql'),
         }),
       ),
     }),
-    includesNetworkError: z.boolean().optional().default(false),
+    includesNetworkError: z.boolean().default(false),
   }),
 ]);
 
@@ -198,8 +195,20 @@ export async function composeExternalFederation(args: {
 
   if (!parseResult.success) {
     args.logger.error('External composition failure: invalid shape of data: %o', parseResult.error);
-
-    throw new Error(`External composition failure: invalid shape of data`);
+    return {
+      type: 'failure',
+      result: {
+        supergraph: null,
+        sdl: null,
+        errors: [
+          {
+            message: 'External composition failure: invalid shape of data',
+            source: 'composition',
+          },
+        ],
+      },
+      includesNetworkError: false,
+    };
   }
 
   if (parseResult.data.type === 'success') {
@@ -314,6 +323,10 @@ async function callExternalService(
       },
       timeout: {
         request: timeoutMs,
+        // connecting should be quick
+        lookup: 10_000,
+        connect: 10_000,
+        secureConnect: 10_000,
       },
     });
 
@@ -329,7 +342,7 @@ async function callExternalService(
         span.setAttribute('error.type', error.name);
 
         logger.error(
-          'Network error without response. (errorName=%s, errorMessage=%s)',
+          'Network error during external composition without response. (errorName=%s, errorMessage=%s)',
           error.name,
           error.message,
         );
@@ -341,7 +354,7 @@ async function callExternalService(
             supergraph: null,
             errors: [
               {
-                message: `External composition network failure. Is the service reachable?`,
+                message: `A network error occurred during external composition: "${error.message}"`,
                 source: 'graphql',
               },
             ],

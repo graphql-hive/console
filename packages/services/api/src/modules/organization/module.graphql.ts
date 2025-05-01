@@ -334,7 +334,7 @@ export default gql`
     """
     List of available permission groups that can be assigned to organization access tokens.
     """
-    availableOrganizationPermissionGroups: [PermissionGroup!]!
+    availableOrganizationAccessTokenPermissionGroups: [PermissionGroup!]! @tag(name: "public")
     """
     Whether the viewer can manage access tokens.
     """

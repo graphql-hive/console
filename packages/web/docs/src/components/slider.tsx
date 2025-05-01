@@ -111,6 +111,8 @@ export function Slider({ counter, className, deadZone, style, ...rest }: SliderP
     <div className="flex w-full">
       <button
         className="z-10 my-3"
+        tabIndex={-1}
+        title="Set to minimum"
         style={{ width: deadZone }}
         onClick={event => {
           const input = event.currentTarget.parentElement!.querySelector(

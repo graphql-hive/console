@@ -30,7 +30,7 @@ integration to Apollo-Router.
 
 [Please follow this guide and documentation for integrating Hive with Apollo Router](https://the-guild.dev/graphql/hive/docs/other-integrations/apollo-router)
 
-### Library
+### As a Library
 
 If you are
 [building a custom Apollo-Router with your own native plugins](https://www.apollographql.com/docs/graphos/routing/customization/native-plugins),
@@ -44,14 +44,21 @@ hive-apollo-router-plugin = "..."
 And then in your codebase, make sure to import and register the Hive plugin:
 
 ```rs
+use apollo_router::register_plugin;
 // import the registry instance and the plugin registration function
 use hive_apollo_router_plugin::registry::HiveRegistry;
-use hive_apollo_router_plugin::usage::register;
+// Import the usage plugin
+use hive_apollo_router_plugin::usage::UsagePlugin;
+// Import persisted documents plugin, if needed
+use persisted_documents::PersistedDocumentsPlugin;
+
 
 // In your main function, make sure to register the plugin before you create or initialize Apollo-Router
 fn main() {
     // Register the Hive usage_reporting plugin
-    register();
+    register_plugin!("hive", "usage", UsagePlugin);
+    // Register the persisted documents plugin, if needed
+    register_plugin!("hive", "persisted_documents", PersistedDocumentsPlugin);
 
     // Initialize the Hive Registry instance and start the Apollo Router
     match HiveRegistry::new(None).and(apollo_router::main()) {

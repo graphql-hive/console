@@ -94,26 +94,26 @@ export default gql`
   }
 
   enum PermissionLevelType {
-    ORGANIZATION
-    PROJECT
-    TARGET
-    SERVICE
-    APP_DEPLOYMENT
+    ORGANIZATION @tag(name: "public")
+    PROJECT @tag(name: "public")
+    TARGET @tag(name: "public")
+    SERVICE @tag(name: "public")
+    APP_DEPLOYMENT @tag(name: "public")
   }
 
   type Permission {
-    id: ID!
-    title: String!
-    description: String!
-    level: PermissionLevelType!
-    dependsOnId: ID
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    level: PermissionLevelType! @tag(name: "public")
+    dependsOnId: ID @tag(name: "public")
     isReadOnly: Boolean!
     warning: String
   }
 
   type PermissionGroup {
-    id: ID!
-    title: String!
-    permissions: [Permission!]!
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    permissions: [Permission!]! @tag(name: "public")
   }
 `;

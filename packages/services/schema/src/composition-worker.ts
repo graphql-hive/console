@@ -1,5 +1,7 @@
 import * as crypto from 'node:crypto';
 import type { MessagePort } from 'node:worker_threads';
+// IMPORTANT: Must use "type" to avoid runtime dependency
+import type { FastifyBaseLogger } from 'fastify';
 import type { Logger } from '@hive/api';
 import { CompositionResponse } from './api';
 import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
@@ -20,21 +22,7 @@ export function createCompositionWorker(args: {
 
   process.on('unhandledRejection', function (err) {
     console.error('unhandledRejection', err);
-    console.error(err);
-    args.port.postMessage({
-      code: 'ERROR',
-      err,
-    });
-    process.exit(1);
-  });
-
-  process.on('uncaughtException', function (err) {
-    console.error('uncaughtException', err);
-    args.port.postMessage({
-      code: 'ERROR',
-      err,
-    });
-    process.exit(1);
+    throw err;
   });
 
   args.port.on('message', async (message: CompositionEvent) => {
@@ -51,7 +39,7 @@ export function createCompositionWorker(args: {
         if (message.data.type === 'federation') {
           const composeFederation = createComposeFederation({
             decrypt,
-            logger: baseLogger.child({ reqId: message.data.args.requestId }) as any,
+            logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
             requestTimeoutMs: message.data.requestTimeoutMs,
           });
           const composed = await composeFederation(message.data.args);

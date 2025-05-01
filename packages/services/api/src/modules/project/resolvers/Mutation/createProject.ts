@@ -61,18 +61,21 @@ export const createProject: NonNullable<MutationResolvers['createProject']> = as
   const targetResults = await Promise.all([
     targetManager.createTarget({
       slug: 'production',
-      projectId: result.project.id,
-      organizationId: organizationId,
+      project: {
+        byId: result.project.id,
+      },
     }),
     targetManager.createTarget({
       slug: 'staging',
-      projectId: result.project.id,
-      organizationId: organizationId,
+      project: {
+        byId: result.project.id,
+      },
     }),
     targetManager.createTarget({
       slug: 'development',
-      projectId: result.project.id,
-      organizationId: organizationId,
+      project: {
+        byId: result.project.id,
+      },
     }),
   ]);
 

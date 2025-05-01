@@ -257,8 +257,12 @@ function CreateTargetModal(props: {
   async function onSubmit(values: z.infer<typeof createTargetFormSchema>) {
     const { data, error } = await mutate({
       input: {
-        projectSlug: props.projectSlug,
-        organizationSlug: props.organizationSlug,
+        project: {
+          bySelector: {
+            projectSlug: props.projectSlug,
+            organizationSlug: props.organizationSlug,
+          },
+        },
         slug: values.targetSlug,
       },
     });
