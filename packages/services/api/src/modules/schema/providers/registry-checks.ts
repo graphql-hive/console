@@ -1,8 +1,8 @@
 import { URL } from 'node:url';
-import type { GraphQLSchema } from 'graphql';
+import { GraphQLInputType, isInputObjectType, type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -489,10 +489,27 @@ export class RegistryChecks {
             period: settings.period,
             schemaCoordinate: change.breakingChangeSchemaCoordinate,
           });
-          const isBreaking =
-            totalRequestCounts[change.breakingChangeSchemaCoordinate] >=
-            Math.max(settings.requestCountThreshold, 1);
+          const totalRequests = totalRequestCounts[change.breakingChangeSchemaCoordinate] ?? 0;
+          const isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
           if (isBreaking) {
+            const useAdvancedNullabilityCheck = requiresAdvancedNullabilityCheck(change);
+            if (useAdvancedNullabilityCheck) {
+              const advancedNullabilityTotalRequests = await this.operationsReader.countCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: `${change.breakingChangeSchemaCoordinate}!`,
+              });
+
+              if (
+                advancedNullabilityTotalRequests[`${change.breakingChangeSchemaCoordinate}!`] >=
+                totalRequestCounts[change.breakingChangeSchemaCoordinate]
+              ) {
+                // All requests for this coordinate provide the value for the coordinate. So moving to non-null is allowed.
+                return;
+              }
+            }
+
             // We need to run both the affected operations an affected clients query.
             // Since the affected clients query is lighter it makes more sense to run it first and skip running
             // the operations query if no clients are affected, as it will also yield zero results in that case.
@@ -857,4 +874,17 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
+}
+
+function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.InputFieldTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldInputFieldType?.toString();
+    const newType = change.meta.newInputFieldType?.toString();
+    return `${oldType}!` === newType;
+  } else if (ChangeType.FieldArgumentTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldArgumentType?.toString();
+    const newType = change.meta.newArgumentType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return false;
 }
