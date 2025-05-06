@@ -54,7 +54,7 @@ export function deployUsage({
         readinessProbe: {
           initialDelaySeconds: 10,
           periodSeconds: 5,
-          failureThreshold: 2,
+          failureThreshold: 1,
           timeoutSeconds: 5,
           endpoint: '/_readiness',
         },

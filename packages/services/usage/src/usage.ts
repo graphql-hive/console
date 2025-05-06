@@ -1,4 +1,13 @@
-import { CompressionTypes, Kafka, logLevel, Partitioners, RetryOptions } from 'kafkajs';
+import net from 'net';
+import tls from 'tls';
+import {
+  CompressionTypes,
+  ISocketFactory,
+  Kafka,
+  logLevel,
+  Partitioners,
+  RetryOptions,
+} from 'kafkajs';
 import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
@@ -32,7 +41,7 @@ const levelMap = {
 
 const retryOptions = {
   maxRetryTime: 30_000,
-  initialRetryTime: 500,
+  initialRetryTime: 300,
   factor: 0.2,
   multiplier: 2,
   retries: 5,
@@ -103,6 +112,25 @@ export function createUsage(config: {
 }) {
   const { logger } = config;
 
+  // Default KafkaJS socketFactory implementation with minor optimizations for Azure
+  // https://github.com/tulios/kafkajs/blob/master/src/network/socketFactory.js
+  const socketFactory: ISocketFactory = ({ host, port, ssl, onConnect }) => {
+    const socket = ssl
+      ? tls.connect(
+          Object.assign({ host, port }, !net.isIP(host) ? { servername: host } : {}, ssl),
+          onConnect,
+        )
+      : net.connect({ host, port }, onConnect);
+
+    // This is equivalent to kafka's "connections.max.idle.ms"
+    socket.setKeepAlive(true, 180_000);
+    // disable nagle's algorithm to have higher throughput since this logic
+    // is already buffering messages into large payloads
+    socket.setNoDelay(true);
+
+    return socket;
+  };
+
   const kafka = new Kafka({
     clientId: 'usage',
     brokers: [config.kafka.connection.broker],
@@ -140,10 +168,11 @@ export function createUsage(config: {
       };
     },
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
-    requestTimeout: 60_000, //
+    requestTimeout: 30_000,
     connectionTimeout: 5_000,
     authenticationTimeout: 5_000,
     retry: retryOptions,
+    socketFactory,
   });
 
   const producer = kafka.producer({
@@ -268,8 +297,23 @@ export function createUsage(config: {
     status = newStatus;
   }
 
+  producer.on(producer.events.CONNECT, () => {
+    logger.info(`Kafka producer: connected`);
+
+    if (status === Status.Unhealthy) {
+      changeStatus(Status.Ready);
+    }
+  });
+
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
     logger.info('Kafka producer: request timeout');
+  });
+
+  producer.on(producer.events.DISCONNECT, () => {
+    logger.info(`Kafka producer: disconnected`);
+    if (status === Status.Ready) {
+      changeStatus(Status.Unhealthy);
+    }
   });
 
   async function stop() {
@@ -281,7 +325,6 @@ export function createUsage(config: {
     await fallback.stop();
     logger.info(`Fallback stopped`);
     await producer.disconnect();
-    logger.info(`Producer disconnected`);
 
     logger.info('Usage stopped');
   }
