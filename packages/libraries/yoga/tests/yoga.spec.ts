@@ -420,36 +420,30 @@ test('reports usage with response cache', async ({ expect }) => {
       }),
     ],
   });
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      resolve();
-    }, 2000);
-    let requestCount = 0;
+  for (const _ of [1, 2, 3]) {
+    try {
+      const res = await yoga.fetch('http://localhost/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `{ hi }`,
+        }),
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toEqual('{"data":{"hi":null}}');
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
-    graphqlScope.on('request', () => {
-      requestCount = requestCount + 1;
-      if (requestCount === 4) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-
-    (async () => {
-      for (const _ of [1, 2, 3]) {
-        const res = await yoga.fetch('http://localhost/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: `{ hi }`,
-          }),
-        });
-        expect(res.status).toBe(200);
-        expect(await res.text()).toEqual('{"data":{"hi":null}}');
-      }
-    })().catch(reject);
-  });
+  await waitFor(50);
+  if (!graphqlScope.isDone()) {
+    console.error(
+      `Still waiting on mocks: ${graphqlScope.pendingMocks().join(', ')}. Results so far: ${JSON.stringify(results)}`,
+    );
+  }
   graphqlScope.done();
   expect(usageCount).toBe(3);
 

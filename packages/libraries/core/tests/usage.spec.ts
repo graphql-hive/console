@@ -4,7 +4,7 @@ import { createHive } from '../src/client/client';
 import { atLeastOnceSampler } from '../src/client/samplers';
 import type { Report } from '../src/client/usage';
 import { version } from '../src/version';
-import { createHiveTestingLogger, waitFor } from './test-utils';
+import { createHiveTestingLogger, fastFetchError, waitFor } from './test-utils';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -340,6 +340,7 @@ test('should not leak the exception', { retry: 3 }, async () => {
     enabled: true,
     debug: true,
     agent: {
+      fetch: fastFetchError,
       timeout: 500,
       maxRetries: 1,
       sendInterval: 10,
@@ -368,7 +369,6 @@ test('should not leak the exception', { retry: 3 }, async () => {
     [INF] [hive][usage] Sending report (queue 1)
     [INF] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [ERR] [hive][usage] Error: getaddrinfo ENOTFOUND 404.localhost.noop
-    [ERR] [hive][usage]     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:666:666)
     [ERR] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
     [INF] [hive][usage] Disposing
   `);
