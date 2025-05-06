@@ -30,7 +30,9 @@ export class HiveCLIError extends CLIError {
   ) {
     const tip = `> See https://the-guild.dev/graphql/hive/docs/api-reference/cli#errors for a complete list of error codes and recommended fixes.
 To disable this message set HIVE_NO_ERROR_TIP=1`;
-    super(`${message}  [${code}]${env.HIVE_NO_ERROR_TIP === '1' ? '' : `\n${tip}`}`);
+    super(`${message}  [${code}]${env.HIVE_NO_ERROR_TIP === '1' ? '' : `\n${tip}`}`, {
+      exit: exitCode,
+    });
   }
 }
 
