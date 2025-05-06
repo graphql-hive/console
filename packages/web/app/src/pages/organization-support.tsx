@@ -43,7 +43,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { SupportCategory, SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
+import { SupportCategoryType, SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useNotifications, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,7 +62,7 @@ const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
     message: 'Subject must be at least 2 characters.',
   }),
-  category: z.nativeEnum(SupportCategory, {
+  category: z.nativeEnum(SupportCategoryType, {
     required_error: 'A priority is required.',
   }),
   project: z.string().optional(),
@@ -108,7 +108,7 @@ function NewTicketForm(props: {
     resolver: zodResolver(newTicketFormSchema),
     defaultValues: {
       subject: '',
-      category: SupportCategory.Other,
+      category: SupportCategoryType.Other,
       priority: SupportTicketPriority.Normal,
       description: '',
     },
@@ -131,8 +131,8 @@ function NewTicketForm(props: {
         input: {
           organizationSlug: props.organizationSlug,
           category: data.category,
-          project: data.project !== 'empty' ? data.project : undefined,
-          target: data.target !== 'empty' ? data.target : undefined,
+          projectId: data.project !== 'empty' ? data.project : undefined,
+          targetId: data.target !== 'empty' ? data.target : undefined,
           subject: data.subject,
           priority: data.priority,
           description: data.description,
@@ -238,7 +238,7 @@ function NewTicketForm(props: {
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
-                          defaultValue={SupportCategory.Other}
+                          defaultValue={SupportCategoryType.Other}
                         >
                           <SelectTrigger variant="default" data-cy="category-picker-trigger">
                             <div className="font-medium" data-cy="category-picker-catgeory">
@@ -247,7 +247,7 @@ function NewTicketForm(props: {
                             </div>
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.values(SupportCategory).map(category => (
+                            {Object.values(SupportCategoryType).map(category => (
                               <SelectItem
                                 key={category}
                                 value={category}

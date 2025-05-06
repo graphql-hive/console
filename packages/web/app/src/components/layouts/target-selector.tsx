@@ -142,7 +142,7 @@ export function TargetSelector(props: {
                 targets.map(target => (
                   <SelectItem
                     key={target.slug}
-                    value={target.slug}
+                    value={target.id}
                     data-cy={`target-picker-option-${target.slug}`}
                   >
                     {target.slug}

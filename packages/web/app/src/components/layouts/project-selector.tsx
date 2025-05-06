@@ -99,7 +99,7 @@ export function ProjectSelector(props: {
                 projects.map(project => (
                   <SelectItem
                     key={project.slug}
-                    value={project.slug}
+                    value={project.id}
                     data-cy={`project-picker-option-${project.slug}`}
                   >
                     {project.slug}
