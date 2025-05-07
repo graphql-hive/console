@@ -392,7 +392,9 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
 
       const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
 
-      expect(output.typesWithAllFieldsInaccessible.entries().toArray()).toEqual([['Mutation', true]]);
+      expect(output.typesWithAllFieldsInaccessible.entries().toArray()).toEqual([
+        ['Mutation', true],
+      ]);
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
