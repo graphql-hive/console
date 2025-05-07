@@ -123,7 +123,6 @@ export const schemaBuilderApiRouter = t.router({
             native: 'native' in input && input.native ? true : false,
             contracts: 'contracts' in input && input.contracts ? input.contracts : undefined,
             requestId: ctx.req.id,
-            // @todo pass the base schema in so that it's factored into the cache key.
           });
         }
 
