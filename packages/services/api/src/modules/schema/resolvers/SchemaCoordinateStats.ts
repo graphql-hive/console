@@ -7,7 +7,11 @@ export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
   'supergraphMetadata' | '__isTypeOf'
 > = {
-  supergraphMetadata: async ({ organization, project, target, schemaCoordinate }, _, { injector }) => {
+  supergraphMetadata: async (
+    { organization, project, target, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
     // @note: SchemaManager.getLatestValidVersion uses DataLoader to avoid multiple fetches per operation
     const latestVersion = await injector.get(SchemaManager).getLatestValidVersion({
       targetId: target,
@@ -17,7 +21,7 @@ export const SchemaCoordinateStats: Pick<
     // @note: `SchemaVersionHelper.getSupergraphAst` is cached
     const supergraphAst = await injector.get(SchemaVersionHelper).getSupergraphAst(latestVersion);
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
-        supergraph?.schemaCoordinateServicesMappings
+    supergraph?.schemaCoordinateServicesMappings;
 
     return {
       __typename: 'SupergraphMetadata',

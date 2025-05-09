@@ -1,4 +1,5 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
+import DataLoader from 'dataloader';
 import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
@@ -47,7 +48,6 @@ import { FederationOrchestrator } from './orchestrators/federation';
 import { SingleOrchestrator } from './orchestrators/single';
 import { StitchingOrchestrator } from './orchestrators/stitching';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
-import DataLoader from 'dataloader';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
   endpoint: z.string().url().nonempty(),
@@ -71,10 +71,7 @@ const externalSchemaCompositionTestDocument = parse(externalSchemaCompositionTes
 })
 export class SchemaManager {
   private logger: Logger;
-  private latestSchemaVersionLoader: DataLoader<
-    TargetSelector,
-    SchemaVersion
-  >;
+  private latestSchemaVersionLoader: DataLoader<TargetSelector, SchemaVersion>;
 
   constructor(
     logger: Logger,
@@ -95,11 +92,11 @@ export class SchemaManager {
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
     this.latestSchemaVersionLoader = new DataLoader(
-      (selectors) => {
+      selectors => {
         return Promise.all(
           selectors.map(async selector => {
             return {
-              ...await this.storage.getLatestValidVersion(selector),
+              ...(await this.storage.getLatestValidVersion(selector)),
               projectId: selector.projectId,
               targetId: selector.targetId,
               organizationId: selector.organizationId,
