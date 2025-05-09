@@ -857,6 +857,11 @@ export default gql`
     subscription: GraphQLObjectType
   }
 
+  extend type SchemaCoordinateStats {
+    # If associated with a federated project, this contains the metadata for this coordinate.
+    supergraphMetadata: SupergraphMetadata
+  }
+
   type UnusedSchemaExplorer {
     types: [GraphQLNamedType!]!
   }

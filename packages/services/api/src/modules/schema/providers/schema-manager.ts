@@ -47,6 +47,7 @@ import { FederationOrchestrator } from './orchestrators/federation';
 import { SingleOrchestrator } from './orchestrators/single';
 import { StitchingOrchestrator } from './orchestrators/stitching';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
+import DataLoader from 'dataloader';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
   endpoint: z.string().url().nonempty(),
@@ -70,6 +71,10 @@ const externalSchemaCompositionTestDocument = parse(externalSchemaCompositionTes
 })
 export class SchemaManager {
   private logger: Logger;
+  private latestSchemaVersionLoader: DataLoader<
+    TargetSelector,
+    SchemaVersion
+  >;
 
   constructor(
     logger: Logger,
@@ -89,6 +94,25 @@ export class SchemaManager {
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
+    this.latestSchemaVersionLoader = new DataLoader(
+      (selectors) => {
+        return Promise.all(
+          selectors.map(async selector => {
+            return {
+              ...await this.storage.getLatestValidVersion(selector),
+              projectId: selector.projectId,
+              targetId: selector.targetId,
+              organizationId: selector.organizationId,
+            };
+          }),
+        );
+      },
+      {
+        cacheKeyFn(selector) {
+          return selector.targetId;
+        },
+      },
+    );
   }
 
   async hasSchema(target: Target) {
@@ -280,12 +304,7 @@ export class SchemaManager {
 
   async getLatestValidVersion(selector: TargetSelector) {
     this.logger.debug('Fetching latest valid version (selector=%o)', selector);
-    return {
-      ...(await this.storage.getLatestValidVersion(selector)),
-      projectId: selector.projectId,
-      targetId: selector.targetId,
-      organizationId: selector.organizationId,
-    };
+    return this.latestSchemaVersionLoader.load(selector);
   }
 
   async getMaybeLatestVersion(target: Target) {
