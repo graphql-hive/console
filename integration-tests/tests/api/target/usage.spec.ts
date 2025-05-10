@@ -125,7 +125,7 @@ test.concurrent(
   },
   {
     timeout: 15_000,
-  }
+  },
 );
 
 test.concurrent(
