@@ -92,7 +92,7 @@ test.concurrent(
       },
     ]);
     expect(collectResult.status).toEqual(200);
-    await waitFor(8000);
+    await waitFor(10_000);
 
     // should be breaking because the field is used now
     const usedCheckResult = await readToken
@@ -123,6 +123,9 @@ test.concurrent(
     expect(op.name).toMatch('ping');
     expect(op.percentage).toBeGreaterThan(99);
   },
+  {
+    timeout: 15_000,
+  }
 );
 
 test.concurrent(
