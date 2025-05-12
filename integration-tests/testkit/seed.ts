@@ -666,6 +666,7 @@ export function initSeed() {
                     .conditionalBreakingChangeConfiguration;
                 },
                 async updateTargetValidationSettings({
+                  isEnabled,
                   excludedClients,
                   percentage,
                   target: ttarget = target,
@@ -684,6 +685,7 @@ export function initSeed() {
                         },
                       },
                       conditionalBreakingChangeConfiguration: {
+                        isEnabled,
                         excludedClients,
                         percentage,
                         requestCount,
