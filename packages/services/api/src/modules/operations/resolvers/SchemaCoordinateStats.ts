@@ -2,7 +2,10 @@ import { hash } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
 import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';
 
-export const SchemaCoordinateStats: SchemaCoordinateStatsResolvers = {
+export const SchemaCoordinateStats: Pick<
+  SchemaCoordinateStatsResolvers,
+  'clients' | 'operations' | 'requestsOverTime' | 'totalRequests' | '__isTypeOf'
+> = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({
       organizationId: organization,

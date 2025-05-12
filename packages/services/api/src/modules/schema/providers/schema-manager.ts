@@ -1,4 +1,5 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
+import DataLoader from 'dataloader';
 import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
@@ -70,6 +71,7 @@ const externalSchemaCompositionTestDocument = parse(externalSchemaCompositionTes
 })
 export class SchemaManager {
   private logger: Logger;
+  private latestSchemaVersionLoader: DataLoader<TargetSelector, SchemaVersion>;
 
   constructor(
     logger: Logger,
@@ -89,6 +91,25 @@ export class SchemaManager {
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
+    this.latestSchemaVersionLoader = new DataLoader(
+      selectors => {
+        return Promise.all(
+          selectors.map(async selector => {
+            return {
+              ...(await this.storage.getLatestValidVersion(selector)),
+              projectId: selector.projectId,
+              targetId: selector.targetId,
+              organizationId: selector.organizationId,
+            };
+          }),
+        );
+      },
+      {
+        cacheKeyFn(selector) {
+          return selector.targetId;
+        },
+      },
+    );
   }
 
   async hasSchema(target: Target) {
@@ -280,12 +301,7 @@ export class SchemaManager {
 
   async getLatestValidVersion(selector: TargetSelector) {
     this.logger.debug('Fetching latest valid version (selector=%o)', selector);
-    return {
-      ...(await this.storage.getLatestValidVersion(selector)),
-      projectId: selector.projectId,
-      targetId: selector.targetId,
-      organizationId: selector.organizationId,
-    };
+    return this.latestSchemaVersionLoader.load(selector);
   }
 
   async getMaybeLatestVersion(target: Target) {

@@ -12,6 +12,7 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,9 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
     $resolution: Int!
   ) {
     schemaCoordinateStats(selector: $selector) {
+      supergraphMetadata {
+        ...SupergraphMetadataList_SupergraphMetadataFragment
+      }
       requestsOverTime(resolution: $resolution) {
         date
         value
@@ -113,6 +117,8 @@ function SchemaCoordinateView(props: {
   const totalOperations = query.data?.schemaCoordinateStats?.operations.nodes.length ?? 0;
   const totalClients = query.data?.schemaCoordinateStats?.clients.nodes.length ?? 0;
 
+  const supergraphMetadata = query.data?.schemaCoordinateStats?.supergraphMetadata;
+
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
@@ -121,7 +127,18 @@ function SchemaCoordinateView(props: {
     <>
       <div className="flex flex-row items-center justify-between py-6">
         <div>
-          <Title>{props.coordinate}</Title>
+          <div className="flex flex-row items-center justify-between">
+            <Title className="pr-8">{props.coordinate}</Title>
+            {supergraphMetadata ? (
+              <SupergraphMetadataList
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                supergraphMetadata={supergraphMetadata}
+                previewThreshold={5}
+              />
+            ) : null}
+          </div>
           <Subtitle>Schema coordinate insights</Subtitle>
         </div>
         <div className="flex justify-end gap-x-2">
