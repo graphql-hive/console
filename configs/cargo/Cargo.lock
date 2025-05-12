@@ -120,9 +120,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-federation"
-version = "2.1.2"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "489dc99e4d578a2d27805794bcd05b0d90da2f47dbcb03deb5af8085db9eb5a0"
+checksum = "c0b5f5e991345ac059cb3dc3c155e772d2b27e8cc0c6a7603672fa9ff1a81d92"
 dependencies = [
  "apollo-compiler",
  "derive_more",
@@ -132,10 +132,11 @@ dependencies = [
  "indexmap 2.7.1",
  "itertools 0.14.0",
  "line-col",
+ "multi_try",
  "multimap 0.10.0",
  "nom",
  "nom_locate",
- "once_cell",
+ "percent-encoding",
  "petgraph",
  "regex",
  "serde",
@@ -163,16 +164,15 @@ dependencies = [
 
 [[package]]
 name = "apollo-router"
-version = "2.1.2"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d881c976a596c137956c501377f2553b4715a9c440a1417a5d39b63c5de750b0"
+checksum = "d93aca1dd88f3fbfe5013520550fe597a27b52904b544cf608f22b03381dfaa8"
 dependencies = [
  "ahash",
  "anyhow",
  "apollo-compiler",
  "apollo-environment-detector",
  "apollo-federation",
- "async-channel 1.9.0",
  "async-compression",
  "async-trait",
  "aws-config",
@@ -229,7 +229,7 @@ dependencies = [
  "libc",
  "linkme",
  "log",
- "lru 0.12.3",
+ "lru 0.14.0",
  "maplit",
  "mediatype",
  "memchr",
@@ -2460,10 +2460,6 @@ name = "hashbrown"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
-dependencies = [
- "ahash",
- "allocator-api2",
-]
 
 [[package]]
 name = "hashbrown"
@@ -3532,18 +3528,18 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.12.3"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3262e75e648fce39813cb56ac41f3c3e3f65217ebf3844d818d1f9398cfb0dc"
+checksum = "227748d55f2f0ab4735d87fd623798cb6b664512fe979705f829c9f81c934465"
 dependencies = [
- "hashbrown 0.14.5",
+ "hashbrown 0.15.2",
 ]
 
 [[package]]
 name = "lru"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "227748d55f2f0ab4735d87fd623798cb6b664512fe979705f829c9f81c934465"
+checksum = "9f8cc7106155f10bdf99a6f379688f543ad6596a415375b36a59a054ceda1198"
 dependencies = [
  "hashbrown 0.15.2",
 ]
@@ -3711,6 +3707,12 @@ dependencies = [
  "spin 0.9.8",
  "version_check",
 ]
+
+[[package]]
+name = "multi_try"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b42256e8ab5f19108cf42e2762786052ae4660635f6fe76134d2cab37068ee8a"
 
 [[package]]
 name = "multimap"

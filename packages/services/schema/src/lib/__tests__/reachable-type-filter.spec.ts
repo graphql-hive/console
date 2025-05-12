@@ -1,5 +1,5 @@
 import { parse, print } from 'graphql';
-import { addDirectiveOnTypes, getReachableTypes } from './reachable-type-filter';
+import { addDirectiveOnTypes, getReachableTypes } from '../reachable-type-filter';
 
 describe('getReachableTypes', () => {
   it('includes the query type', () => {

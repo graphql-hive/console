@@ -26,7 +26,7 @@ Before proceeding, make sure you have
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
   --hive-cdn-key "<hive_cdn_access_key>" \
@@ -40,7 +40,7 @@ hive-gateway supergraph \
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {5}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 docker run --rm --name hive-gateway -p 4000:4000 \
   ghcr.io/graphql-hive/gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
@@ -55,7 +55,7 @@ docker run --rm --name hive-gateway -p 4000:4000 \
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 npx hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
   --hive-cdn-key "<hive_cdn_access_key>" \
@@ -70,7 +70,7 @@ npx hive-gateway supergraph \
 Alternatively, you can also provide the usage reporting configuration via the `gateway.config.ts`
 file.
 
-```ts filename="gateway.config.ts" {8}
+```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({

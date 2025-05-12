@@ -1,5 +1,5 @@
 import { makeFetchCall } from '../src/client/http-client';
-import { createHiveTestingLogger } from './test-utils';
+import { createHiveTestingLogger, fastFetchError } from './test-utils';
 
 test('HTTP call without retries and system level error', async () => {
   const logger = createHiveTestingLogger();
@@ -8,6 +8,7 @@ test('HTTP call without retries and system level error', async () => {
     retry: false,
     headers: {},
     logger,
+    fetchImplementation: fastFetchError,
   }).catch(_ => {});
 
   if (response) {
@@ -30,6 +31,7 @@ test('HTTP with retries and system', async () => {
     },
     headers: {},
     logger,
+    fetchImplementation: fastFetchError,
   }).catch(_ => {});
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
