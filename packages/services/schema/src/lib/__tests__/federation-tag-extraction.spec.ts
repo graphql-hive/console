@@ -379,6 +379,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       const sdl = parse(/* GraphQL */ `
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
           query: Query
+          mutation: Mutation
         }
 
         type Query {
@@ -399,6 +400,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
           query: Query
+          mutation: Mutation
         }
 
         type Query {
