@@ -158,6 +158,8 @@ export const schemaBuilderApiRouter = t.router({
 
         assertAllCasesExhausted(input);
       } catch (error) {
+        ctx.req.log.error('Composition timed out. (error=%o)', error);
+
         // Treat timeouts caused by external composition as "expected errors"
         if (ctx.cache.isTimeoutError(error)) {
           return {

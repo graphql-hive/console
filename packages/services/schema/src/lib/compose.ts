@@ -357,10 +357,6 @@ async function callExternalService(
       },
       timeout: {
         request: timeoutMs,
-        // connecting should be quick
-        lookup: 5_000,
-        connect: 5_000,
-        secureConnect: 5_000,
       },
     });
 
