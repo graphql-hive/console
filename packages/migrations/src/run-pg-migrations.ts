@@ -162,5 +162,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.02.14T00-00-00.schema-versions-metadata'),
       await import('./actions/2025.02.21T00-00-00.schema-versions-metadata-attributes'),
       await import('./actions/2025.03.20T00-00-00.dangerous_breaking'),
+      await import('./actions/2025.05.14T00-00-00.cascade-deletion-indices-2'),
     ],
   });
