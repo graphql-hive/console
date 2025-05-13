@@ -483,16 +483,31 @@ export class RegistryChecks {
             return;
           }
 
+          let checkCoordinate = change.breakingChangeSchemaCoordinate;
+          if (isNullToRequiredArgumentChange(change)) {
+            // If this is a nullable argument changing to required, then we must count all calls -- even those not passing an argument.
+            // Otherwise, if those operations are not considered, they could still be getting sent. And since they are not passing the
+            // argument, they would be broken... This could likely be addressed by adjusting the coordinates collection logic.
+            // But that would require adjusting the field call counts for the explorer...
+
+            // Calculate the field coordinate from the argument coordinate
+            checkCoordinate = change.breakingChangeSchemaCoordinate
+              .split('.')
+              .slice(0, 2)
+              .join('.');
+          }
+
           const totalRequestCounts = await this.operationsReader.countCoordinate({
             targetIds: settings.targetIds,
             excludedClients: settings.excludedClientNames,
             period: settings.period,
-            schemaCoordinate: change.breakingChangeSchemaCoordinate,
+            schemaCoordinate: checkCoordinate,
           });
-          const totalRequests = totalRequestCounts[change.breakingChangeSchemaCoordinate] ?? 0;
-          const isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
+          const totalRequests = totalRequestCounts[checkCoordinate] ?? 0;
+          let isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
           if (isBreaking) {
             const useAdvancedNullabilityCheck = requiresAdvancedNullabilityCheck(change);
+
             if (useAdvancedNullabilityCheck) {
               const advancedNullabilityTotalRequests = await this.operationsReader.countCoordinate({
                 targetIds: settings.targetIds,
@@ -503,16 +518,12 @@ export class RegistryChecks {
 
               if (
                 advancedNullabilityTotalRequests[`${change.breakingChangeSchemaCoordinate}!`] >=
-                totalRequestCounts[change.breakingChangeSchemaCoordinate]
+                totalRequests
               ) {
                 // All requests for this coordinate provide the value for the coordinate. So moving to non-null is allowed.
-                return;
+                isBreaking = false;
               }
             }
-
-            // We need to run both the affected operations an affected clients query.
-            // Since the affected clients query is lighter it makes more sense to run it first and skip running
-            // the operations query if no clients are affected, as it will also yield zero results in that case.
 
             const [topAffectedClients, topAffectedOperations] = await Promise.all([
               this.operationsReader.getTopClientsForSchemaCoordinate({
@@ -882,6 +893,10 @@ function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['
     const newType = change.meta.newInputFieldType?.toString();
     return `${oldType}!` === newType;
   }
+  return isNullToRequiredArgumentChange(change);
+}
+
+function isNullToRequiredArgumentChange(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
   if (ChangeType.FieldArgumentTypeChanged === (change.type as ChangeType)) {
     const oldType = change.meta.oldArgumentType?.toString();
     const newType = change.meta.newArgumentType?.toString();

@@ -290,6 +290,80 @@ describe('collectSchemaCoordinates', () => {
     );
   });
 
+  test('unused variable as nullable argument', () => {
+    const schema = buildSchema(/* GraphQL */ `
+      type Query {
+        random(a: String): String
+      }
+    `);
+    const result = collectSchemaCoordinates({
+      documentNode: parse(/* GraphQL */ `
+        query Foo($a: String) {
+          random(a: $a)
+        }
+      `),
+      schema,
+      processVariables: true,
+      variables: {},
+      typeInfo: new TypeInfo(schema),
+    });
+    expect(Array.from(result).sort()).toEqual(['Query.random', 'Query.random.a', 'String'].sort());
+  });
+
+  test('unused nullable argument', () => {
+    const schema = buildSchema(/* GraphQL */ `
+      type Query {
+        random(a: String): String
+      }
+    `);
+    const result = collectSchemaCoordinates({
+      documentNode: parse(/* GraphQL */ `
+        query Foo {
+          random
+        }
+      `),
+      schema,
+      processVariables: true,
+      variables: null,
+      typeInfo: new TypeInfo(schema),
+    });
+    expect(Array.from(result).sort()).toEqual(['Query.random'].sort());
+  });
+
+  test('unused nullable input field', () => {
+    const schema = buildSchema(/* GraphQL */ `
+      type Query {
+        random(a: A): String
+      }
+
+      input A {
+        b: B
+      }
+
+      input B {
+        c: C
+      }
+
+      input C {
+        d: String
+      }
+    `);
+    const result = collectSchemaCoordinates({
+      documentNode: parse(/* GraphQL */ `
+        query Foo {
+          random(a: { b: null })
+        }
+      `),
+      schema,
+      processVariables: true,
+      variables: null,
+      typeInfo: new TypeInfo(schema),
+    });
+    expect(Array.from(result).sort()).toEqual(
+      ['Query.random', 'Query.random.a', 'Query.random.a!', 'A.b', 'B.c', 'C.d', 'String'].sort(),
+    );
+  });
+
   test('required variable as input field', () => {
     const schema = buildSchema(/* GraphQL */ `
       type Query {
