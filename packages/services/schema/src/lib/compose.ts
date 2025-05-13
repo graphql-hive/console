@@ -138,14 +138,14 @@ export function composeFederationV2(
 }
 
 export async function composeExternalFederation(args: {
-  logger: ServiceLogger;
+  logger?: ServiceLogger;
   subgraphs: Array<SubgraphInput>;
   decrypt: (value: string) => string;
   external: Exclude<ExternalComposition, null>;
   requestTimeoutMs: number;
   requestId: string;
 }): Promise<ComposerMethodResult> {
-  args.logger.debug(
+  args.logger?.debug(
     'Using external composition service (url=%s, schemas=%s)',
     args.external.endpoint,
     args.subgraphs.length,
@@ -161,7 +161,7 @@ export async function composeExternalFederation(args: {
   );
 
   const signature = hash(args.decrypt(args.external.encryptedSecret), 'sha256', body);
-  args.logger.debug(
+  args.logger?.debug(
     'Calling external composition service (url=%s, broker=%s)',
     args.external.endpoint,
     args.external.broker ? 'yes' : 'no',
@@ -190,11 +190,14 @@ export async function composeExternalFederation(args: {
       )
     : callExternalService(request, args.logger, args.requestTimeoutMs));
 
-  args.logger.debug('Got response from external composition service, trying to safe parse');
+  args.logger?.debug('Got response from external composition service, trying to safe parse');
   const parseResult = EXTERNAL_COMPOSITION_RESULT.safeParse(externalResponse);
 
   if (!parseResult.success) {
-    args.logger.error('External composition failure: invalid shape of data: %o', parseResult.error);
+    args.logger?.error(
+      'External composition failure: invalid shape of data: %o',
+      parseResult.error,
+    );
     return {
       type: 'failure',
       result: {
@@ -212,7 +215,7 @@ export async function composeExternalFederation(args: {
   }
 
   if (parseResult.data.type === 'success') {
-    args.logger.debug('External composition successful, checking compatibility');
+    args.logger?.debug('External composition successful, checking compatibility');
 
     await checkExternalCompositionCompatibility(args.logger, parseResult.data.result.sdl);
 
@@ -229,7 +232,10 @@ export async function composeExternalFederation(args: {
   return parseResult.data;
 }
 
-async function checkExternalCompositionCompatibility(logger: ServiceLogger, maybeSdl: string) {
+async function checkExternalCompositionCompatibility(
+  logger: ServiceLogger | undefined,
+  maybeSdl: string,
+) {
   let parsed: DocumentNode | undefined;
   let errors: ReadonlyArray<GraphQLError> | undefined;
   try {
@@ -242,12 +248,12 @@ async function checkExternalCompositionCompatibility(logger: ServiceLogger, mayb
     Sentry.captureException(err);
   } finally {
     if (errors === undefined || errors.length > 0) {
-      logger.warn(`External composition GraphQL validity check failed. (info=%o)`, {
+      logger?.warn(`External composition GraphQL validity check failed. (info=%o)`, {
         isParseSuccessful: parsed !== undefined,
         validationErrors: errors?.map(e => e.message) ?? null,
       });
     } else {
-      logger.debug(`External composition GraphQL validity check passed.`);
+      logger?.debug(`External composition GraphQL validity check passed.`);
     }
   }
 }
@@ -270,7 +276,7 @@ async function callExternalServiceViaBroker(
     signature: string;
   },
   payload: BrokerPayload,
-  logger: ServiceLogger,
+  logger: ServiceLogger | undefined,
   timeoutMs: number,
   requestId: string,
 ) {
@@ -292,7 +298,7 @@ async function callExternalServiceViaBroker(
 
 async function callExternalService(
   input: { url: string; headers: Record<string, string>; body: string },
-  logger: ServiceLogger,
+  logger: ServiceLogger | undefined,
   timeoutMs: number,
 ) {
   const tracer = trace.getTracer('external-composition');
@@ -309,7 +315,7 @@ async function callExternalService(
   });
 
   try {
-    logger.debug('Calling external composition service (url=%s)', input.url);
+    logger?.debug('Calling external composition service (url=%s)', input.url);
     const response = await got(input.url, {
       method: 'POST',
       headers: input.headers,
@@ -341,7 +347,7 @@ async function callExternalService(
         span.setAttribute('error.message', error.message);
         span.setAttribute('error.type', error.name);
 
-        logger.error(
+        logger?.error(
           'Network error during external composition without response. (errorName=%s, errorMessage=%s)',
           error.name,
           error.message,
@@ -390,14 +396,14 @@ async function callExternalService(
           }
         }
 
-        logger.error(
+        logger?.error(
           'Network error, will return failure (url=%s, status=%s, message=%s)',
           input.url,
           error.response.statusCode,
           error.message,
         );
 
-        logger.error(error);
+        logger?.error(error);
 
         span.setAttribute('error.message', error.message || '');
         span.setAttribute('error.type', error.name);
@@ -417,7 +423,7 @@ async function callExternalService(
       }
     }
 
-    logger.error('encountered an unexpected error, throwing. error=%o', error);
+    logger?.error('encountered an unexpected error, throwing. error=%o', error);
 
     throw error;
   } finally {

@@ -34,7 +34,7 @@ import {
 } from './shared';
 
 export type ComposeFederationDeps = {
-  logger: ServiceLogger;
+  logger?: ServiceLogger;
   decrypt: (value: string) => string;
   requestTimeoutMs: number;
 };
@@ -51,7 +51,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
   async function composeFederation(args: ComposeFederationArgs): Promise<CompositionResult> {
     const subgraphs = args.schemas
       .map(schema => {
-        deps.logger.debug(`Parsing subgraph schema SDL (name=%s)`, schema.source);
+        deps.logger?.debug(`Parsing subgraph schema SDL (name=%s)`, schema.source);
         return {
           typeDefs: trimDescriptions(parse(schema.raw)),
           name: schema.source,
@@ -59,12 +59,15 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         };
       })
       .map(subgraph => {
-        deps.logger.debug(`Extracting link implementations from subgraph (name=%s)`, subgraph.name);
+        deps.logger?.debug(
+          `Extracting link implementations from subgraph (name=%s)`,
+          subgraph.name,
+        );
         const { matchesImplementation, resolveImportName } = extractLinkImplementations(
           subgraph.typeDefs,
         );
         if (matchesImplementation('https://specs.graphql-hive.com/hive', 'v1.0')) {
-          deps.logger.debug(
+          deps.logger?.debug(
             `Found hive link in subgraph. Applying link logic. (name=%s)`,
             subgraph.name,
           );
@@ -132,7 +135,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
 
     // Federation v2
     if (args.native) {
-      deps.logger.debug(
+      deps.logger?.debug(
         'Using built-in Federation v2 composition service (schemas=%s)',
         args.schemas.length,
       );
@@ -149,7 +152,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           requestTimeoutMs: deps.requestTimeoutMs,
         });
     } else {
-      deps.logger.debug(
+      deps.logger?.debug(
         'Using built-in Federation v1 composition service (schemas=%s)',
         args.schemas.length,
       );
