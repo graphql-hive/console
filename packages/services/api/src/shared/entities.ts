@@ -394,6 +394,8 @@ export interface ComposeAndValidateResult {
     Array<{ name: string; content: string; source: string | null }>
   > | null;
   metadataAttributes: null | Record<string, string[]>;
+  includesNetworkError?: boolean;
+  includesException?: boolean;
 }
 
 export interface Orchestrator {
