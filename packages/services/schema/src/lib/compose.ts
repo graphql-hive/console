@@ -99,10 +99,15 @@ export function composeFederationV2(
 ): ComposerMethodResult & {
   includesException?: boolean;
 } {
+  logger?.debug(
+    'Compose subgraphs using native federation v2. (subgraphs=%o)',
+    subgraphs.map(s => s.name),
+  );
   try {
     const result = nativeComposeServices(subgraphs);
 
     if (nativeCompositionHasErrors(result)) {
+      logger?.debug('Native composition failed with composition errors.');
       return {
         type: 'failure',
         result: {
@@ -114,6 +119,8 @@ export function composeFederationV2(
       } as const;
     }
 
+    logger?.debug('Native composition succeeded.');
+
     return {
       type: 'success',
       result: {
@@ -124,6 +131,7 @@ export function composeFederationV2(
       includesException: false,
     } as const;
   } catch (error) {
+    logger?.error('Unexpected error during composition.');
     logger?.error(error);
     Sentry.captureException(error);
 
