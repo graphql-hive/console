@@ -117,7 +117,8 @@
       "cookie@<0.7.0": "0.7.2",
       "tar-fs": "2.1.2",
       "ip": "npm:neoip@2.1.0",
-      "miniflare@3>undici": "5.28.5"
+      "miniflare@3>undici": "5.28.5",
+      "@theguild/federation-composition": "0.18.3-alpha-20250513135301-b361eeefafe4ce751993d558e3fa77d6100efad2"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
