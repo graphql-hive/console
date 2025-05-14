@@ -1,5 +1,14 @@
 # hive
 
+## 7.0.1
+
+### Patch Changes
+
+- [#6784](https://github.com/graphql-hive/console/pull/6784)
+  [`549ca54`](https://github.com/graphql-hive/console/commit/549ca54909ad7f62892900d737d8ea1fa01d498b)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Minor bump to address release issues in
+  v7.0.0
+
 ## 7.0.0
 
 ### Major Changes
