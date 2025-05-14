@@ -4,6 +4,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 
 const ProPlanBilling_OrganizationFragment = graphql(`
   fragment ProPlanBilling_OrganizationFragment on Organization {
+    id
     billingConfiguration {
       hasPaymentIssues
     }
