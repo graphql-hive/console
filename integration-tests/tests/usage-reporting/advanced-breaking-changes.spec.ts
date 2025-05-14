@@ -105,6 +105,17 @@ describe('advanced breaking changes', async () => {
     await expect(checkUpdatingUsedArgumentNullability()).resolves.toMatchObject({
       schemaCheck: {
         __typename: 'SchemaCheckError',
+        valid: false,
+        changes: {
+          nodes: [
+            {
+              criticality: 'Breaking',
+              message:
+                "Type for argument 'id' on field 'Query.user' changed from 'ID' to 'ID!'",
+            },
+          ],
+          total: 1,
+        }
       },
     });
 
