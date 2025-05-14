@@ -36,12 +36,5 @@ export default {
         DROP INDEX CONCURRENTLY IF EXISTS "schema_version_to_log_version_id"
       `,
     },
-    // redundant with document_preflight_scripts_target_id_key
-    {
-      name: 'drop index unique_target_id',
-      query: sql`
-        DROP INDEX CONCURRENTLY IF EXISTS "unique_target_id"
-      `,
-    },
   ],
 } satisfies MigrationExecutor;
