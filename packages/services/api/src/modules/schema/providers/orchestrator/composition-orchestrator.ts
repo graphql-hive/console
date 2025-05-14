@@ -5,7 +5,6 @@ import { traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import {
   ComposeAndValidateResult,
-  Orchestrator,
   Project,
   ProjectType,
   SchemaObject,
@@ -22,11 +21,26 @@ type ExternalCompositionConfig = {
 @Injectable({
   scope: Scope.Operation,
 })
-export class FederationOrchestrator implements Orchestrator {
-  type = ProjectType.FEDERATION;
+/**
+ * Orchestrate composition calls to the schema service.
+ */
+export class CompositionOrchestrator {
   private logger: Logger;
   private schemaService;
   private incomingRequestAbortSignal: AbortSignal;
+
+  static projectTypeToOrchestratorType(
+    projectType: ProjectType,
+  ): 'federation' | 'stitching' | 'single' {
+    switch (projectType) {
+      case ProjectType.FEDERATION:
+        return 'federation';
+      case ProjectType.STITCHING:
+        return 'stitching';
+      case ProjectType.SINGLE:
+        return 'single';
+    }
+  }
 
   constructor(
     logger: Logger,
@@ -67,8 +81,9 @@ export class FederationOrchestrator implements Orchestrator {
     return null;
   }
 
-  @traceFn('FederationOrchestrator.composeAndValidate', {
-    initAttributes: (schemas, config) => ({
+  @traceFn('CompositionOrchestrator.composeAndValidate', {
+    initAttributes: (ttype, schemas, config) => ({
+      'hive.composition.type': ttype,
       'hive.composition.schema.count': schemas.length,
       'hive.composition.external': config.external.enabled,
       'hive.composition.native': config.native,
@@ -79,18 +94,35 @@ export class FederationOrchestrator implements Orchestrator {
       'hive.composition.contracts.count': result.contracts?.length ?? 0,
     }),
   })
+  /**
+   * Compose and validate schemas via the schema service.
+   * - Requests time out after 30 seconds and result in a human readable error response
+   * - In case the incoming request is canceled, the call to the schema service is aborted
+   */
   async composeAndValidate(
+    compositionType: 'federation' | 'single' | 'stitching',
     schemas: SchemaObject[],
     config: {
+      /** Whether external composition should be used (only Federation) */
       external: Project['externalComposition'];
+      /** Whether native composition should be used (only Federation) */
       native: boolean;
+      /** Specified contracts (only Federation) */
       contracts: ContractsInputType | null;
     },
   ) {
     this.logger.debug(
-      'Composing and Validating Federated Schemas (method=%s)',
-      config.native ? 'native' : config.external.enabled ? 'external' : 'v1',
+      'Composing and validating schemas (type=%s, method=%s)',
+      compositionType,
+      compositionType === 'federation'
+        ? config.native
+          ? 'native'
+          : config.external.enabled
+            ? 'external'
+            : 'v1'
+        : 'none',
     );
+
     const timeoutAbortSignal = AbortSignal.timeout(30_000);
 
     const onTimeout = () => {
@@ -106,7 +138,7 @@ export class FederationOrchestrator implements Orchestrator {
     try {
       const result = await this.schemaService.composeAndValidate.mutate(
         {
-          type: 'federation',
+          type: compositionType,
           schemas: schemas.map(s => ({
             raw: s.raw,
             source: s.source,
