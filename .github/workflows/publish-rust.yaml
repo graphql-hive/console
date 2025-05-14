@@ -89,9 +89,9 @@ jobs:
           default: true
           override: true
 
-      - name: Set default target
-        run: |
-          rustup default 1.85.1-${{ env.RUST_TARGET }}
+      # - name: Set default target
+      #   run: |
+      #     rustup default 1.85.1-${{ env.RUST_TARGET }}
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
