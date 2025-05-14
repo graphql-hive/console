@@ -22,13 +22,32 @@ export default {
       `,
     },
     {
-      name: 'Create pagination index ',
+      name: 'Create pagination index "organization_member_pagination_idx"',
       query: sql`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "organization_member_pagination_idx"
         ON "organization_member" (
           "organization_id" DESC
           , "user_id" DESC
           , "created_at" DESC
+        )
+      `,
+    },
+    {
+      name: 'Add "organization_member_roles"."created_at" column',
+      query: sql`
+        ALTER TABLE "organization_member_roles"
+          ADD COLUMN IF NOT EXISTS "created_at" timestamptz NOT NULL DEFAULT ${sql.literalValue(createdAt)}::timestamp
+        ;
+      `,
+    },
+    {
+      name: 'Create pagination index "organization_member_roles_pagination_idx"',
+      query: sql`
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS "organization_member_roles_pagination_idx"
+        ON "organization_member_roles" (
+          "organization_id" DESC
+          , "created_at" DESC
+          , "id" DESC
         )
       `,
     },

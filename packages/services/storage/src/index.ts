@@ -4628,23 +4628,6 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
   };
 }
 
-export function decodeUUIDIdBasedCursor(cursor: string) {
-  const id = Buffer.from(cursor, 'base64').toString('utf8');
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-    throw new Error('Invalid cursor');
-  }
-
-  return { id };
-}
-
-export function encodeUUIDIdBasedCursor(cursor: { id: string }) {
-  return Buffer.from(cursor.id).toString('base64');
-}
-
-export function encodeHashBasedCursor(cursor: { id: string }) {
-  return Buffer.from(cursor.id).toString('base64');
-}
-
 export function decodeHashBasedCursor(cursor: string) {
   const id = Buffer.from(cursor, 'base64').toString('utf8');
   return {

@@ -1,7 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { decodeUUIDIdBasedCursor, encodeUUIDIdBasedCursor } from '@hive/storage';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+} from '@hive/storage';
 import { batch } from '../../../shared/helpers';
 import {
   Permission,
@@ -40,6 +43,7 @@ const MemberRoleModel = z
           value as Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope> | null,
       ),
     permissions: z.array(PermissionsModel).nullable(),
+    createdAt: z.string(),
   })
   .transform(record => {
     let permissions: PermissionsPerResourceLevelAssignment;
@@ -91,9 +95,9 @@ export class OrganizationMemberRoles {
       after: string | null;
     },
   ) {
-    let cursor: { id: string } | null = null;
+    let cursor: { id: string; createdAt: string } | null = null;
     if (args.after) {
-      cursor = decodeUUIDIdBasedCursor(args.after);
+      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
     }
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
 
@@ -107,12 +111,19 @@ export class OrganizationMemberRoles {
         ${
           cursor
             ? sql`
-                AND "id" < ${cursor.id}
+                AND (
+                  (
+                    "created_at" = ${cursor.createdAt}
+                    AND "id" < ${cursor.id}
+                  )
+                  OR "created_at" < ${cursor.createdAt}
+                )
               `
             : sql``
         }
       ORDER BY
-        "id" DESC
+        "createdAt" DESC
+        , "id" DESC
       LIMIT ${limit + 1}
     `;
 
@@ -124,7 +135,7 @@ export class OrganizationMemberRoles {
       return {
         node,
         get cursor() {
-          return encodeUUIDIdBasedCursor(node);
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
         },
       };
     });
@@ -366,6 +377,7 @@ const organizationMemberRoleFields = sql`
   , "organization_member_roles"."scopes" AS "legacyScopes"
   , "organization_member_roles"."permissions"
   , "organization_member_roles"."organization_id" AS "organizationId"
+  , to_json("organization_member_roles"."created_at") AS "createdAt"
   , (
     SELECT COUNT(*)
     FROM "organization_member" AS "om"
