@@ -189,6 +189,7 @@ export interface organization_member {
 }
 
 export interface organization_member_roles {
+  created_at: Date;
   description: string;
   id: string;
   locked: boolean;

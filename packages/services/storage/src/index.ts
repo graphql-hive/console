@@ -4628,6 +4628,10 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
   };
 }
 
+export function encodeHashBasedCursor(cursor: { id: string }) {
+  return Buffer.from(cursor.id).toString('base64');
+}
+
 export function decodeHashBasedCursor(cursor: string) {
   const id = Buffer.from(cursor, 'base64').toString('utf8');
   return {
