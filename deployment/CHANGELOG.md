@@ -1,5 +1,160 @@
 # hive
 
+## 7.0.0
+
+### Major Changes
+
+- [#6758](https://github.com/graphql-hive/console/pull/6758)
+  [`0cf1194`](https://github.com/graphql-hive/console/commit/0cf1194c89d82f8dd2750fb6187234b084cbfc31)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add target management fields to the public GraphQL
+  API schema.
+
+  This includes the following fields and related types/fields:
+
+  - `Mutation.updateTargetConditionalBreakingChangeConfiguration`
+  - `Mutation.updateTargetSlug`
+  - `Mutation.updateTargetDangerousChangeClassification`
+  - `Mutation.createTarget`
+  - `Mutation.deleteTarget`
+  - `Mutation.createCdnAccessToken`
+  - `Mutation.deleteCdnAccessToken`
+  - `Target.conditionalBreakingChangeConfiguration`
+  - `Target.failDiffOnDangerousChange`
+  - `Target.cdnAccessTokens`
+  - `Organization.availableOrganizationAccessTokenPermissionGroups`
+
+  **BREAKING CHANGE** This renames existing types and fields within the private GraphQL schema.
+
+### Minor Changes
+
+- [#6771](https://github.com/graphql-hive/console/pull/6771)
+  [`4dcd45a`](https://github.com/graphql-hive/console/commit/4dcd45a683dc6004df003732b94564cfcbf135d7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add meta and subgraph data to coordinate insights
+  page; Fix SubgraphChip service link
+
+- [#6626](https://github.com/graphql-hive/console/pull/6626)
+  [`2056307`](https://github.com/graphql-hive/console/commit/20563078449dbb6bf33bac3b2e5ac3d2c772fc6f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add target breaking change setting to turn
+  dangerous changes into breaking changes
+
+- [#6658](https://github.com/graphql-hive/console/pull/6658)
+  [`e6a970f`](https://github.com/graphql-hive/console/commit/e6a970f790b388ff29f97709acdd73136a79dfb7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Adjust GraphQL schema according to schema design
+  policies.
+
+- [#6701](https://github.com/graphql-hive/console/pull/6701)
+  [`f2fe6c8`](https://github.com/graphql-hive/console/commit/f2fe6c83a2467fcb77ca49c8ed5405d3f6256157)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Print dangerous schema changes as own section in
+  github changes.
+
+- [#6662](https://github.com/graphql-hive/console/pull/6662)
+  [`2b220a5`](https://github.com/graphql-hive/console/commit/2b220a560c4e4777a20ec0cf5f6ee68032055022)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support federation composition validation for
+  `IMPLEMENTED_BY_INACCESSIBLE`.
+
+- [#6678](https://github.com/graphql-hive/console/pull/6678)
+  [`8fd9ad0`](https://github.com/graphql-hive/console/commit/8fd9ad018a50d54eb61759ea3e178790172d82d6)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Deprecate `CriticalityLevel` scalar and fields
+  referencing it in favor of the `SeverityLevelType` scalar. Expose `SchemaChange.severityLevel` and
+  `SchemaChange.severityReason` via the public API endpoint.
+
+- [#6614](https://github.com/graphql-hive/console/pull/6614)
+  [`c1d9c05`](https://github.com/graphql-hive/console/commit/c1d9c0568d5a4b4671aceb831883d348db5f9a55)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add new route `/graphql-public` to the `server`
+  service which contains the public GraphQL API (fields and types will follow).
+
+- [#6675](https://github.com/graphql-hive/console/pull/6675)
+  [`ed66171`](https://github.com/graphql-hive/console/commit/ed66171a4b40d439183c91600bd17044dceafcb7)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updates the
+  `@theguild/federation-composition` to `v0.18.1` that includes the following changes:
+
+  - Support progressive overrides (`@override(label: "<value>")`)
+  - Allow to use `@composeDirective` on a built-in scalar (like `@oneOf`)
+  - Performance improvements (lazy compute of errors), especially noticeable in large schemas (2s ->
+    600ms)
+  - Ensure nested key fields are marked as `@shareable`
+  - Stop collecting paths when a leaf field was reached (performance improvement)
+  - Avoid infinite loop when entity field returns itself
+
+- [#6665](https://github.com/graphql-hive/console/pull/6665)
+  [`cb41478`](https://github.com/graphql-hive/console/commit/cb41478829e41695df686e47dd7673a9601d6008)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Update
+  `@theguild/federation-composition` to `v0.16.0`.
+
+  - Support Apollo Federation `v2.7`, but without the progressive `@override`.
+  - Support Apollo Federation `v2.8`, but without the `@context` and `@fromContext` directives.
+  - Support Apollo Federation `v2.9`, including `@cost` and `@listSize` directives.
+
+- [#6683](https://github.com/graphql-hive/console/pull/6683)
+  [`ab774b7`](https://github.com/graphql-hive/console/commit/ab774b72bea54b88a2fb2ed1ea01f17a84970fc5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Make url optional for subsequent federated schema
+  publishes
+
+### Patch Changes
+
+- [#6716](https://github.com/graphql-hive/console/pull/6716)
+  [`1767037`](https://github.com/graphql-hive/console/commit/17670374485c36ac459150286559cb3b9edba596)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve slack alert error logs
+
+- [#6687](https://github.com/graphql-hive/console/pull/6687)
+  [`349b78f`](https://github.com/graphql-hive/console/commit/349b78f39ad8fe28977f05e7542ca3e9c28092fd)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve resource ID tooltip behavior
+
+- [#6685](https://github.com/graphql-hive/console/pull/6685)
+  [`a107ad3`](https://github.com/graphql-hive/console/commit/a107ad363bf2aee2ffab9d03ecf61ba0e32fac53)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix failing schema contract composition.
+
+- [#6729](https://github.com/graphql-hive/console/pull/6729)
+  [`cc552c9`](https://github.com/graphql-hive/console/commit/cc552c973c63f0a4b034b2c489c3925c347a7e75)
+  Thanks [@jdolle](https://github.com/jdolle)! - Disable redis snapshotting
+
+- [#6770](https://github.com/graphql-hive/console/pull/6770)
+  [`8e02a49`](https://github.com/graphql-hive/console/commit/8e02a49b48e0cac392c2a3b4971867f39502c68b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust contract logic to allow removing mutation
+  and subscription types
+
+- [#6602](https://github.com/graphql-hive/console/pull/6602)
+  [`df3e5a2`](https://github.com/graphql-hive/console/commit/df3e5a23e5cd505d346a6d5719a4a7308aba208d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Added directions for publishing on no schema
+  component
+
+- [#6759](https://github.com/graphql-hive/console/pull/6759)
+  [`132feb9`](https://github.com/graphql-hive/console/commit/132feb93e88667f5fdf118eb85f399e9e4330c56)
+  Thanks [@jdolle](https://github.com/jdolle)! - Reduce usage service readiness threshold; Disable
+  nagles algorithm and increase keepAlive from 60s to 180s for KafkaJS
+
+- [#6713](https://github.com/graphql-hive/console/pull/6713)
+  [`4f9aeae`](https://github.com/graphql-hive/console/commit/4f9aeae78a0f8feaec225dd7398aeda3000036f5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Do not store empty metadata in db
+
+- [#6660](https://github.com/graphql-hive/console/pull/6660)
+  [`5ff2aaa`](https://github.com/graphql-hive/console/commit/5ff2aaa624a6b9f6fe2a3633105ec7ce5ce188d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix schedule a meeting link
+
+- [#6718](https://github.com/graphql-hive/console/pull/6718)
+  [`fd9b160`](https://github.com/graphql-hive/console/commit/fd9b160015ee139bf8f09a41d14fa5446d60b3f5)
+  Thanks [@jdolle](https://github.com/jdolle)! - upgrade 'got' package to fix TimeoutError case
+
+- [#6752](https://github.com/graphql-hive/console/pull/6752)
+  [`d0404db`](https://github.com/graphql-hive/console/commit/d0404db1cb0121357a9d7ea0fbdd33c03cdf243f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Improve external composer UX: Handle network errors
+  gracefully, do not use native composer when testing, and improve settings UI
+
+- [#6755](https://github.com/graphql-hive/console/pull/6755)
+  [`60981bd`](https://github.com/graphql-hive/console/commit/60981bd94466acad9e0cf461b470c10ffbf80357)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly set usage service state to Ready after
+  processing all of the fallback queue.
+
+- [#6632](https://github.com/graphql-hive/console/pull/6632)
+  [`9b2bec6`](https://github.com/graphql-hive/console/commit/9b2bec6185f939b378aa898215c56bb82119d0b6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Capture Stripe.js load error to avoid raising an
+  unhandled error
+
+- [#6706](https://github.com/graphql-hive/console/pull/6706)
+  [`4435820`](https://github.com/graphql-hive/console/commit/4435820a2c666a39580156eea01a482768d61ab9)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve contract schema building for subgraphs
+  using the `extend` keyword.
+
 ## 6.0.0
 
 ### Major Changes
