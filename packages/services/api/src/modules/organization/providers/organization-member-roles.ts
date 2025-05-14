@@ -122,7 +122,7 @@ export class OrganizationMemberRoles {
             : sql``
         }
       ORDER BY
-        "createdAt" DESC
+        "created_at" DESC
         , "id" DESC
       LIMIT ${limit + 1}
     `;
