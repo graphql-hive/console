@@ -229,7 +229,7 @@ export interface Storage {
     | never
   >;
 
-  updateProjectSlug(_: ProjectSelector & { slug: string; userId: string }): Promise<
+  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
     | {
         ok: true;
         project: Project;

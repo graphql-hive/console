@@ -325,7 +325,11 @@ function CreateProjectModal(props: {
   async function onSubmit(values: z.infer<typeof createProjectFormSchema>) {
     const { data, error } = await mutate({
       input: {
-        organizationSlug: props.organizationSlug,
+        organization: {
+          bySelector: {
+            organizationSlug: props.organizationSlug,
+          },
+        },
         slug: values.projectSlug,
         type: values.projectType,
       },

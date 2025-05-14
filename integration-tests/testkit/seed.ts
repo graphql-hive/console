@@ -228,7 +228,11 @@ export function initSeed() {
             async createProject(projectType: ProjectType = ProjectType.Single) {
               const projectResult = await createProject(
                 {
-                  organizationSlug: organization.slug,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   type: projectType,
                   slug: generateUnique(),
                 },
