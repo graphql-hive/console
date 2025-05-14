@@ -1,3 +1,4 @@
+import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import { createPool, sql } from 'slonik';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
@@ -39,6 +40,7 @@ import {
   getOrganizationProjects,
   inviteToOrganization,
   joinOrganization,
+  pollFor,
   publishSchema,
   readClientStats,
   readOperationBody,
@@ -726,6 +728,32 @@ export function initSeed() {
                   ).then(r => r.expectNoGraphQLErrors());
 
                   return operationBodyResult?.target?.operation?.body;
+                },
+                async waitForOperationsCollected(
+                  n: number,
+                  _from?: number,
+                  _to?: number,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const from = formatISO(_from ?? subHours(Date.now(), 1));
+                  const to = formatISO(_to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: ttarget.slug,
+                        period: {
+                          from,
+                          to,
+                        },
+                      },
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    return statsResult.operationsStats.totalOperations == n;
+                  };
+
+                  return pollFor(check);
                 },
                 async readOperationsStats(
                   from: string,

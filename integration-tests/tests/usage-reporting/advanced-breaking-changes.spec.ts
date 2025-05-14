@@ -1,11 +1,11 @@
-import { waitFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 
 describe('advanced breaking changes', async () => {
   test('an argument can safely migrate from nullable to non nullable if all usages provide that argument', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, updateTargetValidationSettings } = await createProject();
+    const { createTargetAccessToken, updateTargetValidationSettings, waitForOperationsCollected } =
+      await createProject();
     const { checkSchema, publishSchema, collectUsage } = await createTargetAccessToken({});
 
     const userResult = await publishSchema({
@@ -83,7 +83,7 @@ describe('advanced breaking changes', async () => {
     const body = usageReport.body as Exclude<typeof usageReport.body, string>;
     expect(body.operations.accepted).toBe(2);
 
-    await waitFor(8_000);
+    await waitForOperationsCollected(2);
 
     const checkUpdatingUsedArgumentNullability = async () => {
       const checkNonnullArgResult = await checkSchema(/* GraphQL */ `
@@ -110,12 +110,11 @@ describe('advanced breaking changes', async () => {
           nodes: [
             {
               criticality: 'Breaking',
-              message:
-                "Type for argument 'id' on field 'Query.user' changed from 'ID' to 'ID!'",
+              message: "Type for argument 'id' on field 'Query.user' changed from 'ID' to 'ID!'",
             },
           ],
           total: 1,
-        }
+        },
       },
     });
 
@@ -145,7 +144,8 @@ describe('advanced breaking changes', async () => {
   test('an argument can NOT migrate from nullable to non nullable if NOT all usages provide that argument', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, updateTargetValidationSettings } = await createProject();
+    const { createTargetAccessToken, updateTargetValidationSettings, waitForOperationsCollected } =
+      await createProject();
     const { checkSchema, publishSchema, collectUsage } = await createTargetAccessToken({});
 
     const userResult = await publishSchema({
@@ -215,7 +215,7 @@ describe('advanced breaking changes', async () => {
     const body = usageReport.body as Exclude<typeof usageReport.body, string>;
     expect(body.operations.accepted).toBe(2);
 
-    await waitFor(8_000);
+    await waitForOperationsCollected(2);
 
     const checkUpdatingUsedArgumentNullability = async () => {
       const checkNonnullArgResult = await checkSchema(/* GraphQL */ `
@@ -265,7 +265,8 @@ describe('advanced breaking changes', async () => {
   test('an input field can migrate from nullable to non nullable if all usages provide that argument', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, updateTargetValidationSettings } = await createProject();
+    const { createTargetAccessToken, updateTargetValidationSettings, waitForOperationsCollected } =
+      await createProject();
     const { checkSchema, publishSchema, collectUsage } = await createTargetAccessToken({});
 
     const userResult = await publishSchema({
@@ -330,7 +331,7 @@ describe('advanced breaking changes', async () => {
     const body = usageReport.body as Exclude<typeof usageReport.body, string>;
     expect(body.operations.accepted).toBe(1);
 
-    await waitFor(8_000);
+    await waitForOperationsCollected(1);
 
     const checkUpdatingUsedArgumentNullability = async () => {
       const checkNonnullArgResult = await checkSchema(/* GraphQL */ `
@@ -387,7 +388,8 @@ describe('advanced breaking changes', async () => {
   test('an input field can NOT migrate from nullable to non nullable if NOT all usages provide that argument', async () => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, updateTargetValidationSettings } = await createProject();
+    const { createTargetAccessToken, updateTargetValidationSettings, waitForOperationsCollected } =
+      await createProject();
     const { checkSchema, publishSchema, collectUsage } = await createTargetAccessToken({});
 
     const userResult = await publishSchema({
@@ -450,7 +452,7 @@ describe('advanced breaking changes', async () => {
     const body = usageReport.body as Exclude<typeof usageReport.body, string>;
     expect(body.operations.accepted).toBe(1);
 
-    await waitFor(8_000);
+    await waitForOperationsCollected(1);
 
     const checkUpdatingUsedArgumentNullability = async () => {
       const checkNonnullArgResult = await checkSchema(/* GraphQL */ `

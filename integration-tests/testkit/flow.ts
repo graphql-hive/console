@@ -38,6 +38,32 @@ export function waitFor(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function pollInternal(
+  check: () => Promise<boolean>,
+  pollFrequency: number,
+  resolve: (value: void | PromiseLike<void>) => void,
+  reject: (reason?: any) => void,
+) {
+  setTimeout(async () => {
+    try {
+      const passes = await check();
+      if (passes) {
+        resolve();
+      } else {
+        pollInternal(check, pollFrequency, resolve, reject);
+      }
+    } catch (e) {
+      reject(e);
+    }
+  }, pollFrequency);
+}
+
+export function pollFor(check: () => Promise<boolean>, pollFrequency = 500): Promise<void> {
+  return new Promise((resolve, reject) => {
+    pollInternal(check, pollFrequency, resolve, reject);
+  });
+}
+
 export function createOrganization(input: CreateOrganizationInput, authToken: string) {
   return execute({
     document: graphql(`
