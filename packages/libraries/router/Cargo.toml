@@ -1,5 +1,3 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "hive-apollo-router-plugin"
 authors = ["Kamil Kisiela <kamil.kisiela@gmail.com>"]
