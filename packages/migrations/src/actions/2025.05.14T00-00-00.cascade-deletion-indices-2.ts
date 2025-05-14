@@ -56,14 +56,14 @@ export default {
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "target_validation_destination_target_id" ON "target_validation"("destination_target_id")
       `,
     },
-    // For cascading delete from "targets"
+    // For cascading delete from "schema_versions"
     {
       name: 'index schema_coordinate_status_created_in_version_id',
       query: sql`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "schema_coordinate_status_created_in_version_id" ON "schema_coordinate_status"("created_in_version_id")
       `,
     },
-    // For cascading delete from "targets"
+    // For cascading delete from "schema_versions"
     {
       name: 'index schema_coordinate_status_deprecated_in_version_id',
       query: sql`
