@@ -1,3 +1,5 @@
+cargo-features = ["edition2024"]
+
 [workspace]
 resolver = "2"
 members = ["packages/libraries/router", "scripts/compress"]
