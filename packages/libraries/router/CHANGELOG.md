@@ -1,5 +1,14 @@
 # 16.10.2024
 
+## 2.1.2
+
+### Patch Changes
+
+- [#6788](https://github.com/graphql-hive/console/pull/6788)
+  [`6f0af0e`](https://github.com/graphql-hive/console/commit/6f0af0eb712ce358b212b335f11d4a86ede08931)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Bump version to trigger release, fix
+  lockfile
+
 ## 2.1.1
 
 ### Patch Changes
