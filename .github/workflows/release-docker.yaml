@@ -1,12 +1,13 @@
 name: 'Release Docker Images'
 
-# When a tag is pushed, it means a new release is being made.
+# When the workflow is invoked with a tag, we are releaseing the version.
 on:
-  push:
-    tags:
-      # "hive@1.2.3" is an example tag that will trigger this workflow.
-      # "hive" represents the docker images needed for self-hosting.
-      - hive@*
+  workflow_call:
+    inputs:
+      tag:
+        default: false
+        type: string
+        required: true
 
 jobs:
   version:
@@ -21,7 +22,7 @@ jobs:
         id: version
         run: |
           # hive@1.0.0
-          VERSION=${{ github.ref_name }}
+          VERSION=${{ inputs.tag }}
           # 1.0.0
           VERSION_NUMBER=$(echo $VERSION | sed 's/[^0-9.]*//g')
           echo "number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
@@ -31,6 +32,7 @@ jobs:
     if: ${{ contains(needs.version.outputs.number, '.') }}
     uses: ./.github/workflows/build-and-dockerize.yaml
     with:
+      ref: refs/tags/${{ inputs.tag }}
       imageTag: ${{ needs.version.outputs.number }}
       publishLatest: true
       publishSourceMaps: true
