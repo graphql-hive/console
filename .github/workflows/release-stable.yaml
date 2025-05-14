@@ -90,12 +90,6 @@ jobs:
           echo "hiveVersion=$VERSION" >> $GITHUB_OUTPUT
           echo "hivePublish=true" >> $GITHUB_OUTPUT
 
-      - name: publish stable hive docker images
-        uses: ./.github/workflows/release-docker.yaml
-        if: steps.hive.outputs.hivePublish
-        with:
-          tag: hive@${{ steps.hive.outputs.hiveVersion }}
-
       # Needed for `oclif pack win`
       - name: Install NSIS
         run: |
@@ -135,3 +129,13 @@ jobs:
           cd packages/libraries/router
           cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
           cargo publish --allow-dirty --no-verify
+
+  # Release the stable docker images
+  release-docker:
+    uses: ./.github/workflows/release-docker.yaml
+    secrets: inherit
+    needs:
+      - publish
+    with:
+      tag: hive@${{ needs.publish.outputs.hivePublish }}
+    if: ${{ needs.package.outputs.hivePublish == 'true' }}
