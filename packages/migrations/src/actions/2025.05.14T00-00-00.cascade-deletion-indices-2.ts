@@ -60,7 +60,7 @@ export default {
     {
       name: 'index schema_coordinate_status_created_in_version_id',
       query: sql`
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS "schema_coordinate_status_created_in_version_id" ON "target_validation"("created_in_version_id")
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS "schema_coordinate_status_created_in_version_id" ON "schema_coordinate_status"("created_in_version_id")
       `,
     },
     // For cascading delete from "targets"
