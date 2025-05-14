@@ -458,6 +458,21 @@ export class CompositeModel {
 
     if (
       compositionCheck.status === 'failed' &&
+      (compositionCheck.reason.includesNetworkError || compositionCheck.reason.includesException)
+    ) {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.CompositionFailure,
+            compositionErrors: compositionCheck.reason.errorsBySource.composition,
+          },
+        ],
+      };
+    }
+
+    if (
+      compositionCheck.status === 'failed' &&
       compositionCheck.reason.errorsBySource.graphql.length > 0 &&
       !compareToLatestComposable
     ) {

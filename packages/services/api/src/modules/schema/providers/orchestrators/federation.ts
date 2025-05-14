@@ -3,7 +3,13 @@ import { abortSignalAny } from '@graphql-hive/signal';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
-import { Orchestrator, Project, ProjectType, SchemaObject } from '../../../../shared/entities';
+import {
+  ComposeAndValidateResult,
+  Orchestrator,
+  Project,
+  ProjectType,
+  SchemaObject,
+} from '../../../../shared/entities';
 import { Logger } from '../../../shared/providers/logger';
 import type { SchemaServiceConfig } from './tokens';
 import { SCHEMA_SERVICE_CONFIG } from './tokens';
@@ -121,8 +127,29 @@ export class FederationOrchestrator implements Orchestrator {
           signal: abortSignalAny([this.incomingRequestAbortSignal, timeoutAbortSignal]),
         },
       );
-
       return result;
+    } catch (err) {
+      // In case of a timeout error we return something the user can process
+      if (timeoutAbortSignal.reason) {
+        return {
+          contracts: null,
+          metadataAttributes: null,
+          schemaMetadata: null,
+          sdl: null,
+          supergraph: null,
+          tags: null,
+          includesNetworkError: true,
+          includesException: false,
+          errors: [
+            {
+              message: 'The schema composition timed out. Please try again.',
+              source: 'composition',
+            },
+          ],
+        } satisfies ComposeAndValidateResult;
+      }
+
+      throw err;
     } finally {
       timeoutAbortSignal.removeEventListener('abort', onTimeout);
       this.incomingRequestAbortSignal.removeEventListener('abort', onIncomingRequestAbort);

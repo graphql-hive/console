@@ -42,7 +42,6 @@ export function deploySchema({
         SCHEMA_CACHE_POLL_INTERVAL_MS: '150',
         SCHEMA_CACHE_TTL_MS: '65000' /* 65s */,
         SCHEMA_CACHE_SUCCESS_TTL_MS: String(hourInMS * 2),
-        SCHEMA_COMPOSITION_TIMEOUT_MS: String(minuteInMS),
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint

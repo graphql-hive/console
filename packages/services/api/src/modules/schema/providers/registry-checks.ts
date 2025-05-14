@@ -283,6 +283,8 @@ export class RegistryChecks {
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
           contracts: result.contracts?.map(mapContract) ?? null,
+          includesNetworkError: result.includesNetworkError ?? false,
+          includesException: result.includesException ?? false,
         },
       } satisfies CheckResult;
     }
