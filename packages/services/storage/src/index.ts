@@ -930,32 +930,92 @@ export async function createStorage(
         return Promise.resolve(null);
       });
     }),
-    getOrganizationInvitations: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allInvitations = await pool.query<
+
+    async getOrganizationInvitations(organizationId, args) {
+      let cursor: null | {
+        createdAt: string;
+        /** email */
+        hash: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
+      if (args.after) {
+        cursor = decodeCreatedAtAndHashBasedCursor(args.after);
+      }
+
+      const query = sql`
+        SELECT
+          oi.organization_id
+          , oi.code
+          , oi.email
+          , to_json(oi.created_at) as "created_at"
+          , to_json(oi.expires_at) as "expires_at"
+          , oi.role_id as "role_id"
+          , to_jsonb(omr.*) as role
+        FROM
+          organization_invitations as oi
+        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
+        WHERE
+          oi.organization_id = ${organizationId}
+          ${
+            cursor
+              ? sql`
+                  AND (
+                    (
+                      oi.created_at = ${cursor.createdAt}
+                      AND oi.email < ${cursor.hash}
+                    )
+                    OR oi.created_at < ${cursor.createdAt}
+                  )
+                `
+              : sql``
+          }
+          AND oi.expires_at > NOW()
+        ORDER BY
+          oi.created_at DESC
+          , oi.email DESC
+        LIMIT ${limit + 1}
+      `;
+
+      const result = await pool.any<
         organization_invitations & {
           role: organization_member_roles;
         }
-      >(
-        sql`/* getOrganizationInvitations */
-          SELECT oi.*, to_jsonb(omr.*) as role
-          FROM organization_invitations as oi
-          LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
-          WHERE oi.organization_id IN (${sql.join(
-            organizations,
-            sql`, `,
-          )}) AND oi.expires_at > NOW() ORDER BY oi.created_at DESC
-        `,
-      );
+      >(query);
 
-      return organizations.map(organization => {
-        return Promise.resolve(
-          allInvitations.rows
-            .filter(row => row.organization_id === organization)
-            .map(transformOrganizationInvitation) ?? [],
-        );
+      let edges = result.map(row => {
+        const node = transformOrganizationInvitation(row);
+
+        return {
+          node,
+          get cursor() {
+            return encodeCreatedAtAndHashBasedCursor({
+              createdAt: node.createdAt,
+              hash: node.email,
+            });
+          },
+        };
       });
-    }),
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
     async deleteOrganizationMemberRole({ organizationId, roleId }) {
       await tracedTransaction('deleteOrganizationMemberRole', pool, async t => {
         const viewerRoleId = await t.oneFirst(sql`/* getViewerRoleId */
@@ -4568,6 +4628,19 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
   };
 }
 
+export function decodeUUIDIdBasedCursor(cursor: string) {
+  const id = Buffer.from(cursor, 'base64').toString('utf8');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    throw new Error('Invalid cursor');
+  }
+
+  return { id };
+}
+
+export function encodeUUIDIdBasedCursor(cursor: { id: string }) {
+  return Buffer.from(cursor.id).toString('base64');
+}
+
 export function encodeHashBasedCursor(cursor: { id: string }) {
   return Buffer.from(cursor.id).toString('base64');
 }
@@ -4576,6 +4649,19 @@ export function decodeHashBasedCursor(cursor: string) {
   const id = Buffer.from(cursor, 'base64').toString('utf8');
   return {
     id,
+  };
+}
+
+export function encodeCreatedAtAndHashBasedCursor(cursor: { createdAt: string; hash: string }) {
+  return Buffer.from(`${cursor.createdAt}|${cursor.hash}`).toString('base64');
+}
+
+export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
+  const [createdAt, hash] = Buffer.from(cursor, 'base64').toString('utf8').split('|');
+
+  return {
+    createdAt,
+    hash,
   };
 }
 
@@ -5218,6 +5304,19 @@ export type PaginatedSchemaVersionConnection = Readonly<{
   edges: ReadonlyArray<{
     cursor: string;
     node: SchemaVersion;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+export type PaginatedOrganizationInvitationConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: OrganizationInvitation;
   }>;
   pageInfo: Readonly<{
     hasNextPage: boolean;

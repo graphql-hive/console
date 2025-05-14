@@ -68,41 +68,22 @@ export const Organization: Pick<
         after: args.after ?? null,
       });
   },
-  invitations: async (organization, _, { injector }) => {
-    const invitations = await injector.get(OrganizationManager).getInvitations({
-      organizationId: organization.id,
+  invitations: async (organization, args, { injector }) => {
+    const invitations = await injector.get(OrganizationManager).getInvitations(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
     });
 
-    if (invitations === null) {
-      return null;
-    }
-
-    return {
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        endCursor: '',
-        startCursor: '',
-      },
-      edges: invitations.map(node => ({
-        node,
-        cursor: '',
-      })),
-    };
+    return invitations;
   },
-  memberRoles: async (organization, _, { injector }) => {
+  memberRoles: async (organization, args, { injector }) => {
     const roles = await injector
       .get(OrganizationMemberRoles)
-      .getMemberRolesForOrganizationId(organization.id);
-    return {
-      edges: roles.map(node => ({ node, cursor: node.id })),
-      pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        endCursor: '',
-        startCursor: '',
-      },
-    };
+      .getPaginatedMemberRolesForOrganizationId(organization.id, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
+    return roles;
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { decodeUUIDIdBasedCursor, encodeUUIDIdBasedCursor } from '@hive/storage';
 import { batch } from '../../../shared/helpers';
 import {
   Permission,
@@ -83,7 +84,19 @@ export class OrganizationMemberRoles {
     });
   }
 
-  async getMemberRolesForOrganizationId(organizationId: string) {
+  async getPaginatedMemberRolesForOrganizationId(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
+    let cursor: { id: string } | null = null;
+    if (args.after) {
+      cursor = decodeUUIDIdBasedCursor(args.after);
+    }
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
     const query = sql`
       SELECT
         ${organizationMemberRoleFields}
@@ -91,11 +104,47 @@ export class OrganizationMemberRoles {
         "organization_member_roles"
       WHERE
         "organization_id" = ${organizationId}
+        ${
+          cursor
+            ? sql`
+                AND "id" < ${cursor.id}
+              `
+            : sql``
+        }
+      ORDER BY
+        "id" DESC
+      LIMIT ${limit + 1}
     `;
 
     const records = await this.pool.any<unknown>(query);
 
-    return records.map(row => MemberRoleModel.parse(row));
+    let edges = records.map(row => {
+      const node = MemberRoleModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
   }
 
   /** Find member roles by their ID */

@@ -307,9 +307,15 @@ export default gql`
     me: Member!
     members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
       @tag(name: "public")
-    invitations: OrganizationInvitationConnection @tag(name: "public")
+    invitations(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationInvitationConnection @tag(name: "public")
     getStarted: OrganizationGetStarted!
-    memberRoles: MemberRoleConnection @tag(name: "public")
+    memberRoles(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): MemberRoleConnection @tag(name: "public")
     """
     Whether the viewer should be able to access the settings page within the app
     """

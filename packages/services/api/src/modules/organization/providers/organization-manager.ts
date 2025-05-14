@@ -4,7 +4,6 @@ import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
-import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -251,13 +250,18 @@ export class OrganizationManager {
     return member;
   }
 
-  @cache((selector: OrganizationSelector) => selector.organizationId)
-  async getInvitations(selector: OrganizationSelector) {
+  async getInvitations(
+    organization: Organization,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
     const canAccessInvitations = await this.session.canPerformAction({
       action: 'member:modify',
-      organizationId: selector.organizationId,
+      organizationId: organization.id,
       params: {
-        organizationId: selector.organizationId,
+        organizationId: organization.id,
       },
     });
 
@@ -265,7 +269,7 @@ export class OrganizationManager {
       return null;
     }
 
-    return await this.storage.getOrganizationInvitations(selector);
+    return await this.storage.getOrganizationInvitations(organization.id, args);
   }
 
   async getOrganizationOwner(selector: OrganizationSelector) {
@@ -1201,39 +1205,6 @@ export class OrganizationManager {
       organization,
       args,
     );
-  }
-
-  async getMemberRoles(selector: { organizationId: string }) {
-    await this.session.assertPerformAction({
-      action: 'member:describe',
-      organizationId: selector.organizationId,
-      params: {
-        organizationId: selector.organizationId,
-      },
-    });
-
-    return this.organizationMemberRoles.getMemberRolesForOrganizationId(selector.organizationId);
-  }
-
-  async getMemberRole(selector: {
-    organizationId: string;
-    roleId: string;
-  }): Promise<OrganizationMemberRole | null> {
-    const role = await this.organizationMemberRoles.findMemberRoleById(selector.roleId);
-
-    if (!role) {
-      return null;
-    }
-
-    await this.session.assertPerformAction({
-      action: 'member:describe',
-      organizationId: role.organizationId,
-      params: {
-        organizationId: role.organizationId,
-      },
-    });
-
-    return role;
   }
 
   async getViewerMemberRole(selector: {

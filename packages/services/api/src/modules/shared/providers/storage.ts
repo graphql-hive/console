@@ -3,6 +3,7 @@ import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
 import type {
   ConditionalBreakingChangeMetadata,
+  PaginatedOrganizationInvitationConnection,
   PaginatedSchemaVersionConnection,
   SchemaChangeType,
   SchemaCheck,
@@ -173,7 +174,13 @@ export interface Storage {
 
   countOrganizationMembers(_: OrganizationSelector): Promise<number>;
 
-  getOrganizationInvitations(_: OrganizationSelector): Promise<readonly OrganizationInvitation[]>;
+  getOrganizationInvitations(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ): Promise<PaginatedOrganizationInvitationConnection>;
 
   getOrganizationOwnerId(_: OrganizationSelector): Promise<string | null>;
 
