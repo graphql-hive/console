@@ -15,17 +15,12 @@ export default {
     {
       name: 'drop constraint contracts_target_id_fkey',
       query: sql`
-        ALTER TABLE "contracts" DROP CONSTRAINT IF EXISTS "contracts_target_id_fkey"
-      `,
-    },
-    // add back but this time with cascade delete
-    {
-      name: 'add constraint contracts_target_id_fkey',
-      query: sql`
-        ALTER TABLE "contracts" ADD CONSTRAINT "contracts_target_id_fkey"
-          FOREIGN KEY ("target_id")
-          REFERENCES "targets"("id")
-          ON DELETE CASCADE
+        ALTER TABLE "contracts"
+          DROP CONSTRAINT IF EXISTS "contracts_target_id_fkey"
+          , ADD CONSTRAINT "contracts_target_id_fkey"
+            FOREIGN KEY ("target_id")
+            REFERENCES "targets"("id")
+            ON DELETE CASCADE
       `,
     },
   ],
