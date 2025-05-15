@@ -487,12 +487,25 @@ export class RegistryChecks {
 
           let checkCoordinate = change.breakingChangeSchemaCoordinate;
           if (isNullToRequiredArgumentChange(change)) {
-            // If this is a nullable argument changing to required, then we must count all calls -- even those not passing an argument.
-            // Otherwise, if those operations are not considered, they could still be getting sent. And since they are not passing the
-            // argument, they would be broken... This could likely be addressed by adjusting the coordinates collection logic.
-            // But that would require adjusting the field call counts for the explorer...
-
-            // Calculate the field coordinate from the argument coordinate
+            /**
+             * It's necessary to check the parent field in this case because an argument is included in the
+             * usage report's list of coordinates _only if it's in the operation_. E.g. For a schema:
+             *
+             * ```
+             * type Query {
+             *   foo(a: String): String
+             * }
+             * ```
+             *
+             * Operation `query Foo { foo(a: "b") }`
+             * Reports: `Query.foo, Query.foo.a, Query.foo.a!`
+             *
+             * Operation: `query Foo2 { foo }`
+             * Only reports: `Query.foo`.
+             *
+             * And so when changing an argument from nullable to non-nullable, we need to check the parent field
+             * could rather than the argument count. Otherwise, the second example wouldn't trigger the change as "breaking".
+             */
             checkCoordinate = change.breakingChangeSchemaCoordinate
               .split('.')
               .slice(0, 2)
