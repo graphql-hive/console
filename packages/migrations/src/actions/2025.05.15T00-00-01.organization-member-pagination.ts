@@ -9,7 +9,7 @@ const day = date.getDate();
 const createdAt = `'${year}-${month}-${day}'`;
 
 export default {
-  name: '2025.04.29T00-00-00.organization-member-pagination.ts',
+  name: '2025.05.15T00-00-01.organization-member-pagination.ts',
   noTransaction: true,
   // Adds a default role to OIDC integration and set index on "oidc_integrations"."default_role_id"
   run: ({ sql }) => [
