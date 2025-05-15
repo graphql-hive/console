@@ -42,7 +42,7 @@ import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/
 import {
   SCHEMA_SERVICE_CONFIG,
   SchemaServiceConfig,
-} from './modules/schema/providers/orchestrators/tokens';
+} from './modules/schema/providers/orchestrator/tokens';
 import { sharedModule } from './modules/shared';
 import { CryptoProvider, encryptionSecretProvider } from './modules/shared/providers/crypto';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
