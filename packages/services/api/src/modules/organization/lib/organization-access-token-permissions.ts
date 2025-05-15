@@ -13,6 +13,24 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'members',
+    title: 'Members',
+    permissions: [
+      {
+        id: 'member:describe',
+        title: 'Describe members',
+        description: 'Fetch information about organization members.',
+      },
+
+      {
+        id: 'member:modify',
+        title: 'Manage members',
+        description: 'Manage users, roles, and invites.',
+        dependsOn: 'member:describe',
+      },
+    ],
+  },
+  {
     id: 'access-tokens',
     title: 'Access Tokens',
     permissions: [
