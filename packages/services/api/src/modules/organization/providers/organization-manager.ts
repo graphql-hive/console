@@ -307,7 +307,7 @@ export class OrganizationManager {
     return result;
   }
 
-  async deleteOrganization(selector: OrganizationSelector): Promise<Organization> {
+  async deleteOrganization(selector: OrganizationSelector, signal?: AbortSignal): Promise<Organization> {
     this.logger.info('Deleting an organization (organization=%s)', selector.organizationId);
     await this.session.assertPerformAction({
       action: 'organization:delete',
@@ -323,7 +323,7 @@ export class OrganizationManager {
 
     const deletedOrganization = await this.storage.deleteOrganization({
       organizationId: organization.id,
-    });
+    }, signal);
 
     await this.tokenStorage.invalidateTokens(deletedOrganization.tokens);
 

@@ -109,7 +109,7 @@ export interface Storage {
       }
   >;
 
-  deleteOrganization(_: OrganizationSelector): Promise<
+  deleteOrganization(_: OrganizationSelector, signal?: AbortSignal): Promise<
     | (Organization & {
         tokens: string[];
       })

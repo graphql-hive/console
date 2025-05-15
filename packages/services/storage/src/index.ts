@@ -7,7 +7,7 @@ import {
   UniqueIntegrityConstraintViolationError,
 } from 'slonik';
 import { update } from 'slonik-utilities';
-import { TaggedTemplateLiteralInvocation, TransactionFunction } from 'slonik/dist/src/types';
+import { DatabasePoolConnection, TaggedTemplateLiteralInvocation, TransactionFunction } from 'slonik/dist/src/types';
 import zod from 'zod';
 import type {
   Alert,
@@ -36,6 +36,7 @@ import { batch, batchBy } from '../../api/src/shared/helpers';
 import {
   alert_channels,
   alerts,
+  cancellableConnection,
   getPool,
   organization_invitations,
   organization_member,
@@ -105,7 +106,7 @@ const tracer = trace.getTracer('storage');
 
 async function tracedTransaction<T>(
   name: string,
-  pool: DatabasePool,
+  pool: DatabasePool | DatabasePoolConnection,
   handler: TransactionFunction<T>,
   transactionRetryLimit?: number,
 ): Promise<T> {
@@ -742,22 +743,26 @@ export async function createStorage(
         };
       });
     },
-    async deleteOrganization({ organizationId: organization }) {
-      const result = await tracedTransaction('DeleteOrganization', pool, async t => {
-        const tokensResult = await t.query<Pick<tokens, 'token'>>(sql`/* findTokensForDeletion */
-          SELECT token FROM tokens WHERE organization_id = ${organization} AND deleted_at IS NULL
-        `);
+    async deleteOrganization({ organizationId: organization }, signal) {
+      const result = await cancellableConnection(pool, async (connection, cancel) => {
+        signal?.addEventListener('abort', cancel);
+        const tracedResult = await tracedTransaction('DeleteOrganization', connection, async t => {
+          const tokensResult = await t.query<Pick<tokens, 'token'>>(sql`/* findTokensForDeletion */
+            SELECT token FROM tokens WHERE organization_id = ${organization} AND deleted_at IS NULL
+          `);
 
-        return {
-          organization: await t.one<organizations>(
-            sql`/* deleteOrganization */
-              DELETE FROM organizations
-              WHERE id = ${organization}
-              RETURNING *
-            `,
-          ),
-          tokens: tokensResult.rows.map(row => row.token),
-        };
+          return {
+            organization: await t.one<organizations>(
+              sql`/* deleteOrganization */
+                DELETE FROM organizations
+                WHERE id = ${organization}
+                RETURNING *
+              `,
+            ),
+            tokens: tokensResult.rows.map(row => row.token),
+          };
+        }).finally(() => signal?.removeEventListener('abort', cancel));
+        return tracedResult;
       });
 
       return {
