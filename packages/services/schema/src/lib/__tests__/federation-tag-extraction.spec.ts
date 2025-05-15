@@ -3,7 +3,7 @@ import {
   applyTagFilterOnSubgraphs,
   applyTagFilterToInaccessibleTransformOnSubgraphSchema,
   type Federation2SubgraphDocumentNodeByTagsFilter,
-} from './federation-tag-extraction';
+} from '../federation-tag-extraction';
 
 describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
   describe('correct @inaccessible directive usage based on subgraph version/imports', () => {
@@ -369,6 +369,48 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         field1: ID!
       }
     `);
+    });
+
+    test('mutation object type is returned in "typesWithAllFieldsInaccessible" if all its fields are excluded', () => {
+      const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
+        include: new Set(),
+        exclude: new Set(['exclude']),
+      };
+      const sdl = parse(/* GraphQL */ `
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+          query: Query
+          mutation: Mutation
+        }
+
+        type Query {
+          field1: String!
+        }
+
+        type Mutation {
+          field1: ID! @tag(name: "exclude")
+        }
+      `);
+
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+
+      expect(output.typesWithAllFieldsInaccessible.entries().toArray()).toEqual([
+        ['Mutation', true],
+      ]);
+
+      expect(print(output.typeDefs)).toMatchInlineSnapshot(`
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+          query: Query
+          mutation: Mutation
+        }
+
+        type Query {
+          field1: String!
+        }
+
+        type Mutation {
+          field1: ID! @federation__inaccessible
+        }
+      `);
     });
   });
 

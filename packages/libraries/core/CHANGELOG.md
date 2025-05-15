@@ -1,5 +1,19 @@
 # @graphql-hive/core
 
+## 0.11.0
+
+### Minor Changes
+
+- [#6637](https://github.com/graphql-hive/console/pull/6637)
+  [`5130fc1`](https://github.com/graphql-hive/console/commit/5130fc1db8c50ac0eb35d901623594749772c550)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add error logging for invalid combinations of the
+  `target` and `token` configuration.
+
+  - Please make sure to provide the `target` option for usage reporting when using a token that
+    starts with `hvo1/`.
+  - Please make sure to **not** provide a `target` option for usage reporting when a token does
+    **not** start with `hvo1/`
+
 ## 0.10.1
 
 ### Patch Changes

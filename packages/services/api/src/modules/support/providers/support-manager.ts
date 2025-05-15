@@ -230,7 +230,7 @@ export class SupportManager {
 
       // Before attempting to create the user we need to check whether an user with that email might already exist.
       let userZendeskId = await this.httpClient
-        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users`, {
+        .get(`https://${this.config.subdomain}.zendesk.com/api/v2/users/search`, {
           searchParams: {
             query: email,
           },
@@ -254,9 +254,9 @@ export class SupportManager {
             })
             .parse(res);
 
-          const user = data.users.at(0) ?? null;
+          const user = data.users.find(u => u.email === email) ?? null;
 
-          if (user?.email === email) {
+          if (user) {
             this.logger.info(
               'User found on Zendesk. (organizationID: %s, userId: %s)',
               input.organizationId,

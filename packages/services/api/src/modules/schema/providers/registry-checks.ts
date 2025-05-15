@@ -18,7 +18,6 @@ import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provi
 import type {
   ComposeAndValidateResult,
   DateRange,
-  Orchestrator,
   Organization,
   Project,
   PushedCompositeSchema,
@@ -27,6 +26,7 @@ import type {
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { extendWithBase, isCompositeSchema, SchemaHelper } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
@@ -170,6 +170,7 @@ export class RegistryChecks {
     private inspector: Inspector,
     private logger: Logger,
     private operationsReader: OperationsReader,
+    private orchestrator: CompositionOrchestrator,
   ) {}
 
   /**
@@ -242,7 +243,6 @@ export class RegistryChecks {
   }
 
   async composition({
-    orchestrator,
     targetId,
     project,
     organization,
@@ -250,7 +250,6 @@ export class RegistryChecks {
     baseSchema,
     contracts,
   }: {
-    orchestrator: Orchestrator;
     targetId: string;
     project: Project;
     organization: Organization;
@@ -258,7 +257,8 @@ export class RegistryChecks {
     baseSchema: string | null;
     contracts: null | ContractsInputType;
   }) {
-    const result = await orchestrator.composeAndValidate(
+    const result = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
       extendWithBase(schemas, baseSchema).map(s => this.helper.createSchemaObject(s)),
       {
         external: project.externalComposition,
@@ -283,6 +283,8 @@ export class RegistryChecks {
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
           contracts: result.contracts?.map(mapContract) ?? null,
+          includesNetworkError: result.includesNetworkError ?? false,
+          includesException: result.includesException ?? false,
         },
       } satisfies CheckResult;
     }
@@ -314,7 +316,6 @@ export class RegistryChecks {
       sdl: string | null;
       schemas: Schemas;
     } | null;
-    orchestrator: Orchestrator;
     organization: Organization;
     project: Project;
     targetId: string;
@@ -337,7 +338,8 @@ export class RegistryChecks {
 
     this.logger.debug('Compose on the fly.');
 
-    const existingSchemaResult = await args.orchestrator.composeAndValidate(
+    const existingSchemaResult = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
       args.version.schemas.map(s => this.helper.createSchemaObject(s)),
       {
         external: args.project.externalComposition,

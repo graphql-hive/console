@@ -314,7 +314,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
         <div className="flex flex-col py-4">
           <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
             <div className="flex flex-col gap-1 pl-3">
-              <div className="mb-2 font-bold">Absolute time range</div>
+              <div className="mb-2 font-bold">Absolute date range</div>
               <div className="space-y-2">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
                   <Label htmlFor="from">From</Label>
@@ -327,7 +327,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                         setFromValue(ev.target.value);
                       }}
                     />
-                    <Button size="icon" variant="ghost" onClick={() => setShowCalendar(true)}>
+                    <Button size="icon" variant="outline" onClick={() => setShowCalendar(true)}>
                       <CalendarDays className="size-4" />
                     </Button>
                   </div>
@@ -350,7 +350,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                         setToValue(ev.target.value);
                       }}
                     />
-                    <Button size="icon" variant="ghost" onClick={() => setShowCalendar(true)}>
+                    <Button size="icon" variant="outline" onClick={() => setShowCalendar(true)}>
                       <CalendarDays className="size-4" />
                     </Button>
                   </div>
@@ -366,7 +366,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                 </div>
 
                 <Button
-                  size="sm"
+                  className="w-full text-center"
                   onClick={() => {
                     const fromWithoutWhitespace = fromValue.trim();
                     const toWithoutWhitespace = toValue.trim();

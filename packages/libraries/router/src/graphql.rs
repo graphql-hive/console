@@ -237,9 +237,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                         match arg_value {
                             Value::Enum(value) => {
                                 let value_str = value.to_string();
-                                ctx.schema_coordinates.insert(
-                                    format!("{input_type_name}.{value_str}").to_string(),
-                                );
+                                ctx.schema_coordinates
+                                    .insert(format!("{input_type_name}.{value_str}").to_string());
                             }
                             Value::List(_) => {
                                 // handled by enter_list_value
@@ -657,9 +656,7 @@ impl OperationProcessor {
                 .items
                 .iter()
                 .any(|selection| match selection {
-                    Selection::Field(field) => {
-                        field.name == "__schema" || field.name == "__type"
-                    }
+                    Selection::Field(field) => field.name == "__schema" || field.name == "__type",
                     _ => false,
                 }),
             _ => false,

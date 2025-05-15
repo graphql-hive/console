@@ -704,7 +704,7 @@ test.concurrent(
     ).rejects.toMatchInlineSnapshot(`
       :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
       exitCode------------------------------------------:
-      2
+      1
       stderr--------------------------------------------:
        ›   Error: No access (reason: "Missing permission for performing
        ›   'schemaVersion:publish' on resource")  (Request ID: __REQUEST_ID__)  [115]
@@ -785,7 +785,7 @@ test('schema:check without `--target` flag fails for organization access token',
   ).rejects.toMatchInlineSnapshot(`
     :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
     exitCode------------------------------------------:
-    2
+    3
     stderr--------------------------------------------:
      ›   Error: Missing 1 required argument:
      ›   TARGET 	The target on which the action is performed. This can either be a
@@ -857,7 +857,7 @@ test('schema:publish without `--target` flag fails for organization access token
   ).rejects.toMatchInlineSnapshot(`
     :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
     exitCode------------------------------------------:
-    2
+    3
     stderr--------------------------------------------:
      ›   Error: Missing 1 required argument:
      ›   TARGET 	The target on which the action is performed. This can either be a

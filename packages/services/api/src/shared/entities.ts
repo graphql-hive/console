@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
-import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
+import type { CompositionFailureError } from '@hive/schema';
 import type { schema_policy_resource } from '@hive/storage';
 import type {
   AlertChannelType,
@@ -401,17 +401,8 @@ export interface ComposeAndValidateResult {
     Array<{ name: string; content: string; source: string | null }>
   > | null;
   metadataAttributes: null | Record<string, string[]>;
-}
-
-export interface Orchestrator {
-  composeAndValidate(
-    schemas: SchemaObject[],
-    config: {
-      external: Project['externalComposition'];
-      native: boolean;
-      contracts: ContractsInputType | null;
-    },
-  ): Promise<ComposeAndValidateResult>;
+  includesNetworkError?: boolean;
+  includesException?: boolean;
 }
 
 export interface AlertChannel {

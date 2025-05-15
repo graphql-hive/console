@@ -1,8 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { FederationOrchestrator } from '../orchestrators/federation';
-import { StitchingOrchestrator } from '../orchestrators/stitching';
 import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from '../registry-checks';
 import { swapServices } from '../schema-helper';
 import { shouldUseLatestComposableVersion } from '../schema-manager';
@@ -39,8 +37,6 @@ import {
 })
 export class CompositeModel {
   constructor(
-    private federationOrchestrator: FederationOrchestrator,
-    private stitchingOrchestrator: StitchingOrchestrator,
     private checks: RegistryChecks,
     private logger: Logger,
   ) {}
@@ -189,14 +185,7 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
-    this.logger.debug('Using orchestrator of type %s', orchestrator.type);
-
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: selector.targetId,
       project,
       organization,
@@ -215,7 +204,6 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: comparedVersion,
       organization,
       project,
@@ -432,13 +420,7 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
-
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: target.id,
       project,
       organization,
@@ -458,6 +440,21 @@ export class CompositeModel {
 
     if (
       compositionCheck.status === 'failed' &&
+      (compositionCheck.reason.includesNetworkError || compositionCheck.reason.includesException)
+    ) {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.CompositionFailure,
+            compositionErrors: compositionCheck.reason.errorsBySource.composition,
+          },
+        ],
+      };
+    }
+
+    if (
+      compositionCheck.status === 'failed' &&
       compositionCheck.reason.errorsBySource.graphql.length > 0 &&
       !compareToLatestComposable
     ) {
@@ -473,7 +470,6 @@ export class CompositeModel {
     }
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: schemaVersionToCompareAgainst,
       organization,
       project,
@@ -617,15 +613,10 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
     const schemas = latestVersion.schemas.filter(s => s.service_name !== input.serviceName);
     schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
 
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: selector.target,
       project,
       organization,
@@ -644,7 +635,6 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: compareToLatestComposable ? latestComposable : latest,
       organization,
       project,
