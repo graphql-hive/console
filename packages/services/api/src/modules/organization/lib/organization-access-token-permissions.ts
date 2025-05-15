@@ -32,6 +32,18 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Describe project',
         description: 'Fetch information about the specified projects.',
       },
+      {
+        id: 'project:delete',
+        title: 'Delete project',
+        description: 'Delete projects.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'project:modifySettings',
+        title: 'Modify Settings',
+        description: 'Modify the project settings.',
+        dependsOn: 'project:describe',
+      },
     ],
   },
   {
