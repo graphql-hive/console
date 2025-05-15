@@ -17,7 +17,6 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
   NativeFederationCompatibilityStatus,
-  Orchestrator,
   Organization,
   Project,
   ProjectType,
@@ -44,9 +43,7 @@ import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helpe
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
 import type { SchemaCoordinatesDiffResult } from './inspector';
-import { FederationOrchestrator } from './orchestrators/federation';
-import { SingleOrchestrator } from './orchestrators/single';
-import { StitchingOrchestrator } from './orchestrators/stitching';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
@@ -78,9 +75,7 @@ export class SchemaManager {
     private session: Session,
     private storage: Storage,
     private projectManager: ProjectManager,
-    private singleOrchestrator: SingleOrchestrator,
-    private stitchingOrchestrator: StitchingOrchestrator,
-    private federationOrchestrator: FederationOrchestrator,
+    private compositionOrchestrator: CompositionOrchestrator,
     private crypto: CryptoProvider,
     private githubIntegrationManager: GitHubIntegrationManager,
     private targetManager: TargetManager,
@@ -189,8 +184,6 @@ export class SchemaManager {
       };
     }
 
-    const orchestrator = this.matchOrchestrator(project.type);
-
     const existingServices = ensureCompositeSchemas(latestSchemas ? latestSchemas.schemas : []);
     const services = existingServices
       // remove provided services from the list
@@ -210,15 +203,19 @@ export class SchemaManager {
       )
       .map(service => this.schemaHelper.createSchemaObject(service));
 
-    const compositionResult = await orchestrator.composeAndValidate(services, {
-      external: project.externalComposition,
-      native: this.checkProjectNativeFederationSupport({
-        project,
-        organization,
-        targetId: selector.targetId,
-      }),
-      contracts: null,
-    });
+    const compositionResult = await this.compositionOrchestrator.composeAndValidate(
+      'federation',
+      services,
+      {
+        external: project.externalComposition,
+        native: this.checkProjectNativeFederationSupport({
+          project,
+          organization,
+          targetId: selector.targetId,
+        }),
+        contracts: null,
+      },
+    );
 
     if (compositionResult.errors.length > 0) {
       return {
@@ -478,10 +475,9 @@ export class SchemaManager {
       throw new HiveError('External composition is not enabled.');
     }
 
-    const orchestrator = this.matchOrchestrator(project.type);
-
     try {
-      const { errors } = await orchestrator.composeAndValidate(
+      const { errors } = await this.compositionOrchestrator.composeAndValidate(
+        'federation',
         [
           {
             document: externalSchemaCompositionTestDocument,
@@ -514,23 +510,6 @@ export class SchemaManager {
         kind: 'error',
         error: error instanceof HiveError ? error.message : 'Unknown error',
       } as const;
-    }
-  }
-
-  matchOrchestrator(projectType: ProjectType): Orchestrator | never {
-    switch (projectType) {
-      case ProjectType.SINGLE: {
-        return this.singleOrchestrator;
-      }
-      case ProjectType.STITCHING: {
-        return this.stitchingOrchestrator;
-      }
-      case ProjectType.FEDERATION: {
-        return this.federationOrchestrator;
-      }
-      default: {
-        throw new HiveError(`Couldn't find an orchestrator for project type "${projectType}"`);
-      }
     }
   }
 
@@ -1190,8 +1169,6 @@ export class SchemaManager {
       ),
     );
 
-    const orchestrator = this.matchOrchestrator(ProjectType.FEDERATION);
-
     this.logger.debug('Checking compatibility of %s versions', versions.length);
 
     const compatibilityResults = await Promise.all(
@@ -1201,7 +1178,8 @@ export class SchemaManager {
           return NativeFederationCompatibilityStatus.UNKNOWN;
         }
 
-        const compositionResult = await orchestrator.composeAndValidate(
+        const compositionResult = await this.compositionOrchestrator.composeAndValidate(
+          'federation',
           ensureCompositeSchemas(schemasPerVersion[i]).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,
