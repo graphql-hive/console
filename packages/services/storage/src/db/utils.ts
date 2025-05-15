@@ -1,4 +1,4 @@
-import { sql, DatabasePool, BackendTerminatedError, DatabasePoolConnection } from 'slonik';
+import { BackendTerminatedError, DatabasePool, DatabasePoolConnection, sql } from 'slonik';
 
 export function createConnectionString(config: {
   host: string;
@@ -22,13 +22,19 @@ export function toDate(date: Date) {
   return sql`to_timestamp(${date.getTime() / 1000})`;
 }
 
-export type CancellableConnectionRoutine<T> = (connection: DatabasePoolConnection, cancel: () => Promise<void>) => Promise<T>;
+export type CancellableConnectionRoutine<T> = (
+  connection: DatabasePoolConnection,
+  cancel: () => Promise<void>,
+) => Promise<T>;
 
-export async function cancellableConnection<T>(pool: DatabasePool, cancellableConnectionRoutine: CancellableConnectionRoutine<T>): Promise<T> {
+export async function cancellableConnection<T>(
+  pool: DatabasePool,
+  cancellableConnectionRoutine: CancellableConnectionRoutine<T>,
+): Promise<T> {
   let done = false;
 
-  return pool.connect(async (connection0) => {
-    return pool.connect(async (connection1) => {
+  return pool.connect(async connection0 => {
+    return pool.connect(async connection1 => {
       const backendProcessId = await connection1.oneFirst(sql`SELECT pg_backend_pid()`);
 
       const cancel = async () => {
@@ -38,10 +44,13 @@ export async function cancellableConnection<T>(pool: DatabasePool, cancellableCo
 
         done = true;
 
-        return connection0.query(sql`
+        return connection0
+          .query(
+            sql`
           SELECT pg_terminate_backend(${backendProcessId})
-        `)
-          .then((_queryResult) => {
+        `,
+          )
+          .then(_queryResult => {
             return;
           })
           .catch((error: unknown) => {
@@ -66,4 +75,4 @@ export async function cancellableConnection<T>(pool: DatabasePool, cancellableCo
       return result;
     });
   });
-};
+}
