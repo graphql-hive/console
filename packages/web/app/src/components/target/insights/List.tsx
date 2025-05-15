@@ -476,6 +476,7 @@ const OperationsList_OperationsStatsQuery = graphql(`
     $filter: OperationStatsFilterInput!
   ) {
     target(reference: { bySelector: $targetSelector }) {
+      id
       operationsStats(period: $period, filter: $filter) {
         clients {
           edges {

@@ -187,6 +187,7 @@ const OperationsFilterContainer_OperationStatsQuery = graphql(`
     $period: DateRangeInput!
   ) {
     target(reference: { bySelector: $targetSelector }) {
+      id
       operationsStats(period: $period) {
         operations {
           edges {
@@ -240,7 +241,7 @@ function OperationsFilterContainer({
     return null;
   }
 
-  if (query.fetching || query.error || !query.data || !query.data.target) {
+  if (query.fetching || query.error || !query.data?.target) {
     return <Spinner />;
   }
 
@@ -544,6 +545,7 @@ const ClientsFilterContainer_ClientStatsQuery = graphql(`
     $period: DateRangeInput!
   ) {
     target(reference: { bySelector: $targetSelector }) {
+      id
       operationsStats(period: $period) {
         clients {
           ...ClientsFilter_ClientStatsValuesConnectionFragment

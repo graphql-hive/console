@@ -41,6 +41,7 @@ const Stats_GeneralOperationsStatsQuery = graphql(`
     $resolution: Int!
   ) {
     target(reference: { bySelector: $targetSelector }) {
+      id
       allOperations: operationsStats(period: $period) {
         totalRequests
       }
