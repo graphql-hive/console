@@ -115,7 +115,6 @@ function NewTicketForm(props: {
   });
   const [_, mutate] = useMutation(NewTicketForm_SupportTicketCreateMutation);
 
-  const [selectedProject, setSelectedProject] = '';
   const onClose = useCallback(() => {
     form.reset({
       subject: '',
@@ -273,15 +272,15 @@ function NewTicketForm(props: {
                       <FormControl>
                         <ProjectSelector
                           currentOrganizationSlug={props.organizationSlug}
-                          currentProjectSlug={field.value ? field.value : ''}
+                          currentProjectSlug={field.value || ''}
                           onValueChange={(value: SetStateAction<string>) => {
                             field.onChange(value);
                             setProject(value);
                           }}
                           organizations={
-                            query?.data?.organizations ? query.data.organizations : null
+                            query?.data?.organizations || null
                           }
-                          optional={true}
+                          optional
                           showOrganization={false}
                         />
                       </FormControl>
@@ -298,13 +297,13 @@ function NewTicketForm(props: {
                       <FormControl>
                         <TargetSelector
                           organizations={
-                            query?.data?.organizations ? query.data.organizations : null
+                            query?.data?.organizations || null
                           }
                           currentOrganizationSlug={props.organizationSlug}
                           currentProjectSlug={project}
                           onValueChange={field.onChange}
-                          optional={true}
-                          currentTargetSlug={field.value ? field.value : ''}
+                          optional
+                          currentTargetSlug={field.value || ''}
                           showOrganization={false}
                           showProject={false}
                         />

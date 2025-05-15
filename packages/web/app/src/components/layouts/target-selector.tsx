@@ -44,7 +44,7 @@ export function TargetSelector(props: {
   const showOrganization =
     typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
   const showProject = typeof props.showProject !== 'undefined' ? props.showProject : true;
-  const isOptional = typeof props.optional !== undefined ? props.optional : false;
+  const isOptional = typeof props.optional !== 'undefined' ? props.optional : false;
 
   const organizations = useFragment(
     TargetSelector_OrganizationConnectionFragment,
@@ -61,7 +61,7 @@ export function TargetSelector(props: {
   const targets = currentProject?.targets?.nodes;
   const currentTarget = targets?.find(node => node.slug === props.currentTargetSlug);
   const onValueChangeFunc =
-    typeof props.onValueChange !== undefined ? props.onValueChange : () => {};
+    typeof props.onValueChange !== 'undefined' ? props.onValueChange : () => {};
 
   return (
     <>
@@ -129,9 +129,9 @@ export function TargetSelector(props: {
             <SelectContent>
               {isOptional ? (
                 <SelectItem
-                  key={'empty'}
-                  value={'empty'}
-                  data-cy={`project-picker-option-Unassigned`}
+                  key='empty'
+                  value='empty'
+                  data-cy='project-picker-option-Unassigned'
                 >
                   Unassigned
                 </SelectItem>

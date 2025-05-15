@@ -2,7 +2,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SelectValue } from '@radix-ui/react-select';
 import { Link, useRouter } from '@tanstack/react-router';
-import { SetStateAction } from 'react';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -87,9 +86,9 @@ export function ProjectSelector(props: {
             <SelectContent>
               {optional ? (
                 <SelectItem
-                  key={'empty'}
-                  value={'empty'}
-                  data-cy={`project-picker-option-Unassigned`}
+                  key='empty'
+                  value='empty'
+                  data-cy='project-picker-option-Unassigned'
                 >
                   Unassigned
                 </SelectItem>
