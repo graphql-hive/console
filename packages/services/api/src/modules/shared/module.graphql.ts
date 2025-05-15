@@ -17,7 +17,7 @@ export default gql`
   scalar Date
   scalar JSON
   scalar JSONSchemaObject
-  scalar SafeInt
+  scalar SafeInt @tag(name: "public")
 
   extend schema
     @link(url: "https://specs.apollo.dev/link/v1.0")

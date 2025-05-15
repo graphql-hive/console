@@ -769,36 +769,31 @@ export function initSeed() {
                   ttarget: TargetOverwrite = target,
                 ) {
                   const statsResult = await readOperationsStats(
+                    { byId: ttarget.id },
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      period: {
-                        from,
-                        to,
-                      },
+                      from,
+                      to,
                     },
+                    {},
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return statsResult.operationsStats;
+                  return statsResult.target?.operationsStats!;
                 },
                 async readClientStats(params: { clientName: string; from: string; to: string }) {
                   const statsResult = await readClientStats(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: target.slug,
-                      client: params.clientName,
-                      period: {
-                        from: params.from,
-                        to: params.to,
-                      },
+                      byId: target.id,
                     },
+                    {
+                      from: params.from,
+                      to: params.to,
+                    },
+                    params.clientName,
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return statsResult.clientStats;
+                  return statsResult.target?.clientStats!;
                 },
                 async updateBaseSchema(newBase: string, ttarget: TargetOverwrite = target) {
                   const result = await updateBaseSchema(

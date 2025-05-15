@@ -108,9 +108,9 @@ test.concurrent(
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
+    const op = operationsStats.operations.edges[0].node;
 
     expect(op.count).toEqual(1);
     await expect(readOperationBody(op.operationHash!)).resolves.toEqual('query ping{ping}');
@@ -221,12 +221,12 @@ test.concurrent(
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
-    expect(op.count).toEqual(1);
+    const op = operationsStats.operations.edges[0].node;
+    expect(op!.count).toEqual(1);
 
-    const doc = await readOperationBody(op.operationHash!);
+    const doc = await readOperationBody(op!.operationHash!);
 
     if (!doc) {
       throw new Error('Operation body is empty');
@@ -282,9 +282,9 @@ test.concurrent(
     const operationsStats = await readOperationsStats(from, to);
 
     // We sent a single operation (multiple times)
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
+    const op = operationsStats.operations.edges[0].node!;
     expect(op.count).toEqual(totalAmount);
     await expect(readOperationBody(op.operationHash!)).resolves.toEqual('query ping{ping}');
     expect(op.operationHash).toBeDefined();
@@ -3151,8 +3151,8 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
-  const op = operationsStats.operations.nodes[0];
+  expect(operationsStats.operations.edges).toHaveLength(1);
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
@@ -3263,9 +3263,9 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
+  expect(operationsStats.operations.edges).toHaveLength(1);
 
-  const op = operationsStats.operations.nodes[0];
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
@@ -3376,9 +3376,9 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
+  expect(operationsStats.operations.edges).toHaveLength(1);
 
-  const op = operationsStats.operations.nodes[0];
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {

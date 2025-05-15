@@ -4,38 +4,62 @@ export default gql`
   extend type Query {
     fieldStats(selector: FieldStatsInput!): FieldStatsValues!
     fieldListStats(selector: FieldListStatsInput!): [FieldStatsValues!]!
-    operationsStats(selector: OperationsStatsSelectorInput!): OperationsStats!
-    schemaCoordinateStats(selector: SchemaCoordinateStatsInput!): SchemaCoordinateStats!
-    clientStats(selector: ClientStatsInput!): ClientStats!
     hasCollectedOperations(selector: TargetSelectorInput!): Boolean!
     clientStatsByTargets(selector: ClientStatsByTargetsInput!): ClientStatsValuesConnection!
     monthlyUsage(selector: OrganizationSelectorInput!): [MonthlyUsage!]!
   }
 
-  input OperationsStatsSelectorInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    # TODO: are these IDs or hashes?
-    operations: [ID!]
-    clientNames: [String!]
+  input OperationStatsFilterInput {
+    """
+    Filter by only showing operations with a specific id.
+    """
+    operationIds: [ID!] @tag(name: "public")
+    """
+    Filter by only showing operations performed by specific clients.
+    """
+    clientNames: [String!] @tag(name: "public")
   }
 
-  input ClientStatsInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    client: String!
-  }
-
-  input SchemaCoordinateStatsInput {
-    organizationSlug: String!
-    projectSlug: String!
-    targetSlug: String!
-    period: DateRangeInput!
-    schemaCoordinate: String!
+  extend type Target {
+    """
+    Retrieve statistics over a schema coordinates usage.
+    """
+    schemaCoordinateStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      The schema coordinate for which statistics should be fetched.
+      """
+      schemaCoordinate: String! @tag(name: "public")
+    ): SchemaCoordinateStats! @tag(name: "public")
+    """
+    Retrieve statistics for a clients usage.
+    """
+    clientStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      Name of the client for which statistics should be fetched.
+      """
+      clientName: String! @tag(name: "public")
+    ): ClientStats! @tag(name: "public")
+    """
+    Retrieve an overview of all operation statistics.
+    """
+    operationsStats(
+      """
+      The usage period for retrieving the statistics.
+      """
+      period: DateRangeInput! @tag(name: "public")
+      """
+      Optional filter.
+      """
+      filter: OperationStatsFilterInput @tag(name: "public")
+    ): OperationsStats! @tag(name: "public")
   }
 
   input ClientStatsByTargetsInput {
@@ -46,9 +70,12 @@ export default gql`
     period: DateRangeInput!
   }
 
+  """
+  Describes a date range interval.
+  """
   input DateRangeInput {
-    from: DateTime!
-    to: DateTime!
+    from: DateTime! @tag(name: "public")
+    to: DateTime! @tag(name: "public")
   }
 
   type DateRange {
@@ -92,39 +119,49 @@ export default gql`
 
   type ClientStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
-    totalRequests: SafeInt!
-    totalVersions: SafeInt!
-    operations: OperationStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    totalVersions: SafeInt! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
     versions(limit: Int!): [ClientVersionStatsValues!]!
   }
 
   type SchemaCoordinateStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
-    totalRequests: SafeInt!
-    operations: OperationStatsValuesConnection!
-    clients: ClientStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
+    clients: ClientStatsValuesConnection! @tag(name: "public")
   }
 
   type OperationsStats {
     requestsOverTime(resolution: Int!): [RequestsOverTime!]!
     failuresOverTime(resolution: Int!): [FailuresOverTime!]!
     durationOverTime(resolution: Int!): [DurationOverTime!]!
-    totalRequests: SafeInt!
-    totalFailures: SafeInt!
-    totalOperations: Int!
-    duration: DurationValues!
-    operations: OperationStatsValuesConnection!
-    clients: ClientStatsValuesConnection!
+    totalRequests: SafeInt! @tag(name: "public")
+    totalFailures: SafeInt! @tag(name: "public")
+    totalOperations: Int! @tag(name: "public")
+    duration: DurationValues! @tag(name: "public")
+    operations: OperationStatsValuesConnection! @tag(name: "public")
+    clients: ClientStatsValuesConnection! @tag(name: "public")
+  }
+
+  type OperationStatsValuesEdge {
+    node: OperationStatsValues! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type OperationStatsValuesConnection {
-    nodes: [OperationStatsValues!]!
-    total: Int!
+    edges: [OperationStatsValuesEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type ClientStatsValuesEdge {
+    node: ClientStatsValues! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type ClientStatsValuesConnection {
-    nodes: [ClientStatsValues!]!
-    total: Int!
+    edges: [ClientStatsValuesEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type MonthlyUsage {
@@ -136,35 +173,35 @@ export default gql`
   }
 
   type DurationValues {
-    avg: Int!
-    p75: Int!
-    p90: Int!
-    p95: Int!
-    p99: Int!
+    avg: Int! @tag(name: "public")
+    p75: Int! @tag(name: "public")
+    p90: Int! @tag(name: "public")
+    p95: Int! @tag(name: "public")
+    p99: Int! @tag(name: "public")
   }
 
   type OperationStatsValues {
-    id: ID!
+    id: ID! @tag(name: "public")
     operationHash: String
     kind: String!
     name: String!
     """
     Total number of requests
     """
-    count: SafeInt!
+    count: SafeInt! @tag(name: "public")
     """
     Number of requests that succeeded
     """
-    countOk: SafeInt!
-    percentage: Float!
-    duration: DurationValues!
+    countOk: SafeInt! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
+    duration: DurationValues! @tag(name: "public")
   }
 
   type ClientStatsValues {
-    name: String!
+    name: String! @tag(name: "public")
     versions: [ClientVersionStatsValues!]!
-    count: Float!
-    percentage: Float!
+    count: Float! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
   }
 
   type ClientVersionStatsValues {

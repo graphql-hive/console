@@ -1,10 +1,17 @@
-import type { ClientStatsValues, OperationStatsValues } from '../../__generated__/types';
+import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
 
-export type OperationStatsValuesConnectionMapper = ReadonlyArray<
+type Connection<TNode> = {
+  pageInfo: PageInfo;
+  edges: Array<{ node: TNode; cursor: string }>;
+};
+
+export type OperationStatsValuesConnectionMapper = Connection<
   Omit<OperationStatsValues, 'duration'> & { duration: DurationValuesMapper }
 >;
-export type ClientStatsValuesConnectionMapper = readonly ClientStatsValues[];
+
+export type ClientStatsValuesConnectionMapper = Connection<ClientStatsValues>;
+
 export interface SchemaCoordinateStatsMapper {
   organization: string;
   project: string;
