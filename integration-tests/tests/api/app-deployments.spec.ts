@@ -1,6 +1,5 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
-import { waitFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
@@ -1697,7 +1696,7 @@ test('app deployment usage reporting', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
   await setFeatureFlag('appDeployments', true);
-  const { createTargetAccessToken, project, target } = await createProject();
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } = await createProject();
   const token = await createTargetAccessToken({});
 
   const { createAppDeployment } = await execute({
@@ -1806,7 +1805,7 @@ test('app deployment usage reporting', async () => {
     'app-name~app-version~aaa',
   );
 
-  await waitFor(5000);
+  await waitForOperationsCollected(1);
 
   data = await execute({
     document: GetAppDeployment,

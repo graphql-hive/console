@@ -763,6 +763,35 @@ export function initSeed() {
 
                   return pollFor(check);
                 },
+                async waitForRequestsCollected(
+                  n: number,
+                  opts?: {
+                    from?: number,
+                    to?: number,
+                    target?: TargetOverwrite,
+                  },
+                ) {
+                  const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
+                  const to = formatISO(opts?.to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: (opts?.target ?? target).slug,
+                        period: {
+                          from,
+                          to,
+                        },
+                      },
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    const totalRequests = statsResult.operationsStats.operations.nodes.reduce((total, node) => total + node.count, 0);
+                    return totalRequests == n;
+                  };
+
+                  return pollFor(check);
+                },
                 async readOperationsStats(
                   from: string,
                   to: string,

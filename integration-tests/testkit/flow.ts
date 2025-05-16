@@ -40,9 +40,23 @@ export function waitFor(ms: number) {
 
 function pollInternal(
   check: () => Promise<boolean>,
+
+  /** In milliseconds */
   pollFrequency: number,
+
+  /** In milliseconds */
+  maxWait: number,
+
+  /** In milliseconds. A random number between 0 and Jitter is added to the pollFrequency to add some
+   * noise and prevent test cases where exact durations are required.
+   * */
+  jitter: number,
+
   resolve: (value: void | PromiseLike<void>) => void,
   reject: (reason?: any) => void,
+
+  /** In milliseconds */
+  startTime: number = Date.now(),
 ) {
   setTimeout(async () => {
     try {
@@ -50,17 +64,22 @@ function pollInternal(
       if (passes) {
         resolve();
       } else {
-        pollInternal(check, pollFrequency, resolve, reject);
+        const waited = Date.now() - startTime;
+        if (waited > maxWait) {
+          reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+        } else {
+          pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+        }
       }
     } catch (e) {
       reject(e);
     }
-  }, pollFrequency);
+  }, Math.round(pollFrequency + Math.random()*jitter));
 }
 
-export function pollFor(check: () => Promise<boolean>, pollFrequency = 500): Promise<void> {
+export function pollFor(check: () => Promise<boolean>, opts?: { pollFrequency?: number, maxWait?: number, jitter?: number }): Promise<void> {
   return new Promise((resolve, reject) => {
-    pollInternal(check, pollFrequency, resolve, reject);
+    pollInternal(check, opts?.pollFrequency ?? 500, opts?.maxWait ?? 10_000, opts?.jitter ?? 100, resolve, reject);
   });
 }
 

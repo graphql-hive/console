@@ -66,7 +66,7 @@ export async function execute<TResult, TVariables>(
     rawBody: body,
     status: response.status,
     expectGraphQLErrors() {
-      if (!body.errors?.length) {
+      if (!body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have errors, but no errors were found!${detailsDump}`,
         );
@@ -75,7 +75,7 @@ export async function execute<TResult, TVariables>(
       return body.errors!;
     },
     expectNoGraphQLErrors: async () => {
-      if (body.errors?.length) {
+      if (body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have no errors, but got ${
             body.errors.length

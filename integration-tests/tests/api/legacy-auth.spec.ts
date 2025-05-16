@@ -10,7 +10,7 @@ test.concurrent(
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, createProject } = await createOrg();
     await inviteAndJoinMember();
-    const { createTargetAccessToken, readOperationsStats, readOperationBody } = await createProject(
+    const { createTargetAccessToken, readOperationsStats, readOperationBody, waitForOperationsCollected } = await createProject(
       ProjectType.Single,
     );
     const { publishSchema, collectLegacyOperations: collectOperations } =
@@ -40,7 +40,7 @@ test.concurrent(
 
     expect(collectResult.status).toEqual(200);
 
-    await waitFor(5000);
+    await waitForOperationsCollected(1)
 
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
