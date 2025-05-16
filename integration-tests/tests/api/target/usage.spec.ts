@@ -8,13 +8,19 @@ import { graphql } from 'testkit/gql';
 import { BreakingChangeFormulaType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
+import { T } from 'vitest/dist/chunks/reporters.d.CfRkRKN2';
 import { UTCDate } from '@date-fns/utc';
 // eslint-disable-next-line hive/enforce-deps-in-dev
 import { normalizeOperation } from '@graphql-hive/core';
 import { createHive } from '../../../../packages/libraries/core/src';
 import { collectSchemaCoordinates } from '../../../../packages/libraries/core/src/client/collect-schema-coordinates';
 import { clickHouseQuery } from '../../../testkit/clickhouse';
-import { createTarget, pollFor, updateTargetValidationSettings, waitFor } from '../../../testkit/flow';
+import {
+  createTarget,
+  pollFor,
+  updateTargetValidationSettings,
+  waitFor,
+} from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { CollectedOperation } from '../../../testkit/usage';
 
@@ -134,9 +140,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, readOperationBody, readOperationsStats, waitForOperationsCollected } = await createProject(
-      ProjectType.Single,
-    );
+    const {
+      createTargetAccessToken,
+      readOperationBody,
+      readOperationsStats,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
     const writeToken = await createTargetAccessToken({});
 
     const raw_document = `
@@ -253,9 +262,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, readOperationsStats, readOperationBody, waitForRequestsCollected } = await createProject(
-      ProjectType.Single,
-    );
+    const {
+      createTargetAccessToken,
+      readOperationsStats,
+      readOperationBody,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const writeToken = await createTargetAccessToken({});
 
     const batchSize = 1000;
@@ -448,9 +460,13 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
 test.concurrent('check usage not from excluded client names', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { organization, createProject } = await createOrg();
-  const { project, target, createTargetAccessToken, toggleTargetValidation, waitForRequestsCollected } = await createProject(
-    ProjectType.Single,
-  );
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    toggleTargetValidation,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
 
   const token = await createTargetAccessToken({});
 
@@ -654,9 +670,13 @@ describe('changes with usage data', () => {
     test.concurrent(input.title, async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { target, createTargetAccessToken, toggleTargetValidation, waitForOperationsCollected, readOperationsStats } = await createProject(
-        ProjectType.Single,
-      );
+      const {
+        target,
+        createTargetAccessToken,
+        toggleTargetValidation,
+        waitForOperationsCollected,
+        readOperationsStats,
+      } = await createProject(ProjectType.Single);
 
       const token = await createTargetAccessToken({
         target,
@@ -721,7 +741,7 @@ describe('changes with usage data', () => {
       ]);
 
       expect(collectResult.status).toEqual(200);
-      await waitForOperationsCollected(n+1);
+      await waitForOperationsCollected(n + 1);
 
       await expect(
         token
@@ -1198,7 +1218,9 @@ describe('changes with usage data', () => {
 test.concurrent('number of produced and collected operations should match', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   const batchSize = 1000;
@@ -1281,7 +1303,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1306,7 +1330,6 @@ test.concurrent(
         },
       },
     ]);
-
 
     await waitForRequestsCollected(2);
 
@@ -1337,7 +1360,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1396,7 +1421,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1449,7 +1476,9 @@ test.concurrent(
 test.concurrent('ignore operations with syntax errors', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectLegacyOperations([
@@ -1510,7 +1539,9 @@ test.concurrent('ignore operations with syntax errors', async ({ expect }) => {
 test.concurrent('ensure correct data', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   // Organization was created, but the rate limiter may be not aware of it yet.
@@ -1822,7 +1853,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setDataRetention } = await createOrg();
-    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     const dataRetentionInDays = 60;
@@ -2180,8 +2213,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings, waitForRequestsCollected } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
 
     const sdl = /* GraphQL */ `
@@ -2393,8 +2430,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings, waitForRequestsCollected } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
     await toggleTargetValidation(true);
     await updateTargetValidationSettings({
@@ -2555,8 +2596,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings, waitForRequestsCollected } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
     await toggleTargetValidation(true);
     await updateTargetValidationSettings({
@@ -2784,35 +2829,40 @@ test.concurrent(
       },
     });
 
-    await waitFor(10_000);
+    let firstSchemaCheckId: string | undefined;
+    await pollFor(async () => {
+      try {
+        const used = await token
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-    const used = await token
-      .checkSchema(/* GraphQL */ `
-        type Query {
-          a: String
-          b: String
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
+
+        if (used.schemaCheck.__typename === 'SchemaCheckError') {
+          expect(used.schemaCheck.errors).toEqual({
+            nodes: [
+              {
+                message: "Field 'a' was removed from object type 'Subscription'",
+              },
+            ],
+            total: 1,
+          });
+          firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
+          return true;
         }
-
-        type Subscription {
-          b: String
-        }
-      `)
-      .then(r => r.expectNoGraphQLErrors());
-
-    if (used.schemaCheck.__typename !== 'SchemaCheckError') {
-      throw new Error(`Expected SchemaCheckError, got ${used.schemaCheck.__typename}`);
-    }
-
-    expect(used.schemaCheck.errors).toEqual({
-      nodes: [
-        {
-          message: "Field 'a' was removed from object type 'Subscription'",
-        },
-      ],
-      total: 1,
+        return false;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
     });
-
-    const firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
 
     if (!firstSchemaCheckId) {
       throw new Error('Expected schemaCheckId to be defined');
@@ -2895,19 +2945,19 @@ test.concurrent(
     await pollFor(async () => {
       try {
         const irrelevant = await token
-        .checkSchema(/* GraphQL */ `
-          type Query {
-            a: String
-            b: String
-          }
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-          type Subscription {
-            b: String
-          }
-        `)
-        .then(r => r.expectNoGraphQLErrors());
-          if (irrelevant?.schemaCheck.__typename === 'SchemaCheckSuccess') {
-            expect(irrelevant.schemaCheck.changes).toEqual(
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
+        if (irrelevant?.schemaCheck.__typename === 'SchemaCheckSuccess') {
+          expect(irrelevant.schemaCheck.changes).toEqual(
             expect.objectContaining({
               nodes: expect.arrayContaining([
                 expect.objectContaining({
@@ -2921,14 +2971,11 @@ test.concurrent(
           return true;
         }
         return false;
-      }
-      catch (e) {
+      } catch (e) {
         console.error(e);
         return false;
       }
-    })
-
-    
+    });
 
     // Make it relevant again, by making 3 subscriptions
 
@@ -2963,17 +3010,17 @@ test.concurrent(
     await pollFor(async () => {
       try {
         const relevant = await token
-        .checkSchema(/* GraphQL */ `
-          type Query {
-            a: String
-            b: String
-          }
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-          type Subscription {
-            b: String
-          }
-        `)
-        .then(r => r.expectNoGraphQLErrors());
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
 
         if (relevant.schemaCheck.__typename === 'SchemaCheckError') {
           expect(relevant.schemaCheck.errors).toEqual({
@@ -2987,8 +3034,7 @@ test.concurrent(
           return true;
         }
         return false;
-      }
-      catch (e) {
+      } catch (e) {
         console.error(e);
         return false;
       }
@@ -2999,9 +3045,13 @@ test.concurrent(
 test.concurrent('ensure percentage precision up to 2 decimal places', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { project, target, createTargetAccessToken, toggleTargetValidation, waitForRequestsCollected } = await createProject(
-    ProjectType.Single,
-  );
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    toggleTargetValidation,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const token = await createTargetAccessToken({});
 
   const schemaPublishResult = await token
@@ -3039,7 +3089,7 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
     }),
   );
 
-  await waitForRequestsCollected(9801+199);
+  await waitForRequestsCollected(9801 + 199);
 
   const result = await clickHouseQuery<{
     target: string;
@@ -3144,8 +3194,13 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
 test.concurrent('(legacy) collect an operation from "unknown" client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats, waitForRequestsCollected } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectLegacyOperations([
@@ -3167,7 +3222,7 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
     },
   ]);
   expect(collectResult.status).toEqual(200);
-  await waitForRequestsCollected(1)
+  await waitForRequestsCollected(1);
 
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
@@ -3247,8 +3302,13 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
 test.concurrent('collect an operation from "unknown" client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats, waitForRequestsCollected } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectUsage({
@@ -3360,8 +3420,13 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
 test.concurrent('collect an operation from undefined client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats, waitForRequestsCollected } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectUsage({

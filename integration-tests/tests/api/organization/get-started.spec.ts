@@ -22,8 +22,13 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, fetchOrganizationInfo, createProject } = await createOrg();
-    const { target, project, createTargetAccessToken, toggleTargetValidation, waitForOperationsCollected } =
-      await createProject(ProjectType.Single);
+    const {
+      target,
+      project,
+      createTargetAccessToken,
+      toggleTargetValidation,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
 
     const { getStarted: steps } = await fetchOrganizationInfo();
     expect(steps?.creatingProject).toBe(true); // modified

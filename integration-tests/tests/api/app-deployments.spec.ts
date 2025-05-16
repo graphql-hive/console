@@ -1696,7 +1696,8 @@ test('app deployment usage reporting', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
   await setFeatureFlag('appDeployments', true);
-  const { createTargetAccessToken, project, target, waitForOperationsCollected } = await createProject();
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
   const token = await createTargetAccessToken({});
 
   const { createAppDeployment } = await execute({

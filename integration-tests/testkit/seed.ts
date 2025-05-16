@@ -766,9 +766,9 @@ export function initSeed() {
                 async waitForRequestsCollected(
                   n: number,
                   opts?: {
-                    from?: number,
-                    to?: number,
-                    target?: TargetOverwrite,
+                    from?: number;
+                    to?: number;
+                    target?: TargetOverwrite;
                   },
                 ) {
                   const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
@@ -786,7 +786,10 @@ export function initSeed() {
                       },
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    const totalRequests = statsResult.operationsStats.operations.nodes.reduce((total, node) => total + node.count, 0);
+                    const totalRequests = statsResult.operationsStats.operations.nodes.reduce(
+                      (total, node) => total + node.count,
+                      0,
+                    );
                     return totalRequests == n;
                   };
 

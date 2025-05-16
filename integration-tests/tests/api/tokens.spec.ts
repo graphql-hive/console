@@ -51,14 +51,17 @@ test.concurrent('deleting a token should clear the cache', async () => {
   // Fetch the token info again to make sure it's cached
   await expect(fetchTokenInfo()).resolves.toEqual(expect.objectContaining(expectedResult));
   // To make sure the cache is cleared, we need to wait for at least 5 seconds
-  await pollFor(async () => {
-    try {
-      await fetchTokenInfo();
-      return false;
-    } catch (e) {
-      return true;
-    }
-  }, { maxWait: 5_500})
+  await pollFor(
+    async () => {
+      try {
+        await fetchTokenInfo();
+        return false;
+      } catch (e) {
+        return true;
+      }
+    },
+    { maxWait: 5_500 },
+  );
   await expect(fetchTokenInfo()).rejects.toThrow();
 });
 

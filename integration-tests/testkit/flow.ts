@@ -58,28 +58,41 @@ function pollInternal(
   /** In milliseconds */
   startTime: number = Date.now(),
 ) {
-  setTimeout(async () => {
-    try {
-      const passes = await check();
-      if (passes) {
-        resolve();
-      } else {
-        const waited = Date.now() - startTime;
-        if (waited > maxWait) {
-          reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+  setTimeout(
+    async () => {
+      try {
+        const passes = await check();
+        if (passes) {
+          resolve();
         } else {
-          pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+          const waited = Date.now() - startTime;
+          if (waited > maxWait) {
+            reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+          } else {
+            pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+          }
         }
+      } catch (e) {
+        reject(e);
       }
-    } catch (e) {
-      reject(e);
-    }
-  }, Math.round(pollFrequency + Math.random()*jitter));
+    },
+    Math.round(pollFrequency + Math.random() * jitter),
+  );
 }
 
-export function pollFor(check: () => Promise<boolean>, opts?: { pollFrequency?: number, maxWait?: number, jitter?: number }): Promise<void> {
+export function pollFor(
+  check: () => Promise<boolean>,
+  opts?: { pollFrequency?: number; maxWait?: number; jitter?: number },
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    pollInternal(check, opts?.pollFrequency ?? 500, opts?.maxWait ?? 10_000, opts?.jitter ?? 100, resolve, reject);
+    pollInternal(
+      check,
+      opts?.pollFrequency ?? 500,
+      opts?.maxWait ?? 10_000,
+      opts?.jitter ?? 100,
+      resolve,
+      reject,
+    );
   });
 }
 

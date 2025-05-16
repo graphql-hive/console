@@ -35,7 +35,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, target, waitForOperationsCollected } = await createProject(ProjectType.Single);
+    const { createTargetAccessToken, target, waitForOperationsCollected } = await createProject(
+      ProjectType.Single,
+    );
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});

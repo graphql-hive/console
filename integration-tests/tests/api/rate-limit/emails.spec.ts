@@ -15,7 +15,9 @@ function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
 test('rate limit approaching and reached for organization', async () => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createTargetAccessToken, waitForRequestsCollected } = await createProject(ProjectType.Single);
+  const { createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
 
   await updateOrgRateLimit(
     {
@@ -45,7 +47,7 @@ test('rate limit approaching and reached for organization', async () => {
   expect(collectResult.status).toEqual(200);
 
   await waitForRequestsCollected(10);
-  
+
   // wait for the rate limit email to send...
   await pollFor(async () => {
     let sent = await emails.history();
@@ -65,7 +67,7 @@ test('rate limit approaching and reached for organization', async () => {
   expect(collectMoreResult.status).toEqual(200);
 
   await waitForRequestsCollected(12);
-  
+
   // wait for the quota email to send...
   await pollFor(async () => {
     let sent = await emails.history();
