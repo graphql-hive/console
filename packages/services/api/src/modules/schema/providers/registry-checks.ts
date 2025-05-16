@@ -1,8 +1,8 @@
 import { URL } from 'node:url';
-import type { GraphQLSchema } from 'graphql';
+import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -485,19 +485,60 @@ export class RegistryChecks {
             return;
           }
 
+          let checkCoordinate = change.breakingChangeSchemaCoordinate;
+          if (isNullToRequiredArgumentChange(change)) {
+            /**
+             * It's necessary to check the parent field in this case because an argument is included in the
+             * usage report's list of coordinates _only if it's in the operation_. E.g. For a schema:
+             *
+             * ```
+             * type Query {
+             *   foo(a: String): String
+             * }
+             * ```
+             *
+             * Operation `query Foo { foo(a: "b") }`
+             * Reports: `Query.foo, Query.foo.a, Query.foo.a!`
+             *
+             * Operation: `query Foo2 { foo }`
+             * Only reports: `Query.foo`.
+             *
+             * And so when changing an argument from nullable to non-nullable, we need to check the parent field
+             * could rather than the argument count. Otherwise, the second example wouldn't trigger the change as "breaking".
+             */
+            checkCoordinate = change.breakingChangeSchemaCoordinate
+              .split('.')
+              .slice(0, 2)
+              .join('.');
+          }
+
           const totalRequestCounts = await this.operationsReader.countCoordinate({
             targetIds: settings.targetIds,
             excludedClients: settings.excludedClientNames,
             period: settings.period,
-            schemaCoordinate: change.breakingChangeSchemaCoordinate,
+            schemaCoordinate: checkCoordinate,
           });
-          const isBreaking =
-            totalRequestCounts[change.breakingChangeSchemaCoordinate] >=
-            Math.max(settings.requestCountThreshold, 1);
+          const totalRequests = totalRequestCounts[checkCoordinate] ?? 0;
+          let isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
           if (isBreaking) {
-            // We need to run both the affected operations an affected clients query.
-            // Since the affected clients query is lighter it makes more sense to run it first and skip running
-            // the operations query if no clients are affected, as it will also yield zero results in that case.
+            const useAdvancedNullabilityCheck = requiresAdvancedNullabilityCheck(change);
+
+            if (useAdvancedNullabilityCheck) {
+              const advancedNullabilityTotalRequests = await this.operationsReader.countCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: `${change.breakingChangeSchemaCoordinate}!`,
+              });
+
+              if (
+                advancedNullabilityTotalRequests[`${change.breakingChangeSchemaCoordinate}!`] >=
+                totalRequests
+              ) {
+                // All requests for this coordinate provide the value for the coordinate. So moving to non-null is allowed.
+                isBreaking = false;
+              }
+            }
 
             const [topAffectedClients, topAffectedOperations] = await Promise.all([
               this.operationsReader.getTopClientsForSchemaCoordinate({
@@ -859,4 +900,22 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
+}
+
+function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.InputFieldTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldInputFieldType?.toString();
+    const newType = change.meta.newInputFieldType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return isNullToRequiredArgumentChange(change);
+}
+
+function isNullToRequiredArgumentChange(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.FieldArgumentTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldArgumentType?.toString();
+    const newType = change.meta.newArgumentType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return false;
 }

@@ -161,9 +161,10 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.02.20T00-00-00.organization-access-tokens'),
       await import('./actions/2025.02.14T00-00-00.schema-versions-metadata'),
       await import('./actions/2025.02.21T00-00-00.schema-versions-metadata-attributes'),
-      await import('./actions/2025.03.20T00-00-00.dangerous_breaking'),
+      await import('./actions/2025.03.20T00-00-00.dangerous-breaking'),
       await import('./actions/2025.05.14T00-00-00.cascade-deletion-indices-2'),
       await import('./actions/2025.05.15T00-00-00.redundant-indices'),
       await import('./actions/2025.05.15T00-00-00.contracts-foreign-key-constraint-fix'),
+      await import('./actions/2025.05.15T00-00-01.organization-member-pagination'),
     ],
   });

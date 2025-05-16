@@ -113,12 +113,14 @@ const deleteProject: TypedDocumentNodeUpdateResolver<typeof DeleteProjectMutatio
   _args,
   cache,
 ) => {
-  const project = deleteProject.deletedProject;
+  const projectId = deleteProject.ok?.deletedProjectId;
 
-  cache.invalidate({
-    __typename: project.__typename,
-    id: project.id,
-  });
+  if (projectId) {
+    cache.invalidate({
+      __typename: 'Project',
+      id: projectId,
+    });
+  }
 };
 
 const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTargetMutation> = (

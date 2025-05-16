@@ -10,10 +10,14 @@ const MemberRoleSelector_OrganizationFragment = graphql(`
       id
     }
     memberRoles {
-      id
-      name
-      description
-      locked
+      edges {
+        node {
+          id
+          name
+          description
+          isLocked
+        }
+      }
     }
   }
 `);
@@ -39,7 +43,7 @@ export function MemberRoleSelector(props: {
   const organization = useFragment(MemberRoleSelector_OrganizationFragment, props.organization);
   const member = useFragment(MemberRoleSelector_MemberFragment, props.member);
   const canAssignRole = organization.viewerCanAssignUserRoles;
-  const roles = organization.memberRoles ?? [];
+  const roles = organization.memberRoles?.edges.map(edge => edge.node) ?? [];
 
   const memberRole = roles.find(role => role.id === props.selectedRoleId);
 
