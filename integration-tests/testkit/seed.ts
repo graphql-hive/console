@@ -748,17 +748,20 @@ export function initSeed() {
                   const check = async () => {
                     const statsResult = await readOperationsStats(
                       {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: ttarget.slug,
-                        period: {
-                          from,
-                          to,
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
                         },
                       },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    return statsResult.operationsStats.totalOperations == n;
+                    return statsResult.target?.operationsStats.totalOperations == n;
                   };
 
                   return pollFor(check);
