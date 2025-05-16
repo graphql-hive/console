@@ -3157,34 +3157,38 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3202,12 +3206,14 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },
@@ -3270,34 +3276,38 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3315,12 +3325,14 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },
@@ -3383,34 +3395,38 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3428,12 +3444,14 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },
