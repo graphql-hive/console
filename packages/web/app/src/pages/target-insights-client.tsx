@@ -28,6 +28,7 @@ const ClientView_ClientStatsQuery = graphql(`
     $clientName: String!
   ) {
     target(reference: { bySelector: $targetSelector }) {
+      id
       clientStats(period: $period, clientName: $clientName) {
         requestsOverTime(resolution: $resolution) {
           date

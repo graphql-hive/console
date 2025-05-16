@@ -601,7 +601,7 @@ function ClientsFilterContainer({
     return null;
   }
 
-  if (query.fetching || query.error || !query.data || !query.data.target) {
+  if (query.fetching || query.error || !query.data?.target) {
     return <Spinner />;
   }
 
