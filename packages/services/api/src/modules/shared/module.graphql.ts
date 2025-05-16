@@ -34,17 +34,11 @@ export default gql`
     name: String!
   ) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
-  type Query {
-    _: Boolean @tag(name: "public")
-  }
+  type Query
 
-  type Mutation {
-    _: Boolean @tag(name: "public")
-  }
+  type Mutation
 
-  type Subscription {
-    _: Boolean @tag(name: "public")
-  }
+  type Subscription
 
   type PageInfo {
     hasNextPage: Boolean! @tag(name: "public")
