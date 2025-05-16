@@ -35,29 +35,33 @@ import { resolutionToMilliseconds } from './utils';
 
 const Stats_GeneralOperationsStatsQuery = graphql(`
   query Stats_GeneralOperationsStats(
-    $selector: OperationsStatsSelectorInput!
-    $allOperationsSelector: OperationsStatsSelectorInput!
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+    $filter: OperationStatsFilterInput!
     $resolution: Int!
   ) {
-    allOperations: operationsStats(selector: $allOperationsSelector) {
-      totalRequests
-    }
-    operationsStats(selector: $selector) {
-      ... on OperationsStats {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      allOperations: operationsStats(period: $period) {
         totalRequests
-        totalFailures
-        totalOperations
-        duration {
-          p75
-          p90
-          p95
-          p99
-        }
       }
-      ...OverTimeStats_OperationsStatsFragment
-      ...RpmOverTimeStats_OperationStatsFragment
-      ...LatencyOverTimeStats_OperationStatsFragment
-      ...ClientsStats_OperationsStatsFragment
+      operationsStats(period: $period, filter: $filter) {
+        ... on OperationsStats {
+          totalRequests
+          totalFailures
+          totalOperations
+          duration {
+            p75
+            p90
+            p95
+            p99
+          }
+        }
+        ...OverTimeStats_OperationsStatsFragment
+        ...RpmOverTimeStats_OperationStatsFragment
+        ...LatencyOverTimeStats_OperationStatsFragment
+        ...ClientsStats_OperationsStatsFragment
+      }
     }
   }
 `);
@@ -382,17 +386,18 @@ function OverTimeStats({
 const ClientsStats_OperationsStatsFragment = graphql(`
   fragment ClientsStats_OperationsStatsFragment on OperationsStats {
     clients {
-      nodes {
-        name
-        count
-        percentage
-        versions {
-          version
+      edges {
+        node {
+          name
           count
           percentage
+          versions {
+            version
+            count
+            percentage
+          }
         }
       }
-      total
     }
   }
 `);
@@ -430,17 +435,20 @@ function ClientsStats(props: {
   const styles = useChartStyles();
   const operationStats = useFragment(ClientsStats_OperationsStatsFragment, props.operationStats);
   const sortedClients = useMemo(() => {
-    return operationStats?.clients.nodes?.length
-      ? operationStats.clients.nodes.slice().sort((a, b) => b.count - a.count)
+    return operationStats?.clients.edges?.length
+      ? operationStats.clients.edges
+          .slice()
+          .sort((a, b) => b.node.count - a.node.count)
+          .map(edge => edge.node)
       : [];
-  }, [operationStats?.clients.nodes]);
+  }, [operationStats?.clients.edges]);
   const otherClientsPrefix = 'Other clients';
   const byClient = useMemo(() => {
     let values: string[] = [];
     const labels: string[] = [];
 
     if (sortedClients?.length) {
-      const total = sortedClients.reduce((acc, node) => acc + node.count, 0);
+      const total = sortedClients.reduce((acc, client) => acc + client.count, 0);
       const counts: number[] = [];
 
       for (let i = 0; i < sortedClients.length; i++) {
@@ -1031,19 +1039,15 @@ export function OperationsStats({
   const [query, refetchQuery] = useQuery({
     query: Stats_GeneralOperationsStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug,
         projectSlug,
         targetSlug,
-        period,
-        operations: operationsFilter,
-        clientNames: clientNamesFilter,
       },
-      allOperationsSelector: {
-        organizationSlug,
-        projectSlug,
-        targetSlug,
-        period,
+      period,
+      filter: {
+        operationIds: operationsFilter,
+        clientNames: clientNamesFilter,
       },
       resolution,
     },
@@ -1064,8 +1068,8 @@ export function OperationsStats({
   const isFetching = query.fetching;
   const isError = !!query.error;
 
-  const operationsStats = query.data?.operationsStats;
-  const allOperationsStats = query.data?.allOperations;
+  const operationsStats = query.data?.target?.operationsStats;
+  const allOperationsStats = query.data?.target?.allOperations;
   dateRangeText = dateRangeText.toLowerCase();
 
   const state = isFetching

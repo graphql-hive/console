@@ -21,25 +21,35 @@ import { useChartStyles } from '@/utils';
 import { Link } from '@tanstack/react-router';
 
 const ClientView_ClientStatsQuery = graphql(`
-  query ClientView_ClientStatsQuery($selector: ClientStatsInput!, $resolution: Int!) {
-    clientStats(selector: $selector) {
-      requestsOverTime(resolution: $resolution) {
-        date
-        value
-      }
-      totalRequests
-      totalVersions
-      operations {
-        nodes {
-          id
-          name
-          operationHash
+  query ClientView_ClientStatsQuery(
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+    $resolution: Int!
+    $clientName: String!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      clientStats(period: $period, clientName: $clientName) {
+        requestsOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalRequests
+        totalVersions
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+              count
+            }
+          }
+        }
+        versions(limit: 25) {
+          version
           count
         }
-      }
-      versions(limit: 25) {
-        version
-        count
       }
     }
   }
@@ -61,13 +71,13 @@ function ClientView(props: {
   const [query, refetch] = useQuery({
     query: ClientView_ClientStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug: props.organizationSlug,
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
-        client: props.clientName,
-        period: dateRangeController.resolvedRange,
       },
+      period: dateRangeController.resolvedRange,
+      clientName: props.clientName,
       resolution: dateRangeController.resolution,
     },
   });
@@ -79,7 +89,7 @@ function ClientView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.clientStats?.requestsOverTime;
+  const points = query.data?.target?.clientStats?.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -88,9 +98,9 @@ function ClientView(props: {
     return points.map(node => [node.date, node.value]);
   }, [points]);
 
-  const totalRequests = query.data?.clientStats?.totalRequests ?? 0;
-  const totalVersions = query.data?.clientStats?.totalVersions ?? 0;
-  const totalOperations = query.data?.clientStats?.operations.nodes.length ?? 0;
+  const totalRequests = query.data?.target?.clientStats?.totalRequests ?? 0;
+  const totalVersions = query.data?.target?.clientStats?.totalVersions ?? 0;
+  const totalOperations = query.data?.target?.clientStats?.operations.edges.length ?? 0;
 
   if (query.error) {
     return (
@@ -274,7 +284,7 @@ function ClientView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.clientStats.operations.nodes.map(operation => (
+                  : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <div key={operation.id} className="flex items-center">
                         <p className="truncate text-sm font-medium">
                           <Link
@@ -320,7 +330,7 @@ function ClientView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.clientStats.versions.map(version => (
+                  : query.data?.target?.clientStats.versions.map(version => (
                       <div key={version.version} className="flex items-center">
                         <p className="truncate text-sm font-medium">{version.version}</p>
                         <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">

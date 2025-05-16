@@ -189,16 +189,9 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      operationsStats(period: $period) {
+        totalRequests
       }
-    ) {
-      totalRequests
     }
   }
 `);
@@ -300,7 +293,7 @@ function DeprecatedSchemaExplorer(props: {
                 </Alert>
               )}
               <DeprecatedSchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.deprecatedSchema}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}

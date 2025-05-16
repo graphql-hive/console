@@ -320,10 +320,11 @@ const ExtendBaseSchema = (props: {
 const ClientExclusion_AvailableClientNamesQuery = graphql(`
   query ClientExclusion_AvailableClientNamesQuery($selector: ClientStatsByTargetsInput!) {
     clientStatsByTargets(selector: $selector) {
-      nodes {
-        name
+      edges {
+        node {
+          name
+        }
       }
-      total
     }
   }
 `);
@@ -356,7 +357,7 @@ function ClientExclusion(
   });
 
   const clientNamesFromStats =
-    availableClientNamesQuery.data?.clientStatsByTargets.nodes.map(n => n.name) ?? [];
+    availableClientNamesQuery.data?.clientStatsByTargets.edges.map(e => e.node.name) ?? [];
   const allClientNames = clientNamesFromStats.concat(
     props.clientsFromSettings.filter(clientName => !clientNamesFromStats.includes(clientName)),
   );
