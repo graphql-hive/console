@@ -54,6 +54,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
 
+/**
+ * We previously used a different character for token masking.
+ * This function standardizes it by replacing all non-alphanumeric characters
+ * with bullet points (•) to ensure consistent formatting.
+ * @param tokenAlias 553••***•••&*******••••••••••••7ab
+ * @returns 553••••••••••••••••••7ab
+ */
+function normalizeTokenAlias(tokenAlias: string): string {
+  return tokenAlias.replaceAll(/[^a-z0-9]/g, '•');
+}
+
 export const DeleteTokensDocument = graphql(`
   mutation deleteTokens($input: DeleteTokensInput!) {
     deleteTokens(input: $input) {
@@ -166,7 +177,7 @@ function RegistryAccessTokens(props: {
                   checked={checked.includes(token.id)}
                 />
               </Td>
-              <Td>{token.alias}</Td>
+              <Td className="font-mono">{normalizeTokenAlias(token.alias)}</Td>
               <Td>{token.name}</Td>
               <Td align="right">
                 {token.lastUsedAt ? (
