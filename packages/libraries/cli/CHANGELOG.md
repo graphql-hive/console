@@ -1,5 +1,13 @@
 # @graphql-hive/cli
 
+## 0.50.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`bbd5643`](https://github.com/graphql-hive/console/commit/bbd5643924eb2b32511e96a03a3a5a978a66adee)]:
+  - @graphql-hive/core@0.12.0
+
 ## 0.50.0
 
 ### Minor Changes

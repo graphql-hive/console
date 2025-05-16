@@ -1,5 +1,15 @@
 # @graphql-hive/core
 
+## 0.12.0
+
+### Minor Changes
+
+- [#6764](https://github.com/graphql-hive/console/pull/6764)
+  [`bbd5643`](https://github.com/graphql-hive/console/commit/bbd5643924eb2b32511e96a03a3a5a978a66adee)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track provided operation arguments/inputs and use
+  them to determine conditional breaking changes; Fix null to non-null argument breaking change edge
+  case"
+
 ## 0.11.0
 
 ### Minor Changes
