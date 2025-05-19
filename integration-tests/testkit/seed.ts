@@ -779,20 +779,24 @@ export function initSeed() {
                   const check = async () => {
                     const statsResult = await readOperationsStats(
                       {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: (opts?.target ?? target).slug,
-                        period: {
-                          from,
-                          to,
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: (opts?.target ?? target).slug,
                         },
                       },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
                       ownerToken,
                     ).then(r => r.expectNoGraphQLErrors());
-                    const totalRequests = statsResult.operationsStats.operations.nodes.reduce(
-                      (total, node) => total + node.count,
-                      0,
-                    );
+                    const totalRequests =
+                      statsResult.target?.operationsStats.operations.edges.reduce(
+                        (total, edge) => total + edge.node.count,
+                        0,
+                      );
                     return totalRequests == n;
                   };
 
