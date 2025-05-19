@@ -75,11 +75,11 @@ export enum SupportTicketPriority {
   URGENT = 'urgent',
 }
 
-export enum SupportCategory {
-  Billing = 'BILLING',
-  Compliance = 'COMPLIANCE',
-  Other = 'OTHER',
-  TechnicalIssue = 'TECHNICAL_ISSUE',
+export enum SupportCategoryType {
+  BILLING = 'billing',
+  COMPLIANCE = 'compliance',
+  OTHER = 'other',
+  TECHNICAL_ISSUE = 'technical_issue',
 }
 
 export enum SupportTicketStatus {

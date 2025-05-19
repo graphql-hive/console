@@ -3,7 +3,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import {
   Organization,
-  SupportCategory,
+  SupportCategoryType,
   SupportTicketPriority,
   SupportTicketStatus,
 } from '../../../shared/entities';
@@ -28,7 +28,7 @@ export const SupportTicketStatusAPIModel = z.enum([
 
 export const SupportTicketPriorityModel = z.nativeEnum(SupportTicketPriority);
 export const SupportTicketStatusModel = z.nativeEnum(SupportTicketStatus);
-export const SupportTicketCategoryModel = z.nativeEnum(SupportCategory).optional();
+export const SupportTicketCategoryModel = z.nativeEnum(SupportCategoryType).optional();
 
 const SupportTicketModel = z.object({
   id: z.number(),
@@ -520,7 +520,7 @@ export class SupportManager {
     organizationId: string;
     subject: string;
     description: string;
-    category?: SupportCategory;
+    category?: z.infer<typeof SupportTicketCategoryModel>;
     project?: string;
     target?: string;
     priority: z.infer<typeof SupportTicketPriorityModel>;

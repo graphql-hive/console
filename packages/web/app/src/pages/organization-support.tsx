@@ -63,7 +63,7 @@ const newTicketFormSchema = z.object({
     message: 'Subject must be at least 2 characters.',
   }),
   category: z.nativeEnum(SupportCategoryType, {
-    required_error: 'A priority is required.',
+    required_error: 'A category is required.',
   }),
   project: z.string().optional(),
   target: z.string().optional(),
@@ -241,8 +241,7 @@ function NewTicketForm(props: {
                         >
                           <SelectTrigger variant="default" data-cy="category-picker-trigger">
                             <div className="font-medium" data-cy="category-picker-catgeory">
-                              {field.value.charAt(0) +
-                                field.value.substring(1).toLocaleLowerCase().replace('_', ' ')}
+                              {field.value}
                             </div>
                           </SelectTrigger>
                           <SelectContent>
