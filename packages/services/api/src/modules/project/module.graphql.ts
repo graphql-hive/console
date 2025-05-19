@@ -7,9 +7,13 @@ export default gql`
   }
 
   extend type Mutation {
-    createProject(input: CreateProjectInput!): CreateProjectResult!
-    updateProjectSlug(input: UpdateProjectSlugInput!): UpdateProjectSlugResult!
-    deleteProject(selector: ProjectSelectorInput!): DeleteProjectPayload!
+    createProject(input: CreateProjectInput! @tag(name: "public")): CreateProjectResult!
+      @tag(name: "public")
+    updateProjectSlug(
+      input: UpdateProjectSlugInput! @tag(name: "public")
+    ): UpdateProjectSlugResult! @tag(name: "public")
+    deleteProject(input: DeleteProjectInput! @tag(name: "public")): DeleteProjectResult!
+      @tag(name: "public")
   }
 
   type UpdateProjectGitRepositoryResult {
@@ -27,42 +31,41 @@ export default gql`
   }
 
   input UpdateProjectSlugInput {
-    slug: String!
-    organizationSlug: String!
-    projectSlug: String!
+    project: ProjectReferenceInput! @tag(name: "public")
+    slug: String! @tag(name: "public")
   }
 
   type UpdateProjectSlugResult {
-    ok: UpdateProjectSlugOk
-    error: UpdateProjectSlugError
+    ok: UpdateProjectSlugOk @tag(name: "public")
+    error: UpdateProjectSlugError @tag(name: "public")
   }
 
   type UpdateProjectSlugOk {
-    selector: ProjectSelector!
-    project: Project!
+    updatedProject: Project! @tag(name: "public")
   }
 
-  type UpdateProjectSlugError implements Error {
-    message: String!
+  type UpdateProjectSlugError {
+    message: String! @tag(name: "public")
   }
 
   type CreateProjectResult {
-    ok: CreateProjectOk
-    error: CreateProjectError
+    ok: CreateProjectResultOk @tag(name: "public")
+    error: CreateProjectResultError @tag(name: "public")
   }
-  type CreateProjectOk {
-    createdProject: Project!
+
+  type CreateProjectResultOk {
+    createdProject: Project! @tag(name: "public")
     createdTargets: [Target!]!
     updatedOrganization: Organization!
   }
 
   type CreateProjectInputErrors {
-    slug: String
+    slug: String @tag(name: "public")
   }
 
-  type CreateProjectError implements Error {
-    message: String!
-    inputErrors: CreateProjectInputErrors!
+  type CreateProjectResultError {
+    message: String! @tag(name: "public")
+    inputErrors: CreateProjectInputErrors! @tag(name: "public")
   }
 
   input ProjectSelectorInput {
@@ -125,9 +128,9 @@ export default gql`
   }
 
   input CreateProjectInput {
-    slug: String!
-    type: ProjectType!
-    organizationSlug: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    slug: String! @tag(name: "public")
+    type: ProjectType! @tag(name: "public")
   }
 
   input UpdateProjectGitRepositoryInput {
@@ -141,8 +144,20 @@ export default gql`
     updatedProject: Project!
   }
 
-  type DeleteProjectPayload {
-    selector: ProjectSelector!
-    deletedProject: Project!
+  input DeleteProjectInput {
+    project: ProjectReferenceInput! @tag(name: "public")
+  }
+
+  type DeleteProjectResult {
+    ok: DeleteProjectResultOk @tag(name: "public")
+    error: DeleteProjectResultError @tag(name: "public")
+  }
+
+  type DeleteProjectResultOk {
+    deletedProjectId: ID! @tag(name: "public")
+  }
+
+  type DeleteProjectResultError {
+    message: String! @tag(name: "public")
   }
 `;

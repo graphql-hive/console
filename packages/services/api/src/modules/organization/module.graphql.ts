@@ -24,11 +24,11 @@ export default gql`
     joinOrganization(code: String!): JoinOrganizationPayload!
     leaveOrganization(input: OrganizationSelectorInput!): LeaveOrganizationResult!
     inviteToOrganizationByEmail(
-      input: InviteToOrganizationByEmailInput!
-    ): InviteToOrganizationByEmailResult!
+      input: InviteToOrganizationByEmailInput! @tag(name: "public")
+    ): InviteToOrganizationByEmailResult! @tag(name: "public")
     deleteOrganizationInvitation(
-      input: DeleteOrganizationInvitationInput!
-    ): DeleteOrganizationInvitationResult!
+      input: DeleteOrganizationInvitationInput! @tag(name: "public")
+    ): DeleteOrganizationInvitationResult! @tag(name: "public")
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
@@ -36,10 +36,14 @@ export default gql`
     answerOrganizationTransferRequest(
       input: AnswerOrganizationTransferRequestInput!
     ): AnswerOrganizationTransferRequestResult!
-    createMemberRole(input: CreateMemberRoleInput!): CreateMemberRoleResult!
-    updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
-    deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
-    assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
+    createMemberRole(input: CreateMemberRoleInput! @tag(name: "public")): CreateMemberRoleResult!
+      @tag(name: "public")
+    updateMemberRole(input: UpdateMemberRoleInput! @tag(name: "public")): UpdateMemberRoleResult!
+      @tag(name: "public")
+    deleteMemberRole(input: DeleteMemberRoleInput! @tag(name: "public")): DeleteMemberRoleResult!
+      @tag(name: "public")
+    assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
+      @tag(name: "public")
     createOrganizationAccessToken(
       input: CreateOrganizationAccessTokenInput! @tag(name: "public")
     ): CreateOrganizationAccessTokenResult! @tag(name: "public")
@@ -240,38 +244,52 @@ export default gql`
   }
 
   input InviteToOrganizationByEmailInput {
-    organizationSlug: String!
-    roleId: ID
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
+    memberRoleId: ID @tag(name: "public")
   }
 
   input DeleteOrganizationInvitationInput {
-    organizationSlug: String!
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
   }
 
-  type InviteToOrganizationByEmailError implements Error {
-    message: String!
+  type InviteToOrganizationByEmailResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: InviteToOrganizationByEmailInputErrors!
+    inputErrors: InviteToOrganizationByEmailInputErrors! @tag(name: "public")
+  }
+
+  type InviteToOrganizationByEmailResultOk {
+    createdOrganizationInvitation: OrganizationInvitation! @tag(name: "public")
   }
 
   type InviteToOrganizationByEmailInputErrors {
-    email: String
+    email: String @tag(name: "public") @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type InviteToOrganizationByEmailResult {
-    ok: OrganizationInvitation
-    error: InviteToOrganizationByEmailError
+    ok: InviteToOrganizationByEmailResultOk @tag(name: "public")
+    error: InviteToOrganizationByEmailResultError @tag(name: "public")
   }
 
   type OrganizationTransfer {
     organization: Organization!
+  }
+
+  type MemberRoleEdge {
+    node: MemberRole! @tag(name: "public")
+    cursor: String!
+  }
+
+  type MemberRoleConnection {
+    edges: [MemberRoleEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
   }
 
   type Organization {
@@ -285,12 +303,19 @@ export default gql`
     slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
-    owner: Member!
+    owner: Member! @tag(name: "public")
     me: Member!
-    members: MemberConnection
-    invitations: OrganizationInvitationConnection
+    members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
+      @tag(name: "public")
+    invitations(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationInvitationConnection @tag(name: "public")
     getStarted: OrganizationGetStarted!
-    memberRoles: [MemberRole!]
+    memberRoles(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): MemberRoleConnection @tag(name: "public")
     """
     Whether the viewer should be able to access the settings page within the app
     """
@@ -330,7 +355,7 @@ export default gql`
     """
     List of available permission groups that can be assigned to users.
     """
-    availableMemberPermissionGroups: [PermissionGroup!]!
+    availableMemberPermissionGroups: [PermissionGroup!]! @tag(name: "public")
     """
     List of available permission groups that can be assigned to organization access tokens.
     """
@@ -367,18 +392,23 @@ export default gql`
     total: Int!
   }
 
+  type OrganizationInvitationEdge {
+    node: OrganizationInvitation! @tag(name: "public")
+    cursor: String!
+  }
+
   type OrganizationInvitationConnection {
-    nodes: [OrganizationInvitation!]!
-    total: Int!
+    edges: [OrganizationInvitationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
   }
 
   type OrganizationInvitation {
-    id: ID!
-    createdAt: DateTime!
-    expiresAt: DateTime!
-    email: String!
+    id: ID! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    expiresAt: DateTime! @tag(name: "public")
+    email: String! @tag(name: "public")
     code: String!
-    role: MemberRole!
+    role: MemberRole! @tag(name: "public")
   }
 
   type OrganizationInvitationError {
@@ -412,22 +442,26 @@ export default gql`
   @oneOf
   """
   type DeleteOrganizationInvitationResult {
-    ok: OrganizationInvitation
-    error: DeleteOrganizationInvitationError
+    ok: DeleteOrganizationInvitationResultOk @tag(name: "public")
+    error: DeleteOrganizationInvitationResultError @tag(name: "public")
   }
 
-  type DeleteOrganizationInvitationError implements Error {
-    message: String!
+  type DeleteOrganizationInvitationResultOk {
+    deletedOrganizationInvitationId: ID! @tag(name: "public")
+  }
+
+  type DeleteOrganizationInvitationResultError {
+    message: String! @tag(name: "public")
   }
 
   type MemberRole {
-    id: ID!
-    name: String!
-    description: String!
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
     """
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
-    locked: Boolean!
+    isLocked: Boolean! @tag(name: "public")
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -447,126 +481,137 @@ export default gql`
     """
     List of permissions attached to this member role.
     """
-    permissions: [String!]!
+    permissions: [String!]! @tag(name: "public")
   }
 
   input CreateMemberRoleInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type CreateMemberRoleOk {
-    updatedOrganization: Organization!
+  type CreateMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    createdMemberRole: MemberRole! @tag(name: "public")
   }
 
   type CreateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type CreateMemberRoleError implements Error {
-    message: String!
+  type CreateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: CreateMemberRoleInputErrors
+    inputErrors: CreateMemberRoleInputErrors @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type CreateMemberRoleResult {
-    ok: CreateMemberRoleOk
-    error: CreateMemberRoleError
+    ok: CreateMemberRoleResultOk @tag(name: "public")
+    error: CreateMemberRoleResultError @tag(name: "public")
   }
 
   input UpdateMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    """
+    The member role that should be udpated.
+    """
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type UpdateMemberRoleOk {
-    updatedRole: MemberRole!
+  type UpdateMemberRoleResultOk {
+    updatedRole: MemberRole! @tag(name: "public")
   }
 
   type UpdateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type UpdateMemberRoleError implements Error {
-    message: String!
+  type UpdateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: UpdateMemberRoleInputErrors
+    inputErrors: UpdateMemberRoleInputErrors @tag(name: "public")
+  }
+
+  input MemberRoleReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
+  input MemberReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type UpdateMemberRoleResult {
-    ok: UpdateMemberRoleOk
-    error: UpdateMemberRoleError
+    ok: UpdateMemberRoleResultOk @tag(name: "public")
+    error: UpdateMemberRoleResultError @tag(name: "public")
   }
 
   input DeleteMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
   }
 
-  type DeleteMemberRoleOk {
-    updatedOrganization: Organization!
+  type DeleteMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    deletedMemberRoleId: ID! @tag(name: "public")
   }
 
-  type DeleteMemberRoleError implements Error {
-    message: String!
+  type DeleteMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type DeleteMemberRoleResult {
-    ok: DeleteMemberRoleOk
-    error: DeleteMemberRoleError
+    ok: DeleteMemberRoleResultOk @tag(name: "public")
+    error: DeleteMemberRoleResultError @tag(name: "public")
   }
 
   input AssignMemberRoleInput {
-    organizationSlug: String!
-    userId: ID!
-    roleId: ID!
-    resources: ResourceAssignmentInput!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    member: MemberReferenceInput! @tag(name: "public")
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
-  type AssignMemberRoleOk {
-    updatedMember: Member!
-    previousMemberRole: MemberRole
+  type AssignMemberRoleResultOk {
+    updatedMember: Member! @tag(name: "public")
+    previousMemberRole: MemberRole @tag(name: "public")
   }
 
-  type AssignMemberRoleError implements Error {
-    message: String!
+  type AssignMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type AssignMemberRoleResult {
-    ok: AssignMemberRoleOk
-    error: AssignMemberRoleError
+    ok: AssignMemberRoleResultOk @tag(name: "public")
+    error: AssignMemberRoleResultError @tag(name: "public")
   }
 
   type Member {
     id: ID!
-    user: User!
-    isOwner: Boolean!
+    user: User! @tag(name: "public")
+    isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
-    role: MemberRole!
-    resourceAssignment: ResourceAssignment!
+    role: MemberRole! @tag(name: "public")
+    resourceAssignment: ResourceAssignment! @tag(name: "public")
     """
     Whether the viewer can remove this member from the organization.
     """
@@ -585,8 +630,13 @@ export default gql`
   }
 
   type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
+    edges: [MemberEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type MemberEdge {
+    cursor: String! @tag(name: "public")
+    node: Member! @tag(name: "public")
   }
 
   input AppDeploymentResourceAssignmentInput {

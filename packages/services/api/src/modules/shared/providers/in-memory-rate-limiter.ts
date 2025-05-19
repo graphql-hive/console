@@ -61,15 +61,12 @@ export class InMemoryRateLimiter {
       maxActions,
     );
 
-    if (!this.session.isViewer()) {
-      throw new Error('Expected to be called for an authenticated user.');
-    }
-
-    const user = await this.session.getViewer();
-
+    const actor = await this.session.getActor();
     const limiter = this.store.ensureLimiter(action, windowSizeInMs, maxActions);
 
-    if (!limiter.isAllowed(user.id)) {
+    if (
+      !limiter.isAllowed(actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id)
+    ) {
       throw new HiveError(message);
     }
   }

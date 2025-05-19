@@ -178,7 +178,10 @@ export default gql`
     """
     Paginated list of schema versions, ordered from recent to oldest.
     """
-    schemaVersions(first: Int, after: String): SchemaVersionConnection! @tag(name: "public")
+    schemaVersions(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): SchemaVersionConnection! @tag(name: "public")
     """
     Retreive a specific schema version in this target by it's id.
     """

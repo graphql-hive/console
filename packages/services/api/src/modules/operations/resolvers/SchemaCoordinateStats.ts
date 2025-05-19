@@ -52,7 +52,7 @@ export const SchemaCoordinateStats: Pick<
       }),
     ]);
 
-    return operations
+    const nodes = operations
       .map(op => {
         return {
           id: hash(`${op.operationName}__${op.operationHash}`),
@@ -66,14 +66,34 @@ export const SchemaCoordinateStats: Pick<
         };
       })
       .sort((a, b) => b.count - a.count);
+
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
-  clients: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
-    return injector.get(OperationsManager).readUniqueClients({
+  clients: async ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+    const nodes = await injector.get(OperationsManager).readUniqueClients({
       targetId: target,
       projectId: project,
       organizationId: organization,
       period,
       schemaCoordinate,
     });
+
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
 };

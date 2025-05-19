@@ -7,8 +7,7 @@ export const updateMemberRole: NonNullable<MutationResolvers['updateMemberRole']
   { injector },
 ) => {
   return injector.get(OrganizationManager).updateMemberRole({
-    organizationSlug: input.organizationSlug,
-    roleId: input.roleId,
+    memberRoleId: input.memberRole.byId,
     name: input.name,
     description: input.description,
     permissions: input.selectedPermissions,

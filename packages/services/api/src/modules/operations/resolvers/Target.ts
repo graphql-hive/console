@@ -4,7 +4,13 @@ import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,
-  'operation' | 'requestsOverTime' | 'totalRequests' | '__isTypeOf'
+  | 'clientStats'
+  | 'operation'
+  | 'operationsStats'
+  | 'requestsOverTime'
+  | 'schemaCoordinateStats'
+  | 'totalRequests'
+  | '__isTypeOf'
 > = {
   totalRequests: (target, { period }, { injector }) => {
     return injector.get(OperationsManager).countRequests({
@@ -32,5 +38,36 @@ export const Target: Pick<
       projectId: target.projectId,
       targetId: target.id,
     });
+  },
+  clientStats: async (target, args, _ctx) => {
+    return {
+      period: parseDateRangeInput(args.period),
+      organization: target.orgId,
+      project: target.projectId,
+      target: target.id,
+      clientName: args.clientName,
+    };
+  },
+  operationsStats: async (target, args, _ctx) => {
+    return {
+      period: parseDateRangeInput(args.period),
+      organization: target.orgId,
+      project: target.projectId,
+      target: target.id,
+      operations: args.filter?.operationIds ?? [],
+      clients:
+        // TODO: figure out if the mapping should actually happen here :thinking:
+        args.filter?.clientNames?.map(clientName => (clientName === 'unknown' ? '' : clientName)) ??
+        [],
+    };
+  },
+  schemaCoordinateStats: async (target, args, _ctx) => {
+    return {
+      period: parseDateRangeInput(args.period),
+      organization: target.orgId,
+      project: target.projectId,
+      target: target.id,
+      schemaCoordinate: args.schemaCoordinate,
+    };
   },
 };

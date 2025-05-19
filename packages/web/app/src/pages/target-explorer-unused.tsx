@@ -242,16 +242,9 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
         id
         type
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      operationsStats(period: $period) {
+        totalRequests
       }
-    ) {
-      totalRequests
     }
   }
 `);
@@ -352,7 +345,7 @@ function UnusedSchemaExplorer(props: {
                 </Alert>
               )}
               <UnusedSchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.unusedSchema}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}

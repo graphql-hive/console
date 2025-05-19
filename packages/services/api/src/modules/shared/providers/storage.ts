@@ -3,6 +3,7 @@ import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
 import type {
   ConditionalBreakingChangeMetadata,
+  PaginatedOrganizationInvitationConnection,
   PaginatedSchemaVersionConnection,
   SchemaChangeType,
   SchemaCheck,
@@ -171,10 +172,15 @@ export interface Storage {
     },
   ): Promise<void>;
 
-  getOrganizationMembers(_: OrganizationSelector): Promise<readonly Member[] | never>;
   countOrganizationMembers(_: OrganizationSelector): Promise<number>;
 
-  getOrganizationInvitations(_: OrganizationSelector): Promise<readonly OrganizationInvitation[]>;
+  getOrganizationInvitations(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ): Promise<PaginatedOrganizationInvitationConnection>;
 
   getOrganizationOwnerId(_: OrganizationSelector): Promise<string | null>;
 
@@ -229,7 +235,7 @@ export interface Storage {
     | never
   >;
 
-  updateProjectSlug(_: ProjectSelector & { slug: string; userId: string }): Promise<
+  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
     | {
         ok: true;
         project: Project;
@@ -280,7 +286,7 @@ export interface Storage {
       }
   >;
 
-  updateTargetSlug(_: TargetSelector & { slug: string; userId: string }): Promise<
+  updateTargetSlug(_: TargetSelector & { slug: string }): Promise<
     | {
         ok: true;
         target: Target;

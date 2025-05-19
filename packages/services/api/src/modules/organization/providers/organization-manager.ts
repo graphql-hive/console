@@ -1,9 +1,9 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
+import { z } from 'zod';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
-import { cache } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -11,12 +11,13 @@ import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
+import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { Logger } from '../../shared/providers/logger';
 import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
-import { createOrUpdateMemberRoleInputSchema } from '../validation';
+import { CreateOrUpdateMemberRoleModel } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
@@ -46,6 +47,7 @@ export class OrganizationManager {
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
     private resourceAssignments: ResourceAssignments,
+    private inMemoryRateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     private idTranslator: IdTranslator,
   ) {
@@ -248,13 +250,18 @@ export class OrganizationManager {
     return member;
   }
 
-  @cache((selector: OrganizationSelector) => selector.organizationId)
-  async getInvitations(selector: OrganizationSelector) {
+  async getInvitations(
+    organization: Organization,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
     const canAccessInvitations = await this.session.canPerformAction({
       action: 'member:modify',
-      organizationId: selector.organizationId,
+      organizationId: organization.id,
       params: {
-        organizationId: selector.organizationId,
+        organizationId: organization.id,
       },
     });
 
@@ -262,7 +269,7 @@ export class OrganizationManager {
       return null;
     }
 
-    return await this.storage.getOrganizationInvitations(selector);
+    return await this.storage.getOrganizationInvitations(organization.id, args);
   }
 
   async getOrganizationOwner(selector: OrganizationSelector) {
@@ -471,25 +478,71 @@ export class OrganizationManager {
     return result;
   }
 
-  async deleteInvitation(input: { email: string; organizationId: string }) {
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
+  async deleteInvitation(args: {
+    email: string;
+    organization: GraphQLSchema.OrganizationReferenceInput;
+  }) {
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
       },
     });
-    return this.storage.deleteOrganizationInvitationByEmail(input);
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+    return this.storage.deleteOrganizationInvitationByEmail({
+      organizationId,
+      email: args.email,
+    });
   }
 
-  async inviteByEmail(input: { email: string; organization: string; role?: string | null }) {
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId: input.organization,
-      params: {
-        organizationId: input.organization,
+  async inviteByEmail(input: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    email: string;
+    role?: string | null;
+  }) {
+    await this.inMemoryRateLimiter.check(
+      'inviteToOrganizationByEmail',
+      5_000, // 5 seconds
+      6, // 6 invites
+      `Exceeded rate limit for inviting to organization by email.`,
+    );
+
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: input.organization,
+      onError: () => {
+        this.session.raise('member:modify');
       },
     });
+
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+
+    const InputModel = z.object({
+      email: z.string().email().max(128, 'Email must be at most 128 characters long'),
+    });
+    const result = InputModel.safeParse(input);
+
+    if (!result.success) {
+      return {
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            email: result.error.formErrors.fieldErrors.email?.[0],
+          },
+        },
+      };
+    }
 
     const { email } = input;
     this.logger.info(
@@ -499,7 +552,7 @@ export class OrganizationManager {
       input.role,
     );
     const organization = await this.getOrganization({
-      organizationId: input.organization,
+      organizationId,
     });
 
     const existingMember = await this.organizationMembers.findOrganizationMembershipByEmail(
@@ -518,7 +571,7 @@ export class OrganizationManager {
 
     const role = input.role
       ? await this.organizationMemberRoles.findMemberRoleById(input.role)
-      : await this.organizationMemberRoles.findViewerRoleByOrganizationId(input.organization);
+      : await this.organizationMemberRoles.findViewerRoleByOrganizationId(organizationId);
 
     if (!role) {
       throw new HiveError(`Role not found`);
@@ -544,7 +597,7 @@ export class OrganizationManager {
       }),
       // schedule an email
       this.emails.api?.sendOrganizationInviteEmail.mutate({
-        organizationId: invitation.organization_id,
+        organizationId: invitation.organizationId,
         organizationName: organization.name,
         email,
         code: invitation.code,
@@ -804,25 +857,30 @@ export class OrganizationManager {
     });
   }
 
-  async createMemberRole(input: {
-    organizationSlug: string;
+  async createMemberRole(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
     name: string;
     description: string;
     permissions: ReadonlyArray<string>;
   }) {
-    const organizationId = await this.idTranslator.translateOrganizationId(input);
-
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId,
-      params: {
-        organizationId,
+    const selector = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
       },
     });
 
-    const inputValidation = createOrUpdateMemberRoleInputSchema.safeParse({
-      name: input.name,
-      description: input.description,
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+      },
+    });
+
+    const inputValidation = CreateOrUpdateMemberRoleModel.safeParse({
+      name: args.name,
+      description: args.description,
     });
 
     if (!inputValidation.success) {
@@ -837,10 +895,10 @@ export class OrganizationManager {
       };
     }
 
-    const roleName = input.name.trim();
+    const roleName = args.name.trim();
 
     const foundRole = await this.organizationMemberRoles.findRoleByOrganizationIdAndName(
-      organizationId,
+      selector.organizationId,
       roleName,
     );
 
@@ -859,15 +917,15 @@ export class OrganizationManager {
     }
 
     const role = await this.organizationMemberRoles.createOrganizationMemberRole({
-      organizationId,
+      organizationId: selector.organizationId,
       name: roleName,
-      description: input.description,
-      permissions: input.permissions,
+      description: args.description,
+      permissions: args.permissions,
     });
 
     await this.auditLog.record({
       eventType: 'ROLE_CREATED',
-      organizationId,
+      organizationId: selector.organizationId,
       metadata: {
         roleId: role.id,
         roleName: role.name,
@@ -877,23 +935,27 @@ export class OrganizationManager {
     return {
       ok: {
         updatedOrganization: await this.storage.getOrganization({
-          organizationId,
+          organizationId: selector.organizationId,
         }),
-        createdRole: role,
+        createdMemberRole: role,
       },
     };
   }
 
-  async deleteMemberRole(input: { organizationId: string; roleId: string }) {
+  async deleteMemberRole(input: { memberRoleId: string }) {
+    const role = await this.organizationMemberRoles.findMemberRoleById(input.memberRoleId);
+
+    if (!role) {
+      this.session.raise('member:modify');
+    }
+
     await this.session.assertPerformAction({
       action: 'member:modify',
-      organizationId: input.organizationId,
+      organizationId: role.organizationId,
       params: {
-        organizationId: input.organizationId,
+        organizationId: role.organizationId,
       },
     });
-
-    const role = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
 
     if (!role) {
       return {
@@ -913,13 +975,13 @@ export class OrganizationManager {
 
     // delete the role
     await this.storage.deleteOrganizationMemberRole({
-      organizationId: input.organizationId,
-      roleId: input.roleId,
+      organizationId: role.organizationId,
+      roleId: role.id,
     });
 
     await this.auditLog.record({
       eventType: 'ROLE_DELETED',
-      organizationId: input.organizationId,
+      organizationId: role.organizationId,
       metadata: {
         roleId: role.id,
         roleName: role.name,
@@ -929,19 +991,25 @@ export class OrganizationManager {
     return {
       ok: {
         updatedOrganization: await this.storage.getOrganization({
-          organizationId: input.organizationId,
+          organizationId: role.organizationId,
         }),
+        deletedMemberRoleId: role.id,
       },
     };
   }
 
-  async assignMemberRole(input: {
-    organizationSlug: string;
+  async assignMemberRole(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
     userId: string;
-    roleId: string;
+    memberRoleId: string;
     resources: GraphQLSchema.ResourceAssignmentInput;
   }) {
-    const organizationId = await this.idTranslator.translateOrganizationId(input);
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError: () => {
+        this.session.raise('member:modify');
+      },
+    });
 
     await this.session.assertPerformAction({
       action: 'member:modify',
@@ -958,14 +1026,14 @@ export class OrganizationManager {
     // Ensure selected member is part of the organization
     const previousMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
-      userId: input.userId,
+      userId: args.userId,
     });
 
     if (!previousMembership) {
       throw new Error(`Member is not part of the organization`);
     }
 
-    const newRole = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
+    const newRole = await this.organizationMemberRoles.findMemberRoleById(args.memberRoleId);
 
     if (!newRole) {
       return {
@@ -978,14 +1046,14 @@ export class OrganizationManager {
     const resourceAssignmentGroup =
       await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
         organization.id,
-        input.resources,
+        args.resources,
       );
 
     // Assign the role to the member
     await this.organizationMembers.assignOrganizationMemberRole({
       organizationId,
-      userId: input.userId,
-      roleId: input.roleId,
+      userId: args.userId,
+      roleId: args.memberRoleId,
       resourceAssignmentGroup,
     });
 
@@ -995,7 +1063,7 @@ export class OrganizationManager {
     const previousMemberRole = previousMembership.assignedRole.role ?? null;
     const updatedMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
-      userId: input.userId,
+      userId: args.userId,
     });
 
     if (!updatedMembership) {
@@ -1021,7 +1089,7 @@ export class OrganizationManager {
           previousMemberRole: previousMemberRole ? previousMemberRole.name : null,
           roleId: newRole.id,
           updatedMember: user.email,
-          userIdAssigned: input.userId,
+          userIdAssigned: args.userId,
         },
       });
     }
@@ -1032,22 +1100,26 @@ export class OrganizationManager {
   }
 
   async updateMemberRole(input: {
-    organizationSlug: string;
-    roleId: string;
+    memberRoleId: string;
     name: string;
     description: string;
     permissions: readonly string[];
   }) {
-    const organizationId = await this.idTranslator.translateOrganizationId(input);
+    const role = await this.organizationMemberRoles.findMemberRoleById(input.memberRoleId);
+
+    if (!role) {
+      this.session.raise('member:modify');
+    }
+
     await this.session.assertPerformAction({
       action: 'member:modify',
-      organizationId,
+      organizationId: role.organizationId,
       params: {
-        organizationId,
+        organizationId: role.organizationId,
       },
     });
 
-    const inputValidation = createOrUpdateMemberRoleInputSchema.safeParse({
+    const inputValidation = CreateOrUpdateMemberRoleModel.safeParse({
       name: input.name,
       description: input.description,
     });
@@ -1064,24 +1136,14 @@ export class OrganizationManager {
       };
     }
 
-    const role = await this.organizationMemberRoles.findMemberRoleById(input.roleId);
-
-    if (!role) {
-      return {
-        error: {
-          message: 'Role not found',
-        },
-      };
-    }
-
     // Ensure name is unique in the organization
     const roleName = input.name.trim();
     const foundRole = await this.organizationMemberRoles.findRoleByOrganizationIdAndName(
-      organizationId,
+      role.organizationId,
       roleName,
     );
 
-    if (foundRole && foundRole.id !== input.roleId) {
+    if (foundRole && foundRole.id !== input.memberRoleId) {
       const msg = 'Role name already exists. Please choose a different name.';
 
       return {
@@ -1096,8 +1158,8 @@ export class OrganizationManager {
 
     // Update the role
     const updatedRole = await this.organizationMemberRoles.updateOrganizationMemberRole({
-      organizationId,
-      roleId: input.roleId,
+      organizationId: role.organizationId,
+      roleId: input.memberRoleId,
       name: roleName,
       description: input.description,
       permissions: input.permissions,
@@ -1108,7 +1170,7 @@ export class OrganizationManager {
 
     await this.auditLog.record({
       eventType: 'ROLE_UPDATED',
-      organizationId,
+      organizationId: role.organizationId,
       metadata: {
         roleId: updatedRole.id,
         roleName: updatedRole.name,
@@ -1127,37 +1189,22 @@ export class OrganizationManager {
     };
   }
 
-  async getMemberRoles(selector: { organizationId: string }) {
+  async getPaginatedOrganizationMembersForOrganization(
+    organization: Organization,
+    args: { first: number | null; after: string | null },
+  ) {
     await this.session.assertPerformAction({
       action: 'member:describe',
-      organizationId: selector.organizationId,
+      organizationId: organization.id,
       params: {
-        organizationId: selector.organizationId,
+        organizationId: organization.id,
       },
     });
 
-    return this.organizationMemberRoles.getMemberRolesForOrganizationId(selector.organizationId);
-  }
-
-  async getMemberRole(selector: {
-    organizationId: string;
-    roleId: string;
-  }): Promise<OrganizationMemberRole | null> {
-    const role = await this.organizationMemberRoles.findMemberRoleById(selector.roleId);
-
-    if (!role) {
-      return null;
-    }
-
-    await this.session.assertPerformAction({
-      action: 'member:describe',
-      organizationId: role.organizationId,
-      params: {
-        organizationId: role.organizationId,
-      },
-    });
-
-    return role;
+    return this.organizationMembers.getPaginatedOrganizationMembersForOrganization(
+      organization,
+      args,
+    );
   }
 
   async getViewerMemberRole(selector: {
@@ -1172,5 +1219,17 @@ export class OrganizationManager {
     });
 
     return this.organizationMemberRoles.findViewerRoleByOrganizationId(selector.organizationId);
+  }
+
+  async findOrganizationOwner(organization: Organization) {
+    await this.session.assertPerformAction({
+      action: 'member:describe',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
+    });
+
+    return this.organizationMembers.findOrganizationOwner(organization);
   }
 }
