@@ -31,37 +31,42 @@ import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
   query SchemaCoordinateView_SchemaCoordinateStatsQuery(
-    $selector: SchemaCoordinateStatsInput!
     $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
     $resolution: Int!
+    $schemaCoordinate: String!
   ) {
-    schemaCoordinateStats(selector: $selector) {
-      supergraphMetadata {
-        ...SupergraphMetadataList_SupergraphMetadataFragment
-      }
-      requestsOverTime(resolution: $resolution) {
-        date
-        value
-      }
-      totalRequests
-      operations {
-        nodes {
-          id
-          name
-          operationHash
-          count
-        }
-      }
-      clients {
-        nodes {
-          name
-          count
-        }
-      }
-    }
     target(reference: { bySelector: $targetSelector }) {
       id
       hasCollectedSubscriptionOperations
+      schemaCoordinateStats(period: $period, schemaCoordinate: $schemaCoordinate) {
+        supergraphMetadata {
+          ...SupergraphMetadataList_SupergraphMetadataFragment
+        }
+        requestsOverTime(resolution: $resolution) {
+          date
+          value
+        }
+        totalRequests
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+              count
+            }
+          }
+        }
+        clients {
+          edges {
+            node {
+              name
+              count
+            }
+          }
+        }
+      }
     }
   }
 `);
@@ -82,18 +87,13 @@ function SchemaCoordinateView(props: {
   const [query, refetch] = useQuery({
     query: SchemaCoordinateView_SchemaCoordinateStatsQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-        projectSlug: props.projectSlug,
-        targetSlug: props.targetSlug,
-        schemaCoordinate: props.coordinate,
-        period: dateRangeController.resolvedRange,
-      },
       targetSelector: {
         organizationSlug: props.organizationSlug,
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       },
+      schemaCoordinate: props.coordinate,
+      period: dateRangeController.resolvedRange,
       resolution: dateRangeController.resolution,
     },
   });
@@ -105,7 +105,7 @@ function SchemaCoordinateView(props: {
   }, [dateRangeController.resolvedRange]);
 
   const isLoading = query.fetching;
-  const points = query.data?.schemaCoordinateStats?.requestsOverTime;
+  const points = query.data?.target?.schemaCoordinateStats?.requestsOverTime;
   const requestsOverTime = useMemo(() => {
     if (!points) {
       return [];
@@ -113,11 +113,11 @@ function SchemaCoordinateView(props: {
 
     return points.map(node => [node.date, node.value]);
   }, [points]);
-  const totalRequests = query.data?.schemaCoordinateStats?.totalRequests ?? 0;
-  const totalOperations = query.data?.schemaCoordinateStats?.operations.nodes.length ?? 0;
-  const totalClients = query.data?.schemaCoordinateStats?.clients.nodes.length ?? 0;
+  const totalRequests = query.data?.target?.schemaCoordinateStats?.totalRequests ?? 0;
+  const totalOperations = query.data?.target?.schemaCoordinateStats?.operations.edges.length ?? 0;
+  const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
 
-  const supergraphMetadata = query.data?.schemaCoordinateStats?.supergraphMetadata;
+  const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -326,31 +326,33 @@ function SchemaCoordinateView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.schemaCoordinateStats.operations.nodes.map(operation => (
-                      <div key={operation.id} className="flex items-center">
-                        <p className="truncate text-sm font-medium">
-                          <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              operationName: operation.name,
-                              operationHash: operation.operationHash ?? '_',
-                            }}
-                          >
-                            {operation.name}
-                          </Link>
-                        </p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(operation.count)}</div>{' '}
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((operation.count * 100) / totalRequests)}%
+                  : query.data?.target?.schemaCoordinateStats.operations.edges.map(
+                      ({ node: operation }) => (
+                        <div key={operation.id} className="flex items-center">
+                          <p className="truncate text-sm font-medium">
+                            <Link
+                              className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                operationName: operation.name,
+                                operationHash: operation.operationHash ?? '_',
+                              }}
+                            >
+                              {operation.name}
+                            </Link>
+                          </p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(operation.count)}</div>{' '}
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((operation.count * 100) / totalRequests)}%
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
               </div>
             </CardContent>
           </Card>
@@ -368,30 +370,32 @@ function SchemaCoordinateView(props: {
               <div className="space-y-2">
                 {isLoading
                   ? null
-                  : query.data?.schemaCoordinateStats.clients.nodes.map(client => (
-                      <div key={client.name} className="flex items-center">
-                        <p className="truncate text-sm font-medium">
-                          <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              name: client.name,
-                            }}
-                          >
-                            {client.name}
-                          </Link>
-                        </p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
-                          <div>{formatNumber(client.count)}</div>
-                          <div className="min-w-[70px] text-right">
-                            {toDecimal((client.count * 100) / totalRequests)}%
+                  : query.data?.target?.schemaCoordinateStats.clients.edges.map(
+                      ({ node: client }) => (
+                        <div key={client.name} className="flex items-center">
+                          <p className="truncate text-sm font-medium">
+                            <Link
+                              className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                              to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                name: client.name,
+                              }}
+                            >
+                              {client.name}
+                            </Link>
+                          </p>
+                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                            <div>{formatNumber(client.count)}</div>
+                            <div className="min-w-[70px] text-right">
+                              {toDecimal((client.count * 100) / totalRequests)}%
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
               </div>
             </CardContent>
           </Card>

@@ -1,5 +1,4 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { waitFor } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -23,8 +22,13 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { inviteAndJoinMember, fetchOrganizationInfo, createProject } = await createOrg();
-    const { target, project, createTargetAccessToken, toggleTargetValidation } =
-      await createProject(ProjectType.Single);
+    const {
+      target,
+      project,
+      createTargetAccessToken,
+      toggleTargetValidation,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
 
     const { getStarted: steps } = await fetchOrganizationInfo();
     expect(steps?.creatingProject).toBe(true); // modified
@@ -87,7 +91,7 @@ test.concurrent(
         },
       },
     ]);
-    await waitFor(8000);
+    await waitForOperationsCollected(1);
     const { getStarted: steps5 } = await fetchOrganizationInfo();
     expect(steps5?.creatingProject).toBe(true);
     expect(steps5?.publishingSchema).toBe(true);

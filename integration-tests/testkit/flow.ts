@@ -4,7 +4,6 @@ import type {
   AddAlertInput,
   AnswerOrganizationTransferRequestInput,
   AssignMemberRoleInput,
-  ClientStatsInput,
   CreateMemberRoleInput,
   CreateOrganizationAccessTokenInput,
   CreateOrganizationInput,
@@ -16,7 +15,6 @@ import type {
   EnableExternalSchemaCompositionInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
-  OperationsStatsSelectorInput,
   OrganizationSelectorInput,
   OrganizationTransferRequestSelector,
   RateLimitInput,
@@ -32,6 +30,7 @@ import type {
   UpdateTargetConditionalBreakingChangeConfigurationInput,
   UpdateTargetSlugInput,
 } from './gql/graphql';
+import * as GraphQLSchema from './gql/graphql';
 import { execute } from './graphql';
 
 export function waitFor(ms: number) {
@@ -40,27 +39,59 @@ export function waitFor(ms: number) {
 
 function pollInternal(
   check: () => Promise<boolean>,
+
+  /** In milliseconds */
   pollFrequency: number,
+
+  /** In milliseconds */
+  maxWait: number,
+
+  /** In milliseconds. A random number between 0 and Jitter is added to the pollFrequency to add some
+   * noise and prevent test cases where exact durations are required.
+   * */
+  jitter: number,
+
   resolve: (value: void | PromiseLike<void>) => void,
   reject: (reason?: any) => void,
+
+  /** In milliseconds */
+  startTime: number = Date.now(),
 ) {
-  setTimeout(async () => {
-    try {
-      const passes = await check();
-      if (passes) {
-        resolve();
-      } else {
-        pollInternal(check, pollFrequency, resolve, reject);
+  setTimeout(
+    async () => {
+      try {
+        const passes = await check();
+        if (passes) {
+          resolve();
+        } else {
+          const waited = Date.now() - startTime;
+          if (waited > maxWait) {
+            reject(new Error(`Polling failed. Condition was not satisfied within ${maxWait}ms`));
+          } else {
+            pollInternal(check, pollFrequency, maxWait, jitter, resolve, reject, startTime);
+          }
+        }
+      } catch (e) {
+        reject(e);
       }
-    } catch (e) {
-      reject(e);
-    }
-  }, pollFrequency);
+    },
+    Math.round(pollFrequency + Math.random() * jitter),
+  );
 }
 
-export function pollFor(check: () => Promise<boolean>, pollFrequency = 500): Promise<void> {
+export function pollFor(
+  check: () => Promise<boolean>,
+  opts?: { pollFrequency?: number; maxWait?: number; jitter?: number },
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    pollInternal(check, pollFrequency, resolve, reject);
+    pollInternal(
+      check,
+      opts?.pollFrequency ?? 500,
+      opts?.maxWait ?? 10_000,
+      opts?.jitter ?? 100,
+      resolve,
+      reject,
+    );
   });
 }
 
@@ -1010,65 +1041,95 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
   });
 }
 
-export function readClientStats(selector: ClientStatsInput, token: string) {
+export function readClientStats(
+  reference: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  clientName: string,
+  token: string,
+) {
   return execute({
     document: graphql(`
-      query IntegrationTests_ClientStat($selector: ClientStatsInput!) {
-        clientStats(selector: $selector) {
-          totalRequests
-          totalVersions
-          operations {
-            nodes {
-              id
-              name
-              operationHash
+      query IntegrationTests_ClientStat(
+        $reference: TargetReferenceInput!
+        $period: DateRangeInput!
+        $clientName: String!
+      ) {
+        target(reference: $reference) {
+          clientStats(period: $period, clientName: $clientName) {
+            totalRequests
+            totalVersions
+            operations {
+              edges {
+                node {
+                  id
+                  name
+                  operationHash
+                  count
+                }
+              }
+            }
+            versions(limit: 25) {
+              version
               count
             }
-          }
-          versions(limit: 25) {
-            version
-            count
           }
         }
       }
     `),
     token,
     variables: {
-      selector,
+      reference,
+      period,
+      clientName,
     },
   });
 }
 
-export function readOperationsStats(input: OperationsStatsSelectorInput, token: string) {
+export function readOperationsStats(
+  target: GraphQLSchema.TargetReferenceInput,
+  period: GraphQLSchema.DateRangeInput,
+  filter: GraphQLSchema.OperationStatsFilterInput,
+  token: string,
+) {
   return execute({
     document: graphql(`
-      query readOperationsStats($input: OperationsStatsSelectorInput!) {
-        operationsStats(selector: $input) {
-          totalOperations
-          operations {
-            nodes {
-              id
-              operationHash
-              kind
-              name
-              count
-              percentage
-              duration {
-                p75
-                p90
-                p95
-                p99
+      query readOperationsStats(
+        $target: TargetReferenceInput!
+        $period: DateRangeInput!
+        $filter: OperationStatsFilterInput
+      ) {
+        target(reference: $target) {
+          operationsStats(period: $period, filter: $filter) {
+            totalOperations
+            operations {
+              edges {
+                node {
+                  id
+                  operationHash
+                  kind
+                  name
+                  count
+                  percentage
+                  duration {
+                    p75
+                    p90
+                    p95
+                    p99
+                  }
+                }
               }
             }
-          }
-          clients {
-            nodes {
-              name
-              versions {
-                version
-                count
+            clients {
+              edges {
+                node {
+                  name
+                  versions {
+                    version
+                    count
+                  }
+                  count
+                }
               }
-              count
             }
           }
         }
@@ -1076,7 +1137,9 @@ export function readOperationsStats(input: OperationsStatsSelectorInput, token: 
     `),
     token,
     variables: {
-      input,
+      target,
+      period,
+      filter,
     },
   });
 }
