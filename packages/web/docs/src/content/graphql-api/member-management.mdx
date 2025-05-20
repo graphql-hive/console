@@ -1,0 +1,239 @@
+---
+title: Member Management via the GraphQL API
+description: Learn how to manage organization members via the Hive Console GraphQL API.
+---
+
+# Manage Members
+
+Organization members, roles, and invites can be managed via the GraphQL API.
+
+## Retrieve List of Available Permissions
+
+A list of permissions that are assignable to member roles can be retrieved via the
+`Organization.availableMemberPermissionGroups` field. It returns a list of all permission groups and
+their permissions.
+
+```graphql filename="Example: Retrieve permissions by group"
+query OrganizationPermissions($organizationSlug: String!) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    id
+    slug
+    availableMemberPermissionGroups {
+      id
+      permissions {
+        id
+        title
+        description
+      }
+    }
+  }
+}
+```
+
+## Create a Member Role
+
+Member roles can be created using the `Mutation.createMemberRole` field.
+
+Provide the permission ids from the `Organization.availableMemberPermissionGroups` field for the
+role via the `CreateMemberRoleInput.selectedPermissions` field.
+
+**Note:** A member role only has permissions and not resources assigned. Resources are assigned when
+assigning a member role to an user.
+
+```graphql filename="Example: Create a Member Role"
+mutation CreateMemberRole($input: CreateMemberRoleInput!) {
+  createMemberRole(input: $input) {
+    ok {
+      createdMemberRole {
+        id
+        name
+        description
+        permissions
+      }
+    }
+    error {
+      message
+      inputErrors {
+        name
+        description
+      }
+    }
+  }
+}
+```
+
+## Update a Member Role
+
+Use the `Mutation.updateMemberRole` field for updating a member role.
+
+```graphql filename="Example: Update Member Role"
+mutation UpdatedMemberRole($input: UpdateMemberRoleInput!) {
+  updateMemberRole(input: $input) {
+    ok {
+      updatedRole {
+        id
+        name
+        description
+        permissions
+      }
+    }
+    error {
+      message
+      inputErrors {
+        name
+        description
+      }
+    }
+  }
+}
+```
+
+## Delete a Member Role
+
+Use the `Mutation.deleteMemberRole` field for deleting a member role.
+
+```graphql filename="Example: Delete a Member Role"
+mutation UpdatedMemberRole($input: DeleteMemberRoleInput!) {
+  deleteMemberRole(input: $input) {
+    ok {
+      deletedMemberRoleId
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Assigning Member Roles
+
+Use the `Mutation.assignMemberRole` field for assigning a member role to an user.
+
+```graphql filename="Example: Assign a Member Role"
+mutation AssignMemberRole($input: AssignMemberRoleInput!) {
+  assignMemberRole(input: $input) {
+    ok {
+      updatedMember {
+        role {
+          id
+        }
+        user {
+          id
+        }
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+### Resource Assignment
+
+Use the `AssignMemberRoleInput.resources` field to optionally specify on which resources the
+permissions granted by the role should apply. Permissions are inherited by all subresources
+(organization, project, target, service, app deployment).
+
+```json5 filename="Example: Grant permissions on all resources"
+{
+  mode: 'ALL',
+  projects: []
+}
+```
+
+```json5 filename="Example: Grant permissions on specific project"
+{
+  mode: 'GRANULAR',
+  projects: [
+    {
+      projectId: '<PROJECT_ID>',
+      targets: {
+        // Grant permissions on all targets within project
+        mode: 'ALL'
+      }
+    }
+  ]
+}
+```
+
+```json5 filename="Example: Grant permissions on specific target"
+{
+  mode: 'GRANULAR',
+  projects: [
+    {
+      projectId: '<PROJECT_ID>',
+      targets: {
+        // Grant permissions on a single targets within project
+        mode: 'GRANULAR',
+        targets: [
+          {
+            targetId: '<TARGET_ID>',
+            // Grant permissions on a all services within target
+            services: { mode: 'ALL' },
+            // Grant permissions on a all app deployments within target
+            appDeployments: { mode: 'ALL' }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+## Retrieve list of Member Invitations
+
+```graphql filename="Example: Member Invitations"
+query Invitations($organizationSlug: String!, $after: String) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    invitations(first: 10, after: $after) {
+      edges {
+        node {
+          id
+          email
+          createdAt
+        }
+      }
+    }
+  }
+}
+```
+
+## Create member invitation
+
+Use the `Mutation.inviteToOrganizationByEmail` field for sending an email invite to the
+organization.
+
+```graphql filename="Example: Invite Members"
+mutation InviteUserToOrganization($input: InviteToOrganizationByEmailInput!) {
+  inviteToOrganizationByEmail(input: $input) {
+    ok {
+      createdOrganizationInvitation {
+        id
+        email
+        expiresAt
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Revoke member invitation
+
+Use the `Mutation.deleteOrganizationInvitation` field for deleting a organization invitation.
+
+```graphql
+mutation DeleteOrganizationInvitation($input: DeleteOrganizationInvitationInput!) {
+  deleteOrganizationInvitation(input: $input) {
+    ok {
+      deletedOrganizationInvitationId
+    }
+    error {
+      message
+    }
+  }
+}
+```
