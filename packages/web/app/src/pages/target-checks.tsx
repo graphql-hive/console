@@ -9,12 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ExternalLinkIcon } from '@radix-ui/react-icons';
-import { Outlet, Link as RouterLink, useParams, useRouter } from '@tanstack/react-router';
+import {
+  Outlet,
+  Link as RouterLink,
+  useNavigate,
+  useParams,
+  useSearch,
+} from '@tanstack/react-router';
 
 const SchemaChecks_NavigationQuery = graphql(`
   query SchemaChecks_NavigationQuery(
@@ -59,20 +66,21 @@ const SchemaChecks_NavigationQuery = graphql(`
 `);
 
 interface SchemaCheckFilters {
-  showOnlyFailed?: boolean;
-  showOnlyChanged?: boolean;
+  showOnlyFailed: boolean;
+  showOnlyChanged: boolean;
 }
 
-const Navigation = (props: {
-  after: string | null;
-  isLastPage: boolean;
-  onLoadMore: (cursor: string) => void;
-  filters?: SchemaCheckFilters;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId?: string;
-}) => {
+const Navigation = (
+  props: {
+    after: string | null;
+    isLastPage: boolean;
+    onLoadMore: (cursor: string) => void;
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCheckId?: string;
+  } & SchemaCheckFilters,
+) => {
   const [query] = useQuery({
     query: SchemaChecks_NavigationQuery,
     variables: {
@@ -81,8 +89,8 @@ const Navigation = (props: {
       targetSlug: props.targetSlug,
       after: props.after,
       filters: {
-        changed: props.filters?.showOnlyChanged ?? false,
-        failed: props.filters?.showOnlyFailed ?? false,
+        changed: props.showOnlyChanged,
+        failed: props.showOnlyFailed,
       },
     },
   });
@@ -109,8 +117,8 @@ const Navigation = (props: {
                   schemaCheckId: edge.node.id,
                 }}
                 search={{
-                  filter_changed: props.filters?.showOnlyChanged,
-                  filter_failed: props.filters?.showOnlyFailed,
+                  filter_changed: props.showOnlyChanged,
+                  filter_failed: props.showOnlyFailed,
                 }}
               >
                 <h3 className="truncate text-sm font-semibold">
@@ -222,22 +230,18 @@ function ChecksPageContent(props: {
   const [paginationVariables, setPaginationVariables] = useState<Array<string | null>>(() => [
     null,
   ]);
-
-  const router = useRouter();
+  const [hasSchemaChecks, setHasSchemaChecks] = useState(false);
+  const navigate = useNavigate();
   const { schemaCheckId } = useParams({
     strict: false /* allows to read the $schemaCheckId param of its child route */,
   }) as { schemaCheckId?: string };
-  const search = router.latestLocation.search as {
-    filter_changed?: string;
-    filter_failed?: string;
+  const search = useSearch({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/checks',
+  }) as {
+    filter_changed: boolean;
+    filter_failed: boolean;
   };
-  const showOnlyChanged = search?.filter_changed === 'true';
-  const showOnlyFailed = search?.filter_failed === 'true';
-
-  const [filters, setFilters] = useState<SchemaCheckFilters>({
-    showOnlyChanged: showOnlyChanged ?? false,
-    showOnlyFailed: showOnlyFailed ?? false,
-  });
+  const { filter_changed: showOnlyChanged, filter_failed: showOnlyFailed } = search;
 
   const [query] = useQuery({
     query: ChecksPageQuery,
@@ -246,8 +250,8 @@ function ChecksPageContent(props: {
       projectSlug: props.projectSlug,
       targetSlug: props.targetSlug,
       filters: {
-        changed: filters.showOnlyChanged ?? false,
-        failed: filters.showOnlyFailed ?? false,
+        changed: showOnlyChanged,
+        failed: showOnlyFailed,
       },
     },
   });
@@ -262,39 +266,28 @@ function ChecksPageContent(props: {
     );
   }
 
-  const hasSchemaChecks = !!query.data?.target?.schemaChecks?.edges?.length;
+  if (!hasSchemaChecks && !!query.data?.target?.schemaChecks?.edges?.length) {
+    setHasSchemaChecks(true);
+  }
   const hasFilteredSchemaChecks = !!query.data?.target?.filteredSchemaChecks?.edges?.length;
   const hasActiveSchemaCheck = !!schemaCheckId;
 
   const handleShowOnlyFilterChange = () => {
-    const updatedFilters = !filters.showOnlyChanged;
-
-    void router.navigate({
+    void navigate({
       search: {
         ...search,
-        filter_changed: updatedFilters,
+        filter_changed: !showOnlyChanged,
       },
     });
-    setFilters(filters => ({
-      ...filters,
-      showOnlyChanged: !filters.showOnlyChanged,
-    }));
   };
 
   const handleShowOnlyFilterFailed = () => {
-    const updatedFilters = !filters.showOnlyFailed;
-
-    void router.navigate({
+    void navigate({
       search: {
         ...search,
-        filter_failed: updatedFilters,
+        filter_failed: !showOnlyFailed,
       },
     });
-
-    setFilters(filters => ({
-      ...filters,
-      showOnlyFailed: !filters.showOnlyFailed,
-    }));
   };
 
   return (
@@ -304,7 +297,7 @@ function ChecksPageContent(props: {
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>
         </div>
-        {query.fetching || query.stale ? null : hasSchemaChecks ? (
+        {hasSchemaChecks ? (
           <div className="flex flex-col gap-5">
             <div>
               <div className="flex h-9 flex-row items-center justify-between">
@@ -315,7 +308,7 @@ function ChecksPageContent(props: {
                   Show only changed schemas
                 </Label>
                 <Switch
-                  checked={filters.showOnlyChanged ?? false}
+                  checked={showOnlyChanged}
                   onCheckedChange={handleShowOnlyFilterChange}
                   id="filter-toggle-has-changes"
                 />
@@ -328,7 +321,7 @@ function ChecksPageContent(props: {
                   Show only failed checks
                 </Label>
                 <Switch
-                  checked={filters.showOnlyFailed ?? false}
+                  checked={showOnlyFailed}
                   onCheckedChange={handleShowOnlyFilterFailed}
                   id="filter-toggle-status-failed"
                 />
@@ -346,16 +339,21 @@ function ChecksPageContent(props: {
                     isLastPage={index + 1 === paginationVariables.length}
                     onLoadMore={cursor => setPaginationVariables(cursors => [...cursors, cursor])}
                     key={cursor ?? 'first'}
-                    filters={filters}
+                    showOnlyChanged={showOnlyChanged}
+                    showOnlyFailed={showOnlyFailed}
                   />
                 ))}
               </div>
+            ) : query.fetching || query.stale ? (
+              <Spinner />
             ) : (
               <div className="cursor-default text-sm">
                 No schema checks found with the current filters
               </div>
             )}
           </div>
+        ) : query.fetching ? (
+          <Spinner />
         ) : (
           <div>
             <div className="cursor-default text-sm">
@@ -405,7 +403,7 @@ export function TargetChecksPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Checks}
-        className={cn('flex flex-row gap-x-6')}
+        className="flex flex-row gap-x-6"
       >
         <ChecksPageContent {...props} />
       </TargetLayout>
