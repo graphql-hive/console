@@ -298,10 +298,12 @@ export function getOrganizationProjects(selector: OrganizationSelectorInput, aut
       query getOrganizationProjects($selector: OrganizationSelectorInput!) {
         organization(reference: { bySelector: $selector }) {
           projects {
-            nodes {
-              id
-              slug
-              name
+            edges {
+              node {
+                id
+                slug
+                name
+              }
             }
           }
         }

@@ -223,7 +223,7 @@ export function initSeed() {
                 token,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const projects = projectsResult.organization?.projects.nodes;
+              const projects = projectsResult.organization?.projects.edges.map(edge => edge.node);
 
               if (!projects) {
                 throw new Error(`Could not get projects for org ${organization.slug}`);

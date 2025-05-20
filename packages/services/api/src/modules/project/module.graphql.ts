@@ -3,7 +3,6 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Query {
     project(reference: ProjectReferenceInput! @tag(name: "public")): Project @tag(name: "public")
-    projects(selector: OrganizationSelectorInput!): ProjectConnection!
   }
 
   extend type Mutation {
@@ -85,7 +84,7 @@ export default gql`
   }
 
   extend type Organization {
-    projects: ProjectConnection!
+    projects: ProjectConnection! @tag(name: "public")
     viewerCanCreateProject: Boolean!
     projectBySlug(projectSlug: String!): Project
   }
@@ -122,9 +121,14 @@ export default gql`
     viewerCanDelete: Boolean!
   }
 
+  type ProjectEdge {
+    node: Project! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
   type ProjectConnection {
-    nodes: [Project!]!
-    total: Int!
+    edges: [ProjectEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   input CreateProjectInput {

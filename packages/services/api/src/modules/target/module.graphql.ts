@@ -247,13 +247,18 @@ export default gql`
   }
 
   extend type Project {
-    targets: TargetConnection!
+    targets: TargetConnection! @tag(name: "public")
     targetBySlug(targetSlug: String!): Target
   }
 
+  type TargetEdge {
+    node: Target! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
   type TargetConnection {
-    nodes: [Target!]!
-    total: Int!
+    edges: [TargetEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type Target {
