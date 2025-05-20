@@ -2185,6 +2185,7 @@ const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
                 hash
                 name
                 countFormatted
+                percentage
                 percentageFormatted
               }
               topAffectedClients {
@@ -2725,7 +2726,7 @@ test.concurrent(
   },
 );
 
-test.concurrent.only(
+test.concurrent(
   'subscription operation is used for conditional breaking change detection',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
@@ -2894,6 +2895,7 @@ test.concurrent.only(
         countFormatted: '1',
         hash: 'c1bbc8385a4a6f4e4988be7394800adc',
         name: 'anonymous',
+        percentage: 100,
         percentageFormatted: '100.00%',
       },
     ]);
@@ -2901,6 +2903,7 @@ test.concurrent.only(
       {
         countFormatted: '1',
         name: 'integration-tests',
+        percentage: 100,
         percentageFormatted: '100.00%',
       },
     ]);
