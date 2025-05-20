@@ -20,7 +20,7 @@ const CreateContractMutation = graphql(`
       error {
         message
         details {
-          targetId
+          target
           contractName
           includeTags
           excludeTags

@@ -20,7 +20,7 @@ const CreateContractMutation = graphql(`
       error {
         message
         details {
-          targetId
+          target
           contractName
           includeTags
           excludeTags
@@ -96,7 +96,7 @@ test.concurrent(
             contractName: null,
             excludeTags: null,
             includeTags: Included and exclude tags must not intersect,
-            targetId: null,
+            target: null,
           },
           message: Something went wrong.,
         },
@@ -134,7 +134,7 @@ test.concurrent('tags can not be empty', async ({ expect }) => {
             contractName: null,
             excludeTags: null,
             includeTags: Provide at least one value for either included tags or excluded tags,
-            targetId: null,
+            target: null,
           },
           message: Something went wrong.,
         },
@@ -255,7 +255,7 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
             contractName: Must be unique across all target contracts.,
             excludeTags: null,
             includeTags: null,
-            targetId: null,
+            target: null,
           },
           message: Something went wrong.,
         },
@@ -290,7 +290,7 @@ test.concurrent('contractName must be at least 2 characters long', async ({ expe
               contractName: String must contain at least 2 character(s),
               excludeTags: null,
               includeTags: null,
-              targetId: null,
+              target: null,
             },
             message: Something went wrong.,
           },
@@ -325,7 +325,7 @@ test.concurrent('contractName must be at most 64 characters long', async ({ expe
               contractName: String must contain at most 64 character(s),
               excludeTags: null,
               includeTags: null,
-              targetId: null,
+              target: null,
             },
             message: Something went wrong.,
           },

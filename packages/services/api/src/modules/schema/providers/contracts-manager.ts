@@ -44,7 +44,7 @@ export class ContractsManager {
       return {
         type: 'error' as const,
         errors: {
-          targetId: 'Target not found.',
+          target: 'Target not found.',
         },
       };
     }

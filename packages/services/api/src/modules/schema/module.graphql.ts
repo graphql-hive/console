@@ -1491,7 +1491,7 @@ export default gql`
   }
 
   type CreateContractInputErrors {
-    targetId: String @tag(name: "public")
+    target: String @tag(name: "public")
     contractName: String @tag(name: "public")
     includeTags: String @tag(name: "public")
     excludeTags: String @tag(name: "public")
