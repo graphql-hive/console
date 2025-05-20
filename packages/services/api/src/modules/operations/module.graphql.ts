@@ -182,9 +182,9 @@ export default gql`
 
   type OperationStatsValues {
     id: ID! @tag(name: "public")
-    operationHash: String
+    operationHash: String! @tag(name: "public")
     kind: String!
-    name: String!
+    name: String! @tag(name: "public")
     """
     Total number of requests
     """
