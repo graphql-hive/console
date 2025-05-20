@@ -2190,6 +2190,7 @@ const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
               topAffectedClients {
                 name
                 countFormatted
+                percentage
                 percentageFormatted
               }
             }
@@ -2724,7 +2725,7 @@ test.concurrent(
   },
 );
 
-test.concurrent(
+test.concurrent.only(
   'subscription operation is used for conditional breaking change detection',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
