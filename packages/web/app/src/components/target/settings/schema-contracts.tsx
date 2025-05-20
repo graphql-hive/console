@@ -95,7 +95,7 @@ function DisableContractDialog(props: { contractId: string; onClose: () => void 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     mutate({
       input: {
-        contractId: props.contractId,
+        contract: { byId: props.contractId },
       },
     });
   }
@@ -402,7 +402,9 @@ function CreateContractDialogContent(props: {
 
       return mutate({
         input: {
-          targetId: target.id,
+          target: {
+            byId: target.id,
+          },
           contractName: values.contractName,
           includeTags: values.includeTags,
           excludeTags: values.excludeTags,

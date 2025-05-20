@@ -39,7 +39,7 @@ test.concurrent('create contract for Federation project', async ({ expect }) => 
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         includeTags: ['foo'],
         excludeTags: ['bar'],
@@ -78,7 +78,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName: 'toyota',
           includeTags: ['foo'],
           excludeTags: ['foo'],
@@ -116,7 +116,7 @@ test.concurrent('tags can not be empty', async ({ expect }) => {
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         includeTags: [],
         excludeTags: [],
@@ -153,7 +153,7 @@ test.concurrent('includeTags only', async ({ expect }) => {
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         includeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,
@@ -189,7 +189,7 @@ test.concurrent('exclude tags only', async ({ expect }) => {
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         excludeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,
@@ -225,7 +225,7 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         includeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,
@@ -238,7 +238,7 @@ test.concurrent('conflicting contractName results in error', async ({ expect }) 
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'toyota',
         includeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,
@@ -274,7 +274,7 @@ test.concurrent('contractName must be at least 2 characters long', async ({ expe
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 't',
         includeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,
@@ -309,7 +309,7 @@ test.concurrent('contractName must be at most 64 characters long', async ({ expe
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: new Array(64 + 1).fill('a').join(''),
         includeTags: ['foo'],
         removeUnreachableTypesFromPublicApiSchema: true,

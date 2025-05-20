@@ -22,11 +22,13 @@ export default gql`
     """
     Create a contract for a given target.
     """
-    createContract(input: CreateContractInput!): CreateContractResult!
+    createContract(input: CreateContractInput! @tag(name: "public")): CreateContractResult!
+      @tag(name: "public")
     """
     Disable a contract.
     """
-    disableContract(input: DisableContractInput!): DisableContractResult!
+    disableContract(input: DisableContractInput! @tag(name: "public")): DisableContractResult!
+      @tag(name: "public")
   }
 
   extend type Query {
@@ -189,11 +191,17 @@ export default gql`
     """
     Get a list of paginated schema contracts for the target.
     """
-    contracts(first: Int, after: String): ContractConnection!
+    contracts(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): ContractConnection! @tag(name: "public")
     """
     Get a list of paginated schema contracts that are active for the target.
     """
-    activeContracts(first: Int, after: String): ContractConnection!
+    activeContracts(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): ContractConnection! @tag(name: "public")
 
     """
     Whether any subscription operations were reported for this target.
@@ -1422,13 +1430,13 @@ export default gql`
   }
 
   type ContractEdge {
-    node: Contract!
-    cursor: String!
+    node: Contract! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type ContractConnection {
-    edges: [ContractEdge!]!
-    pageInfo: PageInfo!
+    edges: [ContractEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   input ApproveFailedSchemaCheckInput {
@@ -1456,61 +1464,65 @@ export default gql`
     message: String!
   }
 
+  input ContractReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
   input CreateContractInput {
-    targetId: ID!
-    contractName: String!
-    includeTags: [String!]
-    excludeTags: [String!]
-    removeUnreachableTypesFromPublicApiSchema: Boolean!
+    target: TargetReferenceInput! @tag(name: "public")
+    contractName: String! @tag(name: "public")
+    includeTags: [String!] @tag(name: "public")
+    excludeTags: [String!] @tag(name: "public")
+    removeUnreachableTypesFromPublicApiSchema: Boolean! @tag(name: "public")
   }
 
   type CreateContractResult {
-    ok: CreateContractResultOk
-    error: CreateContractResultError
+    ok: CreateContractResultOk @tag(name: "public")
+    error: CreateContractResultError @tag(name: "public")
   }
 
   type CreateContractResultOk {
-    createdContract: Contract!
+    createdContract: Contract! @tag(name: "public")
   }
 
-  type CreateContractResultError implements Error {
-    message: String!
-    details: CreateContractInputErrors!
+  type CreateContractResultError {
+    message: String! @tag(name: "public")
+    details: CreateContractInputErrors! @tag(name: "public")
   }
 
   type CreateContractInputErrors {
-    targetId: String
-    contractName: String
-    includeTags: String
-    excludeTags: String
+    targetId: String @tag(name: "public")
+    contractName: String @tag(name: "public")
+    includeTags: String @tag(name: "public")
+    excludeTags: String @tag(name: "public")
   }
 
   input DisableContractInput {
-    contractId: ID!
+    contract: ContractReferenceInput! @tag(name: "public")
   }
 
   type DisableContractResult {
-    ok: DisableContractResultOk
-    error: DisableContractResultError
+    ok: DisableContractResultOk @tag(name: "public")
+    error: DisableContractResultError @tag(name: "public")
   }
 
   type DisableContractResultOk {
-    disabledContract: Contract!
+    disabledContract: Contract! @tag(name: "public")
   }
 
-  type DisableContractResultError implements Error {
-    message: String!
+  type DisableContractResultError {
+    message: String! @tag(name: "public")
   }
 
   type Contract {
-    id: ID!
+    id: ID! @tag(name: "public")
     target: Target!
-    contractName: String!
-    includeTags: [String!]
-    excludeTags: [String!]
-    removeUnreachableTypesFromPublicApiSchema: Boolean!
-    createdAt: DateTime!
-    isDisabled: Boolean!
+    contractName: String! @tag(name: "public")
+    includeTags: [String!] @tag(name: "public")
+    excludeTags: [String!] @tag(name: "public")
+    removeUnreachableTypesFromPublicApiSchema: Boolean! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    isDisabled: Boolean! @tag(name: "public")
     viewerCanDisableContract: Boolean!
   }
 `;

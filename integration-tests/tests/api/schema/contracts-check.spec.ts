@@ -67,7 +67,7 @@ test.concurrent('schema check with successful contract checks', async ({ expect 
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'my-contract',
         removeUnreachableTypesFromPublicApiSchema: true,
         excludeTags: ['toyota'],
@@ -134,7 +134,7 @@ test.concurrent('schema check with failing contract composition', async ({ expec
     document: CreateContractMutation,
     variables: {
       input: {
-        targetId: target.id,
+        target: { byId: target.id },
         contractName: 'my-contract',
         removeUnreachableTypesFromPublicApiSchema: true,
         excludeTags: ['toyota'],
@@ -215,7 +215,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName: 'my-contract',
           removeUnreachableTypesFromPublicApiSchema: true,
           excludeTags: ['toyota'],
@@ -230,7 +230,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName: 'my-other-contract',
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['fiat'],
@@ -399,7 +399,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -562,7 +562,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -758,7 +758,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -947,7 +947,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -1146,7 +1146,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
@@ -1255,7 +1255,7 @@ test.concurrent(
       document: CreateContractMutation,
       variables: {
         input: {
-          targetId: target.id,
+          target: { byId: target.id },
           contractName,
           removeUnreachableTypesFromPublicApiSchema: true,
           includeTags: ['toyota'],
