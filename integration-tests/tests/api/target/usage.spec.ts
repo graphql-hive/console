@@ -2187,6 +2187,12 @@ const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
                 countFormatted
                 percentage
                 percentageFormatted
+                operation {
+                  hash
+                  name
+                  type
+                  body
+                }
               }
               topAffectedClients {
                 name
@@ -2897,6 +2903,12 @@ test.concurrent(
         name: 'anonymous',
         percentage: 100,
         percentageFormatted: '100.00%',
+        operation: {
+          body: 'subscription{a}',
+          hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+          name: 'anonymous',
+          type: 'SUBSCRIPTION',
+        },
       },
     ]);
     expect(node.usageStatistics?.topAffectedClients).toEqual([
