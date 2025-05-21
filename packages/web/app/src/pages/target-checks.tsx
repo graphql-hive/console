@@ -347,7 +347,7 @@ function ChecksPageContent(props: {
             ) : query.fetching || query.stale ? (
               <Spinner />
             ) : (
-              <div className="cursor-default text-sm">
+              <div className="my-4 cursor-default text-center text-sm text-gray-400">
                 No schema checks found with the current filters
               </div>
             )}
