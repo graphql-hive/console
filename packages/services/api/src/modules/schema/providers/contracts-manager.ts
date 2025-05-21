@@ -253,9 +253,9 @@ export class ContractsManager {
       for (const edge of contractChecks.edges) {
         if (edge.node.breakingSchemaChanges) {
           for (const breakingSchemaChange of edge.node.breakingSchemaChanges) {
-            this.breakingSchemaChangeUsageHelper.registerUsageDataForBreakingSchemaChange(
+            this.breakingSchemaChangeUsageHelper.registerMetadataForBreakingSchemaChange(
               breakingSchemaChange,
-              schemaCheck.conditionalBreakingChangeMetadata.usage,
+              schemaCheck.conditionalBreakingChangeMetadata,
             );
           }
         }

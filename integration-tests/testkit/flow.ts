@@ -1155,7 +1155,7 @@ export function readOperationBody(
 ) {
   return execute({
     document: graphql(`
-      query readOperationBody($selector: TargetSelectorInput!, $hash: String!) {
+      query readOperationBody($selector: TargetSelectorInput!, $hash: ID!) {
         target(reference: { bySelector: $selector }) {
           id
           operation(hash: $hash) {

@@ -235,26 +235,49 @@ export default gql`
   }
 
   enum GraphQLOperationType {
-    query
-    mutation
-    subscription
+    QUERY @tag(name: "public")
+    MUTATION @tag(name: "public")
+    SUBSCRIPTION @tag(name: "public")
   }
 
   type Operation {
-    hash: String!
-    name: String
-    type: GraphQLOperationType!
-    body: String!
+    """
+    Hash that uniquely identifies the operation.
+    """
+    hash: ID! @tag(name: "public")
+    """
+    Name of the operation
+    """
+    name: String @tag(name: "public")
+    """
+    Operation type
+    """
+    type: GraphQLOperationType! @tag(name: "public")
+    """
+    Operation body
+    """
+    body: String! @tag(name: "public")
   }
 
   extend type Target {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
-    operation(hash: String!): Operation
+    """
+    Retrieve an operation via it's hash.
+    """
+    operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
   }
 
   extend type Project {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
+  }
+
+  extend type SchemaChangeUsageStatisticsAffectedOperation {
+    """
+    Get the associated operation.
+    The field is nullable as this data is only stored for the duration of the usage retention period.
+    """
+    operation: Operation @tag(name: "public")
   }
 `;
