@@ -1,0 +1,399 @@
+import { Callout, Tabs } from '@theguild/components'
+
+# Migrating from v1 to v2
+
+This document guides you through the process of migrating your Hive Gateway from version 1 to
+version 2. It outlines the key changes, potential breaking points, and provides step-by-step
+instructions to ensure a smooth transition.
+
+v2 includes several breaking changes and improvements over v1. The most significant changes are:
+
+- [New Hive Logger for next-level observability and debugging](#hive-logger)
+
+## Hive Logger
+
+The Hive Logger is a new feature in v2 that provides enhanced logging capabilities. It allows you to
+log messages at different levels (info, debug, error) and provides a more structured way to handle
+logs. The logger implementation now consistently uses the new `@graphql-hive/logger` package and
+standardizes the logger prop naming and usage.
+
+<Callout type="info">
+  You can read more about the new logger and its features in the [Hive Logger documentation](/).
+</Callout>
+
+### Deprecating the Old Logger
+
+The old logger interface from `@graphql-mesh/types` or `@graphql-mesh/utils`, the `DefaultLogger`
+and the `LogLevel` enum have been deprecated and will be removed in the future, after all components
+are migrated to the new logger.
+
+```diff
+- import { DefaultLogger, LogLevel } from '@graphql-mesh/utils';
+- const logger = new DefaultLogger(undefined, LogLevel.debug);
++ import { Logger } from '@graphql-hive/logger';
++ const log = new Logger({ level: 'debug' });
+```
+
+Logging uses similar methods as before, with two significant changes:
+
+1. The first, optional, argument of the logging methods are now the metadata
+1. The message supports interpolation of all values succeeding the message
+
+```diff
+- logger.debug(`Hello ${'world'}`, { foo: 'bar' });
++ log.debug({ foo: 'bar' }, 'Hello %s', 'world');
+```
+
+### `logging` Configuration Option
+
+The `logging` option has been changed to accept either:
+
+1. `true` to enable and log using the `info` level
+1. `false` to disable logging altogether
+1. A Hive Logger instance
+1. A string log level (e.g., `debug`, `info`, `warn`, `error`)
+
+#### Changing the Log Level
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- LogLevel,
+} from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- logging: LogLevel.debug,
++ logging: 'debug',
+});
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filename="index.ts"
+import {
+  createGatewayRuntime,
+- LogLevel,
+} from '@graphql-hive/runtime-gateway';
+
+export const gateway = createGatewayRuntime({
+- logging: LogLevel.debug,
++ logging: 'debug',
+});
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+##### Dynamically Changing the Log Level
+
+A great new feature of the Hive Logger is the ability to change the log level dynamically at
+runtime. This allows you to adjust the verbosity of logs without restarting the application. Please
+advise the [Hive Logger documentation](/) for more details.
+
+#### Using a Custom Logger
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- DefaultLogger,
+- LogLevel,
++ Logger,
+} from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- logging: new DefaultLogger(undefined, LogLevel.debug),
++ logging: new Logger({ level: 'debug' }),
+});
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filename="index.ts"
+import {
+  createGatewayRuntime,
+- DefaultLogger,
+- LogLevel,
++ Logger,
+} from '@graphql-hive/gateway-runtime';
+
+export const gateway = createGatewayRuntime({
+- logging: new DefaultLogger(undefined, LogLevel.debug),
++ logging: new Logger({ level: 'debug' }),
+});
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### The Environment Variable
+
+Hive Logger will continue to support the `DEBUG=1` environment variable for enabling debug logging.
+But, additionally, it supports the new `LOG_LEVEL` environment variable for setting a specific log
+level. This allows you to control the log level without modifying the code or configuration files.
+
+### Prop Renaming `logger` to `log`
+
+Throughout the codebase, the `logger` prop has been renamed to `log`. This change is part of the
+standardization effort to ensure consistency across all components and plugins. The new `log` prop
+is now used in all APIs, contexts, and plugin options. It's shorter and more intuitive, making it
+easier to understand and use.
+
+#### Context
+
+The context object passed to plugins and hooks now uses `log` instead of `logger`. Basically, the
+`GatewayConfigContext` interface has been changed to:
+
+```diff filename="@graphql-hive/gateway"
+- import type { Logger as LegacyLogger } from '@graphql-mesh/types';
++ import type { Logger as HiveLogger } from '@graphql-hive/logger';
+
+export interface GatewayConfigContext {
+- logger: LegacyLogger;
++ log: HiveLogger;
+  // ...rest of the properties
+}
+```
+
+Same goes for all of the transports' contexts. Each of the transport contexts now has a `log` prop
+instead of `logger`. Additionally, the logger is required and will always be provided.
+
+```diff filename="@graphql-mesh/transport-common"
+- import type { Logger as LegacyLogger } from '@graphql-mesh/types';
++ import type { Logger as HiveLogger } from '@graphql-hive/logger';
+
+export interface TransportContext {
+- logger?: LegacyLogger;
++ log: HiveLogger;
+  // ...rest of the properties
+}
+```
+
+##### Plugin Setup
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+import { myPlugins } from './my-plugins';
+
+export const gatewayConfig = defineConfig({
+  plugins(ctx) {
+-   ctx.logger.info('Loading plugins...');
++   ctx.log.info('Loading plugins...');
+    return [...myPlugins];
+  },
+});
+```
+
+##### Plugin Hooks
+
+Across all plugins, hooks and contexts, the `logger` prop has been renamed to `log` and will always
+be provided.
+
+It is now the highly recommended to use the logger from the context at all times because it contains
+the necessary metadata for increased observability, like the request ID or the execution step.
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- plugins({ log }) {
++ plugins() {
+    return [
+      {
+        onExecute({ context }) {
+-         log.info('Executing...');
++         context.log.info('Executing...');
+        },
+        onDelegationPlan(context) {
+-         log.info('Creating delegation plan...');
++         context.log.info('Creating delegation plan...');
+        },
+        onSubgraphExecute(context) {
+-         log.info('Executing on subgraph...');
++         context.log.info('Executing on subgraph...');
+        },
+        onFetch({ context }) {
+-         log.info('Fetching data...');
++         context.log.info('Fetching data...');
+        },
+      },
+    ];
+  },
+});
+```
+
+Will log with the necessary metadata for increased observability, like this:
+
+```
+2025-04-10T14:00:00.000Z INF Executing...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+2025-04-10T14:00:00.000Z INF Creating delegation plan...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Executing on subgraph...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Fetching data...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+```
+
+#### Affected Plugins
+
+##### Prometheus i.e. `usePrometheus`
+
+The monitoring plugin `usePrometheus` has been updated to use the new logger API. The `logger` prop
+has been replaced with the `log` prop when using Hive Gateway runtime.
+
+```diff filename="index.ts"
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import usePrometheus from '@graphql-mesh/plugin-prometheus'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    usePrometheus({
+      ...ctx,
+-     logger: ctx.logger,
++     log: ctx.log,
+    })
+  ]
+})
+```
+
+If you have been using the `usePrometheus` plugin following the example from
+[Monitoring and Tracing](/docs/gateway/monitoring-tracing#usage-example-1), where the `ctx` argument
+is simply spread to the plugin options - you don't have to change anything.
+
+#### Custom Transport
+
+If you have implemented and been using a custom transport of yours, you will need to update the
+`logger` prop to `log` in the `getSubgraphExecutor` method.
+
+```diff filename="letter-transport.ts"
+import type { Transport } from '@graphql-mesh/transport-common';
+import { letterExecutor } from './my-letter-executor';
+
+export interface LetterTransportOptions {
+  shouldStamp?: boolean;
+}
+
+export default {
+  getSubgraphExecutor(payload) {
+-   payload.logger.info('Creating letter executor...');
++   payload.log.info('Creating letter executor...');
+    return letterExecutor(payload);
+  },
+} satisfies Transport<LetterTransportOptions>;
+```
+
+## Custom Logger Adapters
+
+The new Hive Logger is designed to be extensible and allows you to create custom logger adapters by
+implementing "log writers" instead of the complete logger interface. The `LogWriter` is simply:
+
+```ts
+import { Attributes, LogLevel } from '@graphql-hive/logger'
+
+interface LogWriter {
+  write(
+    level: LogLevel,
+    attrs: Attributes | null | undefined,
+    msg: string | null | undefined
+  ): void | Promise<void>
+}
+```
+
+As you may see, it's very simple and allows you, to not only use your favourite logger like pino or
+winston, but also implement custom writers that send logs to a HTTP consumer or writes to a file.
+
+<Callout type="info">
+  Read more about implementing your own writers in the [Hive Logger documentation](/).
+</Callout>
+
+### Pino (only Node.js)
+
+Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
+logs.
+
+`pino` is an optional peer dependency, so you must install it first.
+
+```npm2yarn
+npm i pino pino-pretty
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```npm2yarn
+npm i @graphql-hive/logger
+```
+
+```diff filename="gateway.config.ts"
+import pino from 'pino'
+import { defineConfig } from '@graphql-hive/gateway'
+import { Logger } from '@graphql-hive/logger'
+- import { createLoggerFromPino } from '@graphql-hive/logger-pino'
++ import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
+
+const pinoLogger = pino({
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+export const gatewayConfig = defineConfig({
+- logging: createLoggerFromPino(pinoLogger)
++ logging: new Logger({
++   writers: [new PinoLogWriter(pinoLogger)]
++ })
+})
+```
+
+### Winston (only Node.js)
+
+Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
+Logger's logs.
+
+`winston` is an optional peer dependency, so you must install it first.
+
+```sh
+npm i winston
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```npm2yarn
+npm i @graphql-hive/logger
+```
+
+```diff filename="gateway.config.ts"
+import { createLogger, format, transports } from 'winston'
+import { defineConfig } from '@graphql-hive/gateway'
+import { Logger } from '@graphql-hive/logger'
+- import { createLoggerFromWinston } from '@graphql-hive/winston'
++ import { WinstonLogWriter } from '@graphql-hive/logger/writers/winston'
+
+const winstonLogger = createLogger({
+  level: 'info',
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new transports.Console()]
+})
+
+export const gatewayConfig = defineConfig({
+- logging: createLoggerFromWinston(winstonLogger)
++ logging: new Logger({
++   writers: [new WinstonLogWriter(winstonLogger)]
++ })
+})
+```
