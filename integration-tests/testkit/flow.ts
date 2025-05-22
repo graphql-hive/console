@@ -298,10 +298,12 @@ export function getOrganizationProjects(selector: OrganizationSelectorInput, aut
       query getOrganizationProjects($selector: OrganizationSelectorInput!) {
         organization(reference: { bySelector: $selector }) {
           projects {
-            nodes {
-              id
-              slug
-              name
+            edges {
+              node {
+                id
+                slug
+                name
+              }
             }
           }
         }
@@ -1155,7 +1157,7 @@ export function readOperationBody(
 ) {
   return execute({
     document: graphql(`
-      query readOperationBody($selector: TargetSelectorInput!, $hash: String!) {
+      query readOperationBody($selector: TargetSelectorInput!, $hash: ID!) {
         target(reference: { bySelector: $selector }) {
           id
           operation(hash: $hash) {

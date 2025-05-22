@@ -40,6 +40,16 @@ export interface DurationMetrics {
   p99: number;
 }
 
+const ReadOperationModel = z.object({
+  target: z.string().uuid(),
+  hash: z.string(),
+  body: z.string(),
+  name: z.string(),
+  type: z.union([z.literal('QUERY'), z.literal('MUTATION'), z.literal('SUBSCRIPTION')]),
+});
+
+type Operation = z.TypeOf<typeof ReadOperationModel>;
+
 function toDurationMetrics(percentiles: [number, number, number, number], avg: number) {
   return {
     avg,
@@ -684,47 +694,70 @@ export class OperationsReader {
     });
   }
 
-  async readOperation({ target, hash }: { target: string; hash: string }) {
-    const result = await this.clickHouse.query<{
-      hash: string;
-      body: string;
-      name: string;
-      type: 'query' | 'mutation' | 'subscription';
-    }>({
-      query: sql`
+  readOperation = batch<{ targetIds: Array<string>; hash: string }, Operation | null>(
+    async args => {
+      const allTargetIds = Array.from(new Set(args.flatMap(arg => arg.targetIds)));
+      const hashes = Array.from(new Set(args.map(arg => arg.hash)));
+
+      const result = await this.clickHouse.query<unknown>({
+        query: sql`
         SELECT
+          "operation_collection_details"."target" AS "target",
           "operation_collection_details"."hash" AS "hash",
-          "operation_collection_details"."operation_kind" AS "type",
+          upper("operation_collection_details"."operation_kind") AS "type",
           "operation_collection_details"."name" AS "name",
           "body_join"."body" AS "body"
         FROM "operation_collection_details"
         RIGHT JOIN (
           SELECT
+            "operation_collection_body"."target" AS "target",
             "operation_collection_body"."hash" AS "hash",
             "operation_collection_body"."body" AS "body"
           FROM "operation_collection_body"
             ${this.createFilter({
-              target,
-              extra: [sql`"operation_collection_body"."hash" = ${hash}`],
+              target: allTargetIds,
+              extra: [sql`"operation_collection_body"."hash" IN (${sql.array(hashes, 'String')})`],
               namespace: 'operation_collection_body',
             })}
           LIMIT 1
+            BY
+              "operation_collection_body"."target",
+              "operation_collection_body"."hash"
         ) AS "body_join"
           ON "operation_collection_details"."hash" = "body_join"."hash"
           ${this.createFilter({
-            target,
-            extra: [sql`"operation_collection_details"."hash" = ${hash}`],
+            target: allTargetIds,
+            extra: [sql`"operation_collection_details"."hash" IN (${sql.array(hashes, 'String')})`],
             namespace: 'operation_collection_details',
           })}
         LIMIT 1
+          BY
+            "operation_collection_details"."target" AS "target",
+            "operation_collection_details"."hash"
         SETTINGS allow_asynchronous_read_from_io_pool_for_merge_tree = 1
       `,
-      queryId: 'read_body',
-      timeout: 10_000,
-    });
+        queryId: 'read_body',
+        timeout: 10_000,
+      });
 
-    return result.data.length ? result.data[0] : null;
-  }
+      const lookupMap = new Map<string, Operation>(
+        result.data.map(row => {
+          const record = ReadOperationModel.parse(row);
+          return [`${record.target}/${record.hash}`, record];
+        }),
+      );
+
+      return args.map(async arg => {
+        for (const targetId of arg.targetIds) {
+          const operation = lookupMap.get(`${targetId}/${arg.hash}`);
+          if (operation) {
+            return operation;
+          }
+        }
+        return null;
+      });
+    },
+  );
 
   async getReportedSchemaCoordinates({
     target,
@@ -1044,7 +1077,7 @@ export class OperationsReader {
             SELECT
               "operation_collection_details"."name",
               "operation_collection_details"."hash"
-            FROM 
+            FROM
               "operation_collection_details"
             PREWHERE
               "operation_collection_details"."target" IN (${sql.array(args.targetIds, 'String')})
@@ -1622,7 +1655,7 @@ export class OperationsReader {
                 FROM ${aggregationTableName('operations')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
-                ORDER BY 
+                ORDER BY
                   target,
                   date
                     WITH FILL

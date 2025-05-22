@@ -13,8 +13,21 @@ export const targets: NonNullable<QueryResolvers['targets']> = async (
     translator.translateProjectId(selector),
   ]);
 
-  return injector.get(TargetManager).getTargets({
+  const targets = await injector.get(TargetManager).getTargets({
     organizationId: organization,
     projectId: project,
   });
+
+  return {
+    edges: targets.map(node => ({
+      cursor: '',
+      node,
+    })),
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      endCursor: '',
+      startCursor: '',
+    },
+  };
 };

@@ -263,44 +263,46 @@ const ProjectsPageContent = (
 
     const searchPhrase = props.search;
     const newTargets = searchPhrase
-      ? targetConnection.nodes.filter(target =>
-          target.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
+      ? targetConnection.edges.filter(edge =>
+          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
         )
-      : targetConnection.nodes.slice();
+      : targetConnection.edges.slice();
 
-    return newTargets.sort((a, b) => {
-      const diffRequests = b.totalRequests - a.totalRequests;
-      const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+    return newTargets
+      .map(edge => edge.node)
+      .sort((a, b) => {
+        const diffRequests = b.totalRequests - a.totalRequests;
+        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
 
-      if (sortKey === 'requests' && diffRequests !== 0) {
-        return diffRequests * sortOrder;
-      }
+        if (sortKey === 'requests' && diffRequests !== 0) {
+          return diffRequests * sortOrder;
+        }
 
-      if (sortKey === 'versions' && diffVersions !== 0) {
-        return diffVersions * sortOrder;
-      }
+        if (sortKey === 'versions' && diffVersions !== 0) {
+          return diffVersions * sortOrder;
+        }
 
-      if (sortKey === 'name') {
-        return a.slug.localeCompare(b.slug) * sortOrder * -1;
-      }
+        if (sortKey === 'name') {
+          return a.slug.localeCompare(b.slug) * sortOrder * -1;
+        }
 
-      // falls back to sort by name in ascending order
-      return a.slug.localeCompare(b.slug);
-    });
+        // falls back to sort by name in ascending order
+        return a.slug.localeCompare(b.slug);
+      });
   }, [targetConnection, props.search, sortKey, sortOrder]);
 
   const highestNumberOfRequests = useMemo(() => {
-    if (targetConnection?.nodes?.length) {
-      return targetConnection.nodes.reduce((max, target) => {
+    if (targetConnection?.edges?.length) {
+      return targetConnection.edges.reduce((max, edge) => {
         return Math.max(
           max,
-          target.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
+          edge.node.requestsOverTime.reduce((max, { value }) => Math.max(max, value), 0),
         );
       }, 100);
     }
 
     return 100;
-  }, [targetConnection?.nodes]);
+  }, [targetConnection?.edges]);
 
   if (query.error) {
     return (
@@ -407,13 +409,13 @@ const ProjectsPageContent = (
       <div
         className={cn(
           'grow',
-          targetConnection?.total === 0
+          targetConnection?.edges.length === 0
             ? ''
             : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
         )}
       >
         {targetConnection ? (
-          targetConnection?.total === 0 ? (
+          targetConnection?.edges.length === 0 ? (
             <EmptyList
               title="Hive is waiting for your first target"
               description='You can create a target by clicking the "New Target" button'
@@ -462,17 +464,18 @@ const ProjectOverviewPageQuery = graphql(`
     $period: DateRangeInput!
   ) {
     targets(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      total
-      nodes {
-        id
-        slug
-        ...TargetCard_TargetFragment
-        totalRequests(period: $period)
-        requestsOverTime(resolution: $chartResolution, period: $period) {
-          date
-          value
+      edges {
+        node {
+          id
+          slug
+          ...TargetCard_TargetFragment
+          totalRequests(period: $period)
+          requestsOverTime(resolution: $chartResolution, period: $period) {
+            date
+            value
+          }
+          schemaVersionsCount(period: $period)
         }
-        schemaVersionsCount(period: $period)
       }
     }
   }
