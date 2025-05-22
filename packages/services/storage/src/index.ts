@@ -4159,10 +4159,14 @@ export async function createStorage(
 
       const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
 
-      const { failed, changed } = args.filters ?? {};
+      let { failed, changed, text } = args.filters ?? {};
 
       if (args.cursor) {
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      }
+
+      if (text) {
+        text = text.split('.').join(' ');
       }
 
       const result = await pool.any<unknown>(sql`/* getPaginatedSchemaChecksForTarget */
@@ -4204,6 +4208,18 @@ export async function createStorage(
                   jsonb_typeof("safe_schema_changes") = 'array'
                   OR jsonb_typeof("breaking_schema_changes") = 'array'
                   OR "has_contract_schema_changes" = true
+                )
+              `
+              : sql``
+          }
+          ${
+            text
+              ? sql`
+                AND (
+                  service_name = ${text}
+                  OR safe_schema_changes::text LIKE ${'%' + text + '%'}
+                  OR breaking_schema_changes::text LIKE ${'%' + text + '%'}
+                  OR meta::text LIKE ${'%' + text + '%'}
                 )
               `
               : sql``

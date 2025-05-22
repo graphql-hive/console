@@ -784,10 +784,13 @@ const targetExplorerUnusedRoute = createRoute({
 
 const targetChecksRoute = createRoute({
   validateSearch: zodValidator(
-    z.object({
-      filter_changed: z.boolean().default(false),
-      filter_failed: z.boolean().default(false),
-    }),
+    z
+      .object({
+        filter_changed: z.boolean().default(false),
+        filter_failed: z.boolean().default(false),
+        filter_text: z.string().nullish(),
+      })
+      .nullish(),
   ),
   getParentRoute: () => targetRoute,
   path: 'checks',
