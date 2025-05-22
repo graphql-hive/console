@@ -519,7 +519,7 @@ $ LOG_JSON_PRETTY=1 node example.js
 Hive Logger includes some writers for common loggers of the JavaScript ecosystem with optional peer
 dependencies.
 
-#### `PinoLogWriter`
+#### `PinoLogWriter` (Node.js Only)
 
 Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
 logs.
@@ -553,7 +553,7 @@ log.info({ some: 'attributes' }, 'hello world')
 ```
 {/* prettier-ignore-end */}
 
-#### `WinstonLogWriter`
+#### `WinstonLogWriter` (Node.js Only)
 
 Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
 Logger's logs.
@@ -600,6 +600,8 @@ Writers can be synchronous (returning `void`) or asynchronous (returning a `Prom
 writer performs asynchronous operations (like network requests or file writes), simply return a
 promise from the `write` method.
 
+#### Example of HTTP Writer
+
 ```ts
 import { Attributes, ConsoleLogWriter, Logger, LogLevel, LogWriter } from '@graphql-hive/logger'
 
@@ -621,6 +623,29 @@ const log = new Logger({
 log.info('Hello World!')
 
 await log.flush() // make sure all async writes settle
+```
+
+#### Example of Daily File Log Writer (Node.js Only)
+
+Here is an example of a custom log writer that writes logs to a daily log file. It will write to a
+file for each day in a given directory.
+
+```ts filename="daily-file-log-writer.ts"
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { Attributes, jsonStringify, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+export class DailyFileLogWriter implements LogWriter {
+  constructor(
+    private dir: string,
+    private name: string
+  ) {}
+  write(level: LogLevel, attrs: Attributes | null | undefined, msg: string | null | undefined) {
+    const date = new Date().toISOString().split('T')[0]
+    const logfile = path.resolve(this.dir, `${this.name}_${date}.log`)
+    return fs.appendFile(logfile, jsonStringify({ level, msg, attrs }))
+  }
+}
 ```
 
 #### Flushing and Non-Blocking Logging
