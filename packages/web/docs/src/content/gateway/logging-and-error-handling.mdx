@@ -285,7 +285,49 @@ winston, but also implement custom writers that send logs to a HTTP consumer or 
   Read more about implementing your own writers in the [Hive Logger documentation](/docs/logger).
 </Callout>
 
-#### Pino (only Node.js)
+#### Daily File Log Writer (Node.js Only)
+
+Here is an example of a custom log writer that writes logs to a daily log file. It will write to a
+file for each day in a given directory.
+
+```ts filename="daily-file-log-writer.ts"
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { Attributes, jsonStringify, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+export class DailyFileLogWriter implements LogWriter {
+  constructor(
+    private dir: string,
+    private name: string
+  ) {}
+  write(level: LogLevel, attrs: Attributes | null | undefined, msg: string | null | undefined) {
+    const date = new Date().toISOString().split('T')[0]
+    const logfile = path.resolve(this.dir, `${this.name}_${date}.log`)
+    return fs.appendFile(logfile, jsonStringify({ level, msg, attrs }))
+  }
+}
+```
+
+And using it as simple as pluging it into an instance of Hive Logger to the `logging` option:
+
+```ts filename="gateway.config.ts"
+import { defineConfig, JSONLogWriter, Logger } from '@graphql-hive/gateway'
+import { DailyFileLogWriter } from './daily-file-log-writer'
+
+export const gatewayConfig = defineConfig({
+  logging: new Logger({
+    // you can combine multiple writers to log to different places
+    writers: [
+      // this will log to the console in JSON format
+      new JSONLogWriter(),
+      // and this is our daily file writer
+      new DailyFileLogWriter('/var/log/hive', 'gateway')
+    ]
+  })
+})
+```
+
+#### Pino (Node.js Only)
 
 Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
 logs.
@@ -321,7 +363,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-#### Winston (only Node.js)
+#### Winston (Node.js Only)
 
 Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
 Logger's logs.
