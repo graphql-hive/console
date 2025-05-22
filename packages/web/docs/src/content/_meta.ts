@@ -5,6 +5,7 @@ export default {
   'high-availability-cdn': 'High-Availability CDN',
   dashboard: 'Dashboard',
   gateway: 'Gateway',
+  logger: 'Logger',
   management: 'Management',
   'other-integrations': 'Other Integrations',
   'api-reference': 'CLI/API Reference',
