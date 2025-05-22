@@ -18,7 +18,8 @@ logs. The logger implementation now consistently uses the new `@graphql-hive/log
 standardizes the logger prop naming and usage.
 
 <Callout type="info">
-  You can read more about the new logger and its features in the [Hive Logger documentation](/).
+  You can read more about the new logger and its features in the [Hive Logger
+  documentation](/docs/logger).
 </Callout>
 
 ### Deprecating the Old Logger
@@ -95,7 +96,7 @@ export const gateway = createGatewayRuntime({
 
 A great new feature of the Hive Logger is the ability to change the log level dynamically at
 runtime. This allows you to adjust the verbosity of logs without restarting the application. Please
-advise the [Hive Logger documentation](/) for more details.
+advise the [Hive Logger documentation](/docs/logger) for more details.
 
 #### Using a Custom Logger
 
@@ -319,7 +320,7 @@ As you may see, it's very simple and allows you, to not only use your favourite 
 winston, but also implement custom writers that send logs to a HTTP consumer or writes to a file.
 
 <Callout type="info">
-  Read more about implementing your own writers in the [Hive Logger documentation](/).
+  Read more about implementing your own writers in the [Hive Logger documentation](/docs/logger).
 </Callout>
 
 ### Pino (only Node.js)
@@ -329,13 +330,13 @@ logs.
 
 `pino` is an optional peer dependency, so you must install it first.
 
-```npm2yarn
+```sh npm2yarn
 npm i pino pino-pretty
 ```
 
 Since we're using a custom log writter, you have to install the Hive Logger package too:
 
-```npm2yarn
+```sh npm2yarn
 npm i @graphql-hive/logger
 ```
 
@@ -373,7 +374,7 @@ npm i winston
 
 Since we're using a custom log writter, you have to install the Hive Logger package too:
 
-```npm2yarn
+```sh npm2yarn
 npm i @graphql-hive/logger
 ```
 
