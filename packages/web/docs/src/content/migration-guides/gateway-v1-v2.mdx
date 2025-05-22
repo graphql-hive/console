@@ -95,8 +95,11 @@ export const gateway = createGatewayRuntime({
 ##### Dynamically Changing the Log Level
 
 A great new feature of the Hive Logger is the ability to change the log level dynamically at
-runtime. This allows you to adjust the verbosity of logs without restarting the application. Please
-advise the [Hive Logger documentation](/docs/logger) for more details.
+runtime. This allows you to adjust the verbosity of logs without restarting the application.
+
+Please advise the
+[Hive Logger documentation](/docs/gateway/logging-and-error-handling#change-dynamically) for more
+details and an example.
 
 #### Using a Custom Logger
 
@@ -143,8 +146,33 @@ export const gateway = createGatewayRuntime({
 ### The Environment Variable
 
 Hive Logger will continue to support the `DEBUG=1` environment variable for enabling debug logging.
+
 But, additionally, it supports the new `LOG_LEVEL` environment variable for setting a specific log
 level. This allows you to control the log level without modifying the code or configuration files.
+
+For example, setting `LOG_LEVEL=debug` will enable debug logging, while `LOG_LEVEL=warn` will set
+the log level to "warn".
+
+#### Logging in JSON Format
+
+Previously, the Hive Gateway used two different environment variables to trigger loggin in JSON
+format:
+
+- `LOG_FORMAT=json`
+- `NODE_ENV=production`
+
+Both of those variables are now removed and replaced with `LOG_JSON=1`.
+
+#### Pretty Logging
+
+In addition to the JSON format, Hive Gateway had an additional `LOG_FORMAT=pretty` environment
+variable that pretty-printed the logs. This variable has been removed.
+
+When using the default logger, the logs are now pretty-printed by default. This means that the logs
+will be formatted in a human-readable way, making it easier to read and understand.
+
+Additionally, if you're using [the JSON format](#logging-in-json-format), you can use
+`LOG_JSON_PRETTY=1` environment variable to enable pretty-printing the JSON logs.
 
 ### Prop Renaming `logger` to `log`
 
