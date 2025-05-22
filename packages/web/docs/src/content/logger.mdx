@@ -457,6 +457,12 @@ INF Hello World!
 ```
 {/* prettier-ignore-end */}
 
+#### Disabling Colors
+
+You can disable colors in the console output by setting the `NO_COLOR=1` environment variable. All
+environments that need the logger to not color the output will automatically set this following the
+[NO_COLOR convention](https://no-color.org/).
+
 ### `JSONLogWriter`
 
 <Callout type="info">Will be used then the `LOG_JSON=1` environment variable is provided.</Callout>
