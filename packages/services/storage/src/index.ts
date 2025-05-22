@@ -4165,10 +4165,6 @@ export async function createStorage(
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
       }
 
-      if (text) {
-        text = text.split('.').join(' ');
-      }
-
       const result = await pool.any<unknown>(sql`/* getPaginatedSchemaChecksForTarget */
         SELECT
           ${schemaCheckSQLFields}
