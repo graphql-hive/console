@@ -5,7 +5,7 @@ description: Learn how to manage contracts via the Hive Console GraphQL API.
 
 # Contract Management via the GraphQL API
 
-The contracts of a target can be managed via the Hive Console GraphQL API.For more information,
+The contracts of a target can be managed via the Hive Console GraphQL API. For more information,
 please refer to our [schema contracts documentation](/docs/schema-registry/contracts).
 
 ## Retrieve a list of all Contracts in Target
@@ -38,7 +38,7 @@ query ContractTargets($targetId: ID!) {
 
 ## Retrieve a list of all Active Contracts in Target
 
-Use the `Target.contracts` field for retrieving a list of all contracts within the target.
+Use the `Target.activeContracts` field for retrieving a list of all contracts within the target.
 
 ```graphql
 query ActiveContractTargets($targetId: ID!) {
@@ -96,8 +96,8 @@ mutation CreateContract($input: CreateContractInput!) {
 
 ## Disable a Contract
 
-Use the `Mutation.disableContract` field for disabling a contract. **Note:** A disabled contract can
-not be made active again.
+Use the `Mutation.disableContract` field for disabling a contract. **Note:** A disabled contract
+cannot be made active again.
 
 ```graphql
 mutation DisableContract($input: DisableContractInput!) {
@@ -121,4 +121,4 @@ mutation DisableContract($input: DisableContractInput!) {
 
 ## Delete a Contract
 
-This is not possible. Instead disable the contract.
+This is not possible. Instead, disable the contract.

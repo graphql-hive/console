@@ -10,7 +10,7 @@ Targets can be managed via the Hive Console GraphQL API. For more information, p
 
 ## Retrieve a Single Target
 
-Use the `Query.target` field to retrieve a target either by it's `id` or `slug` selector.
+Use the `Query.target` field to retrieve a target either by its `id` or `slug` selector.
 
 ```graphql filename="Example: Retrieve a single Target via Slug"
 query TargetById($targetId: ID!) {
@@ -21,9 +21,9 @@ query TargetById($targetId: ID!) {
 }
 ```
 
-## Rertieve a List of Targets within a Project
+## Retrieve a List of Targets within a Project
 
-Use the `Projetc.targets` field to retrieve a list of targets within the organization. **Note:**
+Use the `Project.targets` field to retrieve a list of targets within the organization. **Note:**
 This field will currently return all targets within the project.
 
 ```graphql filename="Example: Retrieve a list of Targets in Project"

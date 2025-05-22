@@ -5,7 +5,7 @@ description: Learn how to manage organization members via the Hive Console Graph
 
 # Member Management via the GraphQL API
 
-Organization members, roles, and invites can be managed via the GraphQL API. For more information
+Organization members, roles, and invites can be managed via the GraphQL API. For more information,
 please refer to our
 [member and permissions documentation](/docs/management/members-roles-permissions).
 
@@ -40,7 +40,7 @@ Provide the permission ids from the `Organization.availableMemberPermissionGroup
 role via the `CreateMemberRoleInput.selectedPermissions` field.
 
 **Note:** A member role only has permissions and not resources assigned. Resources are assigned when
-assigning a member role to an user.
+assigning a member role to a user.
 
 ```graphql filename="Example: Create a Member Role"
 mutation CreateMemberRole($input: CreateMemberRoleInput!) {
@@ -109,7 +109,7 @@ mutation UpdatedMemberRole($input: DeleteMemberRoleInput!) {
 
 ## Assigning Member Roles
 
-Use the `Mutation.assignMemberRole` field for assigning a member role to an user.
+Use the `Mutation.assignMemberRole` field for assigning a member role to a user.
 
 ```graphql filename="Example: Assign a Member Role"
 mutation AssignMemberRole($input: AssignMemberRoleInput!) {
@@ -225,7 +225,7 @@ mutation InviteUserToOrganization($input: InviteToOrganizationByEmailInput!) {
 
 ## Revoke member invitation
 
-Use the `Mutation.deleteOrganizationInvitation` field for deleting a organization invitation.
+Use the `Mutation.deleteOrganizationInvitation` field for deleting an organization invitation.
 
 ```graphql
 mutation DeleteOrganizationInvitation($input: DeleteOrganizationInvitationInput!) {

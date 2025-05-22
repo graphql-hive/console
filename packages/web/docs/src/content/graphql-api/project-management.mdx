@@ -10,7 +10,7 @@ Projects can be managed via the Hive Console GraphQL API. For more information, 
 
 ## Retrieve a Single Project
 
-Use the `Query.project` field to retrieve a project either by it's `id` or `slug` selector.
+Use the `Query.project` field to retrieve a project either by its `id` or `slug` selector.
 
 ```graphql filename="Example: Retrieve a single Project via Slug"
 query ProjectBySlug($organizationSlug: String!, $projectSlug: String!) {
@@ -30,7 +30,7 @@ Use the `Organization.projects` field for retriving a list of projects within th
 
 ```graphql filename="Example: Retrieve a List of Projects within an Organization"
 query OrganizationProjects($organizationSlug: String!) {
-  organization(reference: {bySelector: {organizationSlug: $organziationSlug}}}) {
+  organization(reference: { bySelector: { organizationSlug: $organziationSlug } }) {
     id
     projects {
       edges {

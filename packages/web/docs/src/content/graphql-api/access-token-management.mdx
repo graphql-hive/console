@@ -6,13 +6,12 @@ description: Learn how to manage access tokens via the Hive Console GraphQL API.
 # Access Token Management via the GraphQL API
 
 Manage access tokens used for schema publishing, schema checks, app deployment publishes and other
-actions available via the GraphQL API. For more information please refer to our
+actions available via the GraphQL API. For more information, please refer to our
 [access token documentation](/docs/management/access-tokens).
 
 ## Retrieve a List of Access Tokens
 
-Use the `Organization.accessTokens` field for retreiving a paginated list of available access
-tokens.
+Use the `Organization.accessTokens` field for retrieving a paginated list of available access.
 
 ```graphql filename="Example: Paginated list of access tokens"
 query OrganizationAccessTokens($organizationSlug: String!, $after: String) {
@@ -37,7 +36,7 @@ query OrganizationAccessTokens($organizationSlug: String!, $after: String) {
 
 ## Retrieve a Single Access Token
 
-Instead of fetching a paginated list, it is also possible to retrieve a single access token by it's
+Instead of fetching a paginated list, it is also possible to retrieve a single access token by its
 id via the `Organization.accessToken` field.
 
 ```graphql filename="Example: Retrieve access token by id"
@@ -78,7 +77,7 @@ query OrganizationPermissions($organizationSlug: String!) {
 
 ## Create an Access Token
 
-A access token can be created by using the `Mutation.createOrganizationAccessToken` field.
+An access token can be created by using the `Mutation.createOrganizationAccessToken` field.
 
 The `CreateOrganizationAccessTokenResultOk.privateAccessKey` field in the mutation results contains
 the access key that can be used with the Hive CLI or the Hive GraphQL API as an authorization
