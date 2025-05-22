@@ -156,7 +156,6 @@ export default {
         session: () => null
       },
       cache: new CloudflareKVCacheStorage({
-        logger,
         namespace: env.NAMESPACE
       })
     })
