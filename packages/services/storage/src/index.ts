@@ -4159,7 +4159,7 @@ export async function createStorage(
 
       const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
 
-      let { failed, changed, text } = args.filters ?? {};
+      const { failed, changed, text } = args.filters ?? {};
 
       if (args.cursor) {
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
