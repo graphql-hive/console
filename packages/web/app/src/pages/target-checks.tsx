@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { ChangeEventHandler, useState } from 'react';
 import { useQuery } from 'urql';
+import { useDebouncedCallback } from 'use-debounce';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,11 @@ import { QueryError } from '@/components/ui/query-error';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { TimeAgo } from '@/components/ui/time-ago';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from '@/components/v2';
 import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
-import { ExternalLinkIcon } from '@radix-ui/react-icons';
+import { ExternalLinkIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import {
   Outlet,
   Link as RouterLink,
@@ -240,8 +243,13 @@ function ChecksPageContent(props: {
   }) as {
     filter_changed: boolean;
     filter_failed: boolean;
+    filter_text?: string;
   };
-  const { filter_changed: showOnlyChanged, filter_failed: showOnlyFailed } = search;
+  const {
+    filter_changed: showOnlyChanged,
+    filter_failed: showOnlyFailed,
+    filter_text: searchText,
+  } = search;
 
   const [query] = useQuery({
     query: ChecksPageQuery,
@@ -252,6 +260,7 @@ function ChecksPageContent(props: {
       filters: {
         changed: showOnlyChanged,
         failed: showOnlyFailed,
+        text: searchText,
       },
     },
   });
@@ -290,6 +299,19 @@ function ChecksPageContent(props: {
     });
   };
 
+  const handleSearchFilter = useDebouncedCallback<ChangeEventHandler<HTMLInputElement>>(
+    node => {
+      void navigate({
+        search: {
+          ...search,
+          filter_text: node.target.value || undefined,
+        },
+      });
+    },
+    400,
+    { maxWait: 5000 },
+  );
+
   return (
     <>
       <div>
@@ -326,6 +348,34 @@ function ChecksPageContent(props: {
                   id="filter-toggle-status-failed"
                 />
               </div>
+              <div className="flex h-9 flex-row items-center">
+                <Label
+                  htmlFor="filter-search"
+                  className="flex flex-row items-center gap-2 text-sm font-normal text-gray-100"
+                >
+                  Search contents
+                  <TooltipProvider>
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>
+                        <InfoCircledIcon className="size-4" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <div className="max-w-72 p-2">
+                          Filter the list of schema checks by commit ID, service name, author, or
+                          change details. e.g. FIELD_ARGUMENT_TYPE_CHANGED
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
+              </div>
+              <Input
+                id="filter-search"
+                placeholder="..."
+                defaultValue={searchText ?? ''}
+                onChange={handleSearchFilter}
+                size="small"
+              />
             </div>
             {hasFilteredSchemaChecks ? (
               <div className="flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 p-2.5">
