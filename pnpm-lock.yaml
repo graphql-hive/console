@@ -178,6 +178,9 @@ importers:
       jest-snapshot-serializer-raw:
         specifier: 2.0.0
         version: 2.0.0
+      monaco-editor:
+        specifier: 0.52.2
+        version: 0.52.2
       pg:
         specifier: 8.13.1
         version: 8.13.1
