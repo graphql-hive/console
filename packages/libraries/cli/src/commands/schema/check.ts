@@ -6,7 +6,7 @@ import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
-  GithubCommitRequiredError,
+  CommitRequiredError,
   GithubRepositoryRequiredError,
   InvalidTargetError,
   MissingEndpointError,
@@ -227,7 +227,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
 
       if (usesGitHubApp) {
         if (!commit) {
-          throw new GithubCommitRequiredError();
+          throw new CommitRequiredError();
         }
         if (!git.repository) {
           throw new GithubRepositoryRequiredError();
