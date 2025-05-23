@@ -166,12 +166,13 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
     },
     {
       instance: {
-        name: 'GithubCommitRequiredError',
+        name: 'CommitRequiredError',
         code: '110',
-        message: "Couldn't resolve commit sha required for GitHub Application.",
+        message:
+          "Couldn't resolve required commit sha. Provide a non-empty author via the '--commit' parameter or execute the command within a git repository.",
       },
       example: 'hive schema:check FILE --github',
-      fix: 'Make sure the command is called within a valid git project. To use the Github integration, there must be at a commit in the history to reference. The commit sha is set as the schema version in the registry and is used for change approvals and other features. See https://the-guild.dev/graphql/hive/docs/management/organizations#github for more details about this integration.',
+      fix: "Make sure the command is called within a valid git repository directory or the '--commit' parameter is provided with a non-empty value.",
     },
     {
       instance: {
@@ -180,16 +181,17 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
         message: "Couldn't resolve git repository required for GitHub Application.",
       },
       example: 'hive schema:check FILE --github',
-      fix: 'Make sure the command is called within a valid git project. See https://the-guild.dev/graphql/hive/docs/management/organizations#github for more details about this integration.',
+      fix: 'Make sure the command is called within a valid git repository directory. See https://the-guild.dev/graphql/hive/docs/management/organizations#github for more details about this integration.',
     },
     {
       instance: {
-        name: 'GithubAuthorRequiredError',
+        name: 'AuthorRequiredError',
         code: '112',
-        message: "Couldn't resolve commit author required for GitHub Application.",
+        message:
+          "Couldn't resolve required commit author. Provide a non-empty author via the '--author' parameter or execute the command within a git repository.",
       },
       example: 'hive schema:check FILE --github',
-      fix: 'Make sure the command is called within a valid git project. See https://the-guild.dev/graphql/hive/docs/management/organizations#github for more details about this integration.',
+      fix: "Make sure the command is called within a valid git repository directory or the '--author' parameter is provided with a non-empty value.",
     },
     {
       instance: {
