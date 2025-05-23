@@ -36,6 +36,9 @@ export default gql`
     answerOrganizationTransferRequest(
       input: AnswerOrganizationTransferRequestInput!
     ): AnswerOrganizationTransferRequestResult!
+    """
+    Create a new member role with permissions.
+    """
     createMemberRole(input: CreateMemberRoleInput! @tag(name: "public")): CreateMemberRoleResult!
       @tag(name: "public")
     updateMemberRole(input: UpdateMemberRoleInput! @tag(name: "public")): UpdateMemberRoleResult!
@@ -58,10 +61,27 @@ export default gql`
   }
 
   input CreateOrganizationAccessTokenInput {
+    """
+    Organization in which the access token should be created.
+    """
     organization: OrganizationReferenceInput! @tag(name: "public")
+    """
+    Title of the access token.
+    """
     title: String! @tag(name: "public")
+    """
+    Additional description containing information about the purpose of the access token.
+    """
     description: String @tag(name: "public")
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the \`Organization.availableOrganizationAccessTokenPermissionGroups\` field.
+    """
     permissions: [String!]! @tag(name: "public")
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+    """
     resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
@@ -102,6 +122,9 @@ export default gql`
   }
 
   input DeleteOrganizationAccessTokenInput {
+    """
+    The access token that should be deleted.
+    """
     organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
   }
 
@@ -394,12 +417,12 @@ export default gql`
 
   type OrganizationInvitationEdge {
     node: OrganizationInvitation! @tag(name: "public")
-    cursor: String!
+    cursor: String! @tag(name: "public")
   }
 
   type OrganizationInvitationConnection {
     edges: [OrganizationInvitationEdge!]! @tag(name: "public")
-    pageInfo: PageInfo!
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type OrganizationInvitation {
@@ -485,9 +508,21 @@ export default gql`
   }
 
   input CreateMemberRoleInput {
+    """
+    The organization in which the member role should be created.
+    """
     organization: OrganizationReferenceInput! @tag(name: "public")
+    """
+    The name of the member role (must be unique).
+    """
     name: String! @tag(name: "public")
+    """
+    A description describing the purpose of the member role.
+    """
     description: String! @tag(name: "public")
+    """
+    A list of available permissions can be retrieved via the \`Organization.availableMemberPermissionGroups\` field.
+    """
     selectedPermissions: [String!]! @tag(name: "public")
   }
 
