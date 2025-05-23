@@ -9,7 +9,8 @@
     "build": "next build && next-sitemap",
     "dev": "next --turbopack",
     "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
-    "validate-mdx-links": "pnpx validate-mdx-links@1.0.6 --files 'src/**/*.mdx'"
+    "validate-mdx-links": "pnpx validate-mdx-links@1.0.6 --files 'src/**/*.mdx'",
+    "generate-security-report": "trivy image -s 'MEDIUM,HIGH,CRITICAL' ghcr.io/graphql-hive/gateway:latest --format template --template '@./scripts/docker-security-report.tpl'"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",
