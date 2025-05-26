@@ -168,12 +168,12 @@ export class SchemaFileEmptyError extends HiveCLIError {
   }
 }
 
-export class GithubCommitRequiredError extends HiveCLIError {
+export class CommitRequiredError extends HiveCLIError {
   constructor() {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 10),
-      `Couldn't resolve commit sha required for GitHub Application.`,
+      `Couldn't resolve required commit sha. Provide a non-empty author via the '--commit' parameter or execute the command within a git repository.`,
     );
   }
 }
@@ -188,12 +188,12 @@ export class GithubRepositoryRequiredError extends HiveCLIError {
   }
 }
 
-export class GithubAuthorRequiredError extends HiveCLIError {
+export class AuthorRequiredError extends HiveCLIError {
   constructor() {
     super(
       ExitCode.BAD_INIT,
       errorCode(ErrorCategory.GENERIC, 12),
-      `Couldn't resolve commit author required for GitHub Application.`,
+      `Couldn't resolve required commit author. Provide a non-empty author via the '--author' parameter or execute the command within a git repository.`,
     );
   }
 }
