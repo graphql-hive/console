@@ -151,6 +151,9 @@ importers:
       cypress:
         specifier: 13.17.0
         version: 13.17.0
+      cypress-real-events:
+        specifier: 1.14.0
+        version: 1.14.0(cypress@13.17.0)
       dotenv:
         specifier: 16.4.7
         version: 16.4.7
@@ -178,6 +181,9 @@ importers:
       jest-snapshot-serializer-raw:
         specifier: 2.0.0
         version: 2.0.0
+      monaco-editor:
+        specifier: 0.52.2
+        version: 0.52.2
       pg:
         specifier: 8.13.1
         version: 8.13.1
@@ -9258,6 +9264,11 @@ packages:
 
   csv-stringify@6.5.2:
     resolution: {integrity: sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==}
+
+  cypress-real-events@1.14.0:
+    resolution: {integrity: sha512-XmI8y3OZLh6cjRroPalzzS++iv+pGCaD9G9kfIbtspgv7GVsDt30dkZvSXfgZb4rAN+3pOkMVB7e0j4oXydW7Q==}
+    peerDependencies:
+      cypress: ^4.x || ^5.x || ^6.x || ^7.x || ^8.x || ^9.x || ^10.x || ^11.x || ^12.x || ^13.x || ^14.x
 
   cypress@13.17.0:
     resolution: {integrity: sha512-5xWkaPurwkIljojFidhw8lFScyxhtiFHl/i/3zov+1Z5CmY4t9tjIdvSXfu82Y3w7wt0uR9KkucbhkVvJZLQSA==}
@@ -26155,6 +26166,10 @@ snapshots:
   csv-parse@5.6.0: {}
 
   csv-stringify@6.5.2: {}
+
+  cypress-real-events@1.14.0(cypress@13.17.0):
+    dependencies:
+      cypress: 13.17.0
 
   cypress@13.17.0:
     dependencies:
