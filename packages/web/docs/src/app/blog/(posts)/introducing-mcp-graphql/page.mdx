@@ -1,0 +1,61 @@
+---
+title: 'Introducing: GraphQL MCP server'
+authors: blurrah
+tags: [graphql, mcp]
+date: 2025-05-26
+description:
+  A new MCP server that connects AI models to GraphQL endpoints with full schema awareness and dynamic querying capabilities.
+---
+
+TL;DR
+
+- The GraphQL MCP server allows your AI models to interact with your GraphQL server
+- It allows introspection of both local and remote schema's
+- It supports both query and mutation operations, where mutations are opt-in
+- It uses a single tool call for complete flexibility in how you want to interact with your schema
+- Future updates will also allow for specific tool generation for an operation and persisted documents support
+
+------
+The GraphQL MCP server connects AI models directly to your GraphQL endpoints with full schema awareness. Rather than constraining interactions to predefined tools, it lets AI compose any valid GraphQL operation based on your schema and user requests.
+
+It does this by allowing AI applications to introspect a local or remote schema and use it as extra context to execute queries and/or mutations on your GraphQL server. There's a single query tool call that allows any kind of operation with any kind of variables to be filled in by the model.
+
+## GraphQL and MCP
+
+GraphQL and MCP are perfectly suited for eachother. Where most MCP servers create specific, narrow tools, with GraphQL the AI gets direct access to the schema and can compose any valid GraphQL operation on the spot.
+
+This means:
+- No need to anticipate every possible use case upfront
+- The AI can combine data in ways you never explicitly programmed
+- Users can ask natural questions without being limited to your predefined interface
+
+In many ways this is exactly what MCP is built for rather than just exposing individual API endpoints.
+
+This way of allowing any kind of operation works great with models as they're quite adept at reading GraphQL schema SDL's and creating operations based on that information. Schema's are fully typed and often well documented, leading to a lot of useful context for an AI to work with.
+
+All of this also enables exciting use cases such as pen testing your models by prompting your AI to search for weaknesses/errors and performance/recursiveness errors.
+
+## How it works
+- `mcp-graphql` is available as an NPM package
+- You can download and run it using `npx mcp-graphql` where you can use certain environment variables
+- Example for Claude Desktop:
+```json
+{
+    "mcpServers": {
+        "mcp-graphql": {
+            "command": "npx",
+            "args": ["mcp-graphql"],
+            "env": {
+                "ENDPOINT": "http://localhost:3000/graphql"
+            }
+        }
+    }
+}
+```
+
+## The future
+- Tools per operation
+	- Support for persisted documents and predefined operation files
+		- Optionally work with Schema registries such as Hive
+	- Let me know?
+
