@@ -40,6 +40,7 @@ You need to pass imported `renderGraphiQL` to `createGatewayRuntime` like below:
 ```ts filename="Render GraphiQL offline"
 import express from 'express'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { renderGraphiQL } from '@graphql-yoga/render-graphiql';
 
 const app = express()
 
