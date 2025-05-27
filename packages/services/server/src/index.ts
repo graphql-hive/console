@@ -459,19 +459,22 @@ export async function main() {
       handler: graphql,
     });
 
-    server.route({
-      method: ['GET', 'POST'],
-      url: '/graphql-public',
-      handler: createPublicGraphQLHandler({
-        registry,
-        logger: logger as any,
-        hiveUsageConfig: env.hive,
-        authN: new AuthN({
-          strategies: [organizationAccessTokenStrategy],
+    if (env.publicApi) {
+      server.route({
+        method: ['GET', 'POST'],
+        url: '/graphql-public',
+        handler: createPublicGraphQLHandler({
+          registry,
+          logger: logger as any,
+          hiveUsageConfig: env.hive,
+          authN: new AuthN({
+            strategies: [organizationAccessTokenStrategy],
+          }),
+          tracing,
+          requestSigningSecret: env.publicApi.requestSigningSecret,
         }),
-        tracing,
-      }),
-    });
+      });
+    }
 
     const introspection = JSON.stringify({
       query: stripIgnoredCharacters(/* GraphQL */ `

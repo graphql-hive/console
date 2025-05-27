@@ -286,6 +286,8 @@ const app = deployApp({
   sentry,
 });
 
+// TODO: deploy stellate config instead of hive gateway
+
 const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
   environment,
   graphql,
