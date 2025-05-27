@@ -89,7 +89,7 @@ import explorerMetadataFilterImage from '../../../public/docs/pages/specs/link-s
 extend schema @meta(name: "owner", content: "noreply@the-guild.dev")
 
 type Query {
-  user: User @meta(name: "domain", content: "accounts")
+  user: User @meta(name: "domain", content: "accounts") @meta(name: "priority", content: "tier-1")
 }
 
 type User {
