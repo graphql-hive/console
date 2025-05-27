@@ -83,6 +83,8 @@ The GraphQL API for GraphQL Hive.
 | `HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY`   | No (Yes if `HIVE_PERSISTED_DOCUMENTS` is set to `1`) | The access token key for the Hive CDN.                                                                   | `hv2abcdefg`                                         |
 | `LOG_LEVEL`                                 | No                                                   | The verbosity of the service logs. One of `trace`, `debug`, `info`, `warn` ,`error`, `fatal` or `silent` | `info` (default)                                     |
 | `OPENTELEMETRY_COLLECTOR_ENDPOINT`          | No                                                   | OpenTelemetry Collector endpoint. The expected traces transport is HTTP (port `4318`).                   | `http://localhost:4318/v1/traces`                    |
+| `PUBLIC_API`                                | No                                                   | Whether the public API endpoint is enabled. Defaults to `1` (enabled)                                    | `1` (enabled) or `0` (disabled)                      |
+| `PUBLIC_API_REQUEST_SIGNING_SECRET`         | No                                                   | If set only requests that are signed will be accepted. (Requires `PUBLIC_API` to be set to `1`)          | Defaults to `` (disabled)                            |
 
 ## Hive Cloud Configuration
 
