@@ -85,6 +85,19 @@ import explorerMetadataFilterImage from '../../../public/docs/pages/specs/link-s
 
 #### Usage
 
+```graphql
+extend schema @meta(name: "owner", content: "noreply@the-guild.dev")
+
+type Query {
+  user: User @meta(name: "domain", content: "accounts")
+}
+
+type User {
+  id: ID!
+  ssn: String @meta(name: "classification", content: "pii")
+}
+```
+
 `@meta` can be applied to schemas, types, interfaces, and fields. A field's metadata is a union of
 all applied metadata. This is applied using the following rules:
 
