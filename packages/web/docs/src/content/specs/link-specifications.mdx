@@ -86,7 +86,16 @@ import explorerMetadataFilterImage from '../../../public/docs/pages/specs/link-s
 #### Usage
 
 ```graphql
-extend schema @meta(name: "owner", content: "noreply@the-guild.dev")
+extend schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/federation/v2.3")
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "noreply@the-guild.dev")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 type Query {
   user: User @meta(name: "domain", content: "accounts") @meta(name: "priority", content: "tier-1")
