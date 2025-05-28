@@ -103,6 +103,8 @@ export const action: Action = async exec => {
       , "graphql_operation_name" String CODEC(ZSTD(1))
       , "graphql_operation_type" LowCardinality(String) CODEC(ZSTD(1))
       , "graphql_operation_document" String CODEC(ZSTD(1))
+      , "graphql_error_count" UInt32 CODEC(T64, ZSTD(1))
+      , "graphql_error_codes" Array(LowCardinality(String)) CODEC(ZSTD(1))
       , "subgraph_names" Array(LowCardinality(String)) CODEC(ZSTD(1))
       , INDEX "idx_duration" "duration" TYPE minmax GRANULARITY 1
       , INDEX "idx_http_status_code" "http_status_code" TYPE bloom_filter(0.01) GRANULARITY 1
@@ -114,6 +116,7 @@ export const action: Action = async exec => {
       , INDEX "idx_client_version" "client_version" TYPE bloom_filter(0.01) GRANULARITY 1
       , INDEX "idx_graphql_operation_name" "graphql_operation_name" TYPE bloom_filter(0.01) GRANULARITY 1
       , INDEX "idx_graphql_operation_type" "graphql_operation_type" TYPE bloom_filter(0.01) GRANULARITY 1
+      , INDEX "idx_graphql_error_codes" "graphql_error_codes" TYPE bloom_filter(0.01) GRANULARITY 1
       , INDEX "idx_subgraph_names" "subgraph_names" TYPE bloom_filter(0.01) GRANULARITY 1
     )
     ENGINE = MergeTree
@@ -142,6 +145,8 @@ export const action: Action = async exec => {
       , "graphql_operation_name" String
       , "graphql_operation_type" LowCardinality(String)
       , "graphql_operation_document" String
+      , "graphql_error_count" UInt32
+      , "graphql_error_codes" Array(LowCardinality(String))
       , "subgraph_names" Array(String)
     )
     AS (
@@ -161,6 +166,8 @@ export const action: Action = async exec => {
         , "SpanAttributes"['graphql.operation.name'] AS "graphql_operation_name"
         , toLowCardinality("SpanAttributes"['graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['graphql.operation.document'] AS "graphql_operation_document"
+        , "SpanAttributes"['graphql.error.count'] AS "graphql_errors_count"
+        , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['graphql.error.codes'])) AS "graphql_error_codes"
         , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.subgraph.names'])) AS "subgraph_names"
       FROM
         "otel_traces"
