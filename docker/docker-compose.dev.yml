@@ -183,7 +183,7 @@ services:
         condition: service_healthy
     build:
       context: ./configs/otel-collector
-      dockerfile: ../otel-collector.dockerfile
+      dockerfile: ./../../otel-collector.dockerfile
     environment:
       HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
     volumes:
