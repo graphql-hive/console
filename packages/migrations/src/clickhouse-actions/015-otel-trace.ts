@@ -130,7 +130,7 @@ export const action: Action = async exec => {
 
   await exec(`
     CREATE MATERIALIZED VIEW IF NOT EXISTS "otel_traces_normalized_mv" TO "otel_traces_normalized" (
-      , "target_id" LowCardinality(String)
+      "target_id" LowCardinality(String)
       , "trace_id" String
       , "span_id" String
       , "timestamp" DateTime('UTC')
