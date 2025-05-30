@@ -74,11 +74,11 @@ export const Target: Pick<
       schemaCoordinate: args.schemaCoordinate,
     };
   },
-  traces: async (_parent, { first, filter }, { injector }) => {
+  traces: async (target, { first, filter }, { injector }) => {
     const clickhouse = injector.get(ClickHouse);
     const limit = (first ?? 10) + 1;
 
-    const ANDs: SqlValue[] = [sql`target_id = ${'target-1'}`];
+    const ANDs: SqlValue[] = [sql`target_id = ${target.id}`];
 
     if (filter?.id?.length) {
       ANDs.push(sql`trace_id IN (${sql.array(filter.id, 'String')})`);
@@ -101,11 +101,11 @@ export const Target: Pick<
     }
 
     if (filter?.operationName?.length) {
-      ANDs.push(sql`operation_name IN (${sql.array(filter.operationName, 'String')})`);
+      ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
     }
 
     if (filter?.operationType?.length) {
-      ANDs.push(sql`operation_type IN (${sql.array(filter.operationType, 'String')})`);
+      ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
     }
 
     if (filter?.subgraphs?.length) {
@@ -155,8 +155,8 @@ export const Target: Pick<
           trace_id,
           span_id,
           timestamp,
-          operation_name,
-          operation_type,
+          graphql_operation_name as operation_name,
+          graphql_operation_type as operation_type,
           duration,
           subgraph_names,
           http_status_code,
@@ -175,6 +175,8 @@ export const Target: Pick<
 
     const traces = tracesQuery.data;
     let hasNext = false;
+
+    console.log('AYAYAYAY', traces.length);
 
     if (traces.length == limit) {
       hasNext = true;
@@ -241,11 +243,11 @@ export const Target: Pick<
     }
 
     if (filter?.operationName?.length) {
-      ANDs.push(sql`operation_name IN (${sql.array(filter.operationName, 'String')})`);
+      ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
     }
 
     if (filter?.operationType?.length) {
-      ANDs.push(sql`operation_type IN (${sql.array(filter.operationType, 'String')})`);
+      ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
     }
 
     if (filter?.subgraphs?.length) {
