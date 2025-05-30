@@ -164,7 +164,7 @@ export const action: Action = async exec => {
         , "SpanAttributes"['hive.client.name'] AS "client_name"
         , "SpanAttributes"['hive.client.version'] AS "client_version"
         , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
-        , toLowCardinality("SpanAttributes"['graphql.operation.type']) AS "graphql_operation_type"
+        , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
         , "SpanAttributes"['hive.graphql.error.count'] AS "graphql_errors_count"
         , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
