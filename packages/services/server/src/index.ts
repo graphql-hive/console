@@ -65,8 +65,8 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
-import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
+import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
 export async function main() {
@@ -460,6 +460,10 @@ export async function main() {
       handler: graphql,
     });
 
+    const authN = new AuthN({
+      strategies: [organizationAccessTokenStrategy],
+    });
+
     server.route({
       method: ['GET', 'POST'],
       url: '/graphql-public',
@@ -467,9 +471,7 @@ export async function main() {
         registry,
         logger: logger as any,
         hiveUsageConfig: env.hive,
-        authN: new AuthN({
-          strategies: [organizationAccessTokenStrategy],
-        }),
+        authN,
         tracing,
       }),
     });
