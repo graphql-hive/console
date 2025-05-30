@@ -55,16 +55,16 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
   },
   operationName: async ({ loader }, { top }) => {
     return loader.load({
-      key: 'operation_name',
-      columnExpression: 'operation_name',
+      key: 'graphql_operation_name',
+      columnExpression: 'graphql_operation_name',
       limit: top ?? 5,
       arrayJoinColumn: null,
     });
   },
   operationType: async ({ loader }) => {
     return loader.load({
-      key: 'operation_type',
-      columnExpression: 'operation_type',
+      key: 'graphql_operation_type',
+      columnExpression: 'graphql_operation_type',
       limit: null,
       arrayJoinColumn: null,
     });
