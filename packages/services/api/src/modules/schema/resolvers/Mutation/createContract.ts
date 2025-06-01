@@ -7,8 +7,8 @@ export const createContract: NonNullable<MutationResolvers['createContract']> = 
   context,
 ) => {
   const result = await context.injector.get(ContractsManager).createContract({
+    target: args.input.target,
     contract: {
-      targetId: args.input.targetId,
       contractName: args.input.contractName,
       excludeTags: (args.input.excludeTags as Array<string> | null) ?? null,
       includeTags: (args.input.includeTags as Array<string> | null) ?? null,

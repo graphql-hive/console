@@ -410,9 +410,11 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
       }
     }
     targets(selector: $targetsSelector) {
-      nodes {
-        id
-        slug
+      edges {
+        node {
+          id
+          slug
+        }
       }
     }
     organization(reference: { bySelector: $organizationSelector }) {
@@ -510,7 +512,7 @@ const BreakingChanges = (props: {
   const considerDangerousAsBreaking =
     targetSettings?.data?.target?.failDiffOnDangerousChange || false;
   const isEnabled = configuration?.isEnabled || false;
-  const possibleTargets = targetSettings.data?.targets.nodes;
+  const possibleTargets = targetSettings.data?.targets.edges.map(edge => edge.node);
   const { toast } = useToast();
 
   const {

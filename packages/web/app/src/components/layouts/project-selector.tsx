@@ -9,9 +9,11 @@ const ProjectSelector_OrganizationConnectionFragment = graphql(`
       id
       slug
       projects {
-        nodes {
-          id
-          slug
+        edges {
+          node {
+            id
+            slug
+          }
         }
       }
     }
@@ -50,8 +52,10 @@ export function ProjectSelector(props: {
     node => node.slug === props.currentOrganizationSlug,
   );
 
-  const projects = currentOrganization?.projects.nodes;
-  const currentProject = projects?.find(node => node.slug === props.currentProjectSlug);
+  const projectEdges = currentOrganization?.projects.edges;
+  const currentProject = projectEdges?.find(
+    edge => edge.node.slug === props.currentProjectSlug,
+  )?.node;
 
   return (
     <>
@@ -70,8 +74,7 @@ export function ProjectSelector(props: {
       ) : (
         ''
       )}
-
-      {(projects?.length && currentProject) || optional ? (
+      {projectEdges?.length && currentProject ? (
         <>
           {showOrganization ? <div className="italic text-gray-500">/</div> : null}
           <Select
@@ -84,13 +87,13 @@ export function ProjectSelector(props: {
               </div>
             </SelectTrigger>
             <SelectContent>
-              {optional ? (
+              {projectEdges.map(edge => (
                 <SelectItem
-                  key='empty'
-                  value='empty'
-                  data-cy='project-picker-option-Unassigned'
+                  key={edge.node.slug}
+                  value={edge.node.slug}
+                  data-cy={`project-picker-option-${edge.node.slug}`}
                 >
-                  Unassigned
+                  {edge.node.slug}
                 </SelectItem>
               ) : null
               }

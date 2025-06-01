@@ -27,9 +27,10 @@ import { Cache, QueryInput, UpdateResolver } from '@urql/exchange-graphcache';
 const TargetsDocument = graphql(`
   query targets($selector: ProjectSelectorInput!) {
     targets(selector: $selector) {
-      total
-      nodes {
-        id
+      edges {
+        node {
+          id
+        }
       }
     }
   }
@@ -148,8 +149,7 @@ const createTarget: TypedDocumentNodeUpdateResolver<typeof CreateTarget_CreateTa
     },
     data => {
       // TODO: figure out masking
-      data.targets.nodes.unshift(target as any);
-      data.targets.total += 1;
+      data.targets.edges.unshift({ node: target as any, cursor: '' } as any);
     },
   );
 };

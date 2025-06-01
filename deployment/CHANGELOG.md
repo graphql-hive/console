@@ -1,5 +1,90 @@
 # hive
 
+## 8.0.0
+
+### Major Changes
+
+- [#6810](https://github.com/graphql-hive/console/pull/6810)
+  [`ae65069`](https://github.com/graphql-hive/console/commit/ae65069da79f3863ddfe6c4da80826af2b8c4b0a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing schema contracts
+  to the public api schema.
+
+  - `Mutation.createContract`
+  - `Mutation.disableContract`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6722](https://github.com/graphql-hive/console/pull/6722)
+  [`aab6e7c`](https://github.com/graphql-hive/console/commit/aab6e7c2cfbd8453e0062362fc10244da98d57d1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing users to the
+  public api schema.
+
+  - `Mutation.assignMemberRole`
+  - `Mutation.createMemberRole`
+  - `Mutation.deleteMemberRole`
+  - `Mutation.deleteOrganizationInvitation`
+  - `Mutation.inviteToOrganizationByEmail`
+  - `Mutation.updateMemberRole`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6786](https://github.com/graphql-hive/console/pull/6786)
+  [`20bfc4c`](https://github.com/graphql-hive/console/commit/20bfc4c052367efd9bc4d8e9a35e0a72aee2c95b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add mutation fields for managing projects to the
+  public api schema.
+
+  - `Mutation.createProject`
+  - `Mutation.updateProjectSlug`
+  - `Mutation.deleteProject`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+- [#6795](https://github.com/graphql-hive/console/pull/6795)
+  [`3552957`](https://github.com/graphql-hive/console/commit/3552957eeb2c7bf2bf74d912f58b32e56d6bc69f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add fields for querying usage datato the public api
+  schema.
+
+  - `Target.schemaCoordinateStats`
+  - `Target.clientStats`
+  - `Target.operationsStats`
+
+  **BREAKING CHANGE**: This renames and changes the types for existing types within the private
+  GraphQL schema.
+
+### Minor Changes
+
+- [#6764](https://github.com/graphql-hive/console/pull/6764)
+  [`bbd5643`](https://github.com/graphql-hive/console/commit/bbd5643924eb2b32511e96a03a3a5a978a66adee)
+  Thanks [@jdolle](https://github.com/jdolle)! - Track provided operation arguments/inputs and use
+  them to determine conditional breaking changes; Fix null to non-null argument breaking change edge
+  case"
+
+### Patch Changes
+
+- [#6780](https://github.com/graphql-hive/console/pull/6780)
+  [`6c0b6f3`](https://github.com/graphql-hive/console/commit/6c0b6f3051d8ee73307094d124a32496f196a547)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg indexes to help with org delete
+
+- [#6814](https://github.com/graphql-hive/console/pull/6814)
+  [`7574cce`](https://github.com/graphql-hive/console/commit/7574cce6d6155628ee8303ad4e7782af4f8a303d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix random infinite loop on schema checks page
+
+- [#6791](https://github.com/graphql-hive/console/pull/6791)
+  [`6f43b3e`](https://github.com/graphql-hive/console/commit/6f43b3e753ab16e28a11d14ee5afef96be7e1c0d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove redundant pg indices
+
+- [#6792](https://github.com/graphql-hive/console/pull/6792)
+  [`54acc25`](https://github.com/graphql-hive/console/commit/54acc25e156188c22b7aaeb71ae9cce59cc94ba8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust contract to target foreign key reference to
+  cascade delete
+
+- [#6793](https://github.com/graphql-hive/console/pull/6793)
+  [`81df783`](https://github.com/graphql-hive/console/commit/81df78373a0c8a96540740c2a8e3efd9a513640e)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust date range selector ui
+
 ## 7.0.2
 
 ### Patch Changes

@@ -302,3 +302,11 @@ export type SchemaMetadataMapper = {
   content: string;
   source: string | null;
 };
+
+export type SchemaChangeUsageStatisticsAffectedOperationMapper = {
+  name: string;
+  hash: string;
+  count: number;
+  percentage: number;
+  targetIds: Array<string>;
+};

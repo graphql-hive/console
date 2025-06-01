@@ -237,8 +237,8 @@ import hiveCdnAccessContractImage from '../../../public/docs/pages/management/co
 
 ## Serving a Contract Schema
 
-### Apollo Router
+Point your Hive Gateway or Apollo Router instance to the supergraph of the contract schema:
 
-Apollo Router is not able to serve more than a single GraphQL endpoint with different supergraphs.
-We recommend using multiple Apollo Router instances to serve different contract schemas. Point
-Apollo Router to the contract supergraph from the CDN.
+```text filename="Example: Contract Supergraph Endpoint"
+https://cdn.graphql-hive.com/artifacts/v1/<target_id>/contracts/<contract_name>/supergraph
+```

@@ -107,9 +107,11 @@ const NativeCompositionSettings_ProjectFragment = graphql(`
       endpoint
     }
     targets {
-      nodes {
-        id
-        ...IncrementalNativeCompositionSwitch_TargetFragment
+      edges {
+        node {
+          id
+          ...IncrementalNativeCompositionSwitch_TargetFragment
+        }
       }
     }
   }
@@ -255,12 +257,12 @@ export function NativeCompositionSettings(props: {
             </div>
             <div>
               <div className="flex flex-row gap-4">
-                {project.targets.nodes.map(target => (
+                {project.targets.edges.map(edge => (
                   <IncrementalNativeCompositionSwitch
                     organizationSlug={organization.slug}
                     projectSlug={project.slug}
-                    key={target.id}
-                    target={target}
+                    key={edge.node.id}
+                    target={edge.node}
                   />
                 ))}
               </div>
