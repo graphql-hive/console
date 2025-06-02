@@ -1,0 +1,195 @@
+---
+title: Using the GraphQL API
+description: Introduction to the Hive Console GraphQL API.
+---
+
+import { Callout, Tabs } from '@theguild/components'
+
+# Using the GraphQL API
+
+Interact programatically interact with your Hive Organization via the public Hive Console GraphQL
+API. You can manage users, projects, and targets, and retrieve information about your schema usage.
+
+The GraphQL API can be interacted with from any language that supports sending HTTP requests.
+
+Calling the API requires a [Access Token](/docs/management/access-tokens) with the correct scopes
+for the actions.
+
+## API Basics
+
+The Hive Console GraphQL API follows the
+[GraphQL over HTTP sepcification](https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md).
+
+### Endpoint
+
+The endpoint is [`https://api.graphql-hive.com/graphql`](https://api.graphql-hive.com/graphql). The
+API comes with a GraphiQL instance for exploring and building GraphQL operations.
+
+### Method
+
+Requests to the GraphQL API are done with the `POST` method.
+
+### Content Type
+
+Requests must be encoded as JSON with the `Content-Type: application/json` header. It is recommended
+to also send the `Accept: application/graphql-response+json` header.
+
+### Authorization
+
+Requests must be authenticated via the `Authorization` header. Provide an
+[Access Token](/docs/management/access-tokens) with the correct permissions using the `Bearer`
+formatting. E.g. `Authorization: Bearer hvo1/xxxxxxxxxxxxx`.
+
+### Request Body
+
+The request body must be a string encoded JSON object containing the following properties:
+
+- `query` - the string representation of the Source Text of the Document as specified in the
+  Language section of the GraphQL specification.
+- `operationName` - an optional string
+- `variables` - an optional object (map), the keys of which are the variable names and the values of
+  which are the variable values
+
+### Example Requests
+
+Here is an example of retrieving information about your organization.
+
+<Tabs items={[ 'JavaScript', 'curl']}>
+
+{/* JavaScript */}
+
+<Tabs.Tab>
+
+```ts
+const MyOrganizationQuery = /* GraphQL */ `
+  query MyOrganization($organizationSlug: String!) {
+    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+      id
+      slug
+    }
+  }
+`
+
+const response = await fetch('https://api.graphql-hive.com/graphql', {
+  method: "POST",
+  headers: {
+    Authorization: 'Bearer <YOUR_ACCESS_TOKEN>',
+    'Content-Type': 'application/json'
+    Accept: 'application/graphql-response+json',
+  },
+  body: JSON.stringify({
+    query: MyOrganizationQuery,
+    variables: { organizationSlug: '<YOUR_ORGANIZATION_SLUG>' }
+  })
+})
+const body = await response.json()
+```
+
+</Tabs.Tab>
+
+{/* curl */}
+
+<Tabs.Tab>
+
+```sh
+QUERY='query MyOrganization($organizationSlug: String!) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    id
+    slug
+  }
+}'
+# Remove line breaks
+QUERY=$(echo $QUERY | tr -d '\n')
+curl \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/graphql-response+json' \
+  -H 'Authorization: Bearer <YOUR_ACCESS_TOKEN>' \
+  -X POST \
+  -d '{ "query": "'"$QUERY"'", "variables": { "organizationSlug": "<YOUR_ORGANIZATION_SLUG>" } }' \
+  https://api.graphql-hive.com/graphql
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Rate Limiting
+
+The Hive Console GraphQL API uses
+[Query complexity analysis](https://ibm.github.io/graphql-specs/cost-spec.html) for enforcing
+rate-limiting.
+
+We are still in the process of fine-tuning the values and limitations e.g. based on the organization
+plan. If you are sending moderate and sane GraphQL operations the likely hood of being impacted by
+rate-limits in the future is low.
+
+## GraphQL Conventions
+
+In order to provide a smooth experience the GraphQL API follows common conventions and
+best-practices.
+
+### Pagination
+
+The GraphQL API follows the
+[GraphQL Cursor Connection Specification](https://relay.dev/graphql/connections.htm).
+
+To paginate using cursor-based pagination in GraphQL:
+
+1. Request the first set of items using the `first` argument (e.g., `first: 10`).
+2. The response will include a `pageInfo` object with an `endCursor` and `hasNextPage`.
+3. To get the next page, send a new query with the same `first` value and set `after` to the
+   `endCursor` from the previous response.
+
+Repeat this process until `hasNextPage` is `false`.
+
+```graphql filename="Example: Paginated schema versions"
+query PaginatedSchemaVersions($targetSelector: TargetSelectorInput, $first: Int!, $after: String) {
+  target(reference: { bySelector: $targetSelector }) {
+    id
+    schemaVersions(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          sdl
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+```
+
+This method ensures stable pagination even if the underlying data changes (e.g. new items are
+inserted).
+
+### Mutation Fields
+
+The GraphQL API models expected errors as part of the GraphQL schema. The type of a mutation field
+is always a object type with both a `ok` and `error` property. We recommend always selecting both
+fields within the mutation selection sets. In case expected mutation behaviour suceeds, the `ok`
+property is non-null and contains the mutation result, while the `error` peroperty is `null`. In
+case the mutation fails (e.g. due to a input validation error), the `ok` field is `null` and the
+`error` field is non-null containing an error message and often additional information on the source
+of the error.
+
+```graphql filename="Example: Create project mutation"
+mutation CreateProjectMutation($input: CreateProjectInput!) {
+  createProject(input: $input) {
+    ok {
+      createdProject {
+        id
+      }
+    }
+    error {
+      message
+      # More detailed errors for each input field
+      inputErrors {
+        slug
+      }
+    }
+  }
+}
+```

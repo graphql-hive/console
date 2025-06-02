@@ -9,6 +9,7 @@ export default {
   'other-integrations': 'Other Integrations',
   'api-reference': 'CLI/API Reference',
   specs: 'Specifications',
+  'graphql-api': 'GraphQL API',
   'use-cases': 'Use Cases',
   'migration-guides': 'Migration Guides',
   'self-hosting': 'Self-Hosting',

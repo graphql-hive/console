@@ -536,9 +536,10 @@ function FederationModalContent(props: {
         {authenticateSection}
         <div className="mt-2">
           <InputCopy
+            multiline
             value={`docker run --name hive-gateway --rm -p 4000:4000 \\
   ghcr.io/graphql-hive/gateway supergraph \\
-  '${props.cdnUrl}' \\
+  "${props.cdnUrl}" \\
   --hive-cdn-key '<hive_cdn_access_key>'`}
           />
         </div>
@@ -557,6 +558,7 @@ function FederationModalContent(props: {
         </p>
         {authenticateSection}
         <InputCopy
+          multiline
           value={`docker run --name hive-gateway --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
@@ -575,14 +577,17 @@ function FederationModalContent(props: {
           .
         </p>
       </TabsContent>
-      <TabsContent value="cdn" className="space-y-2 pt-2" variant="content">
+      <TabsContent value="cdn" variant="content">
         <p>For other tooling you can access the raw supergraph by sending a HTTP request.</p>
         <p>To access your schema from Hive's CDN, use the following endpoint:</p>
-        <InputCopy value={`${props.cdnUrl}/supergraph`} />
+        <div>
+          <InputCopy multiline value={`${props.cdnUrl}/supergraph`} />
+        </div>
         <p>Here is an example calling the endpoint using curl.</p>
         {authenticateSection}
         <div className="mt-2">
           <InputCopy
+            multiline
             value={`curl -H 'X-Hive-CDN-Key: <hive_cdn_access_key>' \\
   ${props.cdnUrl}/supergraph`}
           />

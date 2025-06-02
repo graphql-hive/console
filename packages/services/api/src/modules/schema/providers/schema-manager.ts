@@ -724,9 +724,9 @@ export class SchemaManager {
 
     if (schemaCheck.breakingSchemaChanges && schemaCheck.conditionalBreakingChangeMetadata) {
       for (const change of schemaCheck.breakingSchemaChanges) {
-        this.breakingSchemaChangeUsageHelper.registerUsageDataForBreakingSchemaChange(
+        this.breakingSchemaChangeUsageHelper.registerMetadataForBreakingSchemaChange(
           change,
-          schemaCheck.conditionalBreakingChangeMetadata.usage,
+          schemaCheck.conditionalBreakingChangeMetadata,
         );
       }
     }

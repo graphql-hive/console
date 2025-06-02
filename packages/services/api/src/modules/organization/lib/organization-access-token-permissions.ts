@@ -75,7 +75,7 @@ export const permissionGroups: Array<PermissionGroup> = [
       },
       {
         id: 'target:delete',
-        title: 'Create target',
+        title: 'Delete target',
         description: 'Delete targets',
       },
       {

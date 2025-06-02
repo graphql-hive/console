@@ -11,16 +11,16 @@ import { formatNumber, formatPercentage } from '../lib/number-formatting';
 export class BreakingSchemaChangeUsageHelper {
   constructor() {}
 
-  private breakingSchemaChangeToUsageMap = new WeakMap<
+  private breakingSchemaChangeToMetadataMap = new WeakMap<
     SchemaChangeType,
-    ConditionalBreakingChangeMetadata['usage']
+    ConditionalBreakingChangeMetadata
   >();
 
-  registerUsageDataForBreakingSchemaChange(
+  registerMetadataForBreakingSchemaChange(
     schemaChange: SchemaChangeType,
-    usage: ConditionalBreakingChangeMetadata['usage'],
+    metadata: ConditionalBreakingChangeMetadata,
   ) {
-    this.breakingSchemaChangeToUsageMap.set(schemaChange, usage);
+    this.breakingSchemaChangeToMetadataMap.set(schemaChange, metadata);
   }
 
   async getUsageDataForBreakingSchemaChange(schemaChange: SchemaChangeType) {
@@ -28,24 +28,23 @@ export class BreakingSchemaChangeUsageHelper {
       return null;
     }
 
-    const usageData = this.breakingSchemaChangeToUsageMap.get(schemaChange);
+    const metadata = this.breakingSchemaChangeToMetadataMap.get(schemaChange);
 
-    if (usageData == null) {
+    if (metadata == null) {
       return null;
     }
 
     return {
       topAffectedOperations: schemaChange.usageStatistics.topAffectedOperations.map(operation => {
-        const percentage = (operation.count / usageData.totalRequestCount) * 100;
+        const percentage = (operation.count / metadata.usage.totalRequestCount) * 100;
         return {
           ...operation,
-          countFormatted: formatNumber(operation.count),
           percentage,
-          percentageFormatted: formatPercentage(percentage),
+          targetIds: metadata.settings.targets.map(target => target.id),
         };
       }),
       topAffectedClients: schemaChange.usageStatistics.topAffectedClients.map(client => {
-        const percentage = (client.count / usageData.totalRequestCount) * 100;
+        const percentage = (client.count / metadata.usage.totalRequestCount) * 100;
 
         return {
           ...client,

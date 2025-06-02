@@ -37,10 +37,7 @@ function GraphQLOperationBody(props: {
 }
 
 const Operation_View_OperationBodyQuery = graphql(`
-  query GraphQLOperationBody_GetOperationBodyQuery(
-    $selector: TargetSelectorInput!
-    $hash: String!
-  ) {
+  query GraphQLOperationBody_GetOperationBodyQuery($selector: TargetSelectorInput!, $hash: ID!) {
     target(reference: { bySelector: $selector }) {
       id
       operation(hash: $hash) {
@@ -86,8 +83,8 @@ function OperationView({
   });
 
   const isNotNoQueryOrMutation =
-    result.data?.target?.operation?.type !== 'query' &&
-    result.data?.target?.operation?.type !== 'mutation';
+    result.data?.target?.operation?.type !== 'QUERY' &&
+    result.data?.target?.operation?.type !== 'MUTATION';
 
   return (
     <>

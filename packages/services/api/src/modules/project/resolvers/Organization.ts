@@ -6,8 +6,23 @@ export const Organization: Pick<
   OrganizationResolvers,
   'projectBySlug' | 'projects' | 'viewerCanCreateProject' | '__isTypeOf'
 > = {
-  projects: (organization, _, { injector }) => {
-    return injector.get(ProjectManager).getProjects({ organizationId: organization.id });
+  projects: async (organization, _, { injector }) => {
+    const projects = await injector
+      .get(ProjectManager)
+      .getProjects({ organizationId: organization.id });
+
+    return {
+      edges: projects.map(node => ({
+        cursor: '',
+        node,
+      })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
   viewerCanCreateProject: async (organization, _arg, { injector }) => {
     return injector.get(Session).canPerformAction({

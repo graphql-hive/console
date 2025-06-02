@@ -1,0 +1,124 @@
+---
+title: Contract Management via the GraphQL API
+description: Learn how to manage contracts via the Hive Console GraphQL API.
+---
+
+# Contract Management via the GraphQL API
+
+The contracts of a target can be managed via the Hive Console GraphQL API. For more information,
+please refer to our [schema contracts documentation](/docs/schema-registry/contracts).
+
+## Retrieve a list of all Contracts in Target
+
+Use the `Target.contracts` field for retrieving a list of all contracts within the target.
+
+```graphql
+query ContractTargets($targetId: ID!) {
+  target(reference: { byId: $targetId }) {
+    id
+    contracts {
+      edges {
+        node {
+          id
+          contractName
+          includeTags
+          excludeTags
+          removeUnreachableTypesFromPublicApiSchema
+          isDisabled
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+```
+
+## Retrieve a list of all Active Contracts in Target
+
+Use the `Target.activeContracts` field for retrieving a list of all contracts within the target.
+
+```graphql
+query ActiveContractTargets($targetId: ID!) {
+  target(reference: { byId: $targetId }) {
+    id
+    activeContracts {
+      edges {
+        node {
+          id
+          contractName
+          includeTags
+          excludeTags
+          removeUnreachableTypesFromPublicApiSchema
+          isDisabled
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+```
+
+### Create a Contract
+
+Use the `Mutation.createContract` field for creating a new contract.
+
+```graphql
+mutation CreateContract($input: CreateContractInput!) {
+  createContract(input: $input) {
+    ok {
+      createdContract {
+        id
+        contractName
+        includeTags
+        excludeTags
+        removeUnreachableTypesFromPublicApiSchema
+        isDisabled
+      }
+    }
+    error {
+      message
+      details {
+        target
+        contractName
+        includeTags
+        excludeTags
+      }
+    }
+  }
+}
+```
+
+## Disable a Contract
+
+Use the `Mutation.disableContract` field for disabling a contract. **Note:** A disabled contract
+cannot be made active again.
+
+```graphql
+mutation DisableContract($input: DisableContractInput!) {
+  disableContract(input: $input) {
+    ok {
+      disabledContract {
+        id
+        contractName
+        includeTags
+        excludeTags
+        removeUnreachableTypesFromPublicApiSchema
+        isDisabled
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Delete a Contract
+
+This is not possible. Instead, disable the contract.
