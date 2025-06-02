@@ -1,6 +1,17 @@
-import { ExecutionResult, print } from 'graphql';
+import { ExecutionResult, parse, print } from 'graphql';
 import { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import { sortSDL } from '@theguild/federation-composition';
 import { getServiceHost } from './utils';
+
+/**
+ * Sorts the SDL of a supergraph schema and removes any extra whitespace.
+ * Helps with schema assertions, especially the snapshot tests.
+ * @param sdl The SDL of a supergraph schema.
+ * @returns The normalized SDL.
+ */
+export function normalizeSupergraph(sdl: string): string {
+  return print(sortSDL(parse(sdl, { noLocation: true })));
+}
 
 export async function execute<TResult, TVariables>(
   params: {
@@ -55,7 +66,7 @@ export async function execute<TResult, TVariables>(
     rawBody: body,
     status: response.status,
     expectGraphQLErrors() {
-      if (!body.errors?.length) {
+      if (!body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have errors, but no errors were found!${detailsDump}`,
         );
@@ -64,7 +75,7 @@ export async function execute<TResult, TVariables>(
       return body.errors!;
     },
     expectNoGraphQLErrors: async () => {
-      if (body.errors?.length) {
+      if (body?.errors?.length) {
         throw new Error(
           `Expected GraphQL response to have no errors, but got ${
             body.errors.length

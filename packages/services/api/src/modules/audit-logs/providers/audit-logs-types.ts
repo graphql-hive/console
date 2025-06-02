@@ -355,6 +355,7 @@ const AuditLogClickhouseObjectModel = z.object({
   eventAction: z.enum(auditLogEventTypes as [string, ...string[]]),
   userId: z.string(),
   userEmail: z.string(),
+  accessTokenId: z.string(),
   metadata: z.string(),
 });
 

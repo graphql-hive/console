@@ -52,7 +52,9 @@ import { schema } from './schema'
 const plugin = useHive({
   enabled: true, // Enable/Disable Hive Client
   token: 'YOUR-TOKEN',
-  usage: true
+  usage: {
+    target: '<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>'
+  }
 })
 ```
 

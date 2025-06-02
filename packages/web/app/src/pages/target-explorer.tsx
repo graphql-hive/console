@@ -16,7 +16,7 @@ import {
   useSchemaExplorerContext,
 } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { noSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion, noValidSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -102,20 +102,20 @@ const TargetExplorerPageQuery = graphql(`
     $targetSlug: String!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
+      slug
     }
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -126,7 +126,6 @@ const TargetExplorerPageQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
         explorer(usage: { period: $period }) {
           metadataAttributes {
             name
@@ -135,16 +134,13 @@ const TargetExplorerPageQuery = graphql(`
           ...ExplorerPage_SchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      project {
+        id
+        type
       }
-    ) {
-      totalRequests
+      operationsStats(period: $period) {
+        totalRequests
+      }
     }
   }
 `);
@@ -166,7 +162,7 @@ function ExplorerPageContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
 
   useEffect(() => {
@@ -259,7 +255,7 @@ function ExplorerPageContent(props: {
                 </Alert>
               )}
               <SchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.explorer}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -269,7 +265,10 @@ function ExplorerPageContent(props: {
           ) : latestSchemaVersion ? (
             noValidSchemaVersion
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion
+              projectType={query.data?.target?.project.type ?? null}
+              recommendedAction="publish"
+            />
           )}
         </>
       )}

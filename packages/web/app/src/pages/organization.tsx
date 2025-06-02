@@ -229,24 +229,23 @@ const OrganizationProjectsPageQuery = graphql(`
     $chartResolution: Int!
     $period: DateRangeInput!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-      }
-    }
-    projects(selector: { organizationSlug: $organizationSlug }) {
-      total
-      nodes {
-        id
-        slug
-        ...ProjectCard_ProjectFragment
-        totalRequests(period: $period)
-        requestsOverTime(resolution: $chartResolution, period: $period) {
-          date
-          value
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      projects {
+        edges {
+          node {
+            id
+            slug
+            ...ProjectCard_ProjectFragment
+            totalRequests(period: $period)
+            requestsOverTime(resolution: $chartResolution, period: $period) {
+              date
+              value
+            }
+            schemaVersionsCount(period: $period)
+          }
         }
-        schemaVersionsCount(period: $period)
       }
     }
   }
@@ -295,15 +294,15 @@ function OrganizationPageContent(
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const projectsConnection = query.data?.projects;
+  const currentOrganization = query.data?.organization;
+  const projectsConnection = currentOrganization?.projects;
 
   const highestNumberOfRequests = useMemo(() => {
     let highest = 10;
 
-    if (projectsConnection?.nodes.length) {
-      for (const project of projectsConnection.nodes) {
-        for (const dataPoint of project.requestsOverTime) {
+    if (projectsConnection?.edges.length) {
+      for (const edge of projectsConnection.edges) {
+        for (const dataPoint of edge.node.requestsOverTime) {
           if (dataPoint.value > highest) {
             highest = dataPoint.value;
           }
@@ -321,30 +320,32 @@ function OrganizationPageContent(
 
     const searchPhrase = props.search;
     const newProjects = searchPhrase
-      ? projectsConnection.nodes.filter(project =>
-          project.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
+      ? projectsConnection.edges.filter(edge =>
+          edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
         )
-      : projectsConnection.nodes.slice();
+      : projectsConnection.edges.slice();
 
-    return newProjects.sort((a, b) => {
-      const diffRequests = b.totalRequests - a.totalRequests;
-      const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
+    return newProjects
+      .map(project => project.node)
+      .sort((a, b) => {
+        const diffRequests = b.totalRequests - a.totalRequests;
+        const diffVersions = b.schemaVersionsCount - a.schemaVersionsCount;
 
-      if (sortKey === 'requests' && diffRequests !== 0) {
-        return diffRequests * sortOrder;
-      }
+        if (sortKey === 'requests' && diffRequests !== 0) {
+          return diffRequests * sortOrder;
+        }
 
-      if (sortKey === 'versions' && diffVersions !== 0) {
-        return diffVersions * sortOrder;
-      }
+        if (sortKey === 'versions' && diffVersions !== 0) {
+          return diffVersions * sortOrder;
+        }
 
-      if (sortKey === 'name') {
-        return a.slug.localeCompare(b.slug) * sortOrder * -1;
-      }
+        if (sortKey === 'name') {
+          return a.slug.localeCompare(b.slug) * sortOrder * -1;
+        }
 
-      // falls back to sort by name in ascending order
-      return a.slug.localeCompare(b.slug);
-    });
+        // falls back to sort by name in ascending order
+        return a.slug.localeCompare(b.slug);
+      });
   }, [projectsConnection, props.search, sortKey, sortOrder]);
 
   if (query.error) {
@@ -450,7 +451,7 @@ function OrganizationPageContent(
             </div>
           </div>
           {currentOrganization && projectsConnection ? (
-            projectsConnection.total === 0 ? (
+            projectsConnection.edges.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
                 description='You can create a project by clicking the "Create Project" button'

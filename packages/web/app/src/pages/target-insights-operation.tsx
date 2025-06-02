@@ -33,15 +33,12 @@ function GraphQLOperationBody(props: {
     return <GraphQLHighlight className="pt-6" code={operation.body} />;
   }
 
-  return <div>Loading...</div>;
+  return <div>Operation not found.</div>;
 }
 
 const Operation_View_OperationBodyQuery = graphql(`
-  query GraphQLOperationBody_GetOperationBodyQuery(
-    $selector: TargetSelectorInput!
-    $hash: String!
-  ) {
-    target(selector: $selector) {
+  query GraphQLOperationBody_GetOperationBodyQuery($selector: TargetSelectorInput!, $hash: ID!) {
+    target(reference: { bySelector: $selector }) {
       id
       operation(hash: $hash) {
         type
@@ -86,8 +83,8 @@ function OperationView({
   });
 
   const isNotNoQueryOrMutation =
-    result.data?.target?.operation?.type !== 'query' &&
-    result.data?.target?.operation?.type !== 'mutation';
+    result.data?.target?.operation?.type !== 'QUERY' &&
+    result.data?.target?.operation?.type !== 'MUTATION';
 
   return (
     <>
@@ -147,7 +144,11 @@ function OperationView({
       )}
       <div className="mt-12 w-full rounded-md border border-gray-800 bg-gray-900/50 p-5">
         <Section.Title>Operation body</Section.Title>
-        <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        {result.fetching ? (
+          <div>Loading...</div>
+        ) : (
+          <GraphQLOperationBody operation={result.data?.target?.operation ?? null} />
+        )}
       </div>
     </>
   );
@@ -159,13 +160,11 @@ const OperationInsightsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        slug
-        rateLimit {
-          retentionInDays
-        }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      rateLimit {
+        retentionInDays
       }
     }
     hasCollectedOperations(
@@ -204,7 +203,7 @@ function OperationInsightsContent(props: {
     );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   if (!currentOrganization) {
     return null;

@@ -6,24 +6,37 @@ import { Callout } from '@theguild/components'
 
 # Max Tokens
 
-**Limit** the number of **tokens** in a GraphQL document.
+**Limit** the number of **tokens** in a GraphQL document. It is used to prevent **DOS attack**,
+**heap overflow** or **server overloading**. The token limit is often limited by the GraphQL parser,
+but this is not always the case and would lead to a fatal heap overflow.
 
-It is used to prevent **DOS attack**, **heap overflow** or **server overloading**.
+## Basic Configuration
 
-The token limit is often limited by the graphql parser, but this is not always the case and would
-lead to a fatal heap overflow.
+<Callout type="info">
+  Powered by [GraphQL Armor](https://escape.tech/graphql-armor/docs/plugins/max-tokens).
+</Callout>
 
-[Provided by GraphQL Armor](https://escape.tech/graphql-armor/docs/plugins/max-tokens)
+Hive Gateway ships with the basic "max tokens" security features. You can enable it by setting the
+`maxTokens` option to `true` or configure the amount of allowed tokens by passing a `number` to the
+option.
 
-## How to use?
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
 
-Install the plugin:
+export const gatewayConfig = defineConfig({
+  maxTokens: true // defaults to 1000
+})
+```
+
+## Advanced Configuration
+
+The built-in configuration options are limited and should be enough for most use-cases. However, if
+you need more control, you can configure more by installing the
+[GraphQL Armor Max Tokens plugin](https://escape.tech/graphql-armor/docs/plugins/max-tokens/).
 
 ```sh npm2yarn
 npm install @escape.tech/graphql-armor-max-tokens
 ```
-
-Then, add it to your plugins:
 
 ```ts filename="gateway.config.ts"
 import { maxTokensPlugin } from '@escape.tech/graphql-armor-max-tokens'
@@ -52,8 +65,3 @@ export const gatewayConfig = defineConfig({
   ]
 })
 ```
-
-## References
-
-- https://github.com/graphql/graphql-js/pull/3684
-- https://github.com/advisories/GHSA-p4qx-6w5p-4rj2

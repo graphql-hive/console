@@ -36,7 +36,7 @@ export class ResourceAssignments {
     resources: ResourceAssignmentGroup;
   }): Promise<GraphQLSchema.ResolversTypes['ResourceAssignment']> {
     if (args.resources.mode === '*') {
-      return { mode: 'all' };
+      return { mode: 'ALL' };
     }
     const projects = await this.storage.findProjectsByIds({
       projectIds: args.resources.projects.map(project => project.id),
@@ -54,7 +54,7 @@ export class ResourceAssignments {
     });
 
     return {
-      mode: 'granular' as const,
+      mode: 'GRANULAR' as const,
       projects: filteredProjects
         .map(projectAssignment => {
           const project = projects.get(projectAssignment.id);
@@ -67,9 +67,9 @@ export class ResourceAssignments {
             project,
             targets:
               projectAssignment.targets.mode === '*'
-                ? { mode: 'all' as const }
+                ? { mode: 'ALL' as const }
                 : {
-                    mode: 'granular' as const,
+                    mode: 'GRANULAR' as const,
                     targets: projectAssignment.targets.targets
                       .map(targetAssignment => {
                         const target = targets.get(targetAssignment.id);
@@ -80,18 +80,18 @@ export class ResourceAssignments {
                           target,
                           services:
                             targetAssignment.services.mode === '*'
-                              ? { mode: 'all' as const }
+                              ? { mode: 'ALL' as const }
                               : {
-                                  mode: 'granular' as const,
+                                  mode: 'GRANULAR' as const,
                                   services: targetAssignment.services.services.map(
                                     service => service.serviceName,
                                   ),
                                 },
                           appDeployments:
                             targetAssignment.appDeployments.mode === '*'
-                              ? { mode: 'all' as const }
+                              ? { mode: 'ALL' as const }
                               : {
-                                  mode: 'granular' as const,
+                                  mode: 'GRANULAR' as const,
                                   appDeployments:
                                     targetAssignment.appDeployments.appDeployments.map(
                                       deployment => deployment.appName,
@@ -124,7 +124,7 @@ export class ResourceAssignments {
       !input.projects ||
       // No need to resolve the projects if mode "all" is used.
       // We will not store the selection in the database.
-      input.mode === 'all'
+      input.mode === 'ALL'
     ) {
       return {
         mode: '*',
@@ -171,14 +171,14 @@ export class ResourceAssignments {
         type: 'project',
         id: project.id,
         targets: {
-          mode: record.targets.mode === 'all' ? '*' : 'granular',
+          mode: record.targets.mode === 'ALL' ? '*' : 'granular',
           targets: projectTargets,
         },
       });
 
       // No need to resolve the projects if mode "a;ll" is used.
       // We will not store the selection in the database.
-      if (record.targets.mode === 'all') {
+      if (record.targets.mode === 'ALL') {
         continue;
       }
 
@@ -217,7 +217,7 @@ export class ResourceAssignments {
           services:
             // monolith schemas do not have services.
             record.project.type === GraphQLSchema.ProjectType.SINGLE ||
-            targetRecord.services.mode === 'all'
+            targetRecord.services.mode === 'ALL'
               ? { mode: '*' }
               : {
                   mode: 'granular',
@@ -229,7 +229,7 @@ export class ResourceAssignments {
                     })) ?? [],
                 },
           appDeployments:
-            targetRecord.appDeployments.mode === 'all'
+            targetRecord.appDeployments.mode === 'ALL'
               ? { mode: '*' }
               : {
                   mode: 'granular',

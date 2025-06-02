@@ -92,7 +92,7 @@ export function connectGithub(server: FastifyInstance) {
         headers: {
           ...req.headers,
           'content-type': 'application/json',
-          'graphql-client-name': 'Hive App',
+          'graphql-client-name': 'hive-app',
           'graphql-client-version': env.release,
         },
         operationName: 'GithubIntegration_organizationByGitHubInstallationId',
@@ -150,7 +150,7 @@ async function ensureGithubIntegration(
     headers: {
       ...req.headers,
       'content-type': 'application/json',
-      'graphql-client-name': 'Hive App',
+      'graphql-client-name': 'hive-app',
       'graphql-client-version': env.release,
     },
     operationName: 'GithubIntegration_addGitHubIntegration',

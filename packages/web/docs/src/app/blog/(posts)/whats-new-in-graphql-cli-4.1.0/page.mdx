@@ -1,0 +1,92 @@
+---
+title: What's new in GraphQL CLI 4.1
+authors: ephelan
+tags: [graphql, node, graphql-cli, graphback]
+date: 2020-10-15
+description: GraphQL CLI - experience the modern way for developing full-stack GraphQL applications.
+---
+
+[GraphQL CLI](https://graphql-cli.com) is your one-stop shop for developing full-stack GraphQL
+applications in Node.js. With GraphQL CLI you can create and run a new GraphQL application in just a
+few seconds! Just declare your GraphQL schema, and you can perform code generation, schema
+validation, introspection and more through intuitive CLI commands.
+
+GraphQL CLI aggregates multiple community projects giving developers the best getting started
+experience. Tools included in the CLI are mature and developed over the years based on Guild's
+experience in pushing production ready GraphQL solutions and also through collaboration with Red Hat
+community projects.
+
+This post covers a number of enhancements added in GraphQL CLI 4.1, which will further improve your
+GraphQL development experience. Check out our previous post
+[**GraphQL CLI is back!**](/blog/graphql-cli-is-back) for a full overview of the library and its
+features.
+
+## Graphback
+
+All the templates are configured with [Graphback](https://graphback.dev), for both runtime and
+generation purposes. Graphback 1.0 has recently been released, check out their blog post
+[Announcing the Release of Graphback 1.0](https://graphback.dev/blog/2020/10/01/announcing-graphback-1.0)
+that goes into deeper details of Graphback's features and capabilities.
+
+To generate your schema and documents with Graphback, run `graphql generate` from your application
+root. See the [generate command docs](https://graphql-cli.com/generate) for a thorough explanation
+of this command and usage guides.
+
+## Serve Command
+
+The serve command is now powered by [graphql-serve](https://npmjs.com/package/graphql-serve),
+letting you start up an in-memory GraphQL server and playground in seconds - perfect for mocking and
+testing!
+
+```sh
+$ graphql serve --port 4000 ./model/datamodel.graphql
+
+Starting server...
+
+Listening at: http://localhost:4000/graphql
+```
+
+Check out the [serve command docs](https://graphql-cli.com/serve) for installation and usage guides!
+
+## Init Command Templates
+
+The `init` command is your gateway to creating your new GraphQL application with GraphQL CLI. You
+will be guided through some questions and after a few seconds a tailor-made starter application will
+be created!
+
+There are several improvements to all of our templates to make them cleaner and more
+production-ready. Additionally, we had added two new starter templates: a plain MongoDB template and
+a MongoDB template with out-of-the-box data synchronization support.
+
+To start using these templates, use the `init` command:
+
+```shell
+graphql init
+```
+
+## Other Updates
+
+We've built a new website to host the GraphQL CLI documentation! Check it out at
+[graphql-cli.com](https://graphql-cli.com).
+
+GraphQL CLI 4.1 has been updated to use the latest versions of
+[GraphQL Code Generator](https://graphql-code-generator.com) and
+[GraphQL Inspector](https://graphql-inspector.com), which are included as recommended, best practice
+workflows for developing production-ready GraphQL applications.
+
+## Try It Out
+
+Start using GraphQL CLI today to create your GraphQL application in just a few steps!
+
+The easiest way to get started is to initialize your new application with npx:
+
+```shell
+npx graphql-cli init
+```
+
+GraphQL CLI will guide you through some steps and in a few seconds your project will created and
+ready to use. Happy coding!
+
+As always, we want your feedback! We would love to hear your suggestions and ideas to help make
+GraphQL CLI even better. Reach out to us through [GitHub](https://github.com/urigo/graphql-cli) or
+join our [Discord community server](https://discord.gg/xud7bH9).

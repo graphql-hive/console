@@ -9,9 +9,13 @@ test.concurrent(`changing a target's slug should result changing its name`, asyn
 
   const renameResult = await updateTargetSlug(
     {
-      organizationSlug: organization.slug,
-      projectSlug: project.slug,
-      targetSlug: target.slug,
+      target: {
+        bySelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
       slug: 'bar',
     },
     ownerToken,
@@ -32,9 +36,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: target.slug,
       },
       ownerToken,
@@ -62,9 +70,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: firstTarget.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: firstTarget.slug,
+          },
+        },
         slug: secondTarget.slug,
       },
       ownerToken,
@@ -90,9 +102,13 @@ test.concurrent(
 
     await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project2.slug,
-        targetSlug: target2.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project2.slug,
+            targetSlug: target2.slug,
+          },
+        },
         slug: sharedSlug,
       },
       ownerToken,
@@ -100,9 +116,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: sharedSlug,
       },
       ownerToken,
@@ -124,9 +144,13 @@ test.concurrent(
 
     const renameResult = await updateTargetSlug(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
-        targetSlug: target.slug,
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
         slug: 'view',
       },
       ownerToken,
@@ -144,7 +168,7 @@ test.concurrent('organization member user can create a target', async ({ expect 
   const inviteMemberResult = await inviteMember(
     orgMemberEmail,
     undefined,
-    organization.memberRoles?.find(role => role.name === 'Admin')?.id,
+    organization.memberRoles?.edges?.find(edge => edge.node.name === 'Admin')?.node.id,
   );
 
   if (inviteMemberResult.ok == null) {
@@ -152,7 +176,7 @@ test.concurrent('organization member user can create a target', async ({ expect 
   }
 
   const joinMemberUsingCodeResult = await joinMemberUsingCode(
-    inviteMemberResult.ok.code,
+    inviteMemberResult.ok.createdOrganizationInvitation.code,
     orgMemberToken,
   ).then(r => r.expectNoGraphQLErrors());
 

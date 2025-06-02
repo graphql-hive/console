@@ -1,5 +1,5 @@
 import { parse } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 import { addInaccessibleToUnreachableTypes } from '../add-inaccessible-to-unreachable-types';
 import { composeFederationV2 } from '../compose';
 
@@ -43,9 +43,9 @@ test('Filters based on tags', async () => {
 
       directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
 
-      directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-
       directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+      directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
       directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
 

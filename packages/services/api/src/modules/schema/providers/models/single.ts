@@ -1,7 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { SingleOrchestrator } from '../orchestrators/single';
 import { ConditionalBreakingChangeDiffConfig, RegistryChecks } from '../registry-checks';
 import type { PublishInput } from '../schema-publisher';
 import type { Organization, Project, SingleSchema, Target } from './../../../../shared/entities';
@@ -22,7 +21,6 @@ import {
 })
 export class SingleModel {
   constructor(
-    private orchestrator: SingleOrchestrator,
     private checks: RegistryChecks,
     private logger: Logger,
   ) {}
@@ -44,6 +42,7 @@ export class SingleModel {
     baseSchema,
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
+    failDiffOnDangerousChange,
   }: {
     input: {
       sdl: string;
@@ -68,6 +67,7 @@ export class SingleModel {
     organization: Organization;
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: boolean;
   }): Promise<SchemaCheckResult> {
     const incoming: SingleSchema = {
       kind: 'single',
@@ -106,7 +106,6 @@ export class SingleModel {
     }
 
     const compositionCheck = await this.checks.composition({
-      orchestrator: this.orchestrator,
       targetId: selector.targetId,
       project,
       organization,
@@ -116,7 +115,6 @@ export class SingleModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator: this.orchestrator,
       version: comparedVersion,
       organization,
       project,
@@ -131,6 +129,7 @@ export class SingleModel {
         approvedChanges,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
       }),
       this.checks.policyCheck({
         selector,
@@ -178,6 +177,7 @@ export class SingleModel {
     latestComposable,
     baseSchema,
     conditionalBreakingChangeDiffConfig,
+    failDiffOnDangerousChange,
   }: {
     input: PublishInput;
     organization: Organization;
@@ -195,6 +195,7 @@ export class SingleModel {
     } | null;
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: boolean;
   }): Promise<SchemaPublishResult> {
     const incoming: SingleSchema = {
       kind: 'single',
@@ -234,7 +235,6 @@ export class SingleModel {
     }
 
     const compositionCheck = await this.checks.composition({
-      orchestrator: this.orchestrator,
       targetId: target.id,
       project,
       organization,
@@ -251,7 +251,6 @@ export class SingleModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator: this.orchestrator,
       version: comparedVersion,
       organization,
       project,
@@ -267,6 +266,7 @@ export class SingleModel {
         approvedChanges: null,
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+        failDiffOnDangerousChange,
       }),
     ]);
 

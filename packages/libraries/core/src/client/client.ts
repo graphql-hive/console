@@ -17,7 +17,14 @@ export function createHive(options: HivePluginOptions): HiveClient {
   let enabled = options.enabled ?? true;
 
   if (enabled === false) {
-    logIf(options.debug === true, 'plugin is not enabled.', logger.info);
+    logIf(
+      options.debug === true &&
+        // hive client can be used only for persisted documents, without the cdn or usage reporting.
+        // hence, we dont want a misleading log message below saying that the plugin is disabled
+        !options.experimental__persistedDocuments,
+      'Plugin is not enabled.',
+      logger.info,
+    );
   }
 
   if (!options.token && enabled) {
@@ -46,10 +53,16 @@ export function createHive(options: HivePluginOptions): HiveClient {
     await Promise.all([schemaReporter.dispose(), usage.dispose()]);
   }
 
+  const isOrganizationAccessToken = options.token?.startsWith('hvo1/') === true;
+
   // enabledOnly when `printTokenInfo` is `true` or `debug` is true and `printTokenInfo` is not `false`
-  const printTokenInfo = enabled
-    ? options.printTokenInfo === true || (!!options.debug && options.printTokenInfo !== false)
-    : false;
+  const printTokenInfo =
+    enabled &&
+    /** Access tokens using the `hvo1/` prefix cannot print any token information. */
+    isOrganizationAccessToken === false
+      ? options.printTokenInfo === true || (!!options.debug && options.printTokenInfo !== false)
+      : false;
+
   const infoLogger = createHiveLogger(logger, '[info]');
 
   const info = printTokenInfo

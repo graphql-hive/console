@@ -1,8 +1,10 @@
 import type { User } from '../../shared/entities';
 import { PermissionGroup, PermissionRecord } from '../organization/lib/permissions';
-import type { OrganizationAccessScope } from './providers/organization-access';
-import type { ProjectAccessScope } from './providers/project-access';
-import type { TargetAccessScope } from './providers/target-access';
+import type {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from './providers/scopes';
 
 export type OrganizationAccessScopeMapper = OrganizationAccessScope;
 export type ProjectAccessScopeMapper = ProjectAccessScope;

@@ -1,4 +1,4 @@
-import { readTokenInfo, waitFor } from 'testkit/flow';
+import { pollFor, readTokenInfo } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from '../../testkit/seed';
 
@@ -51,7 +51,17 @@ test.concurrent('deleting a token should clear the cache', async () => {
   // Fetch the token info again to make sure it's cached
   await expect(fetchTokenInfo()).resolves.toEqual(expect.objectContaining(expectedResult));
   // To make sure the cache is cleared, we need to wait for at least 5 seconds
-  await waitFor(5500);
+  await pollFor(
+    async () => {
+      try {
+        await fetchTokenInfo();
+        return false;
+      } catch (e) {
+        return true;
+      }
+    },
+    { maxWait: 5_500 },
+  );
   await expect(fetchTokenInfo()).rejects.toThrow();
 });
 

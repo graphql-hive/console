@@ -1,6 +1,8 @@
 /* eslint-disable no-process-env */
 import { createHash } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
+import * as GraphQLSchema from 'testkit/gql/graphql';
+import type { CompositeSchema } from '@hive/api/__generated__/types';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
@@ -93,6 +95,113 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         ).rejects.toMatchSnapshot('schemaCheck (breaking)');
       },
     );
+
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('publish validates the service name', async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaPublish([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            ...serviceUrlArgs,
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      });
+
+    test
+      .skipIf(projectType === ProjectType.Single)
+      .concurrent('check validates the service name', async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            '900',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('onlyNumbers');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'asdf$#%^#@!#',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).rejects.toMatchSnapshot('specialCharacters');
+
+        await expect(
+          schemaCheck([
+            '--registry.accessToken',
+            secret,
+            '--author',
+            'Kamil',
+            '--commit',
+            'abc123',
+            '--service',
+            'valid-name0',
+            'fixtures/init-schema.graphql',
+          ]),
+        ).resolves.toMatchSnapshot('success');
+      });
 
     test.concurrent(
       'publishing invalid schema SDL provides meaningful feedback for the user.',
@@ -277,6 +386,91 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         },
       );
 
+    test
+      .skipIf(projectType !== ProjectType.Federation)
+      .concurrent(
+        'can update a service without providing a url if previously published',
+        async ({ expect }) => {
+          const { createOrg } = await initSeed().createOwner();
+          const { inviteAndJoinMember, createProject } = await createOrg();
+          await inviteAndJoinMember();
+          const { createTargetAccessToken, compareToPreviousVersion, fetchVersions } =
+            await createProject(projectType);
+          const { secret } = await createTargetAccessToken({});
+          const cli = createCLI({
+            readonly: secret,
+            readwrite: secret,
+          });
+
+          const sdl = /* GraphQL */ `
+            type Query {
+              users: [User!]
+            }
+
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+            }
+          `;
+
+          await expect(
+            cli.publish({
+              sdl,
+              commit: 'push1',
+              serviceName,
+              serviceUrl,
+              expect: 'latest-composable',
+            }),
+          ).resolves.toMatchSnapshot('schema publish initial');
+
+          const sdl2 = /* GraphQL */ `
+            type Query {
+              users: [User!]
+            }
+
+            type User {
+              id: ID!
+              name: String!
+              email: String!
+              phone: String
+            }
+          `;
+
+          await expect(
+            cli.publish({
+              sdl: sdl2,
+              commit: 'push2',
+              serviceName,
+              serviceUrl: undefined,
+              expect: 'latest-composable',
+            }),
+          ).resolves.toMatchSnapshot('schema publish same url');
+
+          const versions = await fetchVersions(3);
+          expect(versions).toHaveLength(2);
+
+          const versionWithNewServiceUrl = versions[0];
+
+          const schema = versionWithNewServiceUrl.schemas.nodes?.[0];
+          expect(schema.__typename).toBe('CompositeSchema');
+          expect((schema as CompositeSchema).url).toBe('http://localhost:4000');
+
+          expect(await compareToPreviousVersion(versionWithNewServiceUrl.id)).toEqual(
+            expect.objectContaining({
+              target: expect.objectContaining({
+                schemaVersion: expect.objectContaining({
+                  safeSchemaChanges: {
+                    nodes: expect.anything(),
+                  },
+                  schemaCompositionErrors: null,
+                }),
+              }),
+            }),
+          );
+        },
+      );
+
     test.concurrent(
       'schema:fetch can fetch a schema with target:registry:read access',
       async ({ expect }) => {
@@ -351,6 +545,76 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
           type: 'sdl',
         });
         await expect(fetchCmd).resolves.toMatchSnapshot('latest sdl');
+      },
+    );
+
+    test.skipIf(projectType !== ProjectType.Single)(
+      'schema:check rejects a `--url` argument in single projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).rejects.toMatchSnapshot();
+      },
+    );
+
+    test.skipIf(projectType === ProjectType.Single)(
+      'schema:check accepts a `--url` argument in distributed projects',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { inviteAndJoinMember, createProject } = await createOrg();
+        await inviteAndJoinMember();
+        const { createTargetAccessToken } = await createProject(projectType);
+        const { secret } = await createTargetAccessToken({});
+
+        await expect(
+          schemaCheck(
+            [
+              '--registry.accessToken',
+              secret,
+              '--service',
+              'example',
+              '--url',
+              'https://example.graphql-hive.com/graphql',
+              '--author',
+              'Kamil',
+              'fixtures/init-schema.graphql',
+            ],
+            {
+              // set these environment variables to "emulate" a GitHub actions environment
+              // We set GITHUB_EVENT_PATH to "" because on our CI it can be present and we want
+              // consistent snapshot output behaviour.
+              GITHUB_ACTIONS: '1',
+              GITHUB_REPOSITORY: 'foo/foo',
+              GITHUB_EVENT_PATH: '',
+            },
+          ),
+        ).resolves.toMatchSnapshot();
       },
     );
   },
@@ -440,7 +704,7 @@ test.concurrent(
     ).rejects.toMatchInlineSnapshot(`
       :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
       exitCode------------------------------------------:
-      2
+      1
       stderr--------------------------------------------:
        ›   Error: No access (reason: "Missing permission for performing
        ›   'schemaVersion:publish' on resource")  (Request ID: __REQUEST_ID__)  [115]
@@ -495,5 +759,147 @@ test('schema:check gives correct error message for missing `--service` name flag
     ✖ Detected 1 error
 
        - Missing service name
+  `);
+});
+
+test('schema:check without `--target` flag fails for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken } = await createOrg();
+  const { privateAccessKey } = await createOrganizationAccessToken({
+    permissions: ['schemaCheck:create', 'project:describe'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    },
+  });
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      privateAccessKey,
+      '--author',
+      'Kamil',
+      'fixtures/init-schema.graphql',
+    ]),
+  ).rejects.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+    exitCode------------------------------------------:
+    3
+    stderr--------------------------------------------:
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
+     ›   > See https://__URL__ for
+     ›    a complete list of error codes and recommended fixes.
+     ›   To disable this message set HIVE_NO_ERROR_TIP=1
+    stdout--------------------------------------------:
+    __NONE__
+  `);
+});
+
+test('schema:check with `--target` flag succeeds for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken, createProject, organization } = await createOrg();
+  const { project, target } = await createProject();
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
+    permissions: ['schemaCheck:create', 'project:describe'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    },
+  });
+
+  await expect(
+    schemaCheck([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+      '--target',
+      `${organization.slug}/${project.slug}/${target.slug}`,
+      'fixtures/init-schema.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+    stdout--------------------------------------------:
+    ✔ Schema registry is empty, nothing to compare your schema with.
+    View full report:
+    http://__URL__
+  `);
+});
+
+test('schema:publish without `--target` flag fails for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken } = await createOrg();
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
+    permissions: ['project:describe', 'schemaVersion:publish'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    },
+  });
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+
+      'fixtures/init-schema.graphql',
+    ]),
+  ).rejects.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+    exitCode------------------------------------------:
+    3
+    stderr--------------------------------------------:
+     ›   Error: Missing 1 required argument:
+     ›   TARGET 	The target on which the action is performed. This can either be a
+     ›   slug following the format "$organizationSlug/$projectSlug/$targetSlug"
+     ›   (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+     ›   "a0f4c605-6541-4350-8cfe-b31f21a4bf80").  [102]
+     ›   > See https://__URL__ for
+     ›    a complete list of error codes and recommended fixes.
+     ›   To disable this message set HIVE_NO_ERROR_TIP=1
+    stdout--------------------------------------------:
+    __NONE__
+  `);
+});
+
+test('schema:publish with `--target` flag succeeds for organization access token', async ({
+  expect,
+}) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createOrganizationAccessToken, organization, createProject } = await createOrg();
+  const { project, target } = await createProject();
+  const { privateAccessKey: privateKey } = await createOrganizationAccessToken({
+    permissions: ['project:describe', 'schemaVersion:publish'],
+    resources: {
+      mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    },
+  });
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      privateKey,
+      '--author',
+      'Kamil',
+      '--target',
+      `${organization.slug}/${project.slug}/${target.slug}`,
+      'fixtures/init-schema.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+    :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+    stdout--------------------------------------------:
+    ✔ Published initial schema.
+    ℹ Available at http://__URL__
   `);
 });

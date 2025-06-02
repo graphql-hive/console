@@ -1,8 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { FederationOrchestrator } from '../orchestrators/federation';
-import { StitchingOrchestrator } from '../orchestrators/stitching';
 import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from '../registry-checks';
 import { swapServices } from '../schema-helper';
 import { shouldUseLatestComposableVersion } from '../schema-manager';
@@ -39,8 +37,6 @@ import {
 })
 export class CompositeModel {
   constructor(
-    private federationOrchestrator: FederationOrchestrator,
-    private stitchingOrchestrator: StitchingOrchestrator,
     private checks: RegistryChecks,
     private logger: Logger,
   ) {}
@@ -53,6 +49,7 @@ export class CompositeModel {
     > | null;
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
@@ -80,6 +77,7 @@ export class CompositeModel {
             approvedChanges: contract.approvedChanges ?? null,
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
+            failDiffOnDangerousChange: args.failDiffOnDangerousChange,
           }),
         };
       }),
@@ -104,10 +102,12 @@ export class CompositeModel {
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
     contracts,
+    failDiffOnDangerousChange,
   }: {
     input: {
       sdl: string;
       serviceName: string;
+      url: string | null;
     };
     selector: {
       organizationId: string;
@@ -130,6 +130,7 @@ export class CompositeModel {
     organization: Organization;
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -146,7 +147,9 @@ export class CompositeModel {
       sdl: input.sdl,
       service_name: input.serviceName,
       service_url:
-        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ?? 'temp',
+        input.url ??
+        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ??
+        'temp',
       action: 'PUSH',
       metadata: null,
     };
@@ -182,14 +185,7 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
-    this.logger.debug('Using orchestrator of type %s', orchestrator.type);
-
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: selector.targetId,
       project,
       organization,
@@ -208,7 +204,6 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: comparedVersion,
       organization,
       project,
@@ -219,6 +214,7 @@ export class CompositeModel {
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
+      failDiffOnDangerousChange,
     });
     this.logger.info('Contract checks: %o', contractChecks);
 
@@ -231,6 +227,7 @@ export class CompositeModel {
         incomingSdl:
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
+        failDiffOnDangerousChange,
       }),
       this.checks.policyCheck({
         selector,
@@ -301,6 +298,7 @@ export class CompositeModel {
     baseSchema,
     contracts,
     conditionalBreakingChangeDiffConfig,
+    failDiffOnDangerousChange,
   }: {
     input: PublishInput;
     project: Project;
@@ -320,6 +318,7 @@ export class CompositeModel {
     baseSchema: string | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaPublishResult> {
     const incoming: PushedCompositeSchema = {
       kind: 'composite',
@@ -330,7 +329,7 @@ export class CompositeModel {
       target: target.id,
       date: Date.now(),
       service_name: input.service || '',
-      service_url: input.url || '',
+      service_url: input.url || null,
       action: 'PUSH',
       metadata: input.metadata ?? null,
     };
@@ -338,6 +337,10 @@ export class CompositeModel {
     const latestVersion = latest;
     const schemaSwapResult = latestVersion ? swapServices(latestVersion.schemas, incoming) : null;
     const previousService = schemaSwapResult?.existing;
+
+    // default to previous service url if not provided.
+    incoming.service_url = incoming.service_url ?? previousService?.service_url ?? '';
+
     const schemas = schemaSwapResult?.schemas ?? [incoming];
     schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
     const compareToLatestComposable = shouldUseLatestComposableVersion(
@@ -417,13 +420,7 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
-
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: target.id,
       project,
       organization,
@@ -443,6 +440,21 @@ export class CompositeModel {
 
     if (
       compositionCheck.status === 'failed' &&
+      (compositionCheck.reason.includesNetworkError || compositionCheck.reason.includesException)
+    ) {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.CompositionFailure,
+            compositionErrors: compositionCheck.reason.errorsBySource.composition,
+          },
+        ],
+      };
+    }
+
+    if (
+      compositionCheck.status === 'failed' &&
       compositionCheck.reason.errorsBySource.graphql.length > 0 &&
       !compareToLatestComposable
     ) {
@@ -458,7 +470,6 @@ export class CompositeModel {
     }
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: schemaVersionToCompareAgainst,
       organization,
       project,
@@ -475,12 +486,14 @@ export class CompositeModel {
       approvedChanges: null,
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+      failDiffOnDangerousChange,
     });
 
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
+      failDiffOnDangerousChange,
     });
 
     const messages: string[] = [];
@@ -542,6 +555,7 @@ export class CompositeModel {
     baseSchema,
     conditionalBreakingChangeDiffConfig,
     contracts,
+    failDiffOnDangerousChange,
   }: {
     input: {
       serviceName: string;
@@ -566,6 +580,7 @@ export class CompositeModel {
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaDeleteResult> {
     const incoming: DeletedCompositeSchema = {
       kind: 'composite',
@@ -598,15 +613,10 @@ export class CompositeModel {
       };
     }
 
-    const orchestrator =
-      project.type === ProjectType.FEDERATION
-        ? this.federationOrchestrator
-        : this.stitchingOrchestrator;
     const schemas = latestVersion.schemas.filter(s => s.service_name !== input.serviceName);
     schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
 
     const compositionCheck = await this.checks.composition({
-      orchestrator,
       targetId: selector.target,
       project,
       organization,
@@ -625,7 +635,6 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      orchestrator,
       version: compareToLatestComposable ? latestComposable : latest,
       organization,
       project,
@@ -642,12 +651,14 @@ export class CompositeModel {
       approvedChanges: null,
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
+      failDiffOnDangerousChange,
     });
 
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
+      failDiffOnDangerousChange,
     });
 
     if (

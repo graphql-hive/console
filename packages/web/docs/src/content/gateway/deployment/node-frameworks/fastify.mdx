@@ -18,54 +18,71 @@ So you can benefit from the powerful plugins of Fastify ecosystem with Hive Gate
 
 ## Example
 
+In order to connect Fastify's logger to the gateway, you need to install the
+`@graphql-hive/logger-pino` package together with `@graphql-hive/gateway-runtime` and `fastify`.
+
+```sh npm2yarn
+npm i @graphql-hive/gateway-runtime @graphql-hive/logger-pino fastify
+```
+
 ```ts
-import fastify, { FastifyReply, FastifyRequest } from 'fastify'
+import fastify, { type FastifyReply, type FastifyRequest } from 'fastify'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { createLoggerFromPino } from '@graphql-hive/logger-pino'
+
+// Request ID header used for tracking requests
+const requestIdHeader = 'x-request-id'
 
 // This is the fastify instance you have created
-const app = fastify({ logger: true })
+const app = fastify({
+  logger: true,
+  // Use our custom request id header
+  requestIdHeader,
+  // Align with Hive Gateway's request id log label
+  requestIdLogLabel: 'requestId',
+  // Check the header first, then generate a new one if not found
+  genReqId: (req): string =>
+    req.headers[requestIdHeader]?.toString() || gw.fetchAPI.crypto.randomUUID()
+})
 
-const serveRuntime = createGatewayRuntime<{
+// This will allow us to access Fastify request and reply objects in the gateway
+interface FastifyContext {
   req: FastifyRequest
   reply: FastifyReply
-}>({
-  // Integrate Fastify logger
-  logging: {
-    debug: (...args) => args.forEach(arg => app.log.debug(arg)),
-    info: (...args) => args.forEach(arg => app.log.info(arg)),
-    warn: (...args) => args.forEach(arg => app.log.warn(arg)),
-    error: (...args) => args.forEach(arg => app.log.error(arg))
-  }
+}
+
+const gateway = createGatewayRuntime<FastifyContext>({
+  // Integrate Fastify's logger / Pino with the gateway logger
+  logging: createLoggerFromPino(app.log),
+  // Align with Fastify
+  requestId: {
+    // Use the same header name as Fastify
+    headerName: requestIdHeader,
+    // Use the request id from Fastify (see `FastifyContext`)
+    generateRequestId: ({ context }) => context.req.id
+  },
+  // Point to the supergraph
+  supergraph: './supergraph.graphql'
 })
 
-/**
- * We pass the incoming HTTP request to Hive Gateway
- * and handle the response using Fastify's `reply` API
- * Learn more about `reply` https://www.fastify.io/docs/latest/Reply/
- **/
+// Bind the gateway to Fastify
 app.route({
-  // Bind to the Hive Gateway's endpoint to avoid rendering on any path
-  url: serveRuntime.graphqlEndpoint,
+  // "*" is recommendeded in order to handle landing page, readiness and other related endpoints
+  url: '*',
   method: ['GET', 'POST', 'OPTIONS'],
-  handler: async (req, reply) => {
-    // Second parameter adds Fastify's `req` and `reply` to the GraphQL Context
-    const response = await serveRuntime.handleNodeRequestAndResponse(req, reply, {
-      req,
-      reply
-    })
-    response.headers.forEach((value, key) => {
-      reply.header(key, value)
-    })
-
-    reply.status(response.status)
-
-    reply.send(response.body)
-
-    return reply
-  }
+  // Connect the gateway to Fastify route
+  handler: (req, reply) => gateway.handleNodeRequestAndResponse(req, reply, { req, reply })
 })
 
-app.listen(4000)
+const port = 4000
+
+app.listen({ port, host: '0.0.0.0' }, err => {
+  if (err) {
+    console.error('Error starting gateway', err)
+    process.exit(1)
+  }
+  console.log(`Gateway listening on port ${port}`)
+})
 ```
 
 ## Add dummy content type parser for File Uploads

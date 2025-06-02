@@ -20,7 +20,7 @@ test("should log that it's not enabled", async () => {
     .catch(() => 'ERROR');
 
   expect(logger.info).toHaveBeenCalledWith(
-    expect.stringContaining(`[hive] plugin is not enabled.`),
+    expect.stringContaining(`[hive] Plugin is not enabled.`),
   );
   expect(result).toBe('OK');
 });

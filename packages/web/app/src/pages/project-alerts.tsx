@@ -165,11 +165,15 @@ function Alerts(props: {
 
 const ProjectAlertsPageQuery = graphql(`
   query ProjectAlertsPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
       id
       targets {
-        nodes {
-          ...CreateAlertModal_TargetFragment
+        edges {
+          node {
+            ...CreateAlertModal_TargetFragment
+          }
         }
       }
       alerts {
@@ -226,7 +230,7 @@ function AlertsPageContent(props: { organizationSlug: string; projectSlug: strin
 
   const alerts = currentProject?.alerts || [];
   const channels = currentProject?.alertChannels || [];
-  const targets = currentProject?.targets?.nodes || [];
+  const targets = currentProject?.targets?.edges.map(edge => edge.node) || [];
 
   return (
     <div>

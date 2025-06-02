@@ -13,12 +13,15 @@ const ResourceSelector_OrganizationFragment = graphql(`
     id
     slug
     projects {
-      nodes {
-        id
-        slug
-        type
+      edges {
+        node {
+          id
+          slug
+          type
+        }
       }
     }
+    isAppDeploymentsEnabled
   }
 `);
 
@@ -33,9 +36,11 @@ const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
         id
         type
         targets {
-          nodes {
-            id
-            slug
+          edges {
+            node {
+              id
+              slug
+            }
           }
         }
       }
@@ -55,9 +60,11 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
         id
         type
         targets {
-          nodes {
-            id
-            slug
+          edges {
+            node {
+              id
+              slug
+            }
           }
         }
         target: targetBySlug(targetSlug: $targetSlug) {
@@ -65,10 +72,12 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
           latestValidSchemaVersion {
             id
             schemas {
-              nodes {
-                ... on CompositeSchema {
-                  id
-                  service
+              edges {
+                node {
+                  ... on CompositeSchema {
+                    id
+                    service
+                  }
                 }
               }
             }
@@ -79,10 +88,57 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
   }
 `);
 
+/**
+ * This is the `GraphQLSchema.ResourceAssignmentInput` type, but with the slug values for projects and targets included.
+ */
+export type ResourceSelection = Omit<GraphQLSchema.ResourceAssignmentInput, 'projects'> & {
+  projects: Array<
+    Omit<GraphQLSchema.ProjectResourceAssignmentInput, 'targets'> & {
+      projectSlug: string;
+      targets: Omit<GraphQLSchema.ProjectTargetsResourceAssignmentInput, 'targets'> & {
+        targets: Array<
+          GraphQLSchema.TargetResourceAssignmentInput & {
+            targetSlug: string;
+          }
+        >;
+      };
+    }
+  >;
+};
+
+/**
+ * Converts `ResourceSelection` to `GraphQLSchema.ResourceAssignmentInput` for sending to the GraphQL API.
+ * `ResourceSelection` contains fields such as `projectSlug` and `targetSlug`, which are not within the `GraphQLSchema.ResourceAssignmentInput`
+ * type, but TypeScript does not catch sending these properties to the API...
+ */
+export function resourceSlectionToGraphQLSchemaResourceAssignmentInput(
+  input: ResourceSelection,
+): GraphQLSchema.ResourceAssignmentInput {
+  return {
+    mode: input.mode,
+    projects: input.projects.map(project => ({
+      projectId: project.projectId,
+      targets: {
+        mode: project.targets.mode,
+        targets: project.targets.targets.map(target => ({
+          targetId: target.targetId,
+          services: target.services,
+          appDeployments: target.appDeployments,
+        })),
+      },
+    })),
+  };
+}
+
+const enum ServicesAppsState {
+  service,
+  apps,
+}
+
 export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
-  selection: GraphQLSchema.ResourceAssignmentInput;
-  onSelectionChange: (selection: GraphQLSchema.ResourceAssignmentInput) => void;
+  selection: ResourceSelection;
+  onSelectionChange: (selection: ResourceSelection) => void;
 }) {
   const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
   const [breadcrumb, setBreadcrumb] = useState(
@@ -91,60 +147,63 @@ export function ResourceSelector(props: {
       | { projectId: string; targetId?: undefined }
       | { projectId: string; targetId: string },
   );
+  // whether we show the service or apps in the last tab
+  const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
   const projectState = useMemo(() => {
-    if (props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All) {
+    if (props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
       return null;
     }
 
     type SelectedItem = {
-      project: (typeof organization.projects.nodes)[number];
+      project: (typeof organization.projects.edges)[number]['node'];
       projectSelection: GraphQLSchema.ProjectResourceAssignmentInput;
     };
 
-    type NotSelectedItem = (typeof organization.projects.nodes)[number];
+    type NotSelectedItem = (typeof organization.projects.edges)[number]['node'];
 
     const selectedProjects: Array<SelectedItem> = [];
     const notSelectedProjects: Array<NotSelectedItem> = [];
 
     let activeProject: null | SelectedItem = null;
 
-    for (const project of organization.projects.nodes) {
+    for (const edge of organization.projects.edges) {
       const projectSelection = props.selection.projects?.find(
-        item => item.projectId === project.id,
+        item => item.projectId === edge.node.id,
       );
 
       if (projectSelection) {
-        selectedProjects.push({ project, projectSelection });
+        selectedProjects.push({ project: edge.node, projectSelection });
 
-        if (breadcrumb?.projectId === project.id) {
-          activeProject = { project, projectSelection };
+        if (breadcrumb?.projectId === edge.node.id) {
+          activeProject = { project: edge.node, projectSelection };
         }
 
         continue;
       }
 
-      notSelectedProjects.push(project);
+      notSelectedProjects.push(edge.node);
     }
 
     return {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
       activeProject,
-      addProject(item: (typeof organization.projects.nodes)[number]) {
+      addProject(item: (typeof organization.projects.edges)[number]['node']) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects?.push({
               projectId: item.id,
+              projectSlug: item.slug,
               targets: {
-                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
                 targets: [],
               },
             });
           }),
         );
       },
-      removeProject(item: (typeof organization.projects.nodes)[number]) {
+      removeProject(item: (typeof organization.projects.edges)[number]['node']) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects = state.projects?.filter(project => project.projectId !== item.id);
@@ -158,7 +217,7 @@ export function ResourceSelector(props: {
         });
       },
     };
-  }, [organization.projects.nodes, props.selection, breadcrumb?.projectId]);
+  }, [organization.projects.edges, props.selection, breadcrumb?.projectId]);
 
   const [organizationProjectTargets] = useQuery({
     query: ResourceSelector_OrganizationProjectTargestQuery,
@@ -171,7 +230,7 @@ export function ResourceSelector(props: {
 
   const targetState = useMemo(() => {
     if (
-      !organizationProjectTargets?.data?.organization?.project?.targets?.nodes ||
+      !organizationProjectTargets?.data?.organization?.project?.targets?.edges ||
       !projectState?.activeProject
     ) {
       return null;
@@ -182,7 +241,7 @@ export function ResourceSelector(props: {
 
     if (
       projectState.activeProject.projectSelection.targets.mode ===
-      GraphQLSchema.ResourceAssignmentMode.All
+      GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
         selection: '*',
@@ -191,7 +250,7 @@ export function ResourceSelector(props: {
             produce(props.selection, state => {
               const project = state.projects?.find(project => project.projectId === projectId);
               if (!project) return;
-              project.targets.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+              project.targets.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
             }),
           );
         },
@@ -199,7 +258,7 @@ export function ResourceSelector(props: {
     }
 
     type SelectedItem = {
-      target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
       targetSelection: Exclude<
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
@@ -207,7 +266,7 @@ export function ResourceSelector(props: {
     };
 
     type NotSelectedItem =
-      (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
 
     const selected: Array<SelectedItem> = [];
     const notSelected: Array<NotSelectedItem> = [];
@@ -217,27 +276,27 @@ export function ResourceSelector(props: {
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
       >[number];
-      target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
     } = null;
 
-    for (const target of organizationProjectTargets.data.organization.project.targets.nodes) {
+    for (const edge of organizationProjectTargets.data.organization.project.targets.edges) {
       const targetSelection = projectState.activeProject.projectSelection.targets.targets?.find(
-        item => item.targetId === target.id,
+        item => item.targetId === edge.node.id,
       );
 
       if (targetSelection) {
-        selected.push({ target, targetSelection });
+        selected.push({ target: edge.node, targetSelection });
 
-        if (breadcrumb?.targetId === target.id) {
+        if (breadcrumb?.targetId === edge.node.id) {
           activeTarget = {
             targetSelection,
-            target,
+            target: edge.node,
           };
         }
         continue;
       }
 
-      notSelected.push(target);
+      notSelected.push(edge.node);
     }
 
     return {
@@ -248,24 +307,25 @@ export function ResourceSelector(props: {
       activeTarget,
       activeProject: projectState.activeProject,
       addTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
+        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            const project = state.projects?.find(project => project.projectId === projectId);
+            const project = state.projects.find(project => project.projectId === projectId);
             if (!project) return;
-            project.targets.targets?.push({
+            project.targets.targets.push({
               targetId: item.id,
+              targetSlug: item.slug,
               appDeployments: {
-                mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
                 appDeployments: [],
               },
               services: {
                 mode:
                   // for single projects we choose "All" by default as there is no granular selection available
                   projectType === GraphQLSchema.ProjectType.Single
-                    ? GraphQLSchema.ResourceAssignmentMode.All
-                    : GraphQLSchema.ResourceAssignmentMode.Granular,
+                    ? GraphQLSchema.ResourceAssignmentModeType.All
+                    : GraphQLSchema.ResourceAssignmentModeType.Granular,
                 services: [],
               },
             });
@@ -273,7 +333,7 @@ export function ResourceSelector(props: {
         );
       },
       removeTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
+        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
@@ -299,7 +359,7 @@ export function ResourceSelector(props: {
           produce(props.selection, state => {
             const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
-            project.targets.mode = GraphQLSchema.ResourceAssignmentMode.All;
+            project.targets.mode = GraphQLSchema.ResourceAssignmentModeType.All;
           }),
         );
         setBreadcrumb({ projectId });
@@ -307,7 +367,7 @@ export function ResourceSelector(props: {
     };
   }, [
     projectState?.activeProject,
-    organizationProjectTargets?.data?.organization?.project?.targets?.nodes,
+    organizationProjectTargets?.data?.organization?.project?.targets?.edges,
     breadcrumb?.targetId,
   ]);
 
@@ -326,7 +386,8 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationProjectTarget.data?.organization?.project
+      !organizationProjectTarget.data?.organization?.project ||
+      serviceAppsState !== ServicesAppsState.service
     ) {
       return null;
     }
@@ -342,7 +403,7 @@ export function ResourceSelector(props: {
 
     if (
       targetState.activeTarget.targetSelection.services.mode ===
-      GraphQLSchema.ResourceAssignmentMode.All
+      GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
         selection: '*' as const,
@@ -353,7 +414,7 @@ export function ResourceSelector(props: {
               if (!project) return;
               const target = project.targets.targets?.find(target => target.targetId === targetId);
               if (!target) return;
-              target.services.mode = GraphQLSchema.ResourceAssignmentMode.Granular;
+              target.services.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
             }),
           );
         },
@@ -368,8 +429,9 @@ export function ResourceSelector(props: {
     if (
       organizationProjectTarget.data.organization.project.target?.latestValidSchemaVersion?.schemas
     ) {
-      for (const schema of organizationProjectTarget.data.organization.project.target
-        .latestValidSchemaVersion.schemas.nodes) {
+      for (const edge of organizationProjectTarget.data.organization.project.target
+        .latestValidSchemaVersion.schemas.edges) {
+        const schema = edge.node;
         if (
           schema.__typename === 'CompositeSchema' &&
           schema.service &&
@@ -393,7 +455,7 @@ export function ResourceSelector(props: {
             const target = project.targets.targets?.find(target => target.targetId === targetId);
 
             if (!target) return;
-            target.services.mode = GraphQLSchema.ResourceAssignmentMode.All;
+            target.services.mode = GraphQLSchema.ResourceAssignmentModeType.All;
           }),
         );
       },
@@ -432,13 +494,122 @@ export function ResourceSelector(props: {
         );
       },
     };
-  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject, props.selection]);
+  }, [
+    targetState?.activeTarget,
+    breadcrumb,
+    projectState?.activeProject,
+    props.selection,
+    serviceAppsState,
+  ]);
+
+  const appsState = useMemo(() => {
+    if (
+      !projectState?.activeProject ||
+      !targetState?.activeTarget ||
+      !breadcrumb?.targetId ||
+      serviceAppsState !== ServicesAppsState.apps ||
+      !organization.isAppDeploymentsEnabled
+    ) {
+      return null;
+    }
+
+    const projectId = projectState.activeProject.projectSelection.projectId;
+    const targetId = targetState.activeTarget.targetSelection.targetId;
+
+    if (
+      targetState.activeTarget.targetSelection.services.mode ===
+      GraphQLSchema.ResourceAssignmentModeType.All
+    ) {
+      return {
+        selection: '*' as const,
+        setGranular() {
+          props.onSelectionChange(
+            produce(props.selection, state => {
+              const project = state.projects?.find(project => project.projectId === projectId);
+              if (!project) return;
+              const target = project.targets.targets?.find(target => target.targetId === targetId);
+              if (!target) return;
+              target.appDeployments.mode = GraphQLSchema.ResourceAssignmentModeType.Granular;
+            }),
+          );
+        },
+      };
+    }
+
+    const selectedApps: GraphQLSchema.AppDeploymentResourceAssignmentInput[] = [
+      ...(targetState.activeTarget.targetSelection.appDeployments.appDeployments ?? []),
+    ];
+    // TODO: populate this with service state
+    const notSelectedApps: Array<string> = [];
+
+    return {
+      selection: {
+        selected: selectedApps,
+        notSelected: notSelectedApps,
+      },
+      setAll() {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+
+            if (!target) return;
+            target.appDeployments.mode = GraphQLSchema.ResourceAssignmentModeType.All;
+          }),
+        );
+      },
+      addApp(appName: string) {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+            if (
+              !target ||
+              target.appDeployments.appDeployments?.find(
+                appDeployment => appDeployment.appDeployment === appName,
+              )
+            ) {
+              return;
+            }
+
+            target.appDeployments.appDeployments?.push({
+              appDeployment: appName,
+            });
+          }),
+        );
+      },
+      removeApp(appName: string) {
+        props.onSelectionChange(
+          produce(props.selection, state => {
+            const project = state.projects?.find(project => project.projectId === projectId);
+            if (!project) return;
+            const target = project.targets.targets?.find(target => target.targetId === targetId);
+            if (!target) {
+              return;
+            }
+            target.appDeployments.appDeployments = target.appDeployments.appDeployments?.filter(
+              appDeployment => appDeployment.appDeployment !== appName,
+            );
+          }),
+        );
+      },
+    };
+  }, [
+    serviceAppsState,
+    projectState?.activeProject,
+    targetState?.activeTarget,
+    breadcrumb?.targetId,
+    props.selection,
+    props.onSelectionChange,
+  ]);
 
   return (
     <Tabs
       defaultValue="granular"
       value={
-        props.selection.mode === GraphQLSchema.ResourceAssignmentMode.All ? 'full' : 'granular'
+        props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All ? 'full' : 'granular'
       }
     >
       <TabsList variant="content" className="mt-1">
@@ -448,7 +619,7 @@ export function ResourceSelector(props: {
           onClick={() => {
             props.onSelectionChange({
               ...props.selection,
-              mode: GraphQLSchema.ResourceAssignmentMode.All,
+              mode: GraphQLSchema.ResourceAssignmentModeType.All,
             });
             setBreadcrumb(null);
           }}
@@ -461,7 +632,7 @@ export function ResourceSelector(props: {
           onClick={() => {
             props.onSelectionChange({
               ...props.selection,
-              mode: GraphQLSchema.ResourceAssignmentMode.Granular,
+              mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
             });
           }}
         >
@@ -503,7 +674,32 @@ export function ResourceSelector(props: {
                   )}
                 </div>
                 <div className="flex flex-1 items-baseline rounded-tr-sm border-x border-t border-transparent border-x-inherit border-t-inherit px-2 py-1">
-                  <span className="font-bold">Services</span>
+                  <span className="font-bold">
+                    {organization.isAppDeploymentsEnabled ? (
+                      <>
+                        <button
+                          className={cn(
+                            serviceAppsState === ServicesAppsState.service && 'text-orange-500',
+                          )}
+                          onClick={() => setServiceAppsState(ServicesAppsState.service)}
+                        >
+                          Services
+                        </button>{' '}
+                        /{' '}
+                        <button
+                          className={cn(
+                            serviceAppsState === ServicesAppsState.apps && 'text-orange-500',
+                          )}
+                          onClick={() => setServiceAppsState(ServicesAppsState.apps)}
+                        >
+                          Apps
+                        </button>
+                      </>
+                    ) : (
+                      <>Services</>
+                    )}
+                  </span>
+                  {/** Service All / Granular Toggle */}
                   {serviceState && serviceState !== 'none' && (
                     <div className="ml-auto text-xs">
                       <button
@@ -521,9 +717,28 @@ export function ResourceSelector(props: {
                       </button>
                     </div>
                   )}
+                  {/** Apps All / Granular Toggle */}
+                  {appsState && (
+                    <div className="ml-auto text-xs">
+                      <button
+                        className={cn(appsState.selection !== '*' && 'text-orange-500')}
+                        onClick={appsState.setGranular}
+                      >
+                        Select
+                      </button>
+                      {' / '}
+                      <button
+                        className={cn('mr-1', appsState.selection === '*' && 'text-orange-500')}
+                        onClick={appsState.setAll}
+                      >
+                        All
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-0 flex min-h-[250px] flex-wrap rounded-sm">
+                {/** Projects Content */}
                 <div className="flex flex-1 flex-col border pt-2">
                   <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
                     access granted
@@ -535,7 +750,7 @@ export function ResourceSelector(props: {
                         title={
                           selection.project.slug +
                           (selection.projectSelection.targets.mode ===
-                          GraphQLSchema.ResourceAssignmentMode.All
+                          GraphQLSchema.ResourceAssignmentModeType.All
                             ? ' (all targets, all services)'
                             : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
                         }
@@ -566,6 +781,7 @@ export function ResourceSelector(props: {
                   )}
                 </div>
 
+                {/** Targets Content */}
                 <div className="flex flex-1 flex-col border-y border-r pt-2">
                   {targetState === null ? (
                     <div className="text-muted-foreground px-2 text-sm">
@@ -592,7 +808,7 @@ export function ResourceSelector(props: {
                                   GraphQLSchema.ProjectType.Single
                                     ? ' (full access)'
                                     : selection.targetSelection.services.mode ===
-                                        GraphQLSchema.ResourceAssignmentMode.All
+                                        GraphQLSchema.ResourceAssignmentModeType.All
                                       ? ' (all services)'
                                       : ` (${selection.targetSelection.services.services?.length ?? 0} service${selection.targetSelection.services?.services?.length === 1 ? '' : 's'})`)
                                 }
@@ -635,79 +851,160 @@ export function ResourceSelector(props: {
                     </>
                   )}
                 </div>
-                <div className="flex flex-1 flex-col border-y border-r pt-2">
-                  {projectState.activeProject?.projectSelection.targets.mode ===
-                  GraphQLSchema.ResourceAssignmentMode.All ? (
-                    <div className="text-muted-foreground px-2 text-xs">
-                      Access to all services of projects targets granted.
-                    </div>
-                  ) : serviceState === null ? (
-                    <div className="text-muted-foreground px-2 text-xs">
-                      Select a target for adjusting the service access.
-                    </div>
-                  ) : (
-                    <>
-                      {serviceState === 'none' ? (
-                        <div className="text-muted-foreground text-xs">
-                          Project is monolithic and has no services.
-                        </div>
-                      ) : serviceState.selection === '*' ? (
-                        <div className="text-muted-foreground px-2 text-xs">
-                          Access to all services in target granted.
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
-                            access granted
+
+                {/** Services Content */}
+                {serviceAppsState === ServicesAppsState.service && (
+                  <div className="flex flex-1 flex-col border-y border-r pt-2">
+                    {projectState.activeProject?.projectSelection.targets.mode ===
+                    GraphQLSchema.ResourceAssignmentModeType.All ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Access to all services of projects targets granted.
+                      </div>
+                    ) : serviceState === null ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Select a target for adjusting the service access.
+                      </div>
+                    ) : (
+                      <>
+                        {serviceState === 'none' ? (
+                          <div className="text-muted-foreground text-xs">
+                            Project is monolithic and has no services.
                           </div>
-                          {serviceState.selection.selected.length ? (
-                            serviceState.selection.selected.map(service => (
+                        ) : serviceState.selection === '*' ? (
+                          <div className="text-muted-foreground px-2 text-xs">
+                            Access to all services in target granted.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                              access granted
+                            </div>
+                            {serviceState.selection.selected.length ? (
+                              serviceState.selection.selected.map(service => (
+                                <RowItem
+                                  key={service.serviceName}
+                                  title={service.serviceName}
+                                  isActive={false}
+                                  onDelete={() => serviceState.removeService(service.serviceName)}
+                                />
+                              ))
+                            ) : (
+                              <div className="px-2 text-xs">None</div>
+                            )}
+                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                              Not selected
+                            </div>
+                            {serviceState.selection.notSelected.map(serviceName => (
                               <RowItem
-                                key={service.serviceName}
-                                title={service.serviceName}
+                                key={serviceName}
+                                title={serviceName}
                                 isActive={false}
-                                onDelete={() => serviceState.removeService(service.serviceName)}
+                                onClick={() => serviceState.addService(serviceName)}
                               />
-                            ))
-                          ) : (
-                            <div className="px-2 text-xs">None</div>
-                          )}
-                          <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
-                            Not selected
-                          </div>
-                          {serviceState.selection.notSelected.map(serviceName => (
-                            <RowItem
-                              key={serviceName}
-                              title={serviceName}
-                              isActive={false}
-                              onClick={() => serviceState.addService(serviceName)}
-                            />
-                          ))}
-                          <form
-                            onSubmit={ev => {
-                              ev.preventDefault();
-                              const input: HTMLInputElement = ev.currentTarget.serviceName;
-                              const serviceName = input.value.trim().toLowerCase();
-
-                              if (!serviceName) {
-                                return;
-                              }
-
-                              serviceState.addService(serviceName);
-                              input.value = '';
-                            }}
-                          >
+                            ))}
                             <input
                               placeholder="Add service by name"
                               className="mx-2 mt-1 max-w-[70%] border-b text-sm"
                               name="serviceName"
+                              onKeyPress={ev => {
+                                if (ev.key !== 'Enter') {
+                                  return;
+                                }
+                                ev.preventDefault();
+                                const input: HTMLInputElement = ev.currentTarget;
+                                const serviceName = input.value.trim().toLowerCase();
+
+                                if (!serviceName) {
+                                  return;
+                                }
+
+                                serviceState.addService(serviceName);
+                                input.value = '';
+                              }}
                             />
-                          </form>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/** Apps Content */}
+                {serviceAppsState === ServicesAppsState.apps && (
+                  <div className="flex flex-1 flex-col border-y border-r pt-2">
+                    {projectState.activeProject?.projectSelection.targets.mode ===
+                    GraphQLSchema.ResourceAssignmentModeType.All ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Access to all apps of projects targets granted.
+                      </div>
+                    ) : appsState === null ? (
+                      <div className="text-muted-foreground px-2 text-xs">
+                        Select a target for adjusting the apps access.
+                      </div>
+                    ) : (
+                      <>
+                        {serviceState === 'none' ? (
+                          <div className="text-muted-foreground text-xs">
+                            Project is monolithic and has no services.
+                          </div>
+                        ) : appsState.selection === '*' ? (
+                          <div className="text-muted-foreground px-2 text-xs">
+                            Access to all services in target granted.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                              access granted
+                            </div>
+                            {appsState.selection.selected.length ? (
+                              appsState.selection.selected.map(app => (
+                                <RowItem
+                                  key={app.appDeployment}
+                                  title={app.appDeployment}
+                                  isActive={false}
+                                  onDelete={() => appsState.removeApp(app.appDeployment)}
+                                />
+                              ))
+                            ) : (
+                              <div className="px-2 text-xs">None</div>
+                            )}
+                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                              Not selected
+                            </div>
+                            {appsState.selection.notSelected.map(serviceName => (
+                              <RowItem
+                                key={serviceName}
+                                title={serviceName}
+                                isActive={false}
+                                onClick={() => appsState.addApp(serviceName)}
+                              />
+                            ))}
+                            <input
+                              placeholder="Add app by name"
+                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                              name="appName"
+                              onKeyPress={ev => {
+                                if (ev.key !== 'Enter') {
+                                  return;
+                                }
+                                ev.preventDefault();
+                                const input: HTMLInputElement = ev.currentTarget;
+                                const appName = input.value.trim().toLowerCase();
+
+                                if (!appName) {
+                                  return;
+                                }
+
+                                appsState.addApp(appName);
+                                input.value = '';
+                              }}
+                            />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex h-5 items-center text-sm">

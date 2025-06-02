@@ -1,0 +1,264 @@
+---
+title: GraphQL - The Workflow
+authors: tvvignesh
+tags: [graphql, graphql-federation]
+date: 2020-12-12
+description: The Workflow when taking GraphQL from development to production.
+---
+
+_This blog is a part of a series on GraphQL where we will dive deep into GraphQL and its ecosystem
+one piece at a time_
+
+- Part 1: [**Diving Deep**](/blog/graphql-deep-dive-1)
+- Part 2: [**The Usecase & Architecture**](/blog/graphql-deep-dive-2)
+- Part 3: [**The Stack #1**](/blog/graphql-deep-dive-3)
+- Part 4: [**The Stack #2**](/blog/graphql-deep-dive-4)
+- Part 5: [**The Stack #3**](/blog/graphql-deep-dive-5)
+- Part 6: [**The Workflow**](/blog/graphql-deep-dive-6)
+
+What an interesting journey has it been so far! We explored some amazing libraries, tools and
+frameworks which really empowers GraphQL to be what it is today with almost everything being open
+source created with love from the community. But, I do understand that, this can actually be
+overwhelming for some of you who are just starting off this journey with GraphQL and may have some
+trouble putting it all together to work for you.
+
+To address this, we will be talking about the workflow with GraphQL and the tools we have looked at
+so far and the process of taking it from development to production in this blog.
+
+**NOTE:** While these steps have been ordered serially, that is just to give you a sense of
+understanding of the workflow. Some of these can also be deferred for later or parallelly done if
+working with multiple teams. So, with that in mind, let's start.
+
+**Step 1: Evaluation and Research**
+
+As we have discussed before in [this blog post](/blog/graphql-deep-dive-2), GraphQL may not be the
+solution to every problem. And even if it does satisfy your use case well, this would be the first
+thing you would need to do. Understand why you want to use GraphQL, how you would like to use it and
+the ecosystem of tools you need to solve your problem. This can be done only if you introspect your
+use case and really get to the basics answering few obvious questions around GraphQL and your use
+case.
+
+Also, you have to remember that not every organization is operating at the scale of Google,
+Microsoft or Facebook and what works for them need not work for you. So, while you should definitely
+be informed on how people do things, do remember that you need to focus on what works for you and
+what you really need.
+
+**Step 2: Get a boilerplate stack ready**
+
+GraphQL can get overwhelming if you are re-inventing the wheel every time. From putting together
+your schema, resolvers, server, to the various tools you would typically use with it like linting,
+codegen and so on. Now, doing this every time you work on a new service is not a good use of your
+time.
+
+The best way to avoid this is to put together a boilerplate with all that you would typically want
+to use and this can become a starting point of all the services you may develop in the future. This
+would also involve things like setting up your GraphQL Gateway (incase you are using something like
+[Federation](https://the-guild.dev/graphql/hive/federation) or Stitching) since the gateway becomes
+the single point of contact for all your requests from the clients.
+
+Now if you are using something like Typescript/Javascript, the tooling you might want to start off
+with this stage would typically be a GraphQL server like Express GraphQL, Apollo, Helix, Mercurius
+or anything else which might work for you, putting together something like GraphQL Modules if you
+are looking to split your resolvers into multiple modules, devising a mechanism to merge together
+multiple GraphQL schema as the need arises with something like GraphQL Tools, setting up GraphQL
+Config to help all the tools work in tandem with your schema, getting Codegen and its
+extensions/presets setup so that you can re-use the types as generated from your schema, getting
+ESLint setup with your own validation rules, having something like GraphQL Inspector ready so that
+you can do various operations with your schema like validation, mocking and everything you would
+typically want as part of your tooling and even having your editor/IDE setup with appropriate
+extensions and tools to help you with the development process.
+
+While you can definitely iterate with this as you go along, having the barebones when you start can
+definitely take a lot of effort away and save a lot of time in the future.
+
+**Step 3: Putting together the data graph and documentation**
+
+All that you do with GraphQL for your use case mainly revolves around your schema and its types
+since that becomes the base of everything you would develop on top. Getting your data graph ready
+would typically be the next important step and the way you do it does not matter. You can either go
+the SDL-first or code-first route depending on what works well for you.
+
+You might also want to write appropriate documentation parallelly as you work on your schema,
+especially since GraphQL is self-documenting, and it is always good to do it when you have a context
+of what you are doing rather than as an after-thought.
+
+Now, if you are working on a microservices architecture and you are looking to split the data graph
+into multiple parts to be composed or stitched from multiple services, using something like
+Federation or Stitching, you would also need to understand the clear boundaries of the microservices
+and how all of them relate to each other through the data graph.
+
+These boundaries will also decide which service hosts your resolvers/logic to go along with
+resolving the various fields in the schema and performing the business logic as needed in isolation.
+
+**Step 4: Deploying it all as per the need**
+
+Now that you have your boilerplate and data graph ready, the next step you would typically do before
+working on your resolvers or any of your business logic is to actually deploy it all wherever you
+want to, and the way you are looking to do it. Be it public cloud, private cloud or on-premise as
+containers, VMs or bare metal.
+
+Doing this will help you proceed forward as per your architecture be it single/multi-tenant and help
+you resolve the major questions you might have regarding the end-end flow of data considering all
+the compliance policies and laws you might want to cater to.
+
+**Step 5: Mocking and Testing Client Consumption**
+
+Now that you have everything deployed and ready, the next step you would typically do is testing it
+all together. Now, you might wonder how this will even work without any resolvers, or a backend to
+serve the data with.
+
+While you can definitely spend your time writing the resolvers, business logic or connecting your
+backend, you first might want to test out the end-end data flow so that you get a validation on how
+clients would typically interact with your GraphQL API. To do this, you can either mock your schema
+or hard code the data initially in your resolvers and then serve the schema and test it all end-end.
+
+This will establish a confidence about your development workflow, give you a clear idea about the
+data path, how your GraphQL operations (Mutations and Queries would look like), an insight into how
+you can consume the data and also presents you with opportunities doing things like end-end type
+checking, code generation and so on with your clients.
+
+**Step 6: Getting the resolvers and backend setup**
+
+As you might already know, with GraphQL, your clients don't have to worry about the data source,
+your backend logic and the various complexities that go with it since they are all abstracted away
+and this helps you scale the backend and frontend independently of each other.
+
+To do this, try treating your resolvers as just entities which do an operation and respond back with
+data given a set of inputs (similar to what you would typically do with a REST API). So, try setting
+up your backend/datasources from which you would want to serve the data (be it a database like
+[Postgres](https://postgresql.org) or [Mongo](https://mongodb.com) with or without an ORM like
+[Prisma](https://prisma.io), [Knex](https://knexjs.org) or [Sequelize](https://sequelize.org), or
+even an underlying resource like a REST API maybe with something like
+[GraphQL Mesh](https://the-guild.dev/graphql/mesh) or Graph databases like
+[Dgraph](https://dgraph.io)) and also your resolvers to process the data as you see fit, adding your
+business logic on top and return back the fields as needed by the resolvers. This is the point where
+you replace the mocked data with data from the backend.
+
+**Step 7: Optimizing the data path**
+
+Now that you have connected your data sources and added your business logic with all the resolvers
+you need, the next step would typically be to optimize the data path to make sure that you are not
+doing repeated calls to the database increasing the load and bandwidth usage and reduce the
+roundtrips and processing needed as much as possible and also provide faster response times as the
+clients ask for data.
+
+This is where you setup things like batching and also solve N+1 problems with something like a
+[dataloader](https://github.com/graphql/dataloader), setup caching with something like
+[Redis](https://redis.io) or even an [LRU cache](https://npmjs.com/package/lru-cache) to act as a
+proxy for the frequently accessed data whenever and wherever possible, optimizing the network
+chatter by using something like persisted queries, optimize your resolvers by retrieving as much
+data as possible from the parent resolvers, setting up pagination to limit the results returned,
+setting up things like query complexity to control the level of nesting and computation performed,
+rate-limiting in the gateway to avoid things like
+[DDOS](https://cloudflare.com/learning/ddos/what-is-a-ddos-attack) and so on.
+
+This is really important cause, while GraphQL might provide your clients with a high degree of
+flexibility, it also comes with its own set of risks if not used right. So, try to keep even the
+worst case scenarios in mind and design for failures. Do remember that sometimes, it is better to
+make your application fail and crash rather than having to make it do the wrong thing.
+
+**Step 8: Controlling and Securing the data path**
+
+GraphQL provides all its clients with access to any data as they request it and while this might
+sound empowering (and it is), it is not without its own set of risks. You have to make sure that
+only the authorized clients have access to the data and only the data which they are allowed to
+have, only when they need it providing a proper context and purpose to the operation.
+
+To do this, all the clients need to be authenticated properly whenever and however needed,
+authorization rules needs to be setup for all the fields either via directives, resolvers or any
+other mechanism which works well for you, have an encryption/decryption mechanism for confidential
+data like PII, ability to blacklist specific clients whenever needed and so on thereby controlling
+and securing the data as much as possible from your end considering that security must be a
+first-class citizen and not after thought.
+
+**Step 9: Testing**
+
+Testing plays a major role especially when building scalable systems which have to be reliable even
+with a huge stream of changes which might affect it over time. And this is no exception when you
+work with GraphQL as well. You can setup automated tests, integration tests and so on as you
+normally would to improve the confidence people have on the system. And there are a lot of libraries
+which facilitate the same as well as [Mocha](https://mochajs.org), [Jest](https://jestjs.io),
+[AVA](https://github.com/avajs/ava) and so on taking a lot of the burden away from you.
+
+You can test your resolvers, your GraphQL endpoint, your schema and so on. Testing can not just
+improve the reliability of your code, but can also act as a secondary source of documentation for
+people who are looking to understand what every function is doing and how to use it as part of their
+workflow. So, doing this as you go along can help.
+
+**Step 10: Automating or Scripting the repeatable parts**
+
+When you work on GraphQL or anything else for that matter, there is often a set of operations which
+you repeatedly do again and again. And over time, the cost of doing it would exponentially grow up.
+
+For eg. you might push your schema to a [registry](https://the-guild.dev/graphql/hive) if you use
+something like [Federation](https://the-guild.dev/graphql/hive/federation) for all the changes you
+do,
+validate/[lint your schema](https://the-guild.dev/graphql/hive/docs/schema-registry/schema-policy),
+do code generation as you change the SDL or anything else which is specific to your use case. This
+is where automation and scripting plays a major role and I can definitely say that I have saved
+countless hours of my valuable time by just scripting out things which I do repeatedly as part of my
+workflow.
+
+Automation, especially with CI/CD becomes even more impactful when you are working with teams. There
+are a lot of interesting things
+[you can do in your CI/CD pipeline](https://the-guild.dev/graphql/hive/docs/other-integrations/ci-cd)
+like [linting your schema](https://the-guild.dev/graphql/hive/docs/schema-registry/schema-policy)
+and
+[validating it, getting the list of breaking changes](https://the-guild.dev/graphql/hive/docs/get-started/apollo-federation#schema-checks),
+pushing it to the [registry](https://the-guild.dev/graphql/hive/docs/schema-registry), running
+automated tests, sending notifications to relevant people in your team as needed and so on saving a
+lot of time and also providing a high degree of reliability and confidence to what you ship to
+production.
+
+This is when GraphQL platforms like [Hive](https://the-guild.dev/graphql/hive) can come in handy.
+Hive provides you with a lot of tools and integrations covering those workflows, plus it's fully
+open-source and can be self-hosted.
+
+This summarizes the most important steps you need to perform as part of your workflow with GraphQL
+and there are somethings which have been purposefully avoided in this list like setting up your
+infrastructure for file uploads, enabling real-time data exchange with subscriptions/live queries
+and so on since it all depends on your use case at hand but if you are interested in those, do have
+a look at our previous blog posts where we discuss various tools and libraries which can help you
+with it.
+
+While all of this may seem overwhelming, you need not boil yourself doing it all when you start but
+rather do it incrementally as you go along.
+
+**But, I am not using JavaScript/Typescript**
+
+While this series addresses most of the questions with examples from Javascript and Typescript, you
+must take into note that Javascript / Typescript is not the only language which GraphQL is
+compatible with since it is language independent. And you can always draw parallels in other
+languages as well. If you find yourself working in other languages,
+[**this**](https://graphql.org/code) might help or if you are looking for tutorials, there is a good
+catalog [**here**](https://howtographql.com) and as we discussed before, the ecosystem is too huge
+and growing with more like this cropping up everyday.
+
+**Concluding...**
+
+As all good things come to an end, this blog would be the last of this GraphQL series. But if you
+are looking for something specific which we have not addressed in this series, do let us know, and
+maybe we can do a follow-up blog post or even add it to this series if it makes sense. The reason we
+conclude here is that we intend to keep this series as a guide rather than a tutorial series since
+there is a lot of information already out there regarding the various tools, libraries and
+frameworks we talked about in this series.
+
+But rest assured, we will definitely have a lot of blogs like these in the future as we work with
+GraphQL more and more and we also intend to provide you with a case study on how we do all of this
+at [Timecampus](https://twitter.com/timecampus) sometime down the line. Do stick around for that.
+But in the meantime, there are a lot of other blog posts like [these](https://graphql.org/community)
+with blogs, videos and books from the community which is really worth checking out.
+
+Also, I intend to keep the blog posts in this series as living documents rather than one-off blog
+posts. Hence, you might find us updating the information shared if needed over time.
+
+If you are working your way through GraphQL and if this series really did help you in your path, we
+would love to know your story. GraphQL is where it is today because of people like you, the
+community, and I am very positive about its present and future especially in a data driven world and
+the journey towards bringing about a [semantic web](https://en.wikipedia.org/wiki/Semantic_Web).
+
+If you have any questions or are looking for help, feel free to reach out to me
+[@techahoy](https://twitter.com/techahoy) anytime.
+
+And if this helped, do share this across with your friends, hang around and follow us for more like
+this every week. See you all soon.

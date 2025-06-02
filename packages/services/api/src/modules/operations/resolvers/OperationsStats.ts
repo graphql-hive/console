@@ -28,7 +28,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       }),
     ]);
 
-    return operations
+    const nodes = operations
       .map(op => {
         return {
           id: hash(`${op.operationName}__${op.operationHash}`),
@@ -42,6 +42,16 @@ export const OperationsStats: OperationsStatsResolvers = {
         };
       })
       .sort((a, b) => b.count - a.count);
+
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
   totalRequests: (
     { organization, project, target, period, operations, clients },
@@ -130,12 +140,12 @@ export const OperationsStats: OperationsStatsResolvers = {
       clients,
     });
   },
-  clients: (
+  clients: async (
     { organization, project, target, period, operations: operationsFilter, clients },
     _,
     { injector },
   ) => {
-    return injector.get(OperationsManager).readUniqueClients({
+    const nodes = await injector.get(OperationsManager).readUniqueClients({
       targetId: target,
       projectId: project,
       organizationId: organization,
@@ -143,6 +153,16 @@ export const OperationsStats: OperationsStatsResolvers = {
       operations: operationsFilter,
       clients,
     });
+
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
   duration: (
     { organization, project, target, period, operations: operationsFilter, clients },

@@ -74,9 +74,15 @@ export interface Logger {
 
 export interface HiveUsagePluginOptions {
   /**
+   * The target to which the usage data should be reported to.
+   * This can either be a slug following the format `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`)
+   * or an UUID (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`).
+   */
+  target?: string;
+  /**
    * Custom endpoint to collect schema usage
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
@@ -140,7 +146,7 @@ export interface HiveReportingPluginOptions {
   /**
    * Custom endpoint to collect schema reports
    *
-   * @deprecated use `options.selfHosted.usageEndpoint` instead
+   * @deprecated use `options.selfHosting.usageEndpoint` instead
    *
    * Points to Hive by default
    */
@@ -193,7 +199,7 @@ type OptionalWhenFalse<T, KCond extends keyof T, KExcluded extends keyof T> =
 export type HivePluginOptions = OptionalWhenFalse<
   {
     /**
-     * Enable/Disable Hive
+     * Enable/Disable Hive usage reporting
      *
      * Default: true
      */
@@ -205,7 +211,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      */
     debug?: boolean;
     /**
-     * Access Token
+     * Access Token for usage reporting
      */
     token: string;
     /**
@@ -228,6 +234,10 @@ export type HivePluginOptions = OptionalWhenFalse<
     /**
      * Print info about the token.
      * Disabled by default (enabled by default only in debug mode)
+     *
+     * **Note:** The new access tokens do not support printing the token info. For every access token starting with `hvo1/`
+     * no information will be printed.
+     * @deprecated This option will be removed in the future.
      */
     printTokenInfo?: boolean;
     /**

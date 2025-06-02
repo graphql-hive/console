@@ -26,7 +26,7 @@ a custom logger implementation.
 
 By default without any production environment variable, Hive Gateway prints the logs in human
 readable format. However, in production (when `NODE_ENV` is `production`) Hive Gateway prints the
-logs in JSON format, but if you want to enable it in regular mode, you can pass `LOG_LEVEL=json` as
+logs in JSON format, but if you want to enable it in regular mode, you can pass `LOG_FORMAT=json` as
 an environment variable.
 
 ### Log Levels
@@ -82,6 +82,7 @@ npm i winston @graphql-hive/winston
 
 ```ts
 import { createLogger, format, transports } from 'winston'
+import { defineConfig } from '@graphql-hive/gateway'
 import { createLoggerFromWinston } from '@graphql-hive/winston'
 
 // Create a Winston logger
@@ -94,6 +95,21 @@ const winstonLogger = createLogger({
 export const gatewayConfig = defineConfig({
   // Create an adapter for Winston
   logging: createLoggerFromWinston(winstonLogger)
+})
+```
+
+### Integration with Pino (only Node.js)
+
+Like Winston, you can also use [Pino](https://getpino.io/) with Hive Gateway on Node.js
+environments.
+
+```ts
+import pino from 'pino'
+import { defineConfig } from '@graphql-hive/gateway'
+import { createLoggerFromPino } from '@graphql-hive/logger-pino'
+
+export const gatewayConfig = defineConfig({
+  logging: createLoggerFromPino(pino({ level: 'info' }))
 })
 ```
 
@@ -177,18 +193,19 @@ class CustomLogger implements Logger {
 To help with debugging and improve error understanding for consumers, Hive Gateway uses error codes
 for the following specific types of errors:
 
-| Code                        | Description                                                                                                                                                                                                                                                                                     |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GRAPHQL_PARSE_FAILED`      | Sent GraphQL Operation cannot be parsed                                                                                                                                                                                                                                                         |
-| `GRAPHQL_VALIDATION_FAILED` | Sent GraphQL Operation is not validated against the schema                                                                                                                                                                                                                                      |
-| `BAD_USER_INPUT`            | Variable or argument values are not valid in the GraphQL parameters                                                                                                                                                                                                                             |
-| `TIMEOUT_ERROR`             | Indicates a timeout in the subgraph execution. Keep in mind that this timeout is not always an HTTP timeout or a timeout specified by you. It might be the subgraph server that timed out. Learn more about upstream reliability to configure timeout based on your needs.                      |
-| `SCHEMA_RELOAD`             | When Hive Gateway updates the schema by polling or any other way, all ongoing requests are terminated, including subscriptions and long-running defer/stream operations. In this case, this error is sent to the client to indicate a schema change. Usually, a retry is expected in this case. |
-| `SHUTTING_DOWN`             | When Hive Gateway is shutting down or restarting, like `SCHEMA_RELOAD`, it aborts all requests and notifies the client with this error code. After a certain amount of time, a retry can be sent.                                                                                               |
-| `UNAUTHENTICATED`           | The given auth credentials are not valid. Check the logs and documentation of the used auth plugin to learn more.                                                                                                                                                                               |
-| `PERSISTED_QUERY_NOT_FOUND` | Indicates that persisted operation information is not found in the store. Check the related persisted operation plugin docs to learn more about this error.                                                                                                                                     |
-| `INTERNAL_SERVER_ERROR`     | Indicates that the error is unexpected or unspecified and masked by the gateway. It is probably caused by an unexpected network, connection, or other runtime error. You can see the details of this error in the logs.                                                                         |
-| `DOWNSTREAM_SERVICE_ERROR`  | Indicates the error is subgraph-related, and generated by the subgraph, not the gateway                                                                                                                                                                                                         |
+| Code                           | Description                                                                                                                                                                                                                                                                                     |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GRAPHQL_PARSE_FAILED`         | Sent GraphQL Operation cannot be parsed                                                                                                                                                                                                                                                         |
+| `GRAPHQL_VALIDATION_FAILED`    | Sent GraphQL Operation is not validated against the schema                                                                                                                                                                                                                                      |
+| `BAD_USER_INPUT`               | Variable or argument values are not valid in the GraphQL parameters                                                                                                                                                                                                                             |
+| `TIMEOUT_ERROR`                | Indicates a timeout in the subgraph execution. Keep in mind that this timeout is not always an HTTP timeout or a timeout specified by you. It might be the subgraph server that timed out. Learn more about upstream reliability to configure timeout based on your needs.                      |
+| `SCHEMA_RELOAD`                | When Hive Gateway updates the schema by polling or any other way, all ongoing requests are terminated, including subscriptions and long-running defer/stream operations. In this case, this error is sent to the client to indicate a schema change. Usually, a retry is expected in this case. |
+| `SHUTTING_DOWN`                | When Hive Gateway is shutting down or restarting, like `SCHEMA_RELOAD`, it aborts all requests and notifies the client with this error code. After a certain amount of time, a retry can be sent.                                                                                               |
+| `UNAUTHENTICATED`              | The given auth credentials are not valid. Check the logs and documentation of the used auth plugin to learn more.                                                                                                                                                                               |
+| `PERSISTED_QUERY_NOT_FOUND`    | Indicates that persisted operation information is not found in the store. Check the related persisted operation plugin docs to learn more about this error.                                                                                                                                     |
+| `INTERNAL_SERVER_ERROR`        | Indicates that the error is unexpected or unspecified and masked by the gateway. It is probably caused by an unexpected network, connection, or other runtime error. You can see the details of this error in the logs.                                                                         |
+| `DOWNSTREAM_SERVICE_ERROR`     | Indicates the error is subgraph-related, and generated by the subgraph, not the gateway                                                                                                                                                                                                         |
+| `COST_ESTIMATED_TOO_EXPENSIVE` | Indicates that the cost of the operation is too expensive and exceeds the configured limit. [See more about cost limiting (demand control)](/docs/gateway/other-features/security/demand-control)                                                                                               |
 
 ### Error Masking
 

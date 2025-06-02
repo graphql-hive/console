@@ -17,6 +17,7 @@ import { DynamicMetaTags } from './dynamic-meta-tags';
 import graphQLConfLocalImage from '../components/graphql-conf-image.webp';
 import '@theguild/components/style.css';
 import '../selection-styles.css';
+import '../easing-functions.css';
 import '../mermaid.css';
 import { NarrowPages } from './narrow-pages';
 
@@ -96,7 +97,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
               icon: <AccountBox />,
               children: 'Case Studies',
             },
-            { href: 'https://the-guild.dev/blog', icon: <PencilIcon />, children: 'Blog' },
+            { href: '/blog', icon: <PencilIcon />, children: 'Blog' },
             {
               href: 'https://github.com/graphql-hive/console',
               icon: <GitHubIcon />,

@@ -1,8 +1,8 @@
 import { URL } from 'node:url';
-import type { GraphQLSchema } from 'graphql';
+import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -18,7 +18,6 @@ import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provi
 import type {
   ComposeAndValidateResult,
   DateRange,
-  Orchestrator,
   Organization,
   Project,
   PushedCompositeSchema,
@@ -27,6 +26,7 @@ import type {
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { extendWithBase, isCompositeSchema, SchemaHelper } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
@@ -170,6 +170,7 @@ export class RegistryChecks {
     private inspector: Inspector,
     private logger: Logger,
     private operationsReader: OperationsReader,
+    private orchestrator: CompositionOrchestrator,
   ) {}
 
   /**
@@ -242,7 +243,6 @@ export class RegistryChecks {
   }
 
   async composition({
-    orchestrator,
     targetId,
     project,
     organization,
@@ -250,7 +250,6 @@ export class RegistryChecks {
     baseSchema,
     contracts,
   }: {
-    orchestrator: Orchestrator;
     targetId: string;
     project: Project;
     organization: Organization;
@@ -258,7 +257,8 @@ export class RegistryChecks {
     baseSchema: string | null;
     contracts: null | ContractsInputType;
   }) {
-    const result = await orchestrator.composeAndValidate(
+    const result = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
       extendWithBase(schemas, baseSchema).map(s => this.helper.createSchemaObject(s)),
       {
         external: project.externalComposition,
@@ -283,11 +283,11 @@ export class RegistryChecks {
           // Federation 1 apparently has SDL and validation errors at the same time.
           fullSchemaSdl: result.sdl,
           contracts: result.contracts?.map(mapContract) ?? null,
+          includesNetworkError: result.includesNetworkError ?? false,
+          includesException: result.includesException ?? false,
         },
       } satisfies CheckResult;
     }
-
-    this.logger.debug('No validation errors');
 
     if (!result.sdl) {
       throw new Error('No SDL, but no errors either');
@@ -316,7 +316,6 @@ export class RegistryChecks {
       sdl: string | null;
       schemas: Schemas;
     } | null;
-    orchestrator: Orchestrator;
     organization: Organization;
     project: Project;
     targetId: string;
@@ -339,7 +338,8 @@ export class RegistryChecks {
 
     this.logger.debug('Compose on the fly.');
 
-    const existingSchemaResult = await args.orchestrator.composeAndValidate(
+    const existingSchemaResult = await this.orchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
       args.version.schemas.map(s => this.helper.createSchemaObject(s)),
       {
         external: args.project.externalComposition,
@@ -425,6 +425,7 @@ export class RegistryChecks {
     approvedChanges: null | Map<string, SchemaChangeType>;
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
+    failDiffOnDangerousChange: null | boolean;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -484,19 +485,60 @@ export class RegistryChecks {
             return;
           }
 
+          let checkCoordinate = change.breakingChangeSchemaCoordinate;
+          if (isNullToRequiredArgumentChange(change)) {
+            /**
+             * It's necessary to check the parent field in this case because an argument is included in the
+             * usage report's list of coordinates _only if it's in the operation_. E.g. For a schema:
+             *
+             * ```
+             * type Query {
+             *   foo(a: String): String
+             * }
+             * ```
+             *
+             * Operation `query Foo { foo(a: "b") }`
+             * Reports: `Query.foo, Query.foo.a, Query.foo.a!`
+             *
+             * Operation: `query Foo2 { foo }`
+             * Only reports: `Query.foo`.
+             *
+             * And so when changing an argument from nullable to non-nullable, we need to check the parent field
+             * could rather than the argument count. Otherwise, the second example wouldn't trigger the change as "breaking".
+             */
+            checkCoordinate = change.breakingChangeSchemaCoordinate
+              .split('.')
+              .slice(0, 2)
+              .join('.');
+          }
+
           const totalRequestCounts = await this.operationsReader.countCoordinate({
             targetIds: settings.targetIds,
             excludedClients: settings.excludedClientNames,
             period: settings.period,
-            schemaCoordinate: change.breakingChangeSchemaCoordinate,
+            schemaCoordinate: checkCoordinate,
           });
-          const isBreaking =
-            totalRequestCounts[change.breakingChangeSchemaCoordinate] >=
-            Math.max(settings.requestCountThreshold, 1);
+          const totalRequests = totalRequestCounts[checkCoordinate] ?? 0;
+          let isBreaking = totalRequests >= Math.max(settings.requestCountThreshold, 1);
           if (isBreaking) {
-            // We need to run both the affected operations an affected clients query.
-            // Since the affected clients query is lighter it makes more sense to run it first and skip running
-            // the operations query if no clients are affected, as it will also yield zero results in that case.
+            const useAdvancedNullabilityCheck = requiresAdvancedNullabilityCheck(change);
+
+            if (useAdvancedNullabilityCheck) {
+              const advancedNullabilityTotalRequests = await this.operationsReader.countCoordinate({
+                targetIds: settings.targetIds,
+                excludedClients: settings.excludedClientNames,
+                period: settings.period,
+                schemaCoordinate: `${change.breakingChangeSchemaCoordinate}!`,
+              });
+
+              if (
+                advancedNullabilityTotalRequests[`${change.breakingChangeSchemaCoordinate}!`] >=
+                totalRequests
+              ) {
+                // All requests for this coordinate provide the value for the coordinate. So moving to non-null is allowed.
+                isBreaking = false;
+              }
+            }
 
             const [topAffectedClients, topAffectedOperations] = await Promise.all([
               this.operationsReader.getTopClientsForSchemaCoordinate({
@@ -542,7 +584,10 @@ export class RegistryChecks {
     const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
 
     for (const change of inspectorChanges) {
-      if (change.criticality === CriticalityLevel.Breaking) {
+      if (
+        change.criticality === CriticalityLevel.Breaking ||
+        (args.failDiffOnDangerousChange && change.criticality === CriticalityLevel.Dangerous)
+      ) {
         if (change.isSafeBasedOnUsage === true) {
           breakingChanges.push(change);
           continue;
@@ -763,7 +808,7 @@ export function detectUrlChanges(
     const before = nameToCompositeSchemaMap.get(schema.service_name);
 
     if (before && before.service_url !== schema.service_url) {
-      if (before.service_url && schema.service_url) {
+      if (before.service_url != null && schema.service_url != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -774,7 +819,7 @@ export function detectUrlChanges(
             },
           },
         });
-      } else if (before.service_url && schema.service_url == null) {
+      } else if (before.service_url != null && schema.service_url == null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -785,7 +830,7 @@ export function detectUrlChanges(
             },
           },
         });
-      } else if (before.service_url == null && schema.service_url) {
+      } else if (before.service_url == null && schema.service_url != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
@@ -797,7 +842,9 @@ export function detectUrlChanges(
           },
         });
       } else {
-        throw new Error("This shouldn't happen.");
+        throw new Error(
+          `This shouldn't happen (before.service_url=${JSON.stringify(before.service_url)}, schema.service_url=${JSON.stringify(schema.service_url)}).`,
+        );
       }
     }
   }
@@ -853,4 +900,22 @@ function isFederationRelatedChange(change: SchemaChangeType) {
 
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
+}
+
+function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.InputFieldTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldInputFieldType?.toString();
+    const newType = change.meta.newInputFieldType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return isNullToRequiredArgumentChange(change);
+}
+
+function isNullToRequiredArgumentChange(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
+  if (ChangeType.FieldArgumentTypeChanged === (change.type as ChangeType)) {
+    const oldType = change.meta.oldArgumentType?.toString();
+    const newType = change.meta.newArgumentType?.toString();
+    return `${oldType}!` === newType;
+  }
+  return false;
 }

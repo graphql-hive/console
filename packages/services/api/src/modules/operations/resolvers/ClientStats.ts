@@ -35,7 +35,11 @@ export const ClientStats: ClientStatsResolvers = {
       clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
     });
   },
-  operations: async ({ organization, project, target, period, clientName }, args, { injector }) => {
+  operations: async (
+    { organization, project, target, period, clientName },
+    _args,
+    { injector },
+  ) => {
     const operationsManager = injector.get(OperationsManager);
     const [operations, durations] = await Promise.all([
       operationsManager.readOperationsStats({
@@ -54,7 +58,7 @@ export const ClientStats: ClientStatsResolvers = {
       }),
     ]);
 
-    return operations
+    const nodes = await operations
       .map(op => {
         return {
           id: hash(`${op.operationName}__${op.operationHash}`),
@@ -68,6 +72,16 @@ export const ClientStats: ClientStatsResolvers = {
         };
       })
       .sort((a, b) => b.count - a.count);
+
+    return {
+      edges: nodes.map(node => ({ node, cursor: '' })),
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        endCursor: '',
+        startCursor: '',
+      },
+    };
   },
   versions: ({ organization, project, target, period, clientName }, { limit }, { injector }) => {
     return injector.get(OperationsManager).readClientVersions({

@@ -26,19 +26,38 @@ export class AuditLogRecorder {
 
   async record(data: AuditLogSchemaEvent & { organizationId: string }): Promise<void> {
     try {
-      const user = await this.session.getViewer();
+      const actor = await this.session.getActor();
       const { eventType, organizationId } = data;
-      this.logger.debug('Creating audit log event', { eventType });
+      this.logger.debug(
+        'Creating audit log event (eventType=%s, actorType=%s)',
+        eventType,
+        actor.type,
+      );
+
+      const user =
+        actor.type === 'user'
+          ? {
+              id: actor.user.id,
+              email: actor.user.email,
+              fullName: actor.user.fullName,
+              displayName: actor.user.displayName,
+              provider: actor.user.provider,
+            }
+          : undefined;
+      const accessToken =
+        actor.type === 'organizationAccessToken'
+          ? {
+              id: actor.organizationAccessToken.id,
+              firstCharacters: actor.organizationAccessToken.firstCharacters,
+            }
+          : undefined;
 
       const auditLog = AuditLogModel.parse(data);
-      const eventMetadata = JSON.stringify({
-        ...('metadata' in auditLog ? auditLog.metadata : {}),
-        user: {
-          fullName: user.fullName,
-          displayName: user.displayName,
-          provider: user.provider,
-        },
-      });
+      const eventMetadata = {
+        ...('metadata' in auditLog ? (auditLog.metadata as Record<string, unknown>) : {}),
+        user,
+        accessToken,
+      };
 
       const eventTime = formatToClickhouseDateTime(new Date());
       const id = randomUUID();
@@ -46,22 +65,24 @@ export class AuditLogRecorder {
       await this.clickHouse.postQuery({
         query: sql`
           INSERT INTO "audit_logs" (
-            "id",
-            "timestamp",
-            "organization_id",
-            "event_action",
-            "user_id",
-            "user_email",
-            "metadata"
+            "id"
+            , "timestamp"
+            , "organization_id"
+            , "event_action"
+            , "user_id"
+            , "user_email"
+            , "access_token_id"
+            , "metadata"
           )
           VALUES (
             ${id}
             , ${eventTime}
             , ${organizationId}
             , ${eventType}
-            , ${user.id}
-            , ${user.email}
-            , ${eventMetadata}
+            , ${user?.id ?? ''}
+            , ${user?.email ?? ''}
+            , ${accessToken?.id ?? ''}
+            , ${JSON.stringify(eventMetadata)}
           )
         `,
         timeout: 10000,

@@ -62,6 +62,7 @@ export class AuditLogManager {
         , "event_action" AS "eventAction"
         , "user_id" AS "userId"
         , "user_email" AS "userEmail"
+        , "access_token_id" AS "accessTokenId"
         , "metadata"
       FROM
         "audit_logs"
@@ -144,6 +145,7 @@ export class AuditLogManager {
               eventAction: 'event_type',
               userId: 'user_id',
               userEmail: 'user_email',
+              accessTokenId: 'access_token_id',
               metadata: 'metadata',
             },
           },

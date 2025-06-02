@@ -18,6 +18,7 @@ import {
   NameNode,
   ObjectFieldNode,
   TypeInfo,
+  ValueNode,
   visit,
   visitWithTypeInfo,
 } from 'graphql';
@@ -36,11 +37,35 @@ export function collectSchemaCoordinates(args: {
   const entries = new Set<string>();
   const collected_entire_named_types = new Set<string>();
   const shouldAnalyzeVariableValues = args.processVariables === true && variables !== null;
+  const inputValuesProvided = new Map<string, number>();
 
   function markAsUsed(id: string) {
-    if (!entries.has(id)) {
-      entries.add(id);
+    if (inputValuesProvided.has(id)) {
+      const valuesProvided = inputValuesProvided.get(id);
+      if (valuesProvided && valuesProvided > 0) {
+        inputValuesProvided.set(id, inputValuesProvided.get(id)! - 1);
+        entries.add(`${id}!`);
+      }
     }
+    // always flag normal coordinate as used.
+    // This makes tracking usage easier later, because it's all tied to one coordinate,
+    // and it's only necessary to use the "!" form if specific conditions are met.
+    entries.add(id);
+  }
+
+  function countInputValueProvided(id: string) {
+    const existing = inputValuesProvided.get(id);
+    if (existing) {
+      inputValuesProvided.set(id, existing + 1);
+    } else {
+      inputValuesProvided.set(id, 1);
+    }
+  }
+
+  function valueNodeHasValue(v: ValueNode) {
+    return (
+      v.kind !== Kind.NULL && (v.kind !== Kind.VARIABLE || valueExists(variables?.[v.name.value]))
+    );
   }
 
   function makeId(...names: string[]): string {
@@ -129,6 +154,11 @@ export function collectSchemaCoordinates(args: {
     }
   }
 
+  function valueExists(v: unknown) {
+    return v !== null && v !== undefined;
+  }
+
+  // named type is the type that the variable represents
   function collectVariable(namedType: GraphQLNamedInputType, variableValue: unknown) {
     const variableValueArray = Array.isArray(variableValue) ? variableValue : [variableValue];
     if (isInputObjectType(namedType)) {
@@ -137,6 +167,12 @@ export function collectSchemaCoordinates(args: {
           // Collect only the used fields
           for (const fieldName in variable) {
             const field = namedType.getFields()[fieldName];
+
+            // check whether the value for this type is actually provided
+            if (valueExists(variable[fieldName])) {
+              countInputValueProvided(makeId(namedType.name, fieldName));
+            }
+
             if (field) {
               collectInputType(namedType.name, fieldName);
               collectVariable(getNamedType(field.type), variable[fieldName]);
@@ -246,6 +282,11 @@ export function collectSchemaCoordinates(args: {
           );
         }
 
+        // check whether the value for this type is actually provided
+        if (valueNodeHasValue(node.value)) {
+          countInputValueProvided(makeId(parent.name, field.name, arg.name));
+        }
+
         markAsUsed(makeId(parent.name, field.name, arg.name));
         collectNode(node);
       },
@@ -290,6 +331,10 @@ export function collectSchemaCoordinates(args: {
           return null;
         }
 
+        // is provided as a literal
+        if (valueNodeHasValue(node.value)) {
+          countInputValueProvided(makeId(parentInputTypeName, node.name.value));
+        }
         collectNode(node);
         collectInputType(parentInputTypeName, node.name.value);
       },

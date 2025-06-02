@@ -60,15 +60,14 @@ const SubscriptionPage_QueryFragment = graphql(`
 `);
 
 const SubscriptionPageQuery = graphql(`
-  query SubscriptionPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        slug
-        ...SubscriptionPage_OrganizationFragment
-      }
+  query SubscriptionPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      ...SubscriptionPage_OrganizationFragment
     }
     ...SubscriptionPage_QueryFragment
-    monthlyUsage(selector: $selector) {
+    monthlyUsage(selector: { organizationSlug: $organizationSlug }) {
       date
       total
     }
@@ -79,13 +78,11 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   const [query] = useQuery({
     query: SubscriptionPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);

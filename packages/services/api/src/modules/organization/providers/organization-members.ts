@@ -1,6 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+} from '@hive/storage';
 import { type Organization } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
 import { AuthorizationPolicyStatement } from '../../auth/lib/authz';
@@ -30,6 +34,7 @@ const RawOrganizationMembershipModel = z.object({
   assignedResources: ResourceAssignmentModel.nullable().transform(
     value => value ?? { mode: '*' as const, projects: [] },
   ),
+  createdAt: z.string(),
 });
 
 export type OrganizationMembershipRoleAssignment = {
@@ -51,6 +56,7 @@ export type OrganizationMembership = {
   userId: string;
   assignedRole: OrganizationMembershipRoleAssignment;
   connectedToZendesk: boolean;
+  createdAt: string;
 };
 
 @Injectable({
@@ -149,6 +155,7 @@ export class OrganizationMembers {
               );
             },
           },
+          createdAt: record.createdAt,
         });
       }
     }
@@ -156,22 +163,82 @@ export class OrganizationMembers {
     return organizationMembershipByUserId;
   }
 
-  async findOrganizationMembersForOrganization(organization: Organization) {
+  async getPaginatedOrganizationMembersForOrganization(
+    organization: Organization,
+    args: { first: number | null; after: string | null },
+  ) {
     this.logger.debug(
-      'Find organization members for organization. (organizationId=%s)',
+      'Find paginated organization members for organization. (organizationId=%s)',
       organization.id,
     );
 
-    const organizationMembers = await this.findOrganizationMembers(organization.id);
+    const first = args.first ?? 100;
+    const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
+
+    const query = sql`
+      SELECT
+        ${organizationMemberFields(sql`"om"`)}
+      FROM
+        "organization_member" AS "om"
+      WHERE
+        "om"."organization_id" = ${organization.id}
+        ${
+          cursor
+            ? sql`
+                AND (
+                  "om"."created_at" < ${cursor.createdAt}
+                  OR (
+                    "om"."created_at" = ${cursor.createdAt}
+                    AND "om"."user_id" < ${cursor.id}
+                  )
+                )
+              `
+            : sql``
+        }
+      ORDER BY
+        "om"."organization_id" DESC
+        , "om"."user_id" DESC
+        , "om"."user_id" DESC
+      LIMIT ${first + 1}
+    `;
+
+    const result = await this.pool.any<unknown>(query);
+    const hasNextPage = result.length > first;
+
+    const organizationMembers = result
+      .slice(0, first)
+      .map(row => RawOrganizationMembershipModel.parse(row));
     const mapping = await this.resolveMemberships(organization, organizationMembers);
 
-    return organizationMembers.map(record => {
-      const member = mapping.get(record.userId);
-      if (!member) {
+    const edges = organizationMembers.map(record => {
+      const node = mapping.get(record.userId);
+      if (!node) {
         throw new Error('Could not find member.');
       }
-      return member;
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor({
+            createdAt: node.createdAt,
+            id: node.userId,
+          });
+        },
+      };
     });
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: !!cursor,
+        get endCursor() {
+          return edges.at(-1)?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges.at(0)?.cursor ?? '';
+        },
+      },
+    };
   }
 
   /**
@@ -264,4 +331,5 @@ const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
   , ${prefix}."assigned_resources" AS "assignedResources"
+  , to_json(${prefix}."created_at") AS "createdAt"
 `;

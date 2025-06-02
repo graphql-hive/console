@@ -16,10 +16,11 @@ import { createProcessor } from './processor';
 import { ClickHouseConfig, createWriter } from './writer';
 
 enum Status {
-  Waiting,
-  Connected,
-  Ready,
-  Stopped,
+  Waiting = 'Waiting',
+  Connected = 'Connected',
+  Unhealthy = 'Unhealthy',
+  Ready = 'Ready',
+  Stopped = 'Stopped',
 }
 
 const levelMap = {
@@ -98,8 +99,7 @@ export function createIngestor(config: {
 
   async function stop() {
     logger.info('Started Usage Ingestor shutdown...');
-
-    status = Status.Stopped;
+    changeStatus(Status.Stopped);
     await consumer.disconnect();
     writer.destroy();
     logger.info(`Consumer disconnected`);
@@ -114,6 +114,8 @@ export function createIngestor(config: {
   consumer.on('consumer.crash', async ev => {
     logger.error('Consumer crashed (restart=%s, error=%s)', ev.payload.restart, ev.payload.error);
 
+    changeStatus(Status.Unhealthy);
+
     if (ev.payload.restart) {
       return;
     }
@@ -126,15 +128,22 @@ export function createIngestor(config: {
     logger.warn('Consumer disconnected');
   });
 
+  consumer.on('consumer.fetch', async () => {
+    if (status !== Status.Ready) {
+      logger.info('Consumer successfully fetched messages after being in status: %s', status);
+      changeStatus(Status.Ready);
+    }
+  });
+
   async function start() {
     logger.info('Starting Usage Ingestor...');
 
-    status = Status.Waiting;
+    changeStatus(Status.Waiting);
 
     logger.info('Connecting Kafka Consumer');
     await consumer.connect();
 
-    status = Status.Connected;
+    changeStatus(Status.Connected);
 
     logger.info('Subscribing to Kafka topic: %s', config.kafka.topic);
     await consumer.subscribe({
@@ -164,7 +173,7 @@ export function createIngestor(config: {
       },
     });
     logger.info('Kafka is ready');
-    status = Status.Ready;
+    changeStatus(Status.Ready);
   }
 
   const processor = createProcessor({ logger });
@@ -174,6 +183,15 @@ export function createIngestor(config: {
   });
 
   let status: Status = Status.Waiting;
+
+  function changeStatus(newStatus: Status) {
+    if (status === newStatus) {
+      return;
+    }
+
+    logger.info('Changing status to %s', newStatus);
+    status = newStatus;
+  }
 
   return {
     readiness() {

@@ -10,8 +10,8 @@ import {
   type FieldDefinitionNode,
   type NameNode,
 } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
 import { traceInlineSync } from '@hive/service-common';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 
 export type SuperGraphInformation = {
   /** Mapping of schema coordinate to the services that own it. */

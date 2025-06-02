@@ -1,9 +1,9 @@
 'use client';
 
+import { useFrontmatter } from '../../../components/use-frontmatter';
 import { CaseStudyCard } from '../case-study-card';
 import { CaseStudyFile } from '../case-study-types';
 import { getCompanyLogo } from '../company-logos';
-import { useFrontmatter } from '../use-frontmatter';
 
 export function OtherCaseStudies({ caseStudies }: { caseStudies: CaseStudyFile[] }) {
   const frontmatter = useFrontmatter();

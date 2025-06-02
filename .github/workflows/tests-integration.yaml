@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 2
 
@@ -50,13 +50,13 @@ jobs:
         run: pnpm --filter integration-tests prepare:env
 
       - name: patch compose file volumes
-        uses: mikefarah/yq@v4.44.6
+        uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
         with:
           cmd: yq -i 'del(.services.*.volumes)' docker/docker-compose.community.yml
 
       - name: get cpu count for vitest
         id: cpu-cores
-        uses: SimenB/github-actions-cpu-cores@v2
+        uses: SimenB/github-actions-cpu-cores@97ba232459a8e02ff6121db9362b09661c875ab8 # v2
 
       - name: run containers
         timeout-minutes: 8

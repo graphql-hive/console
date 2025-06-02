@@ -7,7 +7,7 @@ import {
   visit,
   type DocumentNode,
 } from 'graphql';
-import { extractLinkImplementations } from '@graphql-hive/federation-link-utils';
+import { extractLinkImplementations } from '@theguild/federation-composition';
 
 export type SubgraphMetadata = Map<
   string,
@@ -62,7 +62,7 @@ export const extractMetadata = (documentAst: DocumentNode, source: string): Subg
           },
           [] as Array<{ name: string; content: string; source: string }>,
         );
-      if (metadata) {
+      if (metadata?.length) {
         schemaCoordinateMetadataMappings.set(schemaCoordinate, metadata);
       }
     }

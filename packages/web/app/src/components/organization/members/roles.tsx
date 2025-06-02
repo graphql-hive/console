@@ -99,7 +99,9 @@ const OrganizationMemberRoleEditor_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleEditor_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
   }
 `);
 
@@ -142,8 +144,9 @@ function OrganizationMemberRoleEditor(props: {
     try {
       const result = await updateMemberRole({
         input: {
-          organizationSlug: organization.slug,
-          roleId: role.id,
+          memberRole: {
+            byId: role.id,
+          },
           name: data.name,
           description: data.description,
           selectedPermissions: data.selectedPermissions,
@@ -232,7 +235,7 @@ function OrganizationMemberRoleEditor(props: {
                 <div className="overflow-y-auto">
                   <PermissionSelector
                     onSelectedPermissionsChange={onChangeSelectedPermissions}
-                    organization={organization}
+                    permissionGroups={organization.availableMemberPermissionGroups}
                     selectedPermissionIds={selectedPermissions}
                   />
                 </div>
@@ -262,7 +265,9 @@ function OrganizationMemberRoleEditor(props: {
 const OrganizationMemberRoleView_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleView_OrganizationFragment on Organization {
     id
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -291,7 +296,7 @@ function OrganizationMemberRoleView(props: {
             <SelectedPermissionOverview
               showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               activePermissionIds={role.permissions}
-              organization={organization}
+              permissionsGroups={organization.availableMemberPermissionGroups}
             />
           </div>
         </div>
@@ -325,8 +330,12 @@ const OrganizationMemberRoleCreator_CreateMemberRoleMutation = graphql(`
         updatedOrganization {
           id
           memberRoles {
-            id
-            ...OrganizationMemberRoleRow_MemberRoleFragment
+            edges {
+              node {
+                id
+                ...OrganizationMemberRoleRow_MemberRoleFragment
+              }
+            }
           }
         }
       }
@@ -345,8 +354,12 @@ const OrganizationMemberRoleCreator_OrganizationFragment = graphql(`
   fragment OrganizationMemberRoleCreator_OrganizationFragment on Organization {
     id
     slug
-    ...PermissionSelector_OrganizationFragment
-    ...SelectedPermissionOverview_OrganizationFragment
+    availableMemberPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+    }
+    availableMemberPermissionGroups {
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
   }
 `);
 
@@ -387,7 +400,11 @@ function OrganizationMemberRoleCreator(props: {
     try {
       const result = await createMemberRole({
         input: {
-          organizationSlug: organization.slug,
+          organization: {
+            bySelector: {
+              organizationSlug: organization.slug,
+            },
+          },
           name: data.name,
           description: data.description,
           selectedPermissions: data.selectedPermissions,
@@ -484,7 +501,7 @@ function OrganizationMemberRoleCreator(props: {
                   <div className="overflow-y-auto">
                     <PermissionSelector
                       onSelectedPermissionsChange={onChangeSelectedPermissions}
-                      organization={organization}
+                      permissionGroups={organization.availableMemberPermissionGroups}
                       selectedPermissionIds={selectedPermissions}
                     />
                   </div>
@@ -495,7 +512,7 @@ function OrganizationMemberRoleCreator(props: {
             <div className="h-[400px] overflow-scroll">
               <SelectedPermissionOverview
                 activePermissionIds={Array.from(selectedPermissions)}
-                organization={organization}
+                permissionsGroups={organization.availableMemberPermissionGroups}
                 showOnlyAllowedPermissions={showOnlyGrantedPermissions}
               />
             </div>
@@ -583,7 +600,7 @@ const OrganizationMemberRoleRow_MemberRoleFragment = graphql(`
     id
     name
     description
-    locked
+    isLocked
     canDelete
     canUpdate
     membersCount
@@ -606,7 +623,7 @@ function OrganizationMemberRoleRow(props: {
       <td className="py-3 text-sm font-medium">
         <div className="flex flex-row items-center">
           <div>{role.name}</div>
-          {role.locked ? (
+          {role.isLocked ? (
             <div className="ml-2">
               <TooltipProvider>
                 <Tooltip delayDuration={100}>
@@ -732,15 +749,21 @@ const OrganizationMemberRoles_DeleteMemberRole = graphql(`
         updatedOrganization {
           id
           memberRoles {
-            id
-            name
-            ...OrganizationMemberRoleRow_MemberRoleFragment
+            edges {
+              node {
+                id
+                name
+                ...OrganizationMemberRoleRow_MemberRoleFragment
+              }
+            }
           }
           invitations {
-            nodes {
-              id
-              role {
+            edges {
+              node {
                 id
+                role {
+                  id
+                }
               }
             }
           }
@@ -758,9 +781,13 @@ const OrganizationMemberRoles_OrganizationFragment = graphql(`
     id
     slug
     memberRoles {
-      id
-      name
-      ...OrganizationMemberRoleRow_MemberRoleFragment
+      edges {
+        node {
+          id
+          name
+          ...OrganizationMemberRoleRow_MemberRoleFragment
+        }
+      }
     }
     me {
       id
@@ -790,7 +817,9 @@ export function OrganizationMemberRoles(props: {
     props.organization,
   );
 
-  type Role = Exclude<typeof organization.memberRoles, null | undefined>[number] | null;
+  type Role =
+    | Exclude<typeof organization.memberRoles, null | undefined>['edges'][number]['node']
+    | null;
 
   const [deleteRoleState, deleteRole] = useMutation(OrganizationMemberRoles_DeleteMemberRole);
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
@@ -858,8 +887,9 @@ export function OrganizationMemberRoles(props: {
                   try {
                     const result = await deleteRole({
                       input: {
-                        organizationSlug: organization.slug,
-                        roleId: roleToDelete.id,
+                        memberRole: {
+                          byId: roleToDelete.id,
+                        },
                       },
                     });
 
@@ -909,7 +939,7 @@ export function OrganizationMemberRoles(props: {
             </tr>
           </thead>
           <tbody className="divide-y-[1px] divide-gray-500/20">
-            {organization.memberRoles?.map(role => (
+            {organization.memberRoles?.edges.map(({ node: role }) => (
               <OrganizationMemberRoleRow
                 organizationSlug={organization.slug}
                 isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}

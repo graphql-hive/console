@@ -75,7 +75,7 @@ pub struct ExecutionReport {
     pub persisted_document_hash: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct State {
     buffer: VecDeque<ExecutionReport>,
     schema: Document<'static, String>,
@@ -96,15 +96,6 @@ impl State {
 
     pub fn drain(&mut self) -> Vec<ExecutionReport> {
         self.buffer.drain(0..).collect::<Vec<ExecutionReport>>()
-    }
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            buffer: VecDeque::new(),
-            schema: Default::default(),
-        }
     }
 }
 
@@ -227,53 +218,51 @@ impl UsageAgent {
                     );
                     continue;
                 }
-                Ok(operation) => {
-                    match operation {
-                        Some(operation) => {
-                            let hash = operation.hash;
+                Ok(operation) => match operation {
+                    Some(operation) => {
+                        let hash = operation.hash;
 
-                            let client_name = non_empty_string(op.client_name);
-                            let client_version = non_empty_string(op.client_version);
+                        let client_name = non_empty_string(op.client_name);
+                        let client_version = non_empty_string(op.client_version);
 
-                            let metadata: Option<Metadata> =
-                                if client_name.is_some() || client_version.is_some() {
-                                    Some(Metadata {
-                                        client: Some(ClientInfo {
-                                            name: client_name,
-                                            version: client_version,
-                                        }),
-                                    })
-                                } else {
-                                    None
-                                };
-                            report.operations.push(Operation {
-                                operationMapKey: hash.clone(),
-                                timestamp: op.timestamp,
-                                execution: Execution {
-                                    ok: op.ok,
-                                    duration: op.duration.as_nanos(),
-                                    errorsTotal: op.errors,
-                                },
-                                persistedDocumentHash: op.persisted_document_hash,
-                                metadata,
+                        let metadata: Option<Metadata> =
+                            if client_name.is_some() || client_version.is_some() {
+                                Some(Metadata {
+                                    client: Some(ClientInfo {
+                                        name: client_name,
+                                        version: client_version,
+                                    }),
+                                })
+                            } else {
+                                None
+                            };
+                        report.operations.push(Operation {
+                            operationMapKey: hash.clone(),
+                            timestamp: op.timestamp,
+                            execution: Execution {
+                                ok: op.ok,
+                                duration: op.duration.as_nanos(),
+                                errorsTotal: op.errors,
+                            },
+                            persistedDocumentHash: op.persisted_document_hash,
+                            metadata,
+                        });
+                        if let std::collections::hash_map::Entry::Vacant(e) = report.map.entry(hash)
+                        {
+                            e.insert(OperationMapRecord {
+                                operation: operation.operation,
+                                operationName: non_empty_string(op.operation_name),
+                                fields: operation.coordinates,
                             });
-                            if !report.map.contains_key(&hash) {
-                                report.map.insert(
-                                    hash,
-                                    OperationMapRecord {
-                                        operation: operation.operation,
-                                        operationName: non_empty_string(op.operation_name),
-                                        fields: operation.coordinates,
-                                    },
-                                );
-                            }
-                            report.size += 1;
                         }
-                        None => {
-                            tracing::debug!("Dropping operation (phase: PROCESSING): probably introspection query");
-                        }
+                        report.size += 1;
                     }
-                }
+                    None => {
+                        tracing::debug!(
+                            "Dropping operation (phase: PROCESSING): probably introspection query"
+                        );
+                    }
+                },
             }
         }
 
@@ -309,7 +298,7 @@ impl UsageAgent {
                 )
                 .header(
                     reqwest::header::USER_AGENT,
-                    format!("hive-apollo-router/{}", COMMIT.unwrap_or_else(|| "local")),
+                    format!("hive-apollo-router/{}", COMMIT.unwrap_or("local")),
                 )
                 .json(&report)
                 .send()

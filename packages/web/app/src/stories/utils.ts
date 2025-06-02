@@ -1,4 +1,4 @@
-import { Organization, PermissionLevel } from '@/gql/graphql';
+import { Organization, PermissionLevelType } from '@/gql/graphql';
 
 export const availableMemberPermissionGroups: Organization['availableMemberPermissionGroups'] = [
   {
@@ -12,7 +12,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'organization:describe',
         dependsOnId: null,
         description: 'Member can see the organization. Permission can not be modified.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'View organization',
       },
       {
@@ -21,7 +21,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'support:manageTickets',
         dependsOnId: null,
         description: 'Member can access, create and reply to support tickets.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Access support tickets',
       },
       {
@@ -30,7 +30,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'organization:modifySlug',
         dependsOnId: null,
         description: 'Member can modify the organization slug.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Update organization slug',
       },
       {
@@ -39,7 +39,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'auditLog:export',
         dependsOnId: null,
         description: 'Member can access and export the audit log.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Export audit log',
       },
       {
@@ -48,7 +48,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'organization:delete',
         dependsOnId: null,
         description: 'Member can delete the Organization.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Delete organization',
       },
     ],
@@ -64,7 +64,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'member:describe',
         dependsOnId: null,
         description: 'Member can access the organization member overview.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'View members',
       },
       {
@@ -73,7 +73,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'member:modify',
         dependsOnId: 'member:describe',
         description: 'Member can assign roles to users.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Assign member role',
         warning:
           'Granting a role the ability to assign roles enables it to elevate its own permissions.',
@@ -91,7 +91,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'billing:describe',
         dependsOnId: null,
         description: 'Member can view the billing information.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'View billing',
       },
       {
@@ -100,7 +100,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'billing:update',
         dependsOnId: 'billing:describe',
         description: 'Member can change the organization plan.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Update billing',
       },
     ],
@@ -116,7 +116,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'oidc:modify',
         dependsOnId: null,
         description: 'Member can connect, modify, and remove an OIDC provider to the connection.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Manage OpenID Connect integration',
       },
     ],
@@ -133,7 +133,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         dependsOnId: null,
         description:
           'Member can connect, modify, and remove access for the GitHub integration and repository access.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Manage GitHub integration',
       },
     ],
@@ -150,7 +150,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         dependsOnId: null,
         description:
           'Member can connect, modify, and remove access for the Slack integration and repository access.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Manage Slack integration',
       },
     ],
@@ -166,7 +166,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'project:create',
         dependsOnId: null,
         description: 'Member can create new projects.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Create project',
       },
       {
@@ -175,7 +175,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'project:describe',
         dependsOnId: null,
         description: 'Member can access the specified projects.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'View project',
       },
       {
@@ -184,7 +184,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'project:delete',
         dependsOnId: 'project:describe',
         description: 'Member can access the specified projects.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'Delete project',
       },
       {
@@ -193,7 +193,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'project:modifySettings',
         dependsOnId: 'project:describe',
         description: 'Member can access the specified projects.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'Modify Settings',
       },
     ],
@@ -209,7 +209,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'schemaLinting:modifyOrganizationRules',
         dependsOnId: null,
         description: 'Member can view and modify the organization schema linting rules.',
-        level: PermissionLevel.Organization,
+        level: PermissionLevelType.Organization,
         title: 'Manage organization level schema linting',
       },
       {
@@ -218,7 +218,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'schemaLinting:modifyProjectRules',
         dependsOnId: 'project:describe',
         description: 'Member can view and modify the projects schema linting rules.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'Manage project level schema linting',
       },
     ],
@@ -234,7 +234,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'target:create',
         dependsOnId: 'project:describe',
         description: 'Member can create new projects.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'Create target',
       },
       {
@@ -243,7 +243,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'target:delete',
         dependsOnId: 'project:describe',
         description: 'Member can access the specified projects.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Delete target',
       },
       {
@@ -252,7 +252,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'target:modifySettings',
         dependsOnId: 'project:describe',
         description: 'Member can access the specified projects.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Modify settings',
       },
       {
@@ -261,7 +261,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'alert:modify',
         dependsOnId: 'project:describe',
         description: 'Can create alerts for schema versions.',
-        level: PermissionLevel.Project,
+        level: PermissionLevelType.Project,
         title: 'Modify alerts',
       },
       {
@@ -270,7 +270,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'targetAccessToken:modify',
         dependsOnId: 'project:describe',
         description: 'Allow managing access tokens for CLI and Usage Reporting.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Manage registry access tokens',
       },
       {
@@ -279,7 +279,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'cdnAccessToken:modify',
         dependsOnId: 'project:describe',
         description: 'Allow managing access tokens for the CDN.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Manage CDN access tokens',
       },
     ],
@@ -295,7 +295,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'laboratory:describe',
         dependsOnId: 'project:describe',
         description: 'Member can access the laboratory, view and execute GraphQL documents.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'View laboratory',
       },
       {
@@ -305,7 +305,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         dependsOnId: 'laboratory:describe',
         description:
           'Member can create, delete and update collections and documents in the laboratory.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Modify laboratory',
       },
       {
@@ -314,7 +314,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'laboratory:modifyPreflightScript',
         dependsOnId: 'laboratory:describe',
         description: 'Member can update the laboratory preflight script.',
-        level: PermissionLevel.Target,
+        level: PermissionLevelType.Target,
         title: 'Modify the laboratory preflight script',
       },
     ],
@@ -330,7 +330,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         id: 'schemaCheck:approve',
         dependsOnId: 'project:describe',
         description: 'Member can approve failed schema checks.',
-        level: PermissionLevel.Service,
+        level: PermissionLevelType.Service,
         title: 'Approve schema check',
       },
     ],

@@ -1,38 +1,18 @@
-import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../providers/target-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteTarget: NonNullable<MutationResolvers['deleteTarget']> = async (
   _,
-  { selector },
+  { input },
   { injector },
 ) => {
-  const translator = injector.get(IdTranslator);
-  const [organizationId, projectId, targetId] = await Promise.all([
-    translator.translateOrganizationId({
-      organizationSlug: selector.organizationSlug,
-    }),
-    translator.translateProjectId({
-      organizationSlug: selector.organizationSlug,
-      projectSlug: selector.projectSlug,
-    }),
-    translator.translateTargetId({
-      organizationSlug: selector.organizationSlug,
-      projectSlug: selector.projectSlug,
-      targetSlug: selector.targetSlug,
-    }),
-  ]);
-  const target = await injector.get(TargetManager).deleteTarget({
-    organizationId: organizationId,
-    projectId: projectId,
-    targetId: targetId,
+  const result = await injector.get(TargetManager).deleteTarget({
+    target: input.target,
   });
+
   return {
-    selector: {
-      organizationSlug: selector.organizationSlug,
-      projectSlug: selector.projectSlug,
-      targetSlug: selector.targetSlug,
+    ok: {
+      deletedTargetId: result.deletedTarget.id,
     },
-    deletedTarget: target,
   };
 };

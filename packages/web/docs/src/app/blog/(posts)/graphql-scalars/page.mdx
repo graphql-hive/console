@@ -1,0 +1,94 @@
+---
+title: GraphQL Scalars 1.0 is out!
+authors: arda
+tags: [graphql, graphql-scalars]
+date: 2019-08-08
+description: More Types, Data Integrity and Strict Validations on GraphQL.
+---
+
+The GraphQL Specification has the`Int`, `Float`, `String`, `Boolean`and `ID` Scalar types by
+default. Those scalar types help you identify the data and validate it before transferring it
+between client and server. But you might need more specific scalars for your GraphQL application, to
+help you better describe and validate your app's data.
+
+## Validation Using Scalars
+
+For example, you have a `String` field, but you need to validate upcoming or ongoing string data
+using regular expressions. So you should have this validation on each end; one in the client, the
+other one in the server and maybe there is another on a source. Instead of duplicating the same
+logic in different parts of the project, you can use `EmailAddress` scalar type that does the
+validation inside GraphQL for you.
+
+## Serialization and Parsing
+
+The other benefit of using GraphQL scalar types is parsing and serializing while transferring data.
+For example, you have `DateTime` data, but it is transferred as `String` due to restrictions of
+JSON, and each time you receive and pass the data, you have to parse the string and create a
+JavaScript `Date` instance while also serializing it to string before passing it to the client.
+Instead of having that logic in your implementation, you can just use `DateTime` scalar and you
+would work with native JavaScript`Date` instances directly like it is one of primitive types such as
+string, number and boolean.
+
+## What's New?
+
+[We've](/) recently [taken over the maintenance](/blog/taking-over-merge-graphql-schemas) of
+[GraphQL-Scalars](https://graphql-scalars.dev) library from the amazing team of OK-Grow!
+
+Since then, we completely rewrote the library using TypeScript, upgraded all dependencies, closed
+all the issues and PRs and increased the number of scalars in the package with new scalars like:
+`BigInt(Long)` , `GUID` , `HexColorCode` , `Hexadecimal` , `IPv4` , `IPv6` , `ISBN` , `MAC` , `JSON`
+and more. You can see all scalars in the
+[**README**](https://graphql-scalars.dev/docs/introduction).
+
+## Mocking
+
+Apollo Server provides mocks built-in scalars such as `Int` , `String` , `Float` , `ID` and
+`Boolean` . What if you need same thing for our scalars? So, we provide you mocking functions for
+each scalar in this package. You can add those easily in your server for mocking the schema.
+
+```typescript
+import { ApolloServer } from 'apollo-server'
+// import all scalars and resolvers
+import { mocks, resolvers, typeDefs } from 'graphql-scalars'
+import { makeExecutableSchema } from 'graphql-tools'
+
+// Alternatively, import individual scalars and resolvers
+// import { DateTimeResolver, DateTimeTypeDefinition, DateTimeMock, ... } from "graphql-scalars"
+
+const server = new ApolloServer({
+  typeDefs: [
+    // use spread syntax to add scalar definitions to your schema
+    ...typeDefs
+    // DateTimeDefinition,
+    // ...
+    // ... other type definitions ...
+  ],
+  resolvers: {
+    // use spread syntax to add scalar resolvers to your resolver map
+    ...resolvers
+    // DateTimeResolver,
+    // ...
+    // ... remainder of resolver map ...
+  },
+  mocks: {
+    // use spread syntax to add scalar resolvers to your resolver map
+    ...mocks
+    // DateTimeMock,
+    // ...
+    // ... other mocks ...
+  }
+})
+```
+
+## Special Thanks
+
+Thanks to OK-Grow for creating this package,
+[adriano-di-giovanni](https://github.com/adriano-di-giovanni) for being generous and giving us the
+[`graphql-scalars`](https://npmjs.com/package/graphql-scalars) name on npm, to
+[Saeris](https://github.com/Saeris) for letting us take other scalar implementations from his fork,
+[stems](https://github.com/stems) for their
+[`graphql-bigint`](https://github.com/stems/graphql-bigint) package,
+[abhiaiyer91](https://github.com/abhiaiyer91) for his
+[`graphql-currency-scalars`](https://github.com/abhiaiyer91/graphql-currency-scalars) package and
+[taion](https://github.com/taion) for his
+[`graphql-type-json`](https://github.com/taion/graphql-type-json).

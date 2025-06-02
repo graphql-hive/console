@@ -5,10 +5,6 @@ export default gql`
     me: User!
   }
 
-  interface Error {
-    message: String!
-  }
-
   extend type Mutation {
     updateMe(input: UpdateMeInput!): UpdateMeResult!
   }
@@ -44,11 +40,11 @@ export default gql`
   }
 
   type User {
-    id: ID!
-    email: String!
+    id: ID! @tag(name: "public")
+    email: String! @tag(name: "public")
     fullName: String!
-    displayName: String!
-    provider: AuthProvider!
+    displayName: String! @tag(name: "public")
+    provider: AuthProviderType! @tag(name: "public")
     isAdmin: Boolean!
   }
 
@@ -57,17 +53,17 @@ export default gql`
     total: Int!
   }
 
-  enum AuthProvider {
-    GOOGLE
-    GITHUB
+  enum AuthProviderType {
+    GOOGLE @tag(name: "public")
+    GITHUB @tag(name: "public")
     """
     Username-Password-Authentication
     """
-    USERNAME_PASSWORD
+    USERNAME_PASSWORD @tag(name: "public")
     """
     OpenID Connect
     """
-    OIDC
+    OIDC @tag(name: "public")
   }
 
   enum OrganizationAccessScope {
@@ -97,27 +93,27 @@ export default gql`
     TOKENS_WRITE
   }
 
-  enum PermissionLevel {
-    organization
-    project
-    target
-    service
-    appDeployment
+  enum PermissionLevelType {
+    ORGANIZATION @tag(name: "public")
+    PROJECT @tag(name: "public")
+    TARGET @tag(name: "public")
+    SERVICE @tag(name: "public")
+    APP_DEPLOYMENT @tag(name: "public")
   }
 
   type Permission {
-    id: ID!
-    title: String!
-    description: String!
-    level: PermissionLevel!
-    dependsOnId: ID
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    level: PermissionLevelType! @tag(name: "public")
+    dependsOnId: ID @tag(name: "public")
     isReadOnly: Boolean!
     warning: String
   }
 
   type PermissionGroup {
-    id: ID!
-    title: String!
-    permissions: [Permission!]!
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    permissions: [Permission!]! @tag(name: "public")
   }
 `;

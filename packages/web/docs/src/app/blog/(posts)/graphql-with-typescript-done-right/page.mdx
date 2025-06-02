@@ -1,0 +1,499 @@
+---
+title: GraphQL with TypeScript done right
+authors: charlypoly
+tags: [graphql, typescript, codegen, node, react]
+date: 2021-04-29
+description: How to get the most of React application types with GraphQL Code Generator.
+canonical: https://charlypoly.com/publications/typescript-with-graphql-done-right
+---
+
+[Generics](https://charlypoly.com/publications/typescript-generics-and-overloads), and Mapped types,
+are key to build types on top of existing ones by making them configurable (Generics) or iterables
+(Mapped types).
+
+Advanced types give to your code and open-source libraries the power of providing an API that
+manipulates data (your application objects) without breaking the “types chain”.
+
+> The best TypeScript configuration ensures that the “types chain” is continuous
+
+## The TypeScript "Types Chain"
+
+TypeScript helps with typing data and following how the data is used and transformed by subsequent
+functions or method calls.
+
+The example below shows how easily this “types chain” can be broken:
+
+```ts
+const a = '1' // a is a string
+
+const stringToInt = (num: string): any => parseInt(num, 10)
+
+const b = stringToInt('5') // b is of type any
+```
+
+_How to break the TypeScript “types chain”
+([playground demo](https://typescriptlang.org/play?ssl=8&ssc=1&pln=1&pc=1#code/MYewdgzgLgBAhjAvDA5ARhTA9F+MCWEe0ATvmAOYBQNoksp5FAKiAJJizIAUYArgFsAXDEaUAlCLhgAnkgB8MAA5wSEAKYcovQQBoYaAAziaVOtBgAjJKKhlKrLdxQBWFOOy5rhGCABmMFAySurwslRAA))_
+
+Since React 16.8 brought ubiquitous functional components, a React application can be seen as a mix
+of functional components dealing with state and data in order to provide UI to the users.
+
+Like with plain JavaScript functions, the same rules of the “types chain” apply to your React
+application that will look to something similar to the following:
+
+![./typescript-with-graphql-done-right-1.png](./typescript-with-graphql-done-right-1.png)
+
+_Most modern React applications have the following data setup: centralized data store passed down to
+components through contexts, transformed by custom hooks down to UI components._
+
+Since React applications are built on top of data, we can conclude that:
+
+> The strength of your React application's types is based on the stability of your data types
+
+### The Flawed "Handwritten" Data Types
+
+Most React projects type remote data (from APIs) manually, either at the component level with
+interfaces or in a global dedicated `.d.ts` file.
+
+```ts
+interface User {
+  id: string
+  email: string
+}
+
+interface Chat {
+  id: string
+  user: User
+  messages: Message[]
+}
+
+//…
+
+const userQuery = gql`
+  query currentUser {
+    me {
+      id
+      email
+    }
+  }
+`
+
+const Login = () => {
+  const { data } = useQuery(userQuery)
+  const user = data ? (data.me as User) : null
+  // ...
+}
+```
+
+_Example of data-types definition and linked usage, common in many projects_
+
+Manually writing and maintaining those type can lead to human errors:
+
+- **outdated typing** (regarding the API current implementation)
+- **typos**
+- **partial typing** of data (not all API's data has a corresponding type)
+
+As we saw earlier, the strength of your React TypeScript types is based on your data types,
+therefore, any mistake on your manually maintained data types will ripple in many of your React
+components.
+
+![./typescript-with-graphql-done-right-2.png](./typescript-with-graphql-done-right-2.png)
+
+_In our hypothetical application, the User type has some typos that will impact the stability of the
+associated components at runtime, defecting the benefits of TypeScript._
+
+Fortunately, thanks to the GraphQL introspection feature, many tools arose to solve this problem by
+providing data-types - and even more - generation tools.
+
+## Robust React Application's Types with GraphQL
+
+[GraphQL Code Generator](https://graphql-code-generator.com), given the mutations and queries used
+by the app and the access to the target GraphQL API, generates the corresponding TypeScript types.
+
+![./typescript-with-graphql-done-right/typescript-with-graphql-done-right-3.png](./typescript-with-graphql-done-right-3.png)
+
+GraphQL Code Generator is doing all the heavy lifting by getting from the API the definitions of the
+data types used by the React applications queries and mutations.
+
+Let's see an example with our hypothetical application Login component relying on the User type.
+
+### Stronger Generated TypeScript Types
+
+First, let's create a `queries.graphql` file in a `src/graphql` folder:
+
+```graphql filename="queries.graphql"
+query currentUser {
+  me {
+    id
+    email
+  }
+}
+```
+
+then, the following GraphQL Code Generator configuration at the root of our project:
+
+```yaml
+schema: http://localhost:3000/graphql
+documents: ./src/graphql/*.graphql
+generates:
+  graphql/generated.ts:
+    plugins:
+      - typescript-operations
+      - typescript-react-apollo
+  config:
+    withHooks: false
+```
+
+_codegen.yml_
+
+And after running `graphql-codegen` CLI, we can refactor our `<Login>` component:
+
+```ts
+import { currentUserDocument, CurrentUserQueryResult } from '../graphql/generated.ts'
+
+// no need to create the User type or `gql` query, we import them from the generated file
+const Login = () => {
+  const { data } = useQuery<CurrentUserQueryResult>(currentUserDocument)
+  // user is typed!
+  const user = data ? data.me : null
+
+  // ...
+}
+```
+
+_src/components/Login.tsx_
+
+The configuration and refactoring were straightforward, directly impacting our data types, which are
+now directly linked to the GraphQL API Schema, making our React application more stable!
+
+Contrary to the manually maintained data types, using the GraphQL Code Generator puts the data-types
+maintenance on the GraphQL API side.
+
+Maintaining data types on the front-end side only consist of running the GraphQL Code Generator tool
+to update types according to the last GraphQL API version.
+
+Let's now see some more advanced configurations that bring more stability.
+
+### Getting the Most of Your GraphQL Code Generator Configuration
+
+When used with React Apollo Client, GraphQL Code Generator offers three main configuration modes:
+
+**Generate TypeScript types definitions**
+
+This is the configuration that we used in our previous example:
+
+```yaml
+schema: http://localhost:3000/graphql
+documents: ./src/graphql/*.graphql
+generates:
+  graphql/generated.ts:
+    plugins:
+      - typescript-operations
+      - typescript-react-apollo
+config:
+  withHooks: false
+```
+
+_codegen.yml_
+
+This configuration will generate a `src/graphql/generated.ts` file that will contain:
+
+- GraphQL document nodes
+- TypeScript Query/Mutation Result types (return type of our GraphQL operations)
+- TypeScript Query/Mutation Variables types (variables types of our GraphQL operations)
+
+Here an example of GraphQL Code Generator output given our previous `currentUser` Query:
+
+```ts
+import { gql } from '@apollo/client'
+import * as Apollo from '@apollo/client'
+
+export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>
+export type CurrentUserQuery = { __typename?: 'Query' } & {
+  me: { __typename?: 'User' } & Pick<User, 'id'>
+}
+
+export const CurrentUserDocument = gql`
+  query currentUser {
+    me {
+      id
+    }
+  }
+`
+
+export type CurrentUserQueryResult = Apollo.QueryResult<CurrentUserQuery, CurrentUserQueryVariables>
+```
+
+_src/graphql/generated.ts_
+
+We already saw the benefits of these generated types on the `<Login>` component refactoring.
+
+However, we can agree that having to provide both the query TypeScript type
+(`CurrentUserQueryResult`) and the query GraphQL document node (`currentUserDocument`) to
+`useQuery()` is cumbersome: `useQuery<CurrentUserQueryResult>(currentUserDocument)`
+
+Let's see how we can improve that in the next configuration mode.
+
+**Generate Typed React Hooks**
+
+GraphQL Code Generator is capable of more than just generating TypeScript types, it can also
+generate JavaScript/TypeScript code.
+
+Let's see how we can ask GraphQL Code Generator to generate Typed React hooks, so we don't have to
+provide the TypeScript types to `useQuery()` every time.
+
+Let's use the following configuration:
+
+```yaml
+schema: http://localhost:3000/graphql
+documents: ./src/graphql/*.graphql
+generates:
+  graphql/generated.ts:
+    plugins:
+      - typescript-operations
+      - typescript-react-apollo
+```
+
+_codegen.yml_
+
+This configuration will generate a `src/graphql/generated.ts` file that will contain:
+
+- GraphQL document node
+- TypeScript Query/Mutation Result types (return type of our GraphQL operations)
+- TypeScript Query/Mutation Variables types (variables types of our GraphQL operations)
+- One custom hook for each defined GraphQL operation
+
+Example given our previous `currentUser` Query:
+
+```ts
+import { gql } from '@apollo/client'
+import * as Apollo from '@apollo/client'
+
+const defaultOptions = {}
+export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>
+export type CurrentUserQuery = { __typename?: 'Query' } & {
+  me: { __typename?: 'User' } & Pick<User, 'id'>
+}
+
+export const CurrentUserDocument = gql`
+  query currentUser {
+    me {
+      id
+    }
+  }
+`
+
+export function useCurrentUserQuery(
+  baseOptions?: Apollo.QueryHookOptions<CurrentUserQuery, CurrentUserQueryVariables>
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<CurrentUserQuery, CurrentUserQueryVariables>(CurrentUserDocument, options)
+}
+export type CurrentUserQueryHookResult = ReturnType<typeof useCurrentUserQuery>
+export type CurrentUserQueryResult = Apollo.QueryResult<CurrentUserQuery, CurrentUserQueryVariables>
+```
+
+_src/graphql/generated.ts_
+
+Which will give us this updated version of our `<Login>` component:
+
+```ts
+import { useCurrentUserQuery } from '../graphql/generated.ts'
+
+// no need to create the User type or `gql` query, we import them from the generated file
+
+const Login = () => {
+  const { data } = useCurrentUserQuery()
+  // user is typed!
+  const user = data ? data.me : null
+
+  // ...
+}
+```
+
+_src/components/Login.tsx_
+
+Nice! Isn't it?
+
+**Generate Typed Documents**
+
+GraphQL Code Generator is providing another simple way to use typed GraphQL Query and Mutations,
+called [`TypedDocumentNode`](https://graphql-code-generator.com/docs/plugins/typed-document-node).
+
+With the following configuration:
+
+```yaml
+schema: http://localhost:3000/graphql
+documents: ./src/graphql/*.graphql
+generates:
+  graphql/generated.ts:
+    plugins:
+      - typescript-operations
+      - typed-document-node
+```
+
+_codegen.yml_
+
+GraphQL Code Generator will generate the following file:
+
+```ts
+import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core'
+
+export type CurrentUserQueryVariables = Exact<{ [key: string]: never }>
+export type CurrentUserQuery = { __typename?: 'Query' } & {
+  me: { __typename?: 'User' } & Pick<User, 'id'>
+}
+
+export const CurrentUserDocument: DocumentNode<CurrentUserQuery, CurrentUserQueryVariables> = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'currentUser' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+_src/graphql/generated.ts_
+
+This allows us the following refactoring of our `<Login>` component:
+
+```ts
+import { CurrentUserDocument } from '../graphql/generated.ts'
+
+// no need to create the User type or `gql` query, we import them from the generated file
+
+const Login = () => {
+  const { data } = useQuery(CurrentUserDocument)
+  // user is typed!
+  const user = data ? data.me : null
+
+  // ...
+}
+```
+
+_src/components/Login.tsx_
+
+In my experience, it is more scalable to go for the
+[`TypedDocumentNode`](https://graphql-code-generator.com/docs/plugins/typed-document-node) approach
+instead of the hooks generation.
+
+The generation of one custom hook per GraphQL operation (`Query`/`Mutation`) can generate a LOT of
+hooks at scale along with a lot of imports, which is not necessary given the `useMutation()`
+`useQuery` provided by Apollo Client.
+
+### Tips: Leverage GraphQL Fragments for Scalable Types
+
+Now that we have many ways to generate **stable **data types, let's see how to make them easier to
+use and maintain in time.
+
+Let's take a look at the following helper:
+
+```ts
+import { CurrentUserQuery } from "src/graphql/generated";
+
+const isUserEmailValid = (user: CurrentUserQuery["me']) => !!user.email
+```
+
+Here, instead of using our `currentUser` query `CurrentUserQuery[“me”]` type, we would prefer to
+rely on a `User` type.
+
+We can achieve this with zero maintainability by leveraging GraphQL Fragments.
+
+When Fragments are provided, GQL Code Generator will produce the corresponding TypeScript types.
+
+Here is our updated `src/graphql/queries.graphql`:
+
+```graphql
+query currentUser {
+  me {
+    ...User
+  }
+}
+```
+
+The `...User` indicates to GraphQL that we want to expand our `User` fragment here, similar to the
+[object spread syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax).
+
+In order to do so, we need to provide to GraphQL Code Generator the definition of the `User`
+fragment that we will place in a new `src/graphql/fragments.graphql` file:
+
+```
+fragment User on users {
+   id
+   email
+}
+```
+
+_src/graphql/fragments.graphql_
+
+Please note that a fragment needs to be defined against an existing type of the GraphQL API Schema,
+here `users`.
+
+Here is our updated helper code:
+
+```ts
+import { UserFragment } from 'src/graphql/generated'
+
+const isUserEmailValid = (user: UserFragment) => !!user.email
+```
+
+Leveraging GraphQL Fragments allows you to build your React app data types on top of the GraphQL API
+types.
+
+Please note that multiple fragments can be defined on a single GraphQL Schema type:
+
+```graphql
+fragment User on users {
+  id
+  email
+}
+fragment UserProfile on users {
+  id
+  email
+  firstName
+  lastName
+}
+```
+
+_src/graphql/fragments.graphql_
+
+A good practice is to ensure that all your Query and Mutations responses use fragment, this will
+ensure that your React application can benefit from well-defined data types of different
+specificity, ex:
+
+- `User` type carries the necessary base properties
+- `UserProfile` type carries the minimum user info for display
+- `UserExtended` type carries all the `users` properties
+
+## Conclusion
+
+The TypeScript type system is powerful and valuable only if used properly.
+
+In React applications, most of the components rely on data, doing your data typing at the center of
+your application stability.
+
+Thanks to GraphQL Code Generator and with a fast setup, you will be able to ensure the stability of
+your React application data types, along with your application's global stability.
+
+If you decide to use GraphQL Code Generator, make sure to:
+
+- move all your `gql` definitions in dedicated `.graphql` files
+- Favor the
+  [`TypedDocumentNode`](https://graphql-code-generator.com/docs/plugins/typed-document-node)
+  configuration mode
+- Make sure that all your Queries and Mutations relies on well-defined GraphQL Fragments

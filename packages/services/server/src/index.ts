@@ -23,8 +23,8 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
-import { HivePubSub } from '@hive/api/src/modules/shared/providers/pub-sub';
-import { createRedisClient } from '@hive/api/src/modules/shared/providers/redis';
+import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
@@ -65,6 +65,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
+import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
 export async function main() {
@@ -402,35 +403,14 @@ export async function main() {
       prometheus: env.prometheus,
     });
 
-    const authN = new AuthN({
-      strategies: [
-        (logger: Logger) =>
-          new SuperTokensUserAuthNStrategy({
-            logger,
-            storage,
-            organizationMembers: new OrganizationMembers(
-              storage.pool,
-              new OrganizationMemberRoles(storage.pool, logger),
-              logger,
-            ),
-          }),
-        (logger: Logger) =>
-          new OrganizationAccessTokenStrategy({
-            logger,
-            organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
-            organizationAccessTokenValidationCache: registry.injector.get(
-              OrganizationAccessTokenValidationCache,
-            ),
-          }),
-        (logger: Logger) =>
-          new TargetAccessTokenStrategy({
-            logger,
-            tokensConfig: {
-              endpoint: env.hiveServices.tokens.endpoint,
-            },
-          }),
-      ],
-    });
+    const organizationAccessTokenStrategy = (logger: Logger) =>
+      new OrganizationAccessTokenStrategy({
+        logger,
+        organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
+        organizationAccessTokenValidationCache: registry.injector.get(
+          OrganizationAccessTokenValidationCache,
+        ),
+      });
 
     const graphqlPath = '/graphql';
     const port = env.http.port;
@@ -445,17 +425,52 @@ export async function main() {
       },
       isProduction: env.environment !== 'development',
       release: env.release,
-      hiveConfig: env.hive,
+      hiveUsageConfig: env.hive,
       hivePersistedDocumentsConfig: env.hivePersistedDocuments,
       tracing,
       logger: logger as any,
-      authN,
+      authN: new AuthN({
+        strategies: [
+          (logger: Logger) =>
+            new SuperTokensUserAuthNStrategy({
+              logger,
+              storage,
+              organizationMembers: new OrganizationMembers(
+                storage.pool,
+                new OrganizationMemberRoles(storage.pool, logger),
+                logger,
+              ),
+            }),
+          organizationAccessTokenStrategy,
+          (logger: Logger) =>
+            new TargetAccessTokenStrategy({
+              logger,
+              tokensConfig: {
+                endpoint: env.hiveServices.tokens.endpoint,
+              },
+            }),
+        ],
+      }),
     });
 
     server.route({
       method: ['GET', 'POST'],
       url: graphqlPath,
       handler: graphql,
+    });
+
+    server.route({
+      method: ['GET', 'POST'],
+      url: '/graphql-public',
+      handler: createPublicGraphQLHandler({
+        registry,
+        logger: logger as any,
+        hiveUsageConfig: env.hive,
+        authN: new AuthN({
+          strategies: [organizationAccessTokenStrategy],
+        }),
+        tracing,
+      }),
     });
 
     const introspection = JSON.stringify({

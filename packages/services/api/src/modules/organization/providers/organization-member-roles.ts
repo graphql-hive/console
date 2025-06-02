@@ -1,6 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+} from '@hive/storage';
 import { batch } from '../../../shared/helpers';
 import {
   Permission,
@@ -39,6 +43,7 @@ const MemberRoleModel = z
           value as Array<OrganizationAccessScope | ProjectAccessScope | TargetAccessScope> | null,
       ),
     permissions: z.array(PermissionsModel).nullable(),
+    createdAt: z.string(),
   })
   .transform(record => {
     let permissions: PermissionsPerResourceLevelAssignment;
@@ -83,7 +88,19 @@ export class OrganizationMemberRoles {
     });
   }
 
-  async getMemberRolesForOrganizationId(organizationId: string) {
+  async getPaginatedMemberRolesForOrganizationId(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
+    let cursor: { id: string; createdAt: string } | null = null;
+    if (args.after) {
+      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+    }
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
     const query = sql`
       SELECT
         ${organizationMemberRoleFields}
@@ -91,11 +108,54 @@ export class OrganizationMemberRoles {
         "organization_member_roles"
       WHERE
         "organization_id" = ${organizationId}
+        ${
+          cursor
+            ? sql`
+                AND (
+                  (
+                    "created_at" = ${cursor.createdAt}
+                    AND "id" < ${cursor.id}
+                  )
+                  OR "created_at" < ${cursor.createdAt}
+                )
+              `
+            : sql``
+        }
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
     `;
 
     const records = await this.pool.any<unknown>(query);
 
-    return records.map(row => MemberRoleModel.parse(row));
+    let edges = records.map(row => {
+      const node = MemberRoleModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
   }
 
   /** Find member roles by their ID */
@@ -317,6 +377,7 @@ const organizationMemberRoleFields = sql`
   , "organization_member_roles"."scopes" AS "legacyScopes"
   , "organization_member_roles"."permissions"
   , "organization_member_roles"."organization_id" AS "organizationId"
+  , to_json("organization_member_roles"."created_at") AS "createdAt"
   , (
     SELECT COUNT(*)
     FROM "organization_member" AS "om"

@@ -46,3 +46,22 @@ export function maskRequestId(errorMessage: string) {
     'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
   );
 }
+
+export function fastFetchError(input: URL | RequestInfo, _init?: RequestInit) {
+  let url: URL;
+  if (typeof input === 'string') {
+    url = new URL(input);
+  } else if (input instanceof URL) {
+    url = input;
+  } else {
+    url = new URL(input.url);
+  }
+  const hostname = url.hostname;
+  const error = new Error(`getaddrinfo ENOTFOUND ${hostname}`) as Error & { [k: string]: string };
+  error.code = 'ENOTFOUND';
+  error.errno = 'ENOTFOUND';
+  error.syscall = 'getaddrinfo';
+  error.hostname = hostname;
+  error.stack = undefined; // prevent stack details from messing up snapshots
+  return Promise.reject(error);
+}

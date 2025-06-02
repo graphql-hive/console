@@ -38,10 +38,7 @@ const CLI_SchemaComposeMutation = graphql(/* GraphQL */ `
         compositionResult {
           supergraphSdl
           errors {
-            total
-            nodes {
-              message
-            }
+            ...RenderErrors_SchemaErrorConnectionFragment
           }
         }
       }

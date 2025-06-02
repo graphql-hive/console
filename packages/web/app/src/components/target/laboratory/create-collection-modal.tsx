@@ -26,7 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 const CollectionQuery = graphql(`
   query Collection($selector: TargetSelectorInput!, $id: ID!) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       documentCollection(id: $id) {
         id

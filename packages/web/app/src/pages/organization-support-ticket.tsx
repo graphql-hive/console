@@ -270,13 +270,11 @@ const SupportTicket_OrganizationFragment = graphql(`
 `);
 
 const SupportTicketPageQuery = graphql(`
-  query SupportTicketPageQuery($selector: OrganizationSelectorInput!, $ticketId: ID!) {
-    organization(selector: $selector) {
-      organization {
-        ...SupportTicket_OrganizationFragment
-        supportTicket(id: $ticketId) {
-          ...SupportTicket_SupportTicketFragment
-        }
+  query SupportTicketPageQuery($organizationSlug: String!, $ticketId: ID!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...SupportTicket_OrganizationFragment
+      supportTicket(id: $ticketId) {
+        ...SupportTicket_SupportTicketFragment
       }
     }
   }
@@ -287,9 +285,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
   const [query, refetchQuery] = useQuery({
     query: SupportTicketPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
       ticketId,
     },
     requestPolicy: 'cache-first',
@@ -303,8 +299,8 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
-  const ticket = query.data?.organization?.organization.supportTicket;
+  const currentOrganization = query.data?.organization;
+  const ticket = currentOrganization?.supportTicket;
 
   return (
     <OrganizationLayout

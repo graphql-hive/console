@@ -29,11 +29,11 @@ import { cleanRequestId, type TracingInstance } from '@hive/service-common';
 import { runWithAsyncContext } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { asyncStorage } from './async-storage';
-import type { HiveConfig, HivePersistedDocumentsConfig } from './environment';
+import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
 import { useArmor } from './use-armor';
 import { extractUserId, useSentryUser } from './use-sentry-user';
 
-const reqIdGenerate = hyperid({ fixedLength: true });
+export const reqIdGenerate = hyperid({ fixedLength: true });
 
 function hashSessionId(sessionId: string): string {
   return createHash('sha256').update(sessionId).digest('hex');
@@ -49,14 +49,14 @@ export interface GraphQLHandlerOptions {
     apiKey: string;
   };
   isProduction: boolean;
-  hiveConfig: HiveConfig;
+  hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;
   release: string;
   logger: FastifyBaseLogger;
   authN: AuthN;
 }
 
-interface Context extends RegistryContext {
+export interface Context extends RegistryContext {
   req: FastifyRequest;
   reply: FastifyReply;
   session: Session;
@@ -80,6 +80,30 @@ function hasFastifyRequest(ctx: unknown): ctx is {
   return !!ctx && typeof ctx === 'object' && 'req' in ctx;
 }
 
+export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plugin {
+  return useErrorHandler(({ errors, context }): void => {
+    // Not sure what changed, but the `context` is now an object with a contextValue property.
+    // We previously relied on the `context` being the `contextValue` itself.
+    const ctx = ('contextValue' in context ? context.contextValue : context) as Context;
+
+    for (const error of errors) {
+      if (isGraphQLError(error) && error.originalError) {
+        console.error(error);
+        console.error(error.originalError);
+        continue;
+      } else {
+        console.error(error);
+      }
+
+      if (hasFastifyRequest(ctx)) {
+        ctx.req.log.error(error);
+      } else {
+        fallbackHandler(error);
+      }
+    }
+  });
+}
+
 function useNoIntrospection(params: {
   signature: string;
   isNonProductionEnvironment: boolean;
@@ -95,94 +119,102 @@ function useNoIntrospection(params: {
   };
 }
 
+export function useHiveSentry() {
+  return useSentry({
+    startTransaction: false,
+    renameTransaction: false,
+    /**
+     * When it's not `null`, the plugin modifies the error object.
+     * We end up with an unintended error masking, because the GraphQLYogaError is replaced with GraphQLError (without error.originalError).
+     */
+    eventIdKey: null,
+    operationName: () => 'graphql',
+    includeRawResult: false,
+    includeResolverArgs: false,
+    includeExecuteVariables: true,
+    configureScope(args, scope) {
+      // Get the operation name from the request, or use the operation name from the document.
+      const operationName =
+        args.operationName ??
+        args.document.definitions.find(isOperationDefinitionNode)?.name?.value ??
+        'unknown';
+
+      scope.setContext('Extra Info', {
+        operationName,
+        variables: JSON.stringify(args.variableValues),
+        operation: print(args.document),
+        userId: extractUserId(args.contextValue as any),
+      });
+    },
+    appendTags: ({ contextValue }) => {
+      const supertokens_user_id = extractUserId(contextValue as any);
+      const request_id = (contextValue as Context).requestId;
+
+      return {
+        supertokens_user_id,
+        request_id,
+      };
+    },
+    skip(args) {
+      // It's the readiness check
+      return args.operationName === 'readiness';
+    },
+  });
+}
+
+export function useHiveTracing(tracingProvider?: Parameters<typeof useOpenTelemetry>[1]) {
+  return useOpenTelemetry(
+    {
+      document: true,
+      resolvers: false,
+      result: false,
+      variables: variables => {
+        if (variables && typeof variables === 'object' && 'selector' in variables) {
+          return JSON.stringify(variables.selector);
+        }
+
+        return '';
+      },
+      excludedOperationNames: ['readiness'],
+    },
+    tracingProvider,
+  );
+}
+
 export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMethod => {
   const server = createYoga<Context>({
     logging: options.logger,
     plugins: [
       useArmor(),
-      useSentry({
-        startTransaction: false,
-        renameTransaction: false,
-        /**
-         * When it's not `null`, the plugin modifies the error object.
-         * We end up with an unintended error masking, because the GraphQLYogaError is replaced with GraphQLError (without error.originalError).
-         */
-        eventIdKey: null,
-        operationName: () => 'graphql',
-        includeRawResult: false,
-        includeResolverArgs: false,
-        includeExecuteVariables: true,
-        configureScope(args, scope) {
-          // Get the operation name from the request, or use the operation name from the document.
-          const operationName =
-            args.operationName ??
-            args.document.definitions.find(isOperationDefinitionNode)?.name?.value ??
-            'unknown';
-
-          scope.setContext('Extra Info', {
-            operationName,
-            variables: JSON.stringify(args.variableValues),
-            operation: print(args.document),
-            userId: extractUserId(args.contextValue as any),
-          });
-        },
-        appendTags: ({ contextValue }) => {
-          const supertokens_user_id = extractUserId(contextValue as any);
-          const request_id = (contextValue as Context).requestId;
-
-          return {
-            supertokens_user_id,
-            request_id,
-          };
-        },
-        skip(args) {
-          // It's the readiness check
-          return args.operationName === 'readiness';
-        },
-      }),
+      useHiveSentry(),
       useSentryUser(),
-      useErrorHandler(({ errors, context }): void => {
-        // Not sure what changed, but the `context` is now an object with a contextValue property.
-        // We previously relied on the `context` being the `contextValue` itself.
-        const ctx = ('contextValue' in context ? context.contextValue : context) as Context;
-
-        for (const error of errors) {
-          if (isGraphQLError(error) && error.originalError) {
-            console.error(error);
-            console.error(error.originalError);
-            continue;
-          } else {
-            console.error(error);
-          }
-
-          if (hasFastifyRequest(ctx)) {
-            ctx.req.log.error(error);
-          } else {
-            server.logger.error(error);
-          }
-        }
+      useHiveErrorHandler(error => {
+        server.logger.error(error);
       }),
       useExtendContext(async context => ({
         session: await options.authN.authenticate(context),
       })),
       useHive({
         debug: true,
-        enabled: !!options.hiveConfig,
-        token: options.hiveConfig?.token ?? '',
-        usage: {
-          endpoint: options.hiveConfig?.usage?.endpoint ?? undefined,
-          clientInfo(ctx: { req: FastifyRequest; reply: FastifyReply }) {
-            const name = ctx.req.headers['graphql-client-name'] as string;
-            const version = (ctx.req.headers['graphql-client-version'] as string) ?? 'missing';
+        enabled: !!options.hiveUsageConfig,
+        token: options.hiveUsageConfig?.token ?? '',
+        usage: options.hiveUsageConfig
+          ? {
+              target: options.hiveUsageConfig.target,
+              endpoint: options.hiveUsageConfig.endpoint ?? undefined,
+              clientInfo(ctx: { req: FastifyRequest; reply: FastifyReply }) {
+                const name = ctx.req.headers['graphql-client-name'] as string;
+                const version = (ctx.req.headers['graphql-client-version'] as string) ?? 'missing';
 
-            if (name) {
-              return { name, version };
+                if (name) {
+                  return { name, version };
+                }
+
+                return null;
+              },
+              exclude: ['readiness'],
             }
-
-            return null;
-          },
-          exclude: ['readiness'],
-        },
+          : false,
         experimental__persistedDocuments: options.hivePersistedDocumentsConfig
           ? {
               cdn: {
@@ -234,24 +266,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
           },
         },
       ),
-      options.tracing
-        ? useOpenTelemetry(
-            {
-              document: true,
-              resolvers: false,
-              result: false,
-              variables: variables => {
-                if (variables && typeof variables === 'object' && 'selector' in variables) {
-                  return JSON.stringify(variables.selector);
-                }
-
-                return '';
-              },
-              excludedOperationNames: ['readiness'],
-            },
-            options.tracing.traceProvider(),
-          )
-        : {},
+      options.tracing ? useHiveTracing(options.tracing.traceProvider()) : {},
       useExecutionCancellation(),
     ],
     graphiql: !options.isProduction,

@@ -132,15 +132,12 @@ const CdnApiModel = zod.union([
 ]);
 
 const HiveModel = zod.union([
-  zod.object({ HIVE: emptyString(zod.literal('0').optional()) }),
+  zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
   zod.object({
-    HIVE: zod.literal('1'),
-    HIVE_API_TOKEN: zod.string(),
-    HIVE_USAGE: zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+    HIVE_USAGE: zod.literal('1'),
     HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
-    HIVE_USAGE_DATA_RETENTION_PURGE_INTERVAL_MINUTES: emptyString(NumberFromString.optional()),
-    HIVE_REPORTING: zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-    HIVE_REPORTING_ENDPOINT: zod.string().url().optional(),
+    HIVE_USAGE_TARGET: zod.string(),
+    HIVE_USAGE_ACCESS_TOKEN: zod.string(),
   }),
 ]);
 
@@ -330,18 +327,12 @@ const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
 
-const hiveConfig =
-  hive.HIVE === '1'
+const hiveUsageConfig =
+  hive.HIVE_USAGE === '1'
     ? {
-        token: hive.HIVE_API_TOKEN,
-        reporting:
-          hive.HIVE_REPORTING === '1' ? { endpoint: hive.HIVE_REPORTING_ENDPOINT ?? null } : null,
-        usage:
-          hive.HIVE_USAGE === '1'
-            ? {
-                endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
-              }
-            : null,
+        target: hive.HIVE_USAGE_TARGET,
+        token: hive.HIVE_USAGE_ACCESS_TOKEN,
+        endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
       }
     : null;
 
@@ -353,7 +344,7 @@ const hivePersistedDocumentsConfig =
       }
     : null;
 
-export type HiveConfig = typeof hiveConfig;
+export type HiveUsageConfig = typeof hiveUsageConfig;
 export type HivePersistedDocumentsConfig = typeof hivePersistedDocumentsConfig;
 
 export const env = {
@@ -511,7 +502,7 @@ export const env = {
           port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
         }
       : null,
-  hive: hiveConfig,
+  hive: hiveUsageConfig,
   hivePersistedDocuments: hivePersistedDocumentsConfig,
   graphql: {
     origin: base.GRAPHQL_PUBLIC_ORIGIN,

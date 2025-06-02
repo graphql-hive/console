@@ -404,7 +404,7 @@ export class Contracts {
                   "contract_checks"."is_success" = FALSE
                   AND "contract_checks"."schema_composition_errors" IS NULL
                   AND "contract_checks"."breaking_schema_changes" IS NOT NULL
-                
+
               )`
             : sql``
         }
@@ -484,7 +484,7 @@ export class Contracts {
           AND "is_success" = FALSE
           AND "schema_composition_errors" IS NULL
           AND "breaking_schema_changes" IS NOT NULL
-        RETURNING 
+        RETURNING
           "id"
       `);
 
@@ -758,7 +758,7 @@ export class Contracts {
         "contract_version_changes"
       WHERE
         "contract_version_id" = ${args.contractVersionId}
-        AND "severity_level" = 'BREAKING' 
+        AND "severity_level" = 'BREAKING'
     `);
 
     if (changes.rows.length === 0) {
@@ -778,7 +778,26 @@ export class Contracts {
         "contract_version_changes"
       WHERE
         "contract_version_id" = ${args.contractVersionId}
-        AND "severity_level" <> 'BREAKING' 
+        AND "severity_level" <> 'BREAKING'
+    `);
+
+    if (changes.rows.length === 0) {
+      return null;
+    }
+
+    return changes.rows.map(row => HiveSchemaChangeModel.parse(row));
+  }
+
+  public async getAllChangesForContractVersion(args: { contractVersionId: string }) {
+    const changes = await this.pool.query<unknown>(sql`
+      SELECT
+        "change_type" as "type",
+        "meta",
+        "is_safe_based_on_usage" as "isSafeBasedOnUsage"
+      FROM
+        "contract_version_changes"
+      WHERE
+        "contract_version_id" = ${args.contractVersionId}
     `);
 
     if (changes.rows.length === 0) {

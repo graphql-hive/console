@@ -498,8 +498,12 @@ describe.each([ProjectType.Stitching, ProjectType.Federation])('$projectType', p
       .then(r => r.expectNoGraphQLErrors());
     const createTargetResult = await createTarget(
       {
-        organizationSlug: organization.slug,
-        projectSlug: project.slug,
+        project: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+          },
+        },
         slug: 'target2',
       },
       ownerToken,
@@ -2588,10 +2592,12 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
     $version: ID!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id

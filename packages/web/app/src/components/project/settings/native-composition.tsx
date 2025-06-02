@@ -107,9 +107,11 @@ const NativeCompositionSettings_ProjectFragment = graphql(`
       endpoint
     }
     targets {
-      nodes {
-        id
-        ...IncrementalNativeCompositionSwitch_TargetFragment
+      edges {
+        node {
+          id
+          ...IncrementalNativeCompositionSwitch_TargetFragment
+        }
       }
     }
   }
@@ -117,7 +119,7 @@ const NativeCompositionSettings_ProjectFragment = graphql(`
 
 const NativeCompositionSettings_ProjectQuery = graphql(`
   query NativeCompositionSettings_ProjectQuery($selector: ProjectSelectorInput!) {
-    project(selector: $selector) {
+    project(reference: { bySelector: $selector }) {
       id
       nativeFederationCompatibility
       experimental_nativeCompositionPerTarget
@@ -227,7 +229,9 @@ export function NativeCompositionSettings(props: {
         <CardTitle>
           <a id="native-composition">Native Federation v2 Composition</a>
         </CardTitle>
-        <CardDescription>Native Apollo Federation v2 support for your project.</CardDescription>
+        <CardDescription>
+          Recommended for most users. Use native Apollo Federation v2 composition for your project.
+        </CardDescription>
 
         {display !== 'enabled' ? (
           <CardDescription>
@@ -253,12 +257,12 @@ export function NativeCompositionSettings(props: {
             </div>
             <div>
               <div className="flex flex-row gap-4">
-                {project.targets.nodes.map(target => (
+                {project.targets.edges.map(edge => (
                   <IncrementalNativeCompositionSwitch
                     organizationSlug={organization.slug}
                     projectSlug={project.slug}
-                    key={target.id}
-                    target={target}
+                    key={edge.node.id}
+                    target={edge.node}
                   />
                 ))}
               </div>

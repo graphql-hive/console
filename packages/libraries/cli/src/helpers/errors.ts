@@ -4,8 +4,8 @@ import { GraphQLError } from 'graphql';
 import { InvalidDocument } from '@graphql-inspector/core';
 import { CLIError } from '@oclif/core/lib/errors';
 import { CompositionFailure } from '@theguild/federation-composition';
-import { SchemaErrorConnection } from '../gql/graphql';
-import { renderErrors } from './schema';
+import { FragmentType, makeFragmentData } from '../gql/index';
+import { renderErrors, RenderErrors_SchemaErrorConnectionFragment } from './schema';
 import { Texture } from './texture/texture';
 
 export enum ExitCode {
@@ -30,7 +30,9 @@ export class HiveCLIError extends CLIError {
   ) {
     const tip = `> See https://the-guild.dev/graphql/hive/docs/api-reference/cli#errors for a complete list of error codes and recommended fixes.
 To disable this message set HIVE_NO_ERROR_TIP=1`;
-    super(`${message}  [${code}]${env.HIVE_NO_ERROR_TIP === '1' ? '' : `\n${tip}`}`);
+    super(`${message}  [${code}]${env.HIVE_NO_ERROR_TIP === '1' ? '' : `\n${tip}`}`, {
+      exit: exitCode,
+    });
   }
 }
 
@@ -306,18 +308,24 @@ export class ServiceAndUrlLengthMismatch extends HiveCLIError {
 
 export class LocalCompositionError extends HiveCLIError {
   constructor(compositionResult: CompositionFailure) {
-    const message = renderErrors({
-      total: compositionResult.errors.length,
-      nodes: compositionResult.errors.map(error => ({
-        message: error.message,
-      })),
-    });
+    const message = renderErrors(
+      makeFragmentData(
+        {
+          edges: compositionResult.errors.map(error => ({
+            node: {
+              message: error.message,
+            },
+          })),
+        },
+        RenderErrors_SchemaErrorConnectionFragment,
+      ),
+    );
     super(ExitCode.ERROR, errorCode(ErrorCategory.DEV, 1), `Local composition failed:\n${message}`);
   }
 }
 
 export class RemoteCompositionError extends HiveCLIError {
-  constructor(errors: SchemaErrorConnection) {
+  constructor(errors: FragmentType<typeof RenderErrors_SchemaErrorConnectionFragment>) {
     const message = renderErrors(errors);
     super(
       ExitCode.ERROR,

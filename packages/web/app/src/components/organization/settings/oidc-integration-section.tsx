@@ -77,7 +77,11 @@ const OIDCIntegrationSection_OrganizationFragment = graphql(`
       authorizationEndpoint
     }
     memberRoles {
-      ...OIDCDefaultRoleSelector_MemberRoleFragment
+      edges {
+        node {
+          ...OIDCDefaultRoleSelector_MemberRoleFragment
+        }
+      }
     }
     me {
       id
@@ -167,7 +171,7 @@ export function OIDCIntegrationSection(props: {
         isAdmin={isAdmin}
         organizationId={organization.id}
         oidcIntegration={organization.oidcIntegration ?? null}
-        memberRoles={organization.memberRoles ?? null}
+        memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? null}
         isOpen={isUpdateOIDCIntegrationModalOpen}
         close={closeModal}
         openCreateModalHash={openCreateModalHash}

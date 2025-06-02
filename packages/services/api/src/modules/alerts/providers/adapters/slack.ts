@@ -1,7 +1,7 @@
 import { Inject, Injectable } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
-import { MessageAttachment, WebClient } from '@slack/web-api';
+import { ErrorCode, MessageAttachment, WebAPICallError, WebClient } from '@slack/web-api';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import {
@@ -77,8 +77,8 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
           unfurl_media: false,
         });
       }
-    } catch (error) {
-      this.logger.error(`Failed to send Slack notification`, error);
+    } catch (error: any) {
+      this.handleSlackClientError(error);
     }
   }
 
@@ -120,12 +120,34 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
         ].join('\n'),
       });
     } catch (error) {
-      this.logger.error(`Failed to send Slack notification`, error);
+      this.handleSlackClientError(error);
     }
   }
 
   private pluralize(word: string, num: number): string {
     return word + (num > 1 ? 's' : '');
+  }
+
+  private handleSlackClientError(error: any): void {
+    // Failed to send Slack notification
+    const err = error as WebAPICallError;
+    if (err.code === ErrorCode.PlatformError) {
+      // This is most likely due to channel_not_found but could also be authorization logic. Any platform error
+      // is going to be an error in the input or creds.
+      this.logger.warn(
+        `Failed to send Slack notification due to a PlatformError (message=%s, error=%s)`,
+        err.message,
+        err.data.error,
+      );
+    } else if (err.code === ErrorCode.HTTPError) {
+      this.logger.error(
+        `Failed to send Slack notification due to a HTTPError (message=%s, statusCode=%i)`,
+        err.message,
+        err.statusCode,
+      );
+    } else {
+      this.logger.error(`Failed to send Slack notification (message=%s)`, err.message);
+    }
   }
 }
 

@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { useToast } from '@/components/ui/use-toast';
@@ -44,7 +45,7 @@ import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
-import { BreakingChangeFormula, ProjectType } from '@/gql/graphql';
+import { BreakingChangeFormulaType, ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
@@ -52,6 +53,17 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RadioGroupIndicator } from '@radix-ui/react-radio-group';
 import { Link, useRouter } from '@tanstack/react-router';
+
+/**
+ * We previously used a different character for token masking.
+ * This function standardizes it by replacing all non-alphanumeric characters
+ * with bullet points (•) to ensure consistent formatting.
+ * @param tokenAlias 553••***•••&*******••••••••••••7ab
+ * @returns 553••••••••••••••••••7ab
+ */
+function normalizeTokenAlias(tokenAlias: string): string {
+  return tokenAlias.replaceAll(/[^a-z0-9]/g, '•');
+}
 
 export const DeleteTokensDocument = graphql(`
   mutation deleteTokens($input: DeleteTokensInput!) {
@@ -165,7 +177,7 @@ function RegistryAccessTokens(props: {
                   checked={checked.includes(token.id)}
                 />
               </Td>
-              <Td>{token.alias}</Td>
+              <Td className="font-mono">{normalizeTokenAlias(token.alias)}</Td>
               <Td>{token.name}</Td>
               <Td align="right">
                 {token.lastUsedAt ? (
@@ -308,10 +320,11 @@ const ExtendBaseSchema = (props: {
 const ClientExclusion_AvailableClientNamesQuery = graphql(`
   query ClientExclusion_AvailableClientNamesQuery($selector: ClientStatsByTargetsInput!) {
     clientStatsByTargets(selector: $selector) {
-      nodes {
-        name
+      edges {
+        node {
+          name
+        }
       }
-      total
     }
   }
 `);
@@ -344,7 +357,7 @@ function ClientExclusion(
   });
 
   const clientNamesFromStats =
-    availableClientNamesQuery.data?.clientStatsByTargets.nodes.map(n => n.name) ?? [];
+    availableClientNamesQuery.data?.clientStatsByTargets.edges.map(e => e.node.name) ?? [];
   const allClientNames = clientNamesFromStats.concat(
     props.clientsFromSettings.filter(clientName => !clientNamesFromStats.includes(clientName)),
   );
@@ -368,9 +381,9 @@ function ClientExclusion(
   );
 }
 
-const TargetSettings_TargetValidationSettingsFragment = graphql(`
-  fragment TargetSettings_TargetValidationSettingsFragment on TargetValidationSettings {
-    enabled
+const TargetSettings_ConditionalBreakingChangeConfigurationFragment = graphql(`
+  fragment TargetSettings_ConditionalBreakingChangeConfigurationFragment on ConditionalBreakingChangeConfiguration {
+    isEnabled
     period
     percentage
     requestCount
@@ -389,50 +402,41 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     $targetsSelector: ProjectSelectorInput!
     $organizationSelector: OrganizationSelectorInput!
   ) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
-      validationSettings {
-        ...TargetSettings_TargetValidationSettingsFragment
+      failDiffOnDangerousChange
+      conditionalBreakingChangeConfiguration {
+        ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
       }
     }
     targets(selector: $targetsSelector) {
-      nodes {
-        id
-        slug
-      }
-    }
-    organization(selector: $organizationSelector) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
+      edges {
+        node {
+          id
+          slug
         }
       }
     }
-  }
-`);
-
-const SetTargetValidationMutation = graphql(`
-  mutation Settings_SetTargetValidation($input: SetTargetValidationInput!) {
-    setTargetValidation(input: $input) {
+    organization(reference: { bySelector: $organizationSelector }) {
       id
-      validationSettings {
-        ...TargetSettings_TargetValidationSettingsFragment
+      rateLimit {
+        retentionInDays
       }
     }
   }
 `);
 
-const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
-  mutation TargetSettingsPage_UpdateTargetValidationSettings(
-    $input: UpdateTargetValidationSettingsInput!
+const TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation(
+    $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
   ) {
-    updateTargetValidationSettings(input: $input) {
+    updateTargetConditionalBreakingChangeConfiguration(input: $input) {
       ok {
         target {
           id
-          validationSettings {
-            ...TargetSettings_TargetValidationSettingsFragment
+          failDiffOnDangerousChange
+          conditionalBreakingChangeConfiguration {
+            ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
           }
         }
       }
@@ -448,19 +452,39 @@ const TargetSettingsPage_UpdateTargetValidationSettingsMutation = graphql(`
   }
 `);
 
+const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation(
+    $input: UpdateTargetDangerousChangeClassificationInput!
+  ) {
+    updateTargetDangerousChangeClassification(input: $input) {
+      ok {
+        target {
+          id
+          failDiffOnDangerousChange
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 function floorDate(date: Date): Date {
   const time = 1000 * 60;
   return new Date(Math.floor(date.getTime() / time) * time);
 }
 
-const ConditionalBreakingChanges = (props: {
+const BreakingChanges = (props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) => {
-  const [targetValidation, setValidation] = useMutation(SetTargetValidationMutation);
   const [mutation, updateValidation] = useMutation(
-    TargetSettingsPage_UpdateTargetValidationSettingsMutation,
+    TargetSettingsPage_UpdateTargetConditionalBreakingChangeConfigurationMutation,
+  );
+  const [dangerousAsBreaking, updateTargetDangerousChangeClassification] = useMutation(
+    TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation,
   );
   const [targetSettings] = useQuery({
     query: TargetSettingsPage_TargetSettingsQuery,
@@ -480,12 +504,15 @@ const ConditionalBreakingChanges = (props: {
     },
   });
 
-  const settings = useFragment(
-    TargetSettings_TargetValidationSettingsFragment,
-    targetSettings.data?.target?.validationSettings,
+  const configuration = useFragment(
+    TargetSettings_ConditionalBreakingChangeConfigurationFragment,
+    targetSettings.data?.target?.conditionalBreakingChangeConfiguration,
   );
-  const isEnabled = settings?.enabled || false;
-  const possibleTargets = targetSettings.data?.targets.nodes;
+
+  const considerDangerousAsBreaking =
+    targetSettings?.data?.target?.failDiffOnDangerousChange || false;
+  const isEnabled = configuration?.isEnabled || false;
+  const possibleTargets = targetSettings.data?.targets.edges.map(edge => edge.node);
   const { toast } = useToast();
 
   const {
@@ -501,12 +528,13 @@ const ConditionalBreakingChanges = (props: {
   } = useFormik({
     enableReinitialize: true,
     initialValues: {
-      percentage: settings?.percentage || 0,
-      requestCount: settings?.requestCount || 1,
-      period: settings?.period || 0,
-      breakingChangeFormula: settings?.breakingChangeFormula ?? BreakingChangeFormula.Percentage,
-      targetIds: settings?.targets.map(t => t.id) || [],
-      excludedClients: settings?.excludedClients ?? [],
+      percentage: configuration?.percentage || 0,
+      requestCount: configuration?.requestCount || 1,
+      period: configuration?.period || 0,
+      breakingChangeFormula:
+        configuration?.breakingChangeFormula ?? BreakingChangeFormulaType.Percentage,
+      targetIds: configuration?.targets.map(t => t.id) || [],
+      excludedClients: configuration?.excludedClients ?? [],
     },
     validationSchema: Yup.object().shape({
       percentage: Yup.number().when('breakingChangeFormula', {
@@ -521,7 +549,7 @@ const ConditionalBreakingChanges = (props: {
       }),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;
@@ -532,9 +560,9 @@ const ConditionalBreakingChanges = (props: {
           return Number(num.toFixed(2)) === num;
         })
         .required(),
-      breakingChangeFormula: Yup.string().oneOf<BreakingChangeFormula>([
-        BreakingChangeFormula.Percentage,
-        BreakingChangeFormula.RequestCount,
+      breakingChangeFormula: Yup.string().oneOf<BreakingChangeFormulaType>([
+        BreakingChangeFormulaType.Percentage,
+        BreakingChangeFormulaType.RequestCount,
       ]),
       targetIds: Yup.array().of(Yup.string()).min(1),
       excludedClients: Yup.array().of(Yup.string()),
@@ -542,32 +570,39 @@ const ConditionalBreakingChanges = (props: {
     onSubmit: values =>
       updateValidation({
         input: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-          ...values,
-          /**
-           * In case the input gets messed up, fallback to default values in cases
-           * where it won't matter based on the selected formula.
-           */
-          requestCount:
-            values.breakingChangeFormula === BreakingChangeFormula.Percentage &&
-            (typeof values.requestCount !== 'number' || values.requestCount < 1)
-              ? 1
-              : values.requestCount,
-          percentage:
-            values.breakingChangeFormula === BreakingChangeFormula.RequestCount &&
-            (typeof values.percentage !== 'number' || values.percentage < 0)
-              ? 0
-              : values.percentage,
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+            },
+          },
+          conditionalBreakingChangeConfiguration: {
+            ...values,
+            /**
+             * In case the input gets messed up, fallback to default values in cases
+             * where it won't matter based on the selected formula.
+             */
+            requestCount:
+              values.breakingChangeFormula === BreakingChangeFormulaType.Percentage &&
+              (typeof values.requestCount !== 'number' || values.requestCount < 1)
+                ? 1
+                : values.requestCount,
+            percentage:
+              values.breakingChangeFormula === BreakingChangeFormulaType.RequestCount &&
+              (typeof values.percentage !== 'number' || values.percentage < 0)
+                ? 0
+                : values.percentage,
+          },
         },
       }).then(result => {
-        if (result.error || result.data?.updateTargetValidationSettings.error) {
+        if (result.error || result.data?.updateTargetConditionalBreakingChangeConfiguration.error) {
           toast({
             variant: 'destructive',
             title: 'Error',
             description:
-              result.error?.message || result.data?.updateTargetValidationSettings.error?.message,
+              result.error?.message ||
+              result.data?.updateTargetConditionalBreakingChangeConfiguration.error?.message,
           });
         } else {
           toast({
@@ -580,23 +615,29 @@ const ConditionalBreakingChanges = (props: {
   });
 
   return (
-    <form onSubmit={handleSubmit}>
+    <>
       <SubPageLayout>
         <SubPageLayoutHeader
-          subPageTitle="Conditional Breaking Changes"
+          subPageTitle="Fail Checks for Dangerous Changes"
           description={
             <>
-              <CardDescription>
-                Conditional Breaking Changes can change the behavior of schema checks, based on real
-                traffic data sent to Hive.
+              <CardDescription className="max-w-[700px]">
+                Dangerous changes are not technically breaking the protocol, but could cause issues
+                for consumers of the schema. Failing schema checks for dangerous changes helps
+                safeguard against these situations by requiring approval for dangerous changes.
+                <br />
+                <br />
+                Before enabling this feature, be sure "contextId" is used on schema checks.
               </CardDescription>
               <CardDescription>
                 <DocsLink
-                  href="/management/targets#conditional-breaking-changes"
+                  href="/management/targets#dangerous-changes"
                   className="text-gray-500 hover:text-gray-300"
                 >
                   Learn more
                 </DocsLink>
+                <br />
+                <br />
               </CardDescription>
             </>
           }
@@ -606,224 +647,298 @@ const ConditionalBreakingChanges = (props: {
           ) : (
             <Switch
               className="shrink-0"
-              checked={isEnabled}
-              onCheckedChange={async enabled => {
-                await setValidation({
+              checked={considerDangerousAsBreaking}
+              onCheckedChange={async failDiffOnDangerousChange => {
+                await updateTargetDangerousChangeClassification({
                   input: {
-                    targetSlug: props.targetSlug,
-                    projectSlug: props.projectSlug,
-                    organizationSlug: props.organizationSlug,
-                    enabled,
+                    failDiffOnDangerousChange,
+                    target: {
+                      bySelector: {
+                        targetSlug: props.targetSlug,
+                        projectSlug: props.projectSlug,
+                        organizationSlug: props.organizationSlug,
+                      },
+                    },
                   },
                 });
               }}
-              disabled={targetValidation.fetching}
+              disabled={dangerousAsBreaking.fetching}
             />
           )}
         </SubPageLayoutHeader>
-        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
-          <div>A schema change is considered as breaking only if it affects more than</div>
-          <div className="mx-4 my-2">
-            <RadioGroup
-              name="breakingChangeFormula"
-              value={values.breakingChangeFormula}
-              onValueChange={async value => {
-                await setFieldValue('breakingChangeFormula', value);
-              }}
-            >
-              <div>
-                <RadioGroupItem
-                  id="percentage"
-                  key="percentage"
-                  value="PERCENTAGE"
-                  disabled={isSubmitting}
-                  data-cy="target-cbc-breakingChangeFormula-option-percentage"
-                >
-                  <RadioGroupIndicator />
-                </RadioGroupItem>
-                <Input
-                  name="percentage"
-                  onChange={async event => {
-                    const value = Number(event.target.value);
-                    if (!Number.isNaN(value)) {
-                      await setFieldValue('percentage', value < 0 ? 0 : value, true);
-                    }
-                  }}
-                  onBlur={handleBlur}
-                  value={values.percentage}
-                  disabled={isSubmitting}
-                  type="number"
-                  step="0.01"
-                  className="mx-2 !inline-flex w-16 text-center"
-                />
-                <label htmlFor="percentage">Percent of Traffic</label>
-              </div>
-              <div>
-                <RadioGroupItem
-                  id="requestCount"
-                  key="requestCount"
-                  value="REQUEST_COUNT"
-                  disabled={isSubmitting}
-                  data-cy="target-cbc-breakingChangeFormula-option-requestCount"
-                >
-                  <RadioGroupIndicator />
-                </RadioGroupItem>
-                <Input
-                  name="requestCount"
-                  onChange={async event => {
-                    const value = Math.round(Number(event.target.value));
-                    if (!Number.isNaN(value)) {
-                      await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
-                    }
-                  }}
-                  onBlur={handleBlur}
-                  value={values.requestCount}
-                  disabled={isSubmitting}
-                  type="number"
-                  step="1"
-                  className="mx-2 !inline-flex w-16 text-center"
-                />
-                <label htmlFor="requestCount">Total Operations</label>
-              </div>
-            </RadioGroup>
-          </div>
-          <div>
-            in the past
-            <Input
-              name="period"
-              onChange={handleChange}
-              onBlur={handleBlur}
-              value={values.period}
-              disabled={isSubmitting}
-              type="number"
-              min="1"
-              max={targetSettings.data?.organization?.organization?.rateLimit.retentionInDays ?? 30}
-              className="mx-2 !inline-flex w-16"
-            />
-            days.
-          </div>
-          <div className="mt-3">
-            {touched.percentage && errors.percentage && (
-              <div className="text-red-500">{errors.percentage}</div>
+        {dangerousAsBreaking.error && (
+          <span className="ml-2 text-red-500">
+            {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
+              dangerousAsBreaking.error.message}
+          </span>
+        )}
+      </SubPageLayout>
+      <form onSubmit={handleSubmit}>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Conditional Breaking Changes"
+            description={
+              <>
+                <CardDescription>
+                  Conditional Breaking Changes can change the behavior of schema checks, based on
+                  real traffic data sent to Hive.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    href="/management/targets#conditional-breaking-changes"
+                    className="text-gray-500 hover:text-gray-300"
+                  >
+                    Learn more
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          >
+            {targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                className="shrink-0"
+                checked={isEnabled}
+                onCheckedChange={async isEnabled => {
+                  await updateValidation({
+                    input: {
+                      target: {
+                        bySelector: {
+                          organizationSlug: props.organizationSlug,
+                          targetSlug: props.targetSlug,
+                          projectSlug: props.projectSlug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                      },
+                    },
+                  });
+                }}
+                disabled={mutation.fetching}
+              />
             )}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.percentage && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.percentage}
-              </div>
-            )}
-            {touched.requestCount && errors.requestCount && (
-              <div className="text-red-500">{errors.requestCount}</div>
-            )}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.requestCount && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.requestCount}
-              </div>
-            )}
-            {/* @todo: inputErrors */}
-            {touched.period && errors.period && <div className="text-red-500">{errors.period}</div>}
-            {mutation.data?.updateTargetValidationSettings.error?.inputErrors.period && (
-              <div className="text-red-500">
-                {mutation.data.updateTargetValidationSettings.error.inputErrors.period}
-              </div>
-            )}
-          </div>
-          <div className="space-y-6">
-            <div>
-              <div className="space-y-2">
+          </SubPageLayoutHeader>
+          <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+            <div>A schema change is considered as breaking only if it affects more than</div>
+            <div className="mx-4 my-2">
+              <RadioGroup
+                name="breakingChangeFormula"
+                value={values.breakingChangeFormula}
+                onValueChange={async value => {
+                  await setFieldValue('breakingChangeFormula', value);
+                }}
+              >
                 <div>
-                  <div className="font-semibold">Allow breaking change for these clients:</div>
-                  <div className="text-xs text-gray-400">
-                    Marks a breaking change as safe when it only affects the following clients.
-                  </div>
+                  <RadioGroupItem
+                    id="percentage"
+                    key="percentage"
+                    value="PERCENTAGE"
+                    disabled={isSubmitting}
+                    data-cy="target-cbc-breakingChangeFormula-option-percentage"
+                  >
+                    <RadioGroupIndicator />
+                  </RadioGroupItem>
+                  <Input
+                    name="percentage"
+                    onChange={async event => {
+                      const value = Number(event.target.value);
+                      if (!Number.isNaN(value)) {
+                        await setFieldValue('percentage', value < 0 ? 0 : value, true);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    value={values.percentage}
+                    disabled={isSubmitting}
+                    type="number"
+                    step="0.01"
+                    className="mx-2 !inline-flex w-16 text-center"
+                  />
+                  <label htmlFor="percentage">Percent of Traffic</label>
                 </div>
-                <div className="max-w-[420px]">
-                  {values.targetIds.length > 0 ? (
-                    <ClientExclusion
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      selectedTargetIds={values.targetIds}
-                      clientsFromSettings={settings?.excludedClients ?? []}
-                      name="excludedClients"
-                      value={values.excludedClients}
-                      onBlur={() => setFieldTouched('excludedClients')}
-                      onChange={async options => {
-                        await setFieldValue(
-                          'excludedClients',
-                          options.map(o => o.value),
-                        );
-                      }}
-                      disabled={isSubmitting}
-                    />
-                  ) : (
-                    <div className="text-gray-500">Select targets first</div>
+                <div>
+                  <RadioGroupItem
+                    id="requestCount"
+                    key="requestCount"
+                    value="REQUEST_COUNT"
+                    disabled={isSubmitting}
+                    data-cy="target-cbc-breakingChangeFormula-option-requestCount"
+                  >
+                    <RadioGroupIndicator />
+                  </RadioGroupItem>
+                  <Input
+                    name="requestCount"
+                    onChange={async event => {
+                      const value = Math.round(Number(event.target.value));
+                      if (!Number.isNaN(value)) {
+                        await setFieldValue('requestCount', value <= 0 ? 1 : value, true);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    value={values.requestCount}
+                    disabled={isSubmitting}
+                    type="number"
+                    step="1"
+                    className="mx-2 !inline-flex w-16 text-center"
+                  />
+                  <label htmlFor="requestCount">Total Operations</label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div>
+              in the past
+              <Input
+                name="period"
+                onChange={handleChange}
+                onBlur={handleBlur}
+                value={values.period}
+                disabled={isSubmitting}
+                type="number"
+                min="1"
+                max={targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30}
+                className="mx-2 !inline-flex w-16"
+              />
+              days.
+            </div>
+            <div className="mt-3">
+              {touched.percentage && errors.percentage && (
+                <div className="text-red-500">{errors.percentage}</div>
+              )}
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .percentage && (
+                <div className="text-red-500">
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.percentage
+                  }
+                </div>
+              )}
+              {touched.requestCount && errors.requestCount && (
+                <div className="text-red-500">{errors.requestCount}</div>
+              )}
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .requestCount && (
+                <div className="text-red-500">
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.requestCount
+                  }
+                </div>
+              )}
+              {touched.period && errors.period && (
+                <div className="text-red-500">{errors.period}</div>
+              )}
+              {mutation.data?.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors
+                .period && (
+                <div className="text-red-500">
+                  {
+                    mutation.data.updateTargetConditionalBreakingChangeConfiguration.error
+                      .inputErrors.period
+                  }
+                </div>
+              )}
+            </div>
+            <div className="space-y-6">
+              <div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-semibold">Allow breaking change for these clients:</div>
+                    <div className="text-xs text-gray-400">
+                      Marks a breaking change as safe when it only affects the following clients.
+                    </div>
+                  </div>
+                  <div className="max-w-[420px]">
+                    {values.targetIds.length > 0 ? (
+                      <ClientExclusion
+                        organizationSlug={props.organizationSlug}
+                        projectSlug={props.projectSlug}
+                        selectedTargetIds={values.targetIds}
+                        clientsFromSettings={configuration?.excludedClients ?? []}
+                        name="excludedClients"
+                        value={values.excludedClients}
+                        onBlur={() => setFieldTouched('excludedClients')}
+                        onChange={async options => {
+                          await setFieldValue(
+                            'excludedClients',
+                            options.map(o => o.value),
+                          );
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    ) : (
+                      <div className="text-gray-500">Select targets first</div>
+                    )}
+                  </div>
+                  {touched.excludedClients && errors.excludedClients && (
+                    <div className="text-red-500">{errors.excludedClients}</div>
                   )}
                 </div>
-                {touched.excludedClients && errors.excludedClients && (
-                  <div className="text-red-500">{errors.excludedClients}</div>
-                )}
               </div>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <div className="font-semibold">Schema usage data from these targets:</div>
-                <div className="text-xs text-gray-400">
-                  Marks a breaking change as safe when it was not requested in the targets clients.
+              <div className="space-y-2">
+                <div>
+                  <div className="font-semibold">Schema usage data from these targets:</div>
+                  <div className="text-xs text-gray-400">
+                    Marks a breaking change as safe when it was not requested in the targets
+                    clients.
+                  </div>
+                </div>
+                <div className="pl-2">
+                  {possibleTargets?.map(pt => (
+                    <div key={pt.id} className="flex items-center gap-x-2">
+                      <Checkbox
+                        checked={values.targetIds.includes(pt.id)}
+                        onCheckedChange={async isChecked => {
+                          await setFieldValue(
+                            'targetIds',
+                            isChecked
+                              ? [...values.targetIds, pt.id]
+                              : values.targetIds.filter(value => value !== pt.id),
+                          );
+                        }}
+                        onBlur={() => setFieldTouched('targetIds', true)}
+                      />{' '}
+                      {pt.slug}
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="pl-2">
-                {possibleTargets?.map(pt => (
-                  <div key={pt.id} className="flex items-center gap-x-2">
-                    <Checkbox
-                      checked={values.targetIds.includes(pt.id)}
-                      onCheckedChange={async isChecked => {
-                        await setFieldValue(
-                          'targetIds',
-                          isChecked
-                            ? [...values.targetIds, pt.id]
-                            : values.targetIds.filter(value => value !== pt.id),
-                        );
-                      }}
-                      onBlur={() => setFieldTouched('targetIds', true)}
-                    />{' '}
-                    {pt.slug}
-                  </div>
-                ))}
+            </div>
+            {touched.targetIds && errors.targetIds && (
+              <div className="text-red-500">{errors.targetIds}</div>
+            )}
+            <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+              <div>
+                <div className="font-semibold">Example settings</div>
+                <div className="text-sm">Removal of a field is considered breaking if</div>
+              </div>
+
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  0%
+                </Tag>{' '}
+                - the field was used at least once in past 30 days
+              </div>
+              <div className="text-sm">
+                <Tag color="yellow" className="py-0">
+                  10%
+                </Tag>{' '}
+                - the field was requested by more than 10% of all GraphQL operations in recent 30
+                days
               </div>
             </div>
+            <Button type="submit" disabled={isSubmitting}>
+              Save
+            </Button>
+            {mutation.error && (
+              <span className="ml-2 text-red-500">
+                {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
+              </span>
+            )}
           </div>
-          {touched.targetIds && errors.targetIds && (
-            <div className="text-red-500">{errors.targetIds}</div>
-          )}
-          <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
-            <div>
-              <div className="font-semibold">Example settings</div>
-              <div className="text-sm">Removal of a field is considered breaking if</div>
-            </div>
-
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                0%
-              </Tag>{' '}
-              - the field was used at least once in past 30 days
-            </div>
-            <div className="text-sm">
-              <Tag color="yellow" className="py-0">
-                10%
-              </Tag>{' '}
-              - the field was requested by more than 10% of all GraphQL operations in recent 30 days
-            </div>
-          </div>
-          <Button type="submit" disabled={isSubmitting}>
-            Save
-          </Button>
-          {mutation.error && (
-            <span className="ml-2 text-red-500">
-              {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
-            </span>
-          )}
-        </div>
-      </SubPageLayout>
-    </form>
+        </SubPageLayout>
+      </form>
+    </>
   );
 };
 
@@ -856,9 +971,13 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             slug: data.slug,
           },
         });
@@ -988,9 +1107,13 @@ function GraphQLEndpointUrl(props: {
       onSubmit: values =>
         mutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
             graphqlEndpointUrl: values.graphqlEndpointUrl === '' ? null : values.graphqlEndpointUrl,
           },
         }).then(result => {
@@ -1138,36 +1261,36 @@ const TargetSettingsPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
+        type
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          slug
+          graphqlEndpointUrl
+          viewerCanAccessSettings
+          baseSchema
+          viewerCanModifySettings
+          viewerCanModifyCDNAccessToken
+          viewerCanModifyTargetAccessToken
+          viewerCanDelete
+        }
       }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
-      slug
-      type
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
-    ) {
-      id
-      slug
-      graphqlEndpointUrl
-      viewerCanAccessSettings
-      baseSchema
-      viewerCanModifySettings
-      viewerCanModifyCDNAccessToken
-      viewerCanModifyTargetAccessToken
-      viewerCanDelete
     }
   }
 `);
+
+function TargetInfo(props: { targetId: string }) {
+  return (
+    <div>
+      <ResourceDetails id={props.targetId} />
+    </div>
+  );
+}
 
 function TargetSettingsContent(props: {
   organizationSlug: string;
@@ -1185,9 +1308,9 @@ function TargetSettingsContent(props: {
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const currentProject = query.data?.project;
-  const currentTarget = query.data?.target;
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
+  const currentTarget = currentProject?.target;
 
   useRedirect({
     canAccess: currentTarget?.viewerCanAccessSettings === true,
@@ -1310,68 +1433,67 @@ function TargetSettingsContent(props: {
         })}
       </NavLayout>
       <PageLayoutContent>
-        {currentOrganization && currentProject && currentTarget ? (
-          <div className="space-y-12">
-            {resolvedPage.key === 'general' ? (
-              <>
-                <TargetSlug
-                  targetSlug={props.targetSlug}
-                  projectSlug={props.projectSlug}
-                  organizationSlug={props.organizationSlug}
-                />
-                <GraphQLEndpointUrl
+        <div className="space-y-12">
+          {resolvedPage.key === 'general' ? (
+            <>
+              <TargetInfo targetId={currentTarget.id} />
+              <TargetSlug
+                targetSlug={props.targetSlug}
+                projectSlug={props.projectSlug}
+                organizationSlug={props.organizationSlug}
+              />
+              <GraphQLEndpointUrl
+                targetSlug={currentTarget.slug}
+                projectSlug={currentProject.slug}
+                organizationSlug={currentOrganization.slug}
+                graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
+              />
+              {currentTarget?.viewerCanDelete && (
+                <TargetDelete
                   targetSlug={currentTarget.slug}
                   projectSlug={currentProject.slug}
                   organizationSlug={currentOrganization.slug}
-                  graphqlEndpointUrl={currentTarget.graphqlEndpointUrl ?? null}
                 />
-                {currentTarget?.viewerCanDelete && (
-                  <TargetDelete
-                    targetSlug={currentTarget.slug}
-                    projectSlug={currentProject.slug}
-                    organizationSlug={currentOrganization.slug}
-                  />
-                )}
-              </>
-            ) : null}
-            {resolvedPage.key === 'cdn' ? (
-              <CDNAccessTokens
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'registry-token' ? (
-              <RegistryAccessTokens
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'breaking-changes' ? (
-              <ConditionalBreakingChanges
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'base-schema' ? (
-              <ExtendBaseSchema
-                baseSchema={currentTarget?.baseSchema ?? ''}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-            {resolvedPage.key === 'schema-contracts' ? (
-              <SchemaContracts
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
-            ) : null}
-          </div>
-        ) : null}
+              )}
+            </>
+          ) : null}
+          {resolvedPage.key === 'cdn' ? (
+            <CDNAccessTokens
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'registry-token' ? (
+            <RegistryAccessTokens
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'breaking-changes' ? (
+            <BreakingChanges
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'base-schema' ? (
+            <ExtendBaseSchema
+              baseSchema={currentTarget?.baseSchema ?? ''}
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+          {resolvedPage.key === 'schema-contracts' ? (
+            <SchemaContracts
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+            />
+          ) : null}
+        </div>
       </PageLayoutContent>
     </PageLayout>
   );
@@ -1416,10 +1538,9 @@ export function TargetSettingsPage(props: {
 
 export const DeleteTargetMutation = graphql(`
   mutation deleteTarget($selector: TargetSelectorInput!) {
-    deleteTarget(selector: $selector) {
-      deletedTarget {
-        __typename
-        id
+    deleteTarget(input: { target: { bySelector: $selector } }) {
+      ok {
+        deletedTargetId
       }
     }
   }

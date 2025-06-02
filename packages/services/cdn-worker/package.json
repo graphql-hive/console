@@ -19,7 +19,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "4.20241230.0",
     "@types/service-worker-mock": "2.0.4",
-    "@whatwg-node/server": "0.9.65",
+    "@whatwg-node/server": "0.10.5",
     "bcryptjs": "2.4.3",
     "dotenv": "16.4.7",
     "esbuild": "0.25.0",
@@ -28,7 +28,7 @@
     "itty-router": "4.2.2",
     "itty-router-extras": "0.4.6",
     "toucan-js": "4.1.0",
-    "undici": "6.21.1",
+    "undici": "6.21.2",
     "zod": "3.24.1"
   }
 }

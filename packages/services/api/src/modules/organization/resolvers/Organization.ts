@@ -9,9 +9,10 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
+  | 'accessToken'
   | 'accessTokens'
   | 'availableMemberPermissionGroups'
-  | 'availableOrganizationPermissionGroups'
+  | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
   | 'getStarted'
   | 'id'
@@ -26,6 +27,7 @@ export const Organization: Pick<
   | 'viewerCanAssignUserRoles'
   | 'viewerCanDelete'
   | 'viewerCanExportAuditLogs'
+  | 'viewerCanManageAccessTokens'
   | 'viewerCanManageInvitations'
   | 'viewerCanManageRoles'
   | 'viewerCanModifySlug'
@@ -37,7 +39,7 @@ export const Organization: Pick<
     return !!organization.id;
   },
   owner: async (organization, _, { injector }) => {
-    const owner = await injector.get(OrganizationMembers).findOrganizationOwner(organization);
+    const owner = await injector.get(OrganizationManager).findOrganizationOwner(organization);
     if (!owner) {
       throw new Error('Not found.');
     }
@@ -58,25 +60,30 @@ export const Organization: Pick<
 
     return member;
   },
-  members: (organization, _, { injector }) => {
-    return injector.get(OrganizationMembers).findOrganizationMembersForOrganization(organization);
+  members: (organization, args, { injector }) => {
+    return injector
+      .get(OrganizationManager)
+      .getPaginatedOrganizationMembersForOrganization(organization, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
   },
-  invitations: async (organization, _, { injector }) => {
-    const invitations = await injector.get(OrganizationManager).getInvitations({
-      organizationId: organization.id,
+  invitations: async (organization, args, { injector }) => {
+    const invitations = await injector.get(OrganizationManager).getInvitations(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
     });
 
-    if (invitations === null) {
-      return null;
-    }
-
-    return {
-      total: invitations.length,
-      nodes: invitations,
-    };
+    return invitations;
   },
-  memberRoles: (organization, _, { injector }) => {
-    return injector.get(OrganizationMemberRoles).getMemberRolesForOrganizationId(organization.id);
+  memberRoles: async (organization, args, { injector }) => {
+    const roles = await injector
+      .get(OrganizationMemberRoles)
+      .getPaginatedMemberRolesForOrganizationId(organization.id, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
+    return roles;
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {
@@ -142,6 +149,13 @@ export const Organization: Pick<
           organizationId: organization.id,
         },
       }),
+      session.canPerformAction({
+        action: 'accessToken:modify',
+        organizationId: organization.id,
+        params: {
+          organizationId: organization.id,
+        },
+      }),
     ]).then(result => result.some(Boolean));
   },
   viewerCanSeeMembers: async (organization, _arg, { session }) => {
@@ -193,7 +207,7 @@ export const Organization: Pick<
   availableMemberPermissionGroups: () => {
     return OrganizationMemberPermissions.permissionGroups;
   },
-  availableOrganizationPermissionGroups: () => {
+  availableOrganizationAccessTokenPermissionGroups: () => {
     return OrganizationAccessTokensPermissions.permissionGroups;
   },
   accessTokens: async (organization, args, { injector }) => {
@@ -201,6 +215,21 @@ export const Organization: Pick<
       organizationId: organization.id,
       first: args.first ?? null,
       after: args.after ?? null,
+    });
+  },
+  viewerCanManageAccessTokens: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      organizationId: organization.id,
+      action: 'accessToken:modify',
+      params: {
+        organizationId: organization.id,
+      },
+    });
+  },
+  accessToken: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).get({
+      organizationId: organization.id,
+      id: args.id,
     });
   },
 };

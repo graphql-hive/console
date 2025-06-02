@@ -20,7 +20,7 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
   GitHubIntegrationManager,
@@ -163,7 +163,7 @@ export class SchemaPublisher {
     };
   }
 
-  private async getConditionalBreakingChangeConfiguration({
+  private async getBreakingChangeConfiguration({
     selector,
   }: {
     selector: {
@@ -171,20 +171,29 @@ export class SchemaPublisher {
       projectId: string;
       targetId: string;
     };
-  }): Promise<ConditionalBreakingChangeConfiguration | null> {
+  }): Promise<{
+    conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration | null;
+    failDiffOnDangerousChange: boolean;
+  }> {
     try {
       const settings = await this.storage.getTargetSettings(selector);
 
-      if (!settings.validation.enabled) {
+      if (!settings.validation.isEnabled) {
         this.logger.debug('Usage validation disabled');
         this.logger.debug('Mark all as used');
-        return null;
+        return {
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+          conditionalBreakingChangeConfiguration: null,
+        };
       }
 
-      if (settings.validation.enabled && settings.validation.targets.length === 0) {
+      if (settings.validation.isEnabled && settings.validation.targets.length === 0) {
         this.logger.debug('Usage validation enabled but no targets to check against');
         this.logger.debug('Mark all as used');
-        return null;
+        return {
+          failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
+          conditionalBreakingChangeConfiguration: null,
+        };
       }
 
       const targetIds = settings.validation.targets;
@@ -200,26 +209,29 @@ export class SchemaPublisher {
       });
 
       return {
-        conditionalBreakingChangeDiffConfig: {
-          period,
-          targetIds,
-          excludedClientNames: settings.validation.excludedClients?.length
-            ? settings.validation.excludedClients
-            : null,
-          requestCountThreshold:
-            settings.validation.breakingChangeFormula === 'PERCENTAGE'
-              ? Math.ceil(totalRequestCount * (settings.validation.percentage / 100))
-              : settings.validation.requestCount,
+        conditionalBreakingChangeConfiguration: {
+          conditionalBreakingChangeDiffConfig: {
+            period,
+            targetIds,
+            excludedClientNames: settings.validation.excludedClients?.length
+              ? settings.validation.excludedClients
+              : null,
+            requestCountThreshold:
+              settings.validation.breakingChangeFormula === 'PERCENTAGE'
+                ? Math.ceil(totalRequestCount * (settings.validation.percentage / 100))
+                : settings.validation.requestCount,
+          },
+          retentionInDays: settings.validation.period,
+          percentage: settings.validation.percentage,
+          requestCount: settings.validation.requestCount,
+          breakingChangeFormula: settings.validation.breakingChangeFormula,
+          totalRequestCount,
         },
-        retentionInDays: settings.validation.period,
-        percentage: settings.validation.percentage,
-        requestCount: settings.validation.requestCount,
-        breakingChangeFormula: settings.validation.breakingChangeFormula,
-        totalRequestCount,
+        failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
       };
     } catch (error: unknown) {
       this.logger.error(`Failed to get settings`, error);
-      return null;
+      throw error;
     }
   }
 
@@ -278,10 +290,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaCheck:create');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaCheck:create');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -327,6 +340,30 @@ export class SchemaPublisher {
         }),
       ]);
 
+    if (input.service) {
+      let serviceExists = false;
+      if (latestVersion?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestVersion.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaCheckError',
+          valid: false,
+          changes: [],
+          warnings: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        } as const;
+      }
+    }
+
     const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
       this.schemaManager.getMaybeLatestVersion(target),
       this.schemaManager.getMaybeLatestValidVersion(target),
@@ -338,6 +375,27 @@ export class SchemaPublisher {
         projectType: project.type,
         conclusion,
       });
+    }
+
+    // if url is provided but this is not a distributed project
+    if (
+      input.url != null &&
+      !(project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING)
+    ) {
+      this.logger.debug('url is only supported by distributed projects (type=%s)', project.type);
+      increaseSchemaCheckCountMetric('rejected');
+
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message: 'url is only supported by distributed projects',
+          },
+        ],
+      } as const;
     }
 
     if (
@@ -496,8 +554,8 @@ export class SchemaPublisher {
       );
     });
 
-    const conditionalBreakingChangeConfiguration =
-      await this.getConditionalBreakingChangeConfiguration({
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+      await this.getBreakingChangeConfiguration({
         selector,
       });
 
@@ -533,6 +591,7 @@ export class SchemaPublisher {
           approvedChanges: approvedSchemaChanges,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       case ProjectType.FEDERATION:
@@ -547,6 +606,7 @@ export class SchemaPublisher {
           input: {
             sdl,
             serviceName: input.service,
+            url: input.url ?? null,
           },
           selector,
           latest: latestVersion
@@ -576,6 +636,7 @@ export class SchemaPublisher {
             })) ?? null,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       default:
@@ -640,6 +701,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
       });
+      this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
@@ -684,6 +746,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
       });
+      this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
       if (!latestVersion || !latestSchemaVersion) {
         throw new Error('This cannot happen 1 :)');
@@ -760,6 +823,7 @@ export class SchemaPublisher {
             )
           : null,
       });
+      this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
 
     if (githubCheckRun) {
@@ -1000,10 +1064,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:publish');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:publish');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1035,12 +1100,41 @@ export class SchemaPublisher {
       targetId: selector.targetId,
     });
 
-    const [contracts, latestVersion] = await Promise.all([
+    const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
+      input.service
+        ? this.storage.getLatestSchemas({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          })
+        : Promise.resolve(),
     ]);
 
-    const legacySelector = this.session.getLegacySelector();
+    // If trying to push with a service name and there are existing services
+    if (input.service) {
+      let serviceExists = false;
+      if (latestSchemas?.schemas) {
+        serviceExists = !!ensureCompositeSchemas(latestSchemas.schemas).find(
+          ({ service_name }) => service_name === input.service,
+        );
+      }
+      // this is a new service. Validate the service name.
+      if (!serviceExists && !isValidServiceName(input.service)) {
+        return {
+          __typename: 'SchemaPublishError',
+          valid: false,
+          changes: [],
+          errors: [
+            {
+              message:
+                'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+            },
+          ],
+        };
+      }
+    }
 
     const checksum = createHash('md5')
       .update(
@@ -1060,7 +1154,7 @@ export class SchemaPublisher {
           latestVersionId: latestVersion?.id,
         }),
       )
-      .update(legacySelector.token)
+      .update(this.session.id)
       .digest('base64');
 
     this.logger.debug(
@@ -1133,10 +1227,11 @@ export class SchemaPublisher {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schemaVersion:deleteService');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schemaVersion:deleteService');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -1236,8 +1331,8 @@ export class SchemaPublisher {
           } as const;
         }
 
-        const conditionalBreakingChangeConfiguration =
-          await this.getConditionalBreakingChangeConfiguration({
+        const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+          await this.getBreakingChangeConfiguration({
             selector: {
               targetId: selector.targetId,
               projectId: selector.projectId,
@@ -1279,6 +1374,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
+          failDiffOnDangerousChange,
         });
 
         let diffSchemaVersionId: string | null = null;
@@ -1568,8 +1664,8 @@ export class SchemaPublisher {
 
     this.logger.debug(`Found ${latestVersion?.schemas.length ?? 0} most recent schemas`);
 
-    const conditionalBreakingChangeConfiguration =
-      await this.getConditionalBreakingChangeConfiguration({
+    const { conditionalBreakingChangeConfiguration, failDiffOnDangerousChange } =
+      await this.getBreakingChangeConfiguration({
         selector: {
           organizationId: organization.id,
           projectId: project.id,
@@ -1629,6 +1725,7 @@ export class SchemaPublisher {
           baseSchema,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       case ProjectType.FEDERATION:
@@ -1663,6 +1760,7 @@ export class SchemaPublisher {
           contracts,
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
+          failDiffOnDangerousChange,
         });
         break;
       default: {
@@ -1815,6 +1913,17 @@ export class SchemaPublisher {
 
     this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
 
+    const serviceName = input.service;
+    let serviceUrl = input.url;
+
+    if (
+      (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
+      serviceUrl == null &&
+      pushedSchema.kind === 'composite'
+    ) {
+      serviceUrl = pushedSchema.service_url;
+    }
+
     const schemaVersion = await this.schemaManager.createVersion({
       valid: composable,
       organizationId: organizationId,
@@ -1822,10 +1931,10 @@ export class SchemaPublisher {
       targetId: target.id,
       commit: input.commit,
       logIds: schemaLogIds,
-      service: input.service,
       schema: input.sdl,
       author: input.author,
-      url: input.url,
+      service: serviceName,
+      url: serviceUrl,
       base_schema: baseSchema,
       metadata: input.metadata ?? null,
       projectType: project.type,
@@ -2367,7 +2476,12 @@ export class SchemaPublisher {
     const breakingChanges = changes.filter(
       change => change.criticality === CriticalityLevel.Breaking,
     );
-    const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
+    const dangerousChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.Dangerous,
+    );
+    const safeChanges = changes.filter(
+      change => change.criticality === CriticalityLevel.NonBreaking,
+    );
 
     const lines: string[] = [
       `## Found ${changes.length} change${changes.length > 1 ? 's' : ''}`,
@@ -2378,12 +2492,17 @@ export class SchemaPublisher {
       lines.push(`Breaking: ${breakingChanges.length}`);
     }
 
+    if (dangerousChanges.length) {
+      lines.push(`Dangerous: ${dangerousChanges.length}`);
+    }
+
     if (safeChanges.length) {
       lines.push(`Safe: ${safeChanges.length}`);
     }
 
     if (printListOfChanges) {
       writeChanges('Breaking', breakingChanges, lines);
+      writeChanges('Dangrous', dangerousChanges, lines);
       writeChanges('Safe', safeChanges, lines);
     }
 
@@ -2438,3 +2557,7 @@ const SchemaCheckContextIdModel = z
   .max(200, {
     message: 'Context ID cannot exceed length of 200 characters.',
   });
+
+function isValidServiceName(service: string): boolean {
+  return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
+}

@@ -222,11 +222,16 @@ export async function createStorage(
     },
   ): OrganizationInvitation {
     return {
+      get id() {
+        return Buffer.from(
+          [invitation.organization_id, invitation.email, invitation.code].join(':'),
+        ).toString('hex');
+      },
       email: invitation.email,
-      organization_id: invitation.organization_id,
+      organizationId: invitation.organization_id,
       code: invitation.code,
-      created_at: invitation.created_at as any,
-      expires_at: invitation.expires_at as any,
+      createdAt: invitation.created_at as any,
+      expiresAt: invitation.expires_at as any,
       roleId: invitation.role.id,
     };
   }
@@ -361,13 +366,15 @@ export async function createStorage(
       | 'validation_excluded_clients'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
+      | 'fail_diff_on_dangerous_change'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
   ): TargetSettings {
     return {
+      failDiffOnDangerousChange: row.fail_diff_on_dangerous_change,
       validation: {
-        enabled: row.validation_enabled,
+        isEnabled: row.validation_enabled,
         percentage: row.validation_percentage,
         period: row.validation_period,
         requestCount: row.validation_request_count ?? 1,
@@ -499,7 +506,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id)
+            (organization_id, user_id, role_id, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -511,7 +518,8 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
-              )
+              ),
+              now()
             )
           ON CONFLICT DO NOTHING
           RETURNING *
@@ -728,9 +736,9 @@ export async function createStorage(
         await t.query<organization_member>(
           sql`/* assignAdminRole */
             INSERT INTO organization_member
-              ("organization_id", "user_id", "role_id")
+              ("organization_id", "user_id", "role_id", "created_at")
             VALUES
-              (${org.id}, ${input.userId}, ${adminRole.id})
+              (${org.id}, ${input.userId}, ${adminRole.id}, now())
           `,
         );
 
@@ -876,49 +884,6 @@ export async function createStorage(
 
       return total;
     },
-    getOrganizationMembers: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allMembers = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getOrganizationMembers */
-        SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
-          omr.scopes as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id = ANY(${sql.array(
-          organizations,
-          'uuid',
-        )}) ORDER BY u.created_at DESC`,
-      );
-
-      return organizations.map(organization => {
-        const members = allMembers.rows.filter(row => row.organization_id === organization);
-
-        if (members) {
-          return Promise.resolve(members.map(transformMember));
-        }
-
-        return Promise.reject(new Error(`Members not found (organization=${organization})`));
-      });
-    }),
     getOrganizationMember: batch(async selectors => {
       const membersResult = await pool.query<
         users &
@@ -965,32 +930,92 @@ export async function createStorage(
         return Promise.resolve(null);
       });
     }),
-    getOrganizationInvitations: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allInvitations = await pool.query<
+
+    async getOrganizationInvitations(organizationId, args) {
+      let cursor: null | {
+        createdAt: string;
+        /** email */
+        hash: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
+      if (args.after) {
+        cursor = decodeCreatedAtAndHashBasedCursor(args.after);
+      }
+
+      const query = sql`
+        SELECT
+          oi.organization_id
+          , oi.code
+          , oi.email
+          , to_json(oi.created_at) as "created_at"
+          , to_json(oi.expires_at) as "expires_at"
+          , oi.role_id as "role_id"
+          , to_jsonb(omr.*) as role
+        FROM
+          organization_invitations as oi
+        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
+        WHERE
+          oi.organization_id = ${organizationId}
+          ${
+            cursor
+              ? sql`
+                  AND (
+                    (
+                      oi.created_at = ${cursor.createdAt}
+                      AND oi.email < ${cursor.hash}
+                    )
+                    OR oi.created_at < ${cursor.createdAt}
+                  )
+                `
+              : sql``
+          }
+          AND oi.expires_at > NOW()
+        ORDER BY
+          oi.created_at DESC
+          , oi.email DESC
+        LIMIT ${limit + 1}
+      `;
+
+      const result = await pool.any<
         organization_invitations & {
           role: organization_member_roles;
         }
-      >(
-        sql`/* getOrganizationInvitations */
-          SELECT oi.*, to_jsonb(omr.*) as role
-          FROM organization_invitations as oi
-          LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
-          WHERE oi.organization_id IN (${sql.join(
-            organizations,
-            sql`, `,
-          )}) AND oi.expires_at > NOW() ORDER BY oi.created_at DESC
-        `,
-      );
+      >(query);
 
-      return organizations.map(organization => {
-        return Promise.resolve(
-          allInvitations.rows
-            .filter(row => row.organization_id === organization)
-            .map(transformOrganizationInvitation) ?? [],
-        );
+      let edges = result.map(row => {
+        const node = transformOrganizationInvitation(row);
+
+        return {
+          node,
+          get cursor() {
+            return encodeCreatedAtAndHashBasedCursor({
+              createdAt: node.createdAt,
+              hash: node.email,
+            });
+          },
+        };
       });
-    }),
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
     async deleteOrganizationMemberRole({ organizationId, roleId }) {
       await tracedTransaction('deleteOrganizationMemberRole', pool, async t => {
         const viewerRoleId = await t.oneFirst(sql`/* getViewerRoleId */
@@ -1164,9 +1189,9 @@ export async function createStorage(
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
             INSERT INTO organization_member
-              (organization_id, user_id, role_id)
+              (organization_id, user_id, role_id, created_at)
             VALUES
-              (${organization}, ${user}, ${roleId})
+              (${organization}, ${user}, ${roleId}, now())
           `,
         );
       });
@@ -1428,6 +1453,11 @@ export async function createStorage(
         });
       },
     ),
+    getProjectById(projectId) {
+      return this.findProjectsByIds({ projectIds: [projectId] }).then(
+        map => map.get(projectId) ?? null,
+      );
+    },
     async updateProjectSlug({ slug, organizationId: organization, projectId: project }) {
       return pool.transaction(async t => {
         const projectSlugExists = await t.exists(
@@ -1794,6 +1824,7 @@ export async function createStorage(
           | 'validation_excluded_clients'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
+          | 'fail_diff_on_dangerous_change'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1805,7 +1836,8 @@ export async function createStorage(
           t.validation_excluded_clients,
           t.validation_request_count,
           t.validation_breaking_change_formula,
-          array_agg(tv.destination_target_id) as targets
+          array_agg(tv.destination_target_id) as targets,
+          t.fail_diff_on_dangerous_change
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1815,89 +1847,16 @@ export async function createStorage(
 
       return transformTargetSettings(row);
     },
-    async setTargetValidation({ targetId: target, projectId: project, enabled }) {
-      return transformTargetSettings(
-        await tracedTransaction('setTargetValidation', pool, async trx => {
-          const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
-            SELECT 1 FROM target_validation WHERE target_id = ${target}
-          `);
-
-          if (!targetValidationRowExists) {
-            await trx.query(sql`/* insertTargetValidation */
-              INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
-            `);
-          }
-
-          return trx.one<
-            Pick<
-              targets,
-              | 'validation_enabled'
-              | 'validation_percentage'
-              | 'validation_period'
-              | 'validation_excluded_clients'
-              | 'validation_breaking_change_formula'
-              | 'validation_request_count'
-            > & {
-              targets: target_validation['destination_target_id'][];
-            }
-          >(sql`/* setTargetValidation */
-          UPDATE targets as t
-          SET validation_enabled = ${enabled}
-          FROM
-            (
-              SELECT
-                  it.id,
-                  array_agg(tv.destination_target_id) as targets
-              FROM targets AS it
-              LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
-              WHERE it.id = ${target} AND it.project_id = ${project}
-              GROUP BY it.id
-              LIMIT 1
-            ) ret
-          WHERE t.id = ret.id
-          RETURNING ret.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
-        `);
-        }),
-      ).validation;
-    },
-    async updateTargetValidationSettings({
+    async updateTargetDangerousChangeClassification({
       targetId: target,
       projectId: project,
-      percentage,
-      period,
-      targets,
-      excludedClients,
-      breakingChangeFormula,
-      requestCount,
+      failDiffOnDangerousChange,
     }) {
       return transformTargetSettings(
-        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
-          await trx.query(sql`/* deleteTargetValidation */
-            DELETE
-            FROM target_validation
-            WHERE destination_target_id NOT IN (${sql.join(targets, sql`, `)})
-              AND target_id = ${target}
-          `);
-
-          await trx.query(sql`/* insertTargetValidation */
-            INSERT INTO target_validation
-              (target_id, destination_target_id)
-            VALUES
-            (
-              ${sql.join(
-                targets.map(dest => sql.join([target, dest], sql`, `)),
-                sql`), (`,
-              )}
-            )
-            ON CONFLICT (target_id, destination_target_id) DO NOTHING
-          `);
-
+        await tracedTransaction('updateTargetDangerousChangeClassification', pool, async trx => {
           return trx.one(sql`/* updateTargetValidationSettings */
             UPDATE targets as t
-            SET validation_percentage = ${percentage}, validation_period = ${period}, validation_excluded_clients = ${sql.array(
-              excludedClients,
-              'text',
-            )} , validation_request_count = ${requestCount}, validation_breaking_change_formula = ${breakingChangeFormula}
+            SET fail_diff_on_dangerous_change = ${failDiffOnDangerousChange}
             FROM (
               SELECT
                 it.id,
@@ -1909,7 +1868,91 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
+          `);
+        }),
+      );
+    },
+    async updateTargetValidationSettings({
+      targetId: target,
+      projectId: project,
+      percentage,
+      period,
+      targets,
+      excludedClients,
+      breakingChangeFormula,
+      requestCount,
+      isEnabled,
+    }) {
+      return transformTargetSettings(
+        await tracedTransaction('updateTargetValidationSettings', pool, async trx => {
+          if (targets) {
+            await trx.query(sql`/* deleteTargetValidation */
+              DELETE
+              FROM target_validation
+              WHERE destination_target_id NOT IN (${sql.join(targets, sql`, `)})
+                AND target_id = ${target}
+            `);
+
+            await trx.query(sql`/* insertTargetValidation */
+              INSERT INTO target_validation
+              (target_id, destination_target_id)
+              VALUES
+              (
+              ${sql.join(
+                targets.map(dest => sql.join([target, dest], sql`, `)),
+                sql`), (`,
+              )}
+              )
+              ON CONFLICT (target_id, destination_target_id) DO NOTHING
+            `);
+          } else {
+            const targetValidationRowExists = await trx.exists(sql`/* findTargetValidation */
+              SELECT 1 FROM target_validation WHERE target_id = ${target}
+            `);
+
+            if (!targetValidationRowExists) {
+              await trx.query(sql`/* insertTargetValidation */
+                INSERT INTO target_validation (target_id, destination_target_id) VALUES (${target}, ${target})
+              `);
+            }
+          }
+
+          return trx.one(sql`/* updateTargetValidationSettings */
+            UPDATE
+              targets as t
+            SET
+              validation_percentage = COALESCE(${percentage ?? null}, validation_percentage)
+              , validation_period = COALESCE(${period ?? null}, validation_period)
+              , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
+              , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
+              , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
+              , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
+            FROM (
+              SELECT
+                it.id
+                , array_agg(tv.destination_target_id) as targets
+              FROM targets AS it
+                LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
+              WHERE
+                it.id = ${target}
+                AND it.project_id = ${project}
+              GROUP BY
+                it.id
+              LIMIT 1
+            ) ret
+            WHERE
+              t.id = ret.id
+            RETURNING
+              t.id
+              , t.validation_enabled
+              , t.validation_percentage
+              , t.validation_period
+              , t.validation_excluded_clients
+              , ret.targets
+              , t.validation_request_count
+              , t.validation_breaking_change_formula
+              , t.fail_diff_on_dangerous_change
           `);
         }),
       ).validation;
@@ -4596,6 +4639,19 @@ export function decodeHashBasedCursor(cursor: string) {
   };
 }
 
+export function encodeCreatedAtAndHashBasedCursor(cursor: { createdAt: string; hash: string }) {
+  return Buffer.from(`${cursor.createdAt}|${cursor.hash}`).toString('base64');
+}
+
+export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
+  const [createdAt, hash] = Buffer.from(cursor, 'base64').toString('utf8').split('|');
+
+  return {
+    createdAt,
+    hash,
+  };
+}
+
 function isDefined<T>(val: T | undefined | null): val is T {
   return val !== undefined && val !== null;
 }
@@ -5147,8 +5203,70 @@ const targetSQLFields = sql`
   "clean_id" as "slug",
   "name",
   "project_id" as "projectId",
-  "graphql_endpoint_url" as "graphqlEndpointUrl"
+  "graphql_endpoint_url" as "graphqlEndpointUrl",
+  "fail_diff_on_dangerous_change" as "failDiffOnDangerousChange"
 `;
+
+export function findTargetById(deps: { pool: DatabasePool }) {
+  return async function findByIdImplementation(id: string): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTarget */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+        FROM (
+          SELECT
+            ${targetSQLFields}
+          FROM
+            "targets"
+          WHERE
+            "id" = ${id}
+        ) AS "t"
+        INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
+
+export function findTargetBySlug(deps: { pool: DatabasePool }) {
+  return async function findTargetsBySlugImplementation(args: {
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+  }): Promise<Target | null> {
+    const data = await deps.pool.maybeOne<unknown>(
+      sql`/* getTargetBySlug */
+        SELECT
+          "t".*
+          , "p"."org_id" AS "orgId"
+          FROM (
+            SELECT
+              ${targetSQLFields}
+            FROM
+              "targets"
+            where
+              "clean_id" = ${args.targetSlug}
+            ) AS "t"
+          INNER JOIN "projects" "p" ON "t"."projectId" = "p"."id"
+          INNER JOIN "organizations" "o" on "p"."org_id" = "o"."id"
+        WHERE "p"."clean_id" = ${args.projectSlug}
+         and "o"."clean_id" = ${args.organizationSlug}
+      `,
+    );
+
+    if (data === null) {
+      return null;
+    }
+
+    return TargetWithOrgIdModel.parse(data);
+  };
+}
 
 const TargetModel = zod.object({
   id: zod.string(),
@@ -5156,6 +5274,7 @@ const TargetModel = zod.object({
   name: zod.string(),
   projectId: zod.string(),
   graphqlEndpointUrl: zod.string().nullable(),
+  failDiffOnDangerousChange: zod.boolean(),
 });
 
 const TargetWithOrgIdModel = TargetModel.extend({
@@ -5172,6 +5291,19 @@ export type PaginatedSchemaVersionConnection = Readonly<{
   edges: ReadonlyArray<{
     cursor: string;
     node: SchemaVersion;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+export type PaginatedOrganizationInvitationConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: OrganizationInvitation;
   }>;
   pageInfo: Readonly<{
     hasNextPage: boolean;

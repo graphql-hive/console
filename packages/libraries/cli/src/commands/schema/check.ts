@@ -42,18 +42,9 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
-            approval {
-              approvedBy {
-                id
-                displayName
-              }
-            }
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
         schemaCheck {
@@ -63,12 +54,9 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
       ... on SchemaCheckError {
         valid
         changes {
-          nodes {
-            message(withSafeBasedOnUsageNote: false)
-            criticality
-            isSafeBasedOnUsage
+          edges {
+            __typename
           }
-          total
           ...RenderChanges_schemaChanges
         }
         warnings {
@@ -81,10 +69,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           total
         }
         errors {
-          nodes {
-            message
-          }
-          total
+          ...RenderErrors_SchemaErrorConnectionFragment
         }
         schemaCheck {
           webUrl
@@ -160,6 +145,10 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         'The target against which to check the schema (slug or ID).' +
         ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
         ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
+    }),
+    url: Flags.string({
+      description:
+        'If checking a service, then you can optionally provide the service URL to see the difference in the supergraph during the check.',
     }),
   };
 
@@ -273,6 +262,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
                 : null,
             contextId: flags.contextId ?? undefined,
             target,
+            url: flags.url,
           },
         },
       });
@@ -285,7 +275,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         const changes = result.schemaCheck.changes;
         if (result.schemaCheck.initial) {
           this.logSuccess('Schema registry is empty, nothing to compare your schema with.');
-        } else if (!changes?.total) {
+        } else if (!changes?.edges.length) {
           this.logSuccess('No changes');
         } else {
           this.log(renderChanges(changes));
@@ -309,7 +299,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
           this.log(renderWarnings(warnings));
         }
 
-        if (changes && changes.total) {
+        if (changes?.edges.length) {
           this.log(renderChanges(changes));
         }
 

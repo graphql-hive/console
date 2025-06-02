@@ -1,4 +1,5 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
+import DataLoader from 'dataloader';
 import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
@@ -16,7 +17,6 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
   NativeFederationCompatibilityStatus,
-  Orchestrator,
   Organization,
   Project,
   ProjectType,
@@ -26,7 +26,7 @@ import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
-import { InsufficientPermissionError, Session } from '../../auth/lib/authz';
+import { Session } from '../../auth/lib/authz';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { CryptoProvider } from '../../shared/providers/crypto';
@@ -43,9 +43,7 @@ import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helpe
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
 import type { SchemaCoordinatesDiffResult } from './inspector';
-import { FederationOrchestrator } from './orchestrators/federation';
-import { SingleOrchestrator } from './orchestrators/single';
-import { StitchingOrchestrator } from './orchestrators/stitching';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
@@ -70,15 +68,14 @@ const externalSchemaCompositionTestDocument = parse(externalSchemaCompositionTes
 })
 export class SchemaManager {
   private logger: Logger;
+  private latestSchemaVersionLoader: DataLoader<TargetSelector, SchemaVersion>;
 
   constructor(
     logger: Logger,
     private session: Session,
     private storage: Storage,
     private projectManager: ProjectManager,
-    private singleOrchestrator: SingleOrchestrator,
-    private stitchingOrchestrator: StitchingOrchestrator,
-    private federationOrchestrator: FederationOrchestrator,
+    private compositionOrchestrator: CompositionOrchestrator,
     private crypto: CryptoProvider,
     private githubIntegrationManager: GitHubIntegrationManager,
     private targetManager: TargetManager,
@@ -89,6 +86,25 @@ export class SchemaManager {
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
+    this.latestSchemaVersionLoader = new DataLoader(
+      selectors => {
+        return Promise.all(
+          selectors.map(async selector => {
+            return {
+              ...(await this.storage.getLatestValidVersion(selector)),
+              projectId: selector.projectId,
+              targetId: selector.targetId,
+              organizationId: selector.organizationId,
+            };
+          }),
+        );
+      },
+      {
+        cacheKeyFn(selector) {
+          return selector.targetId;
+        },
+      },
+    );
   }
 
   async hasSchema(target: Target) {
@@ -123,10 +139,11 @@ export class SchemaManager {
 
     const selector = await this.idTranslator.resolveTargetReference({
       reference: input.target ?? null,
-      onError() {
-        throw new InsufficientPermissionError('schema:compose');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('schema:compose');
+    }
 
     trace.getActiveSpan()?.setAttributes({
       'hive.organization.id': selector.organizationId,
@@ -167,8 +184,6 @@ export class SchemaManager {
       };
     }
 
-    const orchestrator = this.matchOrchestrator(project.type);
-
     const existingServices = ensureCompositeSchemas(latestSchemas ? latestSchemas.schemas : []);
     const services = existingServices
       // remove provided services from the list
@@ -188,15 +203,19 @@ export class SchemaManager {
       )
       .map(service => this.schemaHelper.createSchemaObject(service));
 
-    const compositionResult = await orchestrator.composeAndValidate(services, {
-      external: project.externalComposition,
-      native: this.checkProjectNativeFederationSupport({
-        project,
-        organization,
-        targetId: selector.targetId,
-      }),
-      contracts: null,
-    });
+    const compositionResult = await this.compositionOrchestrator.composeAndValidate(
+      'federation',
+      services,
+      {
+        external: project.externalComposition,
+        native: this.checkProjectNativeFederationSupport({
+          project,
+          organization,
+          targetId: selector.targetId,
+        }),
+        contracts: null,
+      },
+    );
 
     if (compositionResult.errors.length > 0) {
       return {
@@ -279,12 +298,7 @@ export class SchemaManager {
 
   async getLatestValidVersion(selector: TargetSelector) {
     this.logger.debug('Fetching latest valid version (selector=%o)', selector);
-    return {
-      ...(await this.storage.getLatestValidVersion(selector)),
-      projectId: selector.projectId,
-      targetId: selector.targetId,
-      organizationId: selector.organizationId,
-    };
+    return this.latestSchemaVersionLoader.load(selector);
   }
 
   async getMaybeLatestVersion(target: Target) {
@@ -446,15 +460,10 @@ export class SchemaManager {
       },
     });
 
-    const [project, organization] = await Promise.all([
-      this.storage.getProject({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-      }),
-      this.storage.getOrganization({
-        organizationId: selector.organizationId,
-      }),
-    ]);
+    const project = await this.storage.getProject({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+    });
 
     if (project.type !== ProjectType.FEDERATION) {
       throw new HiveError(
@@ -466,10 +475,9 @@ export class SchemaManager {
       throw new HiveError('External composition is not enabled.');
     }
 
-    const orchestrator = this.matchOrchestrator(project.type);
-
     try {
-      const { errors } = await orchestrator.composeAndValidate(
+      const { errors } = await this.compositionOrchestrator.composeAndValidate(
+        'federation',
         [
           {
             document: externalSchemaCompositionTestDocument,
@@ -480,11 +488,8 @@ export class SchemaManager {
         ],
         {
           external: project.externalComposition,
-          native: this.checkProjectNativeFederationSupport({
-            project,
-            organization,
-            targetId: null,
-          }),
+          // when testing external composition, do not use native composition during the check
+          native: false,
           contracts: null,
         },
       );
@@ -505,23 +510,6 @@ export class SchemaManager {
         kind: 'error',
         error: error instanceof HiveError ? error.message : 'Unknown error',
       } as const;
-    }
-  }
-
-  matchOrchestrator(projectType: ProjectType): Orchestrator | never {
-    switch (projectType) {
-      case ProjectType.SINGLE: {
-        return this.singleOrchestrator;
-      }
-      case ProjectType.STITCHING: {
-        return this.stitchingOrchestrator;
-      }
-      case ProjectType.FEDERATION: {
-        return this.federationOrchestrator;
-      }
-      default: {
-        throw new HiveError(`Couldn't find an orchestrator for project type "${projectType}"`);
-      }
     }
   }
 
@@ -736,9 +724,9 @@ export class SchemaManager {
 
     if (schemaCheck.breakingSchemaChanges && schemaCheck.conditionalBreakingChangeMetadata) {
       for (const change of schemaCheck.breakingSchemaChanges) {
-        this.breakingSchemaChangeUsageHelper.registerUsageDataForBreakingSchemaChange(
+        this.breakingSchemaChangeUsageHelper.registerMetadataForBreakingSchemaChange(
           change,
-          schemaCheck.conditionalBreakingChangeMetadata.usage,
+          schemaCheck.conditionalBreakingChangeMetadata,
         );
       }
     }
@@ -1002,10 +990,11 @@ export class SchemaManager {
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.target,
-      onError() {
-        throw new InsufficientPermissionError('project:describe');
-      },
     });
+
+    if (!selector) {
+      this.session.raise('project:describe');
+    }
 
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,
@@ -1180,8 +1169,6 @@ export class SchemaManager {
       ),
     );
 
-    const orchestrator = this.matchOrchestrator(ProjectType.FEDERATION);
-
     this.logger.debug('Checking compatibility of %s versions', versions.length);
 
     const compatibilityResults = await Promise.all(
@@ -1191,7 +1178,8 @@ export class SchemaManager {
           return NativeFederationCompatibilityStatus.UNKNOWN;
         }
 
-        const compositionResult = await orchestrator.composeAndValidate(
+        const compositionResult = await this.compositionOrchestrator.composeAndValidate(
+          'federation',
           ensureCompositeSchemas(schemasPerVersion[i]).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,

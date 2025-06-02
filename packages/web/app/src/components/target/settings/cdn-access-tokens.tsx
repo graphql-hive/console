@@ -61,10 +61,12 @@ function CreateCDNAccessTokenModal(props: {
     onSubmit: async values => {
       await mutate({
         input: {
-          selector: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+            },
           },
           alias: values.alias,
         },
@@ -229,10 +231,12 @@ function DeleteCDNAccessTokenModal(props: {
           onClick={() =>
             mutate({
               input: {
-                selector: {
-                  organizationSlug: props.organizationSlug,
-                  projectSlug: props.projectSlug,
-                  targetSlug: props.targetSlug,
+                target: {
+                  bySelector: {
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                  },
                 },
                 cdnAccessTokenId: props.cdnAccessTokenId,
               },
@@ -296,7 +300,7 @@ function DeleteCDNAccessTokenModal(props: {
 
 const CDNAccessTokensQuery = graphql(`
   query CDNAccessTokensQuery($selector: TargetSelectorInput!, $first: Int!, $after: String) {
-    target(selector: $selector) {
+    target(reference: { bySelector: $selector }) {
       id
       cdnAccessTokens(first: $first, after: $after) {
         edges {

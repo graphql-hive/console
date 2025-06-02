@@ -7,7 +7,7 @@ export const createMemberRole: NonNullable<MutationResolvers['createMemberRole']
   { injector },
 ) => {
   return await injector.get(OrganizationManager).createMemberRole({
-    organizationSlug: input.organizationSlug,
+    organization: input.organization,
     name: input.name,
     description: input.description,
     permissions: input.selectedPermissions,

@@ -92,9 +92,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
+    const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+      await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -180,6 +179,10 @@ test.concurrent(
         },
       }),
     );
+
+    // ensure no new schema version is created for failed external composition
+    const versions = await fetchVersions(20);
+    expect(versions.length).toEqual(1);
   },
 );
 
@@ -188,9 +191,8 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
-    const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
+    const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+      await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -275,15 +277,18 @@ test.concurrent(
         },
       }),
     );
+
+    // ensure no new schema version is created for failed external composition
+    const versions = await fetchVersions(20);
+    expect(versions.length).toEqual(1);
   },
 );
 
 test.concurrent('a timeout error should be visible to the user', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createTargetAccessToken, project, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
+  const { createTargetAccessToken, project, setNativeFederation, fetchVersions } =
+    await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -362,7 +367,7 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
         total: 1,
         nodes: [
           {
-            message: expect.stringMatching(/timeout/i),
+            message: expect.stringMatching(/The schema composition timed out. Please try again./i),
           },
         ],
       },
@@ -370,4 +375,8 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
       valid: false,
     }),
   );
+
+  // ensure no new schema version is created for failed external composition
+  const versions = await fetchVersions(20);
+  expect(versions.length).toEqual(1);
 });

@@ -1,0 +1,170 @@
+---
+title: Access Token Management via the GraphQL API
+description: Learn how to manage access tokens via the Hive Console GraphQL API.
+---
+
+# Access Token Management via the GraphQL API
+
+Manage access tokens used for schema publishing, schema checks, app deployment publishes and other
+actions available via the GraphQL API. For more information, please refer to our
+[access token documentation](/docs/management/access-tokens).
+
+## Retrieve a List of Access Tokens
+
+Use the `Organization.accessTokens` field for retrieving a paginated list of available access.
+
+```graphql filename="Example: Paginated list of access tokens"
+query OrganizationAccessTokens($organizationSlug: String!, $after: String) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    accessTokens(first: 10, after: $after) {
+      edges {
+        node {
+          id
+          title
+          description
+          createdAt
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
+```
+
+## Retrieve a Single Access Token
+
+Instead of fetching a paginated list, it is also possible to retrieve a single access token by its
+id via the `Organization.accessToken` field.
+
+```graphql filename="Example: Retrieve access token by id"
+query OrganizationAccessTokenById($organizationSlug: String!, $accessTokenId: ID!) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    accessToken(id: $accessTokenId) {
+      id
+      title
+      description
+      createdAt
+    }
+  }
+}
+```
+
+## Retrieve a List of Permissions Assignable to Access Tokens
+
+A list of permissions that are assignable to access tokens can be retrieved via the
+`Organization.availableOrganizationAccessTokenPermissionGroups` field. It returns a list of all
+permission groups and their permissions.
+
+```graphql filename="Example: Retrieve permissions by group"
+query OrganizationPermissions($organizationSlug: String!) {
+  organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+    id
+    slug
+    availableOrganizationAccessTokenPermissionGroups {
+      id
+      permissions {
+        id
+        title
+        description
+      }
+    }
+  }
+}
+```
+
+## Create an Access Token
+
+An access token can be created by using the `Mutation.createOrganizationAccessToken` field.
+
+The `CreateOrganizationAccessTokenResultOk.privateAccessKey` field in the mutation results contains
+the access key that can be used with the Hive CLI or the Hive GraphQL API as an authorization
+header.
+
+```graphql filename="Example: Create an Access Token"
+mutation CreateAccessTokenMutation($input: CreateOrganizationAccessTokenInput!) {
+  createOrganizationAccessToken(input: $input) {
+    ok {
+      privateAccessKey
+    }
+    error {
+      message
+      details {
+        title
+        description
+      }
+    }
+  }
+}
+```
+
+### Resource Assignment
+
+Use the `CreateOrganizationAccessTokenInput.resources` field to specify on which resources the
+permissions should apply. Permissions are inherited by all subresources (organization, project,
+target, service, app deployment).
+
+```json5 filename="Example: Grant permissions on all resources"
+{
+  mode: 'ALL',
+  projects: []
+}
+```
+
+```json5 filename="Example: Grant permissions on specific project"
+{
+  mode: 'GRANULAR',
+  projects: [
+    {
+      projectId: '<PROJECT_ID>',
+      targets: {
+        // Grant permissions on all targets within project
+        mode: 'ALL'
+      }
+    }
+  ]
+}
+```
+
+```json5 filename="Example: Grant permissions on specific target"
+{
+  mode: 'GRANULAR',
+  projects: [
+    {
+      projectId: '<PROJECT_ID>',
+      targets: {
+        // Grant permissions on a single targets within project
+        mode: 'GRANULAR',
+        targets: [
+          {
+            targetId: '<TARGET_ID>',
+            // Grant permissions on a all services within target
+            services: { mode: 'ALL' },
+            // Grant permissions on a all app deployments within target
+            appDeployments: { mode: 'ALL' }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+## Delete an Access Token
+
+A access token can be deleted by using the `Mutation.deleteOrganizationAccessToken` field.
+
+```graphql filename="Example: Create an Access Token"
+mutation CreateAccessTokenMutation($input: CreateOrganizationAccessTokenInput!) {
+  deleteOrganizationAccessToken(input: $input) {
+    ok {
+      deletedOrganizationAccessTokenId
+    }
+    error {
+      message
+    }
+  }
+}
+```

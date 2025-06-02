@@ -50,11 +50,18 @@ pub struct UsagePlugin {
 pub struct Config {
     /// Default: true
     enabled: Option<bool>,
-    /// Hive token, can also be set using the HIVE_TOKEN environment variable
+    /// Hive token, can also be set using the HIVE_TOKEN environment variable.
+    /// The token can be a registry access token, or a organization access token.
     registry_token: Option<String>,
     /// Hive registry token. Set to your `/usage` endpoint if you are self-hosting.
     /// Default: https://app.graphql-hive.com/usage
+    /// When `target` is set and organization access token is in use, the target ID is appended to the endpoint,
+    /// so usage endpoint becomes `https://app.graphql-hive.com/usage/<target_id>`
     registry_usage_endpoint: Option<String>,
+    /// The target to which the usage data should be reported to.
+    /// This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")
+    /// or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
+    target: Option<String>,
     /// Sample rate to determine sampling.
     /// 0.0 = 0% chance of being sent
     /// 1.0 = 100% chance of being sent.
@@ -98,6 +105,7 @@ impl Default for Config {
             connect_timeout: Some(5),
             request_timeout: Some(15),
             flush_interval: Some(5),
+            target: None,
         }
     }
 }
@@ -131,7 +139,7 @@ impl UsagePlugin {
 
         let excluded_operation_names: HashSet<String> = config
             .exclude
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_default()
             .clone()
             .into_iter()
             .collect();
@@ -141,13 +149,10 @@ impl UsagePlugin {
         let mut dropped = !sampled;
 
         if !dropped {
-            match &operation_name {
-                Some(name) => {
-                    if excluded_operation_names.contains(name) {
-                        dropped = true;
-                    }
+            if let Some(name) = &operation_name {
+                if excluded_operation_names.contains(name) {
+                    dropped = true;
                 }
-                None => {}
             }
         }
 
@@ -182,17 +187,28 @@ impl Plugin for UsagePlugin {
             .clone()
             .or_else(|| env::var("HIVE_TOKEN").ok());
 
-        if let None = token {
+        if token.is_none() {
             return Err("Hive token is required".into());
         }
 
-        let endpoint = init
+        let mut endpoint = init
             .config
             .registry_usage_endpoint
             .clone()
             .unwrap_or_else(|| {
                 env::var("HIVE_ENDPOINT").unwrap_or(DEFAULT_HIVE_USAGE_ENDPOINT.to_string())
             });
+
+        let target_id = init
+            .config
+            .target
+            .clone()
+            .or_else(|| env::var("HIVE_TARGET_ID").ok());
+
+        // In case target ID is specified in configuration, append it to the endpoint
+        if let Some(target_id) = &target_id {
+            endpoint.push_str(&format!("/{}", target_id));
+        }
 
         let default_config = Config::default();
         let user_config = init.config;

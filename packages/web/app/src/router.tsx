@@ -24,6 +24,7 @@ import {
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -42,7 +43,10 @@ import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
 import { OrganizationPolicyPage } from './pages/organization-policy';
-import { OrganizationSettingsPage } from './pages/organization-settings';
+import {
+  OrganizationSettingsPage,
+  OrganizationSettingsPageEnum,
+} from './pages/organization-settings';
 import { OrganizationSubscriptionPage } from './pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from './pages/organization-subscription-manage';
 import { OrganizationSupportPage } from './pages/organization-support';
@@ -418,12 +422,20 @@ const organizationPolicyRoute = createRoute({
   },
 });
 
+const OrganizationSettingRouteSearch = z.object({
+  page: OrganizationSettingsPageEnum.default('general').optional(),
+});
+
 const organizationSettingsRoute = createRoute({
   getParentRoute: () => organizationRoute,
+  validateSearch(search) {
+    return OrganizationSettingRouteSearch.parse(search);
+  },
   path: 'view/settings',
   component: function OrganizationSettingsRoute() {
     const { organizationSlug } = organizationSettingsRoute.useParams();
-    return <OrganizationSettingsPage organizationSlug={organizationSlug} />;
+    const { page } = organizationSettingsRoute.useSearch();
+    return <OrganizationSettingsPage organizationSlug={organizationSlug} page={page} />;
   },
 });
 
@@ -771,6 +783,12 @@ const targetExplorerUnusedRoute = createRoute({
 });
 
 const targetChecksRoute = createRoute({
+  validateSearch: zodValidator(
+    z.object({
+      filter_changed: z.boolean().default(false),
+      filter_failed: z.boolean().default(false),
+    }),
+  ),
   getParentRoute: () => targetRoute,
   path: 'checks',
   component: function TargetChecksRoute() {

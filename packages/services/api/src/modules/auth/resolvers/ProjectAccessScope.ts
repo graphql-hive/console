@@ -1,4 +1,4 @@
-import { ProjectAccessScope as ProjectAccessScopeEnum } from '../providers/project-access';
+import { ProjectAccessScope as ProjectAccessScopeEnum } from '../providers/scopes';
 import type { ProjectAccessScopeResolvers } from './../../../__generated__/types';
 
 export const ProjectAccessScope: ProjectAccessScopeResolvers = {

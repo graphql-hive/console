@@ -3,7 +3,7 @@ import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -22,10 +22,12 @@ const HistoryPage_VersionsPageQuery = graphql(`
     $after: String
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -34,7 +36,7 @@ const HistoryPage_VersionsPageQuery = graphql(`
           node {
             id
             date
-            valid
+            isValid
             log {
               ... on PushedSchemaLog {
                 id
@@ -121,9 +123,12 @@ function ListPage(props: {
             ) : null}
             <div className="mb-1.5 mt-2.5 flex align-middle text-xs font-medium text-[#c4c4c4]">
               <div
-                className={cn(!version.valid && 'text-red-500', 'flex flex-row items-center gap-1')}
+                className={cn(
+                  !version.isValid && 'text-red-500',
+                  'flex flex-row items-center gap-1',
+                )}
               >
-                <BadgeRounded color={version.valid ? 'green' : 'red'} /> Published
+                <BadgeRounded color={version.isValid ? 'green' : 'red'} /> Published
                 <TimeAgo date={version.date} />
               </div>
 
@@ -170,12 +175,18 @@ const TargetHistoryPageQuery = graphql(`
     $targetSlug: String!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
+      project {
+        id
+        type
+      }
       id
       latestSchemaVersion {
         id
@@ -268,7 +279,12 @@ function HistoryPageContent(props: {
         <Title>Versions</Title>
         <Subtitle>Recently published schemas.</Subtitle>
       </div>
-      {query.fetching ? null : noSchemaVersion}
+      {query.fetching ? null : (
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={query.data?.target?.project.type ?? null}
+        />
+      )}
     </div>
   );
 }

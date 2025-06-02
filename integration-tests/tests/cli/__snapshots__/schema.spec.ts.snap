@@ -15,8 +15,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
@@ -75,6 +76,30 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`FEDERATION > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`FEDERATION > can update a service without providing a url if previously published > schema publish same url 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema published
+ℹ Available at http://__URL__
+`;
+
+exports[`FEDERATION > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`FEDERATION > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
@@ -91,10 +116,89 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`FEDERATION > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`FEDERATION > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`FEDERATION > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`FEDERATION > publish validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`FEDERATION > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`FEDERATION > publish validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`FEDERATION > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
-2
+3
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
@@ -103,6 +207,15 @@ stderr--------------------------------------------:
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
+`;
+
+exports[`FEDERATION > schema:check accepts a \`--url\` argument in distributed projects 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
 `;
 
 exports[`FEDERATION > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -161,7 +274,7 @@ stdout--------------------------------------------:
 exports[`FEDERATION > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
-2
+1
 stderr--------------------------------------------:
  ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]
@@ -187,8 +300,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
@@ -247,10 +361,107 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
-exports[`SINGLE > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
+exports[`SINGLE > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`SINGLE > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+
+exports[`SINGLE > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`SINGLE > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`SINGLE > publish validates the service name > onlyNumbers 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
 2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+2
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), underscore (_), or forward slash (/).
+
+
+`;
+
+exports[`SINGLE > publish validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`SINGLE > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+3
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
@@ -259,6 +470,20 @@ stderr--------------------------------------------:
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
+`;
+
+exports[`SINGLE > schema:check rejects a \`--url\` argument in single projects 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - url is only supported by distributed projects
+
+
 `;
 
 exports[`SINGLE > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -317,7 +542,7 @@ stdout--------------------------------------------:
 exports[`SINGLE > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
-2
+1
 stderr--------------------------------------------:
  ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]
@@ -343,8 +568,9 @@ stdout--------------------------------------------:
 
    Breaking changes:
    - Field email was removed from object type User
-   Safe changes:
+   Dangerous changes:
    - Enum value VIEWER was added to enum UserRole
+   Safe changes:
    - Field address was added to object type User
    - Field User.role changed type from UserRole to UserRole!
 
@@ -403,6 +629,24 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`STITCHING > can update a service without providing a url if previously published > schema publish initial 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
+exports[`STITCHING > can update a service without providing a url if previously published > schema publish same url 1`] = ``;
+
+exports[`STITCHING > can update a service without providing a url if previously published > schemaPublish (initial) 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`STITCHING > can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 
@@ -419,10 +663,89 @@ stdout--------------------------------------------:
 ℹ Available at http://__URL__
 `;
 
+exports[`STITCHING > check validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`STITCHING > check validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+__NONE__
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`STITCHING > check validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
+`;
+
+exports[`STITCHING > publish validates the service name > onlyNumbers 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`STITCHING > publish validates the service name > specialCharacters 1`] = `
+:::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+exitCode------------------------------------------:
+1
+stderr--------------------------------------------:
+ ›   Error: Schema publish failed.  [300]
+ ›   > See https://__URL__ for
+ ›    a complete list of error codes and recommended fixes.
+ ›   To disable this message set HIVE_NO_ERROR_TIP=1
+stdout--------------------------------------------:
+✖ Detected 1 error
+
+   - Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).
+
+
+`;
+
+exports[`STITCHING > publish validates the service name > success 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Published initial schema.
+ℹ Available at http://__URL__
+`;
+
 exports[`STITCHING > publishing invalid schema SDL provides meaningful feedback for the user. > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
-2
+3
 stderr--------------------------------------------:
  ›   Error: The SDL is not valid at line 1, column 1:
  ›    Syntax Error: Unexpected Name "iliketurtles".  [301]
@@ -431,6 +754,15 @@ stderr--------------------------------------------:
  ›   To disable this message set HIVE_NO_ERROR_TIP=1
 stdout--------------------------------------------:
 __NONE__
+`;
+
+exports[`STITCHING > schema:check accepts a \`--url\` argument in distributed projects 1`] = `
+:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+stdout--------------------------------------------:
+✔ Schema registry is empty, nothing to compare your schema with.
+View full report:
+http://__URL__
 `;
 
 exports[`STITCHING > schema:check should notify user when registry is empty > schemaCheck 1`] = `
@@ -491,7 +823,7 @@ stdout--------------------------------------------:
 exports[`STITCHING > schema:publish should see Invalid Token error when token is invalid > schemaPublish 1`] = `
 :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
 exitCode------------------------------------------:
-2
+1
 stderr--------------------------------------------:
  ›   Error: A valid registry token is required to perform the action. The
  ›   registry token used does not exist or has been revoked.  [106]

@@ -1,0 +1,192 @@
+---
+title: GraphQLConf 2023 Recap
+authors: [laurin, uri]
+tags: [graphql, graphql-federation]
+date: 2023-09-25
+description:
+  Explore the highlights of GraphQLConf 2023. Learn about the latest trends in GraphQL, from gateway
+  solutions to composite schemas and innovative projects.
+---
+
+Wow, what a ride!  
+We've just came back from GraphQL Conf and we have a lot to share!
+
+The community gathered together in San Francisco for
+[**the first-ever GraphQL Conference**](https://graphql.org/conf), almost 10 years after GraphQL was
+invented.
+
+It was an extraordinary warm, welcoming, community-centric event that brought together developers,
+enthusiasts, and experts from all over the world. Over the course of three action-packed days,
+filled with amazing workshops, exciting talks, and interesting sponsor booths (Hasura, The Guild,
+Postman, The Graph, solo.io, Inigo, Stellate, StepZen(IBM), Neo4J, WunderGraph, HyGraph and
+Graphabase), we had the incredible opportunity to immerse ourselves in the world of GraphQL. The
+overwhelming volume of high-quality presentations by speakers from companies such as Netflix,
+Intuit, Meta, AWS, Coinbase Salesforce, Atlassian, Apollo GraphQL, Meetup, IBM, Booking.com,
+Wix.com, Okta, Miro and others clearly highlighted the immense need for a community-driven
+conference.
+
+Several participants mentioned it was one of their favorite confs ever (it certainly was for us!)
+
+The Linux Foundation events team, lead by Emily Ruf and the GraphQL Foundation Conference committee,
+lead by Keith Babo, had made a remarkable job with the first ever GraphQL open conference!
+
+![The Guild at GraphQLConf 2023 - photo by graphql.org/conf](./guild.jpg)
+
+One of the highlights of the conference was the chance to meet and shake hands with
+[Lee Byron](https://twitter.com/leeb), the visionary behind GraphQL. We expressed our heartfelt
+gratitude for his groundbreaking invention and the positive impact it has had on the developer
+community. From its inception to the present day, Lee has been tirelessly championing GraphQL - from
+working groups, board meetings, to the first official GraphQL Conf! Our community is truly fortunate
+to have such a dedicated leader. It was truly inspiring to see the faces of the people we had only
+known through outdated avatars on GitHub or Twitter, who are the driving force behind the vibrant
+GraphQL community.
+
+![Lee Byron at GraphQLConf 2023 - photo by Taz Singh](./lee.jpeg)
+
+> Thanks to [Taz Singh](https://twitter.com/tazsingh) for the image, check out his
+> [full GraphQL Conf 2023 album](https://photos.google.com/share/AF1QipOu3QoVIrMnJsVk2Y0Vsu2aw3Vo6z1px-VYmOkX6S91FARgcdDfMu3rzpU6H8fqNQ?key=UmR5VXNEbWhYYndHa3VQVk9DTzBPUkJQRE45SFdB)
+
+Its hard to summarize everything that happened, but the main messages we got from the conference
+were:
+
+1. GraphQL is being used by the largest companies in the world, with clear and solid best practices.
+   Adoption is growing and no company in going back
+2. Loads of innovation is happening in the open source GraphQL Ecosystem, at any part of the stack
+3. Innovation has paved the way for numerous superior open-source solutions across every layer of
+   the stack. This empowers developers with choices, allowing for clear separation of concerns
+   between the gateway, subgraph, and schema registry. With this flexibility, there's no need for
+   vendor lock-in; developers can select the best tool for each specific layer
+4. That innovation leads to new ways people use GraphQL, beyond the classic Client-Server gateway
+   solutions
+5. With GraphQL Conf, the first open GraphQL Conference, the community can find all the available
+   tools and innovations in one place
+
+> There are too many great talks to cover, lucky you can find the recordings of all the workshops
+> and talks [on the website's schedule (click on each talk)](https://graphql.org/conf/schedule/)
+
+The first day of the conference was workshops day, with many great practical workshops across
+everything GraphQL. You can find all the workshop recordings in the schedule
+[here](https://graphql.org/conf/schedule/)
+
+The second day started with welcoming remarks by Lee, followed with great keynotes by Marc-Andre,
+Keith Babo, Theo Browne (would couldn't believe he was invited to give a keynote ;) ) , Bryan
+Robinson, and our very own Uri Goldshtein.
+
+[Uri's keynote on the state of GraphQL](<https://graphql.org/conf/schedule/e29bf518adeb99b2319fa8cb70d8f445/?name=Open%20Federation%20-%20Open%20Remote%20Schema%20Specifications%20with%20Other%20Specs%20(OpenAPI,%20etc.)>)
+focused on highlighting the biggest open source innovations from the last year, including those
+unveiled at the conference and how we all can use them to improve our GraphQL developer experience.
+This talk also served as a roadmap to other talks at the conference. He covered important releases
+for GraphQL Clients and GraphQL Gateways. One of the key takeaways was the emergence of GraphQL
+gateways as a common pattern.
+
+For a long time, developers had limited options when it came to choosing a GraphQL gateway. However,
+now we are **witnessing a flourishing and diverse range of gateways being built in various
+languages** like Apollo Router, Hot Chocolate, Cosmos, and our own GraphQL Mesh. The future promises
+friendly competition between the teams and companies behind these projects. Uri highlighted the
+available choices and alternatives out there and also talked about how you should go about choosing
+the right gateway solution for you.
+
+He then announced **the most important release of the conference - the new GraphQL Fusion spec** by
+ChilliCream and The Guild, Hasura, IBM, AWS AppSync, WunderGraph and many more. An open spec, under
+the Foundation, for
+[remote execution and federation of services](https://the-guild.dev/graphql/hive/federation) that
+challenges the existing patterns of specification-less Federation protocols with a fresh approach.
+
+He ended with the message - We are just getting started!
+
+**The conference was a testament to the growing popularity and importance of GraphQL.** Whether
+attendees were just starting to explore GraphQL, had already adopted it, or were active contributors
+in the GraphQL ecosystem, everyone plays a vital role in the success and future of GraphQL. The
+energy and enthusiasm in the conference halls were palpable, and it was evident that we are just
+scratching the surface of what GraphQL can achieve.
+
+![Discussion Panel at GraphQLConf 2023 - photo by graphql.org/conf](./7.jpg)
+
+It also showed that in an open conference you can find deep and nuanced perspectives on
+architectural choices. For example, on the GraphQL Gateways subject, even with talks and
+announcements on great toolings for that type of architecture, it's important to note that schema
+composition, GraphQL gateways, and other tools should be adopted based on their practical benefits
+in specific workflows. The conference emphasized that these solutions should be embraced only if
+they genuinely enhance the efficiency and productivity of your company's engineering team. GraphQL
+Fusion
+([Conf Talk](https://graphql.org/conf/schedule/4a4e842d1cd0c06083f484d31225abd1/?name=GraphQL%20Fusion:%20Rethinking%20Distributed%20GraphQL)),
+for example, offers adaptability to any GraphQL setup, making it easier to migrate to a more
+distributed setup in the future and even support for federating APIs that are not GraphQL (OpenAPI,
+SOAP, gRPC, etc.). On the other hand, other
+[Federation API](https://the-guild.dev/graphql/hive/federation) protocols requires a specific
+subgraph structure. Additionally, it was interesting to learn that even Facebook, with its vast
+resources, finds value in a monolithic approach for their GraphQL implementation.
+
+![The Guild cap](./backend.jpeg)
+
+Another significant aspect highlighted during the conference was the **need for continuous education
+and knowledge sharing within the GraphQL community**. While there are numerous tutorials and guides
+available for specific libraries and frameworks, there is a growing demand for more generic best
+practices that can be applied across different GraphQL solutions. Topics like security through
+persisted queries or HTTP and response caching sparked engaging discussions among developers,
+showcasing the collective effort needed to improve GraphQL implementation within companies.
+
+![Uri at GraphQLConf 2023 - photo by graphql.org/conf](./2.jpg)
+
+Lastly, the conference showcased several innovative projects that challenge the way we currently use
+GraphQL.
+[Grafast](https://graphql.org/conf/schedule/275443caa2eda5df06699b724efa533c/?name=The%20Future%20of%20Efficiency%20Is%20Here:%20Add%20Planning%20to%20Your%20Schema!),
+for instance, introduces a more efficient approach to implementing GraphQL schemas, while
+[Houdini](https://graphql.org/conf/schedule/ce430c038efa9a9c19743d1ccc702de9/?name=Houdini:%20A%20GraphQL-First%20Meta-Framework)
+and
+[Isograph](https://graphql.org/conf/schedule/2517f7a1d13ad3c0652e1b3cc5b65714/?name=Isograph%20%E2%80%94%20Rethink%20GraphQL-Powered%20React%20Apps)
+are exciting new GraphQL clients inspired by Relay, taking the GraphQL experience to new heights.
+These projects sparked lively discussions and left us with a sense of anticipation and plenty of new
+ideas to explore and improve the GraphQL community as a whole. And if we look ahead to the future,
+[Aleksandra's talk about AI, GraphQL, and the Rise of Malleable Applications](https://graphql.org/conf/schedule/4feef977ceb883c69c91ccd2dd607aec/?name=AI,%20GraphQL,%20and%20the%20Rise%20of%20Malleable%20Applications)
+gave us a glimpse at what's possible!
+
+We extend our heartfelt **thanks to everyone who attended GraphQL Conf 2023**. For those who
+couldn't make it, don't worry! Its impossible to cover the span of amazing talks that happened
+there, but the recordings of all the workshops and talks are already
+[available on the website's schedule (click on each talk)](https://graphql.org/conf/schedule/),
+ensuring that the knowledge and insights shared during the conference can reach a wider audience. We
+also invite you to join the discussions on the official
+[GraphQL discord](https://discord.graphql.org), where the vibrant community continues to thrive.
+Also, new community Meetup groups have been announced at the conference, so make sure to
+[signup here](https://linuxfoundation.surveymonkey.com/r/KWNWSM5) to attend, speak or organize your
+local Meetup.
+
+![The Guild's booth](./booth.jpg)
+
+**The overwhelming participation and turnout at the conference have made clear that GraphQL Conf
+will return in 2024.** So, if you missed out this year, rest assured there will be more
+opportunities to meet and connect with the GraphQL community. Let us know how can we make GraphQL
+Conf 2024 even better!
+
+**See you next year!**
+
+### The Guild at GraphQL Conf
+
+The Guild is a group of open source developers who strive to create a vibrant and open ecosystem in
+GraphQL and APIs in general. We chose to be the largest sponsor of the conference (diamond sponsor +
+workshop day sponsor) and do whatever we can to make the official event a success. We are proud at
+the success of the event and humbled by the community and everyone involved.
+
+At the conference we demonstrated our solutions for GraphQL Gateway, Server and Schema Registry.
+**Our individual tools are fully open source, work separately and integrate with any other tool in
+the ecosystem**, including our competitors - **the opposite of a vendor lock-in**, so you can choose
+the best tool that works for you.
+
+- GraphQL Server - [Yoga Server](https://the-guild.dev/graphql/yoga-server) (see
+  [comparison to other servers](https://the-guild.dev/graphql/yoga-server/docs/comparison))
+- GraphQL Gateway - [GraphQL Mesh](https://the-guild.dev/graphql/mesh) (Supports Federation v1, v2,
+  Stitching and upcoming support for Fusion and subgraphs from any API Protocol like OpenAPI, gRPC,
+  etc.)
+  ([Conf talk](https://graphql.org/conf/schedule/7a87fe1cfc351a993ed40e01d384e3c6/?name=The%20Graph%20of%20Everything%20-%20Federated%20Architecture%20for%20Any%20API%20Service),
+  [Conf Workshop](https://graphql.org/conf/schedule/de9b490bff0d1e234ec4e19bc03392b5/?name=GraphQL%20Mesh%20-%20A%20Federated%20Gateway%20for%20Any%20API%20Protocol%20-%20GraphQL,%20OpenAPI,%20gRPC%20and%20More))
+- Schema Registry - [GraphQL Hive](https://the-guild.dev/graphql/hive) - Offers hosted and open
+  source, self hosted solutions
+  ([Conf Workshop](<https://graphql.org/conf/schedule/55dd5ef56bd778955509d08ea81903ea/?name=Safely%20Evolve%20Your%20(Federated)%20GraphQL%20Schema%20with%20GraphQL%20Hive>))
+- Tools - We build [many other open source tools](https://the-guild.dev/#platform) to support your
+  stack across the different layers, here are more talks from the conference about our tools:
+  - [Using GraphQL Tools with teams and APIs that are not GraphQL](https://graphql.org/conf/schedule/b9e35d673e7b541421d45ce2043dc05e/?name=GraphQL%20Everywhere%20-%20How%20GraphQL%20is%20Being%20Used%20in%20Places%20You%20Never%20Thought%20Were%20Possible)
+  - [GraphQL Over Internet](https://graphql.org/conf/schedule/6c2eefe955e288e974a9182dac06f8fa/?name=GraphQL%20Over%20Internet)
+  - [The Evolution of GraphQL Code Generation](https://graphql.org/conf/schedule/675c416b16ad2b0c519b1ec894353fc5/?name=The%20Evolution%20of%20GraphQL%20Code%20Generation)
+  - [Shared Schema Policies and Automatic Standards Across Your Company's Teams](https://graphql.org/conf/schedule/ff6a2ae37d87e74c9f7739a1331804a1/?name=Shared%20Schema%20Policies%20and%20Automatic%20Standards%20Across%20Your%20Company%E2%80%99s%20Teams)
+  - [How to Choose a GraphQL Gateway?](https://graphql.org/conf/schedule/70f9e59dc60cf417aa38eb890b2a8abe/?name=How%20to%20Choose%20a%20GraphQL%20Gateway?)

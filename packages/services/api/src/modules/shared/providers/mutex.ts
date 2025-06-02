@@ -108,7 +108,7 @@ export class Mutex {
 
     // We try to acquire the lock until the retry counter is exceeded or the lock as been successfully acquired.
     do {
-      logger.debug('Acquiring lock (id=%s, attempt=%n)', id, attemptCounter + 1);
+      logger.debug('Acquiring lock (id=%s, attempt=%d)', id, attemptCounter + 1);
 
       lockToAcquire = await Promise.race([
         // we avoid using any of the acquire settings for auto-extension, retrying, etc.
@@ -171,7 +171,7 @@ export class Mutex {
     }
 
     let extendTimeout: NodeJS.Timeout | undefined;
-    // we have a global timeout of 90 seconds to avoid dead-licks
+    // we have a global timeout of 90 seconds to avoid dead-locks
     const globalTimeout = setTimeout(() => {
       logger.error('Global lock timeout exceeded (id=%s)', id);
       void cleanup();
@@ -188,12 +188,10 @@ export class Mutex {
       clearTimeout(globalTimeout);
 
       extendTimeout = undefined;
-      if (lock.expiration > new Date().getTime()) {
-        void lock.release().catch(err => {
-          logger.error('Error while releasing lock (id=%s)', id);
-          console.error(err);
-        });
-      }
+      void lock.release().catch(err => {
+        logger.error('Error while releasing lock (id=%s)', id);
+        console.error(err);
+      });
     }
 
     async function extendLock(isInitial = false) {

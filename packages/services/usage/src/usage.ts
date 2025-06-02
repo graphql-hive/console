@@ -1,4 +1,13 @@
-import { CompressionTypes, Kafka, logLevel, Partitioners, RetryOptions } from 'kafkajs';
+import net from 'net';
+import tls from 'tls';
+import {
+  CompressionTypes,
+  ISocketFactory,
+  Kafka,
+  logLevel,
+  Partitioners,
+  RetryOptions,
+} from 'kafkajs';
 import { traceInlineSync, type ServiceLogger } from '@hive/service-common';
 import type { RawOperationMap, RawReport } from '@hive/usage-common';
 import { compress } from '@hive/usage-common';
@@ -32,10 +41,10 @@ const levelMap = {
 
 const retryOptions = {
   maxRetryTime: 30_000,
-  initialRetryTime: 500,
+  initialRetryTime: 300,
   factor: 0.2,
   multiplier: 2,
-  retries: 10,
+  retries: 5,
 } satisfies RetryOptions; // why satisfies? To be able to use `retryOptions.retries` and get `number` instead of `number | undefined`
 
 export function splitReport(report: RawReport, numOfChunks: number) {
@@ -103,6 +112,25 @@ export function createUsage(config: {
 }) {
   const { logger } = config;
 
+  // Default KafkaJS socketFactory implementation with minor optimizations for Azure
+  // https://github.com/tulios/kafkajs/blob/master/src/network/socketFactory.js
+  const socketFactory: ISocketFactory = ({ host, port, ssl, onConnect }) => {
+    const socket = ssl
+      ? tls.connect(
+          Object.assign({ host, port }, !net.isIP(host) ? { servername: host } : {}, ssl),
+          onConnect,
+        )
+      : net.connect({ host, port }, onConnect);
+
+    // This is equivalent to kafka's "connections.max.idle.ms"
+    socket.setKeepAlive(true, 180_000);
+    // disable nagle's algorithm to have higher throughput since this logic
+    // is already buffering messages into large payloads
+    socket.setNoDelay(true);
+
+    return socket;
+  };
+
   const kafka = new Kafka({
     clientId: 'usage',
     brokers: [config.kafka.connection.broker],
@@ -140,10 +168,11 @@ export function createUsage(config: {
       };
     },
     // settings recommended by Azure EventHub https://docs.microsoft.com/en-us/azure/event-hubs/apache-kafka-configurations
-    requestTimeout: 60_000, //
+    requestTimeout: 30_000,
     connectionTimeout: 5_000,
     authenticationTimeout: 5_000,
     retry: retryOptions,
+    socketFactory,
   });
 
   const producer = kafka.producer({
@@ -165,7 +194,7 @@ export function createUsage(config: {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
-      logger.info('Splitting into %s', numOfChunks);
+      logger.info('Splitting report into %s (id=%s)', numOfChunks, report.id);
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {
@@ -212,21 +241,15 @@ export function createUsage(config: {
           rawOperationWrites.inc(numOfOperations);
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);
         }
-
-        changeStatus(Status.Ready);
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
 
         changeStatus(Status.Unhealthy);
-        logger.error(`Failed to flush (id=%s, error=%s)`, batchId, error.message);
-        Sentry.setTags({
+        logger.error(
+          `Failed to flush. Adding to fallback queue (id=%s, error=%s)`,
           batchId,
-          message: error.message,
-          numOfOperations,
-        });
-        Sentry.captureException(error);
-
-        logger.info('Adding to fallback queue (id=%s)', batchId);
+          error.message,
+        );
         fallback.add(value, numOfOperations);
 
         throw error;
@@ -255,6 +278,11 @@ export function createUsage(config: {
       } finally {
         stopTimer();
       }
+
+      if (fallback.size() === 0) {
+        logger.info('Fallback queue flushed');
+        changeStatus(Status.Ready);
+      }
     },
     logger: logger.child({ component: 'fallback' }),
   });
@@ -269,8 +297,23 @@ export function createUsage(config: {
     status = newStatus;
   }
 
+  producer.on(producer.events.CONNECT, () => {
+    logger.info(`Kafka producer: connected`);
+
+    if (status === Status.Unhealthy) {
+      changeStatus(Status.Ready);
+    }
+  });
+
   producer.on(producer.events.REQUEST_TIMEOUT, () => {
     logger.info('Kafka producer: request timeout');
+  });
+
+  producer.on(producer.events.DISCONNECT, () => {
+    logger.info(`Kafka producer: disconnected`);
+    if (status === Status.Ready) {
+      changeStatus(Status.Unhealthy);
+    }
   });
 
   async function stop() {
@@ -282,7 +325,6 @@ export function createUsage(config: {
     await fallback.stop();
     logger.info(`Fallback stopped`);
     await producer.disconnect();
-    logger.info(`Producer disconnected`);
 
     logger.info('Usage stopped');
   }
@@ -306,7 +348,7 @@ export function createUsage(config: {
       },
     ),
     readiness() {
-      return status === Status.Ready && fallback.size() === 0;
+      return status === Status.Ready;
     },
     async start() {
       logger.info('Starting Kafka producer');
@@ -319,3 +361,5 @@ export function createUsage(config: {
     stop,
   };
 }
+
+export type Usage = ReturnType<typeof createUsage>;

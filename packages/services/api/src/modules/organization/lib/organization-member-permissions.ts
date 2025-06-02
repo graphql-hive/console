@@ -18,6 +18,13 @@ export const permissionGroups: Array<PermissionGroup> = [
         description: 'Member can access, create and reply to support tickets.',
       },
       {
+        id: 'accessToken:modify',
+        title: 'Manage organization access tokens',
+        description: 'Member can create and delete organization access tokens.',
+        warning:
+          'Granting a role the ability to manage members enables it to elevate its own permissions.',
+      },
+      {
         id: 'organization:modifySlug',
         title: 'Update organization slug',
         description: 'Member can modify the organization slug.',
@@ -265,8 +272,7 @@ assertAllRulesAreAssigned([
   'appDeployment:create',
   'appDeployment:publish',
   'appDeployment:retire',
-
-  'accessToken:modify',
+  'usage:report',
 ]);
 
 /**

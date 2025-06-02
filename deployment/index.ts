@@ -17,11 +17,11 @@ import { deployObservability } from './services/observability';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
+import { deployPublicGraphQLAPIGateway } from './services/public-graphql-api-gateway';
 import { deployRedis } from './services/redis';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
-import { deploySentryEventsMonitor } from './services/sentry-events';
 import { configureSlackApp } from './services/slack-app';
 import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
@@ -33,6 +33,7 @@ import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
 import { publishAppDeployment } from './utils/publish-app-deployment';
 import { publishGraphQLSchema } from './utils/publish-graphql-schema';
+import { ServiceSecret } from './utils/secrets';
 
 // eslint-disable-next-line no-process-env
 const imagesTag = process.env.DOCKER_IMAGE_TAG as string;
@@ -71,11 +72,7 @@ const environment = prepareEnvironment({
   environment: envName,
   rootDns: new pulumi.Config('common').require('dnsZone'),
 });
-deploySentryEventsMonitor({ docker, environment, sentry });
-const observability = deployObservability({
-  envName,
-  tableSuffix: envName === 'prod' ? 'production' : envName,
-});
+const observability = deployObservability({ environment });
 const clickhouse = deployClickhouse();
 const postgres = deployPostgres();
 const redis = deployRedis({ environment });
@@ -163,6 +160,8 @@ const usage = deployUsage({
   docker,
   environment,
   tokens,
+  redis,
+  postgres,
   kafka,
   dbMigrations,
   commerce,
@@ -230,14 +229,17 @@ const graphql = deployGraphQL({
   observability,
 });
 
-const apiConfig = new pulumi.Config('api');
-const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
+const hiveConfig = new pulumi.Config('hive');
+const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
+  usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
+});
 
 const publishGraphQLSchemaCommand = publishGraphQLSchema({
   graphql,
   registry: {
     endpoint: `https://${environment.appDns}/registry`,
-    accessToken: apiEnv.HIVE_API_TOKEN,
+    accessToken: hiveConfigSecret.raw.usageAccessToken,
+    target: hiveConfig.require('target'),
   },
   version: {
     commit: imagesTag,
@@ -252,7 +254,8 @@ if (hiveAppPersistedDocumentsAbsolutePath) {
     appName: 'hive-app',
     registry: {
       endpoint: `https://${environment.appDns}/registry`,
-      accessToken: apiEnv.HIVE_API_TOKEN,
+      accessToken: hiveConfigSecret.raw.usageAccessToken,
+      target: hiveConfig.require('target'),
     },
     version: {
       commit: imagesTag,
@@ -283,12 +286,20 @@ const app = deployApp({
   sentry,
 });
 
+const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
+  environment,
+  graphql,
+  docker,
+  observability,
+});
+
 const proxy = deployProxy({
   observability,
   app,
   graphql,
   usage,
   environment,
+  publicGraphQLAPIGateway,
 });
 
 deployCloudFlareSecurityTransform({

@@ -218,7 +218,7 @@ export async function getErrorDescriptions(): Promise<CLIError[]> {
           'A network error occurred while performing the action: "${cause instanceof Error ? `${cause.name}: ${cause.message}` : cause}"',
       },
       example: 'hive schema:fetch',
-      fix: 'Check your network connection and verify the value if using a custom CDN or registry endpoint.',
+      fix: "Check your network connection and verify the value if using a custom CDN or registry endpoint. Confirm that your network settings allow outbound traffic to Hive's domain.",
     },
     {
       instance: {

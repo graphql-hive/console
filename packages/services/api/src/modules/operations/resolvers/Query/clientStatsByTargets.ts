@@ -32,7 +32,7 @@ export const clientStatsByTargets: NonNullable<QueryResolvers['clientStatsByTarg
     }),
   ]);
 
-  return rows.map(row => {
+  const nodes = rows.map(row => {
     return {
       name: row.name,
       count: row.count,
@@ -40,4 +40,14 @@ export const clientStatsByTargets: NonNullable<QueryResolvers['clientStatsByTarg
       versions: [], // TODO: include versions at some point
     };
   });
+
+  return {
+    edges: nodes.map(node => ({ node, cursor: '' })),
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      endCursor: '',
+      startCursor: '',
+    },
+  };
 };

@@ -2,12 +2,12 @@ import { createHash } from 'node:crypto';
 import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
-import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
+import type { CompositionFailureError } from '@hive/schema';
 import type { schema_policy_resource } from '@hive/storage';
 import type {
   AlertChannelType,
   AlertType,
-  AuthProvider,
+  AuthProviderType,
   OrganizationAccessScope,
   ProjectAccessScope,
   TargetAccessScope,
@@ -197,11 +197,12 @@ export interface Organization {
 }
 
 export interface OrganizationInvitation {
-  organization_id: string;
+  id: string;
+  organizationId: string;
   code: string;
   email: string;
-  created_at: string;
-  expires_at: string;
+  createdAt: string;
+  expiresAt: string;
   roleId: string;
 }
 
@@ -319,6 +320,7 @@ export interface Target {
   orgId: string;
   name: string;
   graphqlEndpointUrl: string | null;
+  failDiffOnDangerousChange: boolean;
 }
 
 export interface Token {
@@ -338,7 +340,7 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProvider;
+  provider: AuthProviderType;
   superTokensUserId: string | null;
   isAdmin: boolean;
   oidcIntegrationId: string | null;
@@ -366,7 +368,7 @@ export interface Member {
 
 export interface TargetSettings {
   validation: {
-    enabled: boolean;
+    isEnabled: boolean;
     period: number;
     percentage: number;
     requestCount: number;
@@ -374,6 +376,7 @@ export interface TargetSettings {
     targets: string[];
     excludedClients: string[];
   };
+  failDiffOnDangerousChange: boolean;
 }
 
 export interface ComposeAndValidateResult {
@@ -392,17 +395,8 @@ export interface ComposeAndValidateResult {
     Array<{ name: string; content: string; source: string | null }>
   > | null;
   metadataAttributes: null | Record<string, string[]>;
-}
-
-export interface Orchestrator {
-  composeAndValidate(
-    schemas: SchemaObject[],
-    config: {
-      external: Project['externalComposition'];
-      native: boolean;
-      contracts: ContractsInputType | null;
-    },
-  ): Promise<ComposeAndValidateResult>;
+  includesNetworkError?: boolean;
+  includesException?: boolean;
 }
 
 export interface AlertChannel {

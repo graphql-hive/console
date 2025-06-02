@@ -10,7 +10,7 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
-import { EmptyList, noSchema, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, noSchema, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -135,9 +135,11 @@ const SchemaView_TargetFragment = graphql(`
     latestSchemaVersion {
       id
       schemas {
-        nodes {
-          __typename
-          ...SchemaView_SchemaFragment
+        edges {
+          node {
+            __typename
+            ...SchemaView_SchemaFragment
+          }
         }
       }
     }
@@ -169,14 +171,17 @@ function SchemaView(props: {
 
   const { latestSchemaVersion } = target;
   if (!latestSchemaVersion) {
-    return noSchemaVersion;
+    return <NoSchemaVersion recommendedAction="publish" projectType={project.type} />;
   }
 
-  if (!latestSchemaVersion.schemas.nodes.length) {
+  if (!latestSchemaVersion.schemas.edges.length) {
     return noSchema;
   }
 
-  const schemas = useFragment(SchemaView_SchemaFragment, target.latestSchemaVersion?.schemas.nodes);
+  const schemas = useFragment(
+    SchemaView_SchemaFragment,
+    target.latestSchemaVersion?.schemas?.edges?.map(edge => edge.node),
+  );
   const compositeSchemas = schemas?.filter(isCompositeSchema) as CompositeSchema[];
   const singleSchema = schemas?.filter(schema => !isCompositeSchema(schema))[0] as
     | SingleSchema
@@ -254,17 +259,13 @@ const TargetSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...SchemaView_ProjectFragment
-    }
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
-      ...SchemaView_TargetFragment
+      ...SchemaView_ProjectFragment
+      target: targetBySlug(targetSlug: $targetSlug) {
+        ...SchemaView_TargetFragment
+      }
     }
   }
 `);
@@ -288,7 +289,7 @@ function TargetSchemaPage(props: {
   }
 
   const currentProject = query.data?.project;
-  const target = query.data?.target;
+  const target = currentProject?.target;
 
   return (
     <TargetLayout

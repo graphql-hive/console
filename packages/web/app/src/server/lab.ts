@@ -67,7 +67,7 @@ export function connectLab(server: FastifyInstance) {
       url,
       headers: {
         'content-type': 'application/json',
-        'graphql-client-name': 'Hive App',
+        'graphql-client-name': 'hive-app',
         'graphql-client-version': env.release,
         ...headers,
       },

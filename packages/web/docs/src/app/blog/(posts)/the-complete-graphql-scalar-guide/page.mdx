@@ -1,0 +1,510 @@
+---
+title: The complete GraphQL Scalar Guide
+authors: eddeee888
+tags: [graphql, scalars, codegen, node, server, typescript]
+date: 2023-06-27
+description:
+  Knowing how native and custom GraphQL Scalar works enables building flexible and extendable
+  GraphQL schema.
+---
+
+import { Callout } from '@theguild/components'
+
+Scalar type is one of the most important GraphQL concepts to understand. Knowing how scalar works
+and using the right tools can help us build type safe, robust and extendable schemas. In this
+article, we cover various essential scalar topics:
+
+- What Is GraphQL Scalar?
+- Create Custom GraphQL Scalar
+- GraphQL Scalar Tools for Type Safety
+
+## What Is GraphQL Scalar?
+
+GraphQL scalar type is a primitive type that represents a value in the input or output field's
+return type. GraphQL comes with a few native scalars: `ID`, `Int`, `Float`, `String`, `Boolean`.
+However, custom scalars can be declared in schemas to represent more complex data types.
+
+### Scalar Value Coercion
+
+One important concept of GraphQL scalar is **coercion**. This happens when a scalar is used as
+either input or output. Coercion is the process of taking the incoming value that could be one or
+many types, and turning it into one outgoing type.
+
+Let's take the native `ID` scalar as an example:
+
+- When used as input: a client can send either `string` or `number` value and the value is coerced
+  into `string` before it gets to a resolver on the server.
+- When used as output: a server can return `string` or `number` and it is coerced to `string` before
+  it is sent to the client.
+
+Here's the full list of native scalar input and output TypeScript types:
+
+| Scalar  | Client can send                  | Resolver receives | Resolver can return              | Client receives                                                   |
+| ------- | -------------------------------- | ----------------- | -------------------------------- | ----------------------------------------------------------------- |
+| ID      | `string`                         | `string`          | `string`                         | `string`                                                          |
+|         | `number`                         | `string`          | `number`                         | `string`                                                          |
+| Int     | `number` (32-bit signed integer) | `number`          | `string`                         | `number` (32-bit signed integer)                                  |
+|         |                                  |                   | `number` (32-bit signed integer) | `number` (32-bit signed integer)                                  |
+|         |                                  |                   | `boolean`                        | `1` if true, `0` if false                                         |
+| Float   | `number` (Float or number)       | `number`          | `string`                         | `number`                                                          |
+|         |                                  |                   | `number`                         | `number`                                                          |
+|         |                                  |                   | `boolean`                        | `1` if true, `0` if false                                         |
+| String  | `string`                         | `string`          | `string`                         | `string`                                                          |
+|         |                                  |                   | `boolean`                        | "true” if true, "false" if false                                  |
+|         |                                  |                   | `number`                         | `string` (numeric value converted into string)                    |
+| Boolean | `boolean`                        | `boolean`         | `boolean`                        | `boolean`                                                         |
+|         |                                  |                   | `number`                         | `false` if incoming value is 0, `true` if incoming value is not 0 |
+
+## Custom GraphQL Scalar
+
+As our schemas evolve, we may need to present more complex data types with custom validation rules.
+We can create custom GraphQL scalars to solve this use case.
+
+There are many examples of popular custom scalars that are used in a lot of projects:
+
+- `DateTime`: string representing an exact point in time
+- `BigInt`: representing values which are too large to be represented by `number`. Similar to
+  JavaScript's `bigint` type
+- `EmailAddress`: string representing valid email formats
+
+There are 3 steps to create a custom GraphQL Scalar:
+
+### 1. Declare Custom Scalar in Schema
+
+We can declare custom GraphQL Scalars using the `scalar` keyword:
+
+```graphql filename="schema.graphql"
+scalar CustomScalar
+```
+
+### 2. Create Custom Scalar Resolver
+
+Now, we can create a resolver for the scalar using `GraphQLScalarType` from the `graphql` package:
+
+```shell
+# Install `graphql` package if it's not installed already
+yarn add graphql
+```
+
+```tsx filename="resolvers/CustomScalar.ts"
+import { GraphQLScalarType } from 'graphql'
+
+export const CustomScalar = new GraphQLScalarType({
+  name: 'CustomScalar',
+  description: 'Custom Scalar description',
+  parseValue(inputValue: unknown) {
+    // (1) Used for input
+  },
+  parseLiteral(ast) {
+    // (2) Used for input
+  },
+  serialize(outputValue: unknown) {
+    // (3) Used for output
+  }
+})
+```
+
+There are 3 main functions to keep in mind when creating a custom scalar:
+
+1.  `parseValue`: This function is called when the scalar is used as variable in an input. The
+    validated and returned value of this function is passed to resolvers. Below is an example of a
+    GraphQL operation that would trigger `parseValue`:
+
+```graphql
+query Example($var: CustomScalar!) {
+  example(arg: $var) # a variable is used so `parseValue` is called on the server
+}
+```
+
+2.  `parseLiteral`: This function is called when the scalar is used as literal value in an input.
+    The `ast` parameter contains the GraphQL kind (e.g. int or string) and the value of the input.
+    The validated and returned value of this function is passed to resolvers. Below is an example of
+    a GraphQL operation that would trigger `parseLiteral`:
+
+```graphql
+query Example {
+  example(arg: "Hello") # a literal string is used so `parseLiteral` is called on the server
+}
+```
+
+3.  `serialize`: This function is called on the output returned by resolvers, before the value is
+    sent to the client. Since most GraphQL servers send results as JSON over HTTP, the return value
+    of `serialize` function must turn the value into `string`, `number` or `boolean`.
+
+Check out this visualisation of the flow of a scalar value from the client to the server, and then
+back to the client:
+
+![Visualisation of how input and output GraphQL Scalar work](./graphql-scalar-flow.jpg)
+
+1.  When a scalar is used as input, the variable or literal value is parsed using `parseValue` or
+    `parseLiteral` respectively.
+2.  The parsed value reaches the second param (usually called `args`) of the receiving resolver.
+3.  If the scalar is used as output, the value reaches the first param (usually called `parent`) of
+    the receiving resolver.
+4.  Once ready to be returned to the client, the scalar value is sent to the scalar resolver's
+    `serialize` function to be turned into JSON-compatible values.
+5.  The serialised scalar value is sent back to the client.
+
+### 3. Add Custom Scalar to Resolvers Map
+
+Finally, we can add the custom scalar resolver to the resolvers map in the GraphQL server. Here's an
+example of how to do it with [GraphQL Yoga](https://the-guild.dev/graphql/yoga-server):
+
+```shell
+# Install `graphql-yoga` to create a GraphQL server
+yarn add graphql-yoga
+```
+
+```tsx
+import { createServer } from 'http'
+import { createSchema, createYoga } from 'graphql-yoga'
+// 1. Import the custom resolver
+import { CustomScalar } from './resolvers/CustomScalar.ts'
+
+const yoga = createYoga({
+  schema: createSchema({
+    typeDefs /* GraphQL typeDefs */,
+    resolvers: {
+      CustomScalar // 2. Put the custom scalar resolver into resolvers map
+    }
+  })
+})
+const server = createServer(yoga)
+server.listen(4000, () => {
+  console.info('Server is running on http://localhost:4000/graphql')
+})
+```
+
+Now, running the server allows us to use custom scalars in our project. 🎉
+
+## GraphQL Scalar Tools for Type Safety
+
+There are lots of tools in the GraphQL ecosystem to support working with both native and custom
+scalars:
+
+### 1. GraphQL Code Generator
+
+[GraphQL Code Generator](https://the-guild.dev/graphql/codegen) is a CLI tool with an extensive
+plugin ecosystem to make implementing both GraphQL client and server easier and safer.
+
+For scalars, GraphQL Code Generator can generate input and output types correctly. On top of that,
+we can customise the types for both native and custom types to fit our needs.
+
+<Callout type="info">
+  In the latest major versions of GraphQL Codegen plugins, the generated `Scalar` type has changed to better support scalar input and output types. This change is necessary because it allows us to type scalars more expressively from now on.
+
+Read on to see how to use Codegen to generate types for [clients](#codegen-config-for-clients) and
+[servers](#codegen-config-for-servers).
+
+</Callout>
+
+#### Codegen Config for Clients
+
+[typescript](https://the-guild.dev/graphql/codegen/plugins/typescript/typescript) is the plugin to
+generate the base TypeScript types, including the `Scalars` type for both native and custom scalars.
+This type is then used by other client plugins like
+[typescript-operations](https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations).
+
+First, install GraphQL Code Generator CLI and `typescript` plugin:
+
+```shell
+yarn add -D @graphql-codegen/cli @graphql-codegen/typescript
+```
+
+Here's an example config that generates native scalar types and `CustomScalar` scalar for clients:
+
+```tsx filename="codegen.ts"
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: '**/schema.graphql',
+  generates: {
+    'src/schema/types.generated.ts': {
+      plugins: ['typescript'],
+      config: {
+        scalars: {
+          // Recommended ID scalar type for clients:
+          ID: {
+            input: 'string | number',
+            output: 'string'
+          },
+          // Setting custom scalar type:
+          CustomScalar: {
+            input: 'string', // this means our server can take CustomScalar as string
+            output: 'number' // this means our server will return CustomScalar as number
+          }
+        }
+      }
+    }
+  }
+}
+
+export default config
+```
+
+Running `yarn graphql-codegen` generates the following Scalar type:
+
+{/* prettier-ignore */}
+```tsx filename="src/schema/types.generated.ts"
+export type Scalars = {
+  ID: { input: string | number; output: string };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
+  CustomScalar: { input: string; output: number };
+};
+```
+
+By default, the `typescript` plugin generates `string` for both ID input and output. This approach
+allows the plugin to be used for both client and server type generation without extra configuration.
+
+On the other hand, using the above recommended config to generate type that's closer to GraphQL's
+native behaviour (i.e. clients can send either `string` or `number` as ID input) can make the
+experience better. A lot of systems use `number` as the type for ID of an object. If the recommended
+config is used for these cases, we don't have to manually convert the ID to a `string` before
+sending it to the server.
+
+<Callout type="info">
+  Starting from `typescript` and `typescript-operations` plugin v4, all depedent client plugins
+  (e.g. Apollo Client, React Request, urql, etc.) must update to use the new input/output format. If
+  you find issues in these client plugins, create an issue in the [community
+  repo](https://github.com/dotansimha/graphql-code-generator-community).
+</Callout>
+
+#### Codegen Config for Servers
+
+<Callout type="warning">
+  In `typescript` and `typescript-resolvers` plugin v4.0.0, the default ID Scalar input type was changed to `string | number` from `string`. This was done to match the expected GraphQL client type.
+
+However, server plugins such as `typescript-resolvers` also depend on the type generated by the
+`typescript` plugin. This causes a lot of friction when setting up config to generate server types.
+
+In `typescript` and `typescript-resolvers` plugin v4.0.1, we have reverted the default ID Scalar
+input type to `string`. Read the
+[pull request](https://github.com/dotansimha/graphql-code-generator/pull/9497) for more details.
+
+</Callout>
+
+For GraphQL servers, we can use
+[typescript-resolvers](https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-resolvers)
+plugin with the same `scalars` config as
+[typescript](https://the-guild.dev/graphql/codegen/plugins/typescript/typescript) plugin. This
+combination changes how scalar types are used:
+
+- The scalar input is the type of coerced value that resolvers receive _after_ `parseValue` or
+  `parseLiteral` functions are called.
+- The scalar output is the type that resolvers return _before_ `serialize` is called.
+
+First, install GraphQL Code Generator CLI, `typescript` and `typescript-resolvers` plugin:
+
+```shell
+yarn add -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-resolvers
+```
+
+Here's the recommended config server types:
+
+```tsx
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: '**/schema.graphql',
+  generates: {
+    'src/schema/types.generated.ts': {
+      plugins: ['typescript', 'typescript-resolvers'],
+      config: {
+        scalars: {
+          // Recommended ID scalar type for servers:
+          ID: {
+            input: 'string',
+            output: 'string | number'
+          },
+          // Setting custom scalar type:
+          CustomScalar: {
+            input: 'string', // this means our server can take CustomScalar as string
+            output: 'number' // this means our server will return CustomScalar as number
+          }
+        }
+      }
+    }
+  }
+}
+
+export default config
+```
+
+Running `yarn graphql-codegen` generates the following Scalar type:
+
+{/* prettier-ignore */}
+```tsx
+export type Scalars = {
+  ID: { input: string; output: string | number };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
+  CustomScalar: { input: string; output: number };
+};
+```
+
+The recommended server config makes it more convenient to handle ID scalar types. This approach is
+particularly useful if you have objects with numeric IDs. Without using the recommended config, we
+would have to create custom mappers or manually convert the number to string to satisfy TypeScript
+typecheck.
+
+<Callout type="info">
+  The recommeded setup is suitable for the most common use cases. It does not cover some edge cases that may make writing resolvers awkward.
+
+For example, `Int`'s output is technically `string | number | boolean` but it is typed as `number`
+by default because most resolvers would never return `string` or `boolean`.
+
+</Callout>
+
+### 2. GraphQL Scalars (`graphql-scalars`)
+
+[GraphQL Scalars](https://the-guild.dev/graphql/scalars) is a library that contains many commonly
+used custom GraphQL Scalars such as `DateTime`, `BigInt`, etc.
+
+Even if it is not too hard to create custom scalars, testing and publishing scalars to share between
+GraphQL servers can quickly distract from building the core business logic. Therefore, it is usually
+better to use a well-maintained and documented library like `graphql-scalars`.
+
+Here's how we can use `DateTime` scalar from `graphql-scalars`:
+
+1.  Install `graphql-scalars`:
+
+```shell
+yarn add graphql-scalars
+```
+
+2.  Declare `DateTime` in the schema:
+
+```graphql filename="schema.graphql"
+scalar DateTime
+```
+
+3.  Import `DateTime` resolver into resolvers map:
+
+```tsx
+import { createServer } from 'http'
+// 1. Import scalar resolver
+import { DateTimeResolver } from 'graphql-scalars'
+import { createSchema, createYoga } from 'graphql-yoga'
+
+const yoga = createYoga({
+  schema: createSchema({
+    typeDefs /* GraphQL typeDefs */,
+    resolvers: {
+      DateTime: DateTimeResolver // 2. Put resolver to resolvers map
+    }
+  })
+})
+const server = createServer(yoga)
+server.listen(4000, () => {
+  console.info('Server is running on http://localhost:4000/graphql')
+})
+```
+
+4.  Use GraphQL Code Generator to create types:
+
+Most scalar resolvers from `graphql-scalars` come with recommended server type that can be used in
+Codegen config. We can import a resolver and use said type very easily:
+
+```tsx filename="codegen.ts"
+import { DateTimeResolver } from 'graphql-scalars'
+// 1. Import scalar resolver
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: '**/schema.graphql',
+  generates: {
+    'src/schema/types.generated.ts': {
+      plugins: ['typescript', 'typescript-resolvers'],
+      config: {
+        scalars: {
+          ID: {
+            input: 'string',
+            output: 'string | number'
+          },
+          DateTime: DateTimeResolver.extensions.codegenScalarType // 2. Use scalar resolver's recommended server type
+        }
+      }
+    }
+  }
+}
+
+export default config
+```
+
+<Callout type="info">
+  What about recommended client types for `graphql-scalars`'s custom scalars?
+
+Currently, there's no official package for this ( _yet_! ). However, there's an
+[issue on the GraphQL Scalars repo](https://github.com/Urigo/graphql-scalars/issues/1996).
+
+Here's the general tips for picking the right client type for `graphql-scalars`:
+
+1.  Check the `serialize` function's return type, then set the scalar `output` type in the codegen
+    config.
+2.  If your client converts the returned scalar value to another type, you can set the final
+    `output` type in the codegen config.
+
+</Callout>
+
+### 3. GraphQL Codegen Server Preset
+
+GraphQL Code Generator and `graphql-scalars` libraries should be enough to manage our scalar
+implementation and type requirements. However, Server Preset
+([@eddeee888/gcg-typescript-resolver-files](https://www.npmjs.com/package/@eddeee888/gcg-typescript-resolver-files))
+can simplify the scalar setup further:
+
+- uses the recommended ID scalar server config by default
+- detects if a custom scalar exists in the installed `graphql-scalars` package, then automatically
+  imports the scalar resolver to the resolvers map and sets up recommended type in Codegen config
+- detects if a custom scalar does not exist in the installed `graphql-scalars` package (or if the
+  package is not installed), then automatically creates a custom scalar resolver and puts it into
+  resolvers map
+
+1.  Install GraphQL Code Generator CLI, Server Preset and (optionally) GraphQL Scalars:
+
+```shell
+yarn add -D @graphql-codegen/cli @eddeee888/gcg-typescript-resolver-files
+
+# (Optional) Install `graphql-scalars` if you intend to use custom scalars from this library
+yarn add graphql-scalars
+```
+
+2.  Use Server Preset in the Codegen config:
+
+```ts filename="codegen.ts"
+import { defineConfig } from '@eddeee888/gcg-typescript-resolver-files'
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: '**/schema.graphql',
+  generates: {
+    'src/schema': defineConfig()
+  }
+}
+
+export default config
+```
+
+Run `yarn graphql-codegen`, and... that's it! Now, every time a custom scalar like `DateTime` is
+added to the schema, the implementation and type automatically come from `graphql-scalars`! 🚀
+
+<Callout type="info">
+  The Server Preset does more than just handling custom scalars. There are existing guides and blog posts with more details on its features and concepts:
+
+- Read how to set up
+  [GraphQL Yoga / Apollo Server with Server Preset](https://the-guild.dev/graphql/codegen/docs/guides/graphql-server-apollo-yoga)
+- Read how to build
+  [Scalable APIs with GraphQL Server Codegen Preset](https://the-guild.dev/blog/scalable-apis-with-graphql-server-codegen-preset)
+
+</Callout>
+
+## Summary
+
+In this article, we explored the importance of GraphQL scalar types, how it works and how to create
+custom scalar resolvers to extend our schemas. We also explored tools to help working with native
+and custom scalars such as GraphQL Code Generator, GraphQL Scalars and Server Preset.

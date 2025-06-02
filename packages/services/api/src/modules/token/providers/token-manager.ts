@@ -5,9 +5,11 @@ import { HiveError } from '../../../shared/errors';
 import { pushIfMissing } from '../../../shared/helpers';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import { ProjectAccessScope } from '../../auth/providers/project-access';
-import { TargetAccessScope } from '../../auth/providers/target-access';
+import {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from '../../auth/providers/scopes';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import { Storage, TargetSelector } from '../../shared/providers/storage';

@@ -11,6 +11,7 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
     [
       organization:describe,
       support:manageTickets,
+      accessToken:modify,
       organization:modifySlug,
       auditLog:export,
       organization:delete,
@@ -103,7 +104,7 @@ test.concurrent('email invitation', async ({ expect }) => {
 
   const inviteEmail = seed.generateEmail();
   const invitationResult = await inviteMember(inviteEmail);
-  const inviteCode = invitationResult.ok?.code;
+  const inviteCode = invitationResult.ok?.createdOrganizationInvitation.code;
   expect(inviteCode).toBeDefined();
 
   const sentEmails = await history();
@@ -119,7 +120,7 @@ test.concurrent(
 
     // Invite
     const invitationResult = await inviteMember();
-    const inviteCode = invitationResult.ok!.code;
+    const inviteCode = invitationResult.ok!.createdOrganizationInvitation.code;
     expect(inviteCode).toBeDefined();
 
     // Join
@@ -149,9 +150,10 @@ const OrganizationInvitationsQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       invitations {
-        total
-        nodes {
-          id
+        edges {
+          node {
+            id
+          }
         }
       }
     }

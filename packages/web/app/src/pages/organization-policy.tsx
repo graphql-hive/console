@@ -12,23 +12,15 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 
 const OrganizationPolicyPageQuery = graphql(`
-  query OrganizationPolicyPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
+  query OrganizationPolicyPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      schemaPolicy {
         id
-        projects {
-          nodes {
-            id
-            slug
-          }
-        }
-        schemaPolicy {
-          id
-          updatedAt
-          ...PolicySettings_SchemaPolicyFragment
-        }
-        viewerCanModifySchemaPolicy
+        updatedAt
+        ...PolicySettings_SchemaPolicyFragment
       }
+      viewerCanModifySchemaPolicy
     }
   }
 `);
@@ -66,15 +58,13 @@ function PolicyPageContent(props: { organizationSlug: string }) {
   const [query] = useQuery({
     query: OrganizationPolicyPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
   const [mutation, mutate] = useMutation(UpdateSchemaPolicyForOrganization);
   const { toast } = useToast();
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;

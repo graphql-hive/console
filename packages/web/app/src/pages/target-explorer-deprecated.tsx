@@ -7,7 +7,7 @@ import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { noSchemaVersion } from '@/components/ui/empty-list';
+import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -159,12 +159,18 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
     $period: DateRangeInput!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
+      project {
+        id
+        type
+      }
       id
       slug
       latestSchemaVersion {
@@ -173,7 +179,6 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
         explorer {
           metadataAttributes {
             name
@@ -184,16 +189,9 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      operationsStats(period: $period) {
+        totalRequests
       }
-    ) {
-      totalRequests
     }
   }
 `);
@@ -295,7 +293,7 @@ function DeprecatedSchemaExplorer(props: {
                 </Alert>
               )}
               <DeprecatedSchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.deprecatedSchema}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -303,7 +301,10 @@ function DeprecatedSchemaExplorer(props: {
               />
             </>
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion
+              recommendedAction="publish"
+              projectType={query.data?.target?.project?.type ?? null}
+            />
           )}
         </>
       )}
@@ -317,14 +318,12 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
+      slug
     }
     hasCollectedOperations(
       selector: {
@@ -360,7 +359,7 @@ function ExplorerDeprecatedSchemaPageContent(props: {
     );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   if (!currentOrganization) {
     return null;

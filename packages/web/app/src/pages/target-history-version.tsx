@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { CriticalityLevel, ProjectType } from '@/gql/graphql';
+import { ProjectType, SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import {
   CheckCircledIcon,
@@ -202,13 +202,17 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     }
     isFirstComposableVersion
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableSchemaVersion {
@@ -323,7 +327,7 @@ function DefaultSchemaVersionView(props: {
             {schemaVersion.schemaCompositionErrors && (
               <CompositionErrorsSection compositionErrors={schemaVersion.schemaCompositionErrors} />
             )}
-            {schemaVersion.breakingSchemaChanges?.nodes.length && (
+            {schemaVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -331,12 +335,12 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  criticality={CriticalityLevel.Breaking}
-                  changes={schemaVersion.breakingSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Breaking}
+                  changes={schemaVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {schemaVersion.safeSchemaChanges?.nodes?.length && (
+            {schemaVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -344,8 +348,8 @@ function DefaultSchemaVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
-                  changes={schemaVersion.safeSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Safe}
+                  changes={schemaVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
@@ -390,13 +394,17 @@ const ContractVersionView_ContractVersionFragment = graphql(`
       ...CompositionErrorsSection_SchemaErrorConnection
     }
     breakingSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     safeSchemaChanges {
-      nodes {
-        ...ChangesBlock_SchemaChangeFragment
+      edges {
+        node {
+          ...ChangesBlock_SchemaChangeFragment
+        }
       }
     }
     previousDiffableContractVersion {
@@ -497,7 +505,7 @@ function ContractVersionView(props: {
                 compositionErrors={contractVersion.schemaCompositionErrors}
               />
             )}
-            {contractVersion.breakingSchemaChanges?.nodes.length && (
+            {contractVersion.breakingSchemaChanges?.edges.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -505,12 +513,12 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Breaking Changes"
-                  criticality={CriticalityLevel.Breaking}
-                  changes={contractVersion.breakingSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Breaking}
+                  changes={contractVersion.breakingSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
-            {contractVersion.safeSchemaChanges?.nodes?.length && (
+            {contractVersion.safeSchemaChanges?.edges?.length && (
               <div className="mb-2">
                 <ChangesBlock
                   organizationSlug={props.organizationSlug}
@@ -518,8 +526,8 @@ function ContractVersionView(props: {
                   targetSlug={props.targetSlug}
                   schemaCheckId=""
                   title="Safe Changes"
-                  criticality={CriticalityLevel.Safe}
-                  changes={contractVersion.safeSchemaChanges.nodes}
+                  severityLevel={SeverityLevelType.Safe}
+                  changes={contractVersion.safeSchemaChanges.edges.map(edge => edge.node)}
                 />
               </div>
             )}
@@ -551,22 +559,18 @@ const ActiveSchemaVersion_SchemaVersionQuery = graphql(`
     $targetSlug: String!
     $versionId: ID!
   ) {
-    target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-      }
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
     ) {
       id
-      schemaVersion(id: $versionId) {
-        id
-        ...SchemaVersionView_SchemaVersionFragment
-      }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      id
       type
+      target: targetBySlug(targetSlug: $targetSlug) {
+        id
+        schemaVersion(id: $versionId) {
+          id
+          ...SchemaVersionView_SchemaVersionFragment
+        }
+      }
     }
   }
 `);
@@ -590,8 +594,9 @@ function ActiveSchemaVersion(props: {
   const { error } = query;
 
   const isLoading = query.fetching || query.stale;
-  const schemaVersion = query?.data?.target?.schemaVersion;
-  const projectType = query?.data?.project?.type;
+  const project = query.data?.project;
+  const schemaVersion = project?.target?.schemaVersion;
+  const projectType = query.data?.project?.type;
 
   if (isLoading || !schemaVersion || !projectType) {
     return (

@@ -3,7 +3,7 @@ import { CaseStudyCard } from './case-study-card';
 import { CaseStudyFile } from './case-study-types';
 import { getCompanyLogo } from './company-logos';
 
-export async function AllCaseStudiesList({ caseStudies }: { caseStudies: CaseStudyFile[] }) {
+export function AllCaseStudiesList({ caseStudies }: { caseStudies: CaseStudyFile[] }) {
   return (
     <section className="py-6 sm:pt-24">
       <Heading size="md" as="h2" className="text-center">

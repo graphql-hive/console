@@ -348,25 +348,29 @@ function OperationsTable({
 const OperationsTableContainer_OperationsStatsFragment = graphql(`
   fragment OperationsTableContainer_OperationsStatsFragment on OperationsStats {
     clients {
-      nodes {
-        name
+      edges {
+        node {
+          name
+        }
       }
     }
     operations {
-      nodes {
-        id
-        name
-        operationHash
-        kind
-        duration {
-          p90
-          p95
-          p99
-          avg
+      edges {
+        node {
+          id
+          name
+          operationHash
+          kind
+          duration {
+            p90
+            p95
+            p99
+            avg
+          }
+          countOk
+          count
+          percentage
         }
-        countOk
-        count
-        percentage
       }
     }
   }
@@ -400,7 +404,7 @@ function OperationsTableContainer({
   const data = useMemo(() => {
     const records: Operation[] = [];
     if (operationStats) {
-      for (const op of operationStats.operations.nodes) {
+      for (const { node: op } of operationStats.operations.edges) {
         if (
           operationsFilter.length > 0 &&
           op.operationHash &&
@@ -425,7 +429,7 @@ function OperationsTableContainer({
     }
 
     return records;
-  }, [operationStats?.operations.nodes, operationsFilter]);
+  }, [operationStats?.operations.edges, operationsFilter]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
@@ -457,7 +461,7 @@ function OperationsTableContainer({
       organizationSlug={organizationSlug}
       projectSlug={projectSlug}
       targetSlug={targetSlug}
-      clients={operationStats?.clients.nodes ?? null}
+      clients={operationStats?.clients.edges.map(edge => edge.node) ?? null}
       clientFilter={clientFilter}
       setClientFilter={setClientFilter}
       selectedPeriod={selectedPeriod}
@@ -466,20 +470,29 @@ function OperationsTableContainer({
 }
 
 const OperationsList_OperationsStatsQuery = graphql(`
-  query OperationsList_OperationsStats($selector: OperationsStatsSelectorInput!) {
-    operationsStats(selector: $selector) {
-      clients {
-        nodes {
-          __typename
+  query OperationsList_OperationsStats(
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+    $filter: OperationStatsFilterInput!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      operationsStats(period: $period, filter: $filter) {
+        clients {
+          edges {
+            __typename
+          }
         }
-      }
-      operations {
-        nodes {
-          id
-          __typename
+        operations {
+          edges {
+            node {
+              id
+            }
+            __typename
+          }
         }
+        ...OperationsTableContainer_OperationsStatsFragment
       }
-      ...OperationsTableContainer_OperationsStatsFragment
     }
   }
 `);
@@ -507,12 +520,13 @@ export function OperationsList({
   const [query, refetchQuery] = useQuery({
     query: OperationsList_OperationsStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug,
         projectSlug,
         targetSlug,
-        period,
-        operations: [],
+      },
+      period,
+      filter: {
         clientNames: clientNamesFilter,
       },
     },
@@ -532,7 +546,7 @@ export function OperationsList({
       refetch={() => refetch()}
     >
       <OperationsTableContainer
-        operationStats={query.data?.operationsStats ?? null}
+        operationStats={query.data?.target?.operationsStats ?? null}
         operationsFilter={operationsFilter}
         className={className}
         setClientFilter={setClientFilter}

@@ -2,8 +2,6 @@
 searchable: false
 ---
 
-import { Callout } from '@theguild/components'
-
 # Rate Limiting
 
 Rate limiting is a technique for reducing server load by limiting the number of requests that can be
@@ -17,18 +15,16 @@ You can use rate limiting feature in order to limit the rate of calling queries 
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
-  rateLimiting: {
-    rules: [
-      {
-        type: 'Query',
-        field: 'foo',
-        max: 5, // requests limit for a time period
-        ttl: 5000, // time period
-        // You can use any value from the context
-        identifier: '{context.headers.authorization}'
-      }
-    ]
-  }
+  rateLimiting: [
+    {
+      type: 'Query',
+      field: 'foo',
+      max: 5, // requests limit for a time period
+      ttl: 5000, // time period
+      // You can use any value from the context
+      identifier: '{context.headers.authorization}'
+    }
+  ]
 })
 ```
 

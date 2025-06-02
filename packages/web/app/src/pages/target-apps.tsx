@@ -6,7 +6,7 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
@@ -44,22 +44,26 @@ const TargetAppsViewQuery = graphql(`
     $targetSlug: String!
     $after: String
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-      }
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
     }
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
       latestSchemaVersion {
         id
         __typename
+      }
+      project {
+        id
+        type
       }
       viewerCanViewAppDeployments
       appDeployments(first: 20, after: $after) {
@@ -86,10 +90,12 @@ const TargetAppsViewFetchMoreQuery = graphql(`
     $after: String!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -254,7 +260,10 @@ function TargetAppsView(props: {
           </div>
         </div>
       ) : !data.data?.target?.latestSchemaVersion ? (
-        noSchemaVersion
+        <NoSchemaVersion
+          recommendedAction="publish"
+          projectType={data.data?.target?.project?.type ?? null}
+        />
       ) : !data.data.target.appDeployments ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"

@@ -91,7 +91,12 @@ export interface LandingPageFeatureTabsProps {
 }
 
 export function LandingPageFeatureTabs({ className }: LandingPageFeatureTabsProps) {
-  const icons = [<SchemaRegistryIcon />, <GraphQLObservabilityIcon />, <GatewayIcon />];
+  const icons = [
+    // The keys here are redundant, but Next.js started false positive linting them even if the ESLint integration is disabled.
+    <SchemaRegistryIcon key="schema-registry-icon" />,
+    <GraphQLObservabilityIcon key="graphql-observability-icon" />,
+    <GatewayIcon key="gateway-icon" />,
+  ];
   return (
     <FeatureTabs className={className} highlights={highlights} icons={icons}>
       <FeatureTab

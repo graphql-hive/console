@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { CriticalityLevel } from '@/gql/graphql';
+import { SeverityLevelType } from '@/gql/graphql';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
@@ -38,17 +38,17 @@ export function labelize(message: string) {
   });
 }
 
-const criticalityLevelMapping = {
-  [CriticalityLevel.Safe]: clsx('text-emerald-400'),
-  [CriticalityLevel.Dangerous]: clsx('text-yellow-400'),
-} as Record<CriticalityLevel, string>;
+const severityLevelMapping = {
+  [SeverityLevelType.Safe]: clsx('text-emerald-400'),
+  [SeverityLevelType.Dangerous]: clsx('text-yellow-400'),
+} as Record<SeverityLevelType, string>;
 
 const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
   fragment ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment on SchemaCheckConditionalBreakingChangeMetadata {
     settings {
       retentionInDays
       targets {
-        name
+        slug
         target {
           id
           slug
@@ -73,8 +73,8 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   fragment ChangesBlock_SchemaChangeWithUsageFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
-    criticality
-    criticalityReason
+    severityLevel
+    severityReason
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -99,8 +99,8 @@ const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
-    criticality
-    criticalityReason
+    severityLevel
+    severityReason
     approval {
       ...ChangesBlock_SchemaChangeApprovalFragment
     }
@@ -111,7 +111,7 @@ const ChangesBlock_SchemaChangeFragment = graphql(`
 export function ChangesBlock(
   props: {
     title: string | React.ReactElement;
-    criticality: CriticalityLevel;
+    severityLevel: SeverityLevelType;
     organizationSlug: string;
     projectSlug: string;
     targetSlug: string;
@@ -192,7 +192,7 @@ function ChangeItem(props: {
             <div
               className={clsx(
                 (change.approval && 'text-orange-500') ||
-                  (criticalityLevelMapping[change.criticality] ?? 'text-red-400'),
+                  (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
               <div className="inline-flex justify-start space-x-2">
@@ -280,7 +280,7 @@ function ChangeItem(props: {
                                           }}
                                           target="_blank"
                                         >
-                                          {target.name}
+                                          {target.slug}
                                         </Link>{' '}
                                         <span className="text-white">target</span>
                                       </p>
@@ -329,7 +329,7 @@ function ChangeItem(props: {
                         {!target.target ? (
                           <TooltipProvider key={index}>
                             <Tooltip>
-                              <TooltipTrigger>{target.name}</TooltipTrigger>
+                              <TooltipTrigger>{target.slug}</TooltipTrigger>
                               <TooltipContent>Target does no longer exist.</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -346,7 +346,7 @@ function ChangeItem(props: {
                             }}
                             target="_blank"
                           >
-                            {target.name}
+                            {target.slug}
                           </Link>
                         )}
                         {index === arr.length - 1
@@ -361,8 +361,8 @@ function ChangeItem(props: {
                 )}
               </div>
             </div>
-          ) : change.criticality === CriticalityLevel.Breaking ? (
-            <>{change.criticalityReason ?? 'No details available for this breaking change.'}</>
+          ) : change.severityLevel === SeverityLevelType.Breaking ? (
+            <>{change.severityReason ?? 'No details available for this breaking change.'}</>
           ) : (
             <>No details available for this change.</>
           )}
@@ -424,8 +424,10 @@ function SchemaChangeApproval(props: {
 
 const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
-    nodes {
-      message
+    edges {
+      node {
+        message
+      }
     }
   }
 `);
@@ -463,9 +465,9 @@ export function CompositionErrorsSection(props: {
         </Heading>
       </TooltipProvider>
       <ul>
-        {compositionErrors?.nodes.map((change, index) => (
+        {compositionErrors?.edges?.map((edge, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={change.message} />
+            <CompositionError message={edge.node.message} />
           </li>
         ))}
       </ul>

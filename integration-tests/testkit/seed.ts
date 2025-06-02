@@ -1,3 +1,4 @@
+import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import { createPool, sql } from 'slonik';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
@@ -21,6 +22,7 @@ import {
   createCdnAccess,
   createMemberRole,
   createOrganization,
+  createOrganizationAccessToken,
   createProject,
   createTarget,
   createToken,
@@ -38,21 +40,19 @@ import {
   getOrganizationProjects,
   inviteToOrganization,
   joinOrganization,
+  pollFor,
   publishSchema,
   readClientStats,
   readOperationBody,
   readOperationsStats,
   readTokenInfo,
-  setTargetValidation,
   updateBaseSchema,
   updateMemberRole,
   updateTargetValidationSettings,
 } from './flow';
 import * as GraphQLSchema from './gql/graphql';
 import {
-  BreakingChangeFormula,
-  OrganizationAccessScope,
-  ProjectAccessScope,
+  BreakingChangeFormulaType,
   ProjectType,
   SchemaPolicyInput,
   TargetAccessScope,
@@ -110,6 +110,33 @@ export function initSeed() {
 
           return {
             organization,
+            async createOrganizationAccessToken(
+              args: {
+                permissions: Array<string>;
+                resources: GraphQLSchema.ResourceAssignmentInput;
+              },
+              /** Override the used access token. */
+              accessToken?: string,
+            ) {
+              const result = await createOrganizationAccessToken(
+                {
+                  title: 'A Access Token',
+                  description: 'access token',
+                  organization: {
+                    byId: organization.id,
+                  },
+                  permissions: args.permissions,
+                  resources: args.resources,
+                },
+                accessToken ?? ownerToken,
+              ).then(r => r.expectNoGraphQLErrors());
+
+              if (result.createOrganizationAccessToken.error) {
+                throw new Error(result.createOrganizationAccessToken.error.message);
+              }
+
+              return result.createOrganizationAccessToken.ok!;
+            },
             async setFeatureFlag(name: string, value: boolean | string[]) {
               const pool = await createConnectionPool();
 
@@ -151,18 +178,22 @@ export function initSeed() {
                 r.expectNoGraphQLErrors(),
               );
 
-              return result.organization!.organization;
+              return result.organization!;
             },
             async inviteMember(
               email = 'some@email.com',
               inviteToken = ownerToken,
-              roleId?: string,
+              memberRoleId?: string,
             ) {
               const inviteResult = await inviteToOrganization(
                 {
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   email,
-                  organizationSlug: organization.slug,
-                  roleId,
+                  memberRoleId,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
@@ -178,7 +209,7 @@ export function initSeed() {
                 ownerToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const members = membersResult.organization?.organization.members?.nodes;
+              const members = membersResult.organization?.members?.edges?.map(edge => edge.node);
 
               if (!members) {
                 throw new Error(`Could not get members for org ${organization.slug}`);
@@ -192,7 +223,7 @@ export function initSeed() {
                 token,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const projects = projectsResult.organization?.organization.projects.nodes;
+              const projects = projectsResult.organization?.projects.edges.map(edge => edge.node);
 
               if (!projects) {
                 throw new Error(`Could not get projects for org ${organization.slug}`);
@@ -203,7 +234,11 @@ export function initSeed() {
             async createProject(projectType: ProjectType = ProjectType.Single) {
               const projectResult = await createProject(
                 {
-                  organizationSlug: organization.slug,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   type: projectType,
                   slug: generateUnique(),
                 },
@@ -615,52 +650,66 @@ export function initSeed() {
                     },
                   };
                 },
-                async toggleTargetValidation(enabled: boolean, ttarget: TargetOverwrite = target) {
-                  const result = await setTargetValidation(
+                async toggleTargetValidation(
+                  isEnabled: boolean,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const result = await updateTargetValidationSettings(
                     {
-                      enabled,
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result;
+                  return result.updateTargetConditionalBreakingChangeConfiguration.ok!.target
+                    .conditionalBreakingChangeConfiguration;
                 },
                 async updateTargetValidationSettings({
+                  isEnabled,
                   excludedClients,
                   percentage,
                   target: ttarget = target,
                   requestCount,
                   breakingChangeFormula,
-                }: {
-                  excludedClients?: string[];
-                  percentage: number;
-                  requestCount?: number;
-                  breakingChangeFormula?: BreakingChangeFormula;
+                }: GraphQLSchema.ConditionalBreakingChangeConfigurationInput & {
                   target?: TargetOverwrite;
                 }) {
                   const result = await updateTargetValidationSettings(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      excludedClients,
-                      percentage,
-                      requestCount,
-                      breakingChangeFormula,
-                      period: 2,
-                      targetIds: [target.id],
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      conditionalBreakingChangeConfiguration: {
+                        isEnabled,
+                        excludedClients,
+                        percentage,
+                        requestCount,
+                        breakingChangeFormula,
+                        period: 2,
+                        targetIds: [target.id],
+                      },
                     },
                     {
                       token: ownerToken,
                     },
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return result.updateTargetValidationSettings;
+                  return result.updateTargetConditionalBreakingChangeConfiguration;
                 },
                 async compareToPreviousVersion(version: string, ttarget: TargetOverwrite = target) {
                   return (
@@ -688,42 +737,102 @@ export function initSeed() {
 
                   return operationBodyResult?.target?.operation?.body;
                 },
+                async waitForOperationsCollected(
+                  n: number,
+                  _from?: number,
+                  _to?: number,
+                  ttarget: TargetOverwrite = target,
+                ) {
+                  const from = formatISO(_from ?? subHours(Date.now(), 1));
+                  const to = formatISO(_to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    return statsResult.target?.operationsStats.totalOperations == n;
+                  };
+
+                  return pollFor(check);
+                },
+                async waitForRequestsCollected(
+                  n: number,
+                  opts?: {
+                    from?: number;
+                    to?: number;
+                    target?: TargetOverwrite;
+                  },
+                ) {
+                  const from = formatISO(opts?.from ?? subHours(Date.now(), 1));
+                  const to = formatISO(opts?.to ?? Date.now());
+                  const check = async () => {
+                    const statsResult = await readOperationsStats(
+                      {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: (opts?.target ?? target).slug,
+                        },
+                      },
+                      {
+                        from,
+                        to,
+                      },
+                      {},
+                      ownerToken,
+                    ).then(r => r.expectNoGraphQLErrors());
+                    const totalRequests =
+                      statsResult.target?.operationsStats.operations.edges.reduce(
+                        (total, edge) => total + edge.node.count,
+                        0,
+                      );
+                    return totalRequests == n;
+                  };
+
+                  return pollFor(check);
+                },
                 async readOperationsStats(
                   from: string,
                   to: string,
                   ttarget: TargetOverwrite = target,
                 ) {
                   const statsResult = await readOperationsStats(
+                    { byId: ttarget.id },
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: ttarget.slug,
-                      period: {
-                        from,
-                        to,
-                      },
+                      from,
+                      to,
                     },
+                    {},
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return statsResult.operationsStats;
+                  return statsResult.target?.operationsStats!;
                 },
                 async readClientStats(params: { clientName: string; from: string; to: string }) {
                   const statsResult = await readClientStats(
                     {
-                      organizationSlug: organization.slug,
-                      projectSlug: project.slug,
-                      targetSlug: target.slug,
-                      client: params.clientName,
-                      period: {
-                        from: params.from,
-                        to: params.to,
-                      },
+                      byId: target.id,
                     },
+                    {
+                      from: params.from,
+                      to: params.to,
+                    },
+                    params.clientName,
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 
-                  return statsResult.clientStats;
+                  return statsResult.target?.clientStats!;
                 },
                 async updateBaseSchema(newBase: string, ttarget: TargetOverwrite = target) {
                   const result = await updateBaseSchema(
@@ -758,8 +867,12 @@ export function initSeed() {
                 async createTarget(args?: { slug?: string; accessToken?: string }) {
                   return createTarget(
                     {
-                      organizationSlug: orgSlug,
-                      projectSlug: project.slug,
+                      project: {
+                        bySelector: {
+                          organizationSlug: orgSlug,
+                          projectSlug: project.slug,
+                        },
+                      },
                       slug: args?.slug ?? generateUnique(),
                     },
                     args?.accessToken ?? ownerToken,
@@ -773,13 +886,18 @@ export function initSeed() {
 
               const invitationResult = await inviteToOrganization(
                 {
-                  organizationSlug: organization.slug,
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
+                    },
+                  },
                   email: memberEmail,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
 
-              const code = invitationResult.inviteToOrganizationByEmail.ok?.code;
+              const code =
+                invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation.code;
 
               if (!code) {
                 throw new Error(
@@ -815,11 +933,19 @@ export function initSeed() {
                 ) {
                   const memberRoleAssignmentResult = await assignMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      userId: input.userId,
-                      roleId: input.roleId,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
+                      member: {
+                        byId: input.userId,
+                      },
+                      memberRole: {
+                        byId: input.roleId,
+                      },
                       resources: input.resources ?? {
-                        mode: GraphQLSchema.ResourceAssignmentMode.All,
+                        mode: GraphQLSchema.ResourceAssignmentModeType.All,
                         projects: [],
                       },
                     },
@@ -833,15 +959,16 @@ export function initSeed() {
                   return memberRoleAssignmentResult.assignMemberRole.ok?.updatedMember;
                 },
                 async deleteMemberRole(
-                  roleId: string,
+                  memberRoleId: string,
                   options: { useMemberToken?: boolean } = {
                     useMemberToken: false,
                   },
                 ) {
                   const memberRoleDeletionResult = await deleteMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId,
+                      memberRole: {
+                        byId: memberRoleId,
+                      },
                     },
                     options.useMemberToken ? memberToken : ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
@@ -866,7 +993,11 @@ export function initSeed() {
                   });
                   const memberRoleCreationResult = await createMemberRole(
                     {
-                      organizationSlug: organization.slug,
+                      organization: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                        },
+                      },
                       name,
                       description: 'some description',
                       selectedPermissions: permissions,
@@ -890,9 +1021,9 @@ export function initSeed() {
                   }
 
                   const createdRole =
-                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles?.find(
-                      r => r.name === name,
-                    );
+                    memberRoleCreationResult.createMemberRole.ok?.updatedOrganization.memberRoles?.edges.find(
+                      e => e.node.name === name,
+                    )?.node;
 
                   if (!createdRole) {
                     throw new Error(
@@ -915,8 +1046,9 @@ export function initSeed() {
                 ) {
                   const memberRoleUpdateResult = await updateMemberRole(
                     {
-                      organizationSlug: organization.slug,
-                      roleId: role.id,
+                      memberRole: {
+                        byId: role.id,
+                      },
                       name: role.name,
                       description: role.description,
                       selectedPermissions: permissions,

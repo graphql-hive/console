@@ -2,7 +2,7 @@ import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/build/src/drivers/memory';
 import { redisDriver } from 'bentocache/build/src/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 import type { DatabasePool } from 'slonik';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import { Logger } from '../../shared/providers/logger';
@@ -19,16 +19,13 @@ import { findById, type OrganizationAccessToken } from './organization-access-to
   global: true,
 })
 export class OrganizationAccessTokensCache {
-  private findById: ReturnType<typeof findById>;
   private cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
 
   constructor(
     @Inject(REDIS_INSTANCE) redis: Redis,
-    @Inject(PG_POOL_CONFIG) pool: DatabasePool,
-    logger: Logger,
+    @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     prometheusConfig: PrometheusConfig,
   ) {
-    this.findById = findById({ pool, logger });
     this.cache = new BentoCache({
       default: 'organizationAccessTokens',
       plugins: prometheusConfig.isEnabled
@@ -53,10 +50,14 @@ export class OrganizationAccessTokensCache {
     });
   }
 
-  get(id: string) {
+  get(
+    id: string,
+    /** Request scoped logger so we associate the request-id with any logs occuring during the SQL lookup. */
+    logger: Logger,
+  ) {
     return this.cache.getOrSet({
       key: id,
-      factory: () => this.findById(id),
+      factory: () => findById({ logger, pool: this.pool })(id),
       ttl: '5min',
       grace: '24h',
     });

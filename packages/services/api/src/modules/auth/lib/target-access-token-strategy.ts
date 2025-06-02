@@ -1,4 +1,5 @@
 import { maskToken, type FastifyReply, type FastifyRequest } from '@hive/service-common';
+import { AccessError } from '../../../shared/errors';
 import { Logger } from '../../shared/providers/logger';
 import { TokenStorage } from '../../token/providers/token-storage';
 import { TokensConfig } from '../../token/providers/tokens';
@@ -43,6 +44,10 @@ export class TargetAccessTokenSession extends Session {
     return this.policies;
   }
 
+  get id(): string {
+    return this.token;
+  }
+
   public getLegacySelector() {
     return {
       token: this.token,
@@ -50,6 +55,10 @@ export class TargetAccessTokenSession extends Session {
       projectId: this.projectId,
       targetId: this.targetId,
     };
+  }
+
+  public async getActor(): Promise<never> {
+    throw new AccessError('Authorization token is missing', 'UNAUTHENTICATED');
   }
 }
 

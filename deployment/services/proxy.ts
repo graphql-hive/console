@@ -5,6 +5,7 @@ import { App } from './app';
 import { Environment } from './environment';
 import { GraphQL } from './graphql';
 import { Observability } from './observability';
+import { type PublicGraphQLAPIGateway } from './public-graphql-api-gateway';
 import { Usage } from './usage';
 
 export function deployProxy({
@@ -13,12 +14,14 @@ export function deployProxy({
   usage,
   environment,
   observability,
+  publicGraphQLAPIGateway,
 }: {
   observability: Observability;
   environment: Environment;
   graphql: GraphQL;
   app: App;
   usage: Usage;
+  publicGraphQLAPIGateway: PublicGraphQLAPIGateway;
 }) {
   const { tlsIssueName } = new CertManager().deployCertManagerAndIssuer();
   const commonConfig = new pulumi.Config('common');
@@ -98,6 +101,16 @@ export function deployProxy({
         name: 'usage',
         path: '/usage',
         service: usage.service,
+        retriable: true,
+      },
+    ])
+    .registerService({ record: environment.apiDns }, [
+      {
+        name: 'public-graphql-api',
+        path: '/graphql',
+        customRewrite: '/graphql',
+        service: publicGraphQLAPIGateway.service,
+        requestTimeout: '60s',
         retriable: true,
       },
     ]);

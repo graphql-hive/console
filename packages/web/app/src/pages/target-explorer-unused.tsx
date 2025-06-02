@@ -6,7 +6,7 @@ import { SchemaVariantFilter } from '@/components/target/explorer/filter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
-import { EmptyList, noSchemaVersion } from '@/components/ui/empty-list';
+import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
@@ -218,10 +218,12 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
     $period: DateRangeInput!
   ) {
     target(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
       }
     ) {
       id
@@ -232,21 +234,17 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        valid
         unusedSchema(usage: { period: $period }) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
         }
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      project {
+        id
+        type
       }
-    ) {
-      totalRequests
+      operationsStats(period: $period) {
+        totalRequests
+      }
     }
   }
 `);
@@ -347,7 +345,7 @@ function UnusedSchemaExplorer(props: {
                 </Alert>
               )}
               <UnusedSchemaView
-                totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+                totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.unusedSchema}
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -355,7 +353,10 @@ function UnusedSchemaExplorer(props: {
               />
             </>
           ) : (
-            noSchemaVersion
+            <NoSchemaVersion
+              recommendedAction="publish"
+              projectType={query.data?.target?.project.type ?? null}
+            />
           )}
         </>
       )}
@@ -369,14 +370,12 @@ const TargetExplorerUnusedSchemaPageQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
   ) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        id
-        rateLimit {
-          retentionInDays
-        }
-        slug
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      rateLimit {
+        retentionInDays
       }
+      slug
     }
     hasCollectedOperations(
       selector: {
@@ -412,7 +411,7 @@ function ExplorerUnusedSchemaPageContent(props: {
     );
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
   const hasCollectedOperations = query.data?.hasCollectedOperations === true;
 
   if (!currentOrganization) {

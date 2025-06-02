@@ -17,7 +17,6 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
-    ...SelectedPermissionOverview_OrganizationFragment
     viewerCanManageInvitations
     viewerCanManageRoles
   }
@@ -107,12 +106,10 @@ function PageContent(props: {
 }
 
 const OrganizationMembersPageQuery = graphql(`
-  query OrganizationMembersPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        ...OrganizationMembersPage_OrganizationFragment
-        viewerCanSeeMembers
-      }
+  query OrganizationMembersPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...OrganizationMembersPage_OrganizationFragment
+      viewerCanSeeMembers
     }
   }
 `);
@@ -125,13 +122,11 @@ function OrganizationMembersPageContent(props: {
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   useRedirect({
     canAccess: currentOrganization?.viewerCanSeeMembers === true,

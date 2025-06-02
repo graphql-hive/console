@@ -1,6 +1,6 @@
 import { ProjectType } from 'testkit/gql/graphql';
 import * as emails from '../../../testkit/emails';
-import { updateOrgRateLimit, waitFor } from '../../../testkit/flow';
+import { pollFor, updateOrgRateLimit, waitFor } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
@@ -15,7 +15,9 @@ function filterEmailsByOrg(orgSlug: string, emails: emails.Email[]) {
 test('rate limit approaching and reached for organization', async () => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
 
   await updateOrgRateLimit(
     {
@@ -44,7 +46,13 @@ test('rate limit approaching and reached for organization', async () => {
   const collectResult = await collectOperations(new Array(10).fill(op));
   expect(collectResult.status).toEqual(200);
 
-  await waitFor(8000);
+  await waitForRequestsCollected(10);
+
+  // wait for the rate limit email to send...
+  await pollFor(async () => {
+    let sent = await emails.history();
+    return filterEmailsByOrg(organization.slug, sent)?.length === 1;
+  });
 
   let sent = await emails.history();
   expect(sent).toContainEqual({
@@ -58,7 +66,13 @@ test('rate limit approaching and reached for organization', async () => {
   const collectMoreResult = await collectOperations([op, op]);
   expect(collectMoreResult.status).toEqual(200);
 
-  await waitFor(7000);
+  await waitForRequestsCollected(12);
+
+  // wait for the quota email to send...
+  await pollFor(async () => {
+    let sent = await emails.history();
+    return filterEmailsByOrg(organization.slug, sent)?.length === 2;
+  });
 
   sent = await emails.history();
 
@@ -73,7 +87,8 @@ test('rate limit approaching and reached for organization', async () => {
   const collectEvenMoreResult = await collectOperations([op, op]);
   expect(collectEvenMoreResult.status).toEqual(429);
 
-  await waitFor(5000);
+  // @note we can't poll for any state here because nothing should change. Must wait unfortunately...
+  await waitFor(4_000);
 
   // Nothing new
   sent = await emails.history();

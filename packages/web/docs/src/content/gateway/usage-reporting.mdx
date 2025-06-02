@@ -26,11 +26,12 @@ Before proceeding, make sure you have
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -39,12 +40,13 @@ hive-gateway supergraph \
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {5}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 docker run --rm --name hive-gateway -p 4000:4000 \
   ghcr.io/graphql-hive/gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -53,11 +55,12 @@ docker run --rm --name hive-gateway -p 4000:4000 \
 
 <Tabs.Tab>
 
-```sh filename="Run Hive Gateway with Usage Reporting enabled." {4}
+```sh filename="Run Hive Gateway with Usage Reporting enabled."
 npx hive-gateway supergraph \
   http://cdn.graphql-hive.com/artifacts/v1/12713322-4f6a-459b-9d7c-8aa3cf039c2e/supergraph \
-  --hive-cdn-key "YOUR HIVE CDN KEY" \
-  --hive-registry-token "YOUR HIVE REGISTRY TOKEN"
+  --hive-cdn-key "<hive_cdn_access_key>" \
+  --hive-usage-target "<hive_usage_target>" \
+  --hive-usage-access-token "<hive_usage_access_token>"
 ```
 
 </Tabs.Tab>
@@ -67,19 +70,23 @@ npx hive-gateway supergraph \
 Alternatively, you can also provide the usage reporting configuration via the `gateway.config.ts`
 file.
 
-```ts filename="gateway.config.ts" {8}
+```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   reporting: {
     type: 'hive',
-    // The registry token provided by Hive Registry
+    // The registry token provided by Hive Registry, defaulting to process.env.HIVE_USAGE_ACCESS_TOKEN
     token: '<token>'
+    // The registry target which the usage data should be reported to defaulting to process.env.HIVE_USAGE_TARGET
+    // This can either be a slug following the format `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`)
+    // or an UUID (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`).
+    target: '<target>'
     /**
      * Other options
      *
      * selfHosting: { ... },
-     * clientInfo: { ... },
+     * clientInfo(context) { ... },
      *
      * See more in Hive Client reference
      */

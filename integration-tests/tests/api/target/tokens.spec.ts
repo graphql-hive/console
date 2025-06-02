@@ -130,9 +130,7 @@ test.concurrent(
     await expect(organizationResult.expectNoGraphQLErrors()).resolves.toEqual(
       expect.objectContaining({
         organization: expect.objectContaining({
-          organization: expect.objectContaining({
-            slug: organizationSlug,
-          }),
+          slug: organizationSlug,
         }),
       }),
     );
@@ -206,9 +204,7 @@ test.concurrent(
     await expect(organizationResult.expectNoGraphQLErrors()).resolves.toEqual(
       expect.objectContaining({
         organization: expect.objectContaining({
-          organization: expect.objectContaining({
-            slug: organizationSlug,
-          }),
+          slug: organizationSlug,
         }),
       }),
     );

@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
+import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
@@ -41,14 +42,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
 const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
-  query getGitHubIntegrationDetails($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        id
-        gitHubIntegration {
-          repositories {
-            nameWithOwner
-          }
+  query getGitHubIntegrationDetails($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      gitHubIntegration {
+        repositories {
+          nameWithOwner
         }
       }
     }
@@ -74,9 +73,7 @@ function GitHubIntegration(props: {
   const [integrationQuery] = useQuery({
     query: GithubIntegration_GithubIntegrationDetailsQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
   });
 
@@ -88,7 +85,7 @@ function GitHubIntegration(props: {
     return null;
   }
 
-  const githubIntegration = integrationQuery.data?.organization?.organization.gitHubIntegration;
+  const githubIntegration = integrationQuery.data?.organization?.gitHubIntegration;
 
   if (!githubIntegration) {
     return null;
@@ -178,11 +175,7 @@ const ProjectSettingsPage_UpdateProjectSlugMutation = graphql(`
   mutation ProjectSettingsPage_UpdateProjectSlugMutation($input: UpdateProjectSlugInput!) {
     updateProjectSlug(input: $input) {
       ok {
-        selector {
-          organizationSlug
-          projectSlug
-        }
-        project {
+        updatedProject {
           id
           slug
         }
@@ -224,8 +217,12 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            project: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+              },
+            },
             slug: data.slug,
           },
         });
@@ -242,7 +239,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
             to: '/$organizationSlug/$projectSlug/view/settings',
             params: {
               organizationSlug: props.organizationSlug,
-              projectSlug: result.data.updateProjectSlug.ok.project.slug,
+              projectSlug: result.data.updateProjectSlug.ok.updatedProject.slug,
             },
           });
         } else if (error) {
@@ -278,18 +275,18 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
               </DocsLink>
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
+          <CardContent>
             <FormField
               control={slugForm.control}
               name="slug"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="flex items-center">
-                      <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                    <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
+                      <div className="border-input text-muted-foreground h-10 overflow-auto text-nowrap rounded-md border bg-gray-900 px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                       </div>
-                      <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
+                      <Input placeholder="slug" className="rounded-l-none" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -319,6 +316,7 @@ const ProjectSettingsPage_OrganizationFragment = graphql(`
 
 const ProjectSettingsPage_ProjectFragment = graphql(`
   fragment ProjectSettingsPage_ProjectFragment on Project {
+    id
     slug
     type
     isProjectNameInGitHubCheckEnabled
@@ -331,13 +329,11 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
 
 const ProjectSettingsPageQuery = graphql(`
   query ProjectSettingsPageQuery($organizationSlug: String!, $projectSlug: String!) {
-    organization(selector: { organizationSlug: $organizationSlug }) {
-      organization {
-        ...ProjectSettingsPage_OrganizationFragment
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...ProjectSettingsPage_OrganizationFragment
+      project: projectBySlug(projectSlug: $projectSlug) {
+        ...ProjectSettingsPage_ProjectFragment
       }
-    }
-    project(selector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug }) {
-      ...ProjectSettingsPage_ProjectFragment
     }
     isGitHubIntegrationFeatureEnabled
   }
@@ -354,8 +350,8 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
     requestPolicy: 'cache-and-network',
   });
 
-  const currentOrganization = query.data?.organization?.organization;
-  const currentProject = query.data?.project;
+  const currentOrganization = query.data?.organization;
+  const currentProject = currentOrganization?.project;
 
   const organization = useFragment(ProjectSettingsPage_OrganizationFragment, currentOrganization);
   const project = useFragment(ProjectSettingsPage_ProjectFragment, currentProject);
@@ -399,6 +395,7 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
       <div className="flex flex-col gap-y-4">
         {project && organization ? (
           <>
+            <ResourceDetails id={project.id} />
             <ProjectSettingsPage_SlugForm
               organizationSlug={props.organizationSlug}
               projectSlug={props.projectSlug}
@@ -474,14 +471,9 @@ export function ProjectSettingsPage(props: { organizationSlug: string; projectSl
 
 export const DeleteProjectMutation = graphql(`
   mutation deleteProject($selector: ProjectSelectorInput!) {
-    deleteProject(selector: $selector) {
-      selector {
-        organizationSlug
-        projectSlug
-      }
-      deletedProject {
-        __typename
-        id
+    deleteProject(input: { project: { bySelector: $selector } }) {
+      ok {
+        deletedProjectId
       }
     }
   }

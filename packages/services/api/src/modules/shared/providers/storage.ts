@@ -3,6 +3,7 @@ import type { DatabasePool } from 'slonik';
 import type { PolicyConfigurationObject } from '@hive/policy';
 import type {
   ConditionalBreakingChangeMetadata,
+  PaginatedOrganizationInvitationConnection,
   PaginatedSchemaVersionConnection,
   SchemaChangeType,
   SchemaCheck,
@@ -34,9 +35,11 @@ import type {
   TargetSettings,
   User,
 } from '../../../shared/entities';
-import type { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import type { ProjectAccessScope } from '../../auth/providers/project-access';
-import type { TargetAccessScope } from '../../auth/providers/target-access';
+import type {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from '../../auth/providers/scopes';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
@@ -169,10 +172,15 @@ export interface Storage {
     },
   ): Promise<void>;
 
-  getOrganizationMembers(_: OrganizationSelector): Promise<readonly Member[] | never>;
   countOrganizationMembers(_: OrganizationSelector): Promise<number>;
 
-  getOrganizationInvitations(_: OrganizationSelector): Promise<readonly OrganizationInvitation[]>;
+  getOrganizationInvitations(
+    organizationId: string,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ): Promise<PaginatedOrganizationInvitationConnection>;
 
   getOrganizationOwnerId(_: OrganizationSelector): Promise<string | null>;
 
@@ -205,6 +213,8 @@ export interface Storage {
 
   getProjects(_: OrganizationSelector): Promise<Project[] | never>;
 
+  getProjectById(projectId: string): Promise<Project | null>;
+
   findProjectsByIds(args: { projectIds: Array<string> }): Promise<Map<string, Project>>;
 
   createProject(_: Pick<Project, 'type'> & { slug: string } & OrganizationSelector): Promise<
@@ -225,7 +235,7 @@ export interface Storage {
     | never
   >;
 
-  updateProjectSlug(_: ProjectSelector & { slug: string; userId: string }): Promise<
+  updateProjectSlug(_: ProjectSelector & { slug: string }): Promise<
     | {
         ok: true;
         project: Project;
@@ -276,7 +286,7 @@ export interface Storage {
       }
   >;
 
-  updateTargetSlug(_: TargetSelector & { slug: string; userId: string }): Promise<
+  updateTargetSlug(_: TargetSelector & { slug: string }): Promise<
     | {
         ok: true;
         target: Target;
@@ -313,13 +323,13 @@ export interface Storage {
   getTargetIdsOfProject(_: ProjectSelector): Promise<readonly string[]>;
   getTargetSettings(_: TargetSelector): Promise<TargetSettings | never>;
 
-  setTargetValidation(
-    _: TargetSelector & { enabled: boolean },
+  updateTargetValidationSettings(
+    _: TargetSelector & Partial<TargetSettings['validation']>,
   ): Promise<TargetSettings['validation'] | never>;
 
-  updateTargetValidationSettings(
-    _: TargetSelector & Omit<TargetSettings['validation'], 'enabled'>,
-  ): Promise<TargetSettings['validation'] | never>;
+  updateTargetDangerousChangeClassification(
+    _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
+  ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
 
   countSchemaVersionsOfProject(
     _: ProjectSelector & {

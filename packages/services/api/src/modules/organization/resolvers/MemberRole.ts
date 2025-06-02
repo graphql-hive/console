@@ -35,9 +35,6 @@ export const MemberRole: MemberRoleResolvers = {
       },
     });
   },
-  locked: async (role, _arg, _ctx) => {
-    return role.isLocked;
-  },
   permissions: (role, _arg, _ctx) => {
     return Array.from(Object.values(role.permissions)).flatMap((set: Set<Permission>) =>
       Array.from(set),

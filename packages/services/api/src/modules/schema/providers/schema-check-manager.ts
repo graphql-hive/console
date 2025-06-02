@@ -43,6 +43,14 @@ export class SchemaCheckManager {
     return schemaCheck.safeSchemaChanges;
   }
 
+  getAllSchemaChanges(schemaCheck: SchemaCheck) {
+    if (!schemaCheck.safeSchemaChanges?.length || !schemaCheck.breakingSchemaChanges?.length) {
+      return null;
+    }
+
+    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+  }
+
   getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
     if (!schemaCheck.breakingSchemaChanges?.length) {
       return null;

@@ -241,11 +241,6 @@ export default withGuildDocs({
       destination: '/docs/gateway/deployment/runtimes/nodejs',
       permanent: true,
     },
-    {
-      source: '/docs/gateway/deployment/node-frameworks/nestjs',
-      destination: '/docs/gateway/deployment/runtimes/nodejs',
-      permanent: true,
-    },
   ],
   env: {
     SITE_URL: 'https://the-guild.dev/graphql/hive',

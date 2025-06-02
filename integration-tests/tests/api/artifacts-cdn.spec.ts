@@ -433,7 +433,7 @@ runArtifactsCDNTests('API Mirror', { service: 'server', port: 8082, path: '/arti
 describe('CDN token', () => {
   const TargetCDNAccessTokensQuery = graphql(`
     query TargetCDNAccessTokens($selector: TargetSelectorInput!, $after: String, $first: Int = 2) {
-      target(selector: $selector) {
+      target(reference: { bySelector: $selector }) {
         cdnAccessTokens(first: $first, after: $after) {
           pageInfo {
             hasNextPage
@@ -591,10 +591,12 @@ describe('CDN token', () => {
       document: DeleteCDNAccessTokenMutation,
       variables: {
         input: {
-          selector: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-            targetSlug: target.slug,
+          target: {
+            bySelector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+              targetSlug: target.slug,
+            },
           },
           cdnAccessTokenId: paginatedResult.target!.cdnAccessTokens.edges[0].node.id,
         },
@@ -648,10 +650,12 @@ describe('CDN token', () => {
       document: DeleteCDNAccessTokenMutation,
       variables: {
         input: {
-          selector: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-            targetSlug: target.slug,
+          target: {
+            bySelector: {
+              organizationSlug: organization.slug,
+              projectSlug: project.slug,
+              targetSlug: target.slug,
+            },
           },
           cdnAccessTokenId: paginatedResult.target!.cdnAccessTokens.edges[0].node.id,
         },

@@ -147,7 +147,12 @@ target, on which you want to deploy your app.
 Once the pre-requisites are met, you can create an app deployment by running the following command.
 
 ```bash filename="Create an App Deployment via CLI"
-hive app:create --name "my-app" --version "1.0.0" persisted-documents.json
+hive app:create \
+  --registry.accessToken "<ACCESS_TOKEN>" \
+  --target "<ORGANIZATION>/<PROJECT>/<TARGET>" \
+  --name "my-app" \
+  --version "1.0.0" \
+  persisted-documents.json
 ```
 
 The parameters `--name` and `--version` are mandatory and uniquily identify your app deployment.
@@ -195,7 +200,11 @@ To publish an app deployment, you can run the following command. Make sure you u
 `--name` and `--version` parameters as you used when creating the app deployment.
 
 ```bash filename="Publish an App Deployment via CLI"
-hive app:publish --name "my-app" --version "1.0.0"
+hive app:publish \
+  --registry.accessToken "<ACCESS_TOKEN>" \
+  --target "<ORGANIZATION>/<PROJECT>/<TARGET>" \
+  --name "my-app" \
+  --version "1.0.0"
 ```
 
 | Parameter   | Description                        |
@@ -270,7 +279,7 @@ const yoga = createYoga({
   schema,
   plugins: [
     useHive({
-      enabled: false
+      enabled: false,
       experimental__persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
@@ -339,7 +348,8 @@ Enable the Persisted Document plugin by adding the following to your `router.yam
 ```yaml filename="router.yaml"
 # ... the rest of your configuration
 plugins:
-  hive.usage: {}
+  hive.usage:
+    target: '<ORGANIZATION>/<PROJECT>/<TARGET>'
   hive.persisted_documents:
     enabled: true
 ```

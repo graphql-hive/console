@@ -1,8 +1,10 @@
 import { Injectable, Scope } from 'graphql-modules';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { MissingTargetError } from '../../../shared/errors';
 import { cache } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { Session } from '../../auth/lib/authz';
+import { TargetAccessTokenSession } from '../../auth/lib/target-access-token-strategy';
 import { Logger } from './logger';
 import { Storage } from './storage';
 
@@ -89,11 +91,14 @@ export class IdTranslator {
     });
   }
 
-  /** Resolve a GraphQLSchema.TargetReferenceInput */
+  /**
+   * Resolve a GraphQLSchema.TargetReferenceInput
+   * - Returns {null} if the resource could not be resolved.
+   * - Raises {MissingTargetError} if no resource was provided and session is not a target access token session.
+   */
   async resolveTargetReference(args: {
     reference: GraphQLSchema.TargetReferenceInput | null;
-    onError(): never;
-  }): Promise<{ organizationId: string; projectId: string; targetId: string }> {
+  }): Promise<{ organizationId: string; projectId: string; targetId: string } | null> {
     this.logger.debug('Resolve target reference. (reference=%o)', args.reference);
 
     let selector: {
@@ -102,39 +107,40 @@ export class IdTranslator {
       targetId: string;
     };
 
-    if (args.reference?.bySelector) {
-      const [organizationId, projectId, targetId] = await Promise.all([
-        this.translateOrganizationId(args.reference.bySelector),
-        this.translateProjectId(args.reference.bySelector),
-        this.translateTargetId(args.reference.bySelector),
-      ]).catch(error => {
-        this.logger.debug(error);
+    if (args.reference?.bySelector != null) {
+      try {
+        const [organizationId, projectId, targetId] = await Promise.all([
+          this.translateOrganizationId(args.reference.bySelector),
+          this.translateProjectId(args.reference.bySelector),
+          this.translateTargetId(args.reference.bySelector),
+        ]);
+        this.logger.debug(
+          'Target selector resolved. (organization=%s, project=%s, target=%s)',
+          organizationId,
+          projectId,
+          targetId,
+        );
+
+        selector = {
+          organizationId,
+          projectId,
+          targetId,
+        };
+      } catch (error: unknown) {
+        this.logger.debug(String(error));
         this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
-        args.onError();
-      });
-
-      this.logger.debug(
-        'Target selector resolved. (organization=%s, project=%s, target=%s)',
-        organizationId,
-        projectId,
-        targetId,
-      );
-
-      selector = {
-        organizationId,
-        projectId,
-        targetId,
-      };
-    } else if (args.reference?.byId) {
+        return null;
+      }
+    } else if (args.reference?.byId != null) {
       if (!isUUID(args.reference.byId)) {
         this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
-        args.onError();
+        return null;
       }
 
       const target = await this.storage.getTargetById(args.reference.byId);
       if (!target) {
         this.logger.debug('Target not found. (targetId=%s)', args.reference.byId);
-        args.onError();
+        return null;
       }
 
       selector = {
@@ -144,6 +150,10 @@ export class IdTranslator {
       };
     } else {
       this.logger.debug('Attempt resolving target selector from access token.');
+      if (this.session instanceof TargetAccessTokenSession === false) {
+        this.logger.debug('Session is not a target access token session.');
+        throw new MissingTargetError();
+      }
       selector = this.session.getLegacySelector();
     }
 
@@ -205,6 +215,64 @@ export class IdTranslator {
     }
 
     this.logger.debug('Target selector resolved. (organizationId=%s)', selector.organizationId);
+
+    return selector;
+  }
+
+  async resolveProjectReference(args: {
+    reference: GraphQLSchema.ProjectReferenceInput;
+  }): Promise<{ organizationId: string; projectId: string } | null> {
+    this.logger.debug('Resolve project reference. (reference=%o)', args.reference);
+
+    let selector: {
+      organizationId: string;
+      projectId: string;
+    };
+
+    if (args.reference?.bySelector) {
+      try {
+        const [organizationId, projectId] = await Promise.all([
+          this.translateOrganizationId(args.reference.bySelector),
+          this.translateProjectId(args.reference.bySelector),
+        ]);
+        this.logger.debug(
+          'Project selector resolved. (organization=%s, project=%s)',
+          organizationId,
+          projectId,
+        );
+
+        selector = {
+          organizationId,
+          projectId,
+        };
+      } catch (error: unknown) {
+        this.logger.debug(String(error));
+        this.logger.debug('Failed to resolve input slug to ids (slug=%o)', args.reference);
+        return null;
+      }
+    } else {
+      if (!isUUID(args.reference.byId)) {
+        this.logger.debug('Invalid uuid provided. (targetId=%s)', args.reference.byId);
+        return null;
+      }
+
+      const project = await this.storage.getProjectById(args.reference.byId);
+      if (!project) {
+        this.logger.debug('Project not found. (targetId=%s)', args.reference.byId);
+        return null;
+      }
+
+      selector = {
+        organizationId: project.orgId,
+        projectId: project.id,
+      };
+    }
+
+    this.logger.debug(
+      'Project selector resolved. (organization=%s, project=%s)',
+      selector.organizationId,
+      selector.projectId,
+    );
 
     return selector;
   }

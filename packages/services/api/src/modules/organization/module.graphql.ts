@@ -2,7 +2,12 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Query {
-    organization(selector: OrganizationSelectorInput!): OrganizationPayload
+    organization(
+      """
+      Reference to the organization that should be fetched.
+      """
+      reference: OrganizationReferenceInput! @tag(name: "public")
+    ): Organization @tag(name: "public")
     organizationByInviteCode(code: String!): OrganizationByInviteCodePayload
     organizations: OrganizationConnection!
     organizationTransferRequest(
@@ -19,11 +24,11 @@ export default gql`
     joinOrganization(code: String!): JoinOrganizationPayload!
     leaveOrganization(input: OrganizationSelectorInput!): LeaveOrganizationResult!
     inviteToOrganizationByEmail(
-      input: InviteToOrganizationByEmailInput!
-    ): InviteToOrganizationByEmailResult!
+      input: InviteToOrganizationByEmailInput! @tag(name: "public")
+    ): InviteToOrganizationByEmailResult! @tag(name: "public")
     deleteOrganizationInvitation(
-      input: DeleteOrganizationInvitationInput!
-    ): DeleteOrganizationInvitationResult!
+      input: DeleteOrganizationInvitationInput! @tag(name: "public")
+    ): DeleteOrganizationInvitationResult! @tag(name: "public")
     updateOrganizationSlug(input: UpdateOrganizationSlugInput!): UpdateOrganizationSlugResult!
     requestOrganizationTransfer(
       input: RequestOrganizationTransferInput!
@@ -31,81 +36,113 @@ export default gql`
     answerOrganizationTransferRequest(
       input: AnswerOrganizationTransferRequestInput!
     ): AnswerOrganizationTransferRequestResult!
-    createMemberRole(input: CreateMemberRoleInput!): CreateMemberRoleResult!
-    updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRoleResult!
-    deleteMemberRole(input: DeleteMemberRoleInput!): DeleteMemberRoleResult!
-    assignMemberRole(input: AssignMemberRoleInput!): AssignMemberRoleResult!
+    """
+    Create a new member role with permissions.
+    """
+    createMemberRole(input: CreateMemberRoleInput! @tag(name: "public")): CreateMemberRoleResult!
+      @tag(name: "public")
+    updateMemberRole(input: UpdateMemberRoleInput! @tag(name: "public")): UpdateMemberRoleResult!
+      @tag(name: "public")
+    deleteMemberRole(input: DeleteMemberRoleInput! @tag(name: "public")): DeleteMemberRoleResult!
+      @tag(name: "public")
+    assignMemberRole(input: AssignMemberRoleInput! @tag(name: "public")): AssignMemberRoleResult!
+      @tag(name: "public")
     createOrganizationAccessToken(
-      input: CreateOrganizationAccessTokenInput!
-    ): CreateOrganizationAccessTokenResult!
+      input: CreateOrganizationAccessTokenInput! @tag(name: "public")
+    ): CreateOrganizationAccessTokenResult! @tag(name: "public")
     deleteOrganizationAccessToken(
-      input: DeleteOrganizationAccessTokenInput!
-    ): DeleteOrganizationAccessTokenResult!
+      input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
+    ): DeleteOrganizationAccessTokenResult! @tag(name: "public")
   }
 
   input OrganizationReferenceInput @oneOf {
-    bySelector: OrganizationSelectorInput
-    byId: ID
+    bySelector: OrganizationSelectorInput @tag(name: "public")
+    byId: ID @tag(name: "public")
   }
 
   input CreateOrganizationAccessTokenInput {
-    organization: OrganizationReferenceInput!
-    title: String!
-    description: String
-    permissions: [String!]!
-    resources: ResourceAssignmentInput!
+    """
+    Organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    """
+    Title of the access token.
+    """
+    title: String! @tag(name: "public")
+    """
+    Additional description containing information about the purpose of the access token.
+    """
+    description: String @tag(name: "public")
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the \`Organization.availableOrganizationAccessTokenPermissionGroups\` field.
+    """
+    permissions: [String!]! @tag(name: "public")
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResult {
-    ok: CreateOrganizationAccessTokenResultOk
-    error: CreateOrganizationAccessTokenResultError
+    ok: CreateOrganizationAccessTokenResultOk @tag(name: "public")
+    error: CreateOrganizationAccessTokenResultError @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResultOk {
     createdOrganizationAccessToken: OrganizationAccessToken!
-    privateAccessKey: String!
+    privateAccessKey: String! @tag(name: "public")
   }
 
-  type CreateOrganizationAccessTokenResultError implements Error {
-    message: String!
-    details: CreateOrganizationAccessTokenResultErrorDetails
+  type CreateOrganizationAccessTokenResultError {
+    message: String! @tag(name: "public")
+    details: CreateOrganizationAccessTokenResultErrorDetails @tag(name: "public")
   }
 
   type CreateOrganizationAccessTokenResultErrorDetails {
     """
     Error message for the input title.
     """
-    title: String
+    title: String @tag(name: "public")
     """
     Error message for the input description.
     """
-    description: String
+    description: String @tag(name: "public")
   }
 
   type OrganizationAccessToken {
-    id: ID!
-    title: String!
-    description: String
-    permissions: [String!]!
-    resources: ResourceAssignment!
-    createdAt: DateTime!
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    permissions: [String!]! @tag(name: "public")
+    resources: ResourceAssignment! @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
   }
 
   input DeleteOrganizationAccessTokenInput {
-    organizationAccessTokenId: ID!
+    """
+    The access token that should be deleted.
+    """
+    organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
+  }
+
+  input OrganizationAccessTokenReference @oneOf @tag(name: "public") {
+    byId: ID @tag(name: "public")
   }
 
   type DeleteOrganizationAccessTokenResult {
-    ok: DeleteOrganizationAccessTokenResultOk
-    error: DeleteOrganizationAccessTokenResultError
+    ok: DeleteOrganizationAccessTokenResultOk @tag(name: "public")
+    error: DeleteOrganizationAccessTokenResultError @tag(name: "public")
   }
 
   type DeleteOrganizationAccessTokenResultOk {
-    deletedOrganizationAccessTokenId: ID!
+    deletedOrganizationAccessTokenId: ID! @tag(name: "public")
   }
 
-  type DeleteOrganizationAccessTokenResultError implements Error {
-    message: String!
+  type DeleteOrganizationAccessTokenResultError {
+    message: String! @tag(name: "public")
   }
 
   type UpdateOrganizationSlugResult {
@@ -203,7 +240,7 @@ export default gql`
   }
 
   input OrganizationSelectorInput {
-    organizationSlug: String!
+    organizationSlug: String! @tag(name: "public")
   }
 
   type OrganizationSelector {
@@ -230,51 +267,78 @@ export default gql`
   }
 
   input InviteToOrganizationByEmailInput {
-    organizationSlug: String!
-    roleId: ID
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
+    memberRoleId: ID @tag(name: "public")
   }
 
   input DeleteOrganizationInvitationInput {
-    organizationSlug: String!
-    email: String!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    email: String! @tag(name: "public")
   }
 
-  type InviteToOrganizationByEmailError implements Error {
-    message: String!
+  type InviteToOrganizationByEmailResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: InviteToOrganizationByEmailInputErrors!
+    inputErrors: InviteToOrganizationByEmailInputErrors! @tag(name: "public")
+  }
+
+  type InviteToOrganizationByEmailResultOk {
+    createdOrganizationInvitation: OrganizationInvitation! @tag(name: "public")
   }
 
   type InviteToOrganizationByEmailInputErrors {
-    email: String
+    email: String @tag(name: "public") @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type InviteToOrganizationByEmailResult {
-    ok: OrganizationInvitation
-    error: InviteToOrganizationByEmailError
+    ok: InviteToOrganizationByEmailResultOk @tag(name: "public")
+    error: InviteToOrganizationByEmailResultError @tag(name: "public")
   }
 
   type OrganizationTransfer {
     organization: Organization!
   }
 
+  type MemberRoleEdge {
+    node: MemberRole! @tag(name: "public")
+    cursor: String!
+  }
+
+  type MemberRoleConnection {
+    edges: [MemberRoleEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
+  }
+
   type Organization {
-    id: ID!
-    slug: String!
+    """
+    Unique UUID of the organization
+    """
+    id: ID! @tag(name: "public")
+    """
+    The slug of the organization.
+    """
+    slug: String! @tag(name: "public")
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
-    owner: Member!
+    owner: Member! @tag(name: "public")
     me: Member!
-    members: MemberConnection
-    invitations: OrganizationInvitationConnection
+    members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
+      @tag(name: "public")
+    invitations(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationInvitationConnection @tag(name: "public")
     getStarted: OrganizationGetStarted!
-    memberRoles: [MemberRole!]
+    memberRoles(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): MemberRoleConnection @tag(name: "public")
     """
     Whether the viewer should be able to access the settings page within the app
     """
@@ -314,25 +378,36 @@ export default gql`
     """
     List of available permission groups that can be assigned to users.
     """
-    availableMemberPermissionGroups: [PermissionGroup!]!
+    availableMemberPermissionGroups: [PermissionGroup!]! @tag(name: "public")
     """
     List of available permission groups that can be assigned to organization access tokens.
     """
-    availableOrganizationPermissionGroups: [PermissionGroup!]!
+    availableOrganizationAccessTokenPermissionGroups: [PermissionGroup!]! @tag(name: "public")
+    """
+    Whether the viewer can manage access tokens.
+    """
+    viewerCanManageAccessTokens: Boolean!
     """
     Paginated organization access tokens.
     """
-    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection!
+    accessTokens(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+    ): OrganizationAccessTokenConnection! @tag(name: "public")
+    """
+    Get organization access token by id.
+    """
+    accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
   }
 
   type OrganizationAccessTokenEdge {
-    node: OrganizationAccessToken!
-    cursor: String!
+    node: OrganizationAccessToken! @tag(name: "public")
+    cursor: String! @tag(name: "public")
   }
 
   type OrganizationAccessTokenConnection {
-    pageInfo: PageInfo!
-    edges: [OrganizationAccessTokenEdge!]!
+    pageInfo: PageInfo! @tag(name: "public")
+    edges: [OrganizationAccessTokenEdge!]! @tag(name: "public")
   }
 
   type OrganizationConnection {
@@ -340,18 +415,23 @@ export default gql`
     total: Int!
   }
 
+  type OrganizationInvitationEdge {
+    node: OrganizationInvitation! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
   type OrganizationInvitationConnection {
-    nodes: [OrganizationInvitation!]!
-    total: Int!
+    edges: [OrganizationInvitationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type OrganizationInvitation {
-    id: ID!
-    createdAt: DateTime!
-    expiresAt: DateTime!
-    email: String!
+    id: ID! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+    expiresAt: DateTime! @tag(name: "public")
+    email: String! @tag(name: "public")
     code: String!
-    role: MemberRole!
+    role: MemberRole! @tag(name: "public")
   }
 
   type OrganizationInvitationError {
@@ -385,22 +465,26 @@ export default gql`
   @oneOf
   """
   type DeleteOrganizationInvitationResult {
-    ok: OrganizationInvitation
-    error: DeleteOrganizationInvitationError
+    ok: DeleteOrganizationInvitationResultOk @tag(name: "public")
+    error: DeleteOrganizationInvitationResultError @tag(name: "public")
   }
 
-  type DeleteOrganizationInvitationError implements Error {
-    message: String!
+  type DeleteOrganizationInvitationResultOk {
+    deletedOrganizationInvitationId: ID! @tag(name: "public")
+  }
+
+  type DeleteOrganizationInvitationResultError {
+    message: String! @tag(name: "public")
   }
 
   type MemberRole {
-    id: ID!
-    name: String!
-    description: String!
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
     """
     Whether the role is a built-in role. Built-in roles cannot be deleted or modified.
     """
-    locked: Boolean!
+    isLocked: Boolean! @tag(name: "public")
     """
     Whether the role can be deleted (based on current user's permissions)
     """
@@ -420,235 +504,269 @@ export default gql`
     """
     List of permissions attached to this member role.
     """
-    permissions: [String!]!
+    permissions: [String!]! @tag(name: "public")
   }
 
   input CreateMemberRoleInput {
-    organizationSlug: String!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    """
+    The organization in which the member role should be created.
+    """
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    """
+    The name of the member role (must be unique).
+    """
+    name: String! @tag(name: "public")
+    """
+    A description describing the purpose of the member role.
+    """
+    description: String! @tag(name: "public")
+    """
+    A list of available permissions can be retrieved via the \`Organization.availableMemberPermissionGroups\` field.
+    """
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type CreateMemberRoleOk {
-    updatedOrganization: Organization!
+  type CreateMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    createdMemberRole: MemberRole! @tag(name: "public")
   }
 
   type CreateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type CreateMemberRoleError implements Error {
-    message: String!
+  type CreateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: CreateMemberRoleInputErrors
+    inputErrors: CreateMemberRoleInputErrors @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type CreateMemberRoleResult {
-    ok: CreateMemberRoleOk
-    error: CreateMemberRoleError
+    ok: CreateMemberRoleResultOk @tag(name: "public")
+    error: CreateMemberRoleResultError @tag(name: "public")
   }
 
   input UpdateMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
-    name: String!
-    description: String!
-    selectedPermissions: [String!]!
+    """
+    The member role that should be udpated.
+    """
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    name: String! @tag(name: "public")
+    description: String! @tag(name: "public")
+    selectedPermissions: [String!]! @tag(name: "public")
   }
 
-  type UpdateMemberRoleOk {
-    updatedRole: MemberRole!
+  type UpdateMemberRoleResultOk {
+    updatedRole: MemberRole! @tag(name: "public")
   }
 
   type UpdateMemberRoleInputErrors {
-    name: String
-    description: String
+    name: String @tag(name: "public")
+    description: String @tag(name: "public")
   }
 
-  type UpdateMemberRoleError implements Error {
-    message: String!
+  type UpdateMemberRoleResultError {
+    message: String! @tag(name: "public")
     """
     The detailed validation error messages for the input fields.
     """
-    inputErrors: UpdateMemberRoleInputErrors
+    inputErrors: UpdateMemberRoleInputErrors @tag(name: "public")
+  }
+
+  input MemberRoleReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
+  }
+
+  input MemberReferenceInput @oneOf {
+    byId: ID @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type UpdateMemberRoleResult {
-    ok: UpdateMemberRoleOk
-    error: UpdateMemberRoleError
+    ok: UpdateMemberRoleResultOk @tag(name: "public")
+    error: UpdateMemberRoleResultError @tag(name: "public")
   }
 
   input DeleteMemberRoleInput {
-    organizationSlug: String!
-    roleId: ID!
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
   }
 
-  type DeleteMemberRoleOk {
-    updatedOrganization: Organization!
+  type DeleteMemberRoleResultOk {
+    updatedOrganization: Organization! @tag(name: "public")
+    deletedMemberRoleId: ID! @tag(name: "public")
   }
 
-  type DeleteMemberRoleError implements Error {
-    message: String!
+  type DeleteMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type DeleteMemberRoleResult {
-    ok: DeleteMemberRoleOk
-    error: DeleteMemberRoleError
+    ok: DeleteMemberRoleResultOk @tag(name: "public")
+    error: DeleteMemberRoleResultError @tag(name: "public")
   }
 
   input AssignMemberRoleInput {
-    organizationSlug: String!
-    userId: ID!
-    roleId: ID!
-    resources: ResourceAssignmentInput!
+    organization: OrganizationReferenceInput! @tag(name: "public")
+    memberRole: MemberRoleReferenceInput! @tag(name: "public")
+    member: MemberReferenceInput! @tag(name: "public")
+    resources: ResourceAssignmentInput! @tag(name: "public")
   }
 
-  type AssignMemberRoleOk {
-    updatedMember: Member!
-    previousMemberRole: MemberRole
+  type AssignMemberRoleResultOk {
+    updatedMember: Member! @tag(name: "public")
+    previousMemberRole: MemberRole @tag(name: "public")
   }
 
-  type AssignMemberRoleError implements Error {
-    message: String!
+  type AssignMemberRoleResultError {
+    message: String! @tag(name: "public")
   }
 
   """
   @oneOf
   """
   type AssignMemberRoleResult {
-    ok: AssignMemberRoleOk
-    error: AssignMemberRoleError
+    ok: AssignMemberRoleResultOk @tag(name: "public")
+    error: AssignMemberRoleResultError @tag(name: "public")
   }
 
   type Member {
     id: ID!
-    user: User!
-    isOwner: Boolean!
+    user: User! @tag(name: "public")
+    isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
-    role: MemberRole!
-    resourceAssignment: ResourceAssignment!
+    role: MemberRole! @tag(name: "public")
+    resourceAssignment: ResourceAssignment! @tag(name: "public")
     """
     Whether the viewer can remove this member from the organization.
     """
     viewerCanRemove: Boolean!
   }
 
-  enum ResourceAssignmentMode {
-    all
-    granular
+  enum ResourceAssignmentModeType {
+    """
+    Apply to all subresouces of the resource.
+    """
+    ALL @tag(name: "public")
+    """
+    Apply to specific subresouces of the resource.
+    """
+    GRANULAR @tag(name: "public")
   }
 
   type MemberConnection {
-    nodes: [Member!]!
-    total: Int!
+    edges: [MemberEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type MemberEdge {
+    cursor: String! @tag(name: "public")
+    node: Member! @tag(name: "public")
   }
 
   input AppDeploymentResourceAssignmentInput {
-    appDeployment: String!
+    appDeployment: String! @tag(name: "public")
   }
 
   input TargetAppDeploymentsResourceAssignmentInput {
     """
     Whether the permissions should apply for all app deployments within the target.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific app deployments within the target for which the permissions should be applied.
     """
-    appDeployments: [AppDeploymentResourceAssignmentInput!]
+    appDeployments: [AppDeploymentResourceAssignmentInput!] @tag(name: "public")
   }
 
   input ServiceResourceAssignmentInput {
-    serviceName: String!
+    serviceName: String! @tag(name: "public")
   }
 
   input TargetServicesResourceAssignmentInput {
     """
     Whether the permissions should apply for all services within the target or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific services within the target for which the permissions should be applied.
     """
-    services: [ServiceResourceAssignmentInput!]
+    services: [ServiceResourceAssignmentInput!] @tag(name: "public")
   }
 
   input TargetResourceAssignmentInput {
-    targetId: ID!
-    services: TargetServicesResourceAssignmentInput!
-    appDeployments: TargetAppDeploymentsResourceAssignmentInput!
+    targetId: ID! @tag(name: "public")
+    services: TargetServicesResourceAssignmentInput! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignmentInput! @tag(name: "public")
   }
 
   input ProjectTargetsResourceAssignmentInput {
     """
     Whether the permissions should apply for all targets within the project or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific targets within the projects for which the permissions should be applied.
     """
-    targets: [TargetResourceAssignmentInput!]
+    targets: [TargetResourceAssignmentInput!] @tag(name: "public")
   }
 
   input ProjectResourceAssignmentInput {
-    projectId: ID!
-    targets: ProjectTargetsResourceAssignmentInput!
+    projectId: ID! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignmentInput! @tag(name: "public")
   }
 
   input ResourceAssignmentInput {
     """
     Whether the permissions should apply for all projects within the organization or only selected ones.
     """
-    mode: ResourceAssignmentMode!
+    mode: ResourceAssignmentModeType! @tag(name: "public")
     """
     Specific projects within the organization for which the permissions should be applied.
     """
-    projects: [ProjectResourceAssignmentInput!]
+    projects: [ProjectResourceAssignmentInput!] @tag(name: "public")
   }
 
   type TargetServicesResourceAssignment {
-    mode: ResourceAssignmentMode!
-    services: [String!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    services: [String!] @tag(name: "public")
   }
 
   type TargetAppDeploymentsResourceAssignment {
-    mode: ResourceAssignmentMode!
-    appDeployments: [String!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    appDeployments: [String!] @tag(name: "public")
   }
 
   type TargetResouceAssignment {
-    targetId: ID!
-    target: Target!
-    services: TargetServicesResourceAssignment!
-    appDeployments: TargetAppDeploymentsResourceAssignment!
+    targetId: ID! @tag(name: "public")
+    target: Target! @tag(name: "public")
+    services: TargetServicesResourceAssignment! @tag(name: "public")
+    appDeployments: TargetAppDeploymentsResourceAssignment! @tag(name: "public")
   }
 
   type ProjectTargetsResourceAssignment {
-    mode: ResourceAssignmentMode!
-    targets: [TargetResouceAssignment!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    targets: [TargetResouceAssignment!] @tag(name: "public")
   }
 
   type ProjectResourceAssignment {
-    projectId: ID!
-    project: Project!
-    targets: ProjectTargetsResourceAssignment!
+    projectId: ID! @tag(name: "public")
+    project: Project! @tag(name: "public")
+    targets: ProjectTargetsResourceAssignment! @tag(name: "public")
   }
 
   type ResourceAssignment {
-    mode: ResourceAssignmentMode!
-    projects: [ProjectResourceAssignment!]
+    mode: ResourceAssignmentModeType! @tag(name: "public")
+    projects: [ProjectResourceAssignment!] @tag(name: "public")
   }
 `;

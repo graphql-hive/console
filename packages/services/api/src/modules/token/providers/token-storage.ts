@@ -5,9 +5,11 @@ import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import type { Token } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic } from '../../../shared/helpers';
-import type { OrganizationAccessScope } from '../../auth/providers/organization-access';
-import type { ProjectAccessScope } from '../../auth/providers/project-access';
-import type { TargetAccessScope } from '../../auth/providers/target-access';
+import type {
+  OrganizationAccessScope,
+  ProjectAccessScope,
+  TargetAccessScope,
+} from '../../auth/providers/scopes';
 import { Logger } from '../../shared/providers/logger';
 import type { TargetSelector } from '../../shared/providers/storage';
 import type { TokensConfig } from './tokens';

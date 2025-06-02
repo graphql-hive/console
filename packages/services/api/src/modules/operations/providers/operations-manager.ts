@@ -101,24 +101,19 @@ export class OperationsManager {
     );
   }
 
-  async getOperation({
-    organizationId,
-    projectId,
-    targetId,
-    hash,
-  }: { hash: string } & TargetSelector) {
+  async getOperation(args: { hash: string } & TargetSelector) {
     await this.session.assertPerformAction({
       action: 'project:describe',
-      organizationId: organizationId,
+      organizationId: args.organizationId,
       params: {
-        organizationId: organizationId,
-        projectId: projectId,
+        organizationId: args.organizationId,
+        projectId: args.projectId,
       },
     });
 
     return await this.reader.readOperation({
-      target: targetId,
-      hash,
+      targetIds: [args.targetId],
+      hash: args.hash,
     });
   }
 

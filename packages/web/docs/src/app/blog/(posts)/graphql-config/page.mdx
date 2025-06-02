@@ -1,0 +1,333 @@
+---
+title: GraphQL Config - One configuration for all your tools
+authors: kamil
+tags: [graphql, graphql-config]
+date: 2019-10-25
+description:
+  One configuration for all your tools. A single place to store all your GraphQL configurations for
+  any GraphQL based tool.
+---
+
+## TL;DR
+
+- Visit our website **[graphql-config.com](https://graphql-config.com)**
+- [**GraphQL Config**](https://github.com/kamilkisiela/graphql-config) is **one** simple place to
+  store **all** your GraphQL Configurations for **any** GraphQL based tool
+- [Prisma recently transferred the project](https://prisma.io/blog/the-guild-takes-over-oss-libraries-vvluy2i4uevs)
+  to [The Guild](/) — and we **completely rewrote it** and addressed **more than ⅔ of the issues**
+  (and the remaining are waiting for feedback)
+- We've already **merged configurations** from [GCG](https://graphql-code-generator.com),
+  [GraphQL Inspector](https://graphql-inspector.com),
+  [GraphQL CLI](https://github.com/Urigo/graphql-cli) — and are looking to learn and **integrate**
+  with GraphiQL, AppSync, Apollo, Gatsby, VS-Code extensions, Relay and the GraphQL team at Facebook
+  and any GraphQL tool creators
+- This is an **alpha phase** — **we want your feedback**, as a user and as a creator — Please
+  [**create an issue**](https://github.com/kamilkisiela/graphql-config) or
+  [**join our Discord channel**](https://discord.gg/xud7bH9)
+
+## How Did We Get Here?
+
+About 2 years ago Prisma came up with a great idea for the GraphQL community — Why repeat yourself
+in creating your configuration for each tool you use in your application.
+
+So together with many developers from the GraphQL community,
+[they introduced the GraphQL Config library and spec](https://prisma.io/blog/new-tooling-to-improve-your-graphql-workflows-7240c81e1ba3)
+and many tools have since embraced that standard.
+
+But time has passed and the library slowly became unmaintained.
+
+Prisma were very kind and generous with moving the project forward and
+[passing it to us](https://prisma.io/blog/the-guild-takes-over-oss-libraries-vvluy2i4uevs).
+
+So when we took over the GraphQL Config, our main goal was to bring it back to life and push it
+forward for the community.
+
+We asked for feedback, looked at existing and new tools that came out since it was released, went
+through all the open issues and PRs, listened to your suggestions and got to work!
+
+---
+
+## Our Main Goals Are
+
+- Highly **customizable** and **extensible**
+- More **useful** structure
+- **Flexible** and helpful enough to become a standard in the community
+- Make it **platform-agnostic** (Node, Browser)
+
+---
+
+## Try It Out Today
+
+We've already refactored most of the code, created a new structure, referenced all the related
+issues and released a new alpha version:
+
+```sh
+npm install graphql-config@next
+```
+
+```sh
+yarn add graphql-config@next
+```
+
+Now we want to hear from you — GraphQL developers and GraphQL tool creators.
+
+Here is a deeper dive into what we've done:
+
+---
+
+## Different Formats of GraphQL Config File
+
+The new [GraphQL Config](https://github.com/kamilkisiela/graphql-config) now allows to use JSON,
+YAML and JavaScript.
+
+## GraphQL Config Looks for:
+
+- `.graphqlrc`
+- `.graphqlrc.yaml`
+- `.graphqlrc.yml`
+- `.graphqlrc.json`
+- `.graphqlrc.js`
+- `graphql.config.js`
+
+The new config can also be created programmatically too.
+
+It also accepts a config defined under `graphql` property in your `package.json` file.
+
+> We're open to expand the range of file names and looking forward to hear more of your use cases.
+
+## New Structure
+
+GraphQL Config allowed to indicate a single graphql file, an introspection file or a URL to an
+endpoint. That's the past!
+
+```yaml
+schema: './schema.graphql'
+documents: './my/app/**/*.graphql'
+extensions:
+  customConfig:
+    value: true
+```
+
+## Schema
+
+We've decided to expand [GraphQL Config](https://github.com/kamilkisiela/graphql-config) for variety
+of sources of GraphQL Schema and rename `schemaPath` to just `schema`.
+
+It accepts now not only a single file but also a glob pattern to match your modularized schema.
+
+## Allows to Generate Schema from:
+
+- files matching a glob pattern (or a list of patterns)
+- an explicit list of files
+- an endpoint
+- an introspection file
+- **TypeScript and JavaScript files**
+- and even more…
+
+It was possible thanks to the concept of **Loaders** which we'll talk about later in the article.
+
+## Documents
+
+Majority of the GraphQL tools depend not only on Schema but Operations and Fragments, so we've
+decided to cover that use case too.
+
+> With the new GraphQL Config, you're able to indicate files containing GraphQL operations and
+> fragments (documents) and load them all within a single method.
+
+GraphQL Config accepts not only `.graphql` files but also extracts documents from **TypeScript and
+JavaScript files, including JSX and TSX**.
+
+```jsx
+import React from 'react'
+import gql from 'graphql-tag'
+import { useQuery } from '@apollo/react-hooks'
+
+// GraphQL Config is able to extract it!
+const GET_USERS = gql`
+  {
+    user {
+      id
+      name
+    }
+  }
+`
+
+export function Users() {
+  const { loading, error, data } = useQuery(GET_USERS)
+
+  // ...
+
+  return <UsersList users={data.users} />
+}
+```
+
+Thanks to that, you can still write your operations and fragments with `graphql-tag` and put them in
+your React components. GraphQL Config is smart enough to find and collect them.
+
+## Include and Exclude
+
+`Include` and `Exclude` options are still relevant, but we improved and fixed the logic behind them.
+
+> Their purpose is to tell config's consumer which files belongs to what project.
+
+Files covered by schema or documents options are automatically included, there's no need to include
+them twice.
+
+## Extensions
+
+We also kept `extensions` and turned them into a first class citizen in GraphQL Config, **making
+them way more powerful than before**.
+
+```yaml
+schema: './schema/*.graphql'
+extensions:
+  codegen:
+    generates:
+      ./src/types.ts:
+        plugins:
+          - typescript
+          - typescript-resolvers
+```
+
+## Pluggable Loaders
+
+The source of GraphQL Schema may differ, depending on the setup. In some projects SDL is kept within
+graphql files, others store it in code.
+
+**The new GraphQL Config is capable of loading schema from:**
+
+- `.graphql` files
+- introspection result file
+- running endpoints
+- Files on **GitHub**
+- Files on **Git repository**
+- files with documents wrapped with `graphql-tag`and gatsby's `graphql`
+- documents with the magic comment `/* GraphQL */`
+- single **JavaScript** and **TypeScript** file that exports GraphQLSchema object, DocumentNode or
+  schema as string
+
+**The possibilities are endless here!**
+
+> The main idea behind loaders is to extend the default behavior of GraphQL Config and allow to load
+> GraphQL Schema from many different sources.
+
+Loaders are flexible enough to let you decide what exactly you want to use, even just to keep the
+bundle size smaller.
+
+It also simplifies the codebase of GraphQL tools as they don't need to take care of that work
+themselves anymore.
+
+```typescript
+export const RelayLoader = {
+  loaderId() {
+    return 'relay-loader'
+  },
+  canLoad(pointer) {
+    return isReactFile(pointer)
+  },
+  load(pointer) {
+    const document = extractDocument(pointer)
+
+    return new Source({
+      location: pointer,
+      document
+    })
+  }
+}
+```
+
+We maintain
+[a few loaders](https://github.com/ardatan/graphql-toolkit/tree/master/packages/loaders), but we
+believe the community will start to cover other use cases as well.
+
+## All Platforms
+
+Our goal is to make **GraphQL Config platform-agnostic**.
+
+The old version relied heavily on Node's file system, which is a blocker in many cases.
+
+**Loader fits here perfectly.**
+
+Because it's just an asynchronous function that receives an input and gives back a GraphQL Schema,
+it should work fine in browser and in any other environment.
+
+## Extensions
+
+In the previous generation of GraphQL Config `extensions` namespace, there was a way to pass custom
+information to the consumers of the config file, like libraries and IDE extensions.
+
+We believe `extensions` should actually **extend** GraphQL Config's behavior.
+
+Take for example loaders. Imagine you want to collect operations and fragments from your Relay
+project. With the new GraphQL Config, you can write a loader and register it through a Relay
+Extension.
+
+```typescript
+const RelayExtension = api => {
+  api.loaders.documents.register(RelayLoader)
+
+  return {
+    name: 'relay'
+  }
+}
+```
+
+The new `extensions` allows you to turn GraphQL Config into something fully customizable and to be
+used in tools like Webpack!
+
+## Hooks
+
+We believe that there's a need to **intercept the schema building process** or to simply **validate
+the config**.
+
+It's not currently available but with your help and suggestions we could make it happen.
+
+## Environment Variables
+
+In the new GraphQL Config, we've decided to support environment variables. **It was a long time
+hanging and highly requested issue**. Now the usage in JS config file is straightforward. It's also
+very easy to use environment variables in YAML and JSON files.
+
+```yaml
+schema: './schema.graphql'
+include: ${INCLUDE_GLOB}
+```
+
+Every `${ENV_VAR}` in the config file is replaced with the actual value. We also allow for defaults.
+Using `${ENV_VAR:foo}` results in `foo`.
+
+## Easier to Contribute
+
+We also wanted to make the codebase itself easy to understand and contribute to.
+
+Our first task was to **bring the repository back to life** by updating the build and test setup.
+
+The `graphql-config` package now ships with **CommonJS** and **ES Modules** thanks to **Rollup** and
+**TypeScript**. Tests are done thanks to **Jest**. The codebase stays consistent because of
+**Prettier** and **ESLint** on top.
+
+We also migrated from Travis to **GitHub Actions** and run tests on **Node 8, 10 and 12**.
+
+To keep dependencies always up to date and to make sure no new release breaks GraphQL Config's
+logic, we decided to use **Dependabot**.
+
+We also addressed more than 70% of the issues and open PRs (and the remaining are waiting for
+feedback).
+
+---
+
+Start using it today!
+
+Even though we are in an alpha phase, If you're the author or maintainer of a GraphQL library or
+another related tool, **we encourage you to adopt the GraphQL Config standard**.
+
+> Please link to this [GitHub issue](https://github.com/kamilkisiela/graphql-config/issues/27) to
+> track the progress.
+
+---
+
+If you have a project that use those tools, we encourage you to try it out in your current project.
+
+We will support and answer all your questions on
+[**Github**](https://github.com/kamilkisiela/graphql-config) and on
+[**our Discord channel**](https://discord.gg/xud7bH9).

@@ -1,5 +1,3 @@
 [workspace]
-members = [
-  "packages/libraries/router",
-  "scripts/compress"
-]
+resolver = "2"
+members = ["packages/libraries/router", "scripts/compress"]

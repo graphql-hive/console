@@ -1,5 +1,77 @@
 # @graphql-hive/apollo
 
+## 0.39.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`bbd5643`](https://github.com/graphql-hive/console/commit/bbd5643924eb2b32511e96a03a3a5a978a66adee)]:
+  - @graphql-hive/core@0.12.0
+
+## 0.39.0
+
+### Minor Changes
+
+- [#6637](https://github.com/graphql-hive/console/pull/6637)
+  [`5130fc1`](https://github.com/graphql-hive/console/commit/5130fc1db8c50ac0eb35d901623594749772c550)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add error logging for invalid combinations of the
+  `target` and `token` configuration.
+
+  - Please make sure to provide the `target` option for usage reporting when using a token that
+    starts with `hvo1/`.
+  - Please make sure to **not** provide a `target` option for usage reporting when a token does
+    **not** start with `hvo1/`
+
+### Patch Changes
+
+- Updated dependencies
+  [[`5130fc1`](https://github.com/graphql-hive/console/commit/5130fc1db8c50ac0eb35d901623594749772c550)]:
+  - @graphql-hive/core@0.11.0
+
+## 0.38.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`ee70018`](https://github.com/graphql-hive/console/commit/ee7001883970fac81210ec21ce70a72bfd3b67bb),
+  [`a003f78`](https://github.com/graphql-hive/console/commit/a003f781cb1a38d8b00a3256163c50e3893db5f2)]:
+  - @graphql-hive/core@0.10.1
+
+## 0.38.0
+
+### Minor Changes
+
+- [#6574](https://github.com/graphql-hive/console/pull/6574)
+  [`494697e`](https://github.com/graphql-hive/console/commit/494697e20f67ef877cd5dd63ccd29984c719ab44)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for providing a target for usage
+  reporting with organization access tokens. This can either be a slug following the format
+  `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID
+  (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`)
+
+  ```ts
+  import { useHive } from '@graphql-hive/apollo'
+
+  const hivePlugin = useHive({
+    enabled: true,
+    token: 'ORGANIZATION_ACCESS_TOKEN',
+    usage: {
+      target: 'my-org/my-project/my-target'
+    }
+  })
+  ```
+
+### Patch Changes
+
+- [#6539](https://github.com/graphql-hive/console/pull/6539)
+  [`a9fc409`](https://github.com/graphql-hive/console/commit/a9fc40920b50d13b8725bb4b424fc3c24d76b7af)
+  Thanks [@tmair](https://github.com/tmair)! - Prevent GraphQL document with selection set not
+  satisfiable by the server to cause unhandled rejections for Apollo Server v3 (see
+  https://github.com/graphql-hive/console/pull/4958 and
+  https://github.com/graphql-hive/console/issues/4935).
+- Updated dependencies
+  [[`494697e`](https://github.com/graphql-hive/console/commit/494697e20f67ef877cd5dd63ccd29984c719ab44)]:
+  - @graphql-hive/core@0.10.0
+
 ## 0.37.1
 
 ### Patch Changes

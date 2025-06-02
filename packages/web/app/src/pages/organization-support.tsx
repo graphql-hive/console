@@ -376,11 +376,9 @@ function Support(props: {
 }
 
 const SupportPageQuery = graphql(`
-  query SupportPageQuery($selector: OrganizationSelectorInput!) {
-    organization(selector: $selector) {
-      organization {
-        ...Support_OrganizationFragment
-      }
+  query SupportPageQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...Support_OrganizationFragment
     }
   }
 `);
@@ -389,9 +387,7 @@ function SupportPageContent(props: { organizationSlug: string }) {
   const [query, refetchQuery] = useQuery({
     query: SupportPageQuery,
     variables: {
-      selector: {
-        organizationSlug: props.organizationSlug,
-      },
+      organizationSlug: props.organizationSlug,
     },
     requestPolicy: 'cache-first',
   });
@@ -404,7 +400,7 @@ function SupportPageContent(props: { organizationSlug: string }) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
-  const currentOrganization = query.data?.organization?.organization;
+  const currentOrganization = query.data?.organization;
 
   return (
     <OrganizationLayout

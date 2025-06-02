@@ -51,43 +51,96 @@ enum UserRole {
 }
 ```
 
-### Hive CLI Access Token
+### Create Access Token
+
+In order to publish our subgraph schemas to the schema registry, we first need to create an access
+token with the necessary permissions for the Hive CLI.
+
+Within your organization, open the `Settings` tab and select the `Access Token` section.
+
+Click `Create new access token` and enter a name for the access token.
+
+import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
+
+<NextImage
+  src={accessTokensCreateNewImage}
+  alt="Create new access token button within the organization settings access token section"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Click `Next` and select `Allowed` for `Check schema/service subgraph`,
+`Publish schema/service/subgraph`, and `Report usage data`.
+
+import accessTokensPermissionsImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+
+<NextImage
+  src={accessTokensPermissionsImage}
+  alt="Grant the permissions required for publishing and checking schemas"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Click `Next` and in the next step keep the `Full Access` selection for the resources. For the
+purpose of this guide there is no need to further restirct the resources.
+
+import accessTokensResourcesImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+
+<NextImage
+  src={accessTokensResourcesImage}
+  alt="Grant full access on all resources"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+One last time click `Next` and review the access token.
+
+import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+
+<NextImage
+  src={accessTokensConfirmImage}
+  alt="Review the permissions"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you
+generated token.
+
+import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
+
+<NextImage
+  src={accessTokensSuccessImage}
+  alt="Successful access token creation"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
+/>
+
+Make sure to copy your token and keep it safe. **You won't be able to see it again.**
+
+### Publish your first schema
 
 As you may have noticed, Hive has created three targets under your project: `development`,
 `staging`, and `production`. This guide will use the `development` target to explore the features
 Hive offers.
 
-To begin, select the `development` target under your Hive project and then choose the **Settings**
-tab. On the Settings screen, you can manage your target's settings and access tokens.
-
-Under the **Registry Access Tokens** section, click the **Generate new token** button. Give your
-access token a name and select **Schema Check & Push** from the list of token presets:
+import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 <NextImage
-  alt="Create Registry Token Form"
-  src={tokenImage}
-  className="mt-10 max-w-md rounded-lg drop-shadow-md"
+  src={targetOverview}
+  alt="Project overview showing the available targets"
+  className="mt-10 max-w-xl rounded-lg drop-shadow-md"
 />
 
-Click on **Generate Token** button and you should get your CLI token created, with permissions to
-publish GraphQL schemas.
-
-Make sure to copy your token and keep it safe. **You won't be able to see it again.**
-
-<Callout type="info">
-  **Note:** You can create multiple tokens with different permissions for different use cases.
-</Callout>
-
-### Publish your first schema
+For this guide we will use the `development` target.
 
 Now that you have your access token, you can publish your schema to the registry.
 
-Run the following command in your terminal, to publish your `schema.graphql` to the registry
-(replace `YOUR_TOKEN_HERE` with the token you have just created):
+Run the following command in your terminal, to publish your `schema.graphql` to the registry.
+
+- Replace `<YOUR_ORGANIZATION>` with the slug of your organization
+- Replace `<YOUR_PROJECT>` with the slug of your project within the organization
+- Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
 
 ```bash
 hive schema:publish \
-  --registry.accessToken YOUR_TOKEN_HERE \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
   schema.graphql
 ```
 
@@ -149,7 +202,8 @@ Now, run the Hive CLI with the `schema:check` command and your modified `schema.
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
   schema.graphql
 ```
 
@@ -195,7 +249,8 @@ Now, run the Hive CLI with the `schema:check` command and your modified `schema.
 
 ```bash
 hive schema:check \
-  --registry.accessToken YOUR_TOKEN_HERE \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
   schema.graphql
 ```
 
@@ -236,7 +291,8 @@ Let's publish the schema we previously modified:
 
 ```bash
 hive schema:publish \
-  --registry.accessToken YOUR_TOKEN_HERE \
+  --registry.accessToken "<YOUR_TOKEN_HERE>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/development" \
   schema.graphql
 ```
 

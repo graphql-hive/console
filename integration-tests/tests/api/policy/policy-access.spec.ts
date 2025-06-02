@@ -8,7 +8,7 @@ describe('Policy Access', () => {
   describe('Project', () => {
     const query = graphql(`
       query ProjectSchemaPolicyAccess($selector: ProjectSelectorInput!) {
-        project(selector: $selector) {
+        project(reference: { bySelector: $selector }) {
           schemaPolicy {
             id
           }
@@ -54,7 +54,7 @@ describe('Policy Access', () => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, createProject, inviteAndJoinMember } = await createOrg();
         const { project } = await createProject(ProjectType.Single);
-        const adminRole = organization.memberRoles?.find(r => r.name === 'Admin');
+        const adminRole = organization.memberRoles?.edges.find(e => e.node.name === 'Admin')?.node;
 
         if (!adminRole) {
           throw new Error('Admin role not found');
@@ -134,11 +134,9 @@ describe('Policy Access', () => {
   describe('Organization', () => {
     const query = graphql(`
       query OrganizationSchemaPolicyAccess($selector: OrganizationSelectorInput!) {
-        organization(selector: $selector) {
-          organization {
-            schemaPolicy {
-              id
-            }
+        organization(reference: { bySelector: $selector }) {
+          schemaPolicy {
+            id
           }
         }
       }
@@ -185,7 +183,9 @@ describe('Policy Access', () => {
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { organization, inviteAndJoinMember } = await createOrg();
-        const adminRole = organization.memberRoles?.find(r => r.name === 'Admin');
+        const adminRole = organization.memberRoles?.edges.find(
+          edge => edge.node.name === 'Admin',
+        )?.node;
 
         if (!adminRole) {
           throw new Error('Admin role not found');
@@ -259,7 +259,7 @@ describe('Policy Access', () => {
           },
           authToken: memberToken,
         }).then(r => r.expectNoGraphQLErrors());
-        expect(result.organization?.organization.schemaPolicy?.id).not.toBeNull();
+        expect(result.organization?.schemaPolicy?.id).not.toBeNull();
       },
     );
   });
