@@ -345,20 +345,20 @@ And finally start it (the config file is in the image and doesn't need to be mou
 docker run -p 4000:4000 hive-gateway-w-add-res supergraph
 ```
 
-## Known Security Vulnerabilities (affected CVE)
+## Known embeded CVEs
 
 Security is important for us, and we are analysing on a regular bases our docker images against
 known CVE database using [`trivy`](https://trivy.dev/latest/).
 
 Because it is based on the official Node image, which itself is based on official stable Debain
-image, our Node base image is affected by some CVE.
+image, our Node base image contains some known CVE.
 
-None of those CVE are affecting directly Hive Gateway software, since it doesn't uses any of the
+None of those CVE are affecting directly Hive Gateway software, since it doesn't use any of the
 affected components. But keep in mind that even if the gateway itself is not vulnerable, your own
 code can use affected components.
 
-If you need a CVE free docker image, we recommend building your own image minimal image that exactly
-matches your needs.
+If you need a CVE free docker image, we recommend building your own minimal image that exactly
+matches your needs and giving you the full control of component versions.
 
 Here is the list of CVE detected in our latest Node image (ghcr.io/graphql-hive/gateway:1.14.1):
 
