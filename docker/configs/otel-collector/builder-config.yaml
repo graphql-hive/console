@@ -12,6 +12,8 @@ processors:
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor
       v0.122.0
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.122.0
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.122.0
