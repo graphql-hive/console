@@ -151,22 +151,25 @@ export const Target: Pick<
     }>({
       query: sql`
         SELECT
-          target_id,
-          trace_id,
-          span_id,
-          timestamp,
-          graphql_operation_name as operation_name,
-          graphql_operation_type as operation_type,
-          duration,
-          subgraph_names,
-          http_status_code,
-          http_method,
-          http_host,
-          http_route,
-          http_url
-        FROM otel_traces_normalized
+          "target_id"
+          , "trace_id"
+          , "span_id"
+          , "timestamp"
+          , "http_status_code"
+          , "http_method"
+          , "http_host"
+          , "http_route"
+          , "http_url"
+          , "duration"
+          , "graphql_operation_name" AS "operation_name"
+          , upper("graphql_operation_type") AS "operation_type"
+          , "subgraph_names"
+        FROM
+          "otel_traces_normalized"
         WHERE ${sql.join(ANDs, ' AND ')}
-        ORDER BY timestamp DESC, trace_id DESC
+        ORDER BY
+          "timestamp" DESC
+          , "trace_id" DESC
         LIMIT ${sql.raw(String(limit))}
       `,
       queryId: 'traces',
@@ -175,8 +178,6 @@ export const Target: Pick<
 
     const traces = tracesQuery.data;
     let hasNext = false;
-
-    console.log('AYAYAYAY', traces.length);
 
     if (traces.length == limit) {
       hasNext = true;

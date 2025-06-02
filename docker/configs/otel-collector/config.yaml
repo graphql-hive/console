@@ -26,6 +26,23 @@ processors:
       - key: hive.target_id
         from_context: auth.targetId
         action: insert
+  filter/drop_missing_attributes:
+    error_mode: ignore
+    traces:
+      span:
+        # prettier-ignore
+        - not (
+            attributes["http.status"] != nil and
+            attributes["http.host"] != nil and
+            attributes["http.method"] != nil and
+            attributes["http.route"] != nil and
+            attributes["http.url"] != nil and
+            (
+              attributes["hive.graphql.operation.type"] == "query" or
+              attributes["hive.graphql.operation.type"] == "mutation" or
+              attributes["hive.graphql.operation.type"] == "subscription"
+            )
+          )
 exporters:
   # debug:
   #   verbosity: detailed
@@ -61,5 +78,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [attributes, batch]
+      processors: [
+          attributes,
+          # filter/drop_missing_attributes,
+          batch,
+        ]
       exporters: [clickhouse]
