@@ -9,11 +9,12 @@ description:
 
 TL;DR
 
-- The GraphQL MCP server allows your AI models to interact with your GraphQL server
+- The GraphQL MCP server allows AI models to interact with **any** GraphQL server and is fully open source and MIT licensed
 - It allows introspection of both local and remote schema's
 - It supports both query and mutation operations, where mutations are opt-in
 - It uses a single tool call for complete flexibility in how you want to interact with your schema
 - Future updates will also allow for specific tool generation for an operation and persisted documents support
+- You can access it at [github.com/blurrah/mcp-graphql](https://github.com/blurrah/mcp-graphql)
 
 ------
 Most MCP servers force you to create narrow, specific tools for each API endpoint. Want to query user data? One tool. Need to fetch posts? Another tool. Want to combine users and their posts? You're out of luck unless you anticipated that exact use case.
@@ -82,8 +83,15 @@ query RecentActiveUsers {
 With traditional MCP servers, this would require separate tools for users, posts, filtering, and sorting - if you even anticipated this exact combination.
 
 ## The future
-- Tools per operation
-	- Support for persisted documents and predefined operation files
-		- Optionally work with Schema registries such as Hive
-	- Let me know?
+
+There's a few neat things coming up for the server.
+
+### Create tool calls for specific operations
+
+We're building support for outputting specific operations as individual tool calls.
+This gives you more control on queries and mutations you'd like to output and also work with large schema's that can exceed context sizes for smaller models.
+
+You can track progress for it on [this PR](https://github.com/blurrah/mcp-graphql/pull/3)
+
+Will also support persisted documents in the future allowing you to work with production API's that lock down calls
 
