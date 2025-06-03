@@ -1,4 +1,3 @@
-import { crypto } from '@whatwg-node/fetch';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createSchemaProposalReview: NonNullable<
@@ -7,11 +6,11 @@ export const createSchemaProposalReview: NonNullable<
   /* Implement Mutation.createSchemaProposalReview resolver logic here */
   return {
     createdAt: Date.now(),
-    id: crypto.randomUUID(),
+    id: `abcd-1234-efgh-5678-wxyz`,
     schemaProposal: {
       stage: stageTransition ?? 'OPEN',
       createdAt: Date.now(),
-      id: crypto.randomUUID(),
+      id: `abcd-1234-efgh-5678-wxyz`,
       updatedAt: Date.now(),
     },
   };
