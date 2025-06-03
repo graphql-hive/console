@@ -9,7 +9,32 @@ import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
 import type { SchemaVersionResolvers } from './../../../__generated__/types';
 
-export const SchemaVersion: SchemaVersionResolvers = {
+export const SchemaVersion: Pick<
+  SchemaVersionResolvers,
+  | 'baseSchema'
+  | 'breakingSchemaChanges'
+  | 'contractVersions'
+  | 'date'
+  | 'deprecatedSchema'
+  | 'explorer'
+  | 'githubMetadata'
+  | 'hasSchemaChanges'
+  | 'isComposable'
+  | 'isFirstComposableVersion'
+  | 'isValid'
+  | 'log'
+  | 'previousDiffableSchemaVersion'
+  | 'safeSchemaChanges'
+  | 'schemaChanges'
+  | 'schemaCompositionErrors'
+  | 'schemas'
+  | 'sdl'
+  | 'supergraph'
+  | 'tags'
+  | 'unusedSchema'
+  | 'valid'
+  | '__isTypeOf'
+> = {
   isComposable: version => {
     return version.schemaCompositionErrors === null;
   },
