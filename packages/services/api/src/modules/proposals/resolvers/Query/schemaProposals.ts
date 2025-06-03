@@ -6,4 +6,23 @@ export const schemaProposals: NonNullable<QueryResolvers['schemaProposals']> = a
   _ctx,
 ) => {
   /* Implement Query.schemaProposals resolver logic here */
+  return {
+    edges: [
+      {
+        cursor: crypto.randomUUID(),
+        node: {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          stage: 'DRAFT',
+          updatedAt: Date.now(),
+        },
+      },
+    ],
+    pageInfo: {
+      endCursor: '',
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: '',
+    },
+  };
 };

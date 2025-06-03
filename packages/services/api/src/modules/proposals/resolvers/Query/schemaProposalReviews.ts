@@ -6,4 +6,13 @@ export const schemaProposalReviews: NonNullable<QueryResolvers['schemaProposalRe
   _ctx,
 ) => {
   /* Implement Query.schemaProposalReviews resolver logic here */
+  return {
+    edges: [],
+    pageInfo: {
+      endCursor: '',
+      hasNextPage: false,
+      hasPreviousPage: false,
+      startCursor: '',
+    },
+  };
 };

@@ -48,7 +48,11 @@ export default gql`
   }
 
   extend type Query {
-    schemaProposals(after: String, first: Int! = 30, input: SchemaProposalsInput): [SchemaProposal]
+    schemaProposals(
+      after: String
+      first: Int! = 30
+      input: SchemaProposalsInput
+    ): SchemaProposalConnection
     schemaProposal(input: SchemaProposalInput!): SchemaProposal
     schemaProposalReviews(
       after: String
@@ -59,7 +63,9 @@ export default gql`
   }
 
   input SchemaProposalsInput {
-    target: TargetReferenceInput
+    target: TargetReferenceInput!
+    userIds: [ID!]
+    stages: [SchemaProposalStage!]
   }
 
   input SchemaProposalInput {
@@ -166,6 +172,9 @@ export default gql`
   }
 
   type SchemaProposalReview {
+    """
+    A UUID unique to this review. Used for querying.
+    """
     id: ID!
 
     """
@@ -173,7 +182,12 @@ export default gql`
     """
     comments(first: Int! = 200): SchemaProposalCommentConnection
 
+    """
+    When the review was first made. Only a review's comments are mutable, so there is no
+    updatedAt on the review.
+    """
     createdAt: DateTime!
+
     """
     If the "lineText" can be found in the referenced SchemaProposalVersion,
     then the "lineNumber" will be for that version. If there is no matching
@@ -191,8 +205,15 @@ export default gql`
     """
     lineText: String
 
+    """
+    The specific version that this review is for.
+    """
     schemaProposalVersion: SchemaProposalVersion
-    schemaProposal: SchemaProposal!
+
+    """
+    The parent proposal that this review is for.
+    """
+    schemaProposal: SchemaProposal
 
     """
     If null then this review is just a comment. Otherwise, the reviewer changed the state of the
@@ -209,12 +230,13 @@ export default gql`
   type SchemaProposalComment {
     id: ID!
 
+    createdAt: DateTime!
+
     """
     Content of this comment. E.g. "Nice job!"
     """
     body: String!
 
-    createdAt: DateTime!
     updatedAt: DateTime!
 
     """

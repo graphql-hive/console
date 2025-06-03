@@ -1,3 +1,4 @@
+import { crypto } from '@whatwg-node/fetch';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaProposal']> = async (
@@ -6,4 +7,10 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
   _ctx,
 ) => {
   /* Implement Mutation.createSchemaProposal resolver logic here */
+  return {
+    createdAt: Date.now(),
+    id: crypto.randomUUID(),
+    stage: 'DRAFT',
+    updatedAt: Date.now(),
+  };
 };
