@@ -9,7 +9,7 @@ export default {
     {
       name: 'create schema_proposal tables',
       query: sql`
-        CREATE TYPE IF NOT EXISTS
+        CREATE TYPE
           schema_proposal_stage AS ENUM('DRAFT', 'OPEN', 'APPROVED', 'IMPLEMENTED', 'CLOSED')
         ;
         /**
@@ -30,7 +30,7 @@ export default {
           , user_id UUID REFERENCES users (id) ON DELETE SET NULL
           -- schema version that is used to calculate the diff. In case the version is deleted,
           -- set this to null to avoid completely erasing the change... This should never happen.
-          , diff_schema_version_id UUID NOT NULL REFERENCES schema_version (id) ON DELETE SET NULL
+          , diff_schema_version_id UUID NOT NULL REFERENCES schema_versions (id) ON DELETE SET NULL
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposals_list ON schema_proposals (
@@ -51,7 +51,7 @@ export default {
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposals_list_by_user_id_stage ON schema_proposals (
-          target_id,
+          target_id
           , user_id
           , stage
           , created_at DESC
@@ -158,8 +158,8 @@ export default {
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposal_comments_list ON schema_proposal_comments(
-          schema_proposal_review_id,
-          created_at ASC
+          schema_proposal_review_id
+          , created_at ASC
         )
         ;
         -- For performance on user delete
