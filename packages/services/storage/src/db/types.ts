@@ -11,6 +11,7 @@ export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
+export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
 
 export interface alert_channels {
@@ -318,6 +319,46 @@ export interface schema_policy_config {
   updated_at: Date;
 }
 
+export interface schema_proposal_comments {
+  body: string;
+  created_at: Date;
+  id: string;
+  schema_proposal_review_id: string | null;
+  updated_at: Date;
+  user_id: string | null;
+}
+
+export interface schema_proposal_reviews {
+  created_at: Date;
+  id: string;
+  line_text: string | null;
+  original_line_num: number | null;
+  original_schema_proposal_version_id: string;
+  schema_proposal_id: string;
+  stage_transition: schema_proposal_stage;
+  user_id: string | null;
+}
+
+export interface schema_proposal_versions {
+  created_at: Date;
+  id: string;
+  schema_proposal_id: string;
+  schema_sdl: string;
+  service_name: string | null;
+  user_id: string | null;
+}
+
+export interface schema_proposals {
+  created_at: Date;
+  diff_schema_version_id: string;
+  id: string;
+  stage: schema_proposal_stage;
+  target_id: string;
+  title: string;
+  updated_at: Date;
+  user_id: string | null;
+}
+
 export interface schema_version_changes {
   change_type: string;
   id: string;
@@ -451,6 +492,10 @@ export interface DBTables {
   schema_coordinate_status: schema_coordinate_status;
   schema_log: schema_log;
   schema_policy_config: schema_policy_config;
+  schema_proposal_comments: schema_proposal_comments;
+  schema_proposal_reviews: schema_proposal_reviews;
+  schema_proposal_versions: schema_proposal_versions;
+  schema_proposals: schema_proposals;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;
   schema_versions: schema_versions;
