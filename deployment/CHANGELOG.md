@@ -1,5 +1,14 @@
 # hive
 
+## 8.0.1
+
+### Patch Changes
+
+- [#6829](https://github.com/graphql-hive/console/pull/6829)
+  [`e81cea8`](https://github.com/graphql-hive/console/commit/e81cea889c26b3ee0453defbfec5a78ba24e90a6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg index for getSchemaVersionByActionId to
+  improve lookup performance
+
 ## 8.0.0
 
 ### Major Changes
