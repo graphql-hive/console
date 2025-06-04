@@ -175,4 +175,82 @@ export const action: Action = async exec => {
         empty("ParentSpanId")
     )
   `);
+
+  // These can be used for dedicated subgraph views
+
+  // await exec(`
+  //   CREATE TABLE IF NOT EXISTS "otel_subgraph_spans" (
+  //     "target_id" LowCardinality(String) CODEC(ZSTD(1))
+  //     , "subgraph_name" String CODEC(ZSTD(1))
+  //     , "trace_id" String CODEC(ZSTD(1))
+  //     , "span_id" String CODEC(ZSTD(1))
+  //     , "timestamp" DateTime('UTC') CODEC(DoubleDelta, LZ4)
+  //     , "duration" UInt64 CODEC(T64, ZSTD(1))
+  //     , "http_status_code" String CODEC(ZSTD(1))
+  //     , "http_method" String CODEC(ZSTD(1))
+  //     , "http_host" String CODEC(ZSTD(1))
+  //     , "http_route" String CODEC(ZSTD(1))
+  //     , "http_url" String CODEC(ZSTD(1))
+  //     , "graphql_operation_name" String CODEC(ZSTD(1))
+  //     , "graphql_operation_type" LowCardinality(String) CODEC(ZSTD(1))
+  //     , "graphql_operation_document" String CODEC(ZSTD(1))
+  //     , "graphql_error_count" UInt32 CODEC(T64, ZSTD(1))
+  //     , "graphql_error_codes" Array(LowCardinality(String)) CODEC(ZSTD(1))
+  //   )
+  //   ENGINE = MergeTree
+  //   PARTITION BY toDate("timestamp")
+  //   ORDER BY ("target_id", "subgraph_name", "timestamp")
+  //   TTL toDateTime(timestamp) + toIntervalDay(365)
+  //   SETTINGS
+  //     index_granularity = 8192
+  //     , ttl_only_drop_parts = 1
+  // `);
+
+  // await exec(`
+  //   CREATE MATERIALIZED VIEW IF NOT EXISTS "otel_subgraph_spans_mv" TO "otel_subgraph_spans" (
+  //     "target_id" LowCardinality(String)
+  //     , "subgraph_name" Array(String)
+  //     , "trace_id" String
+  //     , "span_id" String
+  //     , "timestamp" DateTime('UTC')
+  //     , "duration" UInt64
+  //     , "http_status_code" String
+  //     , "http_host" String
+  //     , "http_method" String
+  //     , "http_route" String
+  //     , "http_url" String
+  //     , "client_name" String
+  //     , "client_version" String
+  //     , "graphql_operation_name" String
+  //     , "graphql_operation_type" LowCardinality(String)
+  //     , "graphql_operation_document" String
+  //     , "graphql_error_count" UInt32
+  //     , "graphql_error_codes" Array(LowCardinality(String))
+  //   )
+  //   AS (
+  //     SELECT
+  //       toLowCardinality("SpanAttributes"['hive.target_id']) AS "target_id"
+  //       , "SpanAttributes"['hive.graphql.subgraph.name'] AS "subgraph_name"
+  //       , "TraceId" as "trace_id"
+  //       , "SpanId" AS "span_id"
+  //       , toDateTime("Timestamp", 'UTC') AS "timestamp"
+  //       , "Duration" AS "duration"
+  //       , "SpanAttributes"['http.status_code'] AS "http_status_code"
+  //       , "SpanAttributes"['http.host'] AS "http_host"
+  //       , "SpanAttributes"['http.method'] AS "http_method"
+  //       , "SpanAttributes"['http.route'] AS "http_route"
+  //       , "SpanAttributes"['http.url'] AS "http_url"
+  //       , "SpanAttributes"['hive.client.name'] AS "client_name"
+  //       , "SpanAttributes"['hive.client.version'] AS "client_version"
+  //       , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
+  //       , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
+  //       , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
+  //       , "SpanAttributes"['hive.graphql.error.count'] AS "graphql_error_count"
+  //       , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
+  //     FROM
+  //       "otel_traces"
+  //     WHERE
+  //       startsWith("SpanName", 'subgraph.execute')
+  //   )
+  // `);
 };
