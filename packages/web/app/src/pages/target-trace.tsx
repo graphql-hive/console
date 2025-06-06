@@ -1,470 +1,27 @@
-import { Fragment, ReactNode, useCallback, useRef, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ChevronDown, ChevronUp, Clock, CopyIcon } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FragmentType, graphql, useFragment } from '@/gql';
+import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './target-traces-width';
-
-const rootSpan: SpanProps = {
-  id: 'root',
-  title: 'FetchProducts',
-  serviceName: 'gateway',
-  duration: 8.12,
-  startedAt: 0,
-  children: [
-    {
-      id: '1ns581b',
-      title: 'plan',
-      serviceName: 'gateway',
-      duration: 2.3,
-      startedAt: 0.2,
-      children: [],
-    },
-    {
-      id: '213hbsdgs',
-      title: 'subgraph',
-      serviceName: 'products',
-      duration: 4.06,
-      startedAt: 2.3,
-      children: [
-        {
-          id: '138sndhs',
-          title: 'parse',
-          duration: 0.1,
-          startedAt: 2.4,
-          children: [],
-        },
-        {
-          id: '1n1bsxs1',
-          title: 'validate',
-          duration: 0.9,
-          startedAt: 2.5,
-          children: [],
-        },
-      ],
-    },
-    {
-      id: '1n23sxs1',
-      title: 'subgraph',
-      serviceName: 'prices',
-      duration: 2.03,
-      startedAt: 4.06,
-      children: [
-        {
-          id: '19nxb23b',
-          title: 'parse',
-          duration: 0.1,
-          startedAt: 4.1,
-          children: [],
-        },
-        {
-          id: '284bsdb1',
-          title: 'validate',
-          duration: 1.2,
-          startedAt: 4.2,
-          children: [
-            {
-              id: '284bsdb1',
-              title: 'async validation',
-              duration: 0.2,
-              startedAt: 5.4,
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-type Trace = {
-  id: string;
-  timestamp: number;
-  duration: number;
-  status: 'ok' | 'error';
-  kind: 'query' | 'mutation' | 'subscription';
-  operationName: string;
-  operationHash: string;
-  httpStatus: number;
-  httpMethod: 'GET' | 'POST';
-  httpHost: string;
-  httpRoute: string;
-  httpUrl: string;
-  subgraphNames: string[];
-};
-
-const now = new Date();
-function generateTraceId() {
-  return [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-}
-const data: Trace[] = [
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime(),
-    status: 'ok',
-    duration: 6019,
-    kind: 'query',
-    operationName: 'FetchProducts',
-    operationHash: '3h1s',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['link', 'products', 'prices'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 120000,
-    status: 'ok',
-    duration: 6019,
-    kind: 'query',
-    operationName: 'FetchProducts',
-    operationHash: '3h1s',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['link', 'products', 'prices'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 240000,
-    status: 'error',
-    duration: 10045,
-    kind: 'mutation',
-    operationName: 'UpdateProduct',
-    operationHash: '8f2b',
-    httpStatus: 500,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['products'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 360000,
-    status: 'ok',
-    duration: 3045,
-    kind: 'query',
-    operationName: 'GetUser',
-    operationHash: 'a7g4',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 480000,
-    status: 'ok',
-    duration: 4521,
-    kind: 'query',
-    operationName: 'ListOrders',
-    operationHash: 'c9h2',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders', 'users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 600000,
-    status: 'error',
-    duration: 7890,
-    kind: 'mutation',
-    operationName: 'CancelOrder',
-    operationHash: 'd1k8',
-    httpStatus: 400,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 720000,
-    status: 'ok',
-    duration: 2156,
-    kind: 'subscription',
-    operationName: 'OrderStatusUpdated',
-    operationHash: 'e4m7',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['orders'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 840000,
-    status: 'ok',
-    duration: 5092,
-    kind: 'query',
-    operationName: 'FetchCart',
-    operationHash: 'f2p9',
-    httpStatus: 200,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['cart', 'products'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 960000,
-    status: 'ok',
-    duration: 6820,
-    kind: 'mutation',
-    operationName: 'AddToCart',
-    operationHash: 'g7r5',
-    httpStatus: 201,
-    httpMethod: 'POST',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['cart'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-  {
-    id: generateTraceId(),
-    timestamp: now.getTime() + 1080000,
-    status: 'error',
-    duration: 3502,
-    kind: 'query',
-    operationName: 'FetchUserProfile',
-    operationHash: 'h3q6',
-    httpStatus: 401,
-    httpMethod: 'GET',
-    httpHost: 'localhost:3000',
-    httpRoute: '/graphql',
-    httpUrl: 'http://localhost:3000/',
-    subgraphNames: ['users'],
-  },
-];
 
 const fetchProductsQueryString = `
   query FetchProduct {
@@ -482,11 +39,16 @@ interface TraceAttribute {
   category?: string;
 }
 
-function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
+function TraceView(props: {
+  rootSpan: SpanFragmentWithChildren;
+  serviceNames: string[];
+  totalTraceDuration: bigint;
+}) {
   const [width] = useWidthSync();
   const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
-  const rootSpan = props.rootSpan;
   const serviceNames = props.serviceNames;
+
+  const timestamps = splitNanosecondsToMsIntervals(props.totalTraceDuration);
 
   return (
     <div className="flex h-full flex-col">
@@ -500,15 +62,25 @@ function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
           </div>
           <div className="h-12 grow pr-8">
             <div className="relative h-full w-full">
-              <div className="absolute left-0 top-6 -translate-x-1/2 text-center">0ms</div>
+              <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
+                {formatMsTimestamp(timestamps[0])}
+              </div>
               <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
-              <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">2.03ms</div>
+              <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
+                {formatMsTimestamp(timestamps[1])}
+              </div>
               <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">4.06ms</div>
+              <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
+                {formatMsTimestamp(timestamps[2])}
+              </div>
               <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">6.09ms</div>
+              <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
+                {formatMsTimestamp(timestamps[3])}
+              </div>
               <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute right-0 top-6 translate-x-1/2 text-center">8.12ms</div>
+              <div className="absolute right-0 top-6 translate-x-1/2 text-center">
+                {formatMsTimestamp(timestamps[4])}
+              </div>
               <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
             </div>
           </div>
@@ -518,14 +90,15 @@ function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
         <div>
           <TraceTree
             leftPanelWidth={width}
-            rootSpan={rootSpan}
+            rootSpan={props.rootSpan}
             highlightedServiceName={highlightedServiceName}
+            serviceNames={serviceNames}
           />
         </div>
       </ScrollArea>
       <div className="sticky bottom-0 z-10 px-2 py-4">
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-          {serviceNames.map((serviceName, index) => (
+          {serviceNames.map(serviceName => (
             <div
               key={serviceName}
               className="flex cursor-pointer items-center gap-2 hover:text-white"
@@ -535,7 +108,7 @@ function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
               <div
                 className="size-2"
                 style={{
-                  backgroundColor: colors[index % colors.length],
+                  backgroundColor: stringToHSL(serviceName),
                 }}
               />
               <div>{serviceName}</div>
@@ -748,26 +321,29 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
 
 function TraceTree(props: {
   highlightedServiceName: string | null;
-  rootSpan: SpanProps;
+  rootSpan: SpanFragmentWithChildren;
   leftPanelWidth: number;
+  serviceNames: Array<string>;
 }) {
+  const rootSpan = useFragment(SpanFragment, props.rootSpan.span);
   const [width] = useWidthSync();
   const minWidth = 175;
   const maxWidth = 450;
-  const serviceNames = listServiceNames(props.rootSpan);
   const serviceNameToColorMap = Object.fromEntries(
-    serviceNames.map((name, index) => [name, colors[index % colors.length]]),
+    props.serviceNames.map((name, index) => [name, colors[index % colors.length]]),
   );
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const durationNs = differenceInNanoseconds(rootSpan.endTime, rootSpan.startTime);
 
   return (
     <div className="relative" ref={containerRef}>
       <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
       <Node
-        key={props.rootSpan.id}
+        key={rootSpan.id}
         level={0}
         highlightedServiceName={props.highlightedServiceName}
-        totalDuration={rootSpan.duration}
+        totalDurationNs={durationNs}
         leftPanelWidth={width}
         span={props.rootSpan}
         parentSpan={null}
@@ -775,6 +351,8 @@ function TraceTree(props: {
         parentColor={null}
         color={colors[0]}
         serviceNameToColorMap={serviceNameToColorMap}
+        serviceName={null}
+        isLastChild={false}
       />
     </div>
   );
@@ -792,34 +370,20 @@ type SpanProps = {
 type NodeProps = {
   highlightedServiceName: string | null;
   level: number;
-  totalDuration: number;
+  totalDurationNs: bigint;
   leftPanelWidth: number;
-  span: SpanProps;
-  parentSpan: SpanProps | null;
+  span: SpanFragmentWithChildren;
+  parentSpan: SpanFragmentWithChildren | null;
   groupLines: boolean[];
   color: string;
   parentColor: string | null;
   serviceNameToColorMap: Record<string, string>;
+  serviceName: string | null;
+  isLastChild: boolean;
 };
 
-function countChildren(spans: SpanProps[]): number {
+function countChildren(spans: SpanFragmentWithChildren[]): number {
   return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
-}
-
-function _listServiceNames(span: SpanProps, serviceNames: string[]) {
-  if (span.serviceName && !serviceNames.includes(span.serviceName)) {
-    serviceNames.push(span.serviceName);
-  }
-
-  for (const child of span.children) {
-    _listServiceNames(child, serviceNames);
-  }
-}
-
-function listServiceNames(span: SpanProps): string[] {
-  const serviceNames: string[] = [];
-  _listServiceNames(span, serviceNames);
-  return serviceNames;
 }
 
 const colors = [
@@ -834,35 +398,52 @@ const colors = [
   '#F27059',
   '#2D9D78',
 ];
+
 function Node(props: NodeProps) {
+  const span = useFragment(SpanFragment, props.span.span);
+
   const [collapsed, setCollapsed] = useState(false);
   const leftPositionPercentage = roundFloatToTwoDecimals(
-    (props.span.startedAt / props.totalDuration) * 100,
+    (nanosecondsToMilliseconds(props.span.startNs) /
+      nanosecondsToMilliseconds(props.totalDurationNs)) *
+      100,
   );
+
   const widthPercentage = roundFloatToTwoDecimals(
-    (props.span.duration / props.totalDuration) * 100,
+    (nanosecondsToMilliseconds(props.span.durationNs) /
+      nanosecondsToMilliseconds(props.totalDurationNs)) *
+      100,
   );
 
   const isNearRightEdge = leftPositionPercentage + widthPercentage > 85;
   const isDimmed =
     typeof props.highlightedServiceName === 'string' &&
-    props.highlightedServiceName !== props.span.serviceName;
-
-  const isLastChild =
-    props.parentSpan?.children[props.parentSpan.children.length - 1].id === props.span.id;
+    props.highlightedServiceName !== span.spanAttributes['gateway.upstream.subgraph.name'];
 
   const childrenCount = collapsed
     ? countChildren(props.span.children) + 1
     : props.span.children.length;
+
   const canBeCollapsed = props.span.children.length > 0;
+  const parentColor = props.parentColor ?? props.color;
 
-  const color = props.color;
-  const parentColor = props.parentColor ?? color;
+  const percentageOfTotal = (
+    (nanosecondsToMilliseconds(props.span.durationNs) /
+      nanosecondsToMilliseconds(props.totalDurationNs)) *
+    100
+  ).toFixed(2);
 
-  const percentageOfTotal = ((props.span.duration / props.totalDuration) * 100).toFixed(2);
   const percentageOfParent = props.parentSpan
-    ? ((props.span.duration / props.parentSpan.duration) * 100).toFixed(2)
+    ? (
+        (nanosecondsToMilliseconds(props.span.durationNs) /
+          nanosecondsToMilliseconds(props.parentSpan.durationNs)) *
+        100
+      ).toFixed(2)
     : null;
+
+  const navigate = useNavigate({
+    from: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+  });
 
   return (
     <>
@@ -874,9 +455,9 @@ function Node(props: NodeProps) {
           >
             <div className="flex h-8 shrink-0 items-center overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500">
               <TreeIcon
-                key={`tree-icon-${props.span.id}`}
+                key={`tree-icon-${span.id}`}
                 isLeaf={props.span.children.length === 0}
-                isLastChild={isLastChild}
+                isLastChild={props.isLastChild}
                 childrenCount={childrenCount}
                 hasParent={!!props.parentSpan}
                 level={props.level}
@@ -888,16 +469,16 @@ function Node(props: NodeProps) {
             <div
               className={cn('whitespace-nowrap text-xs', isDimmed ? 'text-gray-500' : 'text-white')}
             >
-              {props.span.title}
+              {span.name}
             </div>
-            {props.span.serviceName ? (
+            {span.spanAttributes['gateway.upstream.subgraph.name'] ? (
               <div
                 className={cn(
                   'overflow-hidden overflow-ellipsis whitespace-nowrap text-xs',
                   isDimmed ? 'text-gray-600' : 'text-gray-500',
                 )}
               >
-                {props.span.serviceName}
+                {span.spanAttributes['gateway.upstream.subgraph.name']}
               </div>
             ) : null}
           </div>
@@ -914,7 +495,13 @@ function Node(props: NodeProps) {
                   style={{
                     left: `min(${leftPositionPercentage}%, 100% - 1px)`,
                     width: `${widthPercentage}%`,
-                    backgroundColor: color,
+                    backgroundColor: props.color,
+                  }}
+                  onClick={() => {
+                    navigate({
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+                      search: { activeSpanId: span.id },
+                    });
                   }}
                 >
                   <div
@@ -924,7 +511,7 @@ function Node(props: NodeProps) {
                       ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
                     }}
                   >
-                    {props.span.duration}ms
+                    {formatNanoseconds(props.span.durationNs)}
                   </div>
                 </div>
               </TooltipTrigger>
@@ -937,11 +524,13 @@ function Node(props: NodeProps) {
                   <div className="grid grid-cols-2 gap-y-2">
                     <div className="text-gray-400">Duration</div>
                     <div className="text-right font-mono">
-                      <span>{props.span.duration}ms</span>
+                      <span>{formatNanoseconds(props.span.durationNs)}</span>
                     </div>
 
                     <div className="text-gray-400">Started At</div>
-                    <div className="text-right font-mono">{props.span.startedAt}ms</div>
+                    <div className="text-right font-mono">
+                      {formatNanoseconds(props.span.startNs)}
+                    </div>
 
                     <div className="text-gray-400">% of Total</div>
                     <div className="text-right font-mono">{percentageOfTotal}%</div>
@@ -989,31 +578,39 @@ function Node(props: NodeProps) {
       {collapsed
         ? null
         : props.span.children.length
-          ? props.span.children.map(childSpan => {
-              const span = {
-                ...childSpan,
-                // if the child span doesn't have a serviceName, use the parent's serviceName
-                serviceName: childSpan.serviceName ?? props.span.serviceName,
-              };
+          ? props.span.children.map((childSpan, i, arr) => {
+              const uchildSpan = useFragment(SpanFragment, childSpan.span);
 
+              const serviceName: string | null =
+                uchildSpan.spanAttributes['gateway.upstream.subgraph.name'] ??
+                props.serviceName ??
+                null;
+
+              const isLastChild = i === arr.length - 1;
               return (
                 <Node
                   key={span.id}
+                  span={childSpan}
                   highlightedServiceName={props.highlightedServiceName}
                   leftPanelWidth={props.leftPanelWidth}
-                  totalDuration={props.totalDuration}
-                  span={span}
+                  totalDurationNs={props.totalDurationNs}
                   level={props.level + 1}
                   parentSpan={props.span}
                   groupLines={
-                    isLastChild
+                    props.isLastChild
                       ? // remove the last line if it's the last span from the group
                         props.groupLines.slice(0, -1).concat(false, true)
                       : props.groupLines.concat(true)
                   }
-                  parentColor={color}
-                  color={span.serviceName ? props.serviceNameToColorMap[span.serviceName] : color}
+                  parentColor={props.color}
+                  color={
+                    serviceName
+                      ? stringToHSL(props.serviceNameToColorMap[serviceName])
+                      : props.color
+                  }
                   serviceNameToColorMap={props.serviceNameToColorMap}
+                  serviceName={serviceName}
+                  isLastChild={isLastChild}
                 />
               );
             })
@@ -1022,74 +619,64 @@ function Node(props: NodeProps) {
   );
 }
 
-function GridTable(props: {
-  rows: Array<{
-    key: string;
-    value: ReactNode;
-  }>;
-}) {
-  return (
-    <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
-      {props.rows.map(row => (
-        <Fragment key={row.key}>
-          <div className="font-sans text-gray-400">{row.key}</div>
-          <div className="text-right font-mono">{row.value}</div>
-        </Fragment>
-      ))}
-    </div>
-  );
-}
+// function GridTable(props: {
+//   rows: Array<{
+//     key: string;
+//     value: ReactNode;
+//   }>;
+// }) {
+//   return (
+//     <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
+//       {props.rows.map(row => (
+//         <Fragment key={row.key}>
+//           <div className="font-sans text-gray-400">{row.key}</div>
+//           <div className="text-right font-mono">{row.value}</div>
+//         </Fragment>
+//       ))}
+//     </div>
+//   );
+// }
 
-function roundFloatToTwoDecimals(num: number) {
-  return Math.round(num * 100) / 100;
-}
-
-function TraceSheet({ trace }: { trace: Trace | null }) {
-  const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
-
-  if (!trace) {
-    return null;
+const TraceSheet_TraceFragment = graphql(`
+  fragment TraceSheet_TraceFragment on Trace {
+    id
+    subgraphs
+    spans {
+      id
+      ...SpanFragment
+      ...SpanSheet_SpanFragment
+    }
   }
+`);
 
-  const attributes: Array<TraceAttribute> = [
-    {
-      name: 'graphql.operationKind',
-      value: trace.kind,
-      category: 'GraphQL',
-    },
-    {
-      name: 'graphql.subgraphs',
-      value: trace.subgraphNames.join(', '),
-      category: 'GraphQL',
-    },
-    {
-      name: 'http.method',
-      value: trace.httpMethod,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.host',
-      value: trace.httpHost,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.route',
-      value: trace.httpRoute,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.url',
-      value: trace.httpUrl,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.status',
-      value: trace.httpStatus,
-      category: 'HTTP',
-    },
-  ];
+type TraceSheetProps = {
+  trace: FragmentType<typeof TraceSheet_TraceFragment>;
+  activeSpanId: string | null;
+};
 
-  const serviceNames = listServiceNames(rootSpan);
+function TraceSheet(props: TraceSheetProps) {
+  const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
+  const trace = useFragment(TraceSheet_TraceFragment, props.trace);
+
+  const rootSpan = useMemo(() => createSpanTreeStructure(trace.spans), [trace.spans]);
+  const rootSpanUnmasked = useFragment(SpanFragment, rootSpan.span);
+
+  const spanAttributes: Array<TraceAttribute> = Array.from(
+    Object.entries(rootSpanUnmasked.spanAttributes),
+  ).map(([name, value]) => ({
+    name,
+    value: String(value),
+    category: name.split('.')[0] ?? 'unknown',
+  }));
+
+  const totalTraceDuration = differenceInNanoseconds(
+    rootSpanUnmasked.endTime,
+    rootSpanUnmasked.startTime,
+  );
+
+  const navigate = useNavigate({
+    from: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+  });
 
   return (
     <div className="h-full">
@@ -1097,7 +684,11 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
         <ResizablePanelGroup direction="vertical">
           <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
             <WidthSyncProvider defaultWidth={251}>
-              <TraceView rootSpan={rootSpan} serviceNames={serviceNames} />
+              <TraceView
+                rootSpan={rootSpan}
+                serviceNames={trace.subgraphs}
+                totalTraceDuration={totalTraceDuration}
+              />
             </WidthSyncProvider>
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -1151,9 +742,9 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
                 <div className="h-full">
                   {activeView === 'attributes' ? (
                     <div>
-                      {attributes.length > 0 ? (
+                      {spanAttributes.length > 0 ? (
                         <div>
-                          {attributes.map((attr, index) => (
+                          {spanAttributes.map((attr, index) => (
                             <div
                               key={index}
                               className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
@@ -1237,21 +828,53 @@ function TraceSheet({ trace }: { trace: Trace | null }) {
           </ResizablePanel>
         </ResizablePanelGroup>
       </TooltipProvider>
+      {props.activeSpanId && (
+        <SpanSheet
+          span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
+          onClose={() =>
+            navigate({
+              to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
+              search: {},
+            })
+          }
+        />
+      )}
     </div>
   );
 }
 
-function TargetInsightsNewPageContent() {
-  const traceInSheet = data[0];
-
-  return <TraceSheet trace={traceInSheet} />;
-}
-
-export function TargetTracePage(props: {
-  traceId: string;
+function TargetInsightsNewPageContent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  traceId: string;
+  activeSpanId: string | null;
+}) {
+  const [result] = useQuery({
+    query: TargetTraceQuery,
+    variables: {
+      targetSelector: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+      },
+      traceId: props.traceId,
+    },
+  });
+
+  if (!result.data?.target?.trace) {
+    return null;
+  }
+
+  return <TraceSheet trace={result.data.target.trace} activeSpanId={props.activeSpanId} />;
+}
+
+export function TargetTracePage(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
+  activeSpanId: string | null;
 }) {
   return (
     <>
@@ -1267,12 +890,418 @@ export function TargetTracePage(props: {
           <AutoSizer disableWidth>
             {size => (
               <div className="w-full" style={{ height: size.height }}>
-                <TargetInsightsNewPageContent />
+                <TargetInsightsNewPageContent {...props} />
               </div>
             )}
           </AutoSizer>
         </div>
       </TargetLayout>
     </>
+  );
+}
+
+const TargetTraceQuery = graphql(/* GraphQL */ `
+  query TargetTraceQuery($targetSelector: TargetSelectorInput!, $traceId: ID!) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      trace(traceId: $traceId) {
+        ...TraceSheet_TraceFragment
+        id
+        spans {
+          id
+          name
+          parentId
+          ...SpanFragment
+        }
+      }
+    }
+  }
+`);
+
+const SpanFragment = graphql(/* GraphQL */ `
+  fragment SpanFragment on Span {
+    id
+    name
+    spanAttributes
+    parentId
+    startTime
+    endTime
+  }
+`);
+
+type SpanFragmentWithChildren = {
+  span: FragmentType<typeof SpanFragment>;
+  children: Array<SpanFragmentWithChildren>;
+  durationNs: bigint;
+  startNs: bigint;
+};
+
+function createSpanTreeStructure(
+  fragments: Array<FragmentType<typeof SpanFragment>>,
+): SpanFragmentWithChildren {
+  const itemsById = new Map</* id */ string, SpanFragmentWithChildren>();
+  let root: SpanFragmentWithChildren | null = null;
+  for (const fragment of fragments) {
+    const ufragment = useFragment(SpanFragment, fragment);
+
+    const fragmentWithChildren: SpanFragmentWithChildren = {
+      span: fragment,
+      children: [],
+      durationNs: differenceInNanoseconds(ufragment.endTime, ufragment.startTime),
+      startNs: 0n,
+    };
+
+    itemsById.set(ufragment.id, fragmentWithChildren);
+    if (ufragment.parentId == null) {
+      root = fragmentWithChildren;
+    }
+  }
+
+  if (!root) {
+    throw new Error('No root found.');
+  }
+
+  const uroot = useFragment(SpanFragment, root.span);
+  const startNS = parseRFC3339ToEpochNanos(uroot.startTime);
+
+  for (const item of itemsById.values()) {
+    const uitem = useFragment(SpanFragment, item.span);
+    console.log(uitem.parentId);
+    if (!uitem.parentId) {
+      continue;
+    }
+    itemsById.get(uitem.parentId)?.children.push(item);
+    item.startNs = parseRFC3339ToEpochNanos(uitem.startTime) - startNS;
+  }
+
+  for (const item of itemsById.values()) {
+    item.children.sort((a, b) => {
+      if (a.startNs < b.startNs) {
+        return -1;
+      }
+      if (a.startNs > b.startNs) {
+        return 1;
+      }
+      return 0;
+    });
+  }
+
+  return root;
+}
+
+function formatNanoseconds(nsBigInt: bigint) {
+  const TEN_THOUSAND_NS = 10000n;
+
+  if (nsBigInt < TEN_THOUSAND_NS) {
+    return `${nsBigInt}ns`;
+  }
+
+  const hundredthsOfMs = nsBigInt / TEN_THOUSAND_NS;
+  const msValue = Number(hundredthsOfMs) / 100.0;
+  return `${msValue.toFixed(2)}ms`;
+}
+
+function parseRFC3339ToEpochNanos(datetime: string) {
+  const match = datetime.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?Z$/,
+  );
+
+  if (!match) {
+    throw new Error('Invalid RFC 3339 datetime string.');
+  }
+
+  const [, year, month, day, hour, minute, second, fraction = '0'] = match;
+
+  // Pad fraction to nanoseconds (9 digits)
+  const nanoStr = (fraction + '000000000').slice(0, 9);
+  const nanoseconds = parseInt(nanoStr, 10);
+
+  // Use Date.UTC to get milliseconds (integer part of timestamp)
+  const milliseconds = Date.UTC(+year, +month - 1, +day, +hour, +minute, +second);
+
+  const totalNanoseconds = BigInt(milliseconds) * 1_000_000n + BigInt(nanoseconds);
+  return totalNanoseconds;
+}
+
+function differenceInNanoseconds(datetime1: string, datetime2: string) {
+  const nanos1 = parseRFC3339ToEpochNanos(datetime1);
+  const nanos2 = parseRFC3339ToEpochNanos(datetime2);
+
+  return nanos1 - nanos2; // returns a BigInt representing nanoseconds
+}
+
+function splitNanosecondsToMsIntervals(nanoseconds: bigint): number[] {
+  const intervals: number[] = [0];
+  const intervalNs = nanoseconds / 4n;
+
+  for (let i = 0; i < 4; i++) {
+    // Convert nanoseconds to milliseconds (with up to 6 decimal places)
+    const ms = ((i + 1) * Number(intervalNs)) / 1_000_000;
+    intervals.push(ms);
+  }
+
+  return intervals;
+}
+
+function formatMsTimestamp(timestamp: number) {
+  if (timestamp === 0) {
+    return '0ms';
+  }
+  return timestamp.toFixed(2) + 'ms';
+}
+
+function stringToHSL(str: string, saturation = 70, lightness = 40) {
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  // Use hash to generate HSL values
+  const hue = Math.abs(hash) % 360;
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+function nanosecondsToMilliseconds(nsBigInt: bigint) {
+  const oneMillion = 1000000n;
+  const msBigInt = nsBigInt / oneMillion; // BigInt division, truncates remainder
+
+  return Number(msBigInt); // Convert BigInt to Number
+}
+
+function roundFloatToTwoDecimals(num: number) {
+  return Math.round(num * 100) / 100;
+}
+
+const SpanSheet_SpanFragment = graphql(`
+  fragment SpanSheet_SpanFragment on Span {
+    id
+    resourceAttributes
+    spanAttributes
+    name
+    duration
+  }
+`);
+
+type SpanSheetProps = {
+  span: FragmentType<typeof SpanSheet_SpanFragment> | null;
+  onClose: () => void;
+};
+
+function SpanSheet(props: SpanSheetProps) {
+  const span = useFragment(SpanSheet_SpanFragment, props.span);
+  const [activeView, setActiveView] = useState<'span-attributes' | 'resource-attributes'>(
+    'span-attributes',
+  );
+
+  // TODO: maybe loading or not found state???
+  if (!span) {
+    return null;
+  }
+
+  const spanAttributes = Array.from(Object.entries(span.spanAttributes)).map(
+    ([key, value]) => ({ key, value }) satisfies { key: string; value: unknown },
+  );
+
+  const resourceAttributes = Array.from(Object.entries(span.resourceAttributes)).map(
+    ([key, value]) => ({ key, value }) satisfies { key: string; value: unknown },
+  );
+
+  return (
+    <Sheet open={true} onOpenChange={props.onClose}>
+      <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
+        <SheetHeader className="relative border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-lg font-medium text-white">
+              Span Details
+              <span className="text-muted-foreground ml-2 font-mono font-normal">
+                {span.id.substring(0, 4)}
+              </span>
+            </SheetTitle>
+          </div>
+          <SheetDescription className="mt-1 text-xs text-gray-400">
+            Span ID: <span className="font-mono">{span.id}</span>
+          </SheetDescription>
+          <div className="mt-2 flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-gray-400" />
+              <span className="text-gray-300">{formatNanoseconds(BigInt(span.duration))}</span>
+            </div>
+          </div>
+        </SheetHeader>
+        <div>
+          <div className="flex h-full flex-col">
+            <div className="sticky top-0 z-10 border-b border-gray-800">
+              <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
+                <TabButton
+                  isActive={activeView === 'span-attributes'}
+                  onClick={() => setActiveView('span-attributes')}
+                >
+                  <div className="flex items-center gap-x-2">
+                    <div>Span Attributes</div>
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                      >
+                        {Array.from(Object.keys(span.spanAttributes)).length}
+                      </Badge>
+                    </div>
+                  </div>
+                </TabButton>
+                <TabButton
+                  isActive={activeView === 'resource-attributes'}
+                  onClick={() => setActiveView('resource-attributes')}
+                >
+                  <div className="flex items-center gap-x-2">
+                    <div>Resource Attributes</div>
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                      >
+                        {resourceAttributes.length}
+                      </Badge>
+                    </div>
+                  </div>
+                </TabButton>
+                {/* <TabButton
+                  isActive={activeView === 'events'}
+                  onClick={() => setActiveView('events')}
+                >
+                  <div className="flex items-center gap-x-2">
+                    <div>Events</div>
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                      >
+                        3
+                      </Badge>
+                    </div>
+                  </div>
+                </TabButton>
+                <TabButton
+                  isActive={activeView === 'operation'}
+                  onClick={() => setActiveView('operation')}
+                >
+                  <div className="flex items-center gap-x-2">
+                    <div>Operation</div>
+                  </div>
+                </TabButton> */}
+              </div>
+            </div>
+            <div className="h-full">
+              {activeView === 'span-attributes' && (
+                <div>
+                  {spanAttributes.length > 0 ? (
+                    <div>
+                      {spanAttributes.map(attribute => (
+                        <AttributeRow
+                          key={attribute.key}
+                          attributeKey={attribute.key}
+                          value={String(attribute.value)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center">
+                      <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                      <p className="text-xs text-gray-500">
+                        No span attributes found for this span.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeView === 'resource-attributes' && (
+                <div>
+                  {resourceAttributes.length > 0 ? (
+                    <div>
+                      {resourceAttributes.map(attribute => (
+                        <AttributeRow
+                          key={attribute.key}
+                          attributeKey={attribute.key}
+                          value={String(attribute.value)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center">
+                      <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                      <p className="text-xs text-gray-500">
+                        No resource attributes found for this span.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+type AttributeRowProps = {
+  attributeKey: string;
+  value: string;
+};
+
+function AttributeRow(props: AttributeRowProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const clipboard = useClipboard();
+
+  const actionsNode = (
+    <TooltipProvider>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => clipboard(props.value)}
+            className="ml-auto"
+          >
+            <CopyIcon size="10" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Copy attribute value</TooltipContent>
+      </Tooltip>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
+            {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
+  return (
+    <div
+      key={props.attributeKey}
+      className={cn(
+        'border-border flex items-center justify-between border-b px-3 py-3 text-xs',
+        isExpanded && 'flex-col text-left',
+      )}
+    >
+      <div className={cn('flex flex-1 pr-2 text-gray-400', isExpanded && 'w-full pr-0')}>
+        {props.attributeKey}
+        {isExpanded && actionsNode}
+      </div>
+      <div
+        className={cn(
+          'w-full flex-1 pt-2 font-mono text-white',
+          !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
+        )}
+      >
+        {props.value}
+      </div>
+      {!isExpanded && actionsNode}
+    </div>
   );
 }

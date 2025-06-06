@@ -272,7 +272,7 @@ export default gql`
   type Trace {
     id: ID!
     timestamp: DateTime!
-    operationName: String!
+    operationName: String
     operationType: GraphQLOperationType!
     duration: Int!
     subgraphs: [String!]!
@@ -284,6 +284,20 @@ export default gql`
     httpHost: String
     httpRoute: String
     httpUrl: String
+
+    spans: [Span!]!
+  }
+
+  type Span {
+    id: ID!
+    traceId: ID!
+    parentId: ID
+    name: String!
+    startTime: DateTime64!
+    duration: SafeInt!
+    endTime: DateTime64!
+    resourceAttributes: JSONObject!
+    spanAttributes: JSONObject!
   }
 
   input TracesFilterInput {
@@ -335,6 +349,7 @@ export default gql`
     operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
     traces(first: Int, after: String, filter: TracesFilterInput): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+    trace(traceId: ID!): Trace
   }
 
   extend type Project {

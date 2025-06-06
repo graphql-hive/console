@@ -3,6 +3,7 @@ import { parseDateRangeInput } from '../../../shared/helpers';
 import { ClickHouse, sql } from '../providers/clickhouse-client';
 import { OperationsManager } from '../providers/operations-manager';
 import { SqlValue } from '../providers/sql';
+import { Traces } from '../providers/traces';
 import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
@@ -13,6 +14,7 @@ export const Target: Pick<
   | 'requestsOverTime'
   | 'schemaCoordinateStats'
   | 'totalRequests'
+  | 'trace'
   | 'traces'
   | 'tracesFilterOptions'
 > = {
@@ -75,150 +77,7 @@ export const Target: Pick<
     };
   },
   traces: async (target, { first, filter }, { injector }) => {
-    const clickhouse = injector.get(ClickHouse);
-    const limit = (first ?? 10) + 1;
-
-    const ANDs: SqlValue[] = [sql`target_id = ${target.id}`];
-
-    if (filter?.id?.length) {
-      ANDs.push(sql`trace_id IN (${sql.array(filter.id, 'String')})`);
-    }
-
-    if (filter?.success?.length) {
-      // ANDs.push(sql`http_status_code IN (${sql.array(filter.success.map((ok) => ok ? ).flat(1), 'String')})`);
-      ANDs.push(
-        sql`${sql.join(
-          filter.success.map(ok =>
-            ok
-              ? // 2XX
-                sql`(toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300)`
-              : // non-2XXX
-                sql`(toUInt16OrZero(http_status_code) < 200 OR toUInt16OrZero(http_status_code) >= 300)`,
-          ),
-          ' OR ',
-        )}`,
-      );
-    }
-
-    if (filter?.operationName?.length) {
-      ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
-    }
-
-    if (filter?.operationType?.length) {
-      ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
-    }
-
-    if (filter?.subgraphs?.length) {
-      ANDs.push(sql`hasAny(subgraph_names, (${sql.array(filter.subgraphs.flat(), 'String')}))`);
-    }
-
-    if (filter?.httpStatusCode?.length) {
-      ANDs.push(
-        sql`http_status_code IN (${sql.array(filter.httpStatusCode.map(String), 'UInt16')})`,
-      );
-    }
-
-    if (filter?.httpMethod?.length) {
-      ANDs.push(sql`http_method IN (${sql.array(filter.httpMethod, 'String')})`);
-    }
-
-    if (filter?.httpHost?.length) {
-      ANDs.push(sql`http_host IN (${sql.array(filter.httpHost, 'String')})`);
-    }
-
-    if (filter?.httpRoute?.length) {
-      ANDs.push(sql`http_route IN (${sql.array(filter.httpRoute, 'String')})`);
-    }
-
-    if (filter?.httpUrl?.length) {
-      ANDs.push(sql`http_url IN (${sql.array(filter.httpUrl, 'String')})`);
-    }
-
-    const tracesQuery = await clickhouse.query<{
-      target_id: string;
-      trace_id: string;
-      span_id: string;
-      timestamp: string;
-      operation_name: string;
-      operation_type: string;
-      duration: number;
-      subgraph_names: string[];
-      http_status_code: string;
-      http_method: string;
-      http_host: string;
-      http_route: string;
-      http_url: string;
-    }>({
-      query: sql`
-        SELECT
-          "target_id"
-          , "trace_id"
-          , "span_id"
-          , "timestamp"
-          , "http_status_code"
-          , "http_method"
-          , "http_host"
-          , "http_route"
-          , "http_url"
-          , "duration"
-          , "graphql_operation_name" AS "operation_name"
-          , upper("graphql_operation_type") AS "operation_type"
-          , "subgraph_names"
-        FROM
-          "otel_traces_normalized"
-        WHERE ${sql.join(ANDs, ' AND ')}
-        ORDER BY
-          "timestamp" DESC
-          , "trace_id" DESC
-        LIMIT ${sql.raw(String(limit))}
-      `,
-      queryId: 'traces',
-      timeout: 10_000,
-    });
-
-    const traces = tracesQuery.data;
-    let hasNext = false;
-
-    if (traces.length == limit) {
-      hasNext = true;
-      (traces as any).pop();
-    }
-
-    return {
-      edges: traces.map(trace => {
-        return {
-          node: {
-            id: trace.trace_id,
-            timestamp: new Date(trace.timestamp),
-            operationName: trace.operation_name,
-            operationType: trace.operation_type as any,
-            duration: trace.duration,
-            subgraphs: trace.subgraph_names,
-            success: trace.http_status_code === '200',
-            clientName: null,
-            clientVersion: null,
-            httpStatusCode: Number(trace.http_status_code),
-            httpMethod: trace.http_method,
-            httpHost: trace.http_host,
-            httpRoute: trace.http_route,
-            httpUrl: trace.http_url,
-          },
-          cursor: Buffer.from(`${trace.timestamp}|${trace.trace_id}`).toString('base64'),
-        };
-      }),
-      pageInfo: {
-        hasNextPage: hasNext,
-        hasPreviousPage: false,
-        endCursor: traces.length
-          ? Buffer.from(
-              `${traces[traces.length - 1].timestamp}|${traces[traces.length - 1].trace_id}`,
-            ).toString('base64')
-          : '',
-        startCursor: traces.length
-          ? Buffer.from(`${traces[0].timestamp}|${traces[0].trace_id}`).toString('base64')
-          : '',
-      },
-    };
+    return injector.get(Traces).findTracesForTargetId(target.id, first ?? null, filter);
   },
   tracesFilterOptions: async (_parent, { filter }, { injector }) => {
     const ANDs: SqlValue[] = [sql`target_id = ${'target-1'}`];
@@ -338,5 +197,8 @@ export const Target: Pick<
     return {
       loader,
     };
+  },
+  trace(target, args, { injector }) {
+    return injector.get(Traces).findTraceById(target.id, args.traceId);
   },
 };
