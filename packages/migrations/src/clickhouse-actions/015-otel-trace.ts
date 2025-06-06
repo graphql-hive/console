@@ -4,7 +4,7 @@ export const action: Action = async exec => {
   // Base tables as created by otel-exporter clickhouse
   await exec(`
     CREATE TABLE IF NOT EXISTS "otel_traces" (
-      "Timestamp" DateTime64(9) CODEC(Delta(8), ZSTD(1))
+      "Timestamp" DateTime64(9, 'UTC') CODEC(Delta(8), ZSTD(1))
       , "TraceId" String CODEC(ZSTD(1))
       , "SpanId" String CODEC(ZSTD(1))
       , "ParentSpanId" String CODEC(ZSTD(1))
@@ -19,7 +19,7 @@ export const action: Action = async exec => {
       , "Duration" UInt64 CODEC(ZSTD(1))
       , "StatusCode" LowCardinality(String) CODEC(ZSTD(1))
       , "StatusMessage" String CODEC(ZSTD(1))
-      , "Events.Timestamp" Array(DateTime64(9)) CODEC(ZSTD(1))
+      , "Events.Timestamp" Array(DateTime64(9, 'UTC')) CODEC(ZSTD(1))
       , "Events.Name" Array(LowCardinality(String)) CODEC(ZSTD(1))
       , "Events.Attributes" Array(Map(LowCardinality(String), String)) CODEC(ZSTD(1))
       , "Links.TraceId" Array(String) CODEC(ZSTD(1))
@@ -172,7 +172,7 @@ export const action: Action = async exec => {
       FROM
         "otel_traces"
       WHERE
-        empty("ParentSpanId")
+        empty("ParentSpanId") AND NOT empty("SpanAttributes"['hive.graphql.operation.type'])
     )
   `);
 
