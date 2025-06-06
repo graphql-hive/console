@@ -1,5 +1,16 @@
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp, Clock, CopyIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CopyIcon,
+  Link as LinkLucide,
+  PieChart,
+  Play,
+  TreePine,
+} from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
@@ -13,6 +24,7 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
@@ -20,8 +32,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './target-traces-width';
+
+const rootTraceColor = 'rgb(244, 183, 64)';
 
 const fetchProductsQueryString = `
   query FetchProduct {
@@ -43,10 +57,13 @@ function TraceView(props: {
   rootSpan: SpanFragmentWithChildren;
   serviceNames: string[];
   totalTraceDuration: bigint;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
 }) {
   const [width] = useWidthSync();
   const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
-  const serviceNames = props.serviceNames;
 
   const timestamps = splitNanosecondsToMsIntervals(props.totalTraceDuration);
 
@@ -92,13 +109,17 @@ function TraceView(props: {
             leftPanelWidth={width}
             rootSpan={props.rootSpan}
             highlightedServiceName={highlightedServiceName}
-            serviceNames={serviceNames}
+            serviceNames={props.serviceNames}
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            targetSlug={props.targetSlug}
+            traceId={props.traceId}
           />
         </div>
       </ScrollArea>
       <div className="sticky bottom-0 z-10 px-2 py-4">
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-          {serviceNames.map(serviceName => (
+          {props.serviceNames.map(serviceName => (
             <div
               key={serviceName}
               className="flex cursor-pointer items-center gap-2 hover:text-white"
@@ -324,14 +345,15 @@ function TraceTree(props: {
   rootSpan: SpanFragmentWithChildren;
   leftPanelWidth: number;
   serviceNames: Array<string>;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
 }) {
   const rootSpan = useFragment(SpanFragment, props.rootSpan.span);
   const [width] = useWidthSync();
   const minWidth = 175;
   const maxWidth = 450;
-  const serviceNameToColorMap = Object.fromEntries(
-    props.serviceNames.map((name, index) => [name, colors[index % colors.length]]),
-  );
   const containerRef = useRef<HTMLDivElement>(null);
 
   const durationNs = differenceInNanoseconds(rootSpan.endTime, rootSpan.startTime);
@@ -339,7 +361,7 @@ function TraceTree(props: {
   return (
     <div className="relative" ref={containerRef}>
       <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
-      <Node
+      <SpanNode
         key={rootSpan.id}
         level={0}
         highlightedServiceName={props.highlightedServiceName}
@@ -349,25 +371,19 @@ function TraceTree(props: {
         parentSpan={null}
         groupLines={[]}
         parentColor={null}
-        color={colors[0]}
-        serviceNameToColorMap={serviceNameToColorMap}
+        color={rootTraceColor}
         serviceName={null}
         isLastChild={false}
+        organizationSlug={props.organizationSlug}
+        projectSlug={props.projectSlug}
+        targetSlug={props.targetSlug}
+        traceId={props.traceId}
       />
     </div>
   );
 }
 
-type SpanProps = {
-  id: string;
-  title: string;
-  serviceName?: string;
-  duration: number;
-  startedAt: number;
-  children: SpanProps[];
-};
-
-type NodeProps = {
+type SpanNodeProps = {
   highlightedServiceName: string | null;
   level: number;
   totalDurationNs: bigint;
@@ -377,29 +393,19 @@ type NodeProps = {
   groupLines: boolean[];
   color: string;
   parentColor: string | null;
-  serviceNameToColorMap: Record<string, string>;
   serviceName: string | null;
   isLastChild: boolean;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
 };
 
 function countChildren(spans: SpanFragmentWithChildren[]): number {
   return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
 }
 
-const colors = [
-  '#2662d8',
-  '#2eb88a',
-  '#e88d30',
-  '#af56db',
-  '#7BA4F9',
-  '#D8B5FF',
-  '#64748B',
-  '#6C5CE7',
-  '#F27059',
-  '#2D9D78',
-];
-
-function Node(props: NodeProps) {
+function SpanNode(props: SpanNodeProps) {
   const span = useFragment(SpanFragment, props.span.span);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -427,33 +433,20 @@ function Node(props: NodeProps) {
   const canBeCollapsed = props.span.children.length > 0;
   const parentColor = props.parentColor ?? props.color;
 
-  const percentageOfTotal = (
-    (nanosecondsToMilliseconds(props.span.durationNs) /
-      nanosecondsToMilliseconds(props.totalDurationNs)) *
-    100
-  ).toFixed(2);
-
-  const percentageOfParent = props.parentSpan
-    ? (
-        (nanosecondsToMilliseconds(props.span.durationNs) /
-          nanosecondsToMilliseconds(props.parentSpan.durationNs)) *
-        100
-      ).toFixed(2)
-    : null;
-
-  const navigate = useNavigate({
-    from: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
-  });
-
   return (
     <>
-      <div className="cursor-pointer pr-8 odd:bg-gray-800/20 hover:bg-gray-900">
+      <div className="pr-8 odd:bg-gray-800/20 hover:bg-gray-900">
         <div className="relative flex h-8 w-full items-center overflow-hidden">
           <div
             className="relative flex h-8 shrink-0 items-center gap-x-2 overflow-hidden pl-1"
             style={{ width: `${props.leftPanelWidth}px` }}
           >
-            <div className="flex h-8 shrink-0 items-center overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500">
+            <div
+              className={cn(
+                'flex h-8 shrink-0 items-center overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500',
+                canBeCollapsed && 'cursor-pointer',
+              )}
+            >
               <TreeIcon
                 key={`tree-icon-${span.id}`}
                 isLeaf={props.span.children.length === 0}
@@ -482,11 +475,19 @@ function Node(props: NodeProps) {
               </div>
             ) : null}
           </div>
-          <div
+          <Link
             className={cn(
-              'relative flex h-full grow items-center overflow-hidden',
+              'relative flex h-full grow cursor-pointer items-center overflow-hidden',
               isDimmed ? 'opacity-25' : '',
             )}
+            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+            params={{
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+              traceId: props.traceId,
+            }}
+            search={{ activeSpanId: span.id }}
           >
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
@@ -496,12 +497,6 @@ function Node(props: NodeProps) {
                     left: `min(${leftPositionPercentage}%, 100% - 1px)`,
                     width: `${widthPercentage}%`,
                     backgroundColor: props.color,
-                  }}
-                  onClick={() => {
-                    navigate({
-                      to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
-                      search: { activeSpanId: span.id },
-                    });
                   }}
                 >
                   <div
@@ -533,7 +528,7 @@ function Node(props: NodeProps) {
                     </div>
 
                     <div className="text-gray-400">% of Total</div>
-                    <div className="text-right font-mono">{percentageOfTotal}%</div>
+                    <div className="text-right font-mono">{props.span.percentageOfTotal}%</div>
 
                     <div className="col-span-2">
                       {/* Timeline visualization */}
@@ -541,16 +536,21 @@ function Node(props: NodeProps) {
                         <div className="h-[2px] w-full overflow-hidden bg-gray-800">
                           <div
                             className="h-full"
-                            style={{ width: `${percentageOfTotal}%`, backgroundColor: colors[0] }}
+                            style={{
+                              width: `${props.span.percentageOfTotal}%`,
+                              backgroundColor: rootTraceColor,
+                            }}
                           />
                         </div>
                       </div>
                     </div>
 
-                    {percentageOfParent === null ? null : (
+                    {props.span.percentageOfParentSpan === null ? null : (
                       <>
                         <div className="text-gray-400">% of Parent</div>
-                        <div className="text-right font-mono">{percentageOfParent}%</div>
+                        <div className="text-right font-mono">
+                          {props.span.percentageOfParentSpan}%
+                        </div>
 
                         <div className="col-span-2">
                           {/* Timeline visualization */}
@@ -559,7 +559,7 @@ function Node(props: NodeProps) {
                               <div
                                 className="h-full"
                                 style={{
-                                  width: `${percentageOfParent}%`,
+                                  width: `${props.span.percentageOfParentSpan}%`,
                                   backgroundColor: parentColor,
                                 }}
                               />
@@ -572,7 +572,7 @@ function Node(props: NodeProps) {
                 </div>
               </TooltipContent>
             </Tooltip>
-          </div>
+          </Link>
         </div>
       </div>
       {collapsed
@@ -588,7 +588,7 @@ function Node(props: NodeProps) {
 
               const isLastChild = i === arr.length - 1;
               return (
-                <Node
+                <SpanNode
                   key={span.id}
                   span={childSpan}
                   highlightedServiceName={props.highlightedServiceName}
@@ -603,14 +603,13 @@ function Node(props: NodeProps) {
                       : props.groupLines.concat(true)
                   }
                   parentColor={props.color}
-                  color={
-                    serviceName
-                      ? stringToHSL(props.serviceNameToColorMap[serviceName])
-                      : props.color
-                  }
-                  serviceNameToColorMap={props.serviceNameToColorMap}
+                  color={serviceName ? stringToHSL(serviceName) : props.color}
                   serviceName={serviceName}
                   isLastChild={isLastChild}
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                  traceId={props.traceId}
                 />
               );
             })
@@ -652,13 +651,19 @@ const TraceSheet_TraceFragment = graphql(`
 type TraceSheetProps = {
   trace: FragmentType<typeof TraceSheet_TraceFragment>;
   activeSpanId: string | null;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
 };
 
 function TraceSheet(props: TraceSheetProps) {
   const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
   const trace = useFragment(TraceSheet_TraceFragment, props.trace);
 
-  const rootSpan = useMemo(() => createSpanTreeStructure(trace.spans), [trace.spans]);
+  const [rootSpan, spanLookupMap] = useMemo(
+    () => createSpanTreeStructure(trace.spans),
+    [trace.spans],
+  );
   const rootSpanUnmasked = useFragment(SpanFragment, rootSpan.span);
 
   const spanAttributes: Array<TraceAttribute> = Array.from(
@@ -688,6 +693,10 @@ function TraceSheet(props: TraceSheetProps) {
                 rootSpan={rootSpan}
                 serviceNames={trace.subgraphs}
                 totalTraceDuration={totalTraceDuration}
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                traceId={trace.id}
               />
             </WidthSyncProvider>
           </ResizablePanel>
@@ -831,12 +840,17 @@ function TraceSheet(props: TraceSheetProps) {
       {props.activeSpanId && (
         <SpanSheet
           span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
+          computedSpanMetrics={spanLookupMap.get(props.activeSpanId) ?? null}
           onClose={() =>
             navigate({
               to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
               search: {},
             })
           }
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          traceId={trace.id}
         />
       )}
     </div>
@@ -866,7 +880,15 @@ function TargetInsightsNewPageContent(props: {
     return null;
   }
 
-  return <TraceSheet trace={result.data.target.trace} activeSpanId={props.activeSpanId} />;
+  return (
+    <TraceSheet
+      organizationSlug={props.organizationSlug}
+      projectSlug={props.projectSlug}
+      targetSlug={props.targetSlug}
+      trace={result.data.target.trace}
+      activeSpanId={props.activeSpanId}
+    />
+  );
 }
 
 export function TargetTracePage(props: {
@@ -929,16 +951,21 @@ const SpanFragment = graphql(/* GraphQL */ `
   }
 `);
 
+type ComputedSpanMetrics = {
+  durationNs: bigint;
+  startNs: bigint;
+  percentageOfTotal: string;
+  percentageOfParentSpan: string | null;
+};
+
 type SpanFragmentWithChildren = {
   span: FragmentType<typeof SpanFragment>;
   children: Array<SpanFragmentWithChildren>;
-  durationNs: bigint;
-  startNs: bigint;
-};
+} & ComputedSpanMetrics;
 
 function createSpanTreeStructure(
   fragments: Array<FragmentType<typeof SpanFragment>>,
-): SpanFragmentWithChildren {
+): [SpanFragmentWithChildren, ReadonlyMap<string, SpanFragmentWithChildren>] {
   const itemsById = new Map</* id */ string, SpanFragmentWithChildren>();
   let root: SpanFragmentWithChildren | null = null;
   for (const fragment of fragments) {
@@ -949,6 +976,8 @@ function createSpanTreeStructure(
       children: [],
       durationNs: differenceInNanoseconds(ufragment.endTime, ufragment.startTime),
       startNs: 0n,
+      percentageOfTotal: '',
+      percentageOfParentSpan: null,
     };
 
     itemsById.set(ufragment.id, fragmentWithChildren);
@@ -970,8 +999,21 @@ function createSpanTreeStructure(
     if (!uitem.parentId) {
       continue;
     }
-    itemsById.get(uitem.parentId)?.children.push(item);
+    const parent = itemsById.get(uitem.parentId);
+    if (!parent) {
+      throw new Error('Missing parent.');
+    }
+
+    parent.children.push(item);
     item.startNs = parseRFC3339ToEpochNanos(uitem.startTime) - startNS;
+    item.percentageOfTotal = (
+      (nanosecondsToMilliseconds(item.durationNs) / nanosecondsToMilliseconds(root.durationNs)) *
+      100
+    ).toFixed(2);
+    item.percentageOfParentSpan = (
+      (nanosecondsToMilliseconds(item.durationNs) / nanosecondsToMilliseconds(parent.durationNs)) *
+      100
+    ).toFixed(2);
   }
 
   for (const item of itemsById.values()) {
@@ -986,11 +1028,15 @@ function createSpanTreeStructure(
     });
   }
 
-  return root;
+  return [root, itemsById as ReadonlyMap<string, SpanFragmentWithChildren>] as const;
 }
 
 function formatNanoseconds(nsBigInt: bigint) {
   const TEN_THOUSAND_NS = 10000n;
+
+  if (nsBigInt === 0n) {
+    return `0ms`;
+  }
 
   if (nsBigInt < TEN_THOUSAND_NS) {
     return `${nsBigInt}ns`;
@@ -1082,12 +1128,18 @@ const SpanSheet_SpanFragment = graphql(`
     spanAttributes
     name
     duration
+    parentId
   }
 `);
 
 type SpanSheetProps = {
   span: FragmentType<typeof SpanSheet_SpanFragment> | null;
+  computedSpanMetrics: ComputedSpanMetrics | null;
   onClose: () => void;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
 };
 
 function SpanSheet(props: SpanSheetProps) {
@@ -1095,6 +1147,7 @@ function SpanSheet(props: SpanSheetProps) {
   const [activeView, setActiveView] = useState<'span-attributes' | 'resource-attributes'>(
     'span-attributes',
   );
+  const clipboard = useClipboard();
 
   // TODO: maybe loading or not found state???
   if (!span) {
@@ -1111,27 +1164,80 @@ function SpanSheet(props: SpanSheetProps) {
 
   return (
     <Sheet open={true} onOpenChange={props.onClose}>
-      <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
+      <SheetContent className="flex flex-col border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
         <SheetHeader className="relative border-b border-gray-800 p-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-medium text-white">
-              Span Details
+              {!span.parentId && 'Root '}Span Details
               <span className="text-muted-foreground ml-2 font-mono font-normal">
                 {span.id.substring(0, 4)}
               </span>
+              <span className="text-muted-foreground ml-2">{span.name}</span>
             </SheetTitle>
           </div>
           <SheetDescription className="mt-1 text-xs text-gray-400">
             Span ID: <span className="font-mono">{span.id}</span>
+            <CopyIconButton value={span.id} label="Copy Span ID" />
           </SheetDescription>
-          <div className="mt-2 flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-gray-400" />
-              <span className="text-gray-300">{formatNanoseconds(BigInt(span.duration))}</span>
+          {props.computedSpanMetrics && (
+            <div className="grid grid-cols-2 gap-4 pt-3 md:grid-cols-4">
+              {/* Duration */}
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <div>
+                  <p className="text-muted-foreground text-xs">Duration</p>
+                  <p className="text-sm font-medium">
+                    {' '}
+                    {formatNanoseconds(props.computedSpanMetrics.durationNs)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Start Time */}
+              {props.computedSpanMetrics.startNs !== 0n && (
+                <div className="flex items-center space-x-2">
+                  <Play className="h-4 w-4 text-green-500" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">Start</p>
+                    <p className="text-sm font-medium">
+                      {' '}
+                      {formatNanoseconds(props.computedSpanMetrics.startNs)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Percentage of Total */}
+              {props.computedSpanMetrics.percentageOfTotal && (
+                <div className="flex items-center space-x-2">
+                  <PieChart className="h-4 w-4 text-purple-500" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">% of Total</p>
+                    <p className="text-sm font-medium">
+                      {' '}
+                      {props.computedSpanMetrics.percentageOfTotal}%
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Percentage of Parent */}
+              {props.computedSpanMetrics.percentageOfParentSpan && (
+                <div className="flex items-center space-x-2">
+                  <TreePine className="h-4 w-4 text-orange-500" />
+                  <div>
+                    <p className="text-muted-foreground text-xs">% of Parent</p>
+                    <p className="text-sm font-medium">
+                      {' '}
+                      {props.computedSpanMetrics.percentageOfParentSpan}%
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </SheetHeader>
-        <div>
+        <div className="overflow-hidden">
           <div className="flex h-full flex-col">
             <div className="sticky top-0 z-10 border-b border-gray-800">
               <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
@@ -1167,33 +1273,9 @@ function SpanSheet(props: SpanSheetProps) {
                     </div>
                   </div>
                 </TabButton>
-                {/* <TabButton
-                  isActive={activeView === 'events'}
-                  onClick={() => setActiveView('events')}
-                >
-                  <div className="flex items-center gap-x-2">
-                    <div>Events</div>
-                    <div>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                      >
-                        3
-                      </Badge>
-                    </div>
-                  </div>
-                </TabButton>
-                <TabButton
-                  isActive={activeView === 'operation'}
-                  onClick={() => setActiveView('operation')}
-                >
-                  <div className="flex items-center gap-x-2">
-                    <div>Operation</div>
-                  </div>
-                </TabButton> */}
               </div>
             </div>
-            <div className="h-full">
+            <div className="overflow-y-scroll">
               {activeView === 'span-attributes' && (
                 <div>
                   {spanAttributes.length > 0 ? (
@@ -1241,6 +1323,27 @@ function SpanSheet(props: SpanSheetProps) {
             </div>
           </div>
         </div>
+        <SheetFooter className="mt-auto border-t p-2">
+          {span.parentId && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link
+                to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                params={{
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                  traceId: props.traceId,
+                }}
+                search={{ activeSpanId: span.parentId }}
+              >
+                <ArrowUp className="mr-2 h-4 w-4" /> Show Parent Span
+              </Link>
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => clipboard(window.location.href)}>
+            <LinkLucide className="mr-2 h-4 w-4" /> Share Link
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
@@ -1253,39 +1356,28 @@ type AttributeRowProps = {
 
 function AttributeRow(props: AttributeRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const clipboard = useClipboard();
 
   const actionsNode = (
-    <TooltipProvider>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => clipboard(props.value)}
-            className="ml-auto"
-          >
-            <CopyIcon size="10" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Copy attribute value</TooltipContent>
-      </Tooltip>
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
-            {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <>
+      <CopyIconButton value={props.value} label="Copy attribute value" />
+      <TooltipProvider>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
+              {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </>
   );
 
   return (
     <div
       key={props.attributeKey}
       className={cn(
-        'border-border flex items-center justify-between border-b px-3 py-3 text-xs',
+        'border-border flex items-center justify-between border-b px-3 py-3 text-xs last:border-0',
         isExpanded && 'flex-col text-left',
       )}
     >
@@ -1303,5 +1395,31 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       {!isExpanded && actionsNode}
     </div>
+  );
+}
+
+type CopyIconButtonProps = {
+  label: string;
+  value: string;
+};
+
+function CopyIconButton(props: CopyIconButtonProps) {
+  const clipboard = useClipboard();
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => clipboard(props.value)}
+            className="ml-auto"
+          >
+            <CopyIcon size="10" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{props.label}</TooltipContent>
+      </Tooltip>{' '}
+    </TooltipProvider>
   );
 }
