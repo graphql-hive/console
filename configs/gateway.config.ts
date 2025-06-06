@@ -7,7 +7,7 @@
  *   -e HIVE_ORGANIZATION_ACCESS_TOKEN="<organization_access_key>"
  *   -e HIVE_TARGET_REF="<target_ref>"
  *   -e DEBUG=1
- *   ghcr.io/graphql-hive/gateway supergraph \
+ *   ghcr.io/graphql-hive/gateway:1.14.3-alpha-cf354599f0bca73b6f8b010a6747e42a17ef20d7 supergraph \
  *   "http://host.docker.internal:3001/artifacts/v1/<target_id>" \
  *   --hive-cdn-key '<cdn_key>'
  * ````
@@ -27,6 +27,12 @@ const useOnFetchTracer = (): GatewayPlugin => {
     onFetch({ url, options }) {
       upstreamCallHeaders.push({ url, headers: options.headers });
     },
+    // onSubgraphExecute({ executionRequest, requestId, subgraphName, ...res }) {
+    //   return async function onSubgraphExecuteDone({ result }) {
+    //     const span = trace.getSpan(executionRequest.context.opentelemetry.activeContext());
+    //     console.log('DUDUDUDUDUDUDUD', span);
+    //   };
+    // },
     onRequest({ request, url, endResponse, fetchAPI }) {
       if (url.pathname === '/upstream-fetch' && request.method === 'GET') {
         endResponse(fetchAPI.Response.json(upstreamCallHeaders));
@@ -71,6 +77,8 @@ class HiveTracingSpanProcessor implements SpanProcessor {
     const traceId = spanContext.traceId;
     const spanId = spanContext.spanId;
 
+    console.log(traceId, spanId);
+
     // Initialize trace data structures if needed
     if (!this.activeSpans.has(traceId)) {
       this.activeSpans.set(traceId, new Map());
@@ -82,7 +90,8 @@ class HiveTracingSpanProcessor implements SpanProcessor {
     this.activeSpans.get(traceId)!.set(spanId, span);
 
     // If this is a root span (no parent), mark it as the root span for this trace
-    if (!span.parentSpanId) {
+    // if (!span.parentSpanId) {
+    if (!span.parentSpanContext?.spanId) {
       this.rootSpanIds.set(traceId, spanId);
     }
 
@@ -128,9 +137,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
             rootSpan.setAttribute('hive.graphql.operation.type', operationType);
             rootSpan.setAttribute('hive.graphql.operation.name', operationName ?? '');
             rootSpan.setAttribute('hive.graphql.operation.document', document);
-
-            if (errorCount !== undefined)
-              rootSpan.setAttribute('hive.graphql.error.count', errorCount);
+            rootSpan.setAttribute('hive.graphql.error.count', String(errorCount ?? 0));
 
             // Add the subgraph names as a comma-separated list
             if (subgraphNamesForTrace && subgraphNamesForTrace.size > 0) {
@@ -147,6 +154,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
     // For any subgraph span that's ending, make sure we capture its name
     if (span.name && span.name.startsWith('subgraph.execute')) {
       const subgraphName = span.attributes['gateway.upstream.subgraph.name'];
+
       if (subgraphName && typeof subgraphName === 'string' && subgraphNamesForTrace) {
         subgraphNamesForTrace.add(subgraphName);
 
@@ -161,6 +169,20 @@ class HiveTracingSpanProcessor implements SpanProcessor {
           }
         }
       }
+
+      // add hive branded attributes
+      //
+      span.attributes['hive.graphql.subgraph.name'] =
+        span.attributes['gateway.upstream.subgraph.name'];
+      span.attributes['hive.graphql.operation.document'] = span.attributes['graphql.document'];
+      span.attributes['hive.graphql.operation.name'] = span.attributes['graphql.operation.name'];
+      span.attributes['hive.graphql.operation.type'] = span.attributes['graphql.operation.type'];
+      // TODO: attributes for error codes
+      // hive.graphql.error.count
+      span.attributes['hive.graphql.error.count'] = '0';
+      // hive.graphql.error.codes
+      // span.setAttribute('hive.graphql.error.codes', '');
+      //
     }
 
     // Clean up the span reference
@@ -195,6 +217,7 @@ async function createHiveTracingSpanProcessor(): Promise<HiveTracingSpanProcesso
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
+    contextManager: false,
     exporters: [
       createHiveTracingSpanProcessor(),
       createOtlpHttpExporter(
