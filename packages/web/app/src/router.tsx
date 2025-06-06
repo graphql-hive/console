@@ -683,17 +683,26 @@ const targetTracesRoute = createRoute({
   },
 });
 
+const TargetTraceRouteSearchModel = z.object({
+  activeSpanId: z.string().optional(),
+});
+
 const targetTraceRoute = createRoute({
   getParentRoute: () => targetRoute,
+  validateSearch(search) {
+    return TargetTraceRouteSearchModel.parse(search);
+  },
   path: 'trace/$traceId',
   component: function TargetTraceRoute() {
     const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
+    const { activeSpanId } = targetTraceRoute.useSearch();
     return (
       <TargetTracePage
-        traceId={traceId}
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        traceId={traceId}
+        activeSpanId={activeSpanId ?? null}
       />
     );
   },

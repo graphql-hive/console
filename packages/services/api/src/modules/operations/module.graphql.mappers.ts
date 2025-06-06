@@ -1,6 +1,7 @@
 import type Dataloader from 'dataloader';
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
+import { Span, Trace } from './providers/traces';
 
 // import { SqlValue } from './providers/sql';
 
@@ -58,3 +59,6 @@ export type TracesFilterOptionsMapper = {
     string
   >;
 };
+
+export type TraceMapper = Trace;
+export type SpanMapper = Span;
