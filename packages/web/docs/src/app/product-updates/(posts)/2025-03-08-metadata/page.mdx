@@ -26,25 +26,21 @@ extend schema @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@
 
 Metadata is useful for a variety of cases:
 
-- Indicating granular ownership e.g. `owner: "console-team"`
-- Adding contact information e.g. `contact: "#hive-channel"`
-- Defining field importance e.g. `priority: "tier-1"`
-- Defining domains e.g. `domain: "users"`
+- Indicating granular ownership e.g. `@meta(name: "owner", content: "console-team")`
+- Adding contact information e.g. `@meta(name: "contact", content: "#hive-channel")`
+- Defining field importance e.g. `@meta(name: "priority", content: "tier-1")`
+- Defining domains e.g. `@meta(name: "domain", content: "users")`
 
 ... and more.
 
-Currently, metadata can be viewed from Hive’s explorer page and can be used to filter the explorer
-view. And we expect there will be even more features built around this metadata in the future as
-Hive continues to expand.
-
-A full example schema of using metadata would look like:
+Putting it all together, an example schema using Hive's metadata might look like:
 
 ```graphql
 extend schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
   @link(url: "https://specs.apollo.dev/federation/v2.3")
   @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-  @meta(name: "owner", content: "users-team")
+  @meta(name: "owner", content: "noreply@the-guild.dev")
 
 directive @meta(
   name: String!
@@ -52,14 +48,18 @@ directive @meta(
 ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 type Query {
-  me: User @meta(name: "priority", content: "tier-1")
+  user: User @meta(name: "domain", content: "accounts") @meta(name: "priority", content: "tier-1")
 }
 
 type User {
   id: ID!
-  name: String!
+  ssn: String @meta(name: "classification", content: "pii")
 }
 ```
+
+Currently, metadata can be viewed from Hive’s explorer page and can be used to filter the explorer
+view. And we expect there will be even more features built around this metadata in the future as
+Hive continues to expand.
 
 ---
 
