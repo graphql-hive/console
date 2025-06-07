@@ -235,6 +235,16 @@ const HivePersistedDocumentsSchema = zod.union([
   }),
 ]);
 
+const PublicApiSchema = zod.union([
+  zod.object({
+    PUBLIC_API: zod.union([zod.void(), zod.literal('0')]),
+  }),
+  zod.object({
+    PUBLIC_API: zod.literal('1'),
+    PUBLIC_API_REQUEST_SIGNING_SECRET: zod.union([zod.string(), zod.void()]),
+  }),
+]);
+
 const LogModel = zod.object({
   LOG_LEVEL: emptyString(
     zod
@@ -280,6 +290,7 @@ const configs = {
   zendeskSupport: ZendeskSupportModel.safeParse(processEnv),
   tracing: OpenTelemetryConfigurationModel.safeParse(processEnv),
   hivePersistedDocuments: HivePersistedDocumentsSchema.safeParse(processEnv),
+  publicApi: PublicApiSchema.safeParse(processEnv),
 };
 
 const environmentErrors: Array<string> = [];
@@ -326,6 +337,7 @@ const s3AuditLog = extractConfig(configs.s3AuditLog);
 const zendeskSupport = extractConfig(configs.zendeskSupport);
 const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
+const publicApi = extractConfig(configs.publicApi);
 
 const hiveUsageConfig =
   hive.HIVE_USAGE === '1'
@@ -519,4 +531,10 @@ export const env = {
     /** Whether app deployments should be enabled by default for everyone. */
     appDeploymentsEnabled: base.FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED === '1',
   },
+  publicApi:
+    publicApi.PUBLIC_API === '1'
+      ? {
+          requestSigningSecret: publicApi.PUBLIC_API_REQUEST_SIGNING_SECRET ?? null,
+        }
+      : null,
 } as const;
