@@ -2,6 +2,15 @@
 
 import { Kit } from '../kit';
 
+export const PreflightWorkerState = {
+  running: 'running',
+  ready: 'ready',
+} as const;
+
+export type PreflightWorkerState = (typeof PreflightWorkerState)[keyof typeof PreflightWorkerState];
+
+export type LogRecord = LogMessage | { type: 'separator' };
+
 type _MessageEvent<T> = MessageEvent<T>;
 
 export type LogMessage = {
