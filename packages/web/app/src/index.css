@@ -203,3 +203,13 @@
 .hive-badge-is-changed:after {
   @apply absolute right-2 size-1.5 rounded-full border border-orange-600 bg-orange-400 content-[''];
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
