@@ -125,6 +125,7 @@ export default gql`
       first: Int! = 15
       input: SchemaProposalVersionsInput
     ): SchemaProposalVersionConnection
+    commentsCount: Int!
   }
 
   type SchemaProposalReviewEdge {

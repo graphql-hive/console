@@ -20,6 +20,7 @@ import {
   Navigate,
   Outlet,
   useNavigate,
+  useParams,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
@@ -73,6 +74,8 @@ import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
+import { TargetProposalsPage } from './pages/target-proposals';
+import { SchemaProposalStage } from './gql/graphql';
 
 SuperTokens.init(frontendConfig());
 if (env.sentry) {
@@ -820,6 +823,49 @@ const targetChecksSingleRoute = createRoute({
   },
 });
 
+const targetProposalsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals',
+  validateSearch: 
+    z.object({
+      stage: z.enum([...Object.values(SchemaProposalStage).map(s => s.toLowerCase())] as [string, ...string[]]).array().optional().catch(() => void(0)),
+      user: z.string().array().optional(),
+    }),
+  component: function TargetProposalsRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
+    // select proposalId from child route
+    const proposalId = useParams({
+      strict: false,
+      select: p => p.proposalId,
+    });
+    const { stage, user } = targetProposalsRoute.useSearch();
+    return (
+      <TargetProposalsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        filterStages={stage}
+        filterUserIds={user}
+        selectedProposalId={proposalId}
+      />
+    );
+  },
+});
+
+const targetProposalRoute = createRoute({
+  getParentRoute: () => targetProposalsRoute,
+  path: '$proposalId',
+  component: function TargetProposalRoute() {
+    const { proposalId } = targetProposalRoute.useParams();
+    const TargetProposalPage = (props: { proposalId: string}) => <div className="p-4 bg-gray-900/50 w-full ml-4 flex grow rounded">@TODO Render {props.proposalId}</div>;
+    return (
+      <TargetProposalPage
+        proposalId={proposalId}
+      />
+    );
+  },
+});
+
 const routeTree = root.addChildren([
   notFoundRoute,
   anonymousRoute.addChildren([
@@ -875,6 +921,7 @@ const routeTree = root.addChildren([
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
       targetAppVersionRoute,
       targetAppsRoute,
+      targetProposalsRoute.addChildren([targetProposalRoute]),
     ]),
   ]),
 ]);

@@ -11,5 +11,6 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = asy
     id,
     stage: 'OPEN',
     updatedAt: Date.now(),
+    commentsCount: 5,
   };
 };
