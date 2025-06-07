@@ -1,4 +1,4 @@
-import { laboratory } from '../support/testkit';
+import { cyLaboratory } from './__cypress__';
 
 beforeEach(() => {
   cy.clearAllLocalStorage().then(() => {
@@ -16,21 +16,21 @@ describe('Laboratory > Tabs', () => {
     const op2 = 'query { tab2 }';
 
     // make sure there's only one tab
-    laboratory.closeTabsUntilOneLeft();
-    laboratory.updateEditorValue(op1);
-    laboratory.getEditorValue().should('eq', op1);
+    cyLaboratory.closeTabsUntilOneLeft();
+    cyLaboratory.updateEditorValue(op1);
+    cyLaboratory.getEditorValue().should('eq', op1);
 
     // open a new tab and update its value
-    laboratory.openNewTab();
-    laboratory.updateEditorValue(op2);
-    laboratory.getEditorValue().should('eq', op2);
+    cyLaboratory.openNewTab();
+    cyLaboratory.updateEditorValue(op2);
+    cyLaboratory.getEditorValue().should('eq', op2);
 
     // close the second tab
-    laboratory.closeActiveTab();
-    laboratory.getEditorValue().should('eq', op1);
+    cyLaboratory.closeActiveTab();
+    cyLaboratory.getEditorValue().should('eq', op1);
     // close the first tab
-    laboratory.closeActiveTab();
+    cyLaboratory.closeActiveTab();
     // it should reset the editor to its default state
-    laboratory.getEditorValue().should('not.eq', op1);
+    cyLaboratory.getEditorValue().should('not.eq', op1);
   });
 });
