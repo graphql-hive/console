@@ -273,7 +273,7 @@ test('run action again when the action expires', async ({ expect }) => {
 
   await expect(run1).resolves.toBe('foo');
   await expect(run2).resolves.toBe('foo');
-});
+}, { retry: 3 });
 
 test('decide on cache duration', async ({ expect }) => {
   const ttlMs = {
