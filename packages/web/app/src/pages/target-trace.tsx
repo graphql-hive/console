@@ -1358,19 +1358,19 @@ function AttributeRow(props: AttributeRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const actionsNode = (
-    <>
+    <span className="ml-auto mr-0 flex text-white">
       <CopyIconButton value={props.value} label="Copy attribute value" />
       <TooltipProvider>
-        <Tooltip delayDuration={0}>
+        <Tooltip delayDuration={0} disableHoverableContent>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon-xs" onClick={() => setIsExpanded(bool => !bool)}>
               {isExpanded ? <ChevronUp size="14" /> : <ChevronDown size="14" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
+          <TooltipContent className="text-xs">{isExpanded ? 'Collapse' : 'Expand'}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    </>
+    </span>
   );
 
   return (
@@ -1407,7 +1407,7 @@ function CopyIconButton(props: CopyIconButtonProps) {
   const clipboard = useClipboard();
   return (
     <TooltipProvider>
-      <Tooltip delayDuration={0}>
+      <Tooltip delayDuration={0} disableHoverableContent>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
@@ -1418,7 +1418,7 @@ function CopyIconButton(props: CopyIconButtonProps) {
             <CopyIcon size="10" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{props.label}</TooltipContent>
+        <TooltipContent className="text-xs">{props.label}</TooltipContent>
       </Tooltip>{' '}
     </TooltipProvider>
   );
