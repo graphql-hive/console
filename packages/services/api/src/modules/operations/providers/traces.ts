@@ -246,7 +246,7 @@ const TraceModel = z.object({
     z.literal('SUBSCRIPTION'),
   ]),
   graphqlErrorCodes: z.array(z.string()).nullable(),
-  subgraphNames: z.array(z.string()),
+  subgraphNames: z.array(z.string()).transform(s => (s.length === 1 && s.at(0) === '' ? [] : s)),
 });
 
 export type Trace = z.TypeOf<typeof TraceModel>;
