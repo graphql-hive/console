@@ -49,8 +49,7 @@ const fetchProductsQueryString = `
 
 interface TraceAttribute {
   name: string;
-  value: string | number | ReactNode;
-  category?: string;
+  value: string;
 }
 
 function TraceView(props: {
@@ -117,26 +116,28 @@ function TraceView(props: {
           />
         </div>
       </ScrollArea>
-      <div className="sticky bottom-0 z-10 px-2 py-4">
-        <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-          {props.serviceNames.map(serviceName => (
-            <div
-              key={serviceName}
-              className="flex cursor-pointer items-center gap-2 hover:text-white"
-              onMouseEnter={() => setHighlightedServiceName(serviceName)}
-              onMouseLeave={() => setHighlightedServiceName(null)}
-            >
+      {props.serviceNames && (
+        <div className="sticky bottom-0 z-10 px-2 py-4">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+            {props.serviceNames.map(serviceName => (
               <div
-                className="size-2"
-                style={{
-                  backgroundColor: stringToHSL(serviceName),
-                }}
-              />
-              <div>{serviceName}</div>
-            </div>
-          ))}
+                key={serviceName}
+                className="flex cursor-pointer items-center gap-2 hover:text-white"
+                onMouseEnter={() => setHighlightedServiceName(serviceName)}
+                onMouseLeave={() => setHighlightedServiceName(null)}
+              >
+                <div
+                  className="size-2"
+                  style={{
+                    backgroundColor: stringToHSL(serviceName),
+                  }}
+                />
+                <div>{serviceName}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -405,6 +406,37 @@ function countChildren(spans: SpanFragmentWithChildren[]): number {
   return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
 }
 
+type NodeElementProps = {
+  leftPositionPercentage: number;
+  widthPercentage: number;
+  isNearRightEdge: boolean;
+  durationStr: string;
+  color: string;
+};
+
+function NodeElement(props: NodeElementProps) {
+  return (
+    <div
+      className={cn('absolute z-20 block h-6 min-w-[1px] select-none rounded-sm')}
+      style={{
+        left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
+        width: `${props.widthPercentage}%`,
+        backgroundColor: props.color,
+      }}
+    >
+      <div
+        className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+        style={{
+          fontSize: '11px',
+          ...(props.isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
+        }}
+      >
+        {props.durationStr}
+      </div>
+    </div>
+  );
+}
+
 function SpanNode(props: SpanNodeProps) {
   const span = useFragment(SpanFragment, props.span.span);
 
@@ -491,24 +523,13 @@ function SpanNode(props: SpanNodeProps) {
           >
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
-                <div
-                  className={cn('absolute z-20 block h-6 min-w-[1px] select-none rounded-sm')}
-                  style={{
-                    left: `min(${leftPositionPercentage}%, 100% - 1px)`,
-                    width: `${widthPercentage}%`,
-                    backgroundColor: props.color,
-                  }}
-                >
-                  <div
-                    className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
-                    style={{
-                      fontSize: '11px',
-                      ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
-                    }}
-                  >
-                    {formatNanoseconds(props.span.durationNs)}
-                  </div>
-                </div>
+                <NodeElement
+                  color={props.color}
+                  isNearRightEdge={isNearRightEdge}
+                  leftPositionPercentage={leftPositionPercentage}
+                  widthPercentage={widthPercentage}
+                  durationStr={formatNanoseconds(props.span.durationNs)}
+                />
               </TooltipTrigger>
               <TooltipContent
                 side="bottom"
@@ -657,7 +678,9 @@ type TraceSheetProps = {
 };
 
 function TraceSheet(props: TraceSheetProps) {
-  const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
+  const [activeView, setActiveView] = useState<
+    'span-attributes' | 'resource-attributes' | 'events' | 'operation'
+  >('span-attributes');
   const trace = useFragment(TraceSheet_TraceFragment, props.trace);
 
   const [rootSpan, spanLookupMap] = useMemo(
@@ -671,7 +694,12 @@ function TraceSheet(props: TraceSheetProps) {
   ).map(([name, value]) => ({
     name,
     value: String(value),
-    category: name.split('.')[0] ?? 'unknown',
+  }));
+  const resourceAttributes: Array<TraceAttribute> = Array.from(
+    Object.entries(rootSpanUnmasked.resourceAttributes),
+  ).map(([name, value]) => ({
+    name,
+    value: String(value),
   }));
 
   const totalTraceDuration = differenceInNanoseconds(
@@ -706,8 +734,8 @@ function TraceSheet(props: TraceSheetProps) {
               <div className="sticky top-0 z-10 border-b border-gray-800">
                 <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
                   <TabButton
-                    isActive={activeView === 'attributes'}
-                    onClick={() => setActiveView('attributes')}
+                    isActive={activeView === 'span-attributes'}
+                    onClick={() => setActiveView('span-attributes')}
                   >
                     <div className="flex items-center gap-x-2">
                       <div>Attributes</div>
@@ -716,12 +744,28 @@ function TraceSheet(props: TraceSheetProps) {
                           variant="secondary"
                           className="rounded-md px-2 py-0.5 text-[10px] font-thin"
                         >
-                          7
+                          {spanAttributes.length}
                         </Badge>
                       </div>
                     </div>
                   </TabButton>
                   <TabButton
+                    isActive={activeView === 'resource-attributes'}
+                    onClick={() => setActiveView('resource-attributes')}
+                  >
+                    <div className="flex items-center gap-x-2">
+                      <div>Resource Attributes</div>
+                      <div>
+                        <Badge
+                          variant="secondary"
+                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                        >
+                          {resourceAttributes.length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </TabButton>
+                  {/* <TabButton
                     isActive={activeView === 'events'}
                     onClick={() => setActiveView('events')}
                   >
@@ -736,7 +780,7 @@ function TraceSheet(props: TraceSheetProps) {
                         </Badge>
                       </div>
                     </div>
-                  </TabButton>
+                  </TabButton> */}
                   <TabButton
                     isActive={activeView === 'operation'}
                     onClick={() => setActiveView('operation')}
@@ -749,20 +793,16 @@ function TraceSheet(props: TraceSheetProps) {
               </div>
               <ScrollArea className="relative grow">
                 <div className="h-full">
-                  {activeView === 'attributes' ? (
+                  {activeView === 'span-attributes' ? (
                     <div>
                       {spanAttributes.length > 0 ? (
-                        <div>
-                          {spanAttributes.map((attr, index) => (
-                            <div
-                              key={index}
-                              className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
-                            >
-                              <div className="text-gray-400">{attr.name}</div>
-                              <div className="font-mono text-white">{attr.value}</div>
-                            </div>
-                          ))}
-                        </div>
+                        spanAttributes.map(attr => (
+                          <AttributeRow
+                            attributeKey={attr.name}
+                            key={attr.name}
+                            value={attr.value}
+                          />
+                        ))
                       ) : (
                         <div className="py-4 text-center">
                           <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
@@ -773,7 +813,27 @@ function TraceSheet(props: TraceSheetProps) {
                       )}
                     </div>
                   ) : null}
-                  {activeView === 'events' ? (
+                  {activeView === 'resource-attributes' ? (
+                    <div>
+                      {resourceAttributes.length > 0 ? (
+                        resourceAttributes.map(attr => (
+                          <AttributeRow
+                            attributeKey={attr.name}
+                            key={attr.name}
+                            value={attr.value}
+                          />
+                        ))
+                      ) : (
+                        <div className="py-4 text-center">
+                          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                          <p className="text-xs text-gray-500">
+                            No resource attributes found for this trace
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                  {/* {activeView === 'events' ? (
                     <div className="p-4">
                       <div className="space-y-2">
                         {[
@@ -818,7 +878,7 @@ function TraceSheet(props: TraceSheetProps) {
                         ))}
                       </div>
                     </div>
-                  ) : null}
+                  ) : null} */}
                   {activeView === 'operation' ? (
                     <div className="absolute bottom-0 top-0 w-full">
                       <GraphQLHighlight
@@ -945,6 +1005,7 @@ const SpanFragment = graphql(/* GraphQL */ `
     id
     name
     spanAttributes
+    resourceAttributes
     parentId
     startTime
     endTime
