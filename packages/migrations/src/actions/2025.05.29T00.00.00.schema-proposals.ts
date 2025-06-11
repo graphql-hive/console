@@ -125,6 +125,12 @@ export default {
           , line_text text
           -- used in combination with the line_text to determine what line in the current version this review is attributed to
           , original_line_num INT
+          -- the coordinate closest to the reviewed line. E.g. if a comment is reviewed, then
+          -- this is the coordinate that the comment applies to.
+          -- note that the line_text must still be stored in case the coordinate can no
+          -- longer be found in the latest proposal version. That way a preview of the reviewed
+          -- line can be provided.
+          , schema_coordinate text
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposal_reviews_schema_proposal_id ON schema_proposal_reviews(
