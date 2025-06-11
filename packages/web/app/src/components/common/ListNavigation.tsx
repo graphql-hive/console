@@ -98,10 +98,8 @@ export function ListNavigationWrapper(props: { list: ReactNode; content: ReactNo
       <ListNavigation>{props.list}</ListNavigation>
       <div
         className={cn(
-          // !isListNavCollapsed && !isListNavHidden && "dimmed",
           isListNavHidden ? 'flex grow' : 'hidden',
           'w-full md:flex md:grow',
-          // !isListNavHidden && !isListNavCollapsed && 'hidden md:flex w-[120px] overflow-hidden',
           !isListNavHidden && isListNavCollapsed && 'flex',
           !isListNavCollapsed && !isListNavHidden && 'hidden md:hidden',
         )}
@@ -114,32 +112,15 @@ export function ListNavigationWrapper(props: { list: ReactNode; content: ReactNo
 
 export function ListNavigation(props: { children: ReactNode }) {
   const { isListNavCollapsed, isListNavHidden } = useListNavigationContext();
-
-  /**
-   * This can be in a few different stats:
-   * MOBILE (sm)
-   *  is always fullscreen when not hidden and not collapsed.
-   *   hide collapse/expand button
-   *  collapsed OR hidden
-   *    => display: none. Menu button toggles hidden.
-   * DESKTOP (md+)
-   *   show "collapse/expand" button
-   *   collapsed
-   *    => less wide
-   */
-
   return (
     <div
       className={cn(
         'relative z-10 flex w-full flex-row',
         isListNavCollapsed && !isListNavHidden && 'md:w-[300px] xl:w-[420px]',
 
-        /** This is not intuitive, but we want to flip the hidden flag when the screen shrinks so that the default state
-         * is to hide the nav bar, rather than take up the full screen.
-         *
-         * @TODO get the content to render.... isListNavCollapsed && !isListNavHidden).???
-         * and when clicking on a proposal (at least in fullscreen mode...) then hide the navbar
-         * AND if a proposal is selected, then allow the side menu to expand and collapse (enable showing a button to do that)
+        /**
+         * This is not intuitive, but we want hide the menu when collapsed and small.
+         * All or nothing better accomodates small screens.
          */
         isListNavCollapsed && 'hidden md:flex',
         !isListNavCollapsed && !isListNavHidden && 'flex',
