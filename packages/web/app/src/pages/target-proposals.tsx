@@ -284,7 +284,6 @@ const ProposalsListPage = (props: {
                       </div>
                     ) : null}
                   </div>
-                  {/* @todo link to the diffVersion on the history page e.g. http://localhost:3000/my-organization/federation-project/development/history/7f82bfb7-799f-433b-9eda-f192114a4e32 ??*/}
                 </div>
                 <div
                   className={cn(
