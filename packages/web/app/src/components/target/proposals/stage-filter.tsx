@@ -1,16 +1,14 @@
-import { SchemaProposalStage } from "@/gql/graphql";
-import { useRouter, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
-import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
-import { Checkbox } from "@/components/v2";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/v2';
+import { SchemaProposalStage } from '@/gql/graphql';
+import { useRouter, useSearch } from '@tanstack/react-router';
 
-export const StageFilter = ({ selectedStages }: {
-  selectedStages: string[];
-}) => {
+export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) => {
   const [open, setOpen] = useState(false);
   const hasSelection = selectedStages.length !== 0;
   const router = useRouter();
@@ -30,7 +28,7 @@ export const StageFilter = ({ selectedStages }: {
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="truncate p-0 w-[180px]">
+      <PopoverContent align="end" className="w-[180px] truncate p-0">
         <Command>
           <CommandGroup>
             <ScrollArea className="relative max-h-screen">
@@ -55,8 +53,9 @@ export const StageFilter = ({ selectedStages }: {
                   }}
                   className="cursor-pointer truncate"
                 >
-                  <div className="flex-row flex items-center">
-                    <Checkbox className="mr-[6px]" checked={selectedStages.includes(stage)}/><div className="flex-col flex-grow text-ellipsis whitespace-nowrap overflow-hidden max-w-[350px]">{stage}</div>
+                  <div className="flex flex-row items-center">
+                    <Checkbox className="mr-[6px]" checked={selectedStages.includes(stage)} />
+                    <div className="max-w-[350px] grow flex-col truncate">{stage}</div>
                   </div>
                 </CommandItem>
               ))}
@@ -65,5 +64,5 @@ export const StageFilter = ({ selectedStages }: {
         </Command>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};

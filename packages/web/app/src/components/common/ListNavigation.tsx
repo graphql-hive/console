@@ -1,20 +1,20 @@
-import { createContext, ReactNode, useCallback, useContext, useState } from "react";
-import { Button } from "../ui/button";
-import { HamburgerMenuIcon } from "@radix-ui/react-icons";
-import { cn } from "@/lib/utils";
+import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { HamburgerMenuIcon } from '@radix-ui/react-icons';
+import { Button } from '../ui/button';
 
 type ListNavigationContextType = {
   isListNavCollapsed: boolean;
-  setListNavCollapsed: (collapsed: boolean) => void;
+  setIsListNavCollapsed: (collapsed: boolean) => void;
   isListNavHidden: boolean;
-  setListNavHidden: (hidden: boolean) => void;
-}
+  setIsListNavHidden: (hidden: boolean) => void;
+};
 
 const ListNavigationContext = createContext<ListNavigationContextType>({
   isListNavCollapsed: true,
-  setListNavCollapsed: () => {},
+  setIsListNavCollapsed: () => {},
   isListNavHidden: false,
-  setListNavHidden: () => {},
+  setIsListNavHidden: () => {},
 });
 
 export function useListNavigationContext() {
@@ -30,94 +30,89 @@ export function ListNavigationProvider({
   isCollapsed: boolean;
   isHidden: boolean;
 }) {
-  const [isListNavCollapsed, setListNavCollapsed] = useState(isCollapsed);
-  const [isListNavHidden, setListNavHidden] = useState(isHidden);
+  const [isListNavCollapsed, setIsListNavCollapsed] = useState(isCollapsed);
+  const [isListNavHidden, setIsListNavHidden] = useState(isHidden);
 
   return (
     <ListNavigationContext.Provider
       value={{
         isListNavCollapsed,
-        setListNavCollapsed,
+        setIsListNavCollapsed,
         isListNavHidden,
-        setListNavHidden,
+        setIsListNavHidden,
       }}
     >
       {children}
     </ListNavigationContext.Provider>
-  )
+  );
 }
 
 export function useListNavCollapsedToggle() {
-  const { setListNavCollapsed, isListNavCollapsed } = useListNavigationContext();
+  const { setIsListNavCollapsed, isListNavCollapsed } = useListNavigationContext();
   const toggle = useCallback(() => {
-    setListNavCollapsed(!isListNavCollapsed);
-  }, [setListNavCollapsed, isListNavCollapsed]);
+    setIsListNavCollapsed(!isListNavCollapsed);
+  }, [setIsListNavCollapsed, isListNavCollapsed]);
 
-  return [isListNavCollapsed, toggle] as const
+  return [isListNavCollapsed, toggle] as const;
 }
 
 export function useListNavHiddenToggle() {
-  const { setListNavHidden, isListNavHidden, isListNavCollapsed, setListNavCollapsed } = useListNavigationContext();
+  const { setIsListNavHidden, isListNavHidden, isListNavCollapsed, setIsListNavCollapsed } =
+    useListNavigationContext();
   const toggle = useCallback(() => {
     if (isListNavHidden === false && isListNavCollapsed === true) {
-      setListNavCollapsed(false);
+      setIsListNavCollapsed(false);
     } else {
-      setListNavHidden(!isListNavHidden);
+      setIsListNavHidden(!isListNavHidden);
     }
-  }, [isListNavHidden, setListNavHidden, isListNavCollapsed, setListNavCollapsed]);
+  }, [isListNavHidden, setIsListNavHidden, isListNavCollapsed, setIsListNavCollapsed]);
 
-  return [isListNavHidden, toggle] as const
+  return [isListNavHidden, toggle] as const;
 }
 
 function MenuButton({ onClick, className }: { className?: string; onClick: () => void }) {
   return (
-    <Button
-      variant="ghost"
-      className={cn("p-[10px]", className)}
-      onClick={onClick}
-    >
-      <HamburgerMenuIcon/>
+    <Button variant="ghost" className={cn('p-[10px]', className)} onClick={onClick}>
+      <HamburgerMenuIcon />
     </Button>
-  )
+  );
 }
 
-export function ListNavigationTrigger(props: {
-  children?: ReactNode,
-  className?: string
-}) {
+export function ListNavigationTrigger(props: { children?: ReactNode; className?: string }) {
   const [_hidden, toggle] = useListNavHiddenToggle();
 
-  return (
-    props.children ? <Button className={props.className} onClick={toggle}>{props.children}</Button> : <MenuButton className={props.className} onClick={toggle}/>
-  )
-};
+  return props.children ? (
+    <Button className={props.className} onClick={toggle}>
+      {props.children}
+    </Button>
+  ) : (
+    <MenuButton className={props.className} onClick={toggle} />
+  );
+}
 
-export function ListNavigationWrapper(props: { list: ReactNode; content: ReactNode}) {
+export function ListNavigationWrapper(props: { list: ReactNode; content: ReactNode }) {
   const { isListNavCollapsed, isListNavHidden } = useListNavigationContext();
 
   return (
-    <div className="flex flex-row relative grow">
-      <ListNavigation>
-        {props.list}
-      </ListNavigation>
+    <div className="relative flex grow flex-row">
+      <ListNavigation>{props.list}</ListNavigation>
       <div
         className={cn(
           // !isListNavCollapsed && !isListNavHidden && "dimmed",
-          isListNavHidden ? "flex grow" : "hidden",
-          "md:flex md:grow w-full",
+          isListNavHidden ? 'flex grow' : 'hidden',
+          'w-full md:flex md:grow',
           // !isListNavHidden && !isListNavCollapsed && 'hidden md:flex w-[120px] overflow-hidden',
           !isListNavHidden && isListNavCollapsed && 'flex',
           !isListNavCollapsed && !isListNavHidden && 'hidden md:hidden',
-        )}>
+        )}
+      >
         {props.content}
       </div>
     </div>
-  )
+  );
 }
 
-export function ListNavigation(props: {
-  children: ReactNode;
-}) {
+export function ListNavigation(props: { children: ReactNode }) {
   const { isListNavCollapsed, isListNavHidden } = useListNavigationContext();
 
   /**
@@ -136,12 +131,12 @@ export function ListNavigation(props: {
   return (
     <div
       className={cn(
-        "relative flex flex-row z-10 w-full",
+        'relative z-10 flex w-full flex-row',
         isListNavCollapsed && !isListNavHidden && 'md:w-[300px] xl:w-[420px]',
 
         /** This is not intuitive, but we want to flip the hidden flag when the screen shrinks so that the default state
          * is to hide the nav bar, rather than take up the full screen.
-         * 
+         *
          * @TODO get the content to render.... isListNavCollapsed && !isListNavHidden).???
          * and when clicking on a proposal (at least in fullscreen mode...) then hide the navbar
          * AND if a proposal is selected, then allow the side menu to expand and collapse (enable showing a button to do that)
@@ -149,11 +144,10 @@ export function ListNavigation(props: {
         isListNavCollapsed && 'hidden md:flex',
         !isListNavCollapsed && !isListNavHidden && 'flex',
         isListNavHidden && 'hidden md:hidden',
-      )}>
-      <div
-        className={"absolute inset-0 w-full"}
-      >
-        <div className={"gap-5 sticky top-0 bottom-0 left-0 h-full max-h-screen w-full overflow-y-auto"}>
+      )}
+    >
+      <div className="absolute inset-0 w-full">
+        <div className="sticky inset-y-0 left-0 size-full max-h-screen gap-5 overflow-y-auto">
           {props.children}
         </div>
       </div>

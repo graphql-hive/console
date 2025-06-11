@@ -27,6 +27,7 @@ import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
@@ -73,9 +74,8 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
-import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetProposalsPage } from './pages/target-proposals';
-import { SchemaProposalStage } from './gql/graphql';
+import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
 SuperTokens.init(frontendConfig());
 if (env.sentry) {
@@ -826,11 +826,14 @@ const targetChecksSingleRoute = createRoute({
 const targetProposalsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals',
-  validateSearch: 
-    z.object({
-      stage: z.enum([...Object.values(SchemaProposalStage).map(s => s.toLowerCase())] as [string, ...string[]]).array().optional().catch(() => void(0)),
-      user: z.string().array().optional(),
-    }),
+  validateSearch: z.object({
+    stage: z
+      .enum(Object.values(SchemaProposalStage).map(s => s.toLowerCase()) as [string, ...string[]])
+      .array()
+      .optional()
+      .catch(() => void 0),
+    user: z.string().array().optional(),
+  }),
   component: function TargetProposalsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
     // select proposalId from child route
@@ -857,12 +860,12 @@ const targetProposalRoute = createRoute({
   path: '$proposalId',
   component: function TargetProposalRoute() {
     const { proposalId } = targetProposalRoute.useParams();
-    const TargetProposalPage = (props: { proposalId: string}) => <div className="p-4 bg-gray-900/50 w-full ml-4 flex grow rounded">@TODO Render {props.proposalId}</div>;
-    return (
-      <TargetProposalPage
-        proposalId={proposalId}
-      />
+    const TargetProposalPage = (props: { proposalId: string }) => (
+      <div className="ml-4 flex w-full grow rounded bg-gray-900/50 p-4">
+        @TODO Render {props.proposalId}
+      </div>
     );
+    return <TargetProposalPage proposalId={proposalId} />;
   },
 });
 

@@ -1,21 +1,29 @@
-import { useRouter, useSearch } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMemo, useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
-import { Checkbox } from "@/components/v2";
-import { Button } from "@/components/ui/button";
-import { useQuery } from "urql";
+import { useQuery } from 'urql';
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/v2';
 import { graphql } from '@/gql';
+import { useRouter, useSearch } from '@tanstack/react-router';
 
 const UsersSearchQuery = graphql(`
   query UsersSearch($organizationSlug: String!, $after: String, $first: Int) {
-    organization(reference: { bySelector: { organizationSlug: $organizationSlug }}) {
+    organization(reference: { bySelector: { organizationSlug: $organizationSlug } }) {
+      id
       viewerCanSeeMembers
       members(first: $first, after: $after) {
         edges {
           node {
+            id
             user {
               id
               displayName
@@ -29,23 +37,28 @@ const UsersSearchQuery = graphql(`
         }
       }
     }
-  }`);
+  }
+`);
 
-export const UserFilter = ({ selectedUsers, organizationSlug }: {
+export const UserFilter = ({
+  selectedUsers,
+  organizationSlug,
+}: {
   selectedUsers: string[];
   organizationSlug: string;
 }) => {
   const [open, setOpen] = useState(false);
-  const [pages, setPages] = useState([{after: null, first: 200}])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [pages, setPages] = useState([{ after: null, first: 200 }]);
   const hasSelection = selectedUsers.length !== 0;
   const router = useRouter();
   const [query] = useQuery({
     query: UsersSearchQuery,
     variables: {
-      after: pages[pages.length-1]?.after,
-      first: pages[pages.length-1]?.first,
+      after: pages[pages.length - 1]?.after,
+      first: pages[pages.length - 1]?.first,
       organizationSlug,
-    }
+    },
   });
   const search = useSearch({ strict: false });
   const users = query.data?.organization?.members.edges.map(e => e.node.user) ?? [];
@@ -56,7 +69,7 @@ export const UserFilter = ({ selectedUsers, organizationSlug }: {
       return match?.displayName ?? match?.fullName ?? 'Unknown';
     });
   }, [users]);
-  
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -72,9 +85,7 @@ export const UserFilter = ({ selectedUsers, organizationSlug }: {
       </PopoverTrigger>
       <PopoverContent align="end" className="p-0">
         <Command>
-          <CommandInput
-            placeholder="Search org members..."
-          />
+          <CommandInput placeholder="Search org members..." />
           <CommandEmpty>No results.</CommandEmpty>
           <CommandGroup>
             <ScrollArea className="relative max-h-screen">
@@ -101,8 +112,8 @@ export const UserFilter = ({ selectedUsers, organizationSlug }: {
                   }}
                   className="cursor-pointer truncate"
                 >
-                  <div className="flex flex-row items-center w-[270px] truncate min-w-0">
-                    <Checkbox className="mr-[6px]" checked={selectedUsers.includes(user.id)}/>
+                  <div className="flex w-[270px] min-w-0 flex-row items-center truncate">
+                    <Checkbox className="mr-[6px]" checked={selectedUsers.includes(user.id)} />
                     <span className="truncate">{user.displayName ?? user.fullName}</span>
                   </div>
                 </CommandItem>
@@ -112,5 +123,5 @@ export const UserFilter = ({ selectedUsers, organizationSlug }: {
         </Command>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
