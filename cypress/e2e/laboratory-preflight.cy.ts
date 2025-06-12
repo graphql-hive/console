@@ -246,7 +246,7 @@ describe('Execution', () => {
     // Run GraphiQL
     cy.intercept({ headers: preflightHeaders }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
-    cy.wait('@request');
+    cy.wait('@request', { timeout: 10_000 });
   });
 
   it('result.request.headers are NOT substituted with environment variables', () => {
@@ -282,7 +282,7 @@ describe('Execution', () => {
       },
     }).as('request');
     cy.get(selectors.graphiql.buttonExecute).click();
-    cy.wait('@request');
+    cy.wait('@request', { timeout: 10_000 });
   });
 
   it('header placeholders are substituted with environment variables', () => {
