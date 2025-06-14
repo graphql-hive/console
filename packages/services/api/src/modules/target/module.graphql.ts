@@ -268,9 +268,10 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     project: Project!
     """
-    The endpoint url of the target's explorer instance.
+    The endpoint url of the target's explorer/laboratory instance.
+    This is the public endpoint configured in target's settings.
     """
-    graphqlEndpointUrl: String
+    graphqlEndpointUrl: String @tag(name: "public")
     """
     Whether a dangerous change fails a schema check and requires a manual approval.
     """
