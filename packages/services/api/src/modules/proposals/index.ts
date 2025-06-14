@@ -8,5 +8,4 @@ export const proposalsModule = createModule({
   typeDefs,
   resolvers,
   providers: [],
-  // providers: [TargetManager, TargetsByIdCache, TargetsBySlugCache],
 });

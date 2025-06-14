@@ -8,6 +8,7 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
   /* Implement Mutation.createSchemaProposal resolver logic here */
   return {
     createdAt: Date.now(),
+    commentsCount: 5,
     id: `abcd-1234-efgh-5678-wxyz`,
     stage: 'DRAFT',
     updatedAt: Date.now(),
