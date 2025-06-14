@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -31,9 +37,18 @@ export function TargetSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
   currentTargetSlug: string;
+  optional?: boolean;
+  showOrganization?: boolean;
+  showProject?: boolean;
+  onValueChange?: Function;
   organizations: FragmentType<typeof TargetSelector_OrganizationConnectionFragment> | null;
 }) {
   const router = useRouter();
+
+  const showOrganization =
+    typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
+  const showProject = typeof props.showProject !== 'undefined' ? props.showProject : true;
+  const isOptional = typeof props.optional !== 'undefined' ? props.optional : false;
 
   const organizations = useFragment(
     TargetSelector_OrganizationConnectionFragment,
@@ -85,20 +100,26 @@ export function TargetSelector(props: {
         <>
           <Select
             value={props.currentTargetSlug}
-            onValueChange={id => {
-              void router.navigate({
-                to: '/$organizationSlug/$projectSlug/$targetSlug',
-                params: {
-                  organizationSlug: props.currentOrganizationSlug,
-                  projectSlug: props.currentProjectSlug,
-                  targetSlug: id,
-                },
-              });
-            }}
+            onValueChange={
+              onValueChangeFunc
+                ? id => {
+                    onValueChangeFunc(id);
+                  }
+                : id => {
+                    void router.navigate({
+                      to: '/$organizationSlug/$projectSlug/$targetSlug',
+                      params: {
+                        organizationSlug: props.currentOrganizationSlug,
+                        projectSlug: props.currentProjectSlug,
+                        targetSlug: id,
+                      },
+                    });
+                  }
+            }
           >
             <SelectTrigger variant="default" data-cy="target-picker-trigger">
               <div className="font-medium" data-cy="target-picker-current">
-                {currentTarget.slug}
+                {isOptional ? <SelectValue placeholder="Pick an option" /> : (currentTarget?.slug ?? '')}  
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -110,7 +131,22 @@ export function TargetSelector(props: {
                 >
                   {edge.node.slug}
                 </SelectItem>
-              ))}
+              ) : (
+                <></>
+              )}
+              {targets ? (
+                targets.map(target => (
+                  <SelectItem
+                    key={target.slug}
+                    value={target.id}
+                    data-cy={`target-picker-option-${target.slug}`}
+                  >
+                    {target.slug}
+                  </SelectItem>
+                ))
+              ) : (
+                <></>
+              )}
             </SelectContent>
           </Select>
         </>
