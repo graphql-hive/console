@@ -334,6 +334,7 @@ export interface schema_proposal_reviews {
   line_text: string | null;
   original_line_num: number | null;
   original_schema_proposal_version_id: string;
+  schema_coordinate: string | null;
   schema_proposal_id: string;
   stage_transition: schema_proposal_stage;
   user_id: string | null;
