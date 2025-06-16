@@ -12,6 +12,7 @@ export const schemaProposalReview: NonNullable<QueryResolvers['schemaProposalRev
     schemaProposal: {
       id: crypto.randomUUID(),
       createdAt: Date.now(),
+      commentsCount: 3,
       stage: 'OPEN',
       updatedAt: Date.now(),
     },
