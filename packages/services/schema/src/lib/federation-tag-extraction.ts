@@ -63,10 +63,8 @@ function hasIntersection<T>(a: Set<T>, b: Set<T>): boolean {
   return false;
 }
 
-function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
+function getRootQueryTypeNameFromDocumentNode(document: DocumentNode) {
   let queryName: string | null = 'Query';
-  let mutationName: string | null = 'Mutation';
-  let subscriptionName: string | null = 'Subscription';
 
   for (const definition of document.definitions) {
     if (definition.kind === Kind.SCHEMA_DEFINITION || definition.kind === Kind.SCHEMA_EXTENSION) {
@@ -74,23 +72,11 @@ function getRootTypeNamesFromDocumentNode(document: DocumentNode) {
         if (operationTypeDefinition.operation === 'query') {
           queryName = operationTypeDefinition.type.name.value;
         }
-        if (operationTypeDefinition.operation === 'mutation') {
-          mutationName = operationTypeDefinition.type.name.value;
-        }
-        if (operationTypeDefinition.operation === 'subscription') {
-          subscriptionName = operationTypeDefinition.type.name.value;
-        }
       }
     }
   }
 
-  const names = new Set<string>();
-
-  names.add(queryName);
-  names.add(mutationName);
-  names.add(subscriptionName);
-
-  return names;
+  return queryName;
 }
 
 type ObjectLikeNode =
@@ -127,7 +113,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     tagDirectiveName,
     inaccessibleDirectiveName,
   );
-  const rootTypeNames = getRootTypeNamesFromDocumentNode(documentNode);
+  const rootQueryTypeName = getRootQueryTypeNameFromDocumentNode(documentNode);
 
   const typesWithAllFieldsInaccessibleTracker = new Map<string, boolean>();
 
@@ -355,9 +341,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     [Kind.UNION_TYPE_DEFINITION]: scalarAndUnionHandler,
   });
 
-  for (const rootTypeName of rootTypeNames) {
-    typesWithAllFieldsInaccessibleTracker.delete(rootTypeName);
-  }
+  typesWithAllFieldsInaccessibleTracker.delete(rootQueryTypeName);
 
   return {
     typeDefs,

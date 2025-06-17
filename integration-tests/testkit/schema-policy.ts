@@ -9,10 +9,12 @@ export const OrganizationAndProjectsWithSchemaPolicy = graphql(`
         id
       }
       projects {
-        nodes {
-          id
-          schemaPolicy {
+        edges {
+          node {
             id
+            schemaPolicy {
+              id
+            }
           }
         }
       }

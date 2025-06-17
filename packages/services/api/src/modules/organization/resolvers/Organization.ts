@@ -39,7 +39,7 @@ export const Organization: Pick<
     return !!organization.id;
   },
   owner: async (organization, _, { injector }) => {
-    const owner = await injector.get(OrganizationMembers).findOrganizationOwner(organization);
+    const owner = await injector.get(OrganizationManager).findOrganizationOwner(organization);
     if (!owner) {
       throw new Error('Not found.');
     }
@@ -60,25 +60,30 @@ export const Organization: Pick<
 
     return member;
   },
-  members: (organization, _, { injector }) => {
-    return injector.get(OrganizationMembers).findOrganizationMembersForOrganization(organization);
+  members: (organization, args, { injector }) => {
+    return injector
+      .get(OrganizationManager)
+      .getPaginatedOrganizationMembersForOrganization(organization, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
   },
-  invitations: async (organization, _, { injector }) => {
-    const invitations = await injector.get(OrganizationManager).getInvitations({
-      organizationId: organization.id,
+  invitations: async (organization, args, { injector }) => {
+    const invitations = await injector.get(OrganizationManager).getInvitations(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
     });
 
-    if (invitations === null) {
-      return null;
-    }
-
-    return {
-      total: invitations.length,
-      nodes: invitations,
-    };
+    return invitations;
   },
-  memberRoles: (organization, _, { injector }) => {
-    return injector.get(OrganizationMemberRoles).getMemberRolesForOrganizationId(organization.id);
+  memberRoles: async (organization, args, { injector }) => {
+    const roles = await injector
+      .get(OrganizationMemberRoles)
+      .getPaginatedMemberRolesForOrganizationId(organization.id, {
+        first: args.first ?? null,
+        after: args.after ?? null,
+      });
+    return roles;
   },
   cleanId: organization => organization.slug,
   viewerCanDelete: async (organization, _arg, { session }) => {

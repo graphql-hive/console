@@ -57,6 +57,7 @@ export function createFallbackQueue(config: {
     stop() {
       if (timeoutId !== null) {
         clearTimeout(timeoutId);
+        timeoutId = null;
       }
 
       const limit = pLimit(10);

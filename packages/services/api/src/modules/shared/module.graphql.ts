@@ -17,7 +17,7 @@ export default gql`
   scalar Date
   scalar JSON
   scalar JSONSchemaObject
-  scalar SafeInt
+  scalar SafeInt @tag(name: "public")
 
   extend schema
     @link(url: "https://specs.apollo.dev/link/v1.0")
@@ -34,17 +34,11 @@ export default gql`
     name: String!
   ) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
-  type Query {
-    _: Boolean @tag(name: "public")
-  }
+  type Query
 
-  type Mutation {
-    _: Boolean @tag(name: "public")
-  }
+  type Mutation
 
-  type Subscription {
-    _: Boolean @tag(name: "public")
-  }
+  type Subscription
 
   type PageInfo {
     hasNextPage: Boolean! @tag(name: "public")

@@ -135,11 +135,12 @@ async function main() {
     const shutdown = registerShutdown({
       logger: server.log,
       async onShutdown() {
-        server.log.info('Stopping tracing handler...');
-        await tracing?.shutdown();
-
         server.log.info('Stopping service handler...');
         await Promise.all([usage.stop(), server.close()]);
+
+        // shut down tracing last so that traces are sent till the very end
+        server.log.info('Stopping tracing handler...');
+        await tracing?.shutdown();
       },
     });
 

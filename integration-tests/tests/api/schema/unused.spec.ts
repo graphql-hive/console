@@ -35,7 +35,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const { createTargetAccessToken, target, waitForOperationsCollected } = await createProject(
+      ProjectType.Single,
+    );
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -123,7 +125,7 @@ test.concurrent(
       ],
     });
     expect(collectResult.status).toEqual(200);
-    await waitFor(8000);
+    await waitForOperationsCollected(1);
 
     const secondQuery = await execute({
       document: IntegrationTestsUnusedSchemaQuery,

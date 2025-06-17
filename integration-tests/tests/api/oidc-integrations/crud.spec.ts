@@ -798,7 +798,7 @@ describe('restrictions', () => {
     expect(refetchedOrg.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(true);
 
     const invitation = await inviteMember('example@example.com');
-    const invitationCode = invitation.ok?.code;
+    const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
     if (!invitationCode) {
       throw new Error('No invitation code');
@@ -865,7 +865,7 @@ describe('restrictions', () => {
     ).toEqual(false);
 
     const invitation = await inviteMember('example@example.com');
-    const invitationCode = invitation.ok?.code;
+    const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
     if (!invitationCode) {
       throw new Error('No invitation code');
@@ -887,7 +887,7 @@ describe('restrictions', () => {
       const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
 
       const invitation = await inviteMember('example@example.com');
-      const invitationCode = invitation.ok?.code;
+      const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
       if (!invitationCode) {
         throw new Error('No invitation code');

@@ -24,6 +24,7 @@ import {
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
@@ -782,6 +783,12 @@ const targetExplorerUnusedRoute = createRoute({
 });
 
 const targetChecksRoute = createRoute({
+  validateSearch: zodValidator(
+    z.object({
+      filter_changed: z.boolean().default(false),
+      filter_failed: z.boolean().default(false),
+    }),
+  ),
   getParentRoute: () => targetRoute,
   path: 'checks',
   component: function TargetChecksRoute() {

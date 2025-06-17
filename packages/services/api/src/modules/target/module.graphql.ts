@@ -247,13 +247,18 @@ export default gql`
   }
 
   extend type Project {
-    targets: TargetConnection!
+    targets: TargetConnection! @tag(name: "public")
     targetBySlug(targetSlug: String!): Target
   }
 
+  type TargetEdge {
+    node: Target! @tag(name: "public")
+    cursor: String! @tag(name: "public")
+  }
+
   type TargetConnection {
-    nodes: [Target!]!
-    total: Int!
+    edges: [TargetEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type Target {
@@ -263,9 +268,10 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     project: Project!
     """
-    The endpoint url of the target's explorer instance.
+    The endpoint url of the target's explorer/laboratory instance.
+    This is the public endpoint configured in target's settings.
     """
-    graphqlEndpointUrl: String
+    graphqlEndpointUrl: String @tag(name: "public")
     """
     Whether a dangerous change fails a schema check and requires a manual approval.
     """

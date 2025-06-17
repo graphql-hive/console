@@ -13,10 +13,12 @@ const ResourceSelector_OrganizationFragment = graphql(`
     id
     slug
     projects {
-      nodes {
-        id
-        slug
-        type
+      edges {
+        node {
+          id
+          slug
+          type
+        }
       }
     }
     isAppDeploymentsEnabled
@@ -34,9 +36,11 @@ const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
         id
         type
         targets {
-          nodes {
-            id
-            slug
+          edges {
+            node {
+              id
+              slug
+            }
           }
         }
       }
@@ -56,9 +60,11 @@ const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
         id
         type
         targets {
-          nodes {
-            id
-            slug
+          edges {
+            node {
+              id
+              slug
+            }
           }
         }
         target: targetBySlug(targetSlug: $targetSlug) {
@@ -150,40 +156,40 @@ export function ResourceSelector(props: {
     }
 
     type SelectedItem = {
-      project: (typeof organization.projects.nodes)[number];
+      project: (typeof organization.projects.edges)[number]['node'];
       projectSelection: GraphQLSchema.ProjectResourceAssignmentInput;
     };
 
-    type NotSelectedItem = (typeof organization.projects.nodes)[number];
+    type NotSelectedItem = (typeof organization.projects.edges)[number]['node'];
 
     const selectedProjects: Array<SelectedItem> = [];
     const notSelectedProjects: Array<NotSelectedItem> = [];
 
     let activeProject: null | SelectedItem = null;
 
-    for (const project of organization.projects.nodes) {
+    for (const edge of organization.projects.edges) {
       const projectSelection = props.selection.projects?.find(
-        item => item.projectId === project.id,
+        item => item.projectId === edge.node.id,
       );
 
       if (projectSelection) {
-        selectedProjects.push({ project, projectSelection });
+        selectedProjects.push({ project: edge.node, projectSelection });
 
-        if (breadcrumb?.projectId === project.id) {
-          activeProject = { project, projectSelection };
+        if (breadcrumb?.projectId === edge.node.id) {
+          activeProject = { project: edge.node, projectSelection };
         }
 
         continue;
       }
 
-      notSelectedProjects.push(project);
+      notSelectedProjects.push(edge.node);
     }
 
     return {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
       activeProject,
-      addProject(item: (typeof organization.projects.nodes)[number]) {
+      addProject(item: (typeof organization.projects.edges)[number]['node']) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects?.push({
@@ -197,7 +203,7 @@ export function ResourceSelector(props: {
           }),
         );
       },
-      removeProject(item: (typeof organization.projects.nodes)[number]) {
+      removeProject(item: (typeof organization.projects.edges)[number]['node']) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects = state.projects?.filter(project => project.projectId !== item.id);
@@ -211,7 +217,7 @@ export function ResourceSelector(props: {
         });
       },
     };
-  }, [organization.projects.nodes, props.selection, breadcrumb?.projectId]);
+  }, [organization.projects.edges, props.selection, breadcrumb?.projectId]);
 
   const [organizationProjectTargets] = useQuery({
     query: ResourceSelector_OrganizationProjectTargestQuery,
@@ -224,7 +230,7 @@ export function ResourceSelector(props: {
 
   const targetState = useMemo(() => {
     if (
-      !organizationProjectTargets?.data?.organization?.project?.targets?.nodes ||
+      !organizationProjectTargets?.data?.organization?.project?.targets?.edges ||
       !projectState?.activeProject
     ) {
       return null;
@@ -252,7 +258,7 @@ export function ResourceSelector(props: {
     }
 
     type SelectedItem = {
-      target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
       targetSelection: Exclude<
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
@@ -260,7 +266,7 @@ export function ResourceSelector(props: {
     };
 
     type NotSelectedItem =
-      (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
 
     const selected: Array<SelectedItem> = [];
     const notSelected: Array<NotSelectedItem> = [];
@@ -270,27 +276,27 @@ export function ResourceSelector(props: {
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
       >[number];
-      target: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number];
+      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
     } = null;
 
-    for (const target of organizationProjectTargets.data.organization.project.targets.nodes) {
+    for (const edge of organizationProjectTargets.data.organization.project.targets.edges) {
       const targetSelection = projectState.activeProject.projectSelection.targets.targets?.find(
-        item => item.targetId === target.id,
+        item => item.targetId === edge.node.id,
       );
 
       if (targetSelection) {
-        selected.push({ target, targetSelection });
+        selected.push({ target: edge.node, targetSelection });
 
-        if (breadcrumb?.targetId === target.id) {
+        if (breadcrumb?.targetId === edge.node.id) {
           activeTarget = {
             targetSelection,
-            target,
+            target: edge.node,
           };
         }
         continue;
       }
 
-      notSelected.push(target);
+      notSelected.push(edge.node);
     }
 
     return {
@@ -301,7 +307,7 @@ export function ResourceSelector(props: {
       activeTarget,
       activeProject: projectState.activeProject,
       addTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
+        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
@@ -327,7 +333,7 @@ export function ResourceSelector(props: {
         );
       },
       removeTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.nodes)[number],
+        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
@@ -361,7 +367,7 @@ export function ResourceSelector(props: {
     };
   }, [
     projectState?.activeProject,
-    organizationProjectTargets?.data?.organization?.project?.targets?.nodes,
+    organizationProjectTargets?.data?.organization?.project?.targets?.edges,
     breadcrumb?.targetId,
   ]);
 

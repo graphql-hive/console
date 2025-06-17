@@ -3,7 +3,7 @@
   "include": ["."],
   "compilerOptions": {
     "baseUrl": ".",
-    "rootDir": ".",
+    "rootDir": "..",
     "target": "es2017",
     "module": "esnext",
     "skipLibCheck": true,

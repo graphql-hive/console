@@ -322,6 +322,7 @@ export function createKVBuffer<T>(config: {
       logger.info('Stopping buffer');
       if (timeoutId) {
         clearTimeout(timeoutId);
+        timeoutId = null;
       }
       await send({
         scheduleNextSend: false,

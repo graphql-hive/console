@@ -12,6 +12,5 @@ export type OrganizationMapper = Organization;
 export type MemberRoleMapper = OrganizationMemberRole;
 export type OrganizationGetStartedMapper = OrganizationGetStarted;
 export type OrganizationInvitationMapper = OrganizationInvitation;
-export type MemberConnectionMapper = readonly OrganizationMembership[];
 export type MemberMapper = OrganizationMembership;
 export type OrganizationAccessTokenMapper = OrganizationAccessToken;

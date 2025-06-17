@@ -43,7 +43,8 @@ const RequestBrokerModel = zod.union([
 const TimingsModel = zod.object({
   SCHEMA_CACHE_TTL_MS: NumberFromString().default(30000),
   SCHEMA_CACHE_SUCCESS_TTL_MS: zod.optional(NumberFromString()),
-  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(25000).default(25000),
+  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(30_000).default(30_000),
+  SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS: NumberFromString(9_000).default(9_000),
   SCHEMA_CACHE_POLL_INTERVAL_MS: NumberFromString(100).default(150),
 });
 
@@ -175,7 +176,13 @@ export const env = {
       timings.SCHEMA_CACHE_SUCCESS_TTL_MS ||
       timings.SCHEMA_CACHE_TTL_MS /* Fallback to cacheTTL if not set */,
     cachePollInterval: timings.SCHEMA_CACHE_POLL_INTERVAL_MS,
+    /** timeout of the composition in worker */
     schemaCompositionTimeout: timings.SCHEMA_COMPOSITION_TIMEOUT_MS,
+    /**
+     * Timeout of calls to the external composition endpoint within worker
+     * NOTE: This value should always be lower than the schemaCompositionTimeout
+     */
+    schemaExternalCompositionTimeout: timings.SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS,
   },
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'

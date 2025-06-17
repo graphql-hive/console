@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.49.1",
+  "version": "0.50.1",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -38,11 +38,11 @@
     "prebuild": "tsc --build --clean",
     "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme",
     "prepublishOnly": "oclif manifest && oclif readme",
-    "schema:check:federation": "pnpm start schema:check examples/federation.graphql --service reviews",
+    "schema:check:federation": "pnpm start schema:check examples/federation.reviews.graphql --service reviews",
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
     "schema:check:stitching": "pnpm start schema:check --service posts examples/stitching.posts.graphql",
     "schema:fetch:subgraphs": "pnpm start schema:fetch --type=subgraphs",
-    "schema:publish:federation": "pnpm start schema:publish --service reviews --url reviews.com/graphql examples/federation.reviews.graphql",
+    "schema:publish:federation": "pnpm start schema:publish --service reviews --url http://reviews.graphql-hive.dev/graphql examples/federation.reviews.graphql",
     "start": "./bin/dev",
     "version": "oclif readme && git add README.md"
   },
@@ -59,7 +59,7 @@
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "6.0.22",
     "@oclif/plugin-update": "4.2.13",
-    "@theguild/federation-composition": "0.18.1",
+    "@theguild/federation-composition": "0.18.3",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
     "graphql": "^16.8.1",

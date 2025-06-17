@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { SchemaCheck, SchemaVersion } from '@hive/storage';
+import * as GraphQLSchema from '../../../__generated__/types';
 import type { Target } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
@@ -31,24 +32,24 @@ export class ContractsManager {
     this.logger = logger.child({ service: 'ContractsManager' });
   }
 
-  public async createContract(args: { contract: CreateContractInput }) {
-    const breadcrumb = await this.storage.getTargetBreadcrumbForTargetId({
-      targetId: args.contract.targetId,
+  public async createContract(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    contract: Omit<CreateContractInput, 'targetId'>;
+  }) {
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.target,
     });
-    if (!breadcrumb) {
+
+    if (!selector) {
       return {
         type: 'error' as const,
         errors: {
-          targetId: 'Target not found.',
+          target: 'Target not found.',
         },
       };
     }
 
-    const [organizationId, projectId, targetId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(breadcrumb),
-      this.idTranslator.translateProjectId(breadcrumb),
-      this.idTranslator.translateTargetId(breadcrumb),
-    ]);
+    const { organizationId, projectId, targetId } = selector;
 
     await this.session.assertPerformAction({
       action: 'target:modifySettings',
@@ -60,7 +61,12 @@ export class ContractsManager {
       },
     });
 
-    return await this.contracts.createContract(args);
+    return await this.contracts.createContract({
+      contract: {
+        ...args.contract,
+        targetId,
+      },
+    });
   }
 
   public async disableContract(args: { contractId: string }) {
@@ -247,9 +253,9 @@ export class ContractsManager {
       for (const edge of contractChecks.edges) {
         if (edge.node.breakingSchemaChanges) {
           for (const breakingSchemaChange of edge.node.breakingSchemaChanges) {
-            this.breakingSchemaChangeUsageHelper.registerUsageDataForBreakingSchemaChange(
+            this.breakingSchemaChangeUsageHelper.registerMetadataForBreakingSchemaChange(
               breakingSchemaChange,
-              schemaCheck.conditionalBreakingChangeMetadata.usage,
+              schemaCheck.conditionalBreakingChangeMetadata,
             );
           }
         }

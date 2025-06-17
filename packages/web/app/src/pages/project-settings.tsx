@@ -175,11 +175,7 @@ const ProjectSettingsPage_UpdateProjectSlugMutation = graphql(`
   mutation ProjectSettingsPage_UpdateProjectSlugMutation($input: UpdateProjectSlugInput!) {
     updateProjectSlug(input: $input) {
       ok {
-        selector {
-          organizationSlug
-          projectSlug
-        }
-        project {
+        updatedProject {
           id
           slug
         }
@@ -221,8 +217,12 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
       try {
         const result = await slugMutate({
           input: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
+            project: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+              },
+            },
             slug: data.slug,
           },
         });
@@ -239,7 +239,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
             to: '/$organizationSlug/$projectSlug/view/settings',
             params: {
               organizationSlug: props.organizationSlug,
-              projectSlug: result.data.updateProjectSlug.ok.project.slug,
+              projectSlug: result.data.updateProjectSlug.ok.updatedProject.slug,
             },
           });
         } else if (error) {
@@ -471,14 +471,9 @@ export function ProjectSettingsPage(props: { organizationSlug: string; projectSl
 
 export const DeleteProjectMutation = graphql(`
   mutation deleteProject($selector: ProjectSelectorInput!) {
-    deleteProject(selector: $selector) {
-      selector {
-        organizationSlug
-        projectSlug
-      }
-      deletedProject {
-        __typename
-        id
+    deleteProject(input: { project: { bySelector: $selector } }) {
+      ok {
+        deletedProjectId
       }
     }
   }

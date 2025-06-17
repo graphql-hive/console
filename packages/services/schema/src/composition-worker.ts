@@ -40,7 +40,7 @@ export function createCompositionWorker(args: {
           const composeFederation = createComposeFederation({
             decrypt,
             logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
-            requestTimeoutMs: message.data.requestTimeoutMs,
+            requestTimeoutMs: args.env.timings.schemaExternalCompositionTimeout,
           });
           const composed = await composeFederation(message.data.args);
 
@@ -128,7 +128,6 @@ export type CompositionEvent = {
     | {
         type: 'federation';
         args: ComposeFederationArgs;
-        requestTimeoutMs: number;
       }
     | {
         type: 'single';

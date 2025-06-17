@@ -8,13 +8,17 @@ const TargetSelector_OrganizationConnectionFragment = graphql(`
       id
       slug
       projects {
-        nodes {
-          id
-          slug
-          targets {
-            nodes {
-              id
-              slug
+        edges {
+          node {
+            id
+            slug
+            targets {
+              edges {
+                node {
+                  id
+                  slug
+                }
+              }
             }
           }
         }
@@ -40,11 +44,11 @@ export function TargetSelector(props: {
     node => node.slug === props.currentOrganizationSlug,
   );
 
-  const projects = currentOrganization?.projects.nodes;
-  const currentProject = projects?.find(node => node.slug === props.currentProjectSlug);
+  const projects = currentOrganization?.projects.edges;
+  const currentProject = projects?.find(edge => edge.node.slug === props.currentProjectSlug)?.node;
 
-  const targets = currentProject?.targets.nodes;
-  const currentTarget = targets?.find(node => node.slug === props.currentTargetSlug);
+  const targetEdges = currentProject?.targets.edges;
+  const currentTarget = targetEdges?.find(edge => edge.node.slug === props.currentTargetSlug)?.node;
 
   return (
     <>
@@ -77,7 +81,7 @@ export function TargetSelector(props: {
         <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
       )}
       <div className="italic text-gray-500">/</div>
-      {targets?.length && currentOrganization && currentProject && currentTarget ? (
+      {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <>
           <Select
             value={props.currentTargetSlug}
@@ -98,13 +102,13 @@ export function TargetSelector(props: {
               </div>
             </SelectTrigger>
             <SelectContent>
-              {targets.map(target => (
+              {targetEdges.map(edge => (
                 <SelectItem
-                  key={target.slug}
-                  value={target.slug}
-                  data-cy={`target-picker-option-${target.slug}`}
+                  key={edge.node.slug}
+                  value={edge.node.slug}
+                  data-cy={`target-picker-option-${edge.node.slug}`}
                 >
-                  {target.slug}
+                  {edge.node.slug}
                 </SelectItem>
               ))}
             </SelectContent>

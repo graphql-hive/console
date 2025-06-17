@@ -7,23 +7,15 @@ targets schemas using the Hive CLI.
 
 ## Installation
 
-### NodeJS
+You can install the Hive CLI as a binary, docker container or a npm package for Node.js.
 
-If you are running a JavaScript/NodeJS project, you can install Hive CLI from the `npm` registry:
+<Tabs items={['Binary', 'Docker', 'Node.js' ]}>
 
-```sh npm2yarn
-npm i -D @graphql-hive/cli
-```
+{/* Binary */}
 
-<Callout type="info">
-  We recommend installing Hive CLI as part of your project, under `devDependencies`, instead of
-  using a global installation.
-</Callout>
+<Tabs.Tab>
 
-### Binary
-
-If you are running a non-JavaScript project, you can download the prebuilt binary of Hive CLI using
-the following command:
+Download the prebuilt binary of Hive CLI using the following command:
 
 <Tabs items={['MacOS / Linux', 'Windows']}>
   <Tabs.Tab>
@@ -39,32 +31,120 @@ the following command:
   </Tabs.Tab>
 </Tabs>
 
-#### Specific version
+</Tabs.Tab>
 
-You can also download a specific version of the binary:
+{/* Docker */}
+
+<Tabs.Tab>
+
+We publish a docker image for the CLI to the GitHub container registry.
+
+```sh
+docker pull ghcr.io/graphql-hive/cli
+```
+
+</Tabs.Tab>
+
+{/* Node.js */}
+
+<Tabs.Tab>
+
+If you are running a JavaScript/Node.js project, you can install Hive CLI from the `npm`.
+
+<Callout type="info">
+  We recommend installing Hive CLI as part of your project as `devDependencies`, instead of using a
+  global installation.
+</Callout>
+
+```sh npm2yarn
+npm i -D @graphql-hive/cli
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Specific Version
+
+You can also use a specific version of the CLI. A list of all available versions is available on the
+[GitHub releases page](https://github.com/graphql-hive/console/releases?q=%22%40graphql-hive%2Fcli%22&expanded=true).
+
+<Tabs items={['Binary', 'Docker', 'Node.js']}>
+
+{/* Binary */}
+
+<Tabs.Tab>
 
 <Tabs items={['MacOS / Linux', 'Windows']}>
   <Tabs.Tab>
     ```sh
-    curl -sSL https://graphql-hive.com/install.sh | sh -s "0.31.0"
+    curl -sSL https://graphql-hive.com/install.sh | sh -s "0.50.1"
     # or
-    curl -sSL https://graphql-hive.com/install.sh | HIVE_CLI_VERSION="0.31.0" sh
+    curl -sSL https://graphql-hive.com/install.sh | HIVE_CLI_VERSION="0.50.1" sh
     # or
-    export HIVE_CLI_VERSION="0.31.0"
+    export HIVE_CLI_VERSION="0.50.1"
     curl -sSL https://graphql-hive.com/install.sh | sh
     ```
   </Tabs.Tab>
 
   <Tabs.Tab>
     ```sh
-    $env:HIVE_CLI_VERSION="0.31.0"; powershell -c "irm https://graphql-hive.com/install.ps1 | iex"
+    $env:HIVE_CLI_VERSION="0.50.1"; powershell -c "irm https://graphql-hive.com/install.ps1 | iex"
     ```
   </Tabs.Tab>
 </Tabs>
 
+</Tabs.Tab>
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+```sh
+export HIVE_CLI_VERSION="0.50.1"
+docker pull "ghcr.io/graphql-hive/cli:$HIVE_CLI_VERSION"
+```
+
+</Tabs.Tab>
+
+{/* Node.js */}
+
+<Tabs.Tab>
+
+```sh npm2yarn
+npm i -D @graphql-hive/cli@0.50.1
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Basics
+
+### Git Integration
+
+If you are running `hive` command line in a directory that has a Git repository configured (`.git`),
+the CLI willl automatically extract the values for the author and commit for the certain commands
+(e.g. schema publish and schema check.
+
+You may override these values by excplicitly passing the `--author` and `--commit` flags to the CLI.
+
+If your project does not have a Git repository configured with a user name and email, you are
+required to pass the `--author` and `--commit` flags to the CLI.
+
+If you need to change the way Git identifies your `author` property, you may use the following
+commands:
+
+```bash
+git config --global user.name "John Doe"
+git config --global user.email "john@doe.org"
+```
+
 ## Usage
 
-### Publish a schema
+### Publish a Schema
+
+You can use the CLI for publishing schema or services/subgraphs to the schema registry.
 
 <Callout type="info" emoji="🔑">
   This CLI command requires a access token with the `Schema publish` permissions on the specified
@@ -77,11 +157,28 @@ You can also download a specific version of the binary:
   [CI/CD Integration guide](/docs/other-integrations/ci-cd).
 </Callout>
 
-Further reading:
+<Tabs items={['Apollo Federation / Schema Stitching', 'Monolithic Schema']}>
+
+<Tabs.Tab>
+
+```bash
+hive schema:publish \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --service reviews \
+  --url http://my-service.com/graphql \
+  schema.graphql
+```
+
+**Further reading:**
 
 - [Publishing a schema to the Schema Registry](/docs/schema-registry#publish-a-schema)
+- [Apollo Router integration](/docs/other-integrations/apollo-router)
+- [Apollo-Server integration](/docs/other-integrations/apollo-server)
 
-#### Single Schema Project
+</Tabs.Tab>
+
+<Tabs.Tab>
 
 If you have a single file for your GraphQL schema:
 
@@ -101,31 +198,37 @@ hive schema:publish \
   "src/*.graphql"
 ```
 
-Further reading:
+**Further reading:**
 
-- [`schema:publish` API Reference](/docs/api-reference/cli#hive-schemapublish-file)
+- [Publishing a schema to the Schema Registry](/docs/schema-registry#publish-a-schema)
 
-#### Apollo Federation / Schema-Stitching projects
+</Tabs.Tab>
 
-```bash
+</Tabs>
+
+#### GitHub Integration
+
+If GitHub Integration is enabled for your organization, and the GitHub integration has access to the
+GitHub repository, you may specify an additional `--github` flag to report the results back to
+GitHub as Check Suite when running the Hive CLI from within a GitHub action.
+
+<Callout>
+  Check our [CI/CD Integration guide](/docs/other-integrations/ci-cd) for more information and
+  GitHub workflow examples.
+</Callout>
+
+```sh
 hive schema:publish \
   --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
   --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
-  --service reviews \
-  --url http://my-service.com/graphql \
-  schema.graphql
+  schema.graphql \
+  --github
 ```
 
-Further reading:
+#### Metadata
 
-- [`schema:publish` API Reference](/docs/api-reference/cli#hive-schemapublish-file)
-- [Apollo Router integration](/docs/other-integrations/apollo-router)
-- [Apollo-Server integration](/docs/other-integrations/apollo-server)
-
-#### Hive Metadata
-
-If your GraphQL schema runtime requires any metadata to run, you can attach metadata to your schema
-publication. Hive metadata published to Hive must be a valid JSON, and limited to `25MB`.
+You can attach metadata to your schema publication. Hive metadata published to Hive must be a valid
+JSON, and limited to `25MB`.
 
 To attach metadata to your published schema, you can use `--metadata` flag when publishing.
 
@@ -149,11 +252,11 @@ hive schema:publish \
   --metadata '{ "someData": true }'
 ```
 
-Further reading:
+**Further reading:**
 
 - [Fetching Hive Metadata from the CDN](/docs/high-availability-cdn)
 
-### Check a schema
+### Check a Schema
 
 <Callout type="info" emoji="🔑">
   This CLI command requires a access token with the `Schema Check` permissions on the specified
@@ -204,21 +307,40 @@ providing the `--url` parameter.
 hive schema:check "src/schema.graphql" --service users --url "https://users.graphql-hive.com/graphql"
 ```
 
-Further reading:
+**Further reading:**
 
 - [Publishing a schema to the Schema Registry](/docs/schema-registry#publish-a-schema)
 - [Conditional Breaking Changes](/docs/management/targets#conditional-breaking-changes)
 
-### Delete a schema
+#### GitHub Integration
 
-<Callout type="info" emoji="🔑">
-  This CLI command requires a access token with the `Delete subgraph` permissions on the specified
-  target. Please refer to our access token [documentation for creating an access
-  token](/docs/management/access-tokens).
+If GitHub Integration is enabled for your organization, and the GitHub integration has access to the
+GitHub repository, you may specify an additional `--github` flag to report the results back to
+GitHub as Check Suite when running the Hive CLI from within a GitHub action.
+
+<Callout>
+  Check our [CI/CD Integration guide](/docs/other-integrations/ci-cd) for more information and
+  GitHub workflow examples.
 </Callout>
+
+```sh
+hive schema:check \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  schema.graphql \
+  --github
+```
+
+### Delete a Subgraph
 
 <Callout type="info">
   This action is only available for Schema-Stitching and Apollo Federation projects.
+</Callout>
+
+<Callout type="info" emoji="🔑">
+  This CLI command requires a access token with the `Delete subgraph` permissions on the specified
+  target. Please refer to our [documentation for creating access
+  tokens](/docs/management/access-tokens).
 </Callout>
 
 In case you want to compose a schema (or a subgraph in case of Federation), you can do so by using
@@ -231,16 +353,22 @@ hive schema:delete \
   "<SERVICE_NAME>"
 ```
 
-<Callout>
+#### Dry Run
 
 You can also use `--dryRun` flag first to see what effect the command will have on the registry.
 
 In case you want to confirm deletion of the service without typing anything in the terminal, use
 `--confirm` flag.
 
-</Callout>
+```bash
+hive schema:delete \
+  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --dryRun \
+  "<SERVICE_NAME>"
+```
 
-### Develop schema locally
+### Local Subgraph Development
 
 When developing subgraphs locally, you might want to compose a supergraph with your local subgraph
 changes. GraphQL Hive helps you to do that with the `hive dev` command.
@@ -438,30 +566,7 @@ The `products` subgraph will be omitted from the supergraph.
 
 Now you're ready to use the `supergraph.graphql` file in your gateway and execute queries.
 
-### Git Metadata
-
-If you are running `hive` command line in a directory that has a Git repository configured (`.git`),
-then Hive will be able to automatically detect and extract the values for `--author` and `--commit`,
-in order to tag schemas published using the `schema:publish` or `schema:check` command.
-
-You may override these values by passing the `--author` and `--commit` flags to the CLI.
-
-If your project does not have a Git repository configured with a user name and email, you are
-required to pass the `--author` and `--commit` flags to the CLI.
-
-<Callout type="info">
-
-If you need to change the way Git identifies your `author` property, you may use the following
-commands:
-
-```bash
-git config --global user.name "John Doe"
-git config --global user.email "john@doe.org"
-```
-
-</Callout>
-
-### Fetch a schema from the Registry
+### Fetch a Schema from the Registry
 
 Sometimes it is useful to fetch a schema (SDL or Supergraph) from Hive, for example, to use it in a
 local development. This can be done using the `schema:fetch` command.
@@ -497,7 +602,7 @@ hive schema:fetch --type subgraphs feb8aa9ec8932eb
 For more information please refer to the
 [CLI readme](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#commands).
 
-### Fetch a schema from CDN
+### Fetch a Schema from CDN
 
 You can fetch the GraphQL schema from the CDN using the `artifact:fetch` command.
 
@@ -512,36 +617,6 @@ hive artifact:fetch --artifact sdl --cdn.endpoint VALUE --cdn.accessToken VALUE
 
 For more information please refer to the
 [CLI readme](https://github.com/graphql-hive/platform/blob/main/packages/libraries/cli/README.md#commands).
-
-### CLI and GitHub Integration
-
-If [GitHub Integration](/docs/management/organizations#github) is enabled for your organization, and
-the
-[GitHub integration has access to the GitHub repository](/docs/management/projects#github-repository),
-you may specify an additional `--github` flag to report the results back to GitHub as Check Suite
-(for `schema:check` and `schema:publish` commands) when running the Hive CLI from within a GitHub
-action:
-
-```bash
-hive schema:publish \
-  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
-  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
-  schema.graphql \
-  --github
-```
-
-```bash
-hive schema:check \
-  --registry.accessToken "<YOUR_ACCESS_TOKEN>" \
-  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
-  schema.graphql \
-  --github
-```
-
-<Callout>
-  Check our [CI/CD Integration guide](/docs/other-integrations/ci-cd) for more information and
-  GitHub workflow examples.
-</Callout>
 
 ## API Reference
 

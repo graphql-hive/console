@@ -8,13 +8,19 @@ import { graphql } from 'testkit/gql';
 import { BreakingChangeFormulaType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
+import { T } from 'vitest/dist/chunks/reporters.d.CfRkRKN2';
 import { UTCDate } from '@date-fns/utc';
 // eslint-disable-next-line hive/enforce-deps-in-dev
 import { normalizeOperation } from '@graphql-hive/core';
 import { createHive } from '../../../../packages/libraries/core/src';
 import { collectSchemaCoordinates } from '../../../../packages/libraries/core/src/client/collect-schema-coordinates';
 import { clickHouseQuery } from '../../../testkit/clickhouse';
-import { createTarget, updateTargetValidationSettings, waitFor } from '../../../testkit/flow';
+import {
+  createTarget,
+  pollFor,
+  updateTargetValidationSettings,
+  waitFor,
+} from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { CollectedOperation } from '../../../testkit/usage';
 
@@ -51,6 +57,7 @@ test.concurrent(
       toggleTargetValidation,
       readOperationBody,
       readOperationsStats,
+      waitForOperationsCollected,
     } = await createProject(ProjectType.Single);
     const writeToken = await createTargetAccessToken({});
 
@@ -92,7 +99,7 @@ test.concurrent(
       },
     ]);
     expect(collectResult.status).toEqual(200);
-    await waitFor(8000);
+    await waitForOperationsCollected(1);
 
     // should be breaking because the field is used now
     const usedCheckResult = await readToken
@@ -108,9 +115,9 @@ test.concurrent(
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
+    const op = operationsStats.operations.edges[0].node;
 
     expect(op.count).toEqual(1);
     await expect(readOperationBody(op.operationHash!)).resolves.toEqual('query ping{ping}');
@@ -123,6 +130,9 @@ test.concurrent(
     expect(op.name).toMatch('ping');
     expect(op.percentage).toBeGreaterThan(99);
   },
+  {
+    timeout: 15_000,
+  },
 );
 
 test.concurrent(
@@ -130,9 +140,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, readOperationBody, readOperationsStats } = await createProject(
-      ProjectType.Single,
-    );
+    const {
+      createTargetAccessToken,
+      readOperationBody,
+      readOperationsStats,
+      waitForOperationsCollected,
+    } = await createProject(ProjectType.Single);
     const writeToken = await createTargetAccessToken({});
 
     const raw_document = `
@@ -213,17 +226,17 @@ test.concurrent(
       },
     ]);
     expect(collectResult.status).toEqual(200);
-    await waitFor(8000);
+    await waitForOperationsCollected(1);
 
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
-    expect(op.count).toEqual(1);
+    const op = operationsStats.operations.edges[0].node;
+    expect(op!.count).toEqual(1);
 
-    const doc = await readOperationBody(op.operationHash!);
+    const doc = await readOperationBody(op!.operationHash!);
 
     if (!doc) {
       throw new Error('Operation body is empty');
@@ -249,9 +262,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, readOperationsStats, readOperationBody } = await createProject(
-      ProjectType.Single,
-    );
+    const {
+      createTargetAccessToken,
+      readOperationsStats,
+      readOperationBody,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const writeToken = await createTargetAccessToken({});
 
     const batchSize = 1000;
@@ -272,16 +288,16 @@ test.concurrent(
       );
     }
 
-    await waitFor(8000);
+    await waitForRequestsCollected(totalAmount);
 
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
     const operationsStats = await readOperationsStats(from, to);
 
     // We sent a single operation (multiple times)
-    expect(operationsStats.operations.nodes).toHaveLength(1);
+    expect(operationsStats.operations.edges).toHaveLength(1);
 
-    const op = operationsStats.operations.nodes[0];
+    const op = operationsStats.operations.edges[0].node!;
     expect(op.count).toEqual(totalAmount);
     await expect(readOperationBody(op.operationHash!)).resolves.toEqual('query ping{ping}');
     expect(op.operationHash).toBeDefined();
@@ -303,6 +319,7 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
     target: staging,
     createTargetAccessToken,
     toggleTargetValidation,
+    waitForRequestsCollected,
   } = await createProject(ProjectType.Single);
 
   const productionTargetResult = await createTarget(
@@ -380,7 +397,7 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   ]);
 
   expect(collectResult.status).toEqual(200);
-  await waitFor(8000);
+  await waitForRequestsCollected(3, { target: productionTarget });
 
   // should not be breaking because the field is unused on staging
   // ping is used but on production
@@ -443,9 +460,13 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
 test.concurrent('check usage not from excluded client names', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { organization, createProject } = await createOrg();
-  const { project, target, createTargetAccessToken, toggleTargetValidation } = await createProject(
-    ProjectType.Single,
-  );
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    toggleTargetValidation,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
 
   const token = await createTargetAccessToken({});
 
@@ -534,7 +555,7 @@ test.concurrent('check usage not from excluded client names', async ({ expect })
     },
   ]);
   expect(collectResult.status).toEqual(200);
-  await waitFor(8000);
+  await waitForRequestsCollected(4);
 
   // should be breaking because the field is used
   // Query.me would be removed, but was requested by cli and app
@@ -649,9 +670,13 @@ describe('changes with usage data', () => {
     test.concurrent(input.title, async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { target, createTargetAccessToken, toggleTargetValidation } = await createProject(
-        ProjectType.Single,
-      );
+      const {
+        target,
+        createTargetAccessToken,
+        toggleTargetValidation,
+        waitForOperationsCollected,
+        readOperationsStats,
+      } = await createProject(ProjectType.Single);
 
       const token = await createTargetAccessToken({
         target,
@@ -696,6 +721,10 @@ describe('changes with usage data', () => {
         fields = input.reportOperation.fields;
       }
 
+      const from = formatISO(subHours(Date.now(), 1));
+      const to = formatISO(Date.now());
+      const n = (await readOperationsStats(from, to)).totalOperations;
+
       const collectResult = await token.collectLegacyOperations([
         {
           timestamp: Date.now(),
@@ -712,7 +741,7 @@ describe('changes with usage data', () => {
       ]);
 
       expect(collectResult.status).toEqual(200);
-      await waitFor(8000);
+      await waitForOperationsCollected(n + 1);
 
       await expect(
         token
@@ -1189,7 +1218,9 @@ describe('changes with usage data', () => {
 test.concurrent('number of produced and collected operations should match', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   const batchSize = 1000;
@@ -1230,7 +1261,7 @@ test.concurrent('number of produced and collected operations should match', asyn
     );
   }
 
-  await waitFor(10000);
+  await waitForRequestsCollected(totalAmount);
 
   const result = await clickHouseQuery<{
     target: string;
@@ -1272,7 +1303,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1298,7 +1331,7 @@ test.concurrent(
       },
     ]);
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     const coordinatesResult = await clickHouseQuery<{
       target: string;
@@ -1327,7 +1360,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1353,7 +1388,7 @@ test.concurrent(
       },
     ]);
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     const coordinatesResult = await clickHouseQuery<{
       coordinate: string;
@@ -1386,7 +1421,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     await writeToken.collectLegacyOperations([
@@ -1412,7 +1449,7 @@ test.concurrent(
       },
     ]);
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     const coordinatesResult = await clickHouseQuery<{
       target: string;
@@ -1439,7 +1476,9 @@ test.concurrent(
 test.concurrent('ignore operations with syntax errors', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectLegacyOperations([
@@ -1473,7 +1512,8 @@ test.concurrent('ignore operations with syntax errors', async ({ expect }) => {
     }),
   );
 
-  await waitFor(8000);
+  // @note rejected doesnt count... Assume if 1 has been collected that the other has too.
+  await waitForRequestsCollected(1);
 
   const coordinatesResult = await clickHouseQuery<{
     target: string;
@@ -1499,7 +1539,9 @@ test.concurrent('ignore operations with syntax errors', async ({ expect }) => {
 test.concurrent('ensure correct data', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+    ProjectType.Single,
+  );
   const writeToken = await createTargetAccessToken({});
 
   // Organization was created, but the rate limiter may be not aware of it yet.
@@ -1534,7 +1576,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
     },
   ]);
 
-  await waitFor(8000);
+  await waitForRequestsCollected(2);
 
   // operation_collection
   const operationCollectionResult = await clickHouseQuery<{
@@ -1811,7 +1853,9 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject, setDataRetention } = await createOrg();
-    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { target, createTargetAccessToken, waitForRequestsCollected } = await createProject(
+      ProjectType.Single,
+    );
     const writeToken = await createTargetAccessToken({});
 
     const dataRetentionInDays = 60;
@@ -1847,7 +1891,7 @@ test.concurrent(
       },
     ]);
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     // operation_collection
     const operationCollectionResult = await clickHouseQuery<{
@@ -2141,11 +2185,19 @@ const SubscriptionSchemaCheckQuery = graphql(/* GraphQL */ `
                 hash
                 name
                 countFormatted
+                percentage
                 percentageFormatted
+                operation {
+                  hash
+                  name
+                  type
+                  body
+                }
               }
               topAffectedClients {
                 name
                 countFormatted
+                percentage
                 percentageFormatted
               }
             }
@@ -2169,8 +2221,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
 
     const sdl = /* GraphQL */ `
@@ -2284,7 +2340,7 @@ test.concurrent(
 
     collectA();
 
-    await waitFor(8000);
+    await waitForRequestsCollected(1);
 
     const used = await token
       .checkSchema(/* GraphQL */ `
@@ -2319,7 +2375,7 @@ test.concurrent(
       percentage: 50,
     });
 
-    await waitFor(8000);
+    await waitForRequestsCollected(4);
 
     const below = await token
       .checkSchema(/* GraphQL */ `
@@ -2351,7 +2407,7 @@ test.concurrent(
     collectA();
     collectA();
 
-    await waitFor(8000);
+    await waitForRequestsCollected(7);
 
     const relevant = await token
       .checkSchema(/* GraphQL */ `
@@ -2382,8 +2438,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
     await toggleTargetValidation(true);
     await updateTargetValidationSettings({
@@ -2484,7 +2544,7 @@ test.concurrent(
 
     collectA();
 
-    await waitFor(8000);
+    await waitForRequestsCollected(1);
 
     const below = await token
       .checkSchema(/* GraphQL */ `
@@ -2513,7 +2573,7 @@ test.concurrent(
     // Now let's make Query.a above threshold by making a 2nd query for Query.a
     collectA();
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     const above = await token
       .checkSchema(/* GraphQL */ `
@@ -2544,8 +2604,12 @@ test.concurrent(
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken, toggleTargetValidation, updateTargetValidationSettings } =
-      await createProject(ProjectType.Single);
+    const {
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
     await toggleTargetValidation(true);
     await updateTargetValidationSettings({
@@ -2641,7 +2705,7 @@ test.concurrent(
     collectA();
     collectB();
 
-    await waitFor(8000);
+    await waitForRequestsCollected(2);
 
     // try to remove `Query.a`
     const above = await token
@@ -2773,35 +2837,40 @@ test.concurrent(
       },
     });
 
-    await waitFor(10000);
+    let firstSchemaCheckId: string | undefined;
+    await pollFor(async () => {
+      try {
+        const used = await token
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-    const used = await token
-      .checkSchema(/* GraphQL */ `
-        type Query {
-          a: String
-          b: String
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
+
+        if (used.schemaCheck.__typename === 'SchemaCheckError') {
+          expect(used.schemaCheck.errors).toEqual({
+            nodes: [
+              {
+                message: "Field 'a' was removed from object type 'Subscription'",
+              },
+            ],
+            total: 1,
+          });
+          firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
+          return true;
         }
-
-        type Subscription {
-          b: String
-        }
-      `)
-      .then(r => r.expectNoGraphQLErrors());
-
-    if (used.schemaCheck.__typename !== 'SchemaCheckError') {
-      throw new Error(`Expected SchemaCheckError, got ${used.schemaCheck.__typename}`);
-    }
-
-    expect(used.schemaCheck.errors).toEqual({
-      nodes: [
-        {
-          message: "Field 'a' was removed from object type 'Subscription'",
-        },
-      ],
-      total: 1,
+        return false;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
     });
-
-    const firstSchemaCheckId = used.schemaCheck.schemaCheck?.id;
 
     if (!firstSchemaCheckId) {
       throw new Error('Expected schemaCheckId to be defined');
@@ -2832,13 +2901,21 @@ test.concurrent(
         countFormatted: '1',
         hash: 'c1bbc8385a4a6f4e4988be7394800adc',
         name: 'anonymous',
+        percentage: 100,
         percentageFormatted: '100.00%',
+        operation: {
+          body: 'subscription{a}',
+          hash: 'c1bbc8385a4a6f4e4988be7394800adc',
+          name: 'anonymous',
+          type: 'SUBSCRIPTION',
+        },
       },
     ]);
     expect(node.usageStatistics?.topAffectedClients).toEqual([
       {
         countFormatted: '1',
         name: 'integration-tests',
+        percentage: 100,
         percentageFormatted: '100.00%',
       },
     ]);
@@ -2881,36 +2958,40 @@ test.concurrent(
       percentage: 50,
     });
 
-    await waitFor(8000);
+    await pollFor(async () => {
+      try {
+        const irrelevant = await token
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-    const irrelevant = await token
-      .checkSchema(/* GraphQL */ `
-        type Query {
-          a: String
-          b: String
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
+        if (irrelevant?.schemaCheck.__typename === 'SchemaCheckSuccess') {
+          expect(irrelevant.schemaCheck.changes).toEqual(
+            expect.objectContaining({
+              nodes: expect.arrayContaining([
+                expect.objectContaining({
+                  message:
+                    "Field 'a' was removed from object type 'Subscription' (non-breaking based on usage)",
+                }),
+              ]),
+              total: 1,
+            }),
+          );
+          return true;
         }
-
-        type Subscription {
-          b: String
-        }
-      `)
-      .then(r => r.expectNoGraphQLErrors());
-
-    if (irrelevant.schemaCheck.__typename !== 'SchemaCheckSuccess') {
-      throw new Error(`Expected SchemaCheckSuccess, got ${irrelevant.schemaCheck.__typename}`);
-    }
-
-    expect(irrelevant.schemaCheck.changes).toEqual(
-      expect.objectContaining({
-        nodes: expect.arrayContaining([
-          expect.objectContaining({
-            message:
-              "Field 'a' was removed from object type 'Subscription' (non-breaking based on usage)",
-          }),
-        ]),
-        total: 1,
-      }),
-    );
+        return false;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
+    });
 
     // Make it relevant again, by making 3 subscriptions
 
@@ -2942,32 +3023,37 @@ test.concurrent(
       },
     });
 
-    await waitFor(8000);
+    await pollFor(async () => {
+      try {
+        const relevant = await token
+          .checkSchema(/* GraphQL */ `
+            type Query {
+              a: String
+              b: String
+            }
 
-    const relevant = await token
-      .checkSchema(/* GraphQL */ `
-        type Query {
-          a: String
-          b: String
+            type Subscription {
+              b: String
+            }
+          `)
+          .then(r => r.expectNoGraphQLErrors());
+
+        if (relevant.schemaCheck.__typename === 'SchemaCheckError') {
+          expect(relevant.schemaCheck.errors).toEqual({
+            nodes: [
+              {
+                message: "Field 'a' was removed from object type 'Subscription'",
+              },
+            ],
+            total: 1,
+          });
+          return true;
         }
-
-        type Subscription {
-          b: String
-        }
-      `)
-      .then(r => r.expectNoGraphQLErrors());
-
-    if (relevant.schemaCheck.__typename !== 'SchemaCheckError') {
-      throw new Error(`Expected SchemaCheckError, got ${relevant.schemaCheck.__typename}`);
-    }
-
-    expect(relevant.schemaCheck.errors).toEqual({
-      nodes: [
-        {
-          message: "Field 'a' was removed from object type 'Subscription'",
-        },
-      ],
-      total: 1,
+        return false;
+      } catch (e) {
+        console.error(e);
+        return false;
+      }
     });
   },
 );
@@ -2975,9 +3061,13 @@ test.concurrent(
 test.concurrent('ensure percentage precision up to 2 decimal places', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
-  const { project, target, createTargetAccessToken, toggleTargetValidation } = await createProject(
-    ProjectType.Single,
-  );
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    toggleTargetValidation,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const token = await createTargetAccessToken({});
 
   const schemaPublishResult = await token
@@ -3015,7 +3105,7 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
     }),
   );
 
-  await waitFor(10000);
+  await waitForRequestsCollected(9801 + 199);
 
   const result = await clickHouseQuery<{
     target: string;
@@ -3120,8 +3210,13 @@ test.concurrent('ensure percentage precision up to 2 decimal places', async ({ e
 test.concurrent('(legacy) collect an operation from "unknown" client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectLegacyOperations([
@@ -3143,45 +3238,49 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
     },
   ]);
   expect(collectResult.status).toEqual(200);
-  await waitFor(8000);
+  await waitForRequestsCollected(1);
 
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
-  const op = operationsStats.operations.nodes[0];
+  expect(operationsStats.operations.edges).toHaveLength(1);
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3199,12 +3298,14 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },
@@ -3223,8 +3324,13 @@ test.concurrent('(legacy) collect an operation from "unknown" client', async ({ 
 test.concurrent('collect an operation from "unknown" client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectUsage({
@@ -3255,46 +3361,50 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
     ],
   });
   expect(collectResult.status).toEqual(200);
-  await waitFor(8000);
+  await waitForRequestsCollected(1);
 
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
+  expect(operationsStats.operations.edges).toHaveLength(1);
 
-  const op = operationsStats.operations.nodes[0];
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3312,12 +3422,14 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },
@@ -3336,8 +3448,13 @@ test.concurrent('collect an operation from "unknown" client', async ({ expect })
 test.concurrent('collect an operation from undefined client', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();
-  const { createTargetAccessToken, readOperationBody, readOperationsStats, readClientStats } =
-    await createProject(ProjectType.Single);
+  const {
+    createTargetAccessToken,
+    readOperationBody,
+    readOperationsStats,
+    readClientStats,
+    waitForRequestsCollected,
+  } = await createProject(ProjectType.Single);
   const writeToken = await createTargetAccessToken({});
 
   const collectResult = await writeToken.collectUsage({
@@ -3368,46 +3485,50 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
     ],
   });
   expect(collectResult.status).toEqual(200);
-  await waitFor(8000);
+  await waitForRequestsCollected(1);
 
   const from = formatISO(subHours(Date.now(), 6));
   const to = formatISO(Date.now());
   const operationsStats = await readOperationsStats(from, to);
-  expect(operationsStats.operations.nodes).toHaveLength(1);
+  expect(operationsStats.operations.edges).toHaveLength(1);
 
-  const op = operationsStats.operations.nodes[0];
+  const op = operationsStats.operations.edges[0].node;
 
   expect(operationsStats).toMatchInlineSnapshot(`
     {
       clients: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            name: unknown,
-            versions: [
-              {
-                count: 1,
-                version: v1.2.3,
-              },
-            ],
+            node: {
+              count: 1,
+              name: unknown,
+              versions: [
+                {
+                  count: 1,
+                  version: v1.2.3,
+                },
+              ],
+            },
           },
         ],
       },
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            duration: {
-              p75: 200,
-              p90: 200,
-              p95: 200,
-              p99: 200,
+            node: {
+              count: 1,
+              duration: {
+                p75: 200,
+                p90: 200,
+                p95: 200,
+                p99: 200,
+              },
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              kind: query,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+              percentage: 100,
             },
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            kind: query,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
-            percentage: 100,
           },
         ],
       },
@@ -3425,12 +3546,14 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
   expect(clientStats).toMatchInlineSnapshot(`
     {
       operations: {
-        nodes: [
+        edges: [
           {
-            count: 1,
-            id: 8f87d0bc9744ad3d50af125d20c355c0,
-            name: 798a_ping,
-            operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            node: {
+              count: 1,
+              id: 8f87d0bc9744ad3d50af125d20c355c0,
+              name: 798a_ping,
+              operationHash: 798ae10ebeef9f632ceec2fbe85a2052,
+            },
           },
         ],
       },

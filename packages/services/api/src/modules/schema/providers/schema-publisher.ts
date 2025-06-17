@@ -701,6 +701,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
       });
+      this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
@@ -745,6 +746,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
       });
+      this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
       if (!latestVersion || !latestSchemaVersion) {
         throw new Error('This cannot happen 1 :)');
@@ -821,6 +823,7 @@ export class SchemaPublisher {
             )
           : null,
       });
+      this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
 
     if (githubCheckRun) {

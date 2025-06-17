@@ -180,6 +180,7 @@ export interface organization_invitations {
 export interface organization_member {
   assigned_resources: any | null;
   connected_to_zendesk: boolean;
+  created_at: Date;
   organization_id: string;
   role: user_role;
   role_id: string | null;
@@ -188,6 +189,7 @@ export interface organization_member {
 }
 
 export interface organization_member_roles {
+  created_at: Date;
   description: string;
   id: string;
   locked: boolean;

@@ -15,12 +15,6 @@ const OrganizationPolicyPageQuery = graphql(`
   query OrganizationPolicyPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      projects {
-        nodes {
-          id
-          slug
-        }
-      }
       schemaPolicy {
         id
         updatedAt

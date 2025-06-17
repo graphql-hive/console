@@ -15,6 +15,7 @@ import { parseGraphQLSource } from '../../../shared/schema';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
+import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
 import { ensureCompositeSchemas, SchemaHelper } from './schema-helper';
 import { SchemaManager } from './schema-manager';
@@ -36,6 +37,7 @@ export class SchemaVersionHelper {
     private registryChecks: RegistryChecks,
     private storage: Storage,
     private logger: Logger,
+    private compositionOrchestrator: CompositionOrchestrator,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -65,8 +67,8 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    const orchestrator = this.schemaManager.matchOrchestrator(project.type);
-    const validation = await orchestrator.composeAndValidate(
+    const validation = await this.compositionOrchestrator.composeAndValidate(
+      CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
       schemas.map(s => this.schemaHelper.createSchemaObject(s)),
       {
         external: project.externalComposition,

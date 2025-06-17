@@ -13,6 +13,24 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'members',
+    title: 'Members',
+    permissions: [
+      {
+        id: 'member:describe',
+        title: 'Describe members',
+        description: 'Fetch information about organization members.',
+      },
+
+      {
+        id: 'member:modify',
+        title: 'Manage members',
+        description: 'Manage users, roles, and invites.',
+        dependsOn: 'member:describe',
+      },
+    ],
+  },
+  {
     id: 'access-tokens',
     title: 'Access Tokens',
     permissions: [
@@ -32,6 +50,18 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Describe project',
         description: 'Fetch information about the specified projects.',
       },
+      {
+        id: 'project:delete',
+        title: 'Delete project',
+        description: 'Delete projects.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'project:modifySettings',
+        title: 'Modify Settings',
+        description: 'Modify the project settings.',
+        dependsOn: 'project:describe',
+      },
     ],
   },
   {
@@ -45,7 +75,7 @@ export const permissionGroups: Array<PermissionGroup> = [
       },
       {
         id: 'target:delete',
-        title: 'Create target',
+        title: 'Delete target',
         description: 'Delete targets',
       },
       {

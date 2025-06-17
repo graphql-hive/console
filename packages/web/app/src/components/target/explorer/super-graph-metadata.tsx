@@ -52,8 +52,9 @@ function SubgraphChip(props: {
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       }}
-      // TODO(router)
-      hash={`service-${props.text}`}
+      search={{
+        service: props.text,
+      }}
       style={{ backgroundColor: stringToHslColor(props.text) }}
       className="my-[2px] ml-[6px] inline-block h-[22px] max-w-[100px] cursor-pointer items-center justify-between truncate rounded-[16px] py-0 pl-[8px] pr-[6px] text-[10px] font-normal normal-case leading-loose text-[#4f4f4f] drop-shadow-md"
     >
@@ -98,14 +99,16 @@ const SupergraphMetadataList_SupergraphMetadataFragment = graphql(`
 `);
 
 const tooltipColor = 'rgb(36, 39, 46)';
-const previewThreshold = 3;
+const DEFAULT_PREVIEW_THRESHOLD = 3;
 
 export function SupergraphMetadataList(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
   supergraphMetadata: FragmentType<typeof SupergraphMetadataList_SupergraphMetadataFragment>;
+  previewThreshold?: number;
 }) {
+  const previewThreshold = props.previewThreshold ?? DEFAULT_PREVIEW_THRESHOLD;
   const supergraphMetadata = useFragment(
     SupergraphMetadataList_SupergraphMetadataFragment,
     props.supergraphMetadata,

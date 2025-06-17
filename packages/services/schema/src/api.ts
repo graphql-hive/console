@@ -28,7 +28,7 @@ const t = initTRPC.context<Context>().create();
 
 const procedure = t.procedure.use(handleTRPCError);
 
-const EXTERNAL_VALIDATION = z
+const ExternalValidationModel = z
   .object({
     endpoint: z.string().url().min(1),
     encryptedSecret: z.string().min(1),
@@ -72,7 +72,7 @@ export const schemaBuilderApiRouter = t.router({
               })
               .required(),
           ),
-          external: EXTERNAL_VALIDATION,
+          external: ExternalValidationModel,
           native: z.boolean().optional(),
           contracts: ContractsInputModel.nullable().optional(),
         }),
@@ -100,7 +100,6 @@ export const schemaBuilderApiRouter = t.router({
                 data: {
                   type: 'federation',
                   args,
-                  requestTimeoutMs: ctx.cache.timeoutMs,
                 },
                 abortSignal,
                 requestId: ctx.req.id,
@@ -159,24 +158,28 @@ export const schemaBuilderApiRouter = t.router({
 
         assertAllCasesExhausted(input);
       } catch (error) {
+        ctx.req.log.error('Composition timed out. (error=%o)', error);
+
         // Treat timeouts caused by external composition as "expected errors"
-        if (ctx.cache.isTimeoutError(error) && input.type === 'federation' && input.external) {
+        if (ctx.cache.isTimeoutError(error)) {
           return {
             errors: [
               {
-                message: error.message,
-                source: 'graphql',
+                message: 'The composition timed out. Please try again later.',
+                source: 'composition',
               },
             ],
             sdl: null,
             supergraph: null,
-            includesNetworkError: true,
+            includesNetworkError: false,
+            includesException: true,
             contracts: null,
             tags: null,
             schemaMetadata: null,
             metadataAttributes: null,
           } satisfies CompositionResponse;
         }
+
         throw error;
       }
 
@@ -205,4 +208,5 @@ export type CompositionResponse = {
   metadataAttributes: Record<string, string[]> | null;
   tags: Array<string> | null;
   includesNetworkError?: boolean;
+  includesException?: boolean;
 };

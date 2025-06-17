@@ -222,11 +222,16 @@ export async function createStorage(
     },
   ): OrganizationInvitation {
     return {
+      get id() {
+        return Buffer.from(
+          [invitation.organization_id, invitation.email, invitation.code].join(':'),
+        ).toString('hex');
+      },
       email: invitation.email,
-      organization_id: invitation.organization_id,
+      organizationId: invitation.organization_id,
       code: invitation.code,
-      created_at: invitation.created_at as any,
-      expires_at: invitation.expires_at as any,
+      createdAt: invitation.created_at as any,
+      expiresAt: invitation.expires_at as any,
       roleId: invitation.role.id,
     };
   }
@@ -501,7 +506,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id)
+            (organization_id, user_id, role_id, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -513,7 +518,8 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
-              )
+              ),
+              now()
             )
           ON CONFLICT DO NOTHING
           RETURNING *
@@ -730,9 +736,9 @@ export async function createStorage(
         await t.query<organization_member>(
           sql`/* assignAdminRole */
             INSERT INTO organization_member
-              ("organization_id", "user_id", "role_id")
+              ("organization_id", "user_id", "role_id", "created_at")
             VALUES
-              (${org.id}, ${input.userId}, ${adminRole.id})
+              (${org.id}, ${input.userId}, ${adminRole.id}, now())
           `,
         );
 
@@ -878,49 +884,6 @@ export async function createStorage(
 
       return total;
     },
-    getOrganizationMembers: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allMembers = await pool.query<
-        users &
-          Pick<organization_member, 'scopes' | 'organization_id' | 'connected_to_zendesk'> & {
-            is_owner: boolean;
-          } & MemberRoleColumns & {
-            provider: string | null;
-          }
-      >(
-        sql`/* getOrganizationMembers */
-        SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
-          omr.scopes as scopes,
-          om.organization_id,
-          om.connected_to_zendesk,
-          CASE WHEN o.user_id = om.user_id THEN true ELSE false END AS is_owner,
-          omr.id as role_id,
-          omr.name as role_name,
-          omr.locked as role_locked,
-          omr.scopes as role_scopes,
-          omr.description as role_description
-        FROM organization_member as om
-        LEFT JOIN organizations as o ON (o.id = om.organization_id)
-        LEFT JOIN users as u ON (u.id = om.user_id)
-        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
-        WHERE om.organization_id = ANY(${sql.array(
-          organizations,
-          'uuid',
-        )}) ORDER BY u.created_at DESC`,
-      );
-
-      return organizations.map(organization => {
-        const members = allMembers.rows.filter(row => row.organization_id === organization);
-
-        if (members) {
-          return Promise.resolve(members.map(transformMember));
-        }
-
-        return Promise.reject(new Error(`Members not found (organization=${organization})`));
-      });
-    }),
     getOrganizationMember: batch(async selectors => {
       const membersResult = await pool.query<
         users &
@@ -967,32 +930,92 @@ export async function createStorage(
         return Promise.resolve(null);
       });
     }),
-    getOrganizationInvitations: batch(async selectors => {
-      const organizations = selectors.map(s => s.organizationId);
-      const allInvitations = await pool.query<
+
+    async getOrganizationInvitations(organizationId, args) {
+      let cursor: null | {
+        createdAt: string;
+        /** email */
+        hash: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 50) : 50) : 50;
+
+      if (args.after) {
+        cursor = decodeCreatedAtAndHashBasedCursor(args.after);
+      }
+
+      const query = sql`
+        SELECT
+          oi.organization_id
+          , oi.code
+          , oi.email
+          , to_json(oi.created_at) as "created_at"
+          , to_json(oi.expires_at) as "expires_at"
+          , oi.role_id as "role_id"
+          , to_jsonb(omr.*) as role
+        FROM
+          organization_invitations as oi
+        LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
+        WHERE
+          oi.organization_id = ${organizationId}
+          ${
+            cursor
+              ? sql`
+                  AND (
+                    (
+                      oi.created_at = ${cursor.createdAt}
+                      AND oi.email < ${cursor.hash}
+                    )
+                    OR oi.created_at < ${cursor.createdAt}
+                  )
+                `
+              : sql``
+          }
+          AND oi.expires_at > NOW()
+        ORDER BY
+          oi.created_at DESC
+          , oi.email DESC
+        LIMIT ${limit + 1}
+      `;
+
+      const result = await pool.any<
         organization_invitations & {
           role: organization_member_roles;
         }
-      >(
-        sql`/* getOrganizationInvitations */
-          SELECT oi.*, to_jsonb(omr.*) as role
-          FROM organization_invitations as oi
-          LEFT JOIN organization_member_roles as omr ON (omr.organization_id = oi.organization_id AND omr.id = oi.role_id)
-          WHERE oi.organization_id IN (${sql.join(
-            organizations,
-            sql`, `,
-          )}) AND oi.expires_at > NOW() ORDER BY oi.created_at DESC
-        `,
-      );
+      >(query);
 
-      return organizations.map(organization => {
-        return Promise.resolve(
-          allInvitations.rows
-            .filter(row => row.organization_id === organization)
-            .map(transformOrganizationInvitation) ?? [],
-        );
+      let edges = result.map(row => {
+        const node = transformOrganizationInvitation(row);
+
+        return {
+          node,
+          get cursor() {
+            return encodeCreatedAtAndHashBasedCursor({
+              createdAt: node.createdAt,
+              hash: node.email,
+            });
+          },
+        };
       });
-    }),
+
+      const hasNextPage = edges.length > limit;
+      edges = edges.slice(0, limit);
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return edges[edges.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return edges[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
     async deleteOrganizationMemberRole({ organizationId, roleId }) {
       await tracedTransaction('deleteOrganizationMemberRole', pool, async t => {
         const viewerRoleId = await t.oneFirst(sql`/* getViewerRoleId */
@@ -1166,9 +1189,9 @@ export async function createStorage(
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
             INSERT INTO organization_member
-              (organization_id, user_id, role_id)
+              (organization_id, user_id, role_id, created_at)
             VALUES
-              (${organization}, ${user}, ${roleId})
+              (${organization}, ${user}, ${roleId}, now())
           `,
         );
       });
@@ -4616,6 +4639,19 @@ export function decodeHashBasedCursor(cursor: string) {
   };
 }
 
+export function encodeCreatedAtAndHashBasedCursor(cursor: { createdAt: string; hash: string }) {
+  return Buffer.from(`${cursor.createdAt}|${cursor.hash}`).toString('base64');
+}
+
+export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
+  const [createdAt, hash] = Buffer.from(cursor, 'base64').toString('utf8').split('|');
+
+  return {
+    createdAt,
+    hash,
+  };
+}
+
 function isDefined<T>(val: T | undefined | null): val is T {
   return val !== undefined && val !== null;
 }
@@ -5255,6 +5291,19 @@ export type PaginatedSchemaVersionConnection = Readonly<{
   edges: ReadonlyArray<{
     cursor: string;
     node: SchemaVersion;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
+export type PaginatedOrganizationInvitationConnection = Readonly<{
+  edges: ReadonlyArray<{
+    cursor: string;
+    node: OrganizationInvitation;
   }>;
   pageInfo: Readonly<{
     hasNextPage: boolean;

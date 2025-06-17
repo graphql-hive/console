@@ -165,16 +165,9 @@ const TargetExplorerTypenamePageQuery = graphql(`
         id
         type
       }
-    }
-    operationsStats(
-      selector: {
-        organizationSlug: $organizationSlug
-        projectSlug: $projectSlug
-        targetSlug: $targetSlug
-        period: $period
+      operationsStats(period: $period) {
+        totalRequests
       }
-    ) {
-      totalRequests
     }
   }
 `);
@@ -256,7 +249,7 @@ function TypeExplorerPageContent(props: {
       </div>
       {query.fetching ? null : latestSchemaVersion && type ? (
         <TypeRenderer
-          totalRequests={query.data?.operationsStats.totalRequests ?? 0}
+          totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
           type={type}
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}

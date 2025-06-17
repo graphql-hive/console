@@ -104,6 +104,32 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+#### Redis Cluster
+
+If you are using [Redis Cluster](http://redis.io/topics/cluster-tutorial), You can use the
+`startupNodes` option to connect to the Redis Cluster.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  cache: {
+    type: 'redis',
+    startupNodes: [
+      { host: 'localhost', port: 7000 },
+      { host: 'localhost', port: 7001 },
+      { host: 'localhost', port: 7002 }
+    ],
+    // If you are using AWS ElastiCache with TLS, you need to use the following options
+    tls: true,
+    dnsLookupAsIs: true
+  },
+  responseCaching: {
+    session: () => null
+  }
+})
+```
+
 ### Cloudflare Workers KV
 
 Cloudflare Workers KV is a distributed, eventually consistent key-value store available in the

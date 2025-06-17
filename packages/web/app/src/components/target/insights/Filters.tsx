@@ -14,11 +14,13 @@ import { useFormattedNumber, useToggle } from '@/lib/hooks';
 
 const OperationsFilter_OperationStatsValuesConnectionFragment = graphql(`
   fragment OperationsFilter_OperationStatsValuesConnectionFragment on OperationStatsValuesConnection {
-    nodes {
-      id
-      operationHash
-      name
-      ...OperationRow_OperationStatsValuesFragment
+    edges {
+      node {
+        id
+        operationHash
+        name
+        ...OperationRow_OperationStatsValuesFragment
+      }
     }
   }
 `);
@@ -45,7 +47,7 @@ function OperationsFilter({
 
   function getOperationHashes() {
     const items: string[] = [];
-    for (const op of operations.nodes) {
+    for (const { node: op } of operations.edges) {
       if (op.operationHash) {
         items.push(op.operationHash);
       }
@@ -73,7 +75,7 @@ function OperationsFilter({
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedFilter = useDebouncedCallback((value: string) => {
     setVisibleOperations(
-      operations.nodes.filter(op =>
+      operations.edges.filter(({ node: op }) =>
         op.name.toLocaleLowerCase().includes(value.toLocaleLowerCase()),
       ),
     );
@@ -89,7 +91,7 @@ function OperationsFilter({
     [setSearchTerm, debouncedFilter],
   );
 
-  const [visibleOperations, setVisibleOperations] = useState(operations.nodes);
+  const [visibleOperations, setVisibleOperations] = useState(operations.edges);
 
   const selectAll = useCallback(() => {
     setSelectedItems(getOperationHashes());
@@ -100,7 +102,7 @@ function OperationsFilter({
 
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
-      const operation = visibleOperations[index];
+      const operation = visibleOperations[index].node;
 
       return (
         <OperationRow
@@ -130,7 +132,7 @@ function OperationsFilter({
             value={searchTerm}
             onClear={() => {
               setSearchTerm('');
-              setVisibleOperations(operations.nodes);
+              setVisibleOperations(operations.edges);
             }}
           />
           <div className="flex w-full items-center gap-2">
@@ -180,11 +182,19 @@ function OperationsFilter({
 }
 
 const OperationsFilterContainer_OperationStatsQuery = graphql(`
-  query OperationsFilterContainer_OperationStatsQuery($selector: OperationsStatsSelectorInput!) {
-    operationsStats(selector: $selector) {
-      operations {
-        ...OperationsFilter_OperationStatsValuesConnectionFragment
-        total
+  query OperationsFilterContainer_OperationStatsQuery(
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      operationsStats(period: $period) {
+        operations {
+          edges {
+            __typename
+          }
+          ...OperationsFilter_OperationStatsValuesConnectionFragment
+        }
       }
     }
   }
@@ -212,13 +222,12 @@ function OperationsFilterContainer({
   const [query, refresh] = useQuery({
     query: OperationsFilterContainer_OperationStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug,
         projectSlug,
         targetSlug,
-        period,
-        operations: [],
       },
+      period,
     },
   });
 
@@ -232,18 +241,20 @@ function OperationsFilterContainer({
     return null;
   }
 
-  if (query.fetching || query.error || !query.data) {
+  if (query.fetching || query.error || !query.data?.target) {
     return <Spinner />;
   }
 
+  const { target } = query.data;
+
   return (
     <OperationsFilter
-      operationStatsConnection={query.data.operationsStats?.operations}
+      operationStatsConnection={target.operationsStats.operations}
       selected={selected}
       isOpen={isOpen}
       onClose={onClose}
       onFilter={hashes => {
-        onFilter(hashes.length === query.data?.operationsStats.operations.total ? [] : hashes);
+        onFilter(hashes.length === target.operationsStats.operations.edges.length ? [] : hashes);
       }}
     />
   );
@@ -372,9 +383,11 @@ function ClientRow({
 
 const ClientsFilter_ClientStatsValuesConnectionFragment = graphql(`
   fragment ClientsFilter_ClientStatsValuesConnectionFragment on ClientStatsValuesConnection {
-    nodes {
-      name
-      ...ClientRow_ClientStatsValuesFragment
+    edges {
+      node {
+        name
+        ...ClientRow_ClientStatsValuesFragment
+      }
     }
   }
 `);
@@ -397,7 +410,7 @@ function ClientsFilter({
     clientStatsConnection,
   );
   function getClientNames() {
-    return clientConnection.nodes.map(client => client.name);
+    return clientConnection.edges.map(edge => edge.node.name);
   }
 
   const [selectedItems, setSelectedItems] = useState<string[]>(() =>
@@ -420,8 +433,8 @@ function ClientsFilter({
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedFilter = useDebouncedCallback((value: string) => {
     setVisibleOperations(
-      clientConnection.nodes.filter(client =>
-        client.name.toLocaleLowerCase().includes(value.toLocaleLowerCase()),
+      clientConnection.edges.filter(edge =>
+        edge.node.name.toLocaleLowerCase().includes(value.toLocaleLowerCase()),
       ),
     );
   }, 500);
@@ -436,18 +449,18 @@ function ClientsFilter({
     [setSearchTerm, debouncedFilter],
   );
 
-  const [visibleOperations, setVisibleOperations] = useState(clientConnection.nodes);
+  const [visibleOperations, setVisibleOperations] = useState(clientConnection.edges);
 
   const selectAll = useCallback(() => {
     setSelectedItems(getClientNames());
-  }, [clientConnection.nodes]);
+  }, [clientConnection.edges]);
   const selectNone = useCallback(() => {
     setSelectedItems([]);
   }, [setSelectedItems]);
 
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
-      const client = visibleOperations[index];
+      const client = visibleOperations[index].node;
 
       return (
         <ClientRow
@@ -477,7 +490,7 @@ function ClientsFilter({
             value={searchTerm}
             onClear={() => {
               setSearchTerm('');
-              setVisibleOperations(clientConnection.nodes);
+              setVisibleOperations(clientConnection.edges);
             }}
           />
           <div className="flex w-full items-center gap-2">
@@ -527,12 +540,20 @@ function ClientsFilter({
 }
 
 const ClientsFilterContainer_ClientStatsQuery = graphql(`
-  query ClientsFilterContainer_ClientStats($selector: OperationsStatsSelectorInput!) {
-    operationsStats(selector: $selector) {
-      clients {
-        ...ClientsFilter_ClientStatsValuesConnectionFragment
-        nodes {
-          __typename
+  query ClientsFilterContainer_ClientStats(
+    $targetSelector: TargetSelectorInput!
+    $period: DateRangeInput!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      operationsStats(period: $period) {
+        clients {
+          ...ClientsFilter_ClientStatsValuesConnectionFragment
+          edges {
+            node {
+              __typename
+            }
+          }
         }
       }
     }
@@ -561,13 +582,12 @@ function ClientsFilterContainer({
   const [query, refresh] = useQuery({
     query: ClientsFilterContainer_ClientStatsQuery,
     variables: {
-      selector: {
+      targetSelector: {
         organizationSlug,
         projectSlug,
         targetSlug,
-        period,
-        operations: [],
       },
+      period,
     },
   });
 
@@ -581,15 +601,15 @@ function ClientsFilterContainer({
     return null;
   }
 
-  if (query.fetching || query.error || !query.data) {
+  if (query.fetching || query.error || !query.data?.target) {
     return <Spinner />;
   }
 
-  const allClients = query.data.operationsStats?.clients.nodes ?? [];
+  const allClients = query.data.target?.operationsStats?.clients.edges ?? [];
 
   return (
     <ClientsFilter
-      clientStatsConnection={query.data.operationsStats.clients}
+      clientStatsConnection={query.data.target.operationsStats.clients}
       selected={selected}
       isOpen={isOpen}
       onClose={onClose}

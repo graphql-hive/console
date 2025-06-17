@@ -1,14 +1,26 @@
 import { Injectable, Scope } from 'graphql-modules';
+import * as GraphQLSchema from 'packages/libraries/core/src/client/__generated__/types';
+import { z } from 'zod';
 import type { ProjectReferenceInput } from '../../../__generated__/types';
-import type { Organization, Project, ProjectType } from '../../../shared/entities';
+import type { Organization, Project, ProjectType, Target } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationSelector, ProjectSelector, Storage } from '../../shared/providers/storage';
+import { TargetManager } from '../../target/providers/target-manager';
 import { TokenStorage } from '../../token/providers/token-storage';
+import { ProjectSlugModel } from '../validation';
 
 const reservedSlugs = ['view', 'new'];
+
+const CreateProjectModel = z.object({
+  slug: ProjectSlugModel,
+});
+
+const UpdateProjectSlugModel = z.object({
+  slug: ProjectSlugModel,
+});
 
 /**
  * Responsible for auth checks.
@@ -28,30 +40,50 @@ export class ProjectManager {
     private tokenStorage: TokenStorage,
     private auditLog: AuditLogRecorder,
     private idTranslator: IdTranslator,
+    private targetManager: TargetManager,
   ) {
     this.logger = logger.child({ source: 'ProjectManager' });
   }
 
-  async createProject(
-    input: {
-      slug: string;
-      type: ProjectType;
-    } & OrganizationSelector,
-  ) {
-    const { slug, type, organizationId: organization } = input;
+  async createProject(input: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    slug: string;
+    type: ProjectType;
+  }) {
     this.logger.info('Creating a project (input=%o)', input);
+
+    const inputParseResult = CreateProjectModel.safeParse(input);
+
+    if (!inputParseResult.success) {
+      return {
+        ok: false as const,
+        message: 'Please check your input.',
+        inputErrors: {
+          slug: inputParseResult.error.formErrors.fieldErrors.slug?.[0],
+        },
+      };
+    }
+
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: input.organization,
+      onError: () => {
+        this.session.raise('project:create');
+      },
+    });
+
+    const { slug, type } = input;
 
     await this.session.assertPerformAction({
       action: 'project:create',
-      organizationId: organization,
+      organizationId,
       params: {
-        organizationId: organization,
+        organizationId,
       },
     });
 
     if (reservedSlugs.includes(slug)) {
       return {
-        ok: false,
+        ok: false as const,
         message: 'Slug is reserved',
       };
     }
@@ -59,18 +91,18 @@ export class ProjectManager {
     const result = await this.storage.createProject({
       slug,
       type,
-      organizationId: organization,
+      organizationId,
     });
 
     if (result.ok) {
       await Promise.all([
         this.storage.completeGetStartedStep({
-          organizationId: organization,
+          organizationId,
           step: 'creatingProject',
         }),
         this.auditLog.record({
           eventType: 'PROJECT_CREATED',
-          organizationId: organization,
+          organizationId,
           metadata: {
             projectId: result.project.id,
             projectType: type,
@@ -78,32 +110,74 @@ export class ProjectManager {
           },
         }),
       ]);
+
+      const targetResults = await Promise.all([
+        this.targetManager.createTarget({
+          slug: 'production',
+          project: {
+            byId: result.project.id,
+          },
+        }),
+        this.targetManager.createTarget({
+          slug: 'staging',
+          project: {
+            byId: result.project.id,
+          },
+        }),
+        this.targetManager.createTarget({
+          slug: 'development',
+          project: {
+            byId: result.project.id,
+          },
+        }),
+      ]);
+
+      const targets: Target[] = [];
+      for (const result of targetResults) {
+        if (result.ok) {
+          targets.push(result.target);
+        } else {
+          this.logger.error('Failed to create a target: ' + result.message);
+        }
+      }
+
+      return {
+        ok: true as const,
+        project: result.project,
+        targets,
+      };
     }
 
     return result;
   }
 
-  async deleteProject({
-    organizationId: organization,
-    projectId: project,
-  }: ProjectSelector): Promise<Project> {
-    this.logger.info('Deleting a project (project=%s, organization=%s)', project, organization);
+  async deleteProject(args: { project: GraphQLSchema.ProjectReferenceInput }): Promise<Project> {
+    this.logger.info('Deleting a project (reference=%o)', args.project);
+    const selector = await this.idTranslator.resolveProjectReference({
+      reference: args.project,
+    });
+
+    if (!selector) {
+      this.session.raise('project:delete');
+    }
+
     await this.session.assertPerformAction({
       action: 'project:delete',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: organization,
-        projectId: project,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
       },
     });
 
     const deletedProject = await this.storage.deleteProject({
-      projectId: project,
-      organizationId: organization,
+      projectId: selector.projectId,
+      organizationId: selector.organizationId,
     });
+
     await this.auditLog.record({
       eventType: 'PROJECT_DELETED',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       metadata: {
         projectId: deletedProject.id,
         projectSlug: deletedProject.slug,
@@ -192,11 +266,7 @@ export class ProjectManager {
     return filteredProjects;
   }
 
-  async updateSlug(
-    input: {
-      slug: string;
-    } & ProjectSelector,
-  ): Promise<
+  async updateSlug(input: { project: GraphQLSchema.ProjectReferenceInput; slug: string }): Promise<
     | {
         ok: true;
         project: Project;
@@ -206,18 +276,31 @@ export class ProjectManager {
         message: string;
       }
   > {
-    const { slug, organizationId: organization, projectId: project } = input;
     this.logger.info('Updating a project slug (input=%o)', input);
+    const selector = await this.idTranslator.resolveProjectReference({ reference: input.project });
+    if (!selector) {
+      this.session.raise('project:modifySettings');
+    }
+
+    const { slug } = input;
     await this.session.assertPerformAction({
       action: 'project:modifySettings',
-      organizationId: organization,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: organization,
-        projectId: project,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
       },
     });
 
-    const user = await this.session.getViewer();
+    const inputParseResult = UpdateProjectSlugModel.safeParse(input);
+
+    if (!inputParseResult.success) {
+      return {
+        ok: false,
+        message:
+          inputParseResult.error.formErrors.fieldErrors.slug?.[0] ?? 'Please check your input.',
+      };
+    }
 
     if (reservedSlugs.includes(slug)) {
       return {
@@ -227,16 +310,15 @@ export class ProjectManager {
     }
 
     const result = await this.storage.updateProjectSlug({
-      organizationId: organization,
-      projectId: project,
-      userId: user.id,
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
       slug,
     });
 
     if (result.ok) {
       await this.auditLog.record({
         eventType: 'PROJECT_SLUG_UPDATED',
-        organizationId: organization,
+        organizationId: selector.organizationId,
         metadata: {
           previousSlug: slug,
           newSlug: result.project.slug,

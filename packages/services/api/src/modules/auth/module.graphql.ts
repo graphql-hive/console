@@ -40,11 +40,11 @@ export default gql`
   }
 
   type User {
-    id: ID!
-    email: String!
+    id: ID! @tag(name: "public")
+    email: String! @tag(name: "public")
     fullName: String!
-    displayName: String!
-    provider: AuthProvider!
+    displayName: String! @tag(name: "public")
+    provider: AuthProviderType! @tag(name: "public")
     isAdmin: Boolean!
   }
 
@@ -53,17 +53,17 @@ export default gql`
     total: Int!
   }
 
-  enum AuthProvider {
-    GOOGLE
-    GITHUB
+  enum AuthProviderType {
+    GOOGLE @tag(name: "public")
+    GITHUB @tag(name: "public")
     """
     Username-Password-Authentication
     """
-    USERNAME_PASSWORD
+    USERNAME_PASSWORD @tag(name: "public")
     """
     OpenID Connect
     """
-    OIDC
+    OIDC @tag(name: "public")
   }
 
   enum OrganizationAccessScope {
