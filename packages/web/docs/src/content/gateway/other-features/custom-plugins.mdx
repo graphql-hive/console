@@ -833,6 +833,9 @@ An optional `instrumentation` instance can be present in the plugin.
 This `Instrumentation` instance allows to wrap an entire phase execution (including all plugin
 hooks), meaning running code just before, just after and around the execution of the phase.
 
+It is an advanced feature that most plugins should not need. Its main usage is for tracing or
+monitoring purposes.
+
 Instrumentation doesn't have access to input/output of a phase, use hooks to have access to those
 data. If needed, we recommend to share data between instrumentation and hooks with a `WeakMap` and
 the given `context` as the key.
@@ -845,6 +848,83 @@ All instrumentation takes 2 parameters:
   returns `void` (or `Promise<void>` for asynchrone phases). **This function must always be
   called**. If this function returns a `Promise`, the instrument should return a `Promise` resolving
   after it.
+
+#### Example
+
+```ts
+const useMyTracer = () => ({
+  instrumentation: {
+    async request({ request }, wrapped) {
+      const start = performance.now()
+      // The `wrapped` function represent the execution of this phase.
+      // Its argument or result are not accessible, it can only be used to perform action before and after it, or modify its execution context.
+      await wrapped()
+      const end = performance.now()
+      console.log('request', request.headers['Trace-ID'], 'processed in', end - start)
+    },
+    async operation({ context }, wrapped) {
+      const start = performance.now()
+      await wrapped()
+      const end = performance.now()
+      console.log('operation', context.params.operationName, 'executed in', end - start)
+    }
+  }
+})
+```
+
+An more extensive example usage of this API can be found in
+[`useOpenTelemetry` plugin](https://github.com/graphql-hive/gateway/blob/main/packages/plugins/opentelemetry/src/plugin.ts).
+
+#### Sharing data between Instrumentation and Hooks
+
+Some plugin will require to share some data between instruments and hooks. Since this API doesn't
+allow any access to the wrapped phase, you will need to use an indirect way to share data.
+
+The most straightforward solution is to use a `WeakMap` with either the `context`, `request` or
+`executionRequest` objects as keys.
+
+```ts
+const useMyTracer = () => {
+  const spans = new WeakMap<unknown, Span>()
+  return {
+    instrumentation: {
+      async operation({ context }, wrapped) {
+        const span = new Span()
+        spans.set(context, span)
+        await wrapped()
+        span.end()
+      }
+    },
+    onExecute({ args }) {
+      const span = spans.get(args.contextValue)
+      span.setAttribute('graphql.operationName', args.operationName)
+    }
+  }
+}
+```
+
+When your plugin grows in complexity, the number of WeakMaps to track data can become difficult to
+reason about and maintain. In this case, you use the `withState` utility function.
+
+```ts
+import { withState, type GatewayPlugin } from '@graphql-hive/gateway'
+
+type State = { span: Span }
+
+const useMyTracer = () =>
+  withState<GatewayPlugin, State, State, State>({
+    instrumentation: {
+      async operation({ state }, wrapped) {
+        state.forOperation.span = new Span()
+        await wrapped()
+        span.end()
+      }
+    },
+    onExecute({ args, state }) {
+      state.forOperation.span.setAttribute('graphql.operationName', args.operationName)
+    }
+  })
+```
 
 #### Instrumentation composition
 
