@@ -1,0 +1,22 @@
+{
+  "name": "Apollo Router",
+  "logo": "apollo",
+  "sections": [
+    {
+      "title": "Features Set 1",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "rows": [
+        { "feature": "Feature 1", "values": [false, true] },
+        { "feature": "Feature 2", "values": [false, true] },
+        { "feature": "Feature 3", "values": [false, true] },
+        { "feature": "Feature 4", "values": [true, false] },
+        { "feature": "Feature ...", "values": [true, false] }
+      ]
+    },
+    {
+      "title": "Features Set 2",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "rows": [{ "feature": "Feature 1", "values": [false, true] }]
+    }
+  ]
+}
