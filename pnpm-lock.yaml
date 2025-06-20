@@ -859,8 +859,8 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
       undici:
-        specifier: 6.21.2
-        version: 6.21.2
+        specifier: 6.21.3
+        version: 6.21.3
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -892,8 +892,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 6.21.2
-        version: 6.21.2
+        specifier: 6.21.3
+        version: 6.21.3
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -940,8 +940,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 6.21.2
-        version: 6.21.2
+        specifier: 6.21.3
+        version: 6.21.3
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -15394,8 +15394,8 @@ packages:
     resolution: {integrity: sha512-zICwjrDrcrUE0pyyJc1I2QzBkLM8FINsgOrt6WjA+BgajVq9Nxu2PbFFXUrAggLfDXlZGZBVZYw7WNV5KiBiBA==}
     engines: {node: '>=14.0'}
 
-  undici@6.21.2:
-    resolution: {integrity: sha512-uROZWze0R0itiAKVPsYhFov9LxrPMHLMEQFszeI2gCN6bnIIZ8twzBCJcN2LJrBBLfrP0t1FW0g+JmKVl8Vk1g==}
+  undici@6.21.3:
+    resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
     engines: {node: '>=18.17'}
 
   unenv@2.0.0-rc.1:
@@ -33643,7 +33643,7 @@ snapshots:
     dependencies:
       '@fastify/busboy': 2.1.1
 
-  undici@6.21.2: {}
+  undici@6.21.3: {}
 
   unenv@2.0.0-rc.1:
     dependencies:
