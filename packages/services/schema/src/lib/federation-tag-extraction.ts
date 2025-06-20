@@ -192,11 +192,6 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   for (const [typeName, nodes] of definitionsBySchemaCoordinate) {
     /** After processing all nodes implementing a type, we know whether all or only some fields are inaccessible */
     let isSomeFieldsAccessible = false;
-    /** First node occurance record as stored within the `replacementTypeNodes` map.  */
-    let firstReplacementTypeNodeRecord: {
-      key: ObjectLikeNode;
-      value: ObjectLikeNode;
-    } | null = null;
 
     for (const node of nodes) {
       const tagsOnNode = getTagsForSchemaCoordinate(node.name.value);
@@ -252,12 +247,6 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
         };
       }
 
-      if (!firstReplacementTypeNodeRecord) {
-        firstReplacementTypeNodeRecord = {
-          key: node,
-          value: newNode,
-        };
-      }
       replacementTypeNodes.set(node, newNode);
     }
 
