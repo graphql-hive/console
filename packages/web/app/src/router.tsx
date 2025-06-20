@@ -74,6 +74,11 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
+import {
+  ProposalPage,
+  TargetProposalLayoutPage,
+  TargetProposalsViewPage,
+} from './pages/target-proposal-layout';
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
@@ -858,14 +863,25 @@ const targetProposalsRoute = createRoute({
 const targetProposalRoute = createRoute({
   getParentRoute: () => targetProposalsRoute,
   path: '$proposalId',
+  validateSearch: z.object({
+    page: z
+      .enum(Object.values(ProposalPage).map(s => s.toLowerCase()) as [string, ...string[]])
+      .optional()
+      .catch(() => void 0),
+  }),
   component: function TargetProposalRoute() {
-    const { proposalId } = targetProposalRoute.useParams();
-    const TargetProposalPage = (props: { proposalId: string }) => (
-      <div className="ml-4 flex w-full grow rounded bg-gray-900/50 p-4">
-        @TODO Render {props.proposalId}
-      </div>
+    const { organizationSlug, projectSlug, targetSlug, proposalId } =
+      targetProposalRoute.useParams();
+    const { page } = targetProposalRoute.useSearch();
+    return (
+      <TargetProposalLayoutPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        proposalId={proposalId}
+        page={page ?? (ProposalPage.OVERVIEW as string)}
+      />
     );
-    return <TargetProposalPage proposalId={proposalId} />;
   },
 });
 

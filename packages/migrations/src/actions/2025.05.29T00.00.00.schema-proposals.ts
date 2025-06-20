@@ -28,7 +28,7 @@ export default {
           , target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE
           -- ID for the user that opened the proposal
           , user_id UUID REFERENCES users (id) ON DELETE SET NULL
-          -- schema version that is used to calculate the diff. In case the version is deleted,
+          -- The original schema version that this proposal referenced. In case the version is deleted,
           -- set this to null to avoid completely erasing the change... This should never happen.
           , diff_schema_version_id UUID NOT NULL REFERENCES schema_versions (id) ON DELETE SET NULL
         )

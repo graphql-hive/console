@@ -21,7 +21,8 @@ import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon, PinLeftIcon, PinRightIcon } from '@radix-ui/react-icons';
-import { Outlet, Link as RouterLink, useRouter, useSearch } from '@tanstack/react-router';
+import { Outlet, useRouter, useSearch } from '@tanstack/react-router';
+import { stageToColor } from '@/components/proposal/util';
 
 export function TargetProposalsPage(props: {
   organizationSlug: string;
@@ -83,8 +84,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
     <ListNavigationProvider isCollapsed={!!props.selectedProposalId} isHidden={false}>
       <div className="flex py-6">
         <div className="flex-1">
-          <RouterLink
-            href=""
+          <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
             params={{
               organizationSlug: props.organizationSlug,
@@ -93,7 +93,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
             }}
           >
             <Title className="inline-block cursor-pointer">Proposals</Title>
-          </RouterLink>
+          </Link>
           <Subtitle>Collaborate on schema changes to reduce friction during development.</Subtitle>
         </div>
         <div className="ml-auto mr-0 flex flex-col justify-center">
@@ -307,16 +307,3 @@ const ProposalsListPage = (props: {
     </>
   );
 };
-
-function stageToColor(stage: SchemaProposalStage | string) {
-  switch (stage) {
-    case SchemaProposalStage.Closed:
-      return 'red' as const;
-    case SchemaProposalStage.Draft:
-      return 'gray' as const;
-    case SchemaProposalStage.Open:
-      return 'orange' as const;
-    default:
-      return 'green' as const;
-  }
-}

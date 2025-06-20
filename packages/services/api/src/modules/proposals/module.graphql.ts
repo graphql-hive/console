@@ -207,14 +207,15 @@ export default gql`
     lineText: String
 
     """
+    The coordinate being referenced by this review. This is the most accurate location and should be used prior
+    to falling back to the lineNumber. Only if this coordinate does not exist in the comparing schema, should the line number be used.
+    """
+    schemaCoordinate: String
+
+    """
     The specific version that this review is for.
     """
     schemaProposalVersion: SchemaProposalVersion
-
-    """
-    The parent proposal that this review is for.
-    """
-    schemaProposal: SchemaProposal
 
     """
     If null then this review is just a comment. Otherwise, the reviewer changed the state of the

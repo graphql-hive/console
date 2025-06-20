@@ -12,5 +12,33 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = asy
     stage: 'OPEN',
     updatedAt: Date.now(),
     commentsCount: 5,
+    title: 'This adds some stuff to the thing.',
+    user: {
+      id: 'asdffff',
+      displayName: 'jdolle',
+      fullName: 'Jeff Dolle',
+      email: 'jdolle+test@the-guild.dev',
+    },
+    reviews: {
+      edges: [
+        {
+          cursor: 'asdf',
+          node: {
+            id: '1',
+            comments: [],
+            createdAt: Date.now(),
+            lineText: 'type User {',
+            lineNumber: 2,
+            stageTransition: 'OPEN',
+          },
+        },
+      ],
+      pageInfo: {
+        startCursor: 'asdf',
+        endCursor: 'wxyz',
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    },
   };
 };

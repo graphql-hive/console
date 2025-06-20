@@ -6,6 +6,7 @@ const colors = {
   yellow: 'bg-yellow-500/10 text-yellow-500',
   gray: 'bg-gray-500/10 text-gray-500',
   orange: 'bg-orange-500/10 text-orange-500',
+  red: 'bg-red-500/10 text-red-500',
 } as const;
 
 export function Tag({
