@@ -95,7 +95,7 @@ type ObjectLikeNode =
  */
 export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   documentNode: DocumentNode,
-  tagRegister: Map<string, Set<string>>,
+  tagRegister: SchemaCoordinateToTagsRegistry,
   filter: Federation2SubgraphDocumentNodeByTagsFilter,
 ): {
   typeDefs: DocumentNode;
@@ -517,6 +517,11 @@ function getTagsBySchemaCoordinateFromSubgraph(
 
   return map;
 }
+
+type SchemaCoordinateToTagsRegistry = Map<
+  /* schema coordinate */ string,
+  /* tag list */ Set<string>
+>;
 
 /**
  * Get a map with tags per schema coordinates in all subgraphs.
