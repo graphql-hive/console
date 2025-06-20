@@ -1,8 +1,10 @@
 import {
   EnumTypeExtensionNode,
+  EnumValueDefinitionNode,
   InputObjectTypeExtensionNode,
   InterfaceTypeExtensionNode,
   Kind,
+  NameNode,
   ObjectTypeExtensionNode,
   visit,
   type ConstDirectiveNode,
@@ -93,6 +95,7 @@ type ObjectLikeNode =
  */
 export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   documentNode: DocumentNode,
+  tagRegister: Map<string, Set<string>>,
   filter: Federation2SubgraphDocumentNodeByTagsFilter,
 ): {
   typeDefs: DocumentNode;
@@ -108,7 +111,11 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     '@inaccessible',
   );
   const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
-  const getTagsOnNode = buildGetTagsOnNode(tagDirectiveName);
+
+  function getTagsForSchemaCoordinate(coordinate: string) {
+    return tagRegister.get(coordinate) ?? new Set();
+  }
+
   const transformTagDirectives = createTransformTagDirectives(
     tagDirectiveName,
     inaccessibleDirectiveName,
@@ -128,8 +135,15 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     typesWithAllFieldsInaccessibleTracker.set(name, false);
   }
 
-  function fieldArgumentHandler(node: InputValueDefinitionNode) {
-    const tagsOnNode = getTagsOnNode(node);
+  function fieldArgumentHandler(
+    objectLikeNode: ObjectLikeNode,
+    fieldLikeNode: InputValueDefinitionNode | FieldDefinitionNode,
+    node: InputValueDefinitionNode,
+  ) {
+    const tagsOnNode = getTagsForSchemaCoordinate(
+      `${objectLikeNode.name.value}.${fieldLikeNode.name.value}(${node.name.value}:)`,
+    );
+
     if (
       (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
       (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
@@ -185,16 +199,21 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     } | null = null;
 
     for (const node of nodes) {
-      const tagsOnNode = getTagsOnNode(node);
+      const tagsOnNode = getTagsForSchemaCoordinate(node.name.value);
+
       let newNode = {
         ...node,
-        fields: node.fields?.map(node => {
-          const tagsOnNode = getTagsOnNode(node);
+        fields: node.fields?.map(fieldNode => {
+          const tagsOnNode = getTagsForSchemaCoordinate(
+            `${node.name.value}.${fieldNode.name.value}`,
+          );
 
-          if (node.kind === Kind.FIELD_DEFINITION) {
-            node = {
-              ...node,
-              arguments: node.arguments?.map(fieldArgumentHandler),
+          if (fieldNode.kind === Kind.FIELD_DEFINITION) {
+            fieldNode = {
+              ...fieldNode,
+              arguments: fieldNode.arguments?.map(argumentNode =>
+                fieldArgumentHandler(node, fieldNode, argumentNode),
+              ),
             } as FieldDefinitionNode;
           }
 
@@ -203,16 +222,16 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
             (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
           ) {
             return {
-              ...node,
-              directives: transformTagDirectives(node, true),
+              ...fieldNode,
+              directives: transformTagDirectives(fieldNode, true),
             };
           }
 
           isSomeFieldsAccessible = true;
 
           return {
-            ...node,
-            directives: transformTagDirectives(node),
+            ...fieldNode,
+            directives: transformTagDirectives(fieldNode),
           };
         }),
       } as ObjectLikeNode;
@@ -262,30 +281,30 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   }
 
   function enumHandler(node: EnumTypeDefinitionNode | EnumTypeExtensionNode) {
-    const tagsOnNode = getTagsOnNode(node);
+    const tagsOnNode = getTagsForSchemaCoordinate(node.name.value);
 
     let isAllFieldsInaccessible = true;
 
     const newNode = {
       ...node,
-      values: node.values?.map(node => {
-        const tagsOnNode = getTagsOnNode(node);
+      values: node.values?.map(valueNode => {
+        const tagsOnNode = getTagsForSchemaCoordinate(`${node.name.value}.${valueNode.name.value}`);
 
         if (
           (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
           (filter.exclude.size && hasIntersection(tagsOnNode, filter.exclude))
         ) {
           return {
-            ...node,
-            directives: transformTagDirectives(node, true),
+            ...valueNode,
+            directives: transformTagDirectives(valueNode, true),
           };
         }
 
         isAllFieldsInaccessible = false;
 
         return {
-          ...node,
-          directives: transformTagDirectives(node),
+          ...valueNode,
+          directives: transformTagDirectives(valueNode),
         };
       }),
     };
@@ -310,7 +329,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
   }
 
   function scalarAndUnionHandler(node: ScalarTypeDefinitionNode | UnionTypeDefinitionNode) {
-    const tagsOnNode = getTagsOnNode(node);
+    const tagsOnNode = getTagsForSchemaCoordinate(node.name.value);
 
     if (
       (filter.include.size && !hasIntersection(tagsOnNode, filter.include)) ||
@@ -391,6 +410,152 @@ function makeTypesFromSetInaccessible(
   });
 }
 
+function getTagsBySchemaCoordinateFromSubgraph(
+  documentNode: DocumentNode,
+  map: Map<string, Set<string>>,
+  subcoordinatesPerType: Map<string, Set<string>>,
+) {
+  const { resolveImportName } = extractLinkImplementations(documentNode);
+  const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
+  const extractTag = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
+
+  function addSubcoordinatesPerType(schemaCoordinate: string, value: string) {
+    let values = map.get(schemaCoordinate);
+    if (values === undefined) {
+      values = new Set();
+      map.set(schemaCoordinate, values);
+    }
+    values.add(value);
+  }
+
+  function addTypeFields(typeName: string, fields: Set<string>) {
+    let typeFields = subcoordinatesPerType.get(typeName);
+    if (typeFields === undefined) {
+      typeFields = new Set();
+      subcoordinatesPerType.set(typeName, typeFields);
+    }
+    for (const value of fields) {
+      typeFields.add(value);
+    }
+  }
+
+  function TypeDefinitionHandler(node: {
+    name: NameNode;
+    directives?: readonly ConstDirectiveNode[];
+    fields?: readonly FieldDefinitionNode[] | readonly InputValueDefinitionNode[];
+    values?: readonly EnumValueDefinitionNode[];
+  }) {
+    node.directives?.forEach(directiveNode => {
+      const tagValue = extractTag(directiveNode);
+      if (tagValue === null) {
+        return;
+      }
+      addSubcoordinatesPerType(node.name.value, tagValue);
+    });
+
+    const subCoordinates = new Set<string>();
+
+    node.fields?.forEach(fieldNode => {
+      fieldNode.directives?.forEach(directiveNode => {
+        const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
+        subCoordinates.add(schemaCoordinate);
+
+        const tagValue = extractTag(directiveNode);
+        if (tagValue === null) {
+          return;
+        }
+        addSubcoordinatesPerType(schemaCoordinate, tagValue);
+      });
+
+      if ('arguments' in fieldNode) {
+        fieldNode.arguments?.forEach(argumentNode => {
+          const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}(${argumentNode.name.value}:)`;
+          subCoordinates.add(schemaCoordinate);
+
+          argumentNode.directives?.forEach(directiveNode => {
+            const tagValue = extractTag(directiveNode);
+            if (tagValue === null) {
+              return;
+            }
+            addSubcoordinatesPerType(schemaCoordinate, tagValue);
+          });
+        });
+      }
+    });
+    node.values?.forEach(valueNode => {
+      const schemaCoordinate = `${node.name.value}.${valueNode.name.value}`;
+      subCoordinates.add(schemaCoordinate);
+
+      valueNode.directives?.forEach(directiveNode => {
+        const tagValue = extractTag(directiveNode);
+        if (tagValue === null) {
+          return;
+        }
+        addSubcoordinatesPerType(schemaCoordinate, tagValue);
+      });
+    });
+
+    addTypeFields(node.name.value, subCoordinates);
+
+    return false;
+  }
+
+  visit(documentNode, {
+    ScalarTypeDefinition: TypeDefinitionHandler,
+    ScalarTypeExtension: TypeDefinitionHandler,
+    UnionTypeDefinition: TypeDefinitionHandler,
+    UnionTypeExtension: TypeDefinitionHandler,
+    ObjectTypeDefinition: TypeDefinitionHandler,
+    ObjectTypeExtension: TypeDefinitionHandler,
+    InterfaceTypeDefinition: TypeDefinitionHandler,
+    InterfaceTypeExtension: TypeDefinitionHandler,
+    InputObjectTypeDefinition: TypeDefinitionHandler,
+    InputObjectTypeExtension: TypeDefinitionHandler,
+    EnumTypeDefinition: TypeDefinitionHandler,
+    EnumTypeExtension: TypeDefinitionHandler,
+  });
+
+  return map;
+}
+
+/**
+ * Get a map with tags per schema coordinates in all subgraphs.
+ */
+function buildSchemaCoordinateTagRegister<
+  TType extends {
+    typeDefs: DocumentNode;
+    name: string;
+  },
+>(subgraphs: Array<TType>) {
+  const map = new Map<string, Set<string>>();
+  const subcoordinatesPerType = new Map<string, Set<string>>();
+
+  subgraphs.forEach(subgraph =>
+    getTagsBySchemaCoordinateFromSubgraph(subgraph.typeDefs, map, subcoordinatesPerType),
+  );
+
+  // The tags of a type are inherited by it's fields and field arguments
+  for (const [typeName, subCoordinates] of subcoordinatesPerType) {
+    const tags = map.get(typeName);
+    if (tags === undefined) {
+      continue;
+    }
+
+    for (const subCoordinate of subCoordinates) {
+      let subcoordinateTags = map.get(subCoordinate);
+      if (!subcoordinateTags) {
+        subcoordinateTags = new Set();
+        map.set(subCoordinate, subcoordinateTags);
+      }
+      for (const tag of tags) {
+        subcoordinateTags.add(tag);
+      }
+    }
+  }
+
+  return map;
+}
+
 /**
  * Apply a tag filter to a set of subgraphs.
  */
@@ -400,10 +565,17 @@ export function applyTagFilterOnSubgraphs<
     name: string;
   },
 >(subgraphs: Array<TType>, filter: Federation2SubgraphDocumentNodeByTagsFilter): Array<TType> {
+  // All combined @tag directive in all subgraphs per schema coordinate
+  const tagRegister = buildSchemaCoordinateTagRegister(subgraphs);
+
   let filteredSubgraphs = subgraphs.map(subgraph => {
     return {
       ...subgraph,
-      ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(subgraph.typeDefs, filter),
+      ...applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        subgraph.typeDefs,
+        tagRegister,
+        filter,
+      ),
     };
   });
 
