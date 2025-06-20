@@ -668,35 +668,7 @@ export function createTagDirectiveNameExtractionStrategy(
   };
 }
 
-/**
- * Extract all
- */
-
 export type Federation2SubgraphDocumentNodeByTagsFilter = {
   include: Set<string>;
   exclude: Set<string>;
 };
-
-function buildGetTagsOnNode(directiveName: string) {
-  const emptySet = new Set<string>();
-  return function getTagsOnNode(node: { directives?: ReadonlyArray<DirectiveNode> }): Set<string> {
-    if (!node.directives) {
-      return emptySet;
-    }
-    const tags = new Set<string>();
-    for (const directive of node.directives) {
-      if (
-        directive.name.value === directiveName &&
-        directive.arguments?.[0].name.value === 'name' &&
-        directive.arguments[0].value.kind === Kind.STRING
-      ) {
-        tags.add(directive.arguments[0].value.value);
-      }
-    }
-
-    if (!tags.size) {
-      return emptySet;
-    }
-    return tags;
-  };
-}
