@@ -717,7 +717,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
 
         interface Interface1 {
-          field1: String! @federation__inaccessible
+          field1: String!
         }
 
         interface Interface2 {

@@ -419,15 +419,6 @@ function getTagsBySchemaCoordinateFromSubgraph(
   const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
   const extractTag = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
 
-  function addSubcoordinatesPerType(schemaCoordinate: string, value: string) {
-    let values = map.get(schemaCoordinate);
-    if (values === undefined) {
-      values = new Set();
-      map.set(schemaCoordinate, values);
-    }
-    values.add(value);
-  }
-
   function addTypeFields(typeName: string, fields: Set<string>) {
     let typeFields = subcoordinatesPerType.get(typeName);
     if (typeFields === undefined) {
@@ -439,46 +430,54 @@ function getTagsBySchemaCoordinateFromSubgraph(
     }
   }
 
+  function addTagsPerSchemaCoordinate(schemaCoordinate: string, tagValues: Set<string>) {
+    let values = map.get(schemaCoordinate);
+    if (values === undefined) {
+      values = new Set();
+      map.set(schemaCoordinate, values);
+    }
+    for (const tagValue of tagValues) {
+      values.add(tagValue);
+    }
+  }
+
+  function getTagsForNode(node: { directives?: readonly ConstDirectiveNode[] }): Set<string> {
+    const tags = new Set<string>();
+    node.directives?.forEach(directiveNode => {
+      const tagValue = extractTag(directiveNode);
+      if (tagValue === null) {
+        return;
+      }
+      tags.add(tagValue);
+    });
+    return tags;
+  }
+
   function TypeDefinitionHandler(node: {
     name: NameNode;
     directives?: readonly ConstDirectiveNode[];
     fields?: readonly FieldDefinitionNode[] | readonly InputValueDefinitionNode[];
     values?: readonly EnumValueDefinitionNode[];
   }) {
-    node.directives?.forEach(directiveNode => {
-      const tagValue = extractTag(directiveNode);
-      if (tagValue === null) {
-        return;
-      }
-      addSubcoordinatesPerType(node.name.value, tagValue);
-    });
+    const tagValues = getTagsForNode(node);
+    addTagsPerSchemaCoordinate(node.name.value, tagValues);
 
     const subCoordinates = new Set<string>();
 
     node.fields?.forEach(fieldNode => {
-      fieldNode.directives?.forEach(directiveNode => {
-        const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
-        subCoordinates.add(schemaCoordinate);
+      const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
+      subCoordinates.add(schemaCoordinate);
 
-        const tagValue = extractTag(directiveNode);
-        if (tagValue === null) {
-          return;
-        }
-        addSubcoordinatesPerType(schemaCoordinate, tagValue);
-      });
+      const tagValues = getTagsForNode(fieldNode);
+      addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
 
       if ('arguments' in fieldNode) {
         fieldNode.arguments?.forEach(argumentNode => {
           const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}(${argumentNode.name.value}:)`;
           subCoordinates.add(schemaCoordinate);
 
-          argumentNode.directives?.forEach(directiveNode => {
-            const tagValue = extractTag(directiveNode);
-            if (tagValue === null) {
-              return;
-            }
-            addSubcoordinatesPerType(schemaCoordinate, tagValue);
-          });
+          const tagValues = getTagsForNode(argumentNode);
+          addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
         });
       }
     });
@@ -486,13 +485,8 @@ function getTagsBySchemaCoordinateFromSubgraph(
       const schemaCoordinate = `${node.name.value}.${valueNode.name.value}`;
       subCoordinates.add(schemaCoordinate);
 
-      valueNode.directives?.forEach(directiveNode => {
-        const tagValue = extractTag(directiveNode);
-        if (tagValue === null) {
-          return;
-        }
-        addSubcoordinatesPerType(schemaCoordinate, tagValue);
-      });
+      const tagValues = getTagsForNode(valueNode);
+      addTagsPerSchemaCoordinate(schemaCoordinate, tagValues);
     });
 
     addTypeFields(node.name.value, subCoordinates);
