@@ -421,7 +421,14 @@ function collectTagsBySchemaCoordinateFromSubgraph(
     }
   }
 
-  function addTagsPerSchemaCoordinate(schemaCoordinate: string, tagValues: Set<string>) {
+  function addTagsPerSchemaCoordinate(
+    schemaCoordinate: string,
+    tagValues: Set<string> | undefined,
+  ) {
+    if (tagValues === undefined) {
+      return;
+    }
+
     let values = map.get(schemaCoordinate);
     if (values === undefined) {
       values = new Set();
@@ -432,7 +439,9 @@ function collectTagsBySchemaCoordinateFromSubgraph(
     }
   }
 
-  function getTagsForNode(node: { directives?: readonly ConstDirectiveNode[] }): Set<string> {
+  function getTagsForNode(node: {
+    directives?: readonly ConstDirectiveNode[];
+  }): Set<string> | undefined {
     const tags = new Set<string>();
     node.directives?.forEach(directiveNode => {
       const tagValue = extractTag(directiveNode);
@@ -441,6 +450,9 @@ function collectTagsBySchemaCoordinateFromSubgraph(
       }
       tags.add(tagValue);
     });
+    if (tags.size === 0) {
+      return undefined;
+    }
     return tags;
   }
 
