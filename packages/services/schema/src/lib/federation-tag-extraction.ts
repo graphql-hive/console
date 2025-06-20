@@ -521,17 +521,12 @@ function getTagsBySchemaCoordinateFromSubgraph(
 /**
  * Get a map with tags per schema coordinates in all subgraphs.
  */
-function buildSchemaCoordinateTagRegister<
-  TType extends {
-    typeDefs: DocumentNode;
-    name: string;
-  },
->(subgraphs: Array<TType>) {
+export function buildSchemaCoordinateTagRegister(documentNodes: Array<DocumentNode>) {
   const map = new Map<string, Set<string>>();
   const subcoordinatesPerType = new Map<string, Set<string>>();
 
-  subgraphs.forEach(subgraph =>
-    getTagsBySchemaCoordinateFromSubgraph(subgraph.typeDefs, map, subcoordinatesPerType),
+  documentNodes.forEach(documentNode =>
+    getTagsBySchemaCoordinateFromSubgraph(documentNode, map, subcoordinatesPerType),
   );
 
   // The tags of a type are inherited by it's fields and field arguments
@@ -566,7 +561,7 @@ export function applyTagFilterOnSubgraphs<
   },
 >(subgraphs: Array<TType>, filter: Federation2SubgraphDocumentNodeByTagsFilter): Array<TType> {
   // All combined @tag directive in all subgraphs per schema coordinate
-  const tagRegister = buildSchemaCoordinateTagRegister(subgraphs);
+  const tagRegister = buildSchemaCoordinateTagRegister(subgraphs.map(s => s.typeDefs));
 
   let filteredSubgraphs = subgraphs.map(subgraph => {
     return {
