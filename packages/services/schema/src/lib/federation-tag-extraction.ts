@@ -364,7 +364,7 @@ function makeTypesFromSetInaccessible(
   types: Set<string>,
   transformTagDirectives: ReturnType<typeof createTransformTagDirectives>,
 ) {
-  /** We can only apply @accessible once on each unique typename, otherwise we get a composition error */
+  /** We can only apply `@inaccessible` once on each unique typename, otherwise we get a composition error */
   const alreadyAppliedOnTypeNames = new Set<string>();
   function typeHandler(
     node:
@@ -399,11 +399,13 @@ function makeTypesFromSetInaccessible(
   });
 }
 
-function getTagsBySchemaCoordinateFromSubgraph(
+function collectTagsBySchemaCoordinateFromSubgraph(
   documentNode: DocumentNode,
-  map: Map<string, Set<string>>,
-  subcoordinatesPerType: Map<string, Set<string>>,
-) {
+  /** This map will be populated with values. */
+  map: SchemaCoordinateToTagsRegistry,
+  /** This map will be populated with values. */
+  subcoordinatesPerType: SubcoordinatesPerType,
+): void {
   const { resolveImportName } = extractLinkImplementations(documentNode);
   const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
   const extractTag = createTagDirectiveNameExtractionStrategy(tagDirectiveName);
@@ -497,8 +499,6 @@ function getTagsBySchemaCoordinateFromSubgraph(
     EnumTypeDefinition: TypeDefinitionHandler,
     EnumTypeExtension: TypeDefinitionHandler,
   });
-
-  return map;
 }
 
 type SchemaCoordinateToTagsRegistry = Map<
@@ -506,29 +506,37 @@ type SchemaCoordinateToTagsRegistry = Map<
   /* tag list */ Set<string>
 >;
 
+type SubcoordinatesPerType = Map</* type name */ string, /* schema coordinates */ Set<string>>;
+
 /**
  * Get a map with tags per schema coordinates in all subgraphs.
  */
-export function buildSchemaCoordinateTagRegister(documentNodes: Array<DocumentNode>) {
-  const map = new Map<string, Set<string>>();
-  const subcoordinatesPerType = new Map<string, Set<string>>();
+export function buildSchemaCoordinateTagRegister(
+  documentNodes: Array<DocumentNode>,
+): SchemaCoordinateToTagsRegistry {
+  const schemaCoordinatesToTags: SchemaCoordinateToTagsRegistry = new Map();
+  const subcoordinatesPerType: SubcoordinatesPerType = new Map();
 
   documentNodes.forEach(documentNode =>
-    getTagsBySchemaCoordinateFromSubgraph(documentNode, map, subcoordinatesPerType),
+    collectTagsBySchemaCoordinateFromSubgraph(
+      documentNode,
+      schemaCoordinatesToTags,
+      subcoordinatesPerType,
+    ),
   );
 
   // The tags of a type are inherited by it's fields and field arguments
   for (const [typeName, subCoordinates] of subcoordinatesPerType) {
-    const tags = map.get(typeName);
+    const tags = schemaCoordinatesToTags.get(typeName);
     if (tags === undefined) {
       continue;
     }
 
     for (const subCoordinate of subCoordinates) {
-      let subcoordinateTags = map.get(subCoordinate);
+      let subcoordinateTags = schemaCoordinatesToTags.get(subCoordinate);
       if (!subcoordinateTags) {
         subcoordinateTags = new Set();
-        map.set(subCoordinate, subcoordinateTags);
+        schemaCoordinatesToTags.set(subCoordinate, subcoordinateTags);
       }
       for (const tag of tags) {
         subcoordinateTags.add(tag);
@@ -536,7 +544,7 @@ export function buildSchemaCoordinateTagRegister(documentNodes: Array<DocumentNo
     }
   }
 
-  return map;
+  return schemaCoordinatesToTags;
 }
 
 /**
