@@ -2,6 +2,7 @@ import { parse, print } from 'graphql';
 import {
   applyTagFilterOnSubgraphs,
   applyTagFilterToInaccessibleTransformOnSubgraphSchema,
+  buildSchemaCoordinateTagRegister,
   type Federation2SubgraphDocumentNodeByTagsFilter,
 } from '../federation-tag-extraction';
 
@@ -28,7 +29,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       `);
 
       const outputSdl = print(
-        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter).typeDefs,
+        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, new Map(), filter).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
       schema {
@@ -67,7 +68,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       `);
 
       const outputSdl = print(
-        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter).typeDefs,
+        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, new Map(), filter).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0") {
@@ -106,7 +107,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       `);
 
       const outputSdl = print(
-        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter).typeDefs,
+        applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+          sdl,
+          buildSchemaCoordinateTagRegister([sdl]),
+          filter,
+        ).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"]) {
@@ -149,7 +154,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       `);
 
       const outputSdl = print(
-        applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter).typeDefs,
+        applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+          sdl,
+          buildSchemaCoordinateTagRegister([sdl]),
+          filter,
+        ).typeDefs,
       );
       expect(outputSdl).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: [{name: "@inaccessible", as: "@inaccessible__federation"}]) {
@@ -185,7 +194,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -217,7 +230,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -249,7 +266,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -281,7 +302,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -316,7 +341,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -353,7 +382,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -366,7 +399,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
       }
 
       type Type2 @federation__inaccessible {
-        field1: ID!
+        field1: ID! @federation__inaccessible
       }
     `);
     });
@@ -391,7 +424,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(output.typesWithAllFieldsInaccessible.entries().toArray()).toEqual([
         ['Mutation', true],
@@ -435,7 +472,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -475,7 +516,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -516,7 +561,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -557,7 +606,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -599,7 +652,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -643,7 +700,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -656,7 +717,7 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
 
         interface Interface1 {
-          field1: String! @federation__inaccessible
+          field1: String!
         }
 
         interface Interface2 {
@@ -688,7 +749,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -729,7 +794,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -769,7 +838,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -809,7 +882,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -852,7 +929,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -895,7 +976,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -935,7 +1020,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -977,7 +1066,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -1017,7 +1110,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -1062,7 +1159,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -1103,7 +1204,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -1136,7 +1241,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
@@ -1164,7 +1273,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -1194,7 +1307,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -1227,7 +1344,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       // Note: this results in an invalid schema, but still follows the rules of the filtering
       // The filtered schema must be validated afterwards.
@@ -1262,7 +1383,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1297,7 +1422,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1333,7 +1462,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1369,7 +1502,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1405,7 +1542,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
       extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1449,7 +1590,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1500,7 +1645,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1555,7 +1704,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1610,7 +1763,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1665,7 +1822,11 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
 
-      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(sdl, filter);
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
 
       expect(print(output.typeDefs)).toMatchInlineSnapshot(`
         extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
@@ -1813,7 +1974,7 @@ describe('applyTagFilterOnSubgraphs', () => {
 
     expect(print(result[0].typeDefs)).toMatchInlineSnapshot(`
       type Query {
-        field1: String! @inaccessible
+        field1: String!
         field2: Type1! @inaccessible
       }
 

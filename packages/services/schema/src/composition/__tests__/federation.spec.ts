@@ -519,3 +519,78 @@ test('contract: mutation type is part of the public schema if at least one field
     }
   `);
 });
+
+test('contract: scalar is inaccessible, despite being included in at least one subraph', async () => {
+  const compose = createComposeFederation({
+    decrypt: () => '',
+    requestTimeoutMs: Infinity,
+  });
+
+  const sdl2 = /* GraphQL */ `
+    schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
+      query: Query
+    }
+
+    type Query {
+      field1: Foo!
+    }
+
+    type Foo {
+      field: Brr @tag(name: "include")
+    }
+
+    scalar Brr @tag(name: "include")
+  `;
+
+  const sdl = /* GraphQL */ `
+    schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
+      query: Query
+    }
+
+    type Query {
+      c: Int @tag(name: "include")
+    }
+
+    scalar Brr
+  `;
+
+  const result = await compose({
+    contracts: [
+      {
+        filter: {
+          include: ['include'],
+          exclude: null,
+          removeUnreachableTypesFromPublicApiSchema: false,
+        },
+        id: '1',
+      },
+    ],
+    external: null,
+    native: true,
+    requestId: '1',
+    schemas: [
+      {
+        raw: sdl,
+        source: 'foo.graphql',
+        url: 'https://lol.de',
+      },
+      {
+        raw: sdl2,
+        source: 'foo2.graphql',
+        url: 'https://trolol.de',
+      },
+    ],
+  });
+  expect(result.type).toEqual('success');
+  const contractResult = result.result.contracts?.at(0);
+
+  expect(contractResult?.id).toEqual('1');
+  expect(contractResult?.result.type).toEqual('success');
+
+  const line = contractResult?.result.result.supergraph
+    ?.split('\n')
+    .find(line => line.includes('scalar Brr'));
+  expect(line).toEqual(
+    `scalar Brr @join__type(graph: FOO_GRAPHQL)  @join__type(graph: FOO2_GRAPHQL) `,
+  );
+});
