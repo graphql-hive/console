@@ -236,7 +236,7 @@ export const gatewayConfig = defineConfig({
   },
   plugins: () => [
     useOperationFieldPermissions({
-      getPermissions: async context => {
+      getPermissions: context => {
         const { jwt } = context
 
         // Check based on identity / user-id.
@@ -284,7 +284,7 @@ export const gatewayConfig = defineConfig({
   },
   plugins: () => [
     useOperationFieldPermissions({
-      getPermissions: async context => {
+      getPermissions: context => {
         const { jwt } = context
         if (!jwt) {
           // allow only introspection if no token is present
