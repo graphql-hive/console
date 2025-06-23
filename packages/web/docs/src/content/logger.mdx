@@ -591,7 +591,8 @@ log.info({ some: 'attributes' }, 'hello world')
 
 You can implement custom log writers for the Hive Logger by creating a class that implements the
 `LogWriter` interface. This interface requires a single `write` method, which receives the log
-level, attributes, and message.
+level, attributes, and message and an optional `flush` method allowing you to ensure all writer jobs
+are completed when the logger is flushed.
 
 Your writer can perform any action, such as sending logs to a file, external service, or custom
 destination.
@@ -599,6 +600,24 @@ destination.
 Writers can be synchronous (returning `void`) or asynchronous (returning a `Promise<void>`). If your
 writer performs asynchronous operations (like network requests or file writes), simply return a
 promise from the `write` method.
+
+Furthermore, you can optionally implement the `flush` method to ensure that all pending writes are
+completed before the logger is disposed or flushed. This is particularly useful for asynchronous
+writers that need to ensure all logs are written before the application exits or the logger is no
+longer needed.
+
+```ts
+import { Attributes, LogLevel } from '@graphql-hive/logger'
+
+interface LogWriter {
+  write(
+    level: LogLevel,
+    attrs: Attributes | null | undefined,
+    msg: string | null | undefined
+  ): void | Promise<void>
+  flush?(): void | Promise<void>
+}
+```
 
 #### Example of HTTP Writer
 
@@ -657,6 +676,9 @@ writers are async.
 
 This design allows you to use async writers without impacting the performance of your application or
 blocking the main thread.
+
+After all writes have been completed, the logger will call the optional `flush` method on the
+writers, executing any custom finalization logic you may have implemented.
 
 ##### Explicit Resource Management
 
