@@ -15,7 +15,7 @@
     "@trpc/server": "10.45.2",
     "@types/ms": "0.7.34",
     "dotenv": "16.4.7",
-    "fastify": "4.29.0",
+    "fastify": "4.29.1",
     "ioredis": "5.4.2",
     "lru-cache": "11.0.2",
     "ms": "2.1.3",

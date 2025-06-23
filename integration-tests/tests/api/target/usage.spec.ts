@@ -8,7 +8,6 @@ import { graphql } from 'testkit/gql';
 import { BreakingChangeFormulaType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
-import { T } from 'vitest/dist/chunks/reporters.d.CfRkRKN2';
 import { UTCDate } from '@date-fns/utc';
 // eslint-disable-next-line hive/enforce-deps-in-dev
 import { normalizeOperation } from '@graphql-hive/core';
