@@ -1,7 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SelectValue } from '@radix-ui/react-select';
-import { Link } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -24,16 +24,25 @@ export function ProjectSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
   organizations: FragmentType<typeof ProjectSelector_OrganizationConnectionFragment> | null;
-  onValueChange?: Function;
+  onValueChange?: ((value: string) => void) | undefined;
   optional?: boolean;
   showOrganization?: boolean;
 }) {
+  const router = useRouter();
   const optional = typeof props.optional !== 'undefined' ? props.optional : false;
   const showOrganization =
     typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
+  const defaultFunc = (id: string) => {
+    void router.navigate({
+      to: '/$organizationSlug/$projectSlug',
+      params: {
+        organizationSlug: props.currentOrganizationSlug,
+        projectSlug: id,
+      },
+    });
+  };
   const onValueChangeFunc =
-    typeof props.onValueChange !== 'undefined' ? props.onValueChange : undefined;
-
+    typeof props.onValueChange !== 'undefined' ? props.onValueChange : defaultFunc;
   const organizations = useFragment(
     ProjectSelector_OrganizationConnectionFragment,
     props.organizations,
@@ -65,7 +74,7 @@ export function ProjectSelector(props: {
       ) : (
         ''
       )}
-      {projectEdges?.length && currentProject ? (
+      {(projectEdges?.length && currentProject) || optional ? (
         <>
           {showOrganization ? <div className="italic text-gray-500">/</div> : <></>}
           <Select value={props.currentProjectSlug} onValueChange={onValueChangeFunc}>
@@ -79,7 +88,12 @@ export function ProjectSelector(props: {
               </div>
             </SelectTrigger>
             <SelectContent>
-              {projectEdges.map(edge => {
+              {optional ? (
+                <SelectItem key="empty" value="empty" data-cy="project-picker-option-Unassigned">
+                  Unassigned
+                </SelectItem>
+              ) : null}
+              {projectEdges?.map(edge => {
                 return (
                   <SelectItem
                     key={edge.node.slug}
