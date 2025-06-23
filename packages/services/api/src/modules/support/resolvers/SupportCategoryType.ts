@@ -1,5 +1,5 @@
-import type { SupportCategoryTypeResolvers } from './../../../__generated__/types';
 import { SupportCategoryType as SupportCategoryTypeEnum } from '../../../shared/entities';
+import type { SupportCategoryTypeResolvers } from './../../../__generated__/types';
 
 export const SupportCategoryType: SupportCategoryTypeResolvers = {
   TECHNICAL_ISSUE: SupportCategoryTypeEnum.TECHNICAL_ISSUE,

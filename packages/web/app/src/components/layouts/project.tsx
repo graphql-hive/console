@@ -95,7 +95,11 @@ export function ProjectLayout({
             <ProjectSelector
               currentOrganizationSlug={props.organizationSlug}
               currentProjectSlug={props.projectSlug}
-              organizations={query.data?.organizations ?? null}
+              organizations={
+                (query.data?.organizations as FragmentType<
+                  typeof ProjectSelector_OrganizationConnectionFragment
+                >) ?? null
+              }
             />
           </div>
           <div>

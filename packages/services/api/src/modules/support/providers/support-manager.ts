@@ -28,7 +28,7 @@ export const SupportTicketStatusAPIModel = z.enum([
 
 export const SupportTicketPriorityModel = z.nativeEnum(SupportTicketPriority);
 export const SupportTicketStatusModel = z.nativeEnum(SupportTicketStatus);
-export const SupportTicketCategoryModel = z.nativeEnum(SupportCategoryType).optional();
+export const SupportTicketCategoryModel = z.nativeEnum(SupportCategoryType);
 
 const SupportTicketModel = z.object({
   id: z.number(),
@@ -578,9 +578,9 @@ export class SupportManager {
     });
     const customerType = this.resolveCustomerType(organization);
 
-    const formattedBody = ` "Category: " + ${request.data.category ? request.data.category : "Not Selected"}\n\n
-        "Project: " + ${request.data.project ? request.data.project : "Not Selected"}\n\n
-        "Target: " + ${request.data.target ? request.data.target : "Not Selected"}\n\n
+    const formattedBody = ` "Category: " + ${request.data.category ? request.data.category : 'Not Selected'}\n\n
+        "Project: " + ${request.data.project ? request.data.project : 'Not Selected'}\n\n
+        "Target: " + ${request.data.target ? request.data.target : 'Not Selected'}\n\n
         "Description: " + ${request.data.description}
       `;
 

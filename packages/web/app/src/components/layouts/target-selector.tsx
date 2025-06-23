@@ -1,12 +1,5 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '../ui/link';
 
 const TargetSelector_OrganizationConnectionFragment = graphql(`
   fragment TargetSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -40,15 +33,12 @@ export function TargetSelector(props: {
   optional?: boolean;
   showOrganization?: boolean;
   showProject?: boolean;
-  onValueChange?: Function;
+  onValueChange?: (value: string) => void;
   organizations: FragmentType<typeof TargetSelector_OrganizationConnectionFragment> | null;
 }) {
-  const router = useRouter();
-
   const showOrganization =
     typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
   const showProject = typeof props.showProject !== 'undefined' ? props.showProject : true;
-  const isOptional = typeof props.optional !== 'undefined' ? props.optional : false;
 
   const organizations = useFragment(
     TargetSelector_OrganizationConnectionFragment,
@@ -63,93 +53,48 @@ export function TargetSelector(props: {
   const currentProject = projects?.find(edge => edge.node.slug === props.currentProjectSlug)?.node;
 
   const targetEdges = currentProject?.targets.edges;
-  const currentTarget = targetEdges?.find(edge => edge.node.slug === props.currentTargetSlug)?.node;
 
   return (
     <>
-      {currentOrganization ? (
-        <Link
-          to="/$organizationSlug"
-          params={{
-            organizationSlug: currentOrganization.slug,
-          }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentOrganization.slug}
-        </Link>
-      ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
-      )}
-      <div className="italic text-gray-500">/</div>
-      {currentOrganization && currentProject ? (
-        <Link
-          to="/$organizationSlug/$projectSlug"
-          params={{
-            organizationSlug: props.currentOrganizationSlug,
-            projectSlug: props.currentProjectSlug,
-          }}
-          className="max-w-[200px] shrink-0 truncate font-medium"
-        >
-          {currentProject.slug}
-        </Link>
-      ) : (
-        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
-      )}
-      <div className="italic text-gray-500">/</div>
-      {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
-        <>
-          <Select
-            value={props.currentTargetSlug}
-            onValueChange={
-              onValueChangeFunc
-                ? id => {
-                    onValueChangeFunc(id);
-                  }
-                : id => {
-                    void router.navigate({
-                      to: '/$organizationSlug/$projectSlug/$targetSlug',
-                      params: {
-                        organizationSlug: props.currentOrganizationSlug,
-                        projectSlug: props.currentProjectSlug,
-                        targetSlug: id,
-                      },
-                    });
-                  }
-            }
+      {showOrganization ? (
+        currentOrganization ? (
+          <Link
+            to="/$organizationSlug"
+            params={{
+              organizationSlug: currentOrganization.slug,
+            }}
+            className="max-w-[200px] shrink-0 truncate font-medium"
           >
-            <SelectTrigger variant="default" data-cy="target-picker-trigger">
-              <div className="font-medium" data-cy="target-picker-current">
-                {isOptional ? <SelectValue placeholder="Pick an option" /> : (currentTarget?.slug ?? '')}  
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {targetEdges.map(edge => (
-                <SelectItem
-                  key={edge.node.slug}
-                  value={edge.node.slug}
-                  data-cy={`target-picker-option-${edge.node.slug}`}
-                >
-                  {edge.node.slug}
-                </SelectItem>
-              ) : (
-                <></>
-              )}
-              {targets ? (
-                targets.map(target => (
-                  <SelectItem
-                    key={target.slug}
-                    value={target.id}
-                    data-cy={`target-picker-option-${target.slug}`}
-                  >
-                    {target.slug}
-                  </SelectItem>
-                ))
-              ) : (
-                <></>
-              )}
-            </SelectContent>
-          </Select>
-        </>
+            {currentOrganization.slug}
+          </Link>
+        ) : (
+          <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        )
+      ) : (
+        <></>
+      )}
+      {showOrganization ? <div className="italic text-gray-500">/</div> : <></>}
+      {showProject ? (
+        currentOrganization && currentProject ? (
+          <Link
+            to="/$organizationSlug/$projectSlug"
+            params={{
+              organizationSlug: props.currentOrganizationSlug,
+              projectSlug: props.currentProjectSlug,
+            }}
+            className="max-w-[200px] shrink-0 truncate font-medium"
+          >
+            {currentProject.slug}
+          </Link>
+        ) : (
+          <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
+        )
+      ) : (
+        <></>
+      )}
+      <div className="italic text-gray-500">/</div>
+      {targetEdges?.length ? (
+        <TargetSelectorDropdown />
       ) : (
         <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-gray-800" />
       )}

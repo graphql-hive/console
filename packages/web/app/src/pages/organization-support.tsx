@@ -276,9 +276,7 @@ function NewTicketForm(props: {
                             field.onChange(value);
                             setProject(value);
                           }}
-                          organizations={
-                            query?.data?.organizations || null
-                          }
+                          organizations={query?.data?.organizations || null}
                           optional
                           showOrganization={false}
                         />
@@ -295,9 +293,7 @@ function NewTicketForm(props: {
                       <FormLabel>Target (Optional)</FormLabel>
                       <FormControl>
                         <TargetSelector
-                          organizations={
-                            query?.data?.organizations || null
-                          }
+                          organizations={query?.data?.organizations || null}
                           currentOrganizationSlug={props.organizationSlug}
                           currentProjectSlug={project}
                           onValueChange={field.onChange}
@@ -472,7 +468,7 @@ function Support(props: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(tickets ?? []).map(ticket => (
+              {tickets?.map(ticket => (
                 <SupportTicketRow
                   key={ticket.id}
                   organizationSlug={organization.slug}

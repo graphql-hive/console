@@ -1,7 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SelectValue } from '@radix-ui/react-select';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -24,24 +24,15 @@ export function ProjectSelector(props: {
   currentOrganizationSlug: string;
   currentProjectSlug: string;
   organizations: FragmentType<typeof ProjectSelector_OrganizationConnectionFragment> | null;
-  onValueChange?: (id: string) => void;
+  onValueChange?: Function;
   optional?: boolean;
   showOrganization?: boolean;
 }) {
   const optional = typeof props.optional !== 'undefined' ? props.optional : false;
   const showOrganization =
     typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
-  const onValueChangeFunc: (id: string) => void =
-    typeof props.onValueChange !== 'undefined' ? props.onValueChange : (id: string) => {
-      void router.navigate({
-        to: '/$organizationSlug/$projectSlug',
-        params: {
-          organizationSlug: props.currentOrganizationSlug,
-          projectSlug: id,
-        },
-      })
-    };
-  const router = useRouter();
+  const onValueChangeFunc =
+    typeof props.onValueChange !== 'undefined' ? props.onValueChange : undefined;
 
   const organizations = useFragment(
     ProjectSelector_OrganizationConnectionFragment,
@@ -76,39 +67,29 @@ export function ProjectSelector(props: {
       )}
       {projectEdges?.length && currentProject ? (
         <>
-          {showOrganization ? <div className="italic text-gray-500">/</div> : null}
-          <Select
-            value={props.currentProjectSlug}
-            onValueChange={onValueChangeFunc}
-          >
+          {showOrganization ? <div className="italic text-gray-500">/</div> : <></>}
+          <Select value={props.currentProjectSlug} onValueChange={onValueChangeFunc}>
             <SelectTrigger variant="default" data-cy="project-picker-trigger">
               <div className="font-medium" data-cy="project-picker-current">
-                {optional ? <SelectValue placeholder="Pick an option" /> : (currentProject?.slug ?? '')}  
+                {optional ? (
+                  <SelectValue placeholder="Pick an option" />
+                ) : (
+                  (currentProject?.slug ?? '')
+                )}
               </div>
             </SelectTrigger>
             <SelectContent>
-              {projectEdges.map(edge => (
-                <SelectItem
-                  key={edge.node.slug}
-                  value={edge.node.slug}
-                  data-cy={`project-picker-option-${edge.node.slug}`}
-                >
-                  {edge.node.slug}
-                </SelectItem>
-              ) : null
-              }
-              {projects ? (
-                projects.map(project => (
+              {projectEdges.map(edge => {
+                return (
                   <SelectItem
-                    key={project.slug}
-                    value={project.id}
-                    data-cy={`project-picker-option-${project.slug}`}
+                    key={edge.node.slug}
+                    value={edge.node.slug}
+                    data-cy={`project-picker-option-${edge.node.slug}`}
                   >
-                    {project.slug}
+                    {edge.node.slug}
                   </SelectItem>
-                ))
-              ) : null
-              }
+                );
+              })}
             </SelectContent>
           </Select>
         </>
