@@ -519,6 +519,35 @@ $ LOG_JSON_PRETTY=1 node example.js
 Hive Logger includes some writers for common loggers of the JavaScript ecosystem with optional peer
 dependencies.
 
+#### `LogTapeLogWriter`
+
+Use the [`LogTape` logger library](https://logtape.org/) for writing Hive Logger's logs.
+
+`@logtape/logtape` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i @logtape/logtape
+```
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+import { LogTapeLogWriter } from '@graphql-hive/logger/writers/logtape'
+import { configure, getConsoleSink } from '@logtape/logtape'
+
+await configure({
+  sinks: { console: getConsoleSink() },
+  loggers: [{ category: 'hive-gateway', sinks: ['console'] }]
+})
+
+const log = new Logger({ writers: [new LogTapeLogWriter()] })
+
+log.info({ some: 'attributes' }, 'hello world')
+```
+
+```sh
+14:00:00.000 INF hive-gateway hello world
+```
+
 #### `PinoLogWriter` (Node.js Only)
 
 Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
