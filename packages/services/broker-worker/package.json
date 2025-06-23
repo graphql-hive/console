@@ -15,7 +15,7 @@
     "itty-router": "4.2.2",
     "toucan-js": "4.1.0",
     "undici": "6.21.3",
-    "vitest": "3.1.1",
+    "vitest": "3.2.4",
     "workers-loki-logger": "0.1.15",
     "zod": "3.24.1"
   }
