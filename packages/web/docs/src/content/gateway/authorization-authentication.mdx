@@ -257,6 +257,48 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+### Allowing Introspection
+
+If you want to allow introspection queries to be executed without a JWT token, you can use the
+operation field permissions plugin to allow only introspection queries when no JWT token ispresent.
+This way, you can still introspect the schema and explore the API without a token, while protecting
+the rest of the API with JWT authentication.
+
+<Callout>
+  Be careful with this approach, as it allows anyone to introspect your schema without a token. We
+  always advise using [Persisted Documents](/docs/gateway/persisted-documents) to fully secure your
+  GraphQL API.
+</Callout>
+
+```ts filename="gateway.config.ts"
+import { useOperationFieldPermissions } from '@envelop/operation-field-permissions'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  jwt: {
+    ...options,
+    reject: {
+      // allow requests with missing token to introspect the schema
+      missingToken: false
+    }
+  },
+  plugins: () => [
+    useOperationFieldPermissions({
+      getPermissions: async context => {
+        const { jwt } = context
+        if (!jwt) {
+          // allow only introspection if no token is present
+          return new Set(['Query.__schema', 'Query.__type', 'Query.__typename'])
+        }
+        // allow everything when token is present, or you can return a different
+        // set of permissions based on the token like in the previous example
+        return '*'
+      }
+    })
+  ]
+})
+```
+
 ### In upstream GraphQL subgraphs
 
 <Tabs items={['GraphQL-Yoga', 'Apollo Server', 'Other GraphQL servers']}>
