@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
-import { graphql } from '@/gql';
+import { FragmentType, graphql } from '@/gql';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -96,9 +96,7 @@ export function ProjectLayout({
               currentOrganizationSlug={props.organizationSlug}
               currentProjectSlug={props.projectSlug}
               organizations={
-                (query.data?.organizations as FragmentType<
-                  typeof ProjectSelector_OrganizationConnectionFragment
-                >) ?? null
+                (query.data?.organizations) ?? null
               }
             />
           </div>
