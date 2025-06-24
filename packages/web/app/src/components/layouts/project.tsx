@@ -95,9 +95,7 @@ export function ProjectLayout({
             <ProjectSelector
               currentOrganizationSlug={props.organizationSlug}
               currentProjectSlug={props.projectSlug}
-              organizations={
-                (query.data?.organizations) ?? null
-              }
+              organizations={query.data?.organizations ?? null}
             />
           </div>
           <div>
