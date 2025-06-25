@@ -130,14 +130,14 @@ The following are available to use with this plugin:
 
 ### OpenTelemetry Setup
 
-For the OpenTelemetry tracing feature to work, OpenTelemetry must firt be setup.
+For the OpenTelemetry tracing feature to work, OpenTelemetry JS API must be setup.
 
 We recommend to place your OpenTelemetry setup in a `telemetry.ts` file that will be your first
 import in your `gateway.config.ts` file. This allow instrumentations to be registered (if any)
 before any other packages are imported.
 
 For ease of configuration, we provide a `opentelemetrySetup` function from
-'@graphql-hive/plugin-opentelemetry/setup' module, with sensible default and straightforward API
+`@graphql-hive/plugin-opentelemetry/setup` module, with sensible default and straightforward API
 compatible with all runtimes.
 
 But this utility is not mandatory, you can use any setup relevant to your specific use case and
@@ -302,7 +302,7 @@ new NodeSDK({
 
 </Tabs>
 
-#### Exporters, Span Processors and Tracer Provider
+#### Trace Exporter, Span Processors and Tracer Provider
 
 Exporters are responsible of storing the traces recorded by OpenTelemetry. There is a large existing
 range of exporters, Hive Gateway is compatible with any exporter using `@opentelemetry/api` standard
@@ -642,9 +642,37 @@ endpoint
 You can also use the official DataDog Tracer Provider by using manual Hive Gateway deployement and
 installing the dependency.
 
-<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>, 'DataDog Tracer Provider']}>
+<Tabs items={['DataDog Tracer Provider', <div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
+
+The official DataDog's `TracerProvider` is the recommended approach, because it enable and sets up
+the correlation with DataDog APM spans.
+
+```ts filename="telemetry.ts"
+import ddTrace from 'dd-trace'
+import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
+
+const { TracerProvider } = ddTrace.init({
+  // Your configuration
+})
+
+opentelemetrySetup({
+  contextManager: null, // Dont' register a context manager, DataDog Agent registers its own.
+  traces: {
+    tracerProvider: new TracerProvider()
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+It is possible to not use DataDog Agent if you want to only use DataDog as a tracing backend.
+
+DataDog is compatible with standard OTLP over HTTP export format.
 
 ```ts filename="telemetry.ts"
 import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
@@ -665,6 +693,10 @@ opentelemetrySetup({
 
 <Tabs.Tab>
 
+It is possible to not use DataDog Agent if you want to only use DataDog as a tracing backend.
+
+DataDog is compatible with standard OTLP over HTTP export format.
+
 ```ts filename="telemetry.ts"
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { NodeSDK } from '@opentelemetry/sdk-node'
@@ -674,27 +706,6 @@ new NodeSDK({
     url: 'http://<datadog-agent-host>:4318'
   })
 }).start()
-```
-
-</Tabs.Tab>
-
-<Tabs.Tab>
-
-```ts filename="telemetry.ts"
-import ddTrace from 'dd-trace'
-import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
-
-const { TracerProvider } = ddTrace.init({
-  // Your configuration
-})
-
-opentelemetrySetup({
-  contextManager: new AsyncLocalStorageContextManager(),
-  traces: {
-    tracerProvider: new TracerProvider()
-  }
-})
 ```
 
 </Tabs.Tab>
@@ -771,38 +782,42 @@ opentelemetrySetup({
 
 </Tabs>
 
-### Configuration
+#### Context Propagation
 
-<Tabs items={['CLI', 'Programmatic Usage']}>
+By default, Hive Gateway will
+[propagate the trace context](https://opentelemetry.io/docs/concepts/context-propagation/) between
+the incoming HTTP request and the outgoing HTTP requests using standard Baggage and Trace Context
+propagators.
+
+You can configure the list of propagators that will be used. All official propagators are bundled
+with Hive Gateway CLI. To use other non-official propagators, please switch to manual deployement.
+
+You will also have to pick a Context Manager. It will be responsible to keep track of the current
+OpenTelemetry Context at any point of program. We recommend using the official
+`AsyncLocalStorageContextManager` from `@opentelemetry/context-async-hooks` when `AsyncLocalStorage`
+API is available. In other cases, you can either try `@opentelemetry/context-zone`, or pass `null`
+to not use any context manager.
+
+If no Context Manager compatible with async is registered, automatic parenting of custom spans will
+not work. You will have to retreive the current OpenTelemetry context from the GraphQL context, or
+from the `getOtelContext` method of the plugin instance.
+
+<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
-Hive Gateway rely on `@opentelemetry/api` package, which means you can use official OpenTelemetry
-API to configure it. By using `NodeSDK`, you will have access to the fully featured SDK with
-defaults and automatic configuration based environment variables.
+```ts filename="telemetry.ts"
+import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc'
+import { B3Propagator } from '@opentelemetry/propagator-b3'
 
-For a more portable approach, please refer to `Programatic Usage with any runtime`
-
-```ts filename="gateway.config.ts"
-import { defineConfig } from '@graphql-hive/gateway'
-
-export const gatewayConfig = defineConfig({
-  openTelemetry: {
-    inheritContext: true, // Optional, whether to inherit the context from the incoming request
-    propagateContext: true, // Optional, whether to propagate the context to the outgoing requests
-    // Optional config to customize the spans. By default all spans are enabled.
-    traces: {
-      tracer: myCustomTracer, // Optional, a custom tracer to use
-      spans: {
-        http: true, // Whether to track the HTTP request/response
-        graphqlParse: true, // Whether to track the GraphQL parse phase
-        graphqlValidate: true, // Whether to track the GraphQL validate phase
-        graphqlExecute: true, // Whether to track the GraphQL execute phase
-        subgraphExecute: true, // Whether to track the subgraph execution phase
-        upstreamFetch: true // Whether to track the upstream HTTP requests
-      }
-    }
-  }
+opentelemetrySetup({
+  contextManager: new AsyncLocalStorageContextManager(),
+  traces: {
+    exporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4317' })
+  },
+  propagators: [new B3Propagator()]
 })
 ```
 
@@ -810,61 +825,25 @@ export const gatewayConfig = defineConfig({
 
 <Tabs.Tab>
 
-```sh npm2yarn
-npm i @graphql-mesh/plugin-opentelemetry
-```
-
-```ts filename="index.ts"
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-import { NodeSDK, resources, tracing } from '@opentelemetry/sdk-node'
+```ts filename="telemetry.ts"
+import { ZipkinExporter } from '@opentelemetry/exporter-zipkin'
+import { B3Propagator } from '@opentelemetry/propagator-b3'
+import { NodeSDK } from '@opentelemetry/sdk-node'
 
 new NodeSDK({
-  // A simple output to the console.
-  // You can add more exporters here, please see documentation below for more examples.
-  traceExporter: new tracing.ConsoleSpanExporter(),
-  // Optional, enables automatic instrumentation to get low level Node tracing, like network spans.
-  instrumentations: getNodeAutoInstrumentations(),
-  // Optional, a base resource with the name of your service.
-  resource: resources.resourceFromAttributes({
-    serviceName: 'my-custom-service-name'
-  }),
-  // Optional, enables automatic ressource discovery which will add all resources attribute possible
-  resourceDetectors: getResourceDetectors()
+  traceExporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4317' }),
+  textMapPropagator: new B3Propagator()
 }).start()
-
-export const gateway = createGatewayRuntime({
-  plugins: ctx => [
-    useOpenTelemetry({
-      ...ctx,
-      inheritContext: true, // Optional, whether to inherit the context from the incoming request
-      propagateContext: true, // Optional, whether to propagate the context to the outgoing requests
-      // Enables OTEL tracing. It is possible to use `true` to enable tracing with default config
-      traces: {
-        tracer: myCustomTracer, // Optional, a custom tracer to use
-        // Optional config to customize the spans. By default all spans are enabled.
-        spans: {
-          http: true, // Whether to track the HTTP request/response
-          graphqlParse: true, // Whether to track the GraphQL parse phase
-          graphqlValidate: true, // Whether to track the GraphQL validate phase
-          graphqlExecute: true, // Whether to track the GraphQL execute phase
-          subgraphExecute: true, // Whether to track the subgraph execution phase
-          upstreamFetch: true // Whether to track the upstream HTTP requests
-        }
-      }
-    })
-  ]
-})
 ```
 
 </Tabs.Tab>
 
 </Tabs>
 
-#### Batching
+#### Span Batching
 
 By default, if you provide only a Trace Exporter, it will be wrapped into a `BatchSpanProcessor` to
-batch spans together and reduce the number of request to you backeng.
+batch spans together and reduce the number of request to you backend.
 
 This is an important feature for a real world production environment, and you can configure its
 behaviour to exactly suites your infrastructure limits.
@@ -934,21 +913,382 @@ You can learn more about the batching options in the
 [Picking the right span processor](https://opentelemetry.io/docs/languages/js/instrumentation/#picking-the-right-span-processor)
 page.
 
+#### Sampling
+
+When your gateway have a lot of traffic, tracing every requests can become a very expensive
+approach.
+
+A mitigation for this problem is to trace only some requests, using a strategy to choose which
+request to trace or not.
+
+The most common strategy is to combine both a parent first (a span is picked if parent is picked)
+and a ratio based on trace id (each trace, one by request, have a chance to be picked, with a given
+rate).
+
+By default, all requests are traced. You can either provide you own Sampler, or provide a sampling
+rate which will be used to setup a Parent + TraceID Ratio strategy.
+
+<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
+import { AlwaysOnSampler } from '@opentelemetry/sdk-trace-base'
+
+opentelemetrySetup({
+  // Use Parent + TraceID Ratio strategy
+  samplingRate: 0.1,
+
+  // Or use a custom Sampler
+  sampler: new JaegerRemoteSampler({
+    endpoint: 'http://your-jaeger-agent:14268/api/sampling',
+    serviceName: 'your-service-name',
+    initialSampler: new AlwaysOnSampler(),
+    poolingInterval: 60000 // 60 seconds
+  })
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
+import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
+
+new NodeSDK({
+  // Use Parent + TraceID Ratio strategy
+  sampler: new ParentBasedSampler({
+    root: new TraceIdRatioBasedSampler(0.1)
+  }),
+
+  // Or use a custom Sampler
+  sampler: new JaegerRemoteSampler({
+    endpoint: 'http://your-jaeger-agent:14268/api/sampling',
+    serviceName: 'your-service-name',
+    initialSampler: new tracing.AlwaysOnSampler(),
+    poolingInterval: 60000 // 60 seconds
+  })
+}).start()
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### Limits
+
+To ensure that you don't overwhelm your tracing injestion infrastructure, you can set limits for
+both cardinality and amount of data the OpenTelemetry SDK will be allowed to generate.
+
+<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+
+opentelemetrySetup({
+  generalLimits: {},
+  traces: {
+    spanLimits: {}
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
+import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
+
+new NodeSDK({
+  generalLimits: {},
+  spanLimits: {}
+}).start()
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Configuration
+
+Once you have an OpenTelemetry setup file, you must import it from you `gateway.config.ts` file. It
+must be the very first import so that any other package relying on OpenTelemetry have access to the
+correct configuration.
+
+You can then enable OpenTelemetry Tracing support in the Gateway configuration.
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    traces: true
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```sh npm2yarn
+npm i @graphql-mesh/plugin-opentelemetry
+```
+
+```ts filename="index.ts"
+import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+      traces: true
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### OpenTelemetry Context
+
+To correlate all observability events (like tracing, metrics, logs...), OpenTelemetry have a global
+and standard Context API.
+
+This context also allows to keep the link between related spans (for parenting or linking of spans).
+
+You can configure the behaviour of the plugin with this context.
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    useContextManager: true, // If false, the parenting of spans will not rely on OTEL Context
+    inheritContext: true, // If false, the root span will not be based on OTEL Context, it will always be a root span
+    propagateContext: true // If false, the context will not be propagated to subgraphs
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```sh npm2yarn
+npm i @graphql-mesh/plugin-opentelemetry
+```
+
+```ts filename="index.ts"
+import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+      useContextManager: true, // If false, the parenting of spans will not rely on OTEL Context
+      inheritContext: true, // If false, the root span will not be based on OTEL Context, it will always be a root span
+      propagateContext: true // If false, the context will not be propagated to subgraphs
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### OpenTelemetry Diagnostics
+
+If you encounter an issue with you OpenTelemetry setup, you can enable the Diagnostics API. This
+will enable logging of OpenTelemetry SDK based on `OTEL_LOG_LEVEL` env variable.
+
+By default, Hive Gateway configure the Diagnostics API to output logs using Hive Gateway's logger.
+You can disable this using `configureDiagLogger` option.
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    ...ctx,
+    // Use the default DiagLogger, which outputs logs directly to stdout
+    configureDiagLogger: false
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+      // Use the default DiagLogger, which outputs logs directly to stdout
+      configureDiagLogger: false
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### Graceful shutdown
+
+Since spans are batched by default, it is possible to miss some traces if the batching processor is
+not properly flused when the process exits.
+
+To avoid this kind of data loss, Hive Gateway is calling `forceFlush` method on the registered
+Tracer Provider by default. You can customize which method to call or entirely disable this
+behaviour by using the `flushOnDispose` option.
+
+<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    ...ctx,
+    // Disable the auto-flush on shutdown
+    flushOnDispose: false,
+    // or call a custom method
+    flushOnDispose: 'flush'
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+      // Disable the auto-flush on shutdown
+      flushOnDispose: false,
+      // or call a custom method
+      flushOnDispose: 'flush'
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
 ### Reported Spans
 
-The plugin exports OpenTelemetry spans for the following operations:
+The plugin exports the following OpenTelemetry Spans:
+
+#### Background Spans
 
 <details>
 
-<summary>HTTP Server</summary>
+<summary>Gateway Initialization</summary>
+
+By default, the plugin will create a span from the start of the gateway process to the first schema
+load.
+
+All spans hapenning during this time will be parented under this initialisation span, including the
+schema loading span.
+
+You may disable this by setting `traces.spans.initialization` to `false`:
+
+```ts
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      initialization: false
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+
+<summary>Schema Loading</summary>
+
+By default, the plugin will create a span covering each loading of a schema. It can be useful when
+polling or file watch is enabled to identify when the schema changes.
+
+You may disable this by setting `traces.spans.schema` to `false`:
+
+```ts
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      schema: false
+    }
+  }
+}
+```
+
+</details>
+
+#### Request Spans
+
+<details>
+
+<summary>HTTP Request</summary>
 
 <Callout>
   This span is created for each incoming HTTP request, and acts as a root span for the entire
   request. Disabling this span will also disable the other hooks and spans.
 </Callout>
 
-By default, the plugin will a root span for the HTTP layer as a span (`METHOD /path`) with the
-following attributes for the HTTP request:
+By default, the plugin will create a root span for the HTTP layer as a span (`<METHOD> /path`, eg.
+`POST /graphql`) with the following attributes:
 
 - `http.method`: The HTTP method
 - `http.url`: The HTTP URL
@@ -970,41 +1310,90 @@ And the following attributes for the HTTP response:
   [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 </Callout>
 
-You may disable this by setting `spans.http` to `false`:
+You may disable this by setting `traces.spans.http` to `false`:
 
 ```ts
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    http: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    http: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      http: false
     }
   }
 }
 ```
 
+Or, you may filter the spans by setting the `traces.spans.http` configuration to a function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      http: ({ request }) => {
+        // Filter the spans based on the request
+        return true
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+
+<summary>GraphQL Operation</summary>
+
 <Callout>
-  The `payload` object is the same as the one passed to the [`onRequest`
-  hook](https://github.com/ardatan/whatwg-node/blob/master/packages/server/src/plugins/types.ts#L16-L25).
+  This span is created for each GraphQL operation found in incoming HTTP requests, and acts as a
+  parent span for the entire graphql operation. Disabling this span will also disable the other
+  hooks and spans related to the execution of operation.
 </Callout>
+
+By default, the plugin will create a span for the GraphQL layer as a span
+(`graphql.operation <operation name>` or `graphql.operation` for unexecutable operations) with the
+following attributes:
+
+- `graphql.operation.type`: The type of operation (`query`, `mutation` or `subscription`).
+- `grapqhl.operation.name`: The name of the operation to execute, `Anonymous` for operations without
+  name.
+- `graphql.document`: The operation document as a GraphQL string
+
+<Callout>
+  An error in the parse phase will be reported as an [error
+  span](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/), including the
+  error message and as an OpenTelemetry
+  [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
+</Callout>
+
+You may disable this by setting `traces.spans.graphql` to `false`:
+
+```ts
+const openTelemetryConfig = {
+  traces: {
+    traces: {
+      spans: {
+        graphql: false
+      }
+    }
+  }
+}
+```
+
+Or, you may filter the spans by setting the `traces.spans.graphql` configuration to a function which
+takes the GraphQL context as parameter:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphql: ({ context }) => {
+        // Filter the span based on the GraphQL context
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
@@ -1018,6 +1407,10 @@ following attributes:
 - `graphql.document`: The GraphQL query string
 - `graphql.operation.name`: The operation name
 
+If a parsing error is reported, the following attribute will also be present:
+
+- `graphql.error.count`: `1` if a parse error occured
+
 <Callout>
   An error in the parse phase will be reported as an [error
   span](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/), including the
@@ -1025,41 +1418,32 @@ following attributes:
   [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 </Callout>
 
-You may disable this by setting `spans.graphqlParse` to `false`:
+You may disable this by setting `traces.spans.graphqlParse` to `false`:
 
 ```ts filename="gateway.config.ts"
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlParse: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlParse: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      graphqlParse: false
     }
   }
 }
 ```
 
-<Callout>
-  The `payload` object is the same as the one passed to the [`onParse`
-  hook](https://the-guild.dev/graphql/envelop/v4/plugins/lifecycle#before).
-</Callout>
+Or, you may filter the spans by setting the `traces.spans.graphqlParse` configuration to a function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphqlParse: ({ context }) => {
+        // Filter the spans based on the GraphQL context
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
@@ -1073,6 +1457,10 @@ following attributes:
 - `graphql.document`: The GraphQL query string
 - `graphql.operation.name`: The operation name
 
+If a validation error is reported, the following attribute will also be present:
+
+- `graphql.error.count`: The number of validation errors
+
 <Callout>
   An error in the validate phase will be reported as an [error
   span](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/), including the
@@ -1080,41 +1468,77 @@ following attributes:
   [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 </Callout>
 
-You may disable this by setting `spans.graphqlValidate` to `false`:
+You may disable this by setting `traces.spans.graphqlValidate` to `false`:
 
 ```ts filename="gateway.config.ts"
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlValidate: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlValidate: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      graphqlValidate: false
     }
   }
 }
 ```
 
+Or, you may filter the spans by setting the `traces.spans.graphqlValidate` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphqlValidate: ({ context }) => {
+        // Filter the spans based on the GraphQL context
+        return true
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+
+<summary>Graphql Context Building</summary>
+
+By default, the plugin will report the validation phase as a span (`graphql.context`). This span
+doesn't have any attribute.
+
 <Callout>
-  The `payload` object is the same as the one passed to the [`onValidate`
-  hook](https://the-guild.dev/graphql/envelop/v4/plugins/lifecycle#before-1).
+  An error in the context building phase will be reported as an [error
+  span](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/), including the
+  error message and as an OpenTelemetry
+  [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 </Callout>
+
+You may disable this by setting `traces.spans.graphqlContextBuilding` to `false`:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphqlContextBuilding: false
+    }
+  }
+}
+```
+
+Or, you may filter the spans by setting the `traces.spans.graphqlContextBuilding` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphqlContextBuilding: ({ context }) => {
+        // Filter the spans based on the GraphQL context
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
@@ -1126,8 +1550,12 @@ By default, the plugin will report the execution phase as a span (`graphql.execu
 following attributes:
 
 - `graphql.document`: The GraphQL query string
-- `graphql.operation.name`: The operation name
+- `graphql.operation.name`: The operation name (`Anonymous` for operations without name)
 - `graphql.operation.type`: The operation type (`query`/`mutation`/`subscription`)
+
+If an execution error is reported, the following attribute will also be present:
+
+- `graphql.error.count`: The number of errors in the execution result
 
 <Callout>
   An error in the execute phase will be reported as an [error
@@ -1136,41 +1564,33 @@ following attributes:
   [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 </Callout>
 
-You may disable this by setting `spans.graphqlExecute` to `false`:
+You may disable this by setting `traces.spans.graphqlExecute` to `false`:
 
 ```ts filename="gateway.config.ts"
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlExecute: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    graphqlExecute: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      graphqlExecute: false
     }
   }
 }
 ```
 
-<Callout>
-  The `payload` object is the same as the one passed to the [`onExecute`
-  hook](https://the-guild.dev/graphql/envelop/v4/plugins/lifecycle#before-3).
-</Callout>
+Or, you may filter the spans by setting the `traces.spans.graphqlExecute` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      graphqlExecute: ({ context }) => {
+        // Filter the spans based on the GraphQL context
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
@@ -1178,62 +1598,41 @@ const openTelemetryConfig = {
 
 <summary>Subgraph Execute</summary>
 
-By default, the plugin will report the subgraph execution phase as a span (`subgraph.execute`) with
-the following attributes:
+By default, the plugin will report the subgraph execution phase as a client span
+(`subgraph.execute`) with the following attributes:
 
 - `graphql.document`: The GraphQL query string executed to the upstream
 - `graphql.operation.name`: The operation name
 - `graphql.operation.type`: The operation type (`query`/`mutation`/`subscription`)
 - `gateway.upstream.subgraph.name`: The name of the upstream subgraph
 
-In addition, the span will include the following attributes for the HTTP requests;
-
-- `http.method`: The HTTP method
-- `http.url`: The HTTP URL
-- `http.route`: The HTTP status code
-- `http.scheme`: The HTTP scheme
-- `net.host.name`: The hostname
-- `http.host`: The HTTP host
-
-And the following attributes for the HTTP response:
-
-- `http.status_code`: The HTTP status code
-
-You may disable this by setting `spans.subgraphExecute` to `false`:
+You may disable this by setting `traces.spans.subgraphExecute` to `false`:
 
 ```ts filename="gateway.config.ts"
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    subgraphExecute: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans.subgraphExecute` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    subgraphExecute: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      subgraphExecute: false
     }
   }
 }
 ```
 
-<Callout>
-  The `payload` object is the same as the one passed to the [`onSubgraphHook`
-  hook](/docs/gateway/other-features/custom-plugins#onsubgraphexecute).
-</Callout>
+Or, you may filter the spans by setting the `traces.spans.subgraphExecute` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      subgraphExecute: ({ executionRequest, subgraphName }) => {
+        // Filter the spans based on the target SubGraph name and the Execution Request
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
@@ -1252,104 +1651,146 @@ The following attributes are included in the span:
 - `http.scheme`: The HTTP scheme
 - `net.host.name`: The hostname
 - `http.host`: The HTTP host
+- `http.request.resend_count`: Number of retry attempt. Only present starting from the first retry.
 
 And the following attributes for the HTTP response:
 
 - `http.status_code`: The HTTP status code
 
-You may disable this by setting `spans.upstreamFetch` to `false`:
+<Callout>
+  An error in the fetch phase (including responses with a non-ok status code) will be reported as an
+  [error span](https://opentelemetry.io/docs/specs/semconv/exceptions/exceptions-spans/), including
+  the error message and as an OpenTelemetry
+  [`Exception`](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
+</Callout>
+
+You may disable this by setting `traces.spans.upstreamFetch` to `false`:
 
 ```ts filename="gateway.config.ts"
 const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    upstreamFetch: false
-  }
-}
-```
-
-Or, you may filter the spans by setting the `spans.upstreamFetch` configuration to a function:
-
-```ts filename="gateway.config.ts"
-const openTelemetryConfig = {
-  exporters: [
-    /* ... */
-  ],
-  spans: {
-    /* ... */
-    upstreamFetch: payload => {
-      // Filter the spans based on the payload
-      return true
+  traces: {
+    spans: {
+      upstreamFetch: false
     }
   }
 }
 ```
 
-<Callout>
-  The `payload` object is the same as the one passed to the [`onFetch`
-  hook](/docs/gateway/other-features/custom-plugins#onfetch).
-</Callout>
+Or, you may filter the spans by setting the `traces.spans.upstreamFetch` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    spans: {
+      upstreamFetch: ({ executionRequest }) => {
+        // Filter the spans based on the Execution Request
+        return true
+      }
+    }
+  }
+}
+```
 
 </details>
 
-### Context Propagation
+### Reported Events
 
-By default, the plugin will
-[propagate the trace context](https://opentelemetry.io/docs/concepts/context-propagation/) between
-the incoming HTTP request and the outgoing HTTP requests.
+The plugin exports the folowing OpenTelemetry Events.
 
-You may disable this by setting `inheritContext` or `propagateContext` to `false`:
+Events are attached to the current span, meaning that they will be attached to your custom spans if
+you use them. It also means that events can be orphans if you didn't properly setup an asyn
+compatible Context Manager
 
-<Tabs items={["CLI", 'Programmatic Usage']}>
+<details>
 
-<Tabs.Tab>
+<summary>Cache Read and Write</summary>
+
+By default, the plugin will report any cache read or write as an event. The possible event names
+are:
+
+- `gateway.cache.miss`: A cache read happened, but the key didn't match any entity
+- `gateway.cache.hit`: A cache read happened, and the key did match an entity
+- `gateway.cache.write`: A new entity have been added to the cache store
+
+All those events have the following attributes:
+
+- `gateway.cache.key`: The key of the cache entry
+- `gateway.cache.ttl`: The ttl of the cache entry
+
+You may disable this by setting `traces.events.cache` to `false`:
 
 ```ts filename="gateway.config.ts"
-import { defineConfig } from '@graphql-hive/gateway'
-
-export const gatewayConfig = defineConfig({
-  openTelemetry: {
-    exporters: [
-      /* ... */
-    ],
-    // Controls the propagation of the trace context between the incoming HTTP request and Hive Gateway
-    inheritContext: false,
-    // Controls the propagation of the trace context between Hive Gateway and the upstream HTTP requests
-    propagateContext: false
+const openTelemetryConfig = {
+  traces: {
+    events: {
+      cache: false
+    }
   }
-})
+}
 ```
 
-</Tabs.Tab>
-
-<Tabs.Tab>
+Or, you may filter the spans by setting the `traces.spans.upstreamFetch` configuration to a
+function:
 
 ```ts filename="gateway.config.ts"
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-
-export const gateway = createGatewayRuntime({
-  plugins: ctx => [
-    useOpenTelemetry({
-      ...ctx,
-      exporters: [
-        /* ... */
-      ],
-      // Controls the propagation of the trace context between the incoming HTTP request and Hive Gateway
-      inheritContext: false,
-      // Controls the propagation of the trace context between Hive Gateway and the upstream HTTP requests
-      propagateContext: false
-    })
-  ]
-})
+const openTelemetryConfig = {
+  traces: {
+    events: {
+      cache: ({ key, action }) => {
+        // Filter the event based on action ('read' or 'write') and the entity key
+        return true
+      }
+    }
+  }
+}
 ```
 
-</Tabs.Tab>
+</details>
 
-</Tabs>
+<details>
+
+<summary>Cache Error</summary>
+
+By default, the plugin will report any cache error as an event (`gateway.cache.error`). This events
+have the following attributes:
+
+- `gateway.cache.key`: The key of the cache entry
+- `gateway.cache.ttl`: The ttl of the cache entry
+- `gateway.cache.action`: The type of action (`read` or `write`)
+- `exception.type`: The type of error (the `code` if it exists, the message otherwise)
+- `exception.message`: The message of the error
+- `exception.stacktrace`: The error stacktrace as a string
+
+You may disable this by setting `traces.events.cache` to `false`:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    events: {
+      cache: false
+    }
+  }
+}
+```
+
+Or, you may filter the spans by setting the `traces.spans.upstreamFetch` configuration to a
+function:
+
+```ts filename="gateway.config.ts"
+const openTelemetryConfig = {
+  traces: {
+    events: {
+      cache: ({ key, action }) => {
+        // Filter the event based on action ('read' or 'write') and the entity key
+        return true
+      }
+    }
+  }
+}
+```
+
+</details>
 
 ### Troubleshooting
 
@@ -1365,12 +1806,14 @@ In addition, you can use the stdout exporter to log the traces to the console:
 
 <Tabs.Tab>
 
-```ts filename="gateway.config.ts"
-import { createStdoutExporter, defineConfig } from '@graphql-hive/gateway'
+```ts filename="telemetry.ts"
+import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
-export const gatewayConfig = defineConfig({
-  openTelemetry: {
-    exporters: [createStdoutExporter()]
+opentelemetrySetup({
+  contextManager: new AsyncLocalStorageContextManager
+  traces: {
+    console: true
   }
 })
 ```
@@ -1379,24 +1822,13 @@ export const gatewayConfig = defineConfig({
 
 <Tabs.Tab>
 
-<Callout>
-  Beware that OpenTelemetry JavaScript SDK writes spans using `console.dir`. Meaning,
-  serverless/on-the-edge environments that don't support `console.dir` (like [Cloudflare
-  Workers](https://developers.cloudflare.com/workers/runtime-apis/console/)) wont show any logs.
-</Callout>
+```ts filename="telemetry.ts"
+import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
 
-```ts filename="gateway.config.ts"
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { createStdoutExporter, useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-
-export const gateway = createGatewayRuntime({
-  plugins: ctx => [
-    useOpenTelemetry({
-      ...ctx,
-      exporters: [createStdoutExporter()]
-    })
-  ]
-})
+new NodeSDK({
+  // Use `spanProcessors` instead of `traceExporter` to avoid the default batching configuration
+  spanProcessors: [new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter())]
+}).start()
 ```
 
 </Tabs.Tab>
