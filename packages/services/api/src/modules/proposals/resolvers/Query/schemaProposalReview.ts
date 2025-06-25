@@ -15,6 +15,18 @@ export const schemaProposalReview: NonNullable<QueryResolvers['schemaProposalRev
       commentsCount: 3,
       stage: 'OPEN',
       updatedAt: Date.now(),
+      comments: {
+        edges: [
+          {
+            cursor: crypto.randomUUID(),
+            node: {
+              id: crypto.randomUUID(),
+              body: 'This is a comment. The first comment.',
+              updatedAt: Date.now(),
+            }
+          }
+        ]
+      }
     },
   };
 };

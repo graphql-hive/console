@@ -181,7 +181,7 @@ export default gql`
     """
     Comments attached to this review.
     """
-    comments(first: Int! = 200): SchemaProposalCommentConnection
+    comments(after: String, first: Int! = 200): SchemaProposalCommentConnection
 
     """
     When the review was first made. Only a review's comments are mutable, so there is no

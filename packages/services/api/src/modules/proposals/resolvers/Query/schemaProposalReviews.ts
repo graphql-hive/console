@@ -7,7 +7,29 @@ export const schemaProposalReviews: NonNullable<QueryResolvers['schemaProposalRe
 ) => {
   /* Implement Query.schemaProposalReviews resolver logic here */
   return {
-    edges: [],
+    edges: [
+      {
+        node: {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          lineNumber: 3,
+          schemaCoordinate: 'User',
+          lineText: 'type User {',
+          comments: {
+            edges: [
+              {
+                cursor: crypto.randomUUID(),
+                node: {
+                  id: crypto.randomUUID(),
+                  body: 'This is a comment. The first comment.',
+                  updatedAt: Date.now(),
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
     pageInfo: {
       endCursor: '',
       hasNextPage: false,

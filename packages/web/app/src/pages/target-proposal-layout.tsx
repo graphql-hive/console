@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from '@tanstack/react-router';
 import { TargetProposalEditPage } from './target-proposal-edit';
 import { TargetProposalHistoryPage } from './target-proposal-history';
 import { TargetProposalOverviewPage } from './target-proposal-overview';
@@ -19,7 +19,7 @@ export function TargetProposalLayoutPage(props: {
 }) {
   return (
     <div className="ml-4 flex w-full grow flex-col rounded bg-gray-900/50 p-4">
-      <Tabs  value={props.page}>
+      <Tabs value={props.page}>
         <TabsList variant="menu" className="w-full">
           <TabsTrigger variant="menu" value={Page.OVERVIEW} asChild>
             <Link
@@ -63,17 +63,17 @@ export function TargetProposalLayoutPage(props: {
             </Link>
           </TabsTrigger>
         </TabsList>
-        <TabsContent value={Page.OVERVIEW} variant="content" className='w-full'>
+        <TabsContent value={Page.OVERVIEW} variant="content" className="w-full">
           <div className="flex grow flex-row">
             <TargetProposalOverviewPage {...props} />
           </div>
         </TabsContent>
-        <TabsContent value={Page.HISTORY} variant="content" className='w-full'>
+        <TabsContent value={Page.HISTORY} variant="content" className="w-full">
           <div className="flex grow flex-row">
             <TargetProposalHistoryPage {...props} />
           </div>
         </TabsContent>
-        <TabsContent value={Page.EDIT} variant="content" className='w-full'>
+        <TabsContent value={Page.EDIT} variant="content" className="w-full">
           <TargetProposalEditPage {...props} />
         </TabsContent>
       </Tabs>

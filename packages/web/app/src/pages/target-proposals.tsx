@@ -8,6 +8,7 @@ import {
   useListNavigationContext,
 } from '@/components/common/ListNavigation';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { stageToColor } from '@/components/proposal/util';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { UserFilter } from '@/components/target/proposals/user-filter';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -22,7 +23,6 @@ import { SchemaProposalStage } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon, PinLeftIcon, PinRightIcon } from '@radix-ui/react-icons';
 import { Outlet, useRouter, useSearch } from '@tanstack/react-router';
-import { stageToColor } from '@/components/proposal/util';
 
 export function TargetProposalsPage(props: {
   organizationSlug: string;
