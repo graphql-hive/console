@@ -1262,6 +1262,9 @@ const openTelemetryConfig = {
 By default, the plugin will create a span covering each loading of a schema. It can be useful when
 polling or file watch is enabled to identify when the schema changes.
 
+Schema loading in Hive Gateway can be lazy, which means it can be triggered as part of the handling
+of a request. If it happens, the schema loading span will be added as a link to the current span.
+
 You may disable this by setting `traces.spans.schema` to `false`:
 
 ```ts
