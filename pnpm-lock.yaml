@@ -121,6 +121,9 @@ importers:
       '@graphql-inspector/cli':
         specifier: 4.0.3
         version: 4.0.3(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.9.0)
+      '@graphql-inspector/core':
+        specifier: ^6.0.0
+        version: 6.2.1(graphql@16.9.0)
       '@manypkg/get-packages':
         specifier: 2.2.2
         version: 2.2.2
@@ -3775,6 +3778,12 @@ packages:
   '@graphql-inspector/core@5.1.0-alpha-20231208113249-34700c8a':
     resolution: {integrity: sha512-vzJEhQsZz+suo8T32o9dJNOa42IcLHfvmBm3EqRuMKQ0PU8KintUdRG1kFd6NFvNnpPHOVWFc+PYgFKCm7mPoA==}
     engines: {node: '>=16.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  '@graphql-inspector/core@6.2.1':
+    resolution: {integrity: sha512-PxL3fNblfKx/h/B4MIXN1yGHsGdY+uuySz8MAy/ogDk7eU1+va2zDZicLMEBHf7nsKfHWCAN1WFtD1GQP824NQ==}
+    engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
@@ -9589,6 +9598,10 @@ packages:
     resolution: {integrity: sha512-JeMq7fEshyepOWDfcfHK06N3MhyPhz++vtqWhMT5O9A3K42rdsEDpfdVqjaqaAhsw6a+ZqeDvQVtD0hFHQWrzg==}
     engines: {node: '>= 0.6.0'}
 
+  dependency-graph@1.0.0:
+    resolution: {integrity: sha512-cW3gggJ28HZ/LExwxP2B++aiKxhJXMSIt9K48FOXQkm+vuG5gyatXnLsONRJdzO/7VfjDIiaOOa/bs4l464Lwg==}
+    engines: {node: '>=4'}
+
   dequal@2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
@@ -12973,6 +12986,10 @@ packages:
 
   object-inspect@1.13.1:
     resolution: {integrity: sha512-5qoj1RUiKOMsCCNLV1CBiPYE10sziTsnmNxkAI/rZhiD63CF7IqdFGC/XzjWjpSgLf0LxXX3bDFIh0E18f6UhQ==}
+
+  object-inspect@1.13.2:
+    resolution: {integrity: sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==}
+    engines: {node: '>= 0.4'}
 
   object-is@1.1.5:
     resolution: {integrity: sha512-3cyDsyHgtmi7I7DfSSI2LDp6SK2lwvtbg0p0R1e0RvTqF5ceGx+K2dfSjm1bKDMVCFEDAQvy+o8c6a7VujOddw==}
@@ -18965,6 +18982,13 @@ snapshots:
       dependency-graph: 0.11.0
       graphql: 17.0.0-alpha.7
       object-inspect: 1.12.3
+      tslib: 2.6.2
+
+  '@graphql-inspector/core@6.2.1(graphql@16.9.0)':
+    dependencies:
+      dependency-graph: 1.0.0
+      graphql: 16.9.0
+      object-inspect: 1.13.2
       tslib: 2.6.2
 
   '@graphql-inspector/coverage-command@5.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
@@ -26550,6 +26574,8 @@ snapshots:
 
   dependency-graph@0.11.0: {}
 
+  dependency-graph@1.0.0: {}
+
   dequal@2.0.3: {}
 
   derive-valtio@0.1.0(valtio@1.13.2(@types/react@18.3.18)(react@18.3.1)):
@@ -30951,6 +30977,8 @@ snapshots:
   object-inspect@1.12.3: {}
 
   object-inspect@1.13.1: {}
+
+  object-inspect@1.13.2: {}
 
   object-is@1.1.5:
     dependencies:

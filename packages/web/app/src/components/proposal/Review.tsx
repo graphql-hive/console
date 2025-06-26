@@ -33,7 +33,7 @@ export function ReviewComments(props: {
     <div className='p-2 bg-black border-[1px] rounded'>
       {review.comments?.edges?.map(({ node: comment }, idx) => {
         return (
-          <ReviewComment first={idx===0} comment={comment}/>
+          <ReviewComment key={`comment-${comment.id}`} first={idx===0} comment={comment}/>
         );
       })}
     </div>

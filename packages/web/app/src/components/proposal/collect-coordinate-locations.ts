@@ -51,10 +51,10 @@ export function collectCoordinateLocations(
 
   const collectUnionType = (type: GraphQLUnionType) => {
     collect(type.name, type.astNode?.loc);
-    for (const unionType of type.getTypes()) {
-      const coordinate = `${type.name}.${unionType.name}`;
-      collect(coordinate, type.astNode?.loc);
-    }
+    // for (const unionType of type.getTypes()) {
+    //   const coordinate = `${type.name}.${unionType.name}`;
+    //   collect(coordinate, type.astNode?.loc);
+    // }
   };
 
   const collectNamedType = (type: GraphQLNamedType) => {

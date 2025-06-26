@@ -5,9 +5,33 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
 import { Tag, TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
+import { Callout } from '@/components/ui/callout';
 
 const ProposalOverviewQuery = graphql(/** GraphQL  */ `
   query ProposalOverviewQuery($id: ID!) {
+    latestVersion {
+      id
+      isValid
+    }
+    latestValidVersion {
+      id
+      sdl
+      schemas {
+        edges {
+          node {
+            ...on CompositeSchema {
+              id
+              source
+              service
+            }
+            ...on SingleSchema {
+              id
+              source
+            }
+          }
+        }
+      }
+    }
     schemaProposal(input: { id: $id }) {
       id
       createdAt
@@ -54,7 +78,84 @@ export function TargetProposalOverviewPage(props: {
 
   const proposal = query.data?.schemaProposal;
 
-  const sdl = /** GraphQL */ `
+  // const diffSdl = /** GraphQL */ `
+  //   extend schema
+  //     @link(
+  //       url: "https://specs.apollo.dev/federation/v2.3"
+  //       import: ["@key", "@shareable", "@inaccessible", "@tag"]
+  //     )
+  //     @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  //     @meta(name: "priority", content: "tier1")
+
+  //   directive @meta(
+  //     name: String!
+  //     content: String!
+  //   ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+  //   directive @myDirective(a: String!) on FIELD_DEFINITION
+
+  //   directive @hello on FIELD_DEFINITION
+
+  //   type Query {
+  //     allProducts: [ProductItf] @meta(name: "owner", content: "hive-team")
+  //     product(id: ID!): ProductItf
+  //   }
+
+  //   interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
+  //     id: ID!
+  //     sku: String
+  //     name: String
+  //     package: String
+  //     variation: ProductVariation
+  //     dimensions: ProductDimension
+  //     createdBy: User
+  //     hidden: String @inaccessible
+  //     oldField: String @deprecated(reason: "refactored out")
+  //   }
+
+  //   interface SkuItf {
+  //     sku: String
+  //   }
+
+  //   type Product implements ProductItf & SkuItf
+  //     @key(fields: "id")
+  //     @key(fields: "sku package")
+  //     @key(fields: "sku variation { id }")
+  //     @meta(name: "owner", content: "product-team") {
+  //     id: ID! @tag(name: "hi-from-products")
+  //     sku: String @meta(name: "unique", content: "true")
+  //     name: String @hello
+  //     package: String
+  //     variation: ProductVariation
+  //     dimensions: ProductDimension
+  //     createdBy: User
+  //     hidden: String
+  //     reviewsScore: Float!
+  //     oldField: String
+  //   }
+
+  //   enum ShippingClass {
+  //     STANDARD
+  //     EXPRESS
+  //   }
+
+  //   type ProductVariation {
+  //     id: ID!
+  //     name: String
+  //   }
+
+  //   type ProductDimension @shareable {
+  //     size: String
+  //     weight: Float
+  //   }
+
+  //   type User @key(fields: "email") {
+  //     email: ID!
+  //     totalProductsCreated: Int @shareable
+  //   }
+  // `;
+
+  const sdl = /** GraphQL */`
     extend schema
       @link(
         url: "https://specs.apollo.dev/federation/v2.3"
@@ -86,7 +187,6 @@ export function TargetProposalOverviewPage(props: {
       dimensions: ProductDimension
       createdBy: User
       hidden: String @inaccessible
-      oldField: String @deprecated(reason: "refactored out")
     }
 
     interface SkuItf {
@@ -96,7 +196,6 @@ export function TargetProposalOverviewPage(props: {
     type Product implements ProductItf & SkuItf
       @key(fields: "id")
       @key(fields: "sku package")
-      @key(fields: "sku variation { id }")
       @meta(name: "owner", content: "product-team") {
       id: ID! @tag(name: "hi-from-products")
       sku: String @meta(name: "unique", content: "true")
@@ -107,12 +206,12 @@ export function TargetProposalOverviewPage(props: {
       createdBy: User
       hidden: String
       reviewsScore: Float!
-      oldField: String
     }
 
     enum ShippingClass {
       STANDARD
       EXPRESS
+      OVERNIGHT
     }
 
     type ProductVariation {
@@ -129,7 +228,6 @@ export function TargetProposalOverviewPage(props: {
       email: ID!
       totalProductsCreated: Int @shareable
     }
-
   `;
 
   return (
@@ -147,8 +245,18 @@ export function TargetProposalOverviewPage(props: {
           <div className="text-xs">
             Last updated <TimeAgo date={proposal.updatedAt} />
           </div>
-          {/* @todo */}
-          <ProposalSDL latestProposalVersionId={proposal.versions?.edges?.[0].node.id ?? 'asdf'} reviews={proposal.reviews ?? null} sdl={sdl ?? proposal.versions?.edges?.[0].node.schemaSDL} />
+          {query.data?.latestVersion && query.data.latestVersion.isValid === false && (
+            <Callout type='warning'>
+              The latest schema is invalid. Showing comparison against latest valid schema {query.data.latestValidVersion?.id}
+            </Callout>
+          )}
+          <ProposalSDL
+            // diffSdl={diffSdl ?? query.data?.latestValidVersion?.schemas?.edges[0].node.source ?? ''}
+            latestProposalVersionId={proposal.versions?.edges?.[0].node.id ?? 'asdf'}
+            reviews={proposal.reviews ?? null}
+            sdl={sdl ?? proposal.versions?.edges?.[0].node.schemaSDL}
+            serviceName=''
+          />
         </>
       )}
     </div>

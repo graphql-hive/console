@@ -1,4 +1,4 @@
-import { buildSchema, Source } from 'graphql';
+import { buildSchema, GraphQLSchema, Source } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProposalOverview_ReviewsFragmentFragment } from '@/gql/graphql';
 import { ChangeDocument, ChangeRow } from './change';
@@ -17,28 +17,65 @@ const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
         schemaProposalVersion {
           id
           serviceName
+          schemaSDL
         }
         stageTransition
         lineNumber
         lineText
         schemaCoordinate
         ...ProposalOverview_ReviewCommentsFragment
-        schemaProposalVersion {
-          id
-        }
       }
     }
   }
 `);
 
+// @todo should this be done on proposal update AND then the proposal can reference the check????
+//  So it can get the changes
+
+// const ProposalOverview_CheckSchema = graphql(/** GraphQL */`
+//   mutation ProposalOverview_CheckSchema($target: TargetReferenceInput!, $sdl: String!, $service: ID) {
+//     schemaCheck(input: {
+//       target: $target
+//       sdl: $sdl
+//       service: $service
+//     }) {
+//       __typename
+//       ...on SchemaCheckSuccess {
+
+//       }
+//       ...on SchemaCheckError {
+//         changes {
+//           edges {
+//             node {
+//               path
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// `);
+
 type ReviewNode = NonNullable<ProposalOverview_ReviewsFragmentFragment['edges']>[number]['node'];
 
 export function ProposalSDL(props: {
+  diffSdl: string;
   sdl: string;
   serviceName?: string;
   latestProposalVersionId: string;
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment> | null;
 }) {
+  try {
+    void diff(
+    buildSchema(props.diffSdl, { assumeValid: true, assumeValidSDL: true }),
+    buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true }),
+    ).then((changes) => {
+      console.log('DIFF WORKED', changes);
+    });
+  } catch (e) {
+    console.error(`Handled error ${e}`);
+  }
+
   /**
    * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
    * Because of this, we have to fetch every single page of comments...
@@ -49,10 +86,23 @@ export function ProposalSDL(props: {
   const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
 
   try {
+    let diffSchema: GraphQLSchema | undefined;
+    try { 
+      diffSchema = buildSchema(props.diffSdl, { assumeValid: true, assumeValidSDL: true });
+    } catch (e) {
+      console.error('Diff schema is invalid.')
+    }
+    
+    const schema = buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true });
     const coordinateToLineMap = collectCoordinateLocations(
-      buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true }),
+      schema,
       new Source(props.sdl),
     );
+
+    if (diffSchema) {
+      // @todo run schema check and get diff from that API.... That way usage can be checked easily.
+      void diff(diffSchema, schema, undefined)
+    }
 
     // @note assume reviews are specific to the current service...
     const globalReviews: ReviewNode[] = [];
@@ -76,13 +126,18 @@ export function ProposalSDL(props: {
       }
     }
 
-    // let nextReviewEdge = connection.edges?.pop();
+    const diffSdlLines = props.diffSdl.split('\n');
+    let diffLineNumber = 0;
     return (
       <>
         <ChangeDocument>
           {props.sdl.split('\n').flatMap((txt, index) => {
             const lineNumber = index + 1;
-            const elements = [<ChangeRow key={`change-${lineNumber}`} lineNumber={lineNumber}>{txt}</ChangeRow>];
+            const diffLineMatch = txt === diffSdlLines[diffLineNumber];
+            const elements = [<ChangeRow key={`change-${lineNumber}`} lineNumber={lineNumber} diffLineNumber={diffLineNumber+1}>{txt}</ChangeRow>];
+            if (diffLineMatch) {
+              diffLineNumber = diffLineNumber + 1;
+            }
             
             const review = reviewsByLine.get(lineNumber)
             if (review) {
