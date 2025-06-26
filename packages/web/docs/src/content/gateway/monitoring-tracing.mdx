@@ -1092,7 +1092,6 @@ will enable logging of OpenTelemetry SDK based on `OTEL_LOG_LEVEL` env variable.
 By default, Hive Gateway configure the Diagnostics API to output logs using Hive Gateway's logger.
 You can disable this using `configureDiagLogger` option.
 
-
 ```ts filename="gateway.config.ts"
 const opentelemetryConfig = {
   // Use the default DiagLogger, which outputs logs directly to stdout
@@ -1932,7 +1931,6 @@ Otherwise, Hive Gateway provide it's own cross-runtime Context tracking mechanis
 can use
 [`trace.getSpan` standard function](https://opentelemetry.io/docs/languages/js/instrumentation/#get-a-span-from-context)
 to get access to the current span.
-
 
 <Tabs items={["With Context Manager", "Without Context Manager"]}>
 
