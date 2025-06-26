@@ -166,7 +166,7 @@ export const action: Action = async exec => {
         , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
         , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
-        , "SpanAttributes"['hive.graphql.error.count'] AS "graphql_error_count"
+        , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
         , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
         , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.subgraph.names'])) AS "subgraph_names"
       FROM
@@ -245,7 +245,7 @@ export const action: Action = async exec => {
         , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
         , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
-        , "SpanAttributes"['hive.graphql.error.count'] AS "graphql_error_count"
+        , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
         , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
       FROM
         "otel_traces"
