@@ -34,7 +34,7 @@ RUN touch ./src/lib.rs
 RUN cargo build --release
 
 # Runtime
-FROM debian:12-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update
 RUN apt-get -y install ca-certificates
