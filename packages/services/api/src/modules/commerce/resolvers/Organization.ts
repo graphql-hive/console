@@ -63,7 +63,7 @@ export const Organization: Pick<
     const logger = injector.get(Logger);
 
     if (!subscriptionInfo) {
-      logger.info('No active subscription for organization (id=%s)', org.id)
+      logger.info('No active subscription for organization (id=%s)', org.id);
       return {
         hasActiveSubscription: false,
         canUpdateSubscription: true,
@@ -89,7 +89,7 @@ export const Organization: Pick<
     );
 
     if (!subscriptionInfo.paymentMethod) {
-      logger.warn('Active subscription found but is missing a payment method (id=%s)', org.id)
+      logger.warn('Active subscription found but is missing a payment method (id=%s)', org.id);
     }
 
     return {
