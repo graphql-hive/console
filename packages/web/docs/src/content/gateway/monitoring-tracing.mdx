@@ -1140,7 +1140,6 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
-    ...ctx,
     // Use the default DiagLogger, which outputs logs directly to stdout
     configureDiagLogger: false
   }
@@ -1190,7 +1189,6 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
-    ...ctx,
     // Disable the auto-flush on shutdown
     flushOnDispose: false,
     // or call a custom method
@@ -1216,6 +1214,54 @@ export const gateway = createGatewayRuntime({
       flushOnDispose: false,
       // or call a custom method
       flushOnDispose: 'flush'
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+#### Tracer
+
+By default, Hive Gateway will create a tracer named `gateway`. You can provide your own tracer if
+needed.
+
+<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+import { trace } from '@opentelemetry/api'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    traces: {
+      tracer: trace.getTracer('my-custom-tracer')
+    }
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+      traces: {
+        tracer: trace.getTracer('my-custom-tracer')
+      }
     })
   ]
 })
