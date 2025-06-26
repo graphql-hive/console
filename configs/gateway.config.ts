@@ -172,8 +172,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
 
       // add hive branded attributes
       //
-      span.attributes['hive.graphql.subgraph.name'] =
-        span.attributes['gateway.upstream.subgraph.name'];
+      span.attributes['hive.subgraph.name'] = span.attributes['gateway.upstream.subgraph.name'];
       span.attributes['hive.graphql.operation.document'] = span.attributes['graphql.document'];
       span.attributes['hive.graphql.operation.name'] = span.attributes['graphql.operation.name'];
       span.attributes['hive.graphql.operation.type'] = span.attributes['graphql.operation.type'];
