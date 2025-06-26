@@ -77,7 +77,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
     const traceId = spanContext.traceId;
     const spanId = spanContext.spanId;
 
-    console.log(traceId, spanId);
+    console.log(traceId, spanId, span.name);
 
     // Initialize trace data structures if needed
     if (!this.activeSpans.has(traceId)) {
@@ -137,7 +137,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
             rootSpan.setAttribute('hive.graphql.operation.type', operationType);
             rootSpan.setAttribute('hive.graphql.operation.name', operationName ?? '');
             rootSpan.setAttribute('hive.graphql.operation.document', document);
-            rootSpan.setAttribute('hive.graphql.error.count', String(errorCount ?? 0));
+            rootSpan.setAttribute('hive.graphql.error.count', errorCount ?? 0);
 
             // Add the subgraph names as a comma-separated list
             if (subgraphNamesForTrace && subgraphNamesForTrace.size > 0) {
@@ -178,7 +178,7 @@ class HiveTracingSpanProcessor implements SpanProcessor {
       span.attributes['hive.graphql.operation.type'] = span.attributes['graphql.operation.type'];
       // TODO: attributes for error codes
       // hive.graphql.error.count
-      span.attributes['hive.graphql.error.count'] = '0';
+      // span.attributes['hive.graphql.error.count'] = 0;
       // hive.graphql.error.codes
       // span.setAttribute('hive.graphql.error.codes', '');
       //
