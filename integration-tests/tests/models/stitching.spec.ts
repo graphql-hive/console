@@ -472,7 +472,7 @@ describe('publish', () => {
         expect(message).toMatch('Str');
       });
 
-      test.concurrent('rejected: not composable, breaking changes', async () => {
+      test.concurrent('rejected: not composable, breaking changes (syntax error)', async () => {
         const {
           cli: { publish, check },
         } = await prepare(ffs);
@@ -508,7 +508,6 @@ describe('publish', () => {
           expect: 'rejected',
         });
 
-        expect(message).toMatch('topProduct');
         expect(message).toMatch('Expected Name');
       });
 
