@@ -1,5 +1,53 @@
 # hive
 
+## 8.1.0
+
+### Minor Changes
+
+- [#6843](https://github.com/graphql-hive/console/pull/6843)
+  [`d175fba`](https://github.com/graphql-hive/console/commit/d175fba8f17f36ce3205e14032eee89222f85f08)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Make `Target.graphqlEndpointUrl` available
+  in public GraphQL API
+
+### Patch Changes
+
+- [#6829](https://github.com/graphql-hive/console/pull/6829)
+  [`e81cea8`](https://github.com/graphql-hive/console/commit/e81cea889c26b3ee0453defbfec5a78ba24e90a6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg index for getSchemaVersionByActionId to
+  improve lookup performance
+
+- [#6850](https://github.com/graphql-hive/console/pull/6850)
+  [`faa22bb`](https://github.com/graphql-hive/console/commit/faa22bbe662f0df7cca3b9045a22d495897714ee)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where contract composition marks types
+  occuring in multiple subgraphs as `@inaccessible` despite being used within the public API schema.
+
+- [#6845](https://github.com/graphql-hive/console/pull/6845)
+  [`114e7bc`](https://github.com/graphql-hive/console/commit/114e7bcf6860030b668fb1af7faed3650c278a51)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `@theguild/federation-composition` to
+  `0.19.0`
+
+  Increases federation composition compatibility.
+
+  - Fix errors raised by `@requires` with union field selection set
+  - Fix incorrectly raised `IMPLEMENTED_BY_INACCESSIBLE` error for inaccessible object fields where
+    the object type is inaccessible.
+  - Add support for `@provides` fragment selection sets on union type fields.
+  - Fix issue where the satisfiability check raised an exception for fields that share different
+    object type and interface definitions across subgraphs.
+  - Fix issue where scalar type marked with `@inaccessible` does not fail the composition if all
+    usages are not marked with `@inaccessible`.
+  - Support composing executable directives from subgraphs into the supergraph
+
+- [#6862](https://github.com/graphql-hive/console/pull/6862)
+  [`6cf18b9`](https://github.com/graphql-hive/console/commit/6cf18b9d9c10dfcbd95d148571dc305eb5c71b4c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show whether a breaking change is safe based on
+  usage within the GitHub check-run summary.
+
+- [#6864](https://github.com/graphql-hive/console/pull/6864)
+  [`35a69a1`](https://github.com/graphql-hive/console/commit/35a69a1064319c74b9b76a521698ce1260383f08)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Validate schema stitching output sdl. Previously,
+  this caused invalid SDL to be promoted as the latest valid schema version.
+
 ## 8.0.0
 
 ### Major Changes
