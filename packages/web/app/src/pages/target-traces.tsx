@@ -60,8 +60,8 @@ import {
   MultiInputFilter,
   MultiSelectFilter,
   TimelineFilter,
-} from './target-traces-filter';
-import { useWidthSync, WidthSyncProvider } from './target-traces-width';
+} from './traces/target-traces-filter';
+import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 
 const rootSpan: SpanProps = {
   id: 'root',

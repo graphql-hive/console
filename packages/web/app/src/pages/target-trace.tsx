@@ -33,7 +33,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useWidthSync, WidthSyncProvider } from './target-traces-width';
+import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
 
