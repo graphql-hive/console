@@ -167,8 +167,16 @@ export const action: Action = async exec => {
         , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
         , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
-        , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
-        , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.subgraph.names'])) AS "subgraph_names"
+        , if(
+            "SpanAttributes"['hive.graphql.error.codes'] = '',
+            [],
+            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes']))
+          ) AS "graphql_error_codes"
+        , if(
+            "SpanAttributes"['hive.subgraph.names'] = '',
+            [],
+            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.subgraph.names']))
+          ) AS "subgraph_names"
       FROM
         "otel_traces"
       WHERE
@@ -246,7 +254,11 @@ export const action: Action = async exec => {
         , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
         , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
-        , arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes'])) AS "graphql_error_codes"
+        , if(
+            "SpanAttributes"['hive.graphql.error.codes'] = '',
+            [],
+            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes']))
+          ) AS "graphql_error_codes"
       FROM
         "otel_traces"
       WHERE
