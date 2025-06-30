@@ -327,8 +327,14 @@ export default gql`
     Filter based on GraphQL error codes (error.extensions.code).
     """
     errorCodes: [String!]
-    operationName: [String!]
-    operationType: [GraphQLOperationType!]
+    """
+    Filter based on the operation name.
+    """
+    operationNames: [String!]
+    """
+    Filter based on the operation type.
+    """
+    operationTypes: [GraphQLOperationType!]
     """
     Filter based on the HTTP status code of the request.
     """
