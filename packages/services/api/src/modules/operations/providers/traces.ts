@@ -1,8 +1,10 @@
 import { Injectable } from 'graphql-modules';
 import { z } from 'zod';
-import { batch } from '@hive/api/shared/helpers';
+import { batch, parseDateRangeInput } from '@hive/api/shared/helpers';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
 import { ClickHouse, sql } from './clickhouse-client';
+import { formatDate } from './operations-reader';
 import { SqlValue } from './sql';
 
 @Injectable({
@@ -90,6 +92,11 @@ export class Traces {
     targetId: string,
     first: number | null,
     filter: {
+      period: null | GraphQLSchema.DateRangeInput;
+      duration: {
+        min: number | null;
+        max: number | null;
+      } | null;
       id?: Array<string>;
       success?: Array<boolean>;
       operationName?: Array<string>;
@@ -107,59 +114,77 @@ export class Traces {
 
     const ANDs: SqlValue[] = [sql`target_id = ${targetId}`];
 
-    if (filter?.id?.length) {
-      ANDs.push(sql`trace_id IN (${sql.array(filter.id, 'String')})`);
-    }
-
-    if (filter?.success?.length) {
-      // ANDs.push(sql`http_status_code IN (${sql.array(filter.success.map((ok) => ok ? ).flat(1), 'String')})`);
+    if (filter?.period) {
+      const period = parseDateRangeInput(filter.period);
       ANDs.push(
-        sql`${sql.join(
-          filter.success.map(ok =>
-            ok
-              ? // 2XX
-                sql`(toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300)`
-              : // non-2XXX
-                sql`(toUInt16OrZero(http_status_code) < 200 OR toUInt16OrZero(http_status_code) >= 300)`,
-          ),
-          ' OR ',
-        )}`,
+        sql`"otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')`,
+      );
+      ANDs.push(
+        sql`"otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')`,
       );
     }
 
-    if (filter?.operationName?.length) {
-      ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
+    if (filter?.duration?.min) {
+      ANDs.push(sql`"duration" >= ${String(filter.duration.min * 1_000 * 1_000)}`);
     }
 
-    if (filter?.operationType?.length) {
-      ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
+    if (filter?.duration?.max) {
+      ANDs.push(sql`"duration" <= ${String(filter.duration.max * 1_000 * 1_000)}`);
     }
 
-    if (filter?.subgraphs?.length) {
-      ANDs.push(sql`hasAny(subgraph_names, (${sql.array(filter.subgraphs.flat(), 'String')}))`);
-    }
+    // if (filter?.id?.length) {
+    //   ANDs.push(sql`"trace_id" IN (${sql.array(filter.id, 'String')})`);
+    // }
 
-    if (filter?.httpStatusCode?.length) {
-      ANDs.push(
-        sql`http_status_code IN (${sql.array(filter.httpStatusCode.map(String), 'UInt16')})`,
-      );
-    }
+    // if (filter?.success?.length) {
+    //   // ANDs.push(sql`http_status_code IN (${sql.array(filter.success.map((ok) => ok ? ).flat(1), 'String')})`);
+    //   ANDs.push(
+    //     sql`${sql.join(
+    //       filter.success.map(ok =>
+    //         ok
+    //           ? // 2XX
+    //             sql`(toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300)`
+    //           : // non-2XXX
+    //             sql`(toUInt16OrZero(http_status_code) < 200 OR toUInt16OrZero(http_status_code) >= 300)`,
+    //       ),
+    //       ' OR ',
+    //     )}`,
+    //   );
+    // }
 
-    if (filter?.httpMethod?.length) {
-      ANDs.push(sql`http_method IN (${sql.array(filter.httpMethod, 'String')})`);
-    }
+    // if (filter?.operationName?.length) {
+    //   ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
+    // }
 
-    if (filter?.httpHost?.length) {
-      ANDs.push(sql`http_host IN (${sql.array(filter.httpHost, 'String')})`);
-    }
+    // if (filter?.operationType?.length) {
+    //   ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
+    // }
 
-    if (filter?.httpRoute?.length) {
-      ANDs.push(sql`http_route IN (${sql.array(filter.httpRoute, 'String')})`);
-    }
+    // if (filter?.subgraphs?.length) {
+    //   ANDs.push(sql`hasAny(subgraph_names, (${sql.array(filter.subgraphs.flat(), 'String')}))`);
+    // }
 
-    if (filter?.httpUrl?.length) {
-      ANDs.push(sql`http_url IN (${sql.array(filter.httpUrl, 'String')})`);
-    }
+    // if (filter?.httpStatusCode?.length) {
+    //   ANDs.push(
+    //     sql`http_status_code IN (${sql.array(filter.httpStatusCode.map(String), 'UInt16')})`,
+    //   );
+    // }
+
+    // if (filter?.httpMethod?.length) {
+    //   ANDs.push(sql`http_method IN (${sql.array(filter.httpMethod, 'String')})`);
+    // }
+
+    // if (filter?.httpHost?.length) {
+    //   ANDs.push(sql`http_host IN (${sql.array(filter.httpHost, 'String')})`);
+    // }
+
+    // if (filter?.httpRoute?.length) {
+    //   ANDs.push(sql`http_route IN (${sql.array(filter.httpRoute, 'String')})`);
+    // }
+
+    // if (filter?.httpUrl?.length) {
+    //   ANDs.push(sql`http_url IN (${sql.array(filter.httpUrl, 'String')})`);
+    // }
 
     const tracesQuery = await clickhouse.query<unknown>({
       query: sql`
