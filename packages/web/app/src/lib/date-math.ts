@@ -2,7 +2,7 @@
  * The original source code was taken from Grafana's date-math.ts file and adjusted for Hive needs.
  * @source https://github.com/grafana/grafana/blob/411c89012febe13323e4b8aafc8d692f4460e680/packages/grafana-data/src/datetime/datemath.ts#L1C1-L208C2
  */
-import { add, format, formatISO, parse as parseDate, sub, type Duration } from 'date-fns';
+import { add, format, formatISO, parse as parseDate, parseISO, sub, type Duration } from 'date-fns';
 import { z } from 'zod';
 import { UTCDate } from '@date-fns/utc';
 
@@ -46,16 +46,8 @@ export function formatDateToString(date: Date) {
   return format(date, dateStringFormat);
 }
 
-function isValidDateString(input: string) {
-  return input.length === 10 && parseDateString(input) !== undefined;
-}
-
 /**
- * Parses different types input to a moment instance. There is a specific formatting language that can be used
- * if text arg is string. See unit tests for examples.
- * @param text
- * @param roundUp See parseDateMath function.
- * @param timezone Only string 'utc' is acceptable here, for anything else, local timezone is used.
+ * Parse a time iso string or formular into an actual date
  */
 export function parse(text: string, now = new UTCDate()): Date | undefined {
   if (!text) {
@@ -65,17 +57,28 @@ export function parse(text: string, now = new UTCDate()): Date | undefined {
   let mathString = '';
 
   if (text.substring(0, 3) === 'now') {
-    // time = dateTimeForTimeZone(timezone);
     mathString = text.substring('now'.length);
-  } else if (isValidDateString(text)) {
-    return parseDateString(text);
   } else {
-    return undefined;
+    // yyyy-MM-dd
+    const date = parseDateString(text);
+
+    if (date && !isNaN(date?.getTime())) {
+      return date;
+    }
+
+    // ISO
+    const isoDate = parseISO(text);
+
+    if (isoDate && !isNaN(isoDate?.getTime())) {
+      return isoDate;
+    }
   }
 
   if (!mathString.length) {
     return now;
   }
+
+  // formular
 
   return parseDateMath(mathString, now);
 }

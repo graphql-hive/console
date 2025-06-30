@@ -55,6 +55,7 @@ import {
   OnChangeFn,
   useReactTable,
 } from '@tanstack/react-table';
+import * as dateMath from '../lib/date-math';
 import {
   DurationFilter,
   MultiInputFilter,
@@ -838,8 +839,9 @@ function LabelWithBadge(props: {
 }
 
 export const TargetTracesFilterState = z.object({
-  'trace.id': z.array(z.string()).default([]),
+  period: z.union([z.tuple([z.string(), z.string()]), z.tuple([])]).default([]),
   duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
+  'trace.id': z.array(z.string()).default([]),
   'graphql.status': z.array(z.string()).default([]),
   'graphql.kind': z.array(z.string()).default([]),
   'graphql.subgraph': z.array(z.string()).default([]),
@@ -1148,7 +1150,7 @@ function Filters(
           </Button>
         ) : null}
       </SidebarGroupLabel>
-      <TimelineFilter />
+      <TimelineFilter value={filterSelector('period')} onChange={updateFilter('period')} />
       <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
       <MultiInputFilter
         key="trace.id"
@@ -1645,6 +1647,14 @@ const TargetTracesPageQuery = graphql(`
 function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const targetRef = useTargetReference();
+
+  const period = useMemo(() => {
+    if (!props.filter.period.length) {
+      return null;
+    }
+    return dateMath.resolveRange({ from: props.filter.period[0], to: props.filter.period[1] });
+  }, [props.filter.period]);
+
   const [query] = useQuery({
     query: TargetTracesPageQuery,
     variables: {
@@ -1655,16 +1665,21 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
       },
       filterTopN: 5,
       filter: {
-        id: props.filter['trace.id'],
-        operationName: props.filter['graphql.operation'],
-        operationType: props.filter['graphql.kind'] as any,
-        success: props.filter['graphql.status'].map(s => s === 'ok'),
-        httpStatusCode: props.filter['http.status'].map(Number),
-        httpMethod: props.filter['http.method'],
-        httpHost: props.filter['http.host'],
-        httpRoute: props.filter['http.route'],
-        httpUrl: props.filter['http.url'],
-        subgraphs: props.filter['graphql.subgraph'],
+        period,
+        duration: {
+          min: props.filter.duration[0] ?? null,
+          max: props.filter.duration[1] ?? null,
+        },
+        // id: props.filter['trace.id'],
+        // operationName: props.filter['graphql.operation'],
+        // operationType: props.filter['graphql.kind'] as any,
+        // success: props.filter['graphql.status'].map(s => s === 'ok'),
+        // httpStatusCode: props.filter['http.status'].map(Number),
+        // httpMethod: props.filter['http.method'],
+        // httpHost: props.filter['http.host'],
+        // httpRoute: props.filter['http.route'],
+        // httpUrl: props.filter['http.url'],
+        // subgraphs: props.filter['graphql.subgraph'],
       },
       first: props.pagination.pageSize,
     },
