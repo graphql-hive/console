@@ -13,7 +13,7 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
   /* Implement TracesFilterOptions resolver logic here */
   httpHost: async ({ loader }, { top }) => {
     return loader.load({
-      key: 'http_url',
+      key: 'http_host',
       columnExpression: 'http_host',
       limit: top ?? 5,
       arrayJoinColumn: null,
