@@ -99,7 +99,10 @@ export const availablePresets: Preset[] = [
   { name: 'last1y', label: 'Last 1 year', range: { from: 'now-364d', to: 'now' } },
 ];
 
-function findMatchingPreset(range: Preset['range']): Preset | undefined {
+export function findMatchingPreset(
+  range: Preset['range'],
+  availablePresets: Preset[],
+): Preset | undefined {
   return availablePresets.find(preset => {
     return preset.range.from === range.from && preset.range.to === range.to;
   });
@@ -144,7 +147,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       !hasInvalidUnitRegex?.test(props.selectedRange.from) &&
       !hasInvalidUnitRegex?.test(props.selectedRange.to)
     ) {
-      preset = findMatchingPreset(props.selectedRange);
+      preset = findMatchingPreset(props.selectedRange, presets);
 
       if (preset) {
         return preset;
@@ -374,10 +377,13 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                     if (resolvedRange) {
                       setActivePreset(
                         () =>
-                          findMatchingPreset({
-                            from: fromWithoutWhitespace,
-                            to: toWithoutWhitespace,
-                          }) ?? {
+                          findMatchingPreset(
+                            {
+                              from: fromWithoutWhitespace,
+                              to: toWithoutWhitespace,
+                            },
+                            availablePresets,
+                          ) ?? {
                             name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
                             label: buildDateRangeString(resolvedRange),
                             range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
