@@ -9,6 +9,7 @@ instructions to ensure a smooth transition.
 v2 includes several breaking changes and improvements over v1. The most significant changes are:
 
 - [Drop Support for Node v18](#drop-support-for-node-v18)
+- [Multipart Requests are Disabled by Default](#drop-support-for-node-v18)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
 
@@ -45,6 +46,24 @@ The following packages have been updated to their latest versions, which require
 - `@graphql-hive/pubsub`
 - `@graphql-tools/stitch`
 - `@graphql-tools/wrap`
+
+## Multipart Requests are Disabled by Default
+
+The only objective of
+[GraphQL multipart request spec](https://github.com/jaydenseric/graphql-multipart-request-spec) is
+to support file uploads; however, file uploads are not native to GraphQL and are generally
+considered an anti-pattern.
+
+To enable file uploads, you need to explicitly enable the multipart support by setting the
+`multipart` Hive Gateway option to `true`.
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
++ multipart: true,
+});
+```
 
 ## Disabled Automatic Forking
 
