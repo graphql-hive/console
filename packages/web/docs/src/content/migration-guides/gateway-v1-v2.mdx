@@ -8,7 +8,23 @@ instructions to ensure a smooth transition.
 
 v2 includes several breaking changes and improvements over v1. The most significant changes are:
 
+- [Disabled automatic forking](#forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
+
+## Disabled Automatic Forking
+
+We were previously forking workers automatically in v1 when detecting `NODE_ENV=production`;
+however, forking workers for concurrent processing is a delicate process and if not done carefully
+can lead to performance degradations. It should be configured with careful consideration by advanced
+users.
+
+In v2, the automatic forking of workers has been disabled by default. This means that the Hive
+Gateway will no longer automatically create child processes to handle concurrent requests. Instead,
+you can manually configure forking if needed.
+
+You can configure forking in your `gateway.config.ts` file by using the `fork` option or using the
+environment variable `FORK`. These options allow you to specify the number of worker processes to
+fork.
 
 ## Hive Logger
 
