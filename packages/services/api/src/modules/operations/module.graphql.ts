@@ -279,7 +279,7 @@ export default gql`
     success: Boolean!
     clientName: String
     clientVersion: String
-    httpStatusCode: Int
+    httpStatusCode: String
     httpMethod: String
     httpHost: String
     httpRoute: String
@@ -314,23 +314,56 @@ export default gql`
     Duration filter for the traces.
     """
     duration: DurationInput
-    id: [ID!]
+    """
+    Filter based on trace ID.
+    """
+    traceIds: [ID!]
+    """
+    Filter based on whether the operation is a success.
+    A operation is successful if no GraphQL error has occured and the result is within the 2XX or 3XX range.
+    """
+    success: [Boolean!]
+    """
+    Filter based on GraphQL error codes (error.extensions.code).
+    """
+    errorCodes: [String!]
     operationName: [String!]
     operationType: [GraphQLOperationType!]
-    success: [Boolean!]
-    httpStatusCode: [Int!]
-    httpMethod: [String!]
-    httpHost: [String!]
-    httpRoute: [String!]
-    httpUrl: [String!]
-    subgraphs: [String!]
+    """
+    Filter based on the HTTP status code of the request.
+    """
+    httpStatusCodes: [String!]
+    """
+    Filter based on the HTTP method of the request.
+    """
+    httpMethods: [String!]
+    """
+    Filter based on the HTTP host of the request.
+    """
+    httpHosts: [String!]
+    """
+    Filter based on the HTTP route of the request.
+    """
+    httpRoutes: [String!]
+    """
+    Filter based on the HTTP URL of the request.
+    """
+    httpUrls: [String!]
+    """
+    Filter based on called subgraphs.
+    """
+    subgraphNames: [String!]
   }
 
   type TracesFilterOptions {
     success: [FilterBooleanOption!]!
+    """
+    Filter based on GraphQL error code.
+    """
+    errorCode(top: Int): [FilterStringOption!]!
     operationType: [FilterStringOption!]!
     operationName(top: Int): [FilterStringOption!]!
-    httpStatusCode(top: Int): [FilterIntOption!]!
+    httpStatusCode(top: Int): [FilterStringOption!]!
     httpMethod(top: Int): [FilterStringOption!]!
     httpHost(top: Int): [FilterStringOption!]!
     httpRoute(top: Int): [FilterStringOption!]!

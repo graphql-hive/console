@@ -97,16 +97,17 @@ export class Traces {
         min: number | null;
         max: number | null;
       } | null;
-      id?: Array<string>;
-      success?: Array<boolean>;
+      traceIds: ReadonlyArray<string> | null;
+      success: ReadonlyArray<boolean> | null;
+      errorCodes: ReadonlyArray<string> | null;
       operationName?: Array<string>;
       operationType?: Array<string>;
-      subgraphs?: Array<string>;
-      httpStatusCode?: Array<string>;
-      httpMethod?: Array<string>;
-      httpHost?: Array<string>;
-      httpRoute?: Array<string>;
-      httpUrl?: Array<string>;
+      subgraphNames: ReadonlyArray<string> | null;
+      httpStatusCodes: ReadonlyArray<string> | null;
+      httpMethods: ReadonlyArray<string> | null;
+      httpHosts: ReadonlyArray<string> | null;
+      httpRoutes: ReadonlyArray<string> | null;
+      httpUrls: ReadonlyArray<string> | null;
     },
   ) {
     const clickhouse = this.clickHouse;
@@ -132,25 +133,29 @@ export class Traces {
       ANDs.push(sql`"duration" <= ${String(filter.duration.max * 1_000 * 1_000)}`);
     }
 
-    // if (filter?.id?.length) {
-    //   ANDs.push(sql`"trace_id" IN (${sql.array(filter.id, 'String')})`);
-    // }
+    if (filter?.traceIds?.length) {
+      ANDs.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
+    }
 
-    // if (filter?.success?.length) {
-    //   // ANDs.push(sql`http_status_code IN (${sql.array(filter.success.map((ok) => ok ? ).flat(1), 'String')})`);
-    //   ANDs.push(
-    //     sql`${sql.join(
-    //       filter.success.map(ok =>
-    //         ok
-    //           ? // 2XX
-    //             sql`(toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300)`
-    //           : // non-2XXX
-    //             sql`(toUInt16OrZero(http_status_code) < 200 OR toUInt16OrZero(http_status_code) >= 300)`,
-    //       ),
-    //       ' OR ',
-    //     )}`,
-    //   );
-    // }
+    // Success based on GraphQL terms
+    if (filter?.success?.length) {
+      const hasSuccess = filter.success.includes(true);
+      const hasError = filter.success.includes(false);
+
+      if (hasSuccess && !hasError) {
+        ANDs.push(sql`"graphql_error_count" = 0`);
+        ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
+      } else if (hasError && !hasSuccess) {
+        ANDs.push(sql`"graphql_error_count" > 0`);
+        ANDs.push(
+          sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
+        );
+      }
+    }
+
+    if (filter?.errorCodes?.length) {
+      ANDs.push(sql`hasAny("graphql_error_codes", (${sql.array(filter.errorCodes, 'String')}))`);
+    }
 
     // if (filter?.operationName?.length) {
     //   ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
@@ -160,31 +165,29 @@ export class Traces {
     //   ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
     // }
 
-    // if (filter?.subgraphs?.length) {
-    //   ANDs.push(sql`hasAny(subgraph_names, (${sql.array(filter.subgraphs.flat(), 'String')}))`);
-    // }
+    if (filter?.subgraphNames?.length) {
+      ANDs.push(sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames, 'String')}))`);
+    }
 
-    // if (filter?.httpStatusCode?.length) {
-    //   ANDs.push(
-    //     sql`http_status_code IN (${sql.array(filter.httpStatusCode.map(String), 'UInt16')})`,
-    //   );
-    // }
+    if (filter?.httpStatusCodes?.length) {
+      ANDs.push(sql`"http_status_code" IN (${sql.array(filter.httpStatusCodes, 'String')})`);
+    }
 
-    // if (filter?.httpMethod?.length) {
-    //   ANDs.push(sql`http_method IN (${sql.array(filter.httpMethod, 'String')})`);
-    // }
+    if (filter?.httpMethods?.length) {
+      ANDs.push(sql`"http_method" IN (${sql.array(filter.httpMethods, 'String')})`);
+    }
 
-    // if (filter?.httpHost?.length) {
-    //   ANDs.push(sql`http_host IN (${sql.array(filter.httpHost, 'String')})`);
-    // }
+    if (filter?.httpHosts?.length) {
+      ANDs.push(sql`"http_host" IN (${sql.array(filter.httpHosts, 'String')})`);
+    }
 
-    // if (filter?.httpRoute?.length) {
-    //   ANDs.push(sql`http_route IN (${sql.array(filter.httpRoute, 'String')})`);
-    // }
+    if (filter?.httpRoutes?.length) {
+      ANDs.push(sql`"http_route" IN (${sql.array(filter.httpRoutes, 'String')})`);
+    }
 
-    // if (filter?.httpUrl?.length) {
-    //   ANDs.push(sql`http_url IN (${sql.array(filter.httpUrl, 'String')})`);
-    // }
+    if (filter?.httpUrls?.length) {
+      ANDs.push(sql`"http_url" IN (${sql.array(filter.httpUrls, 'String')})`);
+    }
 
     const tracesQuery = await clickhouse.query<unknown>({
       query: sql`
