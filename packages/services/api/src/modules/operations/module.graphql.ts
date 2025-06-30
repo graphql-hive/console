@@ -300,7 +300,20 @@ export default gql`
     spanAttributes: JSONObject!
   }
 
+  input DurationInput {
+    min: SafeInt
+    max: SafeInt
+  }
+
   input TracesFilterInput {
+    """
+    Time range filter for the traces.
+    """
+    period: DateRangeInput
+    """
+    Duration filter for the traces.
+    """
+    duration: DurationInput
     id: [ID!]
     operationName: [String!]
     operationType: [GraphQLOperationType!]
