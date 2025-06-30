@@ -1,5 +1,26 @@
 # @graphql-hive/cli
 
+## 0.50.2
+
+### Patch Changes
+
+- [#6845](https://github.com/graphql-hive/console/pull/6845)
+  [`114e7bc`](https://github.com/graphql-hive/console/commit/114e7bcf6860030b668fb1af7faed3650c278a51)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `@theguild/federation-composition` to
+  `0.19.0`
+
+  Increases federation composition compatibility.
+
+  - Fix errors raised by `@requires` with union field selection set
+  - Fix incorrectly raised `IMPLEMENTED_BY_INACCESSIBLE` error for inaccessible object fields where
+    the object type is inaccessible.
+  - Add support for `@provides` fragment selection sets on union type fields.
+  - Fix issue where the satisfiability check raised an exception for fields that share different
+    object type and interface definitions across subgraphs.
+  - Fix issue where scalar type marked with `@inaccessible` does not fail the composition if all
+    usages are not marked with `@inaccessible`.
+  - Support composing executable directives from subgraphs into the supergraph
+
 ## 0.50.1
 
 ### Patch Changes
