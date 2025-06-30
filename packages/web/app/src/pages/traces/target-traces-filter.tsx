@@ -526,6 +526,8 @@ export const TimelineFilter = memo(
         <FilterContent>
           <div className="space-y-2 p-2">
             <Select
+              // The key is needed to reset the select state to show the SelectTrigger after resetting the filters.
+              key={`${props.value.at(0)}_${props.value.at(1)}`}
               value={selectedPreset?.name ?? undefined}
               onValueChange={value => {
                 if (value === 'custom') {
