@@ -9,7 +9,8 @@ instructions to ensure a smooth transition.
 v2 includes several breaking changes and improvements over v1. The most significant changes are:
 
 - [Drop Support for Node v18](#drop-support-for-node-v18)
-- [Multipart Requests are Disabled by Default](#drop-support-for-node-v18)
+- [Multipart Requests are Disabled by Default](#multipart-requests-are-disabled-by-default)
+- [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
 
@@ -64,6 +65,44 @@ export const gatewayConfig = defineConfig({
 + multipart: true,
 });
 ```
+
+# Remove Mocking Plugin from built-ins
+
+There is no need to provide the `useMock` plugin alongside Hive Gateway built-ins. Not only is the
+mock plugin 2MB in size (minified), but installing and using it is very simple.
+
+Migrating is very simple, start by installing the `@graphql-mesh/plugin-mock` package:
+
+```sh npm2yarn
+npm i @graphql-mesh/plugin-mock
+```
+
+and then use it in your Hive Gateway configuration:
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- useMock
+} from '@graphql-hive/gateway';
++ import { useMock } from '@graphql-mesh/plugin-mock'
+
+export const gatewayConfig = defineConfig({
+  plugins: [
+    useMock({
+      mocks: [
+        {
+          apply: 'User.firstName',
+          faker: '{{name.firstName}}'
+        }
+      ]
+    })
+  ]
+})
+```
+
+<Callout type="info">
+  You can read more about the mocking plugin in the [Mocking documentation](/docs/gateway/mocking).
+</Callout>
 
 ## Disabled Automatic Forking
 
