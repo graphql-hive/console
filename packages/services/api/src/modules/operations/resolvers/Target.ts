@@ -88,6 +88,8 @@ export const Target: Pick<
       traceIds: filter?.traceIds ?? null,
       success: filter?.success ?? null,
       errorCodes: filter?.errorCodes ?? null,
+      operationNames: filter?.operationNames ?? null,
+      operationTypes: filter?.operationTypes ?? null,
       subgraphNames: filter?.subgraphNames ?? null,
       httpMethods: filter?.httpMethods ?? null,
       httpStatusCodes: filter?.httpStatusCodes ?? null,
@@ -119,12 +121,12 @@ export const Target: Pick<
       );
     }
 
-    if (filter?.operationName?.length) {
-      ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationName, 'String')})`);
+    if (filter?.operationNames?.length) {
+      ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationNames, 'String')})`);
     }
 
-    if (filter?.operationType?.length) {
-      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationType, 'String')})`);
+    if (filter?.operationTypes?.length) {
+      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
     }
 
     if (filter?.subgraphNames?.length) {
@@ -171,11 +173,11 @@ export const Target: Pick<
         for (const { key, columnExpression, limit, arrayJoinColumn } of inputs) {
           statements.push(sql`
             SELECT
-              ${key} as key,
-              toString(${sql.raw(columnExpression)}) AS value,
-              count(*) AS count
-            FROM otel_traces_normalized
-            ${sql.raw(arrayJoinColumn ? `ARRAY JOIN ${arrayJoinColumn} as value` : '')}
+              ${key} AS "key",
+              toString(${sql.raw(columnExpression)}) AS "value",
+              count(*) AS "count"
+            FROM "otel_traces_normalized"
+            ${sql.raw(arrayJoinColumn ? `ARRAY JOIN ${arrayJoinColumn} AS "value"` : '')}
             WHERE ${sql.join(ANDs, ' AND ')}
             GROUP BY value
             ORDER BY count DESC
