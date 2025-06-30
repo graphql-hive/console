@@ -459,7 +459,7 @@ const availableTimelineFilterPresets: Array<Preset> = [
 ];
 
 export const TimelineFilter = memo(
-  (props: { value: [string, string] | []; onChange(value: [string, string]): void }) => {
+  (props: { value: [string, string] | []; onChange(value: [string, string] | []): void }) => {
     const selectedPreset = useMemo<Preset | null>(() => {
       if (!props.value.length) {
         return null;
@@ -518,7 +518,11 @@ export const TimelineFilter = memo(
 
     return (
       <Filter name="Timeline">
-        <FilterTitle changes={0} children={'Timeline'} onReset={() => {}} />
+        <FilterTitle
+          changes={props.value.length ? 1 : 0}
+          children={'Timeline'}
+          onReset={() => props.onChange([])}
+        />
         <FilterContent>
           <div className="space-y-2 p-2">
             <Select
