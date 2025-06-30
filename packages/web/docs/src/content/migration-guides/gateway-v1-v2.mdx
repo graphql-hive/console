@@ -675,12 +675,11 @@ import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
 new NodeSDK({
   traceExporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }),
   // or with batching options
-  spanProcessors: [new tracing.BatchSpanProcessor(
-    new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }),
-    {
+  spanProcessors: [
+    new tracing.BatchSpanProcessor(new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }), {
       //... batching options
-    }
-  )]
+    })
+  ]
 }).start()
 ```
 
@@ -787,8 +786,9 @@ Please review your queries to not filter against `null` parent span id.
 
 A new span encapsulating each GraphQL operation have been added.
 
-It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL processing.
-There can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql operation batching over http.
+It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL processing. There
+can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
+operation batching over http.
 
 ### OpenTelemetry Context
 
