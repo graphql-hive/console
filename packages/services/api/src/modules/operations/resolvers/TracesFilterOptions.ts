@@ -36,14 +36,12 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
     });
   },
   httpStatusCode: async ({ loader }, { top }) => {
-    return loader
-      .load({
-        key: 'http_status_code',
-        columnExpression: 'http_status_code',
-        limit: top ?? 5,
-        arrayJoinColumn: null,
-      })
-      .then(data => data.map(({ value, count }) => ({ value: Number(value), count })));
+    return loader.load({
+      key: 'http_status_code',
+      columnExpression: 'http_status_code',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
   },
   httpUrl: async ({ loader }, { top }) => {
     return loader.load({
@@ -87,5 +85,13 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
         arrayJoinColumn: null,
       })
       .then(data => data.map(({ value, count }) => ({ value: value ? true : false, count })));
+  },
+  errorCode: async ({ loader }, { top }) => {
+    return loader.load({
+      key: 'errorCode',
+      columnExpression: 'value',
+      limit: top ?? 10,
+      arrayJoinColumn: 'graphql_error_codes',
+    });
   },
 };

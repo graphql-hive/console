@@ -847,6 +847,7 @@ export const TargetTracesFilterState = z.object({
   'graphql.subgraph': z.array(z.string()).default([]),
   'graphql.operation': z.array(z.string()).default([]),
   'graphql.client': z.array(z.string()).default([]),
+  'graphql.errorCode': z.array(z.string()).default([]),
   'http.status': z.array(z.string()).default([]),
   'http.method': z.array(z.string()).default([]),
   'http.host': z.array(z.string()).default([]),
@@ -1071,6 +1072,14 @@ const filterOptions = {
       count: 2_320_123,
     },
   ],
+  'graphql.errorCode': [
+    {
+      value: 'ERR_AAA',
+      searchContent: 'ERR_AAA',
+      label: 'ERR_AAA',
+      count: 12_000_000,
+    },
+  ],
 };
 
 function Filters(
@@ -1164,6 +1173,14 @@ function Filters(
         options={filterOptions['graphql.status']}
         selectedValues={filterSelector('graphql.status')}
         onChange={updateFilter('graphql.status')}
+        hideSearch
+      />
+      <MultiSelectFilter
+        key="graphql.errorCode"
+        name="Error Code"
+        options={filterOptions['graphql.errorCode']}
+        selectedValues={filterSelector('graphql.errorCode')}
+        onChange={updateFilter('graphql.errorCode')}
         hideSearch
       />
       <MultiSelectFilter
@@ -1639,6 +1656,10 @@ const TargetTracesPageQuery = graphql(`
           value
           count
         }
+        errorCode {
+          value
+          count
+        }
       }
     }
   }
@@ -1670,16 +1691,17 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
           min: props.filter.duration[0] ?? null,
           max: props.filter.duration[1] ?? null,
         },
-        // id: props.filter['trace.id'],
+        traceIds: props.filter['trace.id'],
+        success: props.filter['graphql.status'].map(status => (status === 'ok' ? true : false)),
+        errorCodes: props.filter['graphql.errorCode'],
         // operationName: props.filter['graphql.operation'],
         // operationType: props.filter['graphql.kind'] as any,
-        // success: props.filter['graphql.status'].map(s => s === 'ok'),
-        // httpStatusCode: props.filter['http.status'].map(Number),
-        // httpMethod: props.filter['http.method'],
-        // httpHost: props.filter['http.host'],
-        // httpRoute: props.filter['http.route'],
-        // httpUrl: props.filter['http.url'],
-        // subgraphs: props.filter['graphql.subgraph'],
+        subgraphNames: props.filter['graphql.subgraph'],
+        httpStatusCodes: props.filter['http.status'],
+        httpMethods: props.filter['http.method'],
+        httpHosts: props.filter['http.host'],
+        httpRoutes: props.filter['http.route'],
+        httpUrls: props.filter['http.url'],
       },
       first: props.pagination.pageSize,
     },
@@ -1752,6 +1774,13 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         })) ?? [],
       'graphql.subgraph':
         options?.subgraphs.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
+      'graphql.errorCode':
+        options?.errorCode.map(option => ({
           value: option.value,
           searchContent: option.value,
           label: option.value,

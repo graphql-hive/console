@@ -85,13 +85,22 @@ export const Target: Pick<
             max: filter.duration.max ?? null,
           }
         : null,
+      traceIds: filter?.traceIds ?? null,
+      success: filter?.success ?? null,
+      errorCodes: filter?.errorCodes ?? null,
+      subgraphNames: filter?.subgraphNames ?? null,
+      httpMethods: filter?.httpMethods ?? null,
+      httpStatusCodes: filter?.httpStatusCodes ?? null,
+      httpHosts: filter?.httpHosts ?? null,
+      httpRoutes: filter?.httpRoutes ?? null,
+      httpUrls: filter?.httpUrls ?? null,
     });
   },
-  tracesFilterOptions: async (_parent, { filter }, { injector }) => {
-    const ANDs: SqlValue[] = [sql`target_id = ${'target-1'}`];
+  tracesFilterOptions: async (target, { filter }, { injector }) => {
+    const ANDs: SqlValue[] = [sql`target_id = ${target.id}`];
 
-    if (filter?.id?.length) {
-      ANDs.push(sql`trace_id IN (${sql.array(filter.id, 'String')})`);
+    if (filter?.traceIds?.length) {
+      ANDs.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
     }
 
     if (filter?.success?.length) {
@@ -111,37 +120,39 @@ export const Target: Pick<
     }
 
     if (filter?.operationName?.length) {
-      ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
+      ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationName, 'String')})`);
     }
 
     if (filter?.operationType?.length) {
-      ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
+      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationType, 'String')})`);
     }
 
-    if (filter?.subgraphs?.length) {
-      ANDs.push(sql`hasAny(subgraph_names, (${sql.array(filter.subgraphs.flat(), 'String')}))`);
-    }
-
-    if (filter?.httpStatusCode?.length) {
+    if (filter?.subgraphNames?.length) {
       ANDs.push(
-        sql`http_status_code IN (${sql.array(filter.httpStatusCode.map(String), 'UInt16')})`,
+        sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames.flat(), 'String')}))`,
       );
     }
 
-    if (filter?.httpMethod?.length) {
-      ANDs.push(sql`http_method IN (${sql.array(filter.httpMethod, 'String')})`);
+    if (filter?.httpStatusCodes?.length) {
+      ANDs.push(
+        sql`"http_status_code" IN (${sql.array(filter.httpStatusCodes.map(String), 'UInt16')})`,
+      );
     }
 
-    if (filter?.httpHost?.length) {
-      ANDs.push(sql`http_host IN (${sql.array(filter.httpHost, 'String')})`);
+    if (filter?.httpMethods?.length) {
+      ANDs.push(sql`"http_method" IN (${sql.array(filter.httpMethods, 'String')})`);
     }
 
-    if (filter?.httpRoute?.length) {
-      ANDs.push(sql`http_route IN (${sql.array(filter.httpRoute, 'String')})`);
+    if (filter?.httpHosts?.length) {
+      ANDs.push(sql`"http_host" IN (${sql.array(filter.httpHosts, 'String')})`);
     }
 
-    if (filter?.httpUrl?.length) {
-      ANDs.push(sql`http_url IN (${sql.array(filter.httpUrl, 'String')})`);
+    if (filter?.httpRoutes?.length) {
+      ANDs.push(sql`"http_route" IN (${sql.array(filter.httpRoutes, 'String')})`);
+    }
+
+    if (filter?.httpUrls?.length) {
+      ANDs.push(sql`"http_url" IN (${sql.array(filter.httpUrls, 'String')})`);
     }
 
     const loader = new Dataloader<
