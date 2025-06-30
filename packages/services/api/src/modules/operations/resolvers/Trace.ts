@@ -19,7 +19,7 @@ export const Trace: TraceResolvers = {
     return 'noop';
   },
   httpStatusCode(trace) {
-    return Number(trace.httpStatusCode);
+    return trace.httpStatusCode;
   },
   id(trace) {
     return trace.traceId;
@@ -37,6 +37,9 @@ export const Trace: TraceResolvers = {
     return trace.subgraphNames;
   },
   success(trace) {
-    return trace.httpStatusCode === '200';
+    return (
+      (trace.graphqlErrorCodes?.length ?? 0) === 0 &&
+      (trace.httpStatusCode.startsWith('2') || trace.httpStatusCode.startsWith('3'))
+    );
   },
 };
