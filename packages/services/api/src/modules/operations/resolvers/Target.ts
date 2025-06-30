@@ -77,7 +77,15 @@ export const Target: Pick<
     };
   },
   traces: async (target, { first, filter }, { injector }) => {
-    return injector.get(Traces).findTracesForTargetId(target.id, first ?? null, filter);
+    return injector.get(Traces).findTracesForTargetId(target.id, first ?? null, {
+      period: filter?.period ?? null,
+      duration: filter?.duration
+        ? {
+            min: filter.duration.min ?? null,
+            max: filter.duration.max ?? null,
+          }
+        : null,
+    });
   },
   tracesFilterOptions: async (_parent, { filter }, { injector }) => {
     const ANDs: SqlValue[] = [sql`target_id = ${'target-1'}`];
