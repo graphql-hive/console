@@ -100,8 +100,8 @@ export class Traces {
       traceIds: ReadonlyArray<string> | null;
       success: ReadonlyArray<boolean> | null;
       errorCodes: ReadonlyArray<string> | null;
-      operationName?: Array<string>;
-      operationType?: Array<string>;
+      operationNames: ReadonlyArray<string> | null;
+      operationTypes: ReadonlyArray<string> | null;
       subgraphNames: ReadonlyArray<string> | null;
       httpStatusCodes: ReadonlyArray<string> | null;
       httpMethods: ReadonlyArray<string> | null;
@@ -157,13 +157,13 @@ export class Traces {
       ANDs.push(sql`hasAny("graphql_error_codes", (${sql.array(filter.errorCodes, 'String')}))`);
     }
 
-    // if (filter?.operationName?.length) {
-    //   ANDs.push(sql`graphql_operation_name IN (${sql.array(filter.operationName, 'String')})`);
-    // }
+    if (filter?.operationNames?.length) {
+      ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationNames, 'String')})`);
+    }
 
-    // if (filter?.operationType?.length) {
-    //   ANDs.push(sql`graphql_operation_type IN (${sql.array(filter.operationType, 'String')})`);
-    // }
+    if (filter?.operationTypes?.length) {
+      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+    }
 
     if (filter?.subgraphNames?.length) {
       ANDs.push(sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames, 'String')}))`);
