@@ -8,8 +8,43 @@ instructions to ensure a smooth transition.
 
 v2 includes several breaking changes and improvements over v1. The most significant changes are:
 
-- [Disabled automatic forking](#forking)
+- [Drop Support for Node v18](#drop-support-for-node-v18)
+- [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
+
+## Drop Support for Node v18
+
+Node v18 has reached its end of life (as of 30 Apr 2025), and Hive Gateway v2, with it's
+dependencies, no longer support it. The minimum Node version required to run Hive Gateway is now
+Node v20.
+
+The following packages have been updated to their latest versions, which require Node v20 or higher:
+
+- `@graphql-hive/gateway`
+- `@graphql-hive/gateway-runtime`
+- `@graphql-mesh/fusion-runtime`
+- `@graphql-mesh/hmac-upstream-signature`
+- `@graphql-hive/plugin-deduplicate-request`
+- `@graphql-mesh/transport-http-callback`
+- `@graphql-mesh/plugin-opentelemetry`
+- `@graphql-tools/executor-graphql-ws`
+- `@graphql-tools/stitching-directives`
+- `@graphql-mesh/plugin-prometheus`
+- `@graphql-hive/plugin-aws-sigv4`
+- `@graphql-mesh/transport-common`
+- `@graphql-tools/executor-common`
+- `@graphql-mesh/plugin-jwt-auth`
+- `@graphql-mesh/transport-http`
+- `@graphql-tools/batch-delegate`
+- `@graphql-tools/executor-http`
+- `@graphql-tools/batch-execute`
+- `@graphql-mesh/transport-ws`
+- `@graphql-tools/federation`
+- `@graphql-tools/delegate`
+- `@graphql-hive/nestjs`
+- `@graphql-hive/pubsub`
+- `@graphql-tools/stitch`
+- `@graphql-tools/wrap`
 
 ## Disabled Automatic Forking
 
