@@ -13,6 +13,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
+- [New OpenTelemetry integration for better traces and custom spans](#opentelemetry)
 
 ## Drop Support for Node v18
 
@@ -536,5 +537,283 @@ export const gatewayConfig = defineConfig({
 + logging: new Logger({
 +   writers: [new WinstonLogWriter(winstonLogger)]
 + })
+})
+```
+
+## OpenTelemetry
+
+OpenTelemetry integration have been re-worked to offer better traces, custom attributes and spans,
+and overall compatiblity with standard OTEL API.
+
+For this features to be possible, we had to break the configuration API.
+
+You can read more about the new capabilities of the OpenTelemetry Tracing integration in the
+[Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing)
+
+### OpenTelemetry SDK Setup
+
+The OpenTelemetry SDK setup used to be automatically done by the plugin it self, it is no longer the
+case. You have the choice to either setup it yourself using official `@opentelemetry/*` pacakges
+(like official Node SDK `@opentelemetry/sdk-node`), or to use our cross-plateform setup helper
+(recommended).
+
+Extracting OTEL setup out of the plugin allows to you to decide on the version of `opentelemetry-js`
+SDK you want to use.
+
+Most of OTEL related settings have been moved to `openTelemetrySetup` options. Please refere to
+[OpenTelemetry Setup documentation](/docs/gateway/monitoring-tracing#opentelemetry-setup) for more
+informations.
+
+#### Example with HTTP OTLP Exporter
+
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+1. Install OpenTelemetry SDK
+
+```sh npm2yarn
+npm i @opentelemetry/api @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http
+```
+
+2. Create a new `telemetry.ts` file which will contain your open telemetry setup
+
+```ts filename="telemetry.ts"
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+
+openTelemetrySetup({
+  resource: {
+    serviceName: 'gateway'
+  },
+  contextManager: new AsyncLocalStorageContextManager(),
+  traces: {
+    exporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }),
+    batching: {
+      //... batching options
+    }
+  }
+})
+```
+
+3. Update `gateway.config.ts` to import your `telemetry.ts` file (very first import), and adapt the
+   plugin configuration
+
+<Tabs items={["CLI", "Programatic Usage"]}>
+
+<Tabs.Tab>
+
+```diff filname="config.gateway.ts"
++ import './telemetry.ts'
+- import { createOtlpHttpExporter, defineConfig } from '@graphql-hive/gateway'
++ import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+-   serviceName: 'gateway',
+-   exporters: [
+-     createOtlpHttpExporter({
+-       url: 'http://<otlp-endpoint>:4318'
+-     }, {
+-       //... batching options
+-     })
+-   ]
++   traces: true,
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filname="config.gateway.ts"
++ import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+- import { useOpenTelemetry, createOtlHttpExporter } from '@graphql-mesh/plugin-opentelemetry'
++ import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+-     serviceName: 'gateway',
+-     exporters: [
+-       createOtlpHttpExporter({
+-         url: 'http://<otlp-endpoint>:4318'
+-       }, {
+-         //... batching options
+-       })
+-     ]
++     traces: true,
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+1. Install OpenTelemetry SDK
+
+```sh npm2yarn
+npm i @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
+```
+
+2. Create a new `telemetry.ts` file which will contain your open telemetry setup
+
+```ts filename="telemetry.ts"
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
+
+new NodeSDK({
+  traceExporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }),
+  // or with batching options
+  spanProcessors: [
+    new tracing.BatchSpanProcessor(new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4318' }), {
+      //... batching options
+    })
+  ]
+}).start()
+```
+
+3. Update `gateway.config.ts` to import your `telemetry.ts` file (very first import), and adapt the
+   plugin configuration
+
+<Tabs items={["CLI", "Programatic Usage"]}>
+
+<Tabs.Tab>
+
+```diff filname="config.gateway.ts"
++ import './telemetry.ts'
+- import { createOtlpHttpExporter, defineConfig } from '@graphql-hive/gateway'
++ import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+-   serviceName: 'gateway',
+-   exporters: [
+-     createOtlpHttpExporter({
+-       url: 'http://<otlp-endpoint>:4318'
+-     }, {
+-       //... batching options
+-     })
+-   ]
++   traces: true,
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filname="config.gateway.ts"
++ import './telemetry.ts'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+- import { useOpenTelemetry, createOtlHttpExporter } from '@graphql-mesh/plugin-opentelemetry'
++ import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    useOpenTelemetry({
+      ...ctx,
+-     serviceName: 'gateway',
+-     exporters: [
+-       createOtlpHttpExporter({
+-         url: 'http://<otlp-endpoint>:4318'
+-       }, {
+-         //... batching options
+-       })
+-     ]
++     traces: true,
+    })
+  ]
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Tracing related configuration
+
+All tracing related options has been moved to a `traces` option.
+
+```diff filename="gateway.config"
+import { denfineConfig } from '@grahpl-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
++   traces: {
+      tracer: ...,
+      spans: {
+        ...
+      }
++   }
+  }
+})
+```
+
+### Spans filter functions payload
+
+The payload given as a parameter of the span filtering functions have been restrained.
+
+Due to internal changes, the informations available at span filtering time have been reduced to only
+include (depending on the span) the GraphQL `context`, the HTTP `request` and the Upsream
+`executionRequest`.
+
+Please refere to [Request Spans documentation](/docs/gateway/monitoring-tracing#request-spans) for
+details of what is availbe for each span filter.
+
+### Span parenting
+
+Spans are now parented correctly. This can have impact on trace queries used in your dashboard.
+
+Please review your queries to not filter against `null` parent span id.
+
+### New Graphql Operation Span
+
+A new span encapsulating each GraphQL operation have been added.
+
+It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL processing. There
+can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
+operation batching over http.
+
+### OpenTelemetry Context
+
+The OpenTelemetry Context is now modified by Hive Gateway. The Context is set with the current phase
+span. This means that if you were creating custom spans in your plugin without explicitly providing
+a parent context, your spans will be considered sub-spans of Hive Gateway's current span.
+
+To maintain your span as a root span, add an explicit parent context a creation time:
+
+```diff
+import {
+  trace,
++ ROOT_CONTEXT
+} from '@opentelemetry/api'
+
+export const myPlugin = () => ({
+  onExecute() {
+    trace.startActiveSpan(
+      'my-custom-span',
+      { foo: 'bar' },
++     ROOT_CONTEXT
+      () => {
+        // do something
+      }
+    )
+  }
 })
 ```
