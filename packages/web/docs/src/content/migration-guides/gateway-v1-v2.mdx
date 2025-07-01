@@ -540,7 +540,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-## Opentelemetry
+## OpenTelemetry
 
 OpenTelemetry integration have been re-worked to offer better traces, custom attributes and spans,
 and overall compatiblity with standard OTEL API.
@@ -560,13 +560,13 @@ case. You have the choice to either setup it yourself using official `@opentelem
 Extracting OTEL setup out of the plugin allows to you to decide on the version of `opentelemetry-js`
 SDK you want to use.
 
-Most of OTEL related settings have been moved to `opentelemetrySetup` options. Please refere to
+Most of OTEL related settings have been moved to `openTelemetrySetup` options. Please refere to
 [OpenTelemetry Setup documentation](/docs/gateway/monitoring-tracing#opentelemetry-setup) for more
 informations.
 
 #### Example with HTTP OTLP Exporter
 
-<Tabs items={[<div>Hive Gateway <code>opentelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
@@ -579,11 +579,11 @@ npm i @opentelemetry/api @opentelemetry/context-async-hooks @opentelemetry/expor
 2. Create a new `telemetry.ts` file which will contain your open telemetry setup
 
 ```ts filename="telemetry.ts"
-import { opentelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
-opentelemetrySetup({
+openTelemetrySetup({
   resource: {
     serviceName: 'gateway'
   },
