@@ -1,7 +1,6 @@
 import { buildSchema, printSchema, lexicographicSortSchema, GraphQLSchema } from 'graphql';
 import { diff } from '@graphql-inspector/core';
 import { patchSchema } from '../diff';
-// import { applyChanges } from '../diff';
 
 function printSortedSchema(schema: GraphQLSchema) {
   return printSchema(lexicographicSortSchema(schema))
@@ -181,6 +180,7 @@ const schemaB = buildSchema(/** GraphQL */`
 const editScript = await diff(schemaA, schemaB);
 
 test('patch', async () => {
+  console.log(`Applying changes: ${editScript.map(e => JSON.stringify(e)).join('\n')}`)
   expect(printSortedSchema(schemaB)).toBe(printSortedSchema(patchSchema(schemaA, editScript)));
 })
 
