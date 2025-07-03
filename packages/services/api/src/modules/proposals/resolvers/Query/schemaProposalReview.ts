@@ -23,10 +23,10 @@ export const schemaProposalReview: NonNullable<QueryResolvers['schemaProposalRev
               id: crypto.randomUUID(),
               body: 'This is a comment. The first comment.',
               updatedAt: Date.now(),
-            }
-          }
-        ]
-      }
+            },
+          },
+        ],
+      },
     },
   };
 };

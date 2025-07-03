@@ -1,11 +1,11 @@
 import { useQuery } from 'urql';
 import { ProposalSDL } from '@/components/proposal/proposal-sdl';
 import { stageToColor, userText } from '@/components/proposal/util';
+import { Callout } from '@/components/ui/callout';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
 import { Tag, TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
-import { Callout } from '@/components/ui/callout';
 
 const ProposalOverviewQuery = graphql(/** GraphQL  */ `
   query ProposalOverviewQuery($id: ID!) {
@@ -19,12 +19,12 @@ const ProposalOverviewQuery = graphql(/** GraphQL  */ `
       schemas {
         edges {
           node {
-            ...on CompositeSchema {
+            ... on CompositeSchema {
               id
               source
               service
             }
-            ...on SingleSchema {
+            ... on SingleSchema {
               id
               source
             }
@@ -155,7 +155,7 @@ export function TargetProposalOverviewPage(props: {
   //   }
   // `;
 
-  const sdl = /** GraphQL */`
+  const sdl = /** GraphQL */ `
     extend schema
       @link(
         url: "https://specs.apollo.dev/federation/v2.3"
@@ -231,7 +231,7 @@ export function TargetProposalOverviewPage(props: {
   `;
 
   return (
-    <div className='w-full'>
+    <div className="w-full">
       {query.fetching && <Spinner />}
       {proposal && (
         <>
@@ -246,8 +246,9 @@ export function TargetProposalOverviewPage(props: {
             Last updated <TimeAgo date={proposal.updatedAt} />
           </div>
           {query.data?.latestVersion && query.data.latestVersion.isValid === false && (
-            <Callout type='warning'>
-              The latest schema is invalid. Showing comparison against latest valid schema {query.data.latestValidVersion?.id}
+            <Callout type="warning">
+              The latest schema is invalid. Showing comparison against latest valid schema{' '}
+              {query.data.latestValidVersion?.id}
             </Callout>
           )}
           <ProposalSDL
@@ -255,7 +256,7 @@ export function TargetProposalOverviewPage(props: {
             latestProposalVersionId={proposal.versions?.edges?.[0].node.id ?? 'asdf'}
             reviews={proposal.reviews ?? null}
             sdl={sdl ?? proposal.versions?.edges?.[0].node.schemaSDL}
-            serviceName=''
+            serviceName=""
           />
         </>
       )}

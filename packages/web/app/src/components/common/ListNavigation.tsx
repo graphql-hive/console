@@ -116,7 +116,7 @@ export function ListNavigation(props: { children: ReactNode }) {
     <div
       className={cn(
         'relative z-10 flex w-full flex-row',
-        isListNavCollapsed && !isListNavHidden && 'md:min-w-[300px] xl:min-w-[420px] w-[20%]',
+        isListNavCollapsed && !isListNavHidden && 'w-[20%] md:min-w-[300px] xl:min-w-[420px]',
 
         /**
          * This is not intuitive, but we want hide the menu when collapsed and small.

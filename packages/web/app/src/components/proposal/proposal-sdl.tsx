@@ -67,9 +67,9 @@ export function ProposalSDL(props: {
 }) {
   try {
     void diff(
-    buildSchema(props.diffSdl, { assumeValid: true, assumeValidSDL: true }),
-    buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true }),
-    ).then((changes) => {
+      buildSchema(props.diffSdl, { assumeValid: true, assumeValidSDL: true }),
+      buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true }),
+    ).then(changes => {
       console.log('DIFF WORKED', changes);
     });
   } catch (e) {
@@ -87,28 +87,25 @@ export function ProposalSDL(props: {
 
   try {
     let diffSchema: GraphQLSchema | undefined;
-    try { 
+    try {
       diffSchema = buildSchema(props.diffSdl, { assumeValid: true, assumeValidSDL: true });
     } catch (e) {
-      console.error('Diff schema is invalid.')
+      console.error('Diff schema is invalid.');
     }
-    
+
     const schema = buildSchema(props.sdl, { assumeValid: true, assumeValidSDL: true });
-    const coordinateToLineMap = collectCoordinateLocations(
-      schema,
-      new Source(props.sdl),
-    );
+    const coordinateToLineMap = collectCoordinateLocations(schema, new Source(props.sdl));
 
     if (diffSchema) {
       // @todo run schema check and get diff from that API.... That way usage can be checked easily.
-      void diff(diffSchema, schema, undefined)
+      void diff(diffSchema, schema, undefined);
     }
 
     // @note assume reviews are specific to the current service...
     const globalReviews: ReviewNode[] = [];
     const reviewsByLine = new Map<number, ReviewNode & { isStale: boolean }>();
-    const serviceReviews = reviewsConnection?.edges
-      ?.filter(edge => {
+    const serviceReviews =
+      reviewsConnection?.edges?.filter(edge => {
         const { schemaProposalVersion } = edge.node;
         return schemaProposalVersion?.serviceName === props.serviceName;
       }) ?? [];
@@ -134,48 +131,58 @@ export function ProposalSDL(props: {
           {props.sdl.split('\n').flatMap((txt, index) => {
             const lineNumber = index + 1;
             const diffLineMatch = txt === diffSdlLines[diffLineNumber];
-            const elements = [<ChangeRow key={`change-${lineNumber}`} lineNumber={lineNumber} diffLineNumber={diffLineNumber+1}>{txt}</ChangeRow>];
+            const elements = [
+              <ChangeRow
+                key={`change-${lineNumber}`}
+                lineNumber={lineNumber}
+                diffLineNumber={diffLineNumber + 1}
+              >
+                {txt}
+              </ChangeRow>,
+            ];
             if (diffLineMatch) {
               diffLineNumber = diffLineNumber + 1;
             }
-            
-            const review = reviewsByLine.get(lineNumber)
+
+            const review = reviewsByLine.get(lineNumber);
             if (review) {
               if (review.isStale) {
-                elements.push((
+                elements.push(
                   <tr key={`stale-${lineNumber}`}>
-                    <td colSpan={2}/>
-                    <td className='p-2'>
-                      <div className="text-xs p-2 font-sans" aria-label="warning">This review references an outdated version of the proposal.</div>
+                    <td colSpan={2} />
+                    <td className="p-2">
+                      <div className="p-2 font-sans text-xs" aria-label="warning">
+                        This review references an outdated version of the proposal.
+                      </div>
                       {!!review.lineText && (
-                        <ChangeDocument className='bg-secondary text-white border-gray-800 border-[1px]'>
-                          <ChangeRow lineNumber={lineNumber} diffLineNumber={lineNumber} aria-label="preview">
+                        <ChangeDocument className="bg-secondary border-[1px] border-gray-800 text-white">
+                          <ChangeRow
+                            lineNumber={lineNumber}
+                            diffLineNumber={lineNumber}
+                            aria-label="preview"
+                          >
                             {review.lineText}
                           </ChangeRow>
                         </ChangeDocument>
                       )}
                     </td>
-                  </tr>
-                ))
+                  </tr>,
+                );
               }
               elements.push(
-                <tr key={`change-review-${lineNumber}`} className='font-sans'>
-                  <td colSpan={2}/>
-                  <td className='p-2'>
-                    <ReviewComments lineNumber={lineNumber} review={review}/>
+                <tr key={`change-review-${lineNumber}`} className="font-sans">
+                  <td colSpan={2} />
+                  <td className="p-2">
+                    <ReviewComments lineNumber={lineNumber} review={review} />
                   </td>
-                </tr>
+                </tr>,
               );
             }
             return elements;
           })}
         </ChangeDocument>
         {globalReviews.map(r => {
-          return (
-            <div key={`global-review-${r.id}`}>
-              {r.id}
-            </div>
-          )
+          return <div key={`global-review-${r.id}`}>{r.id}</div>;
         })}
       </>
     );

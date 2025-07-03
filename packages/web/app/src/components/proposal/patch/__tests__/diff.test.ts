@@ -1,12 +1,13 @@
-import { buildSchema, printSchema, lexicographicSortSchema, GraphQLSchema } from 'graphql';
+import { buildSchema, GraphQLSchema, lexicographicSortSchema, printSchema } from 'graphql';
 import { diff } from '@graphql-inspector/core';
 import { patchSchema } from '../diff';
 
 function printSortedSchema(schema: GraphQLSchema) {
-  return printSchema(lexicographicSortSchema(schema))
+  return printSchema(lexicographicSortSchema(schema));
 }
 
-const schemaA = buildSchema(/** GraphQL */`
+const schemaA = buildSchema(
+  /** GraphQL */ `
   extend schema
     @link(
       url: "https://specs.apollo.dev/federation/v2.3"
@@ -81,9 +82,12 @@ const schemaA = buildSchema(/** GraphQL */`
     email: ID!
     totalProductsCreated: Int @shareable
   }
-`, {assumeValid: true, assumeValidSDL: true});
+`,
+  { assumeValid: true, assumeValidSDL: true },
+);
 
-const schemaB = buildSchema(/** GraphQL */`
+const schemaB = buildSchema(
+  /** GraphQL */ `
   extend schema
     @link(
       url: "https://specs.apollo.dev/federation/v2.3"
@@ -175,14 +179,16 @@ const schemaB = buildSchema(/** GraphQL */`
   }
 
   scalar FooBar
-`, { assumeValid: true, assumeValidSDL: true });
+`,
+  { assumeValid: true, assumeValidSDL: true },
+);
 
 const editScript = await diff(schemaA, schemaB);
 
 test('patch', async () => {
-  console.log(`Applying changes: ${editScript.map(e => JSON.stringify(e)).join('\n')}`)
+  console.log(`Applying changes: ${editScript.map(e => JSON.stringify(e)).join('\n')}`);
   expect(printSortedSchema(schemaB)).toBe(printSortedSchema(patchSchema(schemaA, editScript)));
-})
+});
 
 // test.only('printDiff', () => {
 //   expect(printDiff(schemaB, applyChanges(schemaA, editScript))).toBe('');

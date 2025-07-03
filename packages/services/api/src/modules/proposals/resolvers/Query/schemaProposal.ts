@@ -40,9 +40,9 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = asy
                     createdAt: Date.now(),
                     body: 'This is a comment. The first comment.',
                     updatedAt: Date.now(),
-                  }
-                }
-              ]
+                  },
+                },
+              ],
             },
             createdAt: Date.now(),
             lineText: 'type User {',
