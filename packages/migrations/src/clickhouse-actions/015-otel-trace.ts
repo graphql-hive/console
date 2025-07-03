@@ -85,7 +85,7 @@ export const action: Action = async exec => {
     )
   `);
 
-  // Our own custom materialized views based on the base tables
+  // Table and MV for trace overview and filtering
   await exec(`
     CREATE TABLE IF NOT EXISTS "otel_traces_normalized" (
       "target_id" LowCardinality(String) CODEC(ZSTD(1))
