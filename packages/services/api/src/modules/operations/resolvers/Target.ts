@@ -17,6 +17,7 @@ export const Target: Pick<
   | 'trace'
   | 'traces'
   | 'tracesFilterOptions'
+  | 'tracesStatusBreakdown'
 > = {
   totalRequests: (target, { period }, { injector }) => {
     return injector.get(OperationsManager).countRequests({
@@ -221,5 +222,27 @@ export const Target: Pick<
   },
   trace(target, args, { injector }) {
     return injector.get(Traces).findTraceById(target.id, args.traceId);
+  },
+  tracesStatusBreakdown: async (target, { filter }, { injector }) => {
+    return injector.get(Traces).getTraceStatusBreakdownForTargetId(target.id, {
+      period: filter?.period ?? null,
+      duration: filter?.duration
+        ? {
+            min: filter.duration.min ?? null,
+            max: filter.duration.max ?? null,
+          }
+        : null,
+      traceIds: filter?.traceIds ?? null,
+      success: filter?.success ?? null,
+      errorCodes: filter?.errorCodes ?? null,
+      operationNames: filter?.operationNames ?? null,
+      operationTypes: filter?.operationTypes ?? null,
+      subgraphNames: filter?.subgraphNames ?? null,
+      httpMethods: filter?.httpMethods ?? null,
+      httpStatusCodes: filter?.httpStatusCodes ?? null,
+      httpHosts: filter?.httpHosts ?? null,
+      httpRoutes: filter?.httpRoutes ?? null,
+      httpUrls: filter?.httpUrls ?? null,
+    });
   },
 };
