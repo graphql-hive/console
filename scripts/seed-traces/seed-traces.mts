@@ -583,8 +583,10 @@ function mutate(currentTime: Date, reference: Reference) {
       const spanDuration = spanEndTime - spanStartTime;
       const spanOffset = spanStartTime - startTime;
       const newStartTime = currentTimeB + spanOffset;
-      span.startTimeUnixNano = newStartTime.toString();
+      span.startTimeUnixNano = newScreateTracetartTime.toString();
       span.endTimeUnixNano = (newStartTime + spanDuration).toString();
+
+      // TODO figure out a way to ranomly add errors
     }
   }
 }
