@@ -17,7 +17,7 @@ Then run the following script:
 ```
 HIVE_ORGANIZATION_ACCESS_TOKEN=hvo1/NWZmMGJjZmItODQxZS00ZmRiLWE4OTUtMzE3NDc2OWNhMGUwOjY2ZmM1NDI3ODRmYjFiMGYwODUyMWYwYmUyYjc1Yzk5NWM1ZTk0YWVlMzA4MTkxZGQ0NTFmZjcwNTRmM2IyMWY= \
 HIVE_TARGET_REF=the-guild/otel-demo/development \
-node --experimental-strip-types seed-traces-2.mts
+node --experimental-strip-types seed-traces.mts
 ```
 
 You can adjust the amount of days you want to seed by setting `USAGE_DAYS` (e.g. `USAGE_DAYS=5` will
