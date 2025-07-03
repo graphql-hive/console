@@ -1,5 +1,6 @@
 import { Injectable } from 'graphql-modules';
 import { z } from 'zod';
+import { subDays } from '@/lib/date-time';
 import { batch, parseDateRangeInput } from '@hive/api/shared/helpers';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
@@ -88,114 +89,22 @@ export class Traces {
     return SpanListModel.parse(result.data);
   }
 
-  async findTracesForTargetId(
-    targetId: string,
-    first: number | null,
-    filter: {
-      period: null | GraphQLSchema.DateRangeInput;
-      duration: {
-        min: number | null;
-        max: number | null;
-      } | null;
-      traceIds: ReadonlyArray<string> | null;
-      success: ReadonlyArray<boolean> | null;
-      errorCodes: ReadonlyArray<string> | null;
-      operationNames: ReadonlyArray<string> | null;
-      operationTypes: ReadonlyArray<string> | null;
-      subgraphNames: ReadonlyArray<string> | null;
-      httpStatusCodes: ReadonlyArray<string> | null;
-      httpMethods: ReadonlyArray<string> | null;
-      httpHosts: ReadonlyArray<string> | null;
-      httpRoutes: ReadonlyArray<string> | null;
-      httpUrls: ReadonlyArray<string> | null;
-    },
-  ) {
-    const clickhouse = this.clickHouse;
+  async findTracesForTargetId(targetId: string, first: number | null, filter: TraceFilter) {
     const limit = (first ?? 10) + 1;
+    const sqlConditions = buildTraceFilterSQLConditions(filter);
+    const filterSQLFragment = sqlConditions.length
+      ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
+      : sql``;
 
-    const ANDs: SqlValue[] = [sql`target_id = ${targetId}`];
-
-    if (filter?.period) {
-      const period = parseDateRangeInput(filter.period);
-      ANDs.push(
-        sql`"otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')`,
-      );
-      ANDs.push(
-        sql`"otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')`,
-      );
-    }
-
-    if (filter?.duration?.min) {
-      ANDs.push(sql`"duration" >= ${String(filter.duration.min * 1_000 * 1_000)}`);
-    }
-
-    if (filter?.duration?.max) {
-      ANDs.push(sql`"duration" <= ${String(filter.duration.max * 1_000 * 1_000)}`);
-    }
-
-    if (filter?.traceIds?.length) {
-      ANDs.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
-    }
-
-    // Success based on GraphQL terms
-    if (filter?.success?.length) {
-      const hasSuccess = filter.success.includes(true);
-      const hasError = filter.success.includes(false);
-
-      if (hasSuccess && !hasError) {
-        ANDs.push(sql`"graphql_error_count" = 0`);
-        ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
-      } else if (hasError && !hasSuccess) {
-        ANDs.push(sql`"graphql_error_count" > 0`);
-        ANDs.push(
-          sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
-        );
-      }
-    }
-
-    if (filter?.errorCodes?.length) {
-      ANDs.push(sql`hasAny("graphql_error_codes", (${sql.array(filter.errorCodes, 'String')}))`);
-    }
-
-    if (filter?.operationNames?.length) {
-      ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationNames, 'String')})`);
-    }
-
-    if (filter?.operationTypes?.length) {
-      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
-    }
-
-    if (filter?.subgraphNames?.length) {
-      ANDs.push(sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames, 'String')}))`);
-    }
-
-    if (filter?.httpStatusCodes?.length) {
-      ANDs.push(sql`"http_status_code" IN (${sql.array(filter.httpStatusCodes, 'String')})`);
-    }
-
-    if (filter?.httpMethods?.length) {
-      ANDs.push(sql`"http_method" IN (${sql.array(filter.httpMethods, 'String')})`);
-    }
-
-    if (filter?.httpHosts?.length) {
-      ANDs.push(sql`"http_host" IN (${sql.array(filter.httpHosts, 'String')})`);
-    }
-
-    if (filter?.httpRoutes?.length) {
-      ANDs.push(sql`"http_route" IN (${sql.array(filter.httpRoutes, 'String')})`);
-    }
-
-    if (filter?.httpUrls?.length) {
-      ANDs.push(sql`"http_url" IN (${sql.array(filter.httpUrls, 'String')})`);
-    }
-
-    const tracesQuery = await clickhouse.query<unknown>({
+    const tracesQuery = await this.clickHouse.query<unknown>({
       query: sql`
         SELECT
           ${traceFields}
         FROM
           "otel_traces_normalized"
-        WHERE ${sql.join(ANDs, ' AND ')}
+        WHERE
+          target_id = ${targetId}
+          ${filterSQLFragment}
         ORDER BY
           "timestamp" DESC
           , "trace_id" DESC
@@ -234,6 +143,78 @@ export class Traces {
       },
     };
   }
+
+  async getTraceStatusBreakdownForTargetId(targetId: string, filter: TraceFilter) {
+    const sqlConditions = buildTraceFilterSQLConditions(filter, true);
+    const filterSQLFragment = sqlConditions.length
+      ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
+      : sql``;
+
+    const endDate = filter.period?.to ?? new Date();
+    const startDate = filter.period?.from ?? subDays(endDate, 14);
+
+    // TODO: Find unit and range units based on filter.start and filter.end
+    //
+    const { unit, count: rangeUnits } = getBucketUnitAndCount(startDate, endDate);
+
+    const bucketFunctionName = {
+      minutes: 'MINUTE',
+      hours: 'HOUR',
+      days: 'DAY',
+      weeks: 'WEEK',
+      months: 'MONTH',
+    };
+
+    const bucketStepFunctionName = {
+      minutes: 'addMinutes',
+      hours: 'addHours',
+      days: 'addDays',
+      weeks: 'addWeeks',
+      months: 'addMonths',
+    };
+
+    const result = await this.clickHouse.query<unknown>({
+      query: sql`
+        WITH "time_bucket_list" AS (
+          SELECT
+            ${sql.raw(bucketStepFunctionName[unit])}(toStartOfInterval(toDateTime(${formatDate(startDate)}, 'UTC'), INTERVAL 1 ${sql.raw(bucketFunctionName[unit])}), "number" + 1) AS "time_bucket"
+          FROM
+            "system"."numbers"
+          WHERE "system"."numbers"."number" < ${String(rangeUnits)}
+        )
+        SELECT
+          replaceOne(concat(toDateTime64("time_bucket_list"."time_bucket", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucket"
+          , coalesce("t"."ok_count_total", 0) as "okCountTotal"
+          , coalesce("t"."error_count_total", 0) as "errorCountTotal"
+          , coalesce("t"."ok_count_filtered", 0) as "okCountFiltered"
+          , coalesce("t"."error_count_filtered", 0) as "errorCountFiltered"
+        FROM
+          "time_bucket_list"
+        LEFT JOIN
+        (
+          SELECT
+            toStartOfInterval("timestamp", INTERVAL 1 ${sql.raw(bucketFunctionName[unit])}) AS "time_bucket"
+            , sumIf(1, "graphql_error_count" = 0) AS "ok_count_total"
+            , sumIf(1, "graphql_error_count" != 0) AS "error_count_total"
+            , sumIf(1, "graphql_error_count" = 0 ${filterSQLFragment}) AS "ok_count_filtered"
+            , sumIf(1, "graphql_error_count" != 0 ${filterSQLFragment}) AS "error_count_filtered"
+          FROM
+            "otel_traces_normalized"
+          WHERE
+            "target_id" = ${targetId}
+            AND "otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(startDate)}, 'UTC')
+            AND "otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(endDate)}, 'UTC')
+          GROUP BY
+          "time_bucket"
+          ) AS "t"
+        ON "t"."time_bucket" = "time_bucket_list"."time_bucket"
+      `,
+      queryId: `trace_status_breakdown_for_target_id_${unit}_${rangeUnits}`,
+      timeout: 10_000,
+    });
+
+    return TraceStatusBreakdownBucketList.parse(result.data);
+  }
 }
 
 const traceFields = sql`
@@ -252,6 +233,105 @@ const traceFields = sql`
   , "graphql_error_codes" AS "graphqlErrorCodes"
   , "subgraph_names" AS "subgraphNames"
 `;
+
+type TraceFilter = {
+  period: null | GraphQLSchema.DateRangeInput;
+  duration: {
+    min: number | null;
+    max: number | null;
+  } | null;
+  traceIds: ReadonlyArray<string> | null;
+  success: ReadonlyArray<boolean> | null;
+  errorCodes: ReadonlyArray<string> | null;
+  operationNames: ReadonlyArray<string> | null;
+  operationTypes: ReadonlyArray<string> | null;
+  subgraphNames: ReadonlyArray<string> | null;
+  httpStatusCodes: ReadonlyArray<string> | null;
+  httpMethods: ReadonlyArray<string> | null;
+  httpHosts: ReadonlyArray<string> | null;
+  httpRoutes: ReadonlyArray<string> | null;
+  httpUrls: ReadonlyArray<string> | null;
+};
+
+function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) {
+  const ANDs: SqlValue[] = [];
+
+  if (filter?.period && !skipPeriod) {
+    const period = parseDateRangeInput(filter.period);
+    ANDs.push(
+      sql`"otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')`,
+    );
+    ANDs.push(
+      sql`"otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')`,
+    );
+  }
+
+  if (filter?.duration?.min) {
+    ANDs.push(sql`"duration" >= ${String(filter.duration.min * 1_000 * 1_000)}`);
+  }
+
+  if (filter?.duration?.max) {
+    ANDs.push(sql`"duration" <= ${String(filter.duration.max * 1_000 * 1_000)}`);
+  }
+
+  if (filter?.traceIds?.length) {
+    ANDs.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
+  }
+
+  // Success based on GraphQL terms
+  if (filter?.success?.length) {
+    const hasSuccess = filter.success.includes(true);
+    const hasError = filter.success.includes(false);
+
+    if (hasSuccess && !hasError) {
+      ANDs.push(sql`"graphql_error_count" = 0`);
+      ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
+    } else if (hasError && !hasSuccess) {
+      ANDs.push(sql`"graphql_error_count" > 0`);
+      ANDs.push(
+        sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
+      );
+    }
+  }
+
+  if (filter?.errorCodes?.length) {
+    ANDs.push(sql`hasAny("graphql_error_codes", (${sql.array(filter.errorCodes, 'String')}))`);
+  }
+
+  if (filter?.operationNames?.length) {
+    ANDs.push(sql`"graphql_operation_name" IN (${sql.array(filter.operationNames, 'String')})`);
+  }
+
+  if (filter?.operationTypes?.length) {
+    ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+  }
+
+  if (filter?.subgraphNames?.length) {
+    ANDs.push(sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames, 'String')}))`);
+  }
+
+  if (filter?.httpStatusCodes?.length) {
+    ANDs.push(sql`"http_status_code" IN (${sql.array(filter.httpStatusCodes, 'String')})`);
+  }
+
+  if (filter?.httpMethods?.length) {
+    ANDs.push(sql`"http_method" IN (${sql.array(filter.httpMethods, 'String')})`);
+  }
+
+  if (filter?.httpHosts?.length) {
+    ANDs.push(sql`"http_host" IN (${sql.array(filter.httpHosts, 'String')})`);
+  }
+
+  if (filter?.httpRoutes?.length) {
+    ANDs.push(sql`"http_route" IN (${sql.array(filter.httpRoutes, 'String')})`);
+  }
+
+  if (filter?.httpUrls?.length) {
+    ANDs.push(sql`"http_url" IN (${sql.array(filter.httpUrls, 'String')})`);
+  }
+
+  return ANDs;
+}
 
 const TraceModel = z.object({
   traceId: z.string(),
@@ -281,6 +361,18 @@ export type Trace = z.TypeOf<typeof TraceModel>;
 
 const TraceListModel = z.array(TraceModel);
 
+const IntFromString = z.string().transform(value => parseInt(value, 10));
+
+const TraceStatusBreakdownBucket = z.object({
+  timeBucket: z.string(),
+  okCountTotal: IntFromString,
+  errorCountTotal: IntFromString,
+  okCountFiltered: IntFromString,
+  errorCountFiltered: IntFromString,
+});
+
+const TraceStatusBreakdownBucketList = z.array(TraceStatusBreakdownBucket);
+
 const spanFields = sql`
   "TraceId" AS "traceId"
   , "SpanId" AS "spanId"
@@ -308,3 +400,47 @@ const SpanModel = z.object({
 const SpanListModel = z.array(SpanModel);
 
 export type Span = z.TypeOf<typeof SpanModel>;
+
+type BucketResult = {
+  unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
+  count: number;
+};
+
+function getBucketUnitAndCount(startDate: Date, endDate: Date): BucketResult {
+  const MS_IN = {
+    minute: 60 * 1000,
+    hour: 60 * 60 * 1000,
+    day: 24 * 60 * 60 * 1000,
+    week: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const diffMinutes = diffMs / MS_IN.minute;
+
+  let unit;
+  let count;
+
+  if (diffMinutes <= 60) {
+    unit = 'minutes';
+    count = Math.ceil(diffMs / MS_IN.minute);
+  } else if (diffMinutes <= 60 * 24) {
+    unit = 'hours';
+    count = Math.ceil(diffMs / MS_IN.hour);
+  } else if (diffMinutes <= 60 * 24 * 30) {
+    unit = 'days';
+    count = Math.ceil(diffMs / MS_IN.day);
+  } else if (diffMinutes <= 60 * 24 * 30 * 90) {
+    unit = 'weeks';
+    count = Math.ceil(diffMs / MS_IN.week);
+  } else {
+    unit = 'months';
+    // Calculate full months difference:
+    const startYear = startDate.getFullYear();
+    const startMonth = startDate.getMonth();
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+    count = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+  }
+
+  return { unit, count };
+}

@@ -1,7 +1,15 @@
 import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { AlertTriangle, ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowUpDown,
+  Clock,
+  ExternalLinkIcon,
+  // FilterIcon,
+  // SearchIcon,
+  XIcon,
+} from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useQuery } from 'urql';
 import { z } from 'zod';
@@ -15,6 +23,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+// import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -241,8 +250,26 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const Traffic = memo(function Traffic() {
-  const data = chartData;
+const Traffic_TracesStatusBreakdownBucketFragment = graphql(`
+  fragment Traffic_TracesStatusBreakdownBucketFragment on TraceStatusBreakdownBucket {
+    timeBucket
+    okCountTotal
+    errorCountTotal
+    okCountFiltered
+    errorCountFiltered
+  }
+`);
+
+type TrafficProps = {
+  buckets: Array<FragmentType<typeof Traffic_TracesStatusBreakdownBucketFragment>>;
+};
+
+const Traffic = memo(function Traffic(props: TrafficProps) {
+  const buckets = useFragment(Traffic_TracesStatusBreakdownBucketFragment, props.buckets);
+  const data = buckets.map(b => ({
+    ...b,
+    timeBucket: b.timeBucket.substring(0, 10),
+  }));
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   const [_, setZoomedData] = useState<typeof data | null>(null);
@@ -306,10 +333,10 @@ const Traffic = memo(function Traffic() {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        data={chartData}
+        data={data}
       >
         <XAxis
-          dataKey="date"
+          dataKey="timeBucket"
           tickLine={false}
           axisLine={false}
           tickMargin={8}
@@ -336,8 +363,8 @@ const Traffic = memo(function Traffic() {
             />
           }
         />
-        <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} />
-        <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} />
+        <Bar stackId="all" dataKey="okCountTotal" fill={`var(--color-ok)`} name="Ok" />
+        <Bar stackId="all" dataKey="errorCountTotal" fill={`var(--color-error)`} name="Error" />
         {refAreaLeft && refAreaRight && (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
         )}
@@ -1661,6 +1688,9 @@ const TargetTracesPageQuery = graphql(`
           count
         }
       }
+      tracesStatusBreakdown(filter: $filter) {
+        ...Traffic_TracesStatusBreakdownBucketFragment
+      }
     }
   }
 `);
@@ -1814,7 +1844,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div>
               <SearchBar onFiltersOpenChange={() => setFiltersOpen(isOpen => !isOpen)} />
-              <Traffic />
+              <Traffic buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>
             <TracesList
               sorting={props.sorting}

@@ -392,6 +392,29 @@ export default gql`
     count: Int!
   }
 
+  type TraceStatusBreakdownBucket {
+    """
+    The time bucket for the data
+    """
+    timeBucket: DateTime!
+    """
+    Total amount of ok traces in the bucket.
+    """
+    okCountTotal: SafeInt!
+    """
+    Total amount of error traces in the bucket.
+    """
+    errorCountTotal: SafeInt!
+    """
+    Total amount of ok traces in the bucket based on the filter.
+    """
+    okCountFiltered: SafeInt!
+    """
+    Total mount of error traces in the bucket based on the filter.
+    """
+    errorCountFiltered: SafeInt!
+  }
+
   extend type Target {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
@@ -401,6 +424,7 @@ export default gql`
     operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
     traces(first: Int, after: String, filter: TracesFilterInput): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+    tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
     trace(traceId: ID!): Trace
   }
 
