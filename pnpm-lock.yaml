@@ -2182,6 +2182,9 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../packages/libraries/core/dist
+      immer:
+        specifier: 10.1.1
+        version: 10.1.1
 
 packages:
 
