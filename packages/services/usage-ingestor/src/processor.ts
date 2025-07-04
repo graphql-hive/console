@@ -1,5 +1,6 @@
-import type { OperationTypeNode } from 'graphql';
+import { parse, type OperationTypeNode } from 'graphql';
 import LRU from 'tiny-lru';
+import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
 import type {
   ProcessedOperation,
@@ -18,7 +19,6 @@ import {
   schemaCoordinatesSize,
   totalOperations,
 } from './metrics';
-import { normalizeOperation } from './normalize-operation';
 import {
   stringifyAppDeploymentUsageRecord,
   stringifyQueryOrMutationOperation,
@@ -41,14 +41,22 @@ type NormalizeFunction = (arg: RawOperationMapRecord) => {
 const DAY_IN_MS = 86_400_000;
 const RETENTION_FALLBACK = 365;
 
+function parseSafe(operation: string): DocumentNode | null {
+  try {
+    return parse(operation);
+  } catch {
+    return null;
+  }
+}
+
 export function createProcessor(config: { logger: ServiceLogger }) {
   const { logger } = config;
   const normalize = cache(
     (operation: RawOperationMapRecord) => {
       normalizeCacheMisses.inc();
-      return normalizeOperation({
-        document: operation.operation,
-        fields: operation.fields,
+      return preprocessOperation({
+        document: parseSafe(operation.operation),
+        schemaCoordinates: operation.fields,
         operationName: operation.operationName ?? null,
       });
     },
