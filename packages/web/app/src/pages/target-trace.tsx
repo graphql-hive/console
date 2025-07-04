@@ -37,16 +37,6 @@ import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
 
-const fetchProductsQueryString = `
-  query FetchProduct {
-    products {
-      id
-      name
-      price
-    }
-  }
-`;
-
 interface TraceAttribute {
   name: string;
   value: string;
@@ -887,7 +877,7 @@ function TraceSheet(props: TraceSheetProps) {
                           fontSize: 10,
                           minimap: { enabled: false },
                         }}
-                        code={fetchProductsQueryString}
+                        code={rootSpanUnmasked.spanAttributes['hive.graphql.operation.document']}
                       />
                     </div>
                   ) : null}
