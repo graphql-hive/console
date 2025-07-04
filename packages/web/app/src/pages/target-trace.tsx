@@ -667,7 +667,7 @@ type TraceSheetProps = {
   targetSlug: string;
 };
 
-function TraceSheet(props: TraceSheetProps) {
+export function TraceSheet(props: TraceSheetProps) {
   const [activeView, setActiveView] = useState<
     'span-attributes' | 'resource-attributes' | 'events' | 'operation'
   >('span-attributes');
