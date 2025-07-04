@@ -1,19 +1,10 @@
 import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import {
-  AlertTriangle,
-  ArrowUpDown,
-  Clock,
-  ExternalLinkIcon,
-  // FilterIcon,
-  // SearchIcon,
-  XIcon,
-} from 'lucide-react';
+import { ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useQuery } from 'urql';
 import { z } from 'zod';
-import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,11 +14,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-// import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { QueryError } from '@/components/ui/query-error';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
@@ -51,12 +39,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
@@ -65,179 +52,13 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as dateMath from '../lib/date-math';
+import { TraceSheet as ImportedTraceSheet } from './target-trace';
 import {
   DurationFilter,
   MultiInputFilter,
   MultiSelectFilter,
   TimelineFilter,
 } from './traces/target-traces-filter';
-import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
-
-const rootSpan: SpanProps = {
-  id: 'root',
-  title: 'FetchProducts',
-  serviceName: 'gateway',
-  duration: 8.12,
-  startedAt: 0,
-  children: [
-    {
-      id: '1ns581b',
-      title: 'plan',
-      serviceName: 'gateway',
-      duration: 2.3,
-      startedAt: 0.2,
-      children: [],
-    },
-    {
-      id: '213hbsdgs',
-      title: 'subgraph',
-      serviceName: 'products',
-      duration: 4.06,
-      startedAt: 2.3,
-      children: [
-        {
-          id: '138sndhs',
-          title: 'parse',
-          duration: 0.1,
-          startedAt: 2.4,
-          children: [],
-        },
-        {
-          id: '1n1bsxs1',
-          title: 'validate',
-          duration: 0.9,
-          startedAt: 2.5,
-          children: [],
-        },
-      ],
-    },
-    {
-      id: '1n23sxs1',
-      title: 'subgraph',
-      serviceName: 'prices',
-      duration: 2.03,
-      startedAt: 4.06,
-      children: [
-        {
-          id: '19nxb23b',
-          title: 'parse',
-          duration: 0.1,
-          startedAt: 4.1,
-          children: [],
-        },
-        {
-          id: '284bsdb1',
-          title: 'validate',
-          duration: 1.2,
-          startedAt: 4.2,
-          children: [
-            {
-              id: '284bsdb1',
-              title: 'async validation',
-              duration: 0.2,
-              startedAt: 5.4,
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-const chartData = [
-  { date: '2024-04-01', ok: 222, error: 15 },
-  { date: '2024-04-02', ok: 97, error: 18 },
-  { date: '2024-04-03', ok: 167, error: 12 },
-  { date: '2024-04-04', ok: 242, error: 26 },
-  { date: '2024-04-05', ok: 373, error: 29 },
-  { date: '2024-04-06', ok: 301, error: 34 },
-  { date: '2024-04-07', ok: 245, error: 18 },
-  { date: '2024-04-08', ok: 409, error: 32 },
-  { date: '2024-04-09', ok: 59, error: 11 },
-  { date: '2024-04-10', ok: 261, error: 19 },
-  { date: '2024-04-11', ok: 327, error: 35 },
-  { date: '2024-04-12', ok: 292, error: 21 },
-  { date: '2024-04-13', ok: 342, error: 38 },
-  { date: '2024-04-14', ok: 137, error: 22 },
-  { date: '2024-04-15', ok: 120, error: 17 },
-  { date: '2024-04-16', ok: 138, error: 19 },
-  { date: '2024-04-17', ok: 446, error: 36 },
-  { date: '2024-04-18', ok: 364, error: 41 },
-  { date: '2024-04-19', ok: 243, error: 18 },
-  { date: '2024-04-20', ok: 89, error: 15 },
-  { date: '2024-04-21', ok: 137, error: 20 },
-  { date: '2024-04-22', ok: 224, error: 17 },
-  { date: '2024-04-23', ok: 138, error: 23 },
-  { date: '2024-04-24', ok: 387, error: 29 },
-  { date: '2024-04-25', ok: 215, error: 25 },
-  { date: '2024-04-26', ok: 75, error: 13 },
-  { date: '2024-04-27', ok: 383, error: 42 },
-  { date: '2024-04-28', ok: 122, error: 18 },
-  { date: '2024-04-29', ok: 315, error: 24 },
-  { date: '2024-04-30', ok: 454, error: 38 },
-  { date: '2024-05-01', ok: 165, error: 22 },
-  { date: '2024-05-02', ok: 293, error: 31 },
-  { date: '2024-05-03', ok: 247, error: 19 },
-  { date: '2024-05-04', ok: 385, error: 42 },
-  { date: '2024-05-05', ok: 481, error: 39 },
-  { date: '2024-05-06', ok: 498, error: 52 },
-  { date: '2024-05-07', ok: 388, error: 30 },
-  { date: '2024-05-08', ok: 149, error: 21 },
-  { date: '2024-05-09', ok: 227, error: 18 },
-  { date: '2024-05-10', ok: 293, error: 33 },
-  { date: '2024-05-11', ok: 335, error: 27 },
-  { date: '2024-05-12', ok: 197, error: 24 },
-  { date: '2024-05-13', ok: 197, error: 16 },
-  { date: '2024-05-14', ok: 448, error: 49 },
-  { date: '2024-05-15', ok: 473, error: 38 },
-  { date: '2024-05-16', ok: 338, error: 40 },
-  { date: '2024-05-17', ok: 499, error: 42 },
-  { date: '2024-05-18', ok: 315, error: 35 },
-  { date: '2024-05-19', ok: 235, error: 18 },
-  { date: '2024-05-20', ok: 177, error: 23 },
-  { date: '2024-05-21', ok: 82, error: 14 },
-  { date: '2024-05-22', ok: 81, error: 12 },
-  { date: '2024-05-23', ok: 252, error: 29 },
-  { date: '2024-05-24', ok: 294, error: 22 },
-  { date: '2024-05-25', ok: 201, error: 25 },
-  { date: '2024-05-26', ok: 213, error: 17 },
-  { date: '2024-05-27', ok: 420, error: 46 },
-  { date: '2024-05-28', ok: 233, error: 19 },
-  { date: '2024-05-29', ok: 78, error: 13 },
-  { date: '2024-05-30', ok: 340, error: 28 },
-  { date: '2024-05-31', ok: 178, error: 23 },
-  { date: '2024-06-01', ok: 178, error: 20 },
-  { date: '2024-06-02', ok: 470, error: 41 },
-  { date: '2024-06-03', ok: 103, error: 16 },
-  { date: '2024-06-04', ok: 439, error: 38 },
-  { date: '2024-06-05', ok: 88, error: 14 },
-  { date: '2024-06-06', ok: 294, error: 25 },
-  { date: '2024-06-07', ok: 323, error: 37 },
-  { date: '2024-06-08', ok: 385, error: 32 },
-  { date: '2024-06-09', ok: 438, error: 48 },
-  { date: '2024-06-10', ok: 155, error: 20 },
-  { date: '2024-06-11', ok: 92, error: 15 },
-  { date: '2024-06-12', ok: 492, error: 42 },
-  { date: '2024-06-13', ok: 81, error: 13 },
-  { date: '2024-06-14', ok: 426, error: 38 },
-  { date: '2024-06-15', ok: 307, error: 35 },
-  { date: '2024-06-16', ok: 371, error: 31 },
-  { date: '2024-06-17', ok: 475, error: 52 },
-  { date: '2024-06-18', ok: 107, error: 17 },
-  { date: '2024-06-19', ok: 341, error: 29 },
-  { date: '2024-06-20', ok: 408, error: 45 },
-  { date: '2024-06-21', ok: 169, error: 21 },
-  { date: '2024-06-22', ok: 317, error: 27 },
-  { date: '2024-06-23', ok: 480, error: 53 },
-  { date: '2024-06-24', ok: 132, error: 18 },
-  { date: '2024-06-25', ok: 141, error: 19 },
-  { date: '2024-06-26', ok: 434, error: 38 },
-  { date: '2024-06-27', ok: 448, error: 49 },
-  { date: '2024-06-28', ok: 149, error: 20 },
-  { date: '2024-06-29', ok: 103, error: 16 },
-  { date: '2024-06-30', ok: 446, error: 40 },
-];
 
 const chartConfig = {
   ok: {
@@ -446,9 +267,10 @@ const TracesList = memo(function TracesList(
   props: SortProps &
     PaginationProps & {
       traces: FragmentType<typeof TracesList_Trace>[];
+      onSelectTraceId: (traceId: string) => void;
+      selectedTraceId: string | null;
     },
 ) {
-  const [traceInSheet, setTraceInSheet] = useState<Trace | null>(null);
   const router = useRouter();
   const data = useFragment(TracesList_Trace, props.traces);
 
@@ -664,7 +486,7 @@ const TracesList = memo(function TracesList(
           );
         },
         cell: ({ row }) => {
-          const duration = formatDuration(row.getValue('duration') / 1000000, true);
+          const duration = formatDuration((row.getValue('duration') as number) / 1000000, true);
           return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
         },
       },
@@ -716,7 +538,7 @@ const TracesList = memo(function TracesList(
         cell: ({ row }) => {
           return (
             <div className="text-center font-mono text-xs font-medium">
-              {row.getValue('subgraphs').length}
+              {(row.getValue('subgraphs') as Array<string>).length}
             </div>
           );
         },
@@ -756,15 +578,7 @@ const TracesList = memo(function TracesList(
   });
 
   return (
-    <Sheet
-      defaultOpen={false}
-      open={traceInSheet !== null}
-      onOpenChange={isOpen => {
-        if (!isOpen) {
-          setTraceInSheet(null);
-        }
-      }}
-    >
+    <>
       <div className="rounded-lg border bg-gray-900/50 shadow-sm">
         <Table>
           <TableHeader>
@@ -790,11 +604,11 @@ const TracesList = memo(function TracesList(
                   data-state={row.getIsSelected() && 'selected'}
                   className={cn(
                     'cursor-pointer',
-                    traceInSheet?.id === row.original.id ? 'bg-white/10' : '',
+                    props.selectedTraceId === row.original.id ? 'bg-white/10' : '',
                   )}
                   onClick={ev => {
                     ev.preventDefault();
-                    setTraceInSheet(row.original);
+                    props.onSelectTraceId(row.original.id);
                   }}
                 >
                   {row.getVisibleCells().map(cell => (
@@ -834,8 +648,7 @@ const TracesList = memo(function TracesList(
           </Button>
         </div>
       </div>
-      <TraceSheet trace={traceInSheet} />
-    </Sheet>
+    </>
   );
 });
 
@@ -1280,328 +1093,103 @@ function Filters(
   );
 }
 
-const fetchProductsQueryString = `
-  query FetchProduct {
-    products {
+type SelectedTraceSheetProps = {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  traceId: string;
+};
+
+const SelectedTraceSheetQuery = graphql(`
+  query SelectedTraceSheetQuery($targetSelector: TargetSelectorInput!, $traceId: ID!) {
+    target(reference: { bySelector: $targetSelector }) {
       id
-      name
-      price
+      trace(traceId: $traceId) {
+        ...TraceSheet_TraceFragment
+        id
+        operationName
+        duration
+        success
+        timestamp
+      }
     }
   }
-`;
+`);
 
-interface TraceAttribute {
-  name: string;
-  value: string | number | ReactNode;
-  category?: string;
-}
+function SelectedTraceSheet(props: SelectedTraceSheetProps) {
+  const [queryResult] = useQuery({
+    query: SelectedTraceSheetQuery,
+    variables: {
+      targetSelector: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+      },
+      traceId: props.traceId,
+    },
+  });
 
-function TraceView(props: { rootSpan: SpanProps; serviceNames: string[] }) {
-  const [width] = useWidthSync();
-  const [highlightedServiceName, setHighlightedServiceName] = useState<string | null>(null);
-  const rootSpan = props.rootSpan;
-  const serviceNames = props.serviceNames;
-
-  return (
-    <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-10 border-b border-gray-800">
-        <div className="flex w-full items-center text-xs text-white">
-          <div className="h-12 shrink-0 py-2" style={{ width }}>
-            <div className="pl-4">
-              <div className="font-medium">Timeline</div>
-              <div className="text-xs text-gray-500">Spans and details</div>
-            </div>
-          </div>
-          <div className="h-12 grow pr-8">
-            <div className="relative h-full w-full">
-              <div className="absolute left-0 top-6 -translate-x-1/2 text-center">0ms</div>
-              <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
-              <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">2.03ms</div>
-              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">4.06ms</div>
-              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">6.09ms</div>
-              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-              <div className="absolute right-0 top-6 translate-x-1/2 text-center">8.12ms</div>
-              <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <ScrollArea className="flex-grow">
-        <div>
-          <TraceTree
-            leftPanelWidth={width}
-            rootSpan={rootSpan}
-            highlightedServiceName={highlightedServiceName}
-          />
-        </div>
-      </ScrollArea>
-      <div className="sticky bottom-0 z-10 px-2 py-4">
-        <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-          {serviceNames.map((serviceName, index) => (
-            <div
-              key={serviceName}
-              className="flex cursor-pointer items-center gap-2 hover:text-white"
-              onMouseEnter={() => setHighlightedServiceName(serviceName)}
-              onMouseLeave={() => setHighlightedServiceName(null)}
-            >
-              <div
-                className="size-2"
-                style={{
-                  backgroundColor: colors[index % colors.length],
-                }}
-              />
-              <div>{serviceName}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TraceSheet(props: { trace: DocumentType<typeof TracesList_Trace> | null }) {
-  const targetRef = useTargetReference();
-  const [activeView, setActiveView] = useState<'attributes' | 'events' | 'operation'>('attributes');
-  const trace = props.trace;
-
-  if (!trace) {
-    return null;
-  }
-
-  const attributes: Array<TraceAttribute> = [
-    {
-      name: 'graphql.operationKind',
-      value: trace.operationType,
-      category: 'GraphQL',
-    },
-    {
-      name: 'graphql.subgraphs',
-      value: trace.subgraphs.join(', '),
-      category: 'GraphQL',
-    },
-    {
-      name: 'http.method',
-      value: trace.httpMethod,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.host',
-      value: trace.httpHost,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.route',
-      value: trace.httpRoute,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.url',
-      value: trace.httpUrl,
-      category: 'HTTP',
-    },
-    {
-      name: 'http.status',
-      value: trace.httpStatusCode,
-      category: 'HTTP',
-    },
-  ];
-
-  const serviceNames = listServiceNames(rootSpan);
+  const trace = queryResult.data?.target?.trace;
 
   return (
     <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
-      <SheetHeader className="relative border-b border-gray-800 p-4">
-        <div className="flex items-center justify-between">
-          <SheetTitle className="text-lg font-medium text-white">
-            {trace.operationName}
-            <span className="text-muted-foreground ml-2 font-mono font-normal">
-              {trace.id.substring(0, 4)}
-            </span>
-          </SheetTitle>
-        </div>
-        <SheetDescription className="mt-1 text-xs text-gray-400">
-          Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
-        </SheetDescription>
-        <div className="mt-2 flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-gray-400" />
-            <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
+      {trace && (
+        <SheetHeader className="relative border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-lg font-medium text-white">
+              {trace?.operationName}
+              <span className="text-muted-foreground ml-2 font-mono font-normal">
+                {trace.id.substring(0, 4)}
+              </span>
+            </SheetTitle>
           </div>
-          <Badge
-            variant="outline"
-            className={cn(
-              'rounded-sm border-0 px-1 font-medium uppercase',
-              trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-            )}
-          >
-            {trace.success ? 'Ok' : 'Error'}
-          </Badge>
-          <span className="font-mono uppercase text-gray-300">
-            {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
-          </span>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-            params={{
-              organizationSlug: targetRef.organizationSlug,
-              projectSlug: targetRef.projectSlug,
-              targetSlug: targetRef.targetSlug,
-              traceId: trace.id,
-            }}
-            className="absolute bottom-4 right-4"
-          >
-            <ExternalLinkIcon className="mr-1 h-3 w-3" />
-            Full Trace
-          </Link>
-        </Button>
-      </SheetHeader>
-      <div className="h-[calc(100vh-113px)]">
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
-            <WidthSyncProvider defaultWidth={251}>
-              <TraceView rootSpan={rootSpan} serviceNames={serviceNames} />
-            </WidthSyncProvider>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
-            <div className="flex h-full flex-col">
-              <div className="sticky top-0 z-10 border-b border-gray-800">
-                <div className="item-center flex w-full gap-x-4 px-2 text-xs font-medium">
-                  <TabButton
-                    isActive={activeView === 'attributes'}
-                    onClick={() => setActiveView('attributes')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Attributes</div>
-                      <div>
-                        <Badge
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                        >
-                          7
-                        </Badge>
-                      </div>
-                    </div>
-                  </TabButton>
-                  <TabButton
-                    isActive={activeView === 'events'}
-                    onClick={() => setActiveView('events')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Events</div>
-                      <div>
-                        <Badge
-                          variant="secondary"
-                          className="rounded-md px-2 py-0.5 text-[10px] font-thin"
-                        >
-                          3
-                        </Badge>
-                      </div>
-                    </div>
-                  </TabButton>
-                  <TabButton
-                    isActive={activeView === 'operation'}
-                    onClick={() => setActiveView('operation')}
-                  >
-                    <div className="flex items-center gap-x-2">
-                      <div>Operation</div>
-                    </div>
-                  </TabButton>
-                </div>
-              </div>
-              <ScrollArea className="relative grow">
-                <div className="h-full">
-                  {activeView === 'attributes' ? (
-                    <div>
-                      {attributes.length > 0 ? (
-                        <div>
-                          {attributes.map((attr, index) => (
-                            <div
-                              key={index}
-                              className="border-border flex items-center justify-between border-b px-3 py-3 text-xs"
-                            >
-                              <div className="text-gray-400">{attr.name}</div>
-                              <div className="font-mono text-white">{attr.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="py-4 text-center">
-                          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
-                          <p className="text-xs text-gray-500">
-                            No attributes found for this trace
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                  {activeView === 'events' ? (
-                    <div className="p-4">
-                      <div className="space-y-2">
-                        {[
-                          {
-                            code: 'DB_CONNECTION_ERROR',
-                            message: 'Connection to database timed out after 5 seconds',
-                            stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
-                          },
-                          {
-                            code: 'GRAPHQL_PARSE_FAILED',
-                            message: 'Sent GraphQL Operation cannot be parsed',
-                          },
-                          {
-                            code: 'TIMEOUT_ERROR',
-                            message: 'Operation timed out after 10 seconds',
-                          },
-                        ].map((exception, index) => (
-                          <div
-                            key={index}
-                            className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
-                          >
-                            <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
-                              <span className="font-mono text-xs font-medium text-red-300">
-                                {exception.code}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className="border-red-700 bg-red-950 text-[10px] text-red-300"
-                              >
-                                Exception
-                              </Badge>
-                            </div>
-                            <div className="p-3 text-xs">
-                              <p className="text-gray-300">{exception.message}</p>
-                              {exception.stacktrace && (
-                                <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
-                                  {exception.stacktrace}
-                                </pre>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  {activeView === 'operation' ? (
-                    <div className="absolute bottom-0 top-0 w-full">
-                      <GraphQLHighlight
-                        height={'100%'}
-                        options={{
-                          fontSize: 10,
-                          minimap: { enabled: false },
-                        }}
-                        code={fetchProductsQueryString}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </ScrollArea>
+          <SheetDescription className="mt-1 text-xs text-gray-400">
+            Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
+          </SheetDescription>
+          <div className="mt-2 flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-gray-400" />
+              <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+            <Badge
+              variant="outline"
+              className={cn(
+                'rounded-sm border-0 px-1 font-medium uppercase',
+                trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
+              )}
+            >
+              {trace.success ? 'Ok' : 'Error'}
+            </Badge>
+            <span className="font-mono uppercase text-gray-300">
+              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+            </span>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                traceId: props.traceId,
+              }}
+              className="absolute bottom-4 right-4"
+            >
+              <ExternalLinkIcon className="mr-1 h-3 w-3" />
+              Full Trace
+            </Link>
+          </Button>
+        </SheetHeader>
+      )}
+      {trace && (
+        <ImportedTraceSheet
+          activeSpanId={null}
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          trace={trace}
+        />
+      )}
     </SheetContent>
   );
 }
@@ -1742,6 +1330,8 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     [query.data?.target?.traces.edges],
   );
 
+  const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+
   const filterOptions = useMemo(() => {
     const options = query.data?.target?.tracesFilterOptions;
 
@@ -1850,10 +1440,29 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
               sorting={props.sorting}
               pagination={props.pagination}
               traces={traces ?? []}
+              onSelectTraceId={setSelectedTraceId}
+              selectedTraceId={selectedTraceId}
             />
           </div>
         </SidebarInset>
       </SidebarProvider>
+      <Sheet
+        open={selectedTraceId !== null}
+        onOpenChange={isOpen => {
+          if (!isOpen) {
+            setSelectedTraceId(null);
+          }
+        }}
+      >
+        {selectedTraceId && (
+          <SelectedTraceSheet
+            organizationSlug={targetRef.organizationSlug}
+            projectSlug={targetRef.projectSlug}
+            targetSlug={targetRef.targetSlug}
+            traceId={selectedTraceId}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }
@@ -1977,392 +1586,6 @@ function TreeIcon(props: {
   );
 }
 
-function TabButton(props: { isActive: boolean; onClick(): void; children: ReactNode }) {
-  return (
-    <button
-      className={cn(
-        'border-b-2 px-2 py-2',
-        props.isActive ? 'border-[#2662d8]' : 'hover:border-border border-transparent',
-      )}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </button>
-  );
-}
-
-function TraceResize(props: { minWidth: number; maxWidth: number }) {
-  const [width, setWidth] = useWidthSync();
-  const [isDragging, setIsDragging] = useState(false);
-  const handleRef = useRef<HTMLDivElement>(null);
-  const startPosRef = useRef(0);
-  const startWidthRef = useRef(0);
-  const { minWidth, maxWidth } = props;
-
-  // Handle the start of dragging
-  const handleDragStart = useCallback(
-    (clientX: number) => {
-      setIsDragging(true);
-      startPosRef.current = clientX;
-      startWidthRef.current = width;
-
-      // Prevent text selection during drag
-      document.body.style.userSelect = 'none';
-    },
-    [width],
-  );
-
-  // Handle dragging
-  const handleDrag = useCallback(
-    (clientX: number) => {
-      if (!isDragging) return;
-      const delta = clientX - startPosRef.current;
-      let newWidth = startWidthRef.current + delta;
-      // Constrain to min/max
-      newWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
-      setWidth(newWidth);
-    },
-    [isDragging, minWidth, maxWidth, setWidth],
-  );
-
-  // Handle the end of dragging
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-    document.body.style.userSelect = '';
-  }, []);
-
-  // Pointer event handlers
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      // Set pointer capture on the drag handle element
-      if (handleRef.current) {
-        handleRef.current.setPointerCapture(e.pointerId);
-      }
-      handleDragStart(e.clientX);
-    },
-    [handleDragStart],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      handleDrag(e.clientX);
-    },
-    [isDragging, handleDrag],
-  );
-
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      // Release pointer capture
-      if (handleRef.current) {
-        handleRef.current.releasePointerCapture(e.pointerId);
-      }
-      handleDragEnd();
-    },
-    [handleDragEnd],
-  );
-
-  return (
-    <div
-      className="absolute bottom-0 top-0 z-20 w-[5px] cursor-ew-resize"
-      style={{ left: width - 2 }} // Position 2px to the left of the center
-      ref={handleRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-    >
-      {/* Invisible wider hit area */}
-      <div
-        className={cn(
-          'absolute inset-y-0 left-[2px] w-px bg-gray-800',
-          isDragging ? 'bg-gray-600' : 'hover:bg-gray-700',
-        )}
-      />
-    </div>
-  );
-}
-
-function TraceTree(props: {
-  highlightedServiceName: string | null;
-  rootSpan: SpanProps;
-  leftPanelWidth: number;
-}) {
-  const [width] = useWidthSync();
-  const minWidth = 175;
-  const maxWidth = 450;
-  const serviceNames = listServiceNames(props.rootSpan);
-  const serviceNameToColorMap = Object.fromEntries(
-    serviceNames.map((name, index) => [name, colors[index % colors.length]]),
-  );
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
-      <Node
-        key={props.rootSpan.id}
-        level={0}
-        highlightedServiceName={props.highlightedServiceName}
-        totalDuration={rootSpan.duration}
-        leftPanelWidth={width}
-        span={props.rootSpan}
-        parentSpan={null}
-        groupLines={[]}
-        parentColor={null}
-        color={colors[0]}
-        serviceNameToColorMap={serviceNameToColorMap}
-      />
-    </div>
-  );
-}
-
-type SpanProps = {
-  id: string;
-  title: string;
-  serviceName?: string;
-  duration: number;
-  startedAt: number;
-  children: SpanProps[];
-};
-
-type NodeProps = {
-  highlightedServiceName: string | null;
-  level: number;
-  totalDuration: number;
-  leftPanelWidth: number;
-  span: SpanProps;
-  parentSpan: SpanProps | null;
-  groupLines: boolean[];
-  color: string;
-  parentColor: string | null;
-  serviceNameToColorMap: Record<string, string>;
-};
-
-function countChildren(spans: SpanProps[]): number {
-  return spans.reduce((acc, span) => acc + countChildren(span.children), spans.length);
-}
-
-function _listServiceNames(span: SpanProps, serviceNames: string[]) {
-  if (span.serviceName && !serviceNames.includes(span.serviceName)) {
-    serviceNames.push(span.serviceName);
-  }
-
-  for (const child of span.children) {
-    _listServiceNames(child, serviceNames);
-  }
-}
-
-function listServiceNames(span: SpanProps): string[] {
-  const serviceNames: string[] = [];
-  _listServiceNames(span, serviceNames);
-  return serviceNames;
-}
-
-const colors = [
-  '#2662d8',
-  '#2eb88a',
-  '#e88d30',
-  '#af56db',
-  '#7BA4F9',
-  '#D8B5FF',
-  '#64748B',
-  '#6C5CE7',
-  '#F27059',
-  '#2D9D78',
-];
-function Node(props: NodeProps) {
-  const [collapsed, setCollapsed] = useState(false);
-  const leftPositionPercentage = roundFloatToTwoDecimals(
-    (props.span.startedAt / props.totalDuration) * 100,
-  );
-  const widthPercentage = roundFloatToTwoDecimals(
-    (props.span.duration / props.totalDuration) * 100,
-  );
-
-  const isNearRightEdge = leftPositionPercentage + widthPercentage > 85;
-  const isDimmed =
-    typeof props.highlightedServiceName === 'string' &&
-    props.highlightedServiceName !== props.span.serviceName;
-
-  const isLastChild =
-    props.parentSpan?.children[props.parentSpan.children.length - 1].id === props.span.id;
-
-  const childrenCount = collapsed
-    ? countChildren(props.span.children) + 1
-    : props.span.children.length;
-  const canBeCollapsed = props.span.children.length > 0;
-
-  const color = props.color;
-  const parentColor = props.parentColor ?? color;
-
-  const percentageOfTotal = ((props.span.duration / props.totalDuration) * 100).toFixed(2);
-  const percentageOfParent = props.parentSpan
-    ? ((props.span.duration / props.parentSpan.duration) * 100).toFixed(2)
-    : null;
-
-  return (
-    <>
-      <div className="cursor-pointer pr-8 odd:bg-gray-800/20 hover:bg-gray-900">
-        <div className="relative flex h-8 w-full items-center overflow-hidden">
-          <div
-            className="relative flex h-8 shrink-0 items-center gap-x-2 overflow-hidden pl-1"
-            style={{ width: `${props.leftPanelWidth}px` }}
-          >
-            <div className="flex h-8 shrink-0 items-center overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500">
-              <TreeIcon
-                key={`tree-icon-${props.span.id}`}
-                isLeaf={props.span.children.length === 0}
-                isLastChild={isLastChild}
-                childrenCount={childrenCount}
-                hasParent={!!props.parentSpan}
-                level={props.level}
-                lines={props.groupLines}
-                isCollapsed={collapsed}
-                onClick={canBeCollapsed ? () => setCollapsed(collapsed => !collapsed) : undefined}
-              />
-            </div>
-            <div
-              className={cn('whitespace-nowrap text-xs', isDimmed ? 'text-gray-500' : 'text-white')}
-            >
-              {props.span.title}
-            </div>
-            {props.span.serviceName ? (
-              <div
-                className={cn(
-                  'overflow-hidden overflow-ellipsis whitespace-nowrap text-xs',
-                  isDimmed ? 'text-gray-600' : 'text-gray-500',
-                )}
-              >
-                {props.span.serviceName}
-              </div>
-            ) : null}
-          </div>
-          <div
-            className={cn(
-              'relative flex h-full grow items-center overflow-hidden',
-              isDimmed ? 'opacity-25' : '',
-            )}
-          >
-            <TooltipProvider>
-              <Tooltip disableHoverableContent delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <div
-                    className={cn('absolute z-20 block h-6 min-w-[1px] select-none rounded-sm')}
-                    style={{
-                      left: `min(${leftPositionPercentage}%, 100% - 1px)`,
-                      width: `${widthPercentage}%`,
-                      backgroundColor: color,
-                    }}
-                  >
-                    <div
-                      className="absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
-                      style={{
-                        fontSize: '11px',
-                        ...(isNearRightEdge ? { right: '6px' } : { left: `calc(100% + 6px)` }),
-                      }}
-                    >
-                      {props.span.duration}ms
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
-                >
-                  {/* Content */}
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-y-2">
-                      <div className="text-gray-400">Duration</div>
-                      <div className="text-right font-mono">
-                        <span>{props.span.duration}ms</span>
-                      </div>
-
-                      <div className="text-gray-400">Started At</div>
-                      <div className="text-right font-mono">{props.span.startedAt}ms</div>
-
-                      <div className="text-gray-400">% of Total</div>
-                      <div className="text-right font-mono">{percentageOfTotal}%</div>
-
-                      <div className="col-span-2">
-                        {/* Timeline visualization */}
-                        <div>
-                          <div className="h-[2px] w-full overflow-hidden bg-gray-800">
-                            <div
-                              className="h-full"
-                              style={{ width: `${percentageOfTotal}%`, backgroundColor: colors[0] }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {percentageOfParent === null ? null : (
-                        <>
-                          <div className="text-gray-400">% of Parent</div>
-                          <div className="text-right font-mono">{percentageOfParent}%</div>
-
-                          <div className="col-span-2">
-                            {/* Timeline visualization */}
-                            <div>
-                              <div className="h-[2px] w-full overflow-hidden bg-gray-800">
-                                <div
-                                  className="h-full"
-                                  style={{
-                                    width: `${percentageOfParent}%`,
-                                    backgroundColor: parentColor,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
-      {collapsed
-        ? null
-        : props.span.children.length
-          ? props.span.children.map(childSpan => {
-              const span = {
-                ...childSpan,
-                // if the child span doesn't have a serviceName, use the parent's serviceName
-                serviceName: childSpan.serviceName ?? props.span.serviceName,
-              };
-
-              return (
-                <Node
-                  key={span.id}
-                  highlightedServiceName={props.highlightedServiceName}
-                  leftPanelWidth={props.leftPanelWidth}
-                  totalDuration={props.totalDuration}
-                  span={span}
-                  level={props.level + 1}
-                  parentSpan={props.span}
-                  groupLines={
-                    isLastChild
-                      ? // remove the last line if it's the last span from the group
-                        props.groupLines.slice(0, -1).concat(false, true)
-                      : props.groupLines.concat(true)
-                  }
-                  parentColor={color}
-                  color={span.serviceName ? props.serviceNameToColorMap[span.serviceName] : color}
-                  serviceNameToColorMap={props.serviceNameToColorMap}
-                />
-              );
-            })
-          : null}
-    </>
-  );
-}
-
 function GridTable(props: {
   rows: Array<{
     key: string;
@@ -2379,8 +1602,4 @@ function GridTable(props: {
       ))}
     </div>
   );
-}
-
-function roundFloatToTwoDecimals(num: number) {
-  return Math.round(num * 100) / 100;
 }
