@@ -571,22 +571,26 @@ function mutate(currentTime: Date, reference: Reference) {
   const currentTimeB = toTimeUnixNano(currentTime);
 
   for (const payload of reference) {
-    for (const span of payload.resourceSpans[0].scopeSpans[0].spans) {
-      if (span.parentSpanId) {
-        span.parentSpanId = getNewSpanId(span.parentSpanId);
+    for (const resourceSpans of payload.resourceSpans) {
+      for (const scopeSpan of resourceSpans.scopeSpans) {
+        for (const span of scopeSpan.spans) {
+          if (span.parentSpanId) {
+            span.parentSpanId = getNewSpanId(span.parentSpanId);
+          }
+          span.spanId = getNewSpanId(span.spanId);
+          span.traceId = newTraceId;
+
+          const spanStartTime = BigInt(span.startTimeUnixNano);
+          const spanEndTime = BigInt(span.endTimeUnixNano);
+          const spanDuration = spanEndTime - spanStartTime;
+          const spanOffset = spanStartTime - startTime;
+          const newStartTime = currentTimeB + spanOffset;
+          span.startTimeUnixNano = newStartTime.toString();
+          span.endTimeUnixNano = (newStartTime + spanDuration).toString();
+
+          // TODO figure out a way to ranomly add errors
+        }
       }
-      span.spanId = getNewSpanId(span.spanId);
-      span.traceId = newTraceId;
-
-      const spanStartTime = BigInt(span.startTimeUnixNano);
-      const spanEndTime = BigInt(span.endTimeUnixNano);
-      const spanDuration = spanEndTime - spanStartTime;
-      const spanOffset = spanStartTime - startTime;
-      const newStartTime = currentTimeB + spanOffset;
-      span.startTimeUnixNano = newScreateTracetartTime.toString();
-      span.endTimeUnixNano = (newStartTime + spanDuration).toString();
-
-      // TODO figure out a way to ranomly add errors
     }
   }
 }
