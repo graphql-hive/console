@@ -151,7 +151,26 @@ more details about OpenTelemetry setup and API.
 
 #### Basic usage
 
-<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+<Tabs items={["CLI", <div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+If your use case is simple enough, you can use CLI options to setup opentelemtry.
+
+```bash
+hive-gateway supegraph --opentelemetry "http://localhost:4318"
+```
+
+By default, an HTTP OTLP exporter will be used, but you can change it with
+`--opentelemetry-exporter-type`:
+
+```bash
+hive-gateway supegraph --opentelemetry "http://localhost:4317" --opentelemetry-exporter-type otlp-grpc
+```
+
+Please refer to `openTelemetrySetup()` usage if you need more controle and options.
+
+</Tabs.Tab>
 
 <Tabs.Tab>
 
@@ -1029,6 +1048,21 @@ You can then enable OpenTelemetry Tracing support in the Gateway configuration.
 
 <Tabs.Tab>
 
+with CLI, you can either enable OpenTelemetry tracing by using `--opentelemetry` option or by
+using the configuration file.
+
+<Tabs items=["CLI", "Configuration file"]>
+
+<Tabs.Tab>
+
+```bash
+hive-gateway supergraph --opentelemetry
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
 ```ts filename="gateway.config.ts"
 import './telemetry.ts'
 import { defineConfig } from '@graphql-hive/gateway'
@@ -1039,6 +1073,10 @@ export const gatewayConfig = defineConfig({
   }
 })
 ```
+
+</Tabs.Tab>
+
+</Tabs>
 
 </Tabs.Tab>
 
