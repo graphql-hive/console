@@ -15,6 +15,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Hive Logger](#hive-logger)
 - [OpenTelemetry](#opentelemetry)
 - [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
+- [Renamed CLI options for Hive Usage Report](#hive-usage-cli-options)
 
 ## Drop Support for Node v18
 
@@ -837,3 +838,13 @@ const useMyPlugin = () => ({
   }
 })
 ```
+
+## Hive Usage CLI Options
+
+To prepare for future observability features of Hive Console, some CLI options have been renamed:
+
+- `--hive-usage-target` have been renamed `--hive-target`
+- `--hive-access-token` is a new option to define an access token that will be used for all
+  observability features.
+- `--hive-usage-access-token` is now a specific access token that will be used only for usage
+  report.
