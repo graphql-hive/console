@@ -14,6 +14,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
 - [New OpenTelemetry integration for better traces and custom spans](#opentelemetry)
+- [Renamed CLI options for Hive Usage Report](#hive-usage-cli-options)
 
 ## Drop Support for Node v18
 
@@ -566,7 +567,12 @@ informations.
 
 #### Example with HTTP OTLP Exporter
 
-<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>,
+
+<div>
+  OpenTelemetry <code>NodeSDK</code>
+</div>
+]}>
 
 <Tabs.Tab>
 
@@ -817,3 +823,29 @@ export const myPlugin = () => ({
   }
 })
 ```
+
+### Opentelemetry CLI Options
+
+It is now possible to setup opentelemtry without a configuration file, by using the new
+`--opentelemetry <exporter-endpoint>` option.
+
+```bash
+hive-gateway supergraph --opentelemetry "http://localhost:4318"
+```
+
+By default, an HTTP OTLP exporter will be used. You can also use a GRPC one by using
+`--opentelemetry-exporter-type`:
+
+```bash
+hive-gateway supergraph --opentelemetry "http://localhost:4317" --opentelemetry-exporter-type otlp-grpc
+```
+
+## Hive Usage CLI Options
+
+To prepare for future observability features of Hive Console, some CLI options have been renamed:
+
+- `--hive-usage-target` have been renamed `--hive-target`
+- `--hive-access-token` is a new option to define an access token that will be used for all
+  observability features.
+- `--hive-usage-access-token` is now a specific access token that will be used only for usage
+  report.
