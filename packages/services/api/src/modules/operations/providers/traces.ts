@@ -69,7 +69,7 @@ export class Traces {
     return trace;
   }
 
-  async findSpansForTraceId(traceId: string): Promise<Array<Span>> {
+  async findSpansForTraceId(traceId: string, targetId: string): Promise<Array<Span>> {
     this.logger.debug('find spans for trace (traceId=%s)', traceId);
     const result = await this.clickHouse.query<unknown>({
       query: sql`
@@ -79,12 +79,11 @@ export class Traces {
           "otel_traces"
         WHERE
           "TraceId" = ${traceId}
+          AND "SpanAttributes"['hive.target_id'] = ${targetId}
       `,
       timeout: 10_000,
       queryId: 'Traces.findSpansForTraceId',
     });
-
-    console.log(result.data);
 
     return SpanListModel.parse(result.data);
   }

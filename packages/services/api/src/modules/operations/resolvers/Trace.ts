@@ -31,7 +31,7 @@ export const Trace: TraceResolvers = {
     return trace.graphqlOperationType;
   },
   spans(trace, _arg, { injector }) {
-    return injector.get(Traces).findSpansForTraceId(trace.traceId);
+    return injector.get(Traces).findSpansForTraceId(trace.traceId, trace.targetId);
   },
   subgraphs(trace) {
     return trace.subgraphNames;
