@@ -52,7 +52,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as dateMath from '../lib/date-math';
-import { TraceSheet as ImportedTraceSheet } from './target-trace';
+import { CopyIconButton, TraceSheet as ImportedTraceSheet } from './target-trace';
 import {
   DurationFilter,
   MultiInputFilter,
@@ -194,22 +194,6 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
   );
 });
 
-type Trace = {
-  id: string;
-  timestamp: number;
-  duration: number;
-  status: 'ok' | 'error';
-  kind: 'query' | 'mutation' | 'subscription';
-  operationName: string;
-  operationHash: string;
-  httpStatus: number;
-  httpMethod: 'GET' | 'POST';
-  httpHost: string;
-  httpRoute: string;
-  httpUrl: string;
-  subgraphNames: string[];
-};
-
 const TargetTracesSortShape = z
   .array(
     z.object({
@@ -260,6 +244,7 @@ const TracesList_Trace = graphql(`
     httpHost
     httpRoute
     httpUrl
+    operationHash
   }
 `);
 
@@ -435,9 +420,6 @@ const TracesList = memo(function TracesList(
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="text-muted-foreground font-mono">
-                    {Math.random().toString(16).substring(2, 6)}
-                  </span>
                   <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
                     {row.original.operationType.substring(0, 1).toUpperCase()}
                   </span>
@@ -460,7 +442,7 @@ const TracesList = memo(function TracesList(
                     },
                     {
                       key: 'Hash',
-                      value: Math.random().toString(16).substring(2),
+                      value: row.original.operationHash,
                     },
                   ]}
                 />
@@ -1144,7 +1126,8 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             </SheetTitle>
           </div>
           <SheetDescription className="mt-1 text-xs text-gray-400">
-            Trace ID: <span className="font-mono">1a2b3c4d5e6f7g8h9i0j</span>
+            Trace ID: <span className="font-mono">{trace.id}</span>
+            <CopyIconButton value={trace.id} label="Copy Trace ID" />
           </SheetDescription>
           <div className="mt-2 flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
@@ -1194,26 +1177,6 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   );
 }
 
-function SearchBar(props: { onFiltersOpenChange: () => void }) {
-  return null;
-
-  // return (
-  //   <div className="flex gap-x-4">
-  //     <Button
-  //       variant="outline"
-  //       className="bg-background size-10 p-0"
-  //       onClick={props.onFiltersOpenChange}
-  //     >
-  //       <FilterIcon className="size-4" />
-  //     </Button>
-  //     <div className="relative w-full">
-  //       <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
-  //       <Input type="search" className="pl-9" placeholder="Search..." {...props} />
-  //     </div>
-  //   </div>
-  // );
-}
-
 const TargetTracesPageQuery = graphql(`
   query TargetTracesPageQuery(
     $targetRef: TargetSelectorInput!
@@ -1244,6 +1207,10 @@ const TargetTracesPageQuery = graphql(`
           count
         }
         operationName(top: $filterTopN) {
+          value
+          count
+        }
+        clientName(top: $filterTopN) {
           value
           count
         }
@@ -1314,6 +1281,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         errorCodes: props.filter['graphql.errorCode'],
         operationNames: props.filter['graphql.operation'],
         operationTypes: props.filter['graphql.kind'] as any,
+        clientNames: props.filter['graphql.client'],
         subgraphNames: props.filter['graphql.subgraph'],
         httpStatusCodes: props.filter['http.status'],
         httpMethods: props.filter['http.method'],
@@ -1406,7 +1374,13 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
           label: option.value,
           count: option.count,
         })) ?? [],
-      'graphql.client': [],
+      'graphql.client':
+        options?.clientName.map(option => ({
+          value: option.value,
+          searchContent: option.value,
+          label: option.value,
+          count: option.count,
+        })) ?? [],
     };
   }, [query.data?.target?.tracesFilterOptions]);
 
@@ -1433,7 +1407,6 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         <SidebarInset className="bg-transparent">
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div>
-              <SearchBar onFiltersOpenChange={() => setFiltersOpen(isOpen => !isOpen)} />
               <Traffic buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>
             <TracesList
@@ -1492,97 +1465,6 @@ export function TargetTracesPage(
         />
       </TargetLayout>
     </>
-  );
-}
-
-function TreeIcon(props: {
-  level: number;
-  /**
-   * Decides whether or not to draw the └[]
-   */
-  hasParent: boolean;
-  /**
-   * Decides whether or not to draw
-   */
-  isLeaf: boolean;
-  /**
-   * Wheter or not to draw ├
-   */
-  isLastChild: boolean;
-  childrenCount: number;
-  isCollapsed: boolean;
-  lines: boolean[];
-  onClick?: () => void;
-}) {
-  const levelWidth = 16;
-  const base = 30;
-  const width = base + props.level * levelWidth;
-
-  const leftSideEdgeStart = (props.level - 1) * levelWidth + 12;
-  const leftSideEdgeEnd = leftSideEdgeStart + 15;
-
-  const rectLeft = 2 + props.level * levelWidth;
-
-  return (
-    <svg
-      width={width}
-      height="100%"
-      preserveAspectRatio="xMidYMid meet"
-      className="shrink"
-      onClick={props.onClick}
-    >
-      {/* left-side line */}
-      {props.hasParent ? (
-        <line x1={leftSideEdgeStart} y1="16" x2={leftSideEdgeEnd} y2="16" stroke="currentColor" />
-      ) : null}
-
-      {/* bottom line */}
-      {props.isLeaf || props.isCollapsed ? null : (
-        <line x1={rectLeft + 10} x2={rectLeft + 10} y1="16" y2="32" stroke="currentColor" />
-      )}
-
-      {/* leaf span */}
-      {props.isLeaf ? (
-        <circle cx={props.level * 16 + 12} cy="16" r="3" fill="currentColor"></circle>
-      ) : (
-        // number block
-        <>
-          <rect
-            x={rectLeft}
-            y="8"
-            width="20"
-            height="16"
-            rx="3px"
-            ry="3px"
-            fill={props.isCollapsed ? 'currentColor' : 'black'}
-            stroke="currentColor"
-          />
-          <text
-            x={rectLeft + 10}
-            y="20"
-            style={{ fontSize: 10 }}
-            textAnchor="middle"
-            fontWeight={props.isCollapsed ? 700 : 500}
-            fill={props.isCollapsed ? 'white' : 'currentColor'}
-          >
-            {props.childrenCount}
-          </text>
-        </>
-      )}
-
-      {/* this line is the vertical line (for each parent groups) */}
-      {props.lines.map((line, index) =>
-        line ? (
-          <line
-            x1={16 * (index + 1) - 4}
-            x2={16 * (index + 1) - 4}
-            y1="0"
-            y2={index === props.level - 1 && props.isLastChild ? 16 : 32}
-            stroke="currentColor"
-          />
-        ) : null,
-      )}
-    </svg>
   );
 }
 

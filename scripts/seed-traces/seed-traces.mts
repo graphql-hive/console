@@ -563,6 +563,21 @@ function generateRandomClient() {
   };
 }
 
+const errorCodes = [
+  'INTERNAL_SERVER_ERROR',
+  'ERR_UNAUTHENTICATED',
+  'ERR_TEAPOD_NOT_FOUND',
+  'ERR_NOT_FOUND',
+];
+
+function getRandomErrorCodes() {
+  if (Math.random() > 0.2) {
+    return '';
+  }
+
+  return [randomArrayItem(errorCodes)];
+}
+
 function mutate(currentTime: Date, reference: Reference) {
   const newTraceId = randomId();
   const newSpanIds = new Map<string, string>();
@@ -604,6 +619,21 @@ function mutate(currentTime: Date, reference: Reference) {
                 value: { stringValue: faker.faker.git.commitSha() },
               },
             );
+
+            const errors = getRandomErrorCodes();
+
+            if (errors) {
+              rootTrace.attributes.push(
+                {
+                  key: 'hive.graphql.error.codes',
+                  value: { stringValue: errors.join(',') },
+                },
+                {
+                  key: 'hive.graphql.error.count',
+                  value: { stringValue: String(errors.length) },
+                },
+              );
+            }
             break;
           }
         }
@@ -636,8 +666,6 @@ function mutate(currentTime: Date, reference: Reference) {
           const newStartTime = currentTimeB + spanOffset;
           span.startTimeUnixNano = newStartTime.toString();
           span.endTimeUnixNano = (newStartTime + spanDuration).toString();
-
-          // TODO figure out a way to ranomly add errors
         }
       }
     }

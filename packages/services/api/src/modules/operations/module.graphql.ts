@@ -358,6 +358,10 @@ export default gql`
     """
     operationTypes: [GraphQLOperationType!]
     """
+    Filter based on the client name.
+    """
+    clientNames: [String!]
+    """
     Filter based on the HTTP status code of the request.
     """
     httpStatusCodes: [String!]
@@ -391,6 +395,7 @@ export default gql`
     errorCode(top: Int): [FilterStringOption!]!
     operationType: [FilterStringOption!]!
     operationName(top: Int): [FilterStringOption!]!
+    clientName(top: Int): [FilterStringOption!]!
     httpStatusCode(top: Int): [FilterStringOption!]!
     httpMethod(top: Int): [FilterStringOption!]!
     httpHost(top: Int): [FilterStringOption!]!

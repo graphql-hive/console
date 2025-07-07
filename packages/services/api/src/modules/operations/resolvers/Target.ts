@@ -91,6 +91,7 @@ export const Target: Pick<
       errorCodes: filter?.errorCodes ?? null,
       operationNames: filter?.operationNames ?? null,
       operationTypes: filter?.operationTypes ?? null,
+      clientNames: filter?.clientNames ?? null,
       subgraphNames: filter?.subgraphNames ?? null,
       httpMethods: filter?.httpMethods ?? null,
       httpStatusCodes: filter?.httpStatusCodes ?? null,
@@ -128,6 +129,10 @@ export const Target: Pick<
 
     if (filter?.operationTypes?.length) {
       ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+    }
+
+    if (filter?.clientNames?.length) {
+      ANDs.push(sql`"client_name" IN (${sql.array(filter.clientNames, 'String')})`);
     }
 
     if (filter?.subgraphNames?.length) {
@@ -237,6 +242,7 @@ export const Target: Pick<
       errorCodes: filter?.errorCodes ?? null,
       operationNames: filter?.operationNames ?? null,
       operationTypes: filter?.operationTypes ?? null,
+      clientNames: filter?.clientNames ?? null,
       subgraphNames: filter?.subgraphNames ?? null,
       httpMethods: filter?.httpMethods ?? null,
       httpStatusCodes: filter?.httpStatusCodes ?? null,
