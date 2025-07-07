@@ -678,13 +678,13 @@ export function TraceSheet(props: TraceSheetProps) {
     [trace.spans],
   );
   const rootSpanUnmasked = useFragment(SpanFragment, rootSpan.span);
-
   const spanAttributes: Array<TraceAttribute> = Array.from(
     Object.entries(rootSpanUnmasked.spanAttributes),
   ).map(([name, value]) => ({
     name,
     value: String(value),
   }));
+
   const resourceAttributes: Array<TraceAttribute> = Array.from(
     Object.entries(rootSpanUnmasked.resourceAttributes),
   ).map(([name, value]) => ({
