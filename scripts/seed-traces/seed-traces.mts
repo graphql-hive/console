@@ -735,8 +735,8 @@ while (currentDate.getTime() < now.getTime()) {
   const promises: Array<Promise<unknown>> = [];
 
   for (const reference of references) {
-    const tracePayloads = createTrace(currentDate, reference);
     for (let i = randomInt(10); i > 0; i--) {
+      const tracePayloads = createTrace(currentDate, reference);
       promises.push(
         ...tracePayloads.map(body =>
           fetch(otelEndpointUrl, {
