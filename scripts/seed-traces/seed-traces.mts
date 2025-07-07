@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as date from 'date-fns';
 import * as immer from 'immer';
+import * as faker from '@faker-js/faker';
 
 // This is just copy pasted here to infer the TS type
 // Please feel free to collapse this section.
@@ -532,6 +533,36 @@ function toTimeUnixNano(date = new Date()) {
   return nanoseconds;
 }
 
+function getRandomIndex(length: number) {
+  return Math.floor(Math.random() * length);
+}
+
+function randomArrayItem<T>(arr: Array<T>) {
+  return arr[getRandomIndex(appVersions.size)];
+}
+
+const clientNames = ['sales-app', 'product-cron-sync', 'analytics-dashboard'];
+
+const appVersions = new Map<string, Array<string>>();
+
+for (const name of clientNames) {
+  const versions = new Array<string>();
+  for (let i = 0; i <= 10; i++) {
+    versions.push(faker.faker.system.semver());
+  }
+  appVersions.set(name, versions);
+}
+
+function generateRandomClient() {
+  const name = randomArrayItem(clientNames);
+  const version = randomArrayItem(appVersions.get(name)!);
+
+  return {
+    name,
+    version,
+  };
+}
+
 function mutate(currentTime: Date, reference: Reference) {
   const newTraceId = randomId();
   const newSpanIds = new Map<string, string>();
@@ -556,6 +587,11 @@ function mutate(currentTime: Date, reference: Reference) {
         for (const span of scopeSpan.spans) {
           if (span.parentSpanId === undefined) {
             rootTrace = span;
+            const client = generateRandomClient();
+            rootTrace.attributes['hive.client.name'] = client.name;
+            rootTrace.attributes['hive.client.version'] = client.version;
+            // TODO: actually calculate this based on the operation.
+            rootTrace.attributes['hive.graphql.operation.hash'] = faker.faker.git.commitSha();
             break;
           }
         }
@@ -577,6 +613,7 @@ function mutate(currentTime: Date, reference: Reference) {
           if (span.parentSpanId) {
             span.parentSpanId = getNewSpanId(span.parentSpanId);
           }
+
           span.spanId = getNewSpanId(span.spanId);
           span.traceId = newTraceId;
 
