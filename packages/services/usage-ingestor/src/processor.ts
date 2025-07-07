@@ -54,8 +54,14 @@ export function createProcessor(config: { logger: ServiceLogger }) {
   const normalize = cache(
     (operation: RawOperationMapRecord) => {
       normalizeCacheMisses.inc();
+      const document = parseSafe(operation.operation);
+
+      if (!document) {
+        return null;
+      }
+
       return preprocessOperation({
-        document: parseSafe(operation.operation),
+        document,
         schemaCoordinates: operation.fields,
         operationName: operation.operationName ?? null,
       });
