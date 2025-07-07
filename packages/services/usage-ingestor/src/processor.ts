@@ -1,4 +1,4 @@
-import { parse, type OperationTypeNode } from 'graphql';
+import { parse, type DocumentNode, type OperationTypeNode } from 'graphql';
 import LRU from 'tiny-lru';
 import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
