@@ -588,10 +588,22 @@ function mutate(currentTime: Date, reference: Reference) {
           if (span.parentSpanId === undefined) {
             rootTrace = span;
             const client = generateRandomClient();
-            rootTrace.attributes['hive.client.name'] = client.name;
-            rootTrace.attributes['hive.client.version'] = client.version;
-            // TODO: actually calculate this based on the operation.
-            rootTrace.attributes['hive.graphql.operation.hash'] = faker.faker.git.commitSha();
+
+            rootTrace.attributes.push(
+              {
+                key: 'hive.client.name',
+                value: { stringValue: client.name },
+              },
+              {
+                key: 'hive.client.version',
+                value: { stringValue: client.version },
+              },
+              // TODO: actually calculate this based on the operation.
+              {
+                key: 'hive.graphql.operation.hash',
+                value: { stringValue: faker.faker.git.commitSha() },
+              },
+            );
             break;
           }
         }
