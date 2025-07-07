@@ -153,8 +153,6 @@ export class Traces {
     const endDate = filter.period?.to ?? new Date();
     const startDate = filter.period?.from ?? subDays(endDate, 14);
 
-    // TODO: Find unit and range units based on filter.start and filter.end
-    //
     const { unit, count: rangeUnits } = getBucketUnitAndCount(startDate, endDate);
 
     const bucketFunctionName = {
@@ -280,6 +278,7 @@ type TraceFilter = {
   errorCodes: ReadonlyArray<string> | null;
   operationNames: ReadonlyArray<string> | null;
   operationTypes: ReadonlyArray<string> | null;
+  clientNames: ReadonlyArray<string> | null;
   subgraphNames: ReadonlyArray<string> | null;
   httpStatusCodes: ReadonlyArray<string> | null;
   httpMethods: ReadonlyArray<string> | null;
@@ -339,6 +338,10 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) 
 
   if (filter?.operationTypes?.length) {
     ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+  }
+
+  if (filter?.clientNames?.length) {
+    ANDs.push(sql`"client_name" IN (${sql.array(filter.clientNames, 'String')})`);
   }
 
   if (filter?.subgraphNames?.length) {
