@@ -16,7 +16,7 @@ import {
 } from 'graphql';
 import { md5 } from 'js-md5';
 import sortBy from 'lodash.sortby';
-import { collectSchemaCoordinates } from '../client/collect-schema-coordinates';
+import { collectSchemaCoordinates } from '../client/collect-schema-coordinates.js';
 
 /**
  * Normalize a operation document.
