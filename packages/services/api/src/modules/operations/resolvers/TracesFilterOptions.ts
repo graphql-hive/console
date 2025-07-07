@@ -94,4 +94,12 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
       arrayJoinColumn: 'graphql_error_codes',
     });
   },
+  clientName: async ({ loader }, { top }) => {
+    return loader.load({
+      key: 'client_name',
+      columnExpression: 'client_name',
+      limit: top ?? 10,
+      arrayJoinColumn: null,
+    });
+  },
 };
