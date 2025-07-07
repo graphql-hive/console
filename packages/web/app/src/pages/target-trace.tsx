@@ -1454,7 +1454,7 @@ type CopyIconButtonProps = {
   value: string;
 };
 
-function CopyIconButton(props: CopyIconButtonProps) {
+export function CopyIconButton(props: CopyIconButtonProps) {
   const clipboard = useClipboard();
   return (
     <TooltipProvider>
