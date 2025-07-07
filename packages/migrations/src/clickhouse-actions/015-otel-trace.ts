@@ -103,6 +103,7 @@ export const action: Action = async exec => {
       , "graphql_operation_name" String CODEC(ZSTD(1))
       , "graphql_operation_type" LowCardinality(String) CODEC(ZSTD(1))
       , "graphql_operation_document" String CODEC(ZSTD(1))
+      , "graphql_operation_hash" String CODEC(ZSTD(1))
       , "graphql_error_count" UInt32 CODEC(T64, ZSTD(1))
       , "graphql_error_codes" Array(LowCardinality(String)) CODEC(ZSTD(1))
       , "subgraph_names" Array(LowCardinality(String)) CODEC(ZSTD(1))
@@ -145,6 +146,7 @@ export const action: Action = async exec => {
       , "graphql_operation_name" String
       , "graphql_operation_type" LowCardinality(String)
       , "graphql_operation_document" String
+      , "graphql_operation_hash" String
       , "graphql_error_count" UInt32
       , "graphql_error_codes" Array(LowCardinality(String))
       , "subgraph_names" Array(String)
@@ -166,6 +168,7 @@ export const action: Action = async exec => {
         , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
         , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
         , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
+        , "SpanAttributes"['hive.graphql.operation.hash'] AS "graphql_operation_hash"
         , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
         , if(
             "SpanAttributes"['hive.graphql.error.codes'] = '',
