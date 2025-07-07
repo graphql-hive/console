@@ -274,10 +274,32 @@ export default gql`
     timestamp: DateTime!
     operationName: String
     operationType: GraphQLOperationType!
+    """
+    The Hash of the GraphQL operation.
+    """
+    operationHash: ID
+    """
+    Total duration of the trace.
+    """
     duration: Int!
+    """
+    The subgraphs called within the trace.
+    """
     subgraphs: [String!]!
+    """
+    Wether the trace is successful.
+    A trace is a success if no GraphQL errors occured and the HTTP status code is in the 2XX to 3XX range.
+    """
     success: Boolean!
+    """
+    The client name.
+    Usually this is the 'x-graphql-client-name' header sent to the gateway.
+    """
     clientName: String
+    """
+    The client version.
+    Usually this is the 'x-graphql-client-version' header sent to the gateway.
+    """
     clientVersion: String
     httpStatusCode: String
     httpMethod: String

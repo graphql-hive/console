@@ -229,10 +229,45 @@ const traceFields = sql`
   , "http_url" AS "httpUrl"
   , "duration"
   , "graphql_operation_name" AS "graphqlOperationName"
+  , "graphql_operation_document" AS "graphqlOperationDocument"
+  , "graphql_operation_hash" AS "graphqlOperationHash"
+  , "client_name" AS "clientName"
+  , "client_version" AS "clientVersion"
   , upper("graphql_operation_type") AS "graphqlOperationType"
   , "graphql_error_codes" AS "graphqlErrorCodes"
   , "subgraph_names" AS "subgraphNames"
 `;
+
+const TraceModel = z.object({
+  traceId: z.string(),
+  targetId: z.string().uuid(),
+  spanId: z.string(),
+  timestamp: z.string(),
+  httpStatusCode: z.string(),
+  httpMethod: z.string(),
+  httpHost: z.string(),
+  httpRoute: z.string(),
+  httpUrl: z.string(),
+  duration: z.string().transform(value => parseFloat(value)),
+  graphqlOperationName: z
+    .string()
+    .nullable()
+    .transform(value => value || null),
+  graphqlOperationType: z.union([
+    z.literal('QUERY'),
+    z.literal('MUTATION'),
+    z.literal('SUBSCRIPTION'),
+  ]),
+  graphqlOperationHash: z.string().nullable(),
+  clientName: z.string().nullable(),
+  clientVersion: z.string().nullable(),
+  graphqlErrorCodes: z.array(z.string()).nullable(),
+  subgraphNames: z.array(z.string()).transform(s => (s.length === 1 && s.at(0) === '' ? [] : s)),
+});
+
+export type Trace = z.TypeOf<typeof TraceModel>;
+
+const TraceListModel = z.array(TraceModel);
 
 type TraceFilter = {
   period: null | GraphQLSchema.DateRangeInput;
@@ -332,34 +367,6 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) 
 
   return ANDs;
 }
-
-const TraceModel = z.object({
-  traceId: z.string(),
-  targetId: z.string().uuid(),
-  spanId: z.string(),
-  timestamp: z.string(),
-  httpStatusCode: z.string(),
-  httpMethod: z.string(),
-  httpHost: z.string(),
-  httpRoute: z.string(),
-  httpUrl: z.string(),
-  duration: z.string().transform(value => parseFloat(value)),
-  graphqlOperationName: z
-    .string()
-    .nullable()
-    .transform(value => value || null),
-  graphqlOperationType: z.union([
-    z.literal('QUERY'),
-    z.literal('MUTATION'),
-    z.literal('SUBSCRIPTION'),
-  ]),
-  graphqlErrorCodes: z.array(z.string()).nullable(),
-  subgraphNames: z.array(z.string()).transform(s => (s.length === 1 && s.at(0) === '' ? [] : s)),
-});
-
-export type Trace = z.TypeOf<typeof TraceModel>;
-
-const TraceListModel = z.array(TraceModel);
 
 const IntFromString = z.string().transform(value => parseInt(value, 10));
 
