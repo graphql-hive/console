@@ -505,7 +505,34 @@ const reference = [
                   },
                 ],
                 droppedAttributesCount: 0,
-                events: [],
+                events: [
+                  {
+                    attributes: [
+                      {
+                        key: 'exception.type',
+                        value: {
+                          stringValue: 'GraphQLError',
+                        },
+                      },
+                      {
+                        key: 'exception.message',
+                        value: {
+                          stringValue: 'Variable "$id" of required type "ID!" was not provided.',
+                        },
+                      },
+                      {
+                        key: 'exception.stacktrace',
+                        value: {
+                          stringValue:
+                            'GraphQLError: Variable "$id" of required type "ID!" was not provided.\n    at createGraphQLError (file:///node_modules/.chunk/abortSignalAny-BG8Lg0X_.mjs:29:12)\n    at coerceVariableValues (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:566:25)\n    at getVariableValues (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:533:25)\n    at buildExecutionContext (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:746:35)\n    at execute (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:615:24)\n    at file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:1960:37\n    at Promise.then (file:///node_modules/.chunk/index-DYl9M8N-.mjs:31:40)\n    at handleMaybePromise (file:///node_modules/.chunk/index-DYl9M8N-.mjs:10:33)\n    at normalizedExecutor (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:1960:12)\n    at _4.args (file:///node_modules/.chunk/use-engine-CPlZaEw6.mjs:580:17)',
+                        },
+                      },
+                    ],
+                    name: 'exception',
+                    timeUnixNano: '1751541923667636834',
+                    droppedAttributesCount: 0,
+                  },
+                ],
                 droppedEventsCount: 0,
                 status: {
                   code: 1,
@@ -666,6 +693,15 @@ function mutate(currentTime: Date, reference: Reference) {
           const newStartTime = currentTimeB + spanOffset;
           span.startTimeUnixNano = newStartTime.toString();
           span.endTimeUnixNano = (newStartTime + spanDuration).toString();
+
+          if (span.events.length) {
+            for (const event of span.events) {
+              const spanStartTime = BigInt(event.timeUnixNano);
+              const spanOffset = spanStartTime - startTime;
+              const newStartTime = currentTimeB + spanOffset;
+              event.timeUnixNano = newStartTime.toString();
+            }
+          }
         }
       }
     }
