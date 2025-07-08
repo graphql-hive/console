@@ -452,9 +452,14 @@ function SpanNode(props: SpanNodeProps) {
   );
 
   const isNearRightEdge = leftPositionPercentage + widthPercentage > 85;
+  const activeSpanId = useContext(ActiveSpanIdContext);
+  const highlightedEvent = useContext(HighlightedEventContext);
+
   const isDimmed =
-    typeof props.highlightedServiceName === 'string' &&
-    props.highlightedServiceName !== span.spanAttributes['gateway.upstream.subgraph.name'];
+    (typeof props.highlightedServiceName === 'string' &&
+      props.highlightedServiceName !== span.spanAttributes['gateway.upstream.subgraph.name']) ||
+    (activeSpanId && activeSpanId !== span.id) ||
+    (highlightedEvent && highlightedEvent.spanId !== span.id);
 
   const childrenCount = collapsed
     ? countChildren(props.span.children) + 1
@@ -464,8 +469,6 @@ function SpanNode(props: SpanNodeProps) {
   const parentColor = props.parentColor ?? props.color;
 
   const hasException = span.events.some(event => event.name === 'exception');
-  const highlightedEvent = useContext(HighlightedEventContext);
-  const activeSpanId = useContext(ActiveSpanIdContext);
 
   return (
     <>
@@ -473,9 +476,7 @@ function SpanNode(props: SpanNodeProps) {
         className={cn(
           'pr-8 odd:bg-gray-800/20 hover:bg-gray-900',
           hasException && 'bg-red-900/20 odd:bg-red-900/20 hover:bg-red-900',
-          highlightedEvent &&
-            (highlightedEvent.spanId === span.id ? 'bg-red-900 odd:bg-red-900' : 'opacity-30'),
-          activeSpanId && activeSpanId !== span.id && 'opacity-30',
+          highlightedEvent && highlightedEvent.spanId === span.id && 'bg-red-900 odd:bg-red-900',
         )}
       >
         <div className="relative flex h-8 w-full items-center overflow-hidden">
@@ -630,7 +631,7 @@ function SpanNode(props: SpanNodeProps) {
               const isError = event.name === 'exception';
 
               return (
-                <Tooltip delayDuration={100}>
+                <Tooltip delayDuration={100} key={event.id}>
                   <TooltipTrigger asChild>
                     <Link
                       className={cn(
@@ -665,7 +666,7 @@ function SpanNode(props: SpanNodeProps) {
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="overflow-hidden rounded-lg border-none p-0 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
+                    className="overflow-hidden rounded-lg border-none p-1 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
                   >
                     <div className="z-20">
                       <ExceptionTeaser
@@ -1615,7 +1616,7 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       <div
         className={cn(
-          'w-full flex-1 pt-2 font-mono text-white',
+          'w-full flex-1 pt-2 font-mono text-[10px] text-white',
           !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
         )}
       >
@@ -1651,26 +1652,6 @@ export function CopyIconButton(props: CopyIconButtonProps) {
     </TooltipProvider>
   );
 }
-
-// function ErrorEventMarker(props: { name: string; positionPercentage: string }) {
-//   const isError = props.name === 'exception';
-//   return (
-//     <Link
-//       className={cn(
-//         'absolute bottom-[4px] top-[4px] z-50 w-0.5 cursor-pointer',
-//         isError ? 'bg-red-500' : 'bg-yellow-500',
-//       )}
-//       style={{ left: props.positionPercentage }}
-//     >
-//       <div
-//         className={cn(
-//           'absolute -left-[3px] -top-[2px] h-2 w-2',
-//           isError ? 'bg-red-500' : 'bg-yellow-500',
-//         )}
-//       />
-//     </Link>
-//   );
-// }
 
 function ExceptionTeaser(props: {
   name: string;
