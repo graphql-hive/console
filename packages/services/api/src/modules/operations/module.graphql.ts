@@ -310,6 +310,12 @@ export default gql`
     spans: [Span!]!
   }
 
+  type SpanEvent {
+    date: DateTime64!
+    name: String!
+    attributes: JSONObject!
+  }
+
   type Span {
     id: ID!
     traceId: ID!
@@ -320,6 +326,7 @@ export default gql`
     endTime: DateTime64!
     resourceAttributes: JSONObject!
     spanAttributes: JSONObject!
+    events: [SpanEvent!]!
   }
 
   input DurationInput {

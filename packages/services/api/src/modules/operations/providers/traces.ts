@@ -392,19 +392,34 @@ const spanFields = sql`
   , replaceOne(concat(toDateTime64(addNanoseconds("Timestamp", "Duration"), 9, 'UTC'), 'Z'), ' ', 'T') AS "endDate"
   , "Duration" AS "duration"
   , "ParentSpanId" AS "parentSpanId"
+  , arrayMap(x -> replaceOne(concat(toDateTime64(x, 9, 'UTC'), 'Z'), ' ', 'T'),"Events.Timestamp") AS "eventsTimestamps"
+  , "Events.Name" AS "eventsName"
+  , "Events.Attributes" AS "eventsAttributes"
 `;
 
-const SpanModel = z.object({
-  traceId: z.string(),
-  spanId: z.string(),
-  spanName: z.string(),
-  resourceAttributes: z.record(z.string(), z.unknown()),
-  spanAttributes: z.record(z.string(), z.unknown()),
-  startDate: z.string(),
-  endDate: z.string(),
-  duration: z.string().transform(value => parseFloat(value)),
-  parentSpanId: z.string().transform(value => value || null),
-});
+const SpanModel = z
+  .object({
+    traceId: z.string(),
+    spanId: z.string(),
+    spanName: z.string(),
+    resourceAttributes: z.record(z.string(), z.unknown()),
+    spanAttributes: z.record(z.string(), z.unknown()),
+    startDate: z.string(),
+    endDate: z.string(),
+    duration: z.string().transform(value => parseFloat(value)),
+    parentSpanId: z.string().transform(value => value || null),
+    eventsTimestamps: z.array(z.string()),
+    eventsName: z.array(z.string()),
+    eventsAttributes: z.array(z.record(z.string(), z.string())),
+  })
+  .transform(({ eventsTimestamps, eventsName, eventsAttributes, ...span }) => ({
+    ...span,
+    events: eventsTimestamps.map((date, index) => ({
+      date,
+      name: eventsName[index],
+      attributes: eventsAttributes[index],
+    })),
+  }));
 
 const SpanListModel = z.array(SpanModel);
 

@@ -1,4 +1,12 @@
-import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   AlertTriangle,
   ArrowUp,
@@ -407,7 +415,7 @@ type NodeElementProps = {
 function NodeElement(props: NodeElementProps) {
   return (
     <div
-      className={cn('absolute z-20 block h-6 min-w-[1px] select-none rounded-sm')}
+      className={cn('relative z-20 block h-6 min-w-[1px] select-none rounded-sm')}
       style={{
         left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
         width: `${props.widthPercentage}%`,
@@ -455,9 +463,21 @@ function SpanNode(props: SpanNodeProps) {
   const canBeCollapsed = props.span.children.length > 0;
   const parentColor = props.parentColor ?? props.color;
 
+  const hasException = span.events.some(event => event.name === 'exception');
+  const highlightedEvent = useContext(HighlightedEventContext);
+  const activeSpanId = useContext(ActiveSpanIdContext);
+
   return (
     <>
-      <div className="pr-8 odd:bg-gray-800/20 hover:bg-gray-900">
+      <div
+        className={cn(
+          'pr-8 odd:bg-gray-800/20 hover:bg-gray-900',
+          hasException && 'bg-red-900/20 odd:bg-red-900/20 hover:bg-red-900',
+          highlightedEvent &&
+            (highlightedEvent.spanId === span.id ? 'bg-red-900 odd:bg-red-900' : 'opacity-30'),
+          activeSpanId && activeSpanId !== span.id && 'opacity-30',
+        )}
+      >
         <div className="relative flex h-8 w-full items-center overflow-hidden">
           <div
             className="relative flex h-8 shrink-0 items-center gap-x-2 overflow-hidden pl-1"
@@ -482,9 +502,20 @@ function SpanNode(props: SpanNodeProps) {
               />
             </div>
             <div
-              className={cn('whitespace-nowrap text-xs', isDimmed ? 'text-gray-500' : 'text-white')}
+              className={cn(
+                'flex w-full items-center whitespace-nowrap align-middle text-xs',
+                isDimmed ? 'text-gray-500' : 'text-white',
+              )}
             >
-              {span.name}
+              <span className="mr-1">{span.name}</span>
+              {hasException && (
+                <Badge
+                  variant="outline"
+                  className="font-small ml-auto mr-1 rounded-sm border-0 bg-red-900/30 px-1 font-mono text-xs font-medium uppercase text-red-400"
+                >
+                  Error
+                </Badge>
+              )}
             </div>
             {span.spanAttributes['gateway.upstream.subgraph.name'] ? (
               <div
@@ -497,29 +528,31 @@ function SpanNode(props: SpanNodeProps) {
               </div>
             ) : null}
           </div>
-          <Link
-            className={cn(
-              'relative flex h-full grow cursor-pointer items-center overflow-hidden',
-              isDimmed ? 'opacity-25' : '',
-            )}
-            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              traceId: props.traceId,
-            }}
-            search={{ activeSpanId: span.id }}
-          >
+          <div className="relative w-full">
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
-                <NodeElement
-                  color={props.color}
-                  isNearRightEdge={isNearRightEdge}
-                  leftPositionPercentage={leftPositionPercentage}
-                  widthPercentage={widthPercentage}
-                  durationStr={formatNanoseconds(props.span.durationNs)}
-                />
+                <Link
+                  className={cn(
+                    'relative flex h-full grow cursor-pointer items-center overflow-hidden',
+                    isDimmed ? 'opacity-25' : '',
+                  )}
+                  to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    traceId: props.traceId,
+                  }}
+                  search={{ activeSpanId: span.id }}
+                >
+                  <NodeElement
+                    color={props.color}
+                    isNearRightEdge={isNearRightEdge}
+                    leftPositionPercentage={leftPositionPercentage}
+                    widthPercentage={widthPercentage}
+                    durationStr={formatNanoseconds(props.span.durationNs)}
+                  />
+                </Link>
               </TooltipTrigger>
               <TooltipContent
                 side="bottom"
@@ -583,7 +616,71 @@ function SpanNode(props: SpanNodeProps) {
                 </div>
               </TooltipContent>
             </Tooltip>
-          </Link>
+
+            {props.span.events.map(event => {
+              if (highlightedEvent && event.id !== highlightedEvent.eventId) {
+                return null;
+              }
+
+              const leftPercentage = roundFloatToTwoDecimals(
+                (nanosecondsToMilliseconds(event.timeNs) /
+                  nanosecondsToMilliseconds(props.totalDurationNs)) *
+                  100,
+              );
+              const isError = event.name === 'exception';
+
+              return (
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      className={cn(
+                        'absolute bottom-0 top-0 z-50 translate-x-[-50%] cursor-pointer px-1',
+                      )}
+                      style={{ left: `${leftPercentage}%` }}
+                      to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                      params={{
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                        traceId: props.traceId,
+                      }}
+                      search={{ activeSpanId: span.id, activeSpanTab: 'events' }}
+                    >
+                      <div className="relative h-full">
+                        <div
+                          className={cn(
+                            'absolute bottom-0 top-0 w-0.5',
+                            isError ? 'bg-red-500' : 'bg-yellow-500',
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'absolute -left-[3px] -top-[2px] h-2 w-2',
+                              isError ? 'bg-red-500' : 'bg-yellow-500',
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="overflow-hidden rounded-lg border-none p-0 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
+                  >
+                    <div className="z-20">
+                      <ExceptionTeaser
+                        key={event.id}
+                        type={String(event.attributes['exception.type'] ?? '')}
+                        message={String(event.attributes['exception.message'] ?? '')}
+                        stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
+                        name={event.name}
+                      />
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
         </div>
       </div>
       {collapsed
@@ -629,24 +726,6 @@ function SpanNode(props: SpanNodeProps) {
   );
 }
 
-// function GridTable(props: {
-//   rows: Array<{
-//     key: string;
-//     value: ReactNode;
-//   }>;
-// }) {
-//   return (
-//     <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
-//       {props.rows.map(row => (
-//         <Fragment key={row.key}>
-//           <div className="font-sans text-gray-400">{row.key}</div>
-//           <div className="text-right font-mono">{row.value}</div>
-//         </Fragment>
-//       ))}
-//     </div>
-//   );
-// }
-
 const TraceSheet_TraceFragment = graphql(`
   fragment TraceSheet_TraceFragment on Trace {
     id
@@ -662,10 +741,19 @@ const TraceSheet_TraceFragment = graphql(`
 type TraceSheetProps = {
   trace: FragmentType<typeof TraceSheet_TraceFragment>;
   activeSpanId: string | null;
+  activeSpanTab: string | null;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 };
+
+type HighlightedEvent = {
+  spanId: string;
+  eventId: string;
+};
+
+const HighlightedEventContext = createContext(null as null | HighlightedEvent);
+const ActiveSpanIdContext = createContext(null as null | string);
 
 export function TraceSheet(props: TraceSheetProps) {
   const [activeView, setActiveView] = useState<
@@ -673,7 +761,9 @@ export function TraceSheet(props: TraceSheetProps) {
   >('span-attributes');
   const trace = useFragment(TraceSheet_TraceFragment, props.trace);
 
-  const [rootSpan, spanLookupMap] = useMemo(
+  const [highlightedEvent, setHighlightedEvent] = useState<HighlightedEvent | null>(null);
+
+  const { rootSpan, spansById, events } = useMemo(
     () => createSpanTreeStructure(trace.spans),
     [trace.spans],
   );
@@ -707,15 +797,19 @@ export function TraceSheet(props: TraceSheetProps) {
         <ResizablePanelGroup direction="vertical">
           <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
             <WidthSyncProvider defaultWidth={251}>
-              <TraceView
-                rootSpan={rootSpan}
-                serviceNames={trace.subgraphs}
-                totalTraceDuration={totalTraceDuration}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                traceId={trace.id}
-              />
+              <HighlightedEventContext.Provider value={highlightedEvent}>
+                <ActiveSpanIdContext.Provider value={props.activeSpanId}>
+                  <TraceView
+                    rootSpan={rootSpan}
+                    serviceNames={trace.subgraphs}
+                    totalTraceDuration={totalTraceDuration}
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    targetSlug={props.targetSlug}
+                    traceId={trace.id}
+                  />
+                </ActiveSpanIdContext.Provider>
+              </HighlightedEventContext.Provider>
             </WidthSyncProvider>
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -755,7 +849,7 @@ export function TraceSheet(props: TraceSheetProps) {
                       </div>
                     </div>
                   </TabButton>
-                  {/* <TabButton
+                  <TabButton
                     isActive={activeView === 'events'}
                     onClick={() => setActiveView('events')}
                   >
@@ -770,13 +864,13 @@ export function TraceSheet(props: TraceSheetProps) {
                         </Badge>
                       </div>
                     </div>
-                  </TabButton> */}
+                  </TabButton>
                   <TabButton
                     isActive={activeView === 'operation'}
                     onClick={() => setActiveView('operation')}
                   >
                     <div className="flex items-center gap-x-2">
-                      <div>Operation</div>
+                      <div>GraphQL Operation</div>
                     </div>
                   </TabButton>
                 </div>
@@ -823,52 +917,41 @@ export function TraceSheet(props: TraceSheetProps) {
                       )}
                     </div>
                   ) : null}
-                  {/* {activeView === 'events' ? (
+                  {activeView === 'events' ? (
                     <div className="p-4">
                       <div className="space-y-2">
-                        {[
-                          {
-                            code: 'DB_CONNECTION_ERROR',
-                            message: 'Connection to database timed out after 5 seconds',
-                            stacktrace: `Error: Connection to database timed out\n\tat PostgresClient.connect (/app/db.js:42:3)\n\tat ProductService.getProducts (/app/services/product.js:15:5)`,
-                          },
-                          {
-                            code: 'GRAPHQL_PARSE_FAILED',
-                            message: 'Sent GraphQL Operation cannot be parsed',
-                          },
-                          {
-                            code: 'TIMEOUT_ERROR',
-                            message: 'Operation timed out after 10 seconds',
-                          },
-                        ].map((exception, index) => (
-                          <div
-                            key={index}
-                            className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20"
+                        {events.map(event => (
+                          <Link
+                            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                              projectSlug: props.projectSlug,
+                              targetSlug: props.targetSlug,
+                              traceId: trace.id,
+                            }}
+                            search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                            onMouseOver={() =>
+                              setHighlightedEvent({
+                                spanId: event.spanId,
+                                eventId: event.id,
+                              })
+                            }
+                            onMouseLeave={() => {
+                              setHighlightedEvent(null);
+                            }}
                           >
-                            <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
-                              <span className="font-mono text-xs font-medium text-red-300">
-                                {exception.code}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className="border-red-700 bg-red-950 text-[10px] text-red-300"
-                              >
-                                Exception
-                              </Badge>
-                            </div>
-                            <div className="p-3 text-xs">
-                              <p className="text-gray-300">{exception.message}</p>
-                              {exception.stacktrace && (
-                                <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
-                                  {exception.stacktrace}
-                                </pre>
-                              )}
-                            </div>
-                          </div>
+                            <ExceptionTeaser
+                              key={event.id}
+                              type={String(event.attributes['exception.type'] ?? '')}
+                              message={String(event.attributes['exception.message'] ?? '')}
+                              stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
+                              name={event.name}
+                            />
+                          </Link>
                         ))}
                       </div>
                     </div>
-                  ) : null} */}
+                  ) : null}
                   {activeView === 'operation' ? (
                     <div className="absolute bottom-0 top-0 w-full">
                       <GraphQLHighlight
@@ -890,7 +973,7 @@ export function TraceSheet(props: TraceSheetProps) {
       {props.activeSpanId && (
         <SpanSheet
           span={trace.spans.find(trace => trace.id === props.activeSpanId) ?? null}
-          computedSpanMetrics={spanLookupMap.get(props.activeSpanId) ?? null}
+          computedSpanMetrics={spansById.get(props.activeSpanId) ?? null}
           onClose={() =>
             navigate({
               to: '/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId',
@@ -901,6 +984,7 @@ export function TraceSheet(props: TraceSheetProps) {
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
           traceId={trace.id}
+          activeTab={props.activeSpanTab}
         />
       )}
     </div>
@@ -913,6 +997,7 @@ function TargetInsightsNewPageContent(props: {
   targetSlug: string;
   traceId: string;
   activeSpanId: string | null;
+  activeSpanTab: string | null;
 }) {
   const [result] = useQuery({
     query: TargetTraceQuery,
@@ -937,6 +1022,7 @@ function TargetInsightsNewPageContent(props: {
       targetSlug={props.targetSlug}
       trace={result.data.target.trace}
       activeSpanId={props.activeSpanId}
+      activeSpanTab={props.activeSpanTab}
     />
   );
 }
@@ -947,6 +1033,7 @@ export function TargetTracePage(props: {
   targetSlug: string;
   traceId: string;
   activeSpanId: string | null;
+  activeSpanTab: string | null;
 }) {
   return (
     <>
@@ -999,6 +1086,11 @@ const SpanFragment = graphql(/* GraphQL */ `
     parentId
     startTime
     endTime
+    events {
+      date
+      name
+      attributes
+    }
   }
 `);
 
@@ -1009,16 +1101,30 @@ type ComputedSpanMetrics = {
   percentageOfParentSpan: string | null;
 };
 
+type SpanEvent = {
+  id: string;
+  spanId: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  type: string;
+  timeNs: bigint;
+};
+
 type SpanFragmentWithChildren = {
   span: FragmentType<typeof SpanFragment>;
   children: Array<SpanFragmentWithChildren>;
+  events: Array<SpanEvent>;
 } & ComputedSpanMetrics;
 
-function createSpanTreeStructure(
-  fragments: Array<FragmentType<typeof SpanFragment>>,
-): [SpanFragmentWithChildren, ReadonlyMap<string, SpanFragmentWithChildren>] {
-  const itemsById = new Map</* id */ string, SpanFragmentWithChildren>();
-  let root: SpanFragmentWithChildren | null = null;
+function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragment>>): {
+  rootSpan: SpanFragmentWithChildren;
+  spansById: ReadonlyMap<string, SpanFragmentWithChildren>;
+  events: ReadonlyArray<SpanEvent>;
+} {
+  const spansById = new Map</* id */ string, SpanFragmentWithChildren>();
+  const events: Array<SpanEvent> = [];
+
+  let rootSpan: SpanFragmentWithChildren | null = null;
   for (const fragment of fragments) {
     const ufragment = useFragment(SpanFragment, fragment);
 
@@ -1029,28 +1135,46 @@ function createSpanTreeStructure(
       startNs: 0n,
       percentageOfTotal: '',
       percentageOfParentSpan: null,
+      events: [],
     };
 
-    itemsById.set(ufragment.id, fragmentWithChildren);
+    spansById.set(ufragment.id, fragmentWithChildren);
     if (ufragment.parentId == null) {
-      root = fragmentWithChildren;
+      rootSpan = fragmentWithChildren;
     }
   }
 
-  if (!root) {
+  if (!rootSpan) {
     throw new Error('No root found.');
   }
 
-  const uroot = useFragment(SpanFragment, root.span);
+  const uroot = useFragment(SpanFragment, rootSpan.span);
   const startNS = parseRFC3339ToEpochNanos(uroot.startTime);
 
-  for (const item of itemsById.values()) {
+  // TODO: this should probably be provided be the backend
+  let eventIdCounter = 0;
+
+  for (const item of spansById.values()) {
     const uitem = useFragment(SpanFragment, item.span);
-    console.log(uitem.parentId);
+
+    for (const event of uitem.events) {
+      eventIdCounter++;
+      const spanEvent: SpanEvent = {
+        id: String(eventIdCounter),
+        spanId: uitem.id,
+        name: event.name,
+        attributes: event.attributes,
+        type: 'exception',
+        timeNs: parseRFC3339ToEpochNanos(event.date) - startNS,
+      };
+      events.push(spanEvent);
+      item.events.push(spanEvent);
+    }
+
     if (!uitem.parentId) {
       continue;
     }
-    const parent = itemsById.get(uitem.parentId);
+    const parent = spansById.get(uitem.parentId);
     if (!parent) {
       throw new Error('Missing parent.');
     }
@@ -1058,7 +1182,8 @@ function createSpanTreeStructure(
     parent.children.push(item);
     item.startNs = parseRFC3339ToEpochNanos(uitem.startTime) - startNS;
     item.percentageOfTotal = (
-      (nanosecondsToMilliseconds(item.durationNs) / nanosecondsToMilliseconds(root.durationNs)) *
+      (nanosecondsToMilliseconds(item.durationNs) /
+        nanosecondsToMilliseconds(rootSpan.durationNs)) *
       100
     ).toFixed(2);
     item.percentageOfParentSpan = (
@@ -1067,7 +1192,7 @@ function createSpanTreeStructure(
     ).toFixed(2);
   }
 
-  for (const item of itemsById.values()) {
+  for (const item of spansById.values()) {
     item.children.sort((a, b) => {
       if (a.startNs < b.startNs) {
         return -1;
@@ -1079,7 +1204,7 @@ function createSpanTreeStructure(
     });
   }
 
-  return [root, itemsById as ReadonlyMap<string, SpanFragmentWithChildren>] as const;
+  return { rootSpan, spansById, events };
 }
 
 function formatNanoseconds(nsBigInt: bigint) {
@@ -1180,6 +1305,11 @@ const SpanSheet_SpanFragment = graphql(`
     name
     duration
     parentId
+    events {
+      name
+      attributes
+      date
+    }
   }
 `);
 
@@ -1191,13 +1321,14 @@ type SpanSheetProps = {
   projectSlug: string;
   targetSlug: string;
   traceId: string;
+  activeTab: string | null;
 };
 
 function SpanSheet(props: SpanSheetProps) {
   const span = useFragment(SpanSheet_SpanFragment, props.span);
-  const [activeView, setActiveView] = useState<'span-attributes' | 'resource-attributes'>(
-    'span-attributes',
-  );
+  const [activeView, setActiveView] = useState<
+    'span-attributes' | 'resource-attributes' | 'events'
+  >((props.activeTab as 'events') ?? 'span-attributes');
   const clipboard = useClipboard();
 
   // TODO: maybe loading or not found state???
@@ -1324,6 +1455,22 @@ function SpanSheet(props: SpanSheetProps) {
                     </div>
                   </div>
                 </TabButton>
+                <TabButton
+                  isActive={activeView === 'events'}
+                  onClick={() => setActiveView('events')}
+                >
+                  <div className="flex items-center gap-x-2">
+                    <div>Events</div>
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-md px-2 py-0.5 text-[10px] font-thin"
+                      >
+                        {span.events.length}
+                      </Badge>
+                    </div>
+                  </div>
+                </TabButton>
               </div>
             </div>
             <div className="overflow-y-scroll">
@@ -1367,6 +1514,36 @@ function SpanSheet(props: SpanSheetProps) {
                       <p className="text-xs text-gray-500">
                         No resource attributes found for this span.
                       </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeView === 'events' && (
+                <div>
+                  {span.events.length > 0 ? (
+                    <div className="px-1 pt-2">
+                      {span.events.map(event => {
+                        return (
+                          <ExceptionTeaser
+                            type={event.attributes['exception.type'] ?? ''}
+                            message={event.attributes['exception.message'] ?? ''}
+                            stacktrace={event.attributes['exception.stacktrace'] ?? ''}
+                            name={event.name}
+                          />
+                        );
+                        // return (
+                        //   <>
+                        //     {Array.from(Object.entries(event.attributes)).map(([key, value]) => (
+                        //       <AttributeRow key={key} attributeKey={key} value={String(value)} />
+                        //     ))}
+                        //   </>
+                        // );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center">
+                      <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-gray-500" />
+                      <p className="text-xs text-gray-500">No events found for this span.</p>
                     </div>
                   )}
                 </div>
@@ -1472,5 +1649,51 @@ export function CopyIconButton(props: CopyIconButtonProps) {
         <TooltipContent className="text-xs">{props.label}</TooltipContent>
       </Tooltip>{' '}
     </TooltipProvider>
+  );
+}
+
+// function ErrorEventMarker(props: { name: string; positionPercentage: string }) {
+//   const isError = props.name === 'exception';
+//   return (
+//     <Link
+//       className={cn(
+//         'absolute bottom-[4px] top-[4px] z-50 w-0.5 cursor-pointer',
+//         isError ? 'bg-red-500' : 'bg-yellow-500',
+//       )}
+//       style={{ left: props.positionPercentage }}
+//     >
+//       <div
+//         className={cn(
+//           'absolute -left-[3px] -top-[2px] h-2 w-2',
+//           isError ? 'bg-red-500' : 'bg-yellow-500',
+//         )}
+//       />
+//     </Link>
+//   );
+// }
+
+function ExceptionTeaser(props: {
+  name: string;
+  message: string;
+  stacktrace: string | null;
+  type: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-md border border-red-800/50 bg-red-900/20">
+      <div className="flex items-center justify-between bg-red-900/40 px-3 py-2">
+        <span className="font-mono text-xs font-medium text-red-300">{props.type}</span>
+        <Badge variant="outline" className="border-red-700 bg-red-950 text-[10px] text-red-300">
+          {props.name}
+        </Badge>
+      </div>
+      <div className="p-3 text-xs">
+        <p className="text-gray-300">{props.message}</p>
+        {props.stacktrace && (
+          <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+            {props.stacktrace}
+          </pre>
+        )}
+      </div>
+    </div>
   );
 }
