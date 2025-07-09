@@ -115,7 +115,7 @@ export function PlansTable({ className }: { className?: string }) {
           </thead>
           <tbody>
             <TableSubheaderRow
-              icon={<OperationsIcon />}
+              icon={<SSOIcon />}
               title="Team"
               description="Structure teams your way. No enterprise tax."
             />
@@ -207,7 +207,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<OperationsIcon />}
+              icon={<UsageIcon />}
               title="Analytics, Monitoring & Metrics"
               description="Monitor and evolve your schema in a flexible way."
             />
@@ -441,7 +441,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<UsageIcon />}
+              icon={<EnterpriseSupportIcon />}
               title="Support"
               description="You can rely on us when you need help."
             />
