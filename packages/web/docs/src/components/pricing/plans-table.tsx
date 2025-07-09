@@ -96,7 +96,7 @@ export function PlansTable({ className }: { className?: string }) {
             <div className="z-10 rounded-l-3xl p-6 text-xl/6 font-normal">Features</div>
             {pricingTiers.map(tier => (
               <div className="py-6 last:rounded-r-3xl" key={tier.name}>
-                <div className="border-beige-400 flex justify-center gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
+                <div className="border-beige-400 flex items-center justify-between gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
                   <div className="text-xl/6 font-medium">{tier.name}</div>
                   {tier.cta}
                 </div>
