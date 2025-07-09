@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import Link from 'next/link';
 import {
   CallToAction,
   cn,
@@ -96,7 +97,7 @@ export function PlansTable({ className }: { className?: string }) {
             <div className="z-10 rounded-l-3xl p-6 text-xl/6 font-normal">Features</div>
             {pricingTiers.map(tier => (
               <div className="py-6 last:rounded-r-3xl" key={tier.name}>
-                <div className="border-beige-400 flex items-center justify-between gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
+                <div className="border-beige-400 flex justify-center gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
                   <div className="text-xl/6 font-medium">{tier.name}</div>
                   {tier.cta}
                 </div>
@@ -116,9 +117,102 @@ export function PlansTable({ className }: { className?: string }) {
           <tbody>
             <TableSubheaderRow
               icon={<OperationsIcon />}
-              title="Operations and data retention"
-              description="Structured by your plan—analyze the limits, manage your potential."
+              title="Team"
+              description="Structure teams your way. No enterprise tax."
             />
+
+            <tr>
+              <PlansTableCell className="whitespace-pre">Maximum team size</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                Unlimited
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell className="whitespace-pre">Single Sign-On (SSO)</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell className="whitespace-pre">
+                Role-based Access Control (RBAC)
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <TableSubheaderRow
+              icon={<OperationsIcon />}
+              title="Projects"
+              description="Experiment, iterate and ship to production in no time."
+            />
+
+            <tr>
+              <PlansTableCell>Maximum subgraph count</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                Unlimited
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Subgraph/schema publishes</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                Unlimited
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Subgraph/schema checks</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                Unlimited
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                Unlimited
+              </PlansTableCell>
+            </tr>
+
+            <TableSubheaderRow
+              icon={<OperationsIcon />}
+              title="Analytics, Monitoring & Metrics"
+              description="Monitor and evolve your schema in a flexible way."
+            />
+
             <tr>
               <PlansTableCell className="whitespace-pre">Operations per month</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
@@ -127,14 +221,41 @@ export function PlansTable({ className }: { className?: string }) {
               <PlansTableCell activePlan={activePlan} plan="Pro">
                 1M operations per month
                 <br className="max-sm:inline" />
-                <span className="font-normal">Then $10 per million operations</span>
+                <span className="font-normal">Then $10 per 1 million operations</span>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                Custom operation limit
+                Custom
               </PlansTableCell>
             </tr>
+
             <tr>
-              <PlansTableCell>Usage data retention</PlansTableCell>
+              <PlansTableCell>Schema usage data retention</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                7 days
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                90 days
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                One-year Minimum, Customizable
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Traffic-based breaking change detection</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                7 days
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                90 days
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                One-year Minimum, Customizable
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Schema check retention</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 7 days
               </PlansTableCell>
@@ -147,24 +268,13 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<UsageIcon />}
-              title="Usage"
-              description="All plans, all features, all unlimited. Know exactly what you're working with."
+              icon={<OperationsIcon />}
+              title="Gateway"
+              description="Performant and extendible. Stress-tested in production."
             />
+
             <tr>
-              <PlansTableCell>Scale: projects and organizations</PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                Unlimited
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                Unlimited
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                Unlimited
-              </PlansTableCell>
-            </tr>
-            <tr>
-              <PlansTableCell>GitHub issues and chat support</PlansTableCell>
+              <PlansTableCell>Self-host</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -175,16 +285,89 @@ export function PlansTable({ className }: { className?: string }) {
                 {YES}
               </PlansTableCell>
             </tr>
+
             <tr>
-              <PlansTableCell>Schema pushes and checks</PlansTableCell>
+              <PlansTableCell>
+                Apollo Federation v1 support
+                <br />
+                <TextLink
+                  href="/federation-gateway-audit"
+                  target="_blank"
+                  className="text-sm text-green-800"
+                >
+                  Check out the Federation Audit
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
-                Unlimited
+                {YES}
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Pro">
-                Unlimited
+                {YES}
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                Unlimited
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>
+                Apollo Federation v2 support
+                <br />
+                <TextLink
+                  href="/federation-gateway-audit"
+                  target="_blank"
+                  className="text-sm text-green-800"
+                >
+                  Check out the Federation Audit
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>OpenTelemetry (OTEL) Tracing</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Prometheus Metrics</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>Custom Plugins</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
               </PlansTableCell>
             </tr>
 
@@ -193,85 +376,6 @@ export function PlansTable({ className }: { className?: string }) {
               title="Availability"
               description="Engineered for uninterrupted performance and reliability."
             />
-            <tr>
-              <PlansTableCell>99.95% uptime of operation collection</PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                {YES}
-              </PlansTableCell>
-            </tr>
-            <tr>
-              <PlansTableCell className="lg:whitespace-pre">
-                100% uptime of schema registry CDN
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                {YES}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                {YES}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                {YES}
-              </PlansTableCell>
-            </tr>
-
-            <TableSubheaderRow
-              icon={<SSOIcon />}
-              title="SSO"
-              description={
-                <>
-                  Single sign-on via Open ID provider.{' '}
-                  <TextLink href="/docs/management/sso-oidc-provider">Learn more.</TextLink>
-                </>
-              }
-            />
-            <tr>
-              <PlansTableCell>Single sign-on via Open ID provider</PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                {YES}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                {YES}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                {YES}
-              </PlansTableCell>
-            </tr>
-
-            <TableSubheaderRow
-              icon={<EnterpriseSupportIcon />}
-              title="Enterprise Support"
-              description="Dedicated resources and personalized guidance designed for enterprise-scale needs."
-            />
-            <tr>
-              <PlansTableCell>Dedicated Slack channel for support</PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                {YES}
-              </PlansTableCell>
-            </tr>
-            <tr>
-              <PlansTableCell>White-glove onboarding</PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Hobby">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Pro">
-                {NO}
-              </PlansTableCell>
-              <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                {YES}
-              </PlansTableCell>
-            </tr>
             <tr>
               <PlansTableCell>Support SLA</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
@@ -296,6 +400,86 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
                 Tailored to your needs
+              </PlansTableCell>
+            </tr>
+            <tr>
+              <PlansTableCell className="lg:whitespace-pre">
+                100% uptime of schema registry CDN
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+            <tr>
+              <PlansTableCell>99.95% uptime for usage/analytics</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+            <tr>
+              <PlansTableCell>99.95% uptime for dashboard</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <TableSubheaderRow
+              icon={<UsageIcon />}
+              title="Support"
+              description="You can rely on us when you need help."
+            />
+            <tr>
+              <PlansTableCell>GitHub issues and chat support</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+            <tr>
+              <PlansTableCell>Dedicated Slack channel for support</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+            <tr>
+              <PlansTableCell>White-glove onboarding</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
               </PlansTableCell>
             </tr>
             <tr>
@@ -331,6 +515,24 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Pro">
                 {NO}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <TableSubheaderRow
+              icon={<UsageIcon />}
+              title="Compliance / Security"
+              description="Enterprise-grade software, affordable for everyone."
+            />
+            <tr>
+              <PlansTableCell>SOC 2 Type II Certified</PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
                 {YES}
