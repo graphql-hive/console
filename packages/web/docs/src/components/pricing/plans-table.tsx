@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import { LuGlobeLock, LuPackage, LuUserRound } from 'react-icons/lu';
 import {
   CallToAction,
   cn,
@@ -9,14 +10,9 @@ import {
   TextLink,
 } from '@theguild/components';
 import { CheckmarkIcon, XIcon } from '../../app/gateway/federation-compatible-benchmarks/icons';
+import { GatewayIcon } from '../icons';
 import { NestedSticky } from '../nested-sticky';
-import {
-  AvailabilityIcon,
-  EnterpriseSupportIcon,
-  OperationsIcon,
-  SSOIcon,
-  UsageIcon,
-} from './icons';
+import { AvailabilityIcon, EnterpriseSupportIcon, UsageIcon } from './icons';
 
 type PlanName = 'Hobby' | 'Pro' | 'Enterprise';
 interface PricingPlan {
@@ -115,7 +111,7 @@ export function PlansTable({ className }: { className?: string }) {
           </thead>
           <tbody>
             <TableSubheaderRow
-              icon={<SSOIcon />}
+              icon={<LuUserRound />}
               title="Team"
               description="Structure teams your way. No enterprise tax."
             />
@@ -162,7 +158,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<OperationsIcon />}
+              icon={<LuPackage />}
               title="Projects"
               description="Experiment, iterate and ship to production in no time."
             />
@@ -267,7 +263,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<OperationsIcon />}
+              icon={<GatewayIcon />}
               title="Gateway"
               description="Performant and extendible. Stress-tested in production."
             />
@@ -521,7 +517,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <TableSubheaderRow
-              icon={<UsageIcon />}
+              icon={<LuGlobeLock />}
               title="Compliance / Security"
               description="Enterprise-grade software, affordable for everyone."
             />
