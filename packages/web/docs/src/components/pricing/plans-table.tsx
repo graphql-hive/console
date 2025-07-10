@@ -219,7 +219,7 @@ export function PlansTable({ className }: { className?: string }) {
                 <span className="font-normal">Then $10 per 1 million operations</span>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Enterprise">
-                Custom
+                Volume discount negotiable
               </PlansTableCell>
             </tr>
 
