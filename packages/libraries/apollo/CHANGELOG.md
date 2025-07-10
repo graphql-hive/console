@@ -1,5 +1,13 @@
 # @graphql-hive/apollo
 
+## 0.39.2
+
+### Patch Changes
+
+- Updated dependencies
+  [[`8d56b98`](https://github.com/graphql-hive/console/commit/8d56b9848028d65442cb1dada139f5a17d464f1b)]:
+  - @graphql-hive/core@0.13.0
+
 ## 0.39.1
 
 ### Patch Changes
