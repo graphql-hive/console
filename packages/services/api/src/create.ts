@@ -36,6 +36,7 @@ import {
   SchemaPolicyServiceConfig,
 } from './modules/policy/providers/tokens';
 import { projectModule } from './modules/project';
+import { proposalsModule } from './modules/proposals';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -88,6 +89,7 @@ const modules = [
   collectionModule,
   appDeploymentsModule,
   auditLogsModule,
+  proposalsModule,
 ];
 
 export function createRegistry({
