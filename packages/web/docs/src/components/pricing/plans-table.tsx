@@ -316,7 +316,7 @@ export function PlansTable({ className }: { className?: string }) {
                   target="_blank"
                   className="text-sm text-green-800"
                 >
-                  Check out the Federation Audit
+                  Check out the federation audit
                 </TextLink>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
@@ -339,7 +339,7 @@ export function PlansTable({ className }: { className?: string }) {
                   target="_blank"
                   className="text-sm text-green-800"
                 >
-                  Check out the Federation Audit
+                  Check out the federation audit
                 </TextLink>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
@@ -380,7 +380,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Persisted Documents</PlansTableCell>
+              <PlansTableCell>Persisted documents</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -419,7 +419,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Demand Control</PlansTableCell>
+              <PlansTableCell>Demand control</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -432,7 +432,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Rate Limiting</PlansTableCell>
+              <PlansTableCell>Rate limiting</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -445,7 +445,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Subgraph Request Signing</PlansTableCell>
+              <PlansTableCell>Subgraph request signing</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -458,7 +458,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Response Caching</PlansTableCell>
+              <PlansTableCell>Response caching</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -471,7 +471,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Custom Plugins</PlansTableCell>
+              <PlansTableCell>Custom plugins</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -661,7 +661,7 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
             </tr>
             <tr>
-              <PlansTableCell>Audit Logs</PlansTableCell>
+              <PlansTableCell>Audit logs</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
