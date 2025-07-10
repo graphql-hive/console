@@ -603,22 +603,43 @@ You can fetch either the latest schema or a schema by the action id (commit sha)
 publishing the schema version. The `--write` option can be used for writing the schema to a file.
 
 ```bash
-hive schema:fetch --type sdl --write schema.graphql
-hive schema:fetch --type sdl --write schema.graphql feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type sdl \
+  --write schema.graphqls
+
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type sdl \
+  --write schema.graphqls \
+  feb8aa9ec8932eb
 ```
 
 For projects with a supergraph it is also possible to fetch the supergraph.
 
 ```bash
-hive schema:fetch --type supergraph --write supergraph.graphql
-hive schema:fetch --type supergraph --write supergraph.graphql feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type supergraph \
+  --write supergraph.graphqls
+
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type supergraph \
+  --write supergraph.graphqls \
+  feb8aa9ec8932eb
 ```
 
 It is also possible to print a list of subgraph details in an ascii table.
 
 ```bash
-hive schema:fetch --type subgraphs
-hive schema:fetch --type subgraphs feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type subgraphs
+
+hive schema:fetch
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type subgraphs feb8aa9ec8932eb
 ```
 
 For more information please refer to the
