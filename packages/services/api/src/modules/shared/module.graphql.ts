@@ -14,6 +14,14 @@ export default gql`
   scalar DateTime
     @tag(name: "public")
     @specifiedBy(url: "https://the-guild.dev/graphql/scalars/docs/scalars/date-time")
+
+  """
+  DateTime with nano second precission.
+  """
+  scalar DateTime64
+
+  scalar JSONObject
+
   scalar Date
   scalar JSON
   scalar JSONSchemaObject
