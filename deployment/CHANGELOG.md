@@ -1,5 +1,29 @@
 # hive
 
+## 8.1.1
+
+### Patch Changes
+
+- [#6867](https://github.com/graphql-hive/console/pull/6867)
+  [`be0d710`](https://github.com/graphql-hive/console/commit/be0d71025b4d1bee06b6059f31bd5039e9709b5d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Only show the "edit preflight script" button in the
+  laboratory when the users has permissions to edit it.
+
+- [#6881](https://github.com/graphql-hive/console/pull/6881)
+  [`f8a1350`](https://github.com/graphql-hive/console/commit/f8a13506f747b297f6c7bfd295fe13af89153380)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `project:create` permission to the acccess
+  token permission selection screen.
+
+- [#6875](https://github.com/graphql-hive/console/pull/6875)
+  [`73864f2`](https://github.com/graphql-hive/console/commit/73864f2b954387406c6d7f3a205d7ee38663e6a4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix default organization resolution and prevent
+  missing permissions error.
+
+- [#6879](https://github.com/graphql-hive/console/pull/6879)
+  [`3779184`](https://github.com/graphql-hive/console/commit/3779184a440743f04bd18943651da7b77f7a43c0)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - Fix schema version browser history
+  navigation.
+
 ## 8.1.0
 
 ### Minor Changes
