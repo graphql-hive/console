@@ -112,7 +112,7 @@ export function PlansTable({ className }: { className?: string }) {
           <tbody>
             <TableSubheaderRow
               icon={<LuUserRound />}
-              title="Team"
+              title="Organization and Team"
               description="Structure teams your way. No enterprise tax."
             />
 
@@ -130,7 +130,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell className="whitespace-pre">Single Sign-On (SSO)</PlansTableCell>
+              <PlansTableCell className="whitespace-pre">
+                <TextLink href="/docs/management/sso-oidc-provider" target="_blank">
+                  Single Sign-On (SSO)
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -144,7 +148,26 @@ export function PlansTable({ className }: { className?: string }) {
 
             <tr>
               <PlansTableCell className="whitespace-pre">
-                Role-based Access Control (RBAC)
+                <TextLink href="/docs/management/members-roles-permissions" target="_blank">
+                  Role-based Access Control (RBAC)
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell className="whitespace-pre">
+                <TextLink href="/docs/graphql-api" target="_blank">
+                  GraphQL Management API
+                </TextLink>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
@@ -177,7 +200,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Subgraph/schema publishes</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/schema-registry#publish-a-schema">
+                  Subgraph/schema publishes
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 Unlimited
               </PlansTableCell>
@@ -190,7 +217,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Subgraph/schema checks</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/schema-registry#check-a-schema">
+                  Subgraph/schema checks
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 Unlimited
               </PlansTableCell>
@@ -203,7 +234,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Schema Contracts</PlansTableCell>
+              <PlansTableCell>
+                <TextLink href="/docs/schema-registry/contracts" target="_blank">
+                  Schema Contracts
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 Unlimited
               </PlansTableCell>
@@ -216,7 +251,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Schema Linting</PlansTableCell>
+              <PlansTableCell>
+                <TextLink href="/docs/schema-registry/schema-policy" target="_blank">
+                  Schema Linting
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -235,7 +274,24 @@ export function PlansTable({ className }: { className?: string }) {
             />
 
             <tr>
-              <PlansTableCell className="whitespace-pre">Operations per month</PlansTableCell>
+              <PlansTableCell className="whitespace-pre">
+                <TextLink href=" /docs/schema-registry/usage-reporting" target="_blank">
+                  Operation usage reporting and insights
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell className="whitespace-pre">Usage reporting per month</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 1M operations per month
               </PlansTableCell>
@@ -263,7 +319,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Traffic-based breaking change detection</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  href="/docs/management/targets#conditional-breaking-changes"
+                  target="_blank"
+                >
+                  Traffic-based breaking change detection
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 7 days
               </PlansTableCell>
@@ -354,7 +417,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Subscriptions over WebSocket and SSE</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/gateway/subscriptions">
+                  Subscriptions over WebSocket and SSE
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -367,7 +434,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>JWT authentication</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/gateway/authorization-authentication">
+                  JWT authentication
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -380,7 +451,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Persisted documents</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/gateway/persisted-documents">
+                  Persisted documents
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -393,7 +468,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>OpenTelemetry (OTEL) tracing</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/monitoring-tracing#opentelemetry-traces"
+                >
+                  OpenTelemetry (OTEL) tracing
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -406,7 +488,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Prometheus metrics</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/monitoring-tracing#prometheus-metrics"
+                >
+                  Prometheus metrics
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -419,7 +508,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Demand control</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/other-features/security/demand-control"
+                >
+                  Demand control
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -432,7 +528,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Rate limiting</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/other-features/security/rate-limiting"
+                >
+                  Rate limiting
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -445,7 +548,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Subgraph request signing</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/other-features/security/hmac-signature"
+                >
+                  Subgraph request signing
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -458,7 +568,14 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Response caching</PlansTableCell>
+              <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="/docs/gateway/other-features/performance/response-caching"
+                >
+                  Response caching
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -471,7 +588,11 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell>Custom plugins</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/gateway/other-features/custom-plugins">
+                  Custom plugins
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
@@ -661,7 +782,11 @@ export function PlansTable({ className }: { className?: string }) {
               </PlansTableCell>
             </tr>
             <tr>
-              <PlansTableCell>Audit logs</PlansTableCell>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/management/audit-logs">
+                  Audit logs
+                </TextLink>
+              </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 {YES}
               </PlansTableCell>
