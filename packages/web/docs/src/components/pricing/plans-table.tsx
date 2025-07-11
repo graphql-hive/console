@@ -147,7 +147,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell className="whitespace-pre">
+              <PlansTableCell>
                 <TextLink href="/docs/management/members-roles-permissions" target="_blank">
                   Role-based Access Control (RBAC)
                 </TextLink>
@@ -274,7 +274,7 @@ export function PlansTable({ className }: { className?: string }) {
             />
 
             <tr>
-              <PlansTableCell className="whitespace-pre">
+              <PlansTableCell>
                 <TextLink href=" /docs/schema-registry/usage-reporting" target="_blank">
                   Operation usage reporting and insights
                 </TextLink>
