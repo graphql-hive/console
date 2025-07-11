@@ -89,12 +89,26 @@ export function PlansTable({ className }: { className?: string }) {
             aria-hidden
             className="bg-beige-100 [[data-sticky]>&]:border-beige-200 relative flex items-center rounded-3xl border border-transparent *:text-left max-md:hidden md:*:w-1/4 [[data-sticky]>&]:rounded-t-none [[data-sticky]>&]:shadow-sm"
           >
-            <div className="z-10 rounded-l-3xl p-6 text-xl/6 font-normal">Features</div>
-            {pricingTiers.map(tier => (
-              <div className="py-6 last:rounded-r-3xl" key={tier.name}>
-                <div className="border-beige-400 flex items-center justify-between gap-4 border-l px-6 sm:[@media(width<1400px)]:[&>a]:hidden">
+            <div className="z-10 flex rounded-l-3xl p-6 pr-[0.5px] text-xl/6 font-normal lg:w-[28%]">
+              <span className="border-beige-400 w-full border-r">Features</span>
+            </div>
+            {pricingTiers.map((tier, i) => (
+              <div
+                className="py-6 last:rounded-r-3xl last:pr-6 lg:w-[23%] lg:last:w-[26%]"
+                key={tier.name}
+              >
+                <div
+                  className={cn(
+                    'border-beige-400 flex w-full items-center justify-between gap-4 px-6 pr-0 sm:[@media(width<1400px)]:[&>a]:hidden',
+                  )}
+                >
                   <div className="text-xl/6 font-medium">{tier.name}</div>
                   {tier.cta}
+                  {i < pricingTiers.length - 1 && (
+                    <div className="border-beige-400 ml-auto h-full w-6 select-none border-r">
+                      &nbsp;
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -117,7 +131,7 @@ export function PlansTable({ className }: { className?: string }) {
             />
 
             <tr>
-              <PlansTableCell className="whitespace-pre">Maximum team size</PlansTableCell>
+              <PlansTableCell>Maximum team size</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 Unlimited
               </PlansTableCell>
@@ -130,7 +144,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell className="whitespace-pre">
+              <PlansTableCell>
                 <TextLink href="/docs/management/sso-oidc-provider" target="_blank">
                   Single Sign-On (SSO)
                 </TextLink>
@@ -164,7 +178,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell className="whitespace-pre">
+              <PlansTableCell>
                 <TextLink href="/docs/graphql-api" target="_blank">
                   GraphQL Management API
                 </TextLink>
@@ -291,7 +305,7 @@ export function PlansTable({ className }: { className?: string }) {
             </tr>
 
             <tr>
-              <PlansTableCell className="whitespace-pre">Usage reporting per month</PlansTableCell>
+              <PlansTableCell>Usage reporting per month</PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
                 1M operations per month
               </PlansTableCell>
@@ -909,7 +923,7 @@ function PlansTableCell({
     <td
       aria-hidden={plan !== currentPlan}
       className={cn(
-        'border-beige-400 border-b border-r p-4 font-medium first:border-l first:font-medium max-md:w-1/2 max-sm:text-sm sm:py-6 md:w-1/4 [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 md:[.subheader+tr>&:last-child]:rounded-tr-3xl max-md:[.subheader+tr>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl md:[tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl max-md:[tr:is(:has(+.subheader),:last-child)>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
+        'border-beige-400 border-b border-r p-4 font-medium first:border-l first:font-medium max-md:w-1/2 max-sm:text-sm sm:py-6 md:w-1/4 lg:w-[23%] lg:first:w-[28%] lg:last:w-[26%] [&:not(:first-child)]:border-l-0 [&:not(:first-child)]:text-center [&:not(:first-child)]:text-sm [&:not(:first-child)]:text-green-800 md:[.subheader+tr>&:last-child]:rounded-tr-3xl max-md:[.subheader+tr>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-tr-3xl [.subheader+tr>&]:border-t [.subheader+tr>&]:first:rounded-tl-3xl md:[tr:is(:has(+.subheader),:last-child)>&:last-child]:rounded-br-3xl max-md:[tr:is(:has(+.subheader),:last-child)>&:not(:first-child,:has(+td[aria-hidden=false]))]:rounded-br-3xl [tr:is(:last-child,:has(+.subheader))>&]:first:rounded-bl-3xl',
         plan && plan !== currentPlan && 'max-md:hidden',
         className,
       )}
