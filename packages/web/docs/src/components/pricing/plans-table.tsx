@@ -99,15 +99,13 @@ export function PlansTable({ className }: { className?: string }) {
               >
                 <div
                   className={cn(
-                    'border-beige-400 flex w-full items-center justify-between gap-4 px-6 pr-0 sm:[@media(width<1400px)]:[&>a]:hidden',
+                    'border-beige-400 flex w-full items-center justify-between px-6 pr-0 sm:[@media(width<1400px)]:[&>a]:hidden',
                   )}
                 >
-                  <div className="text-xl/6 font-medium">{tier.name}</div>
+                  <div className="mr-auto text-xl/6 font-medium">{tier.name}</div>
                   {tier.cta}
                   {i < pricingTiers.length - 1 && (
-                    <div className="border-beige-400 ml-auto h-full w-6 select-none border-r">
-                      &nbsp;
-                    </div>
+                    <div className="border-beige-400 h-full w-6 select-none border-r">&nbsp;</div>
                   )}
                 </div>
               </div>
