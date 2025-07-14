@@ -26,9 +26,7 @@ const validateDate = (datestring: string): boolean => {
 
   switch (month) {
     case 2: // February
-      if (leapYear(year) && day > 29) {
-        return false;
-      } else if (!leapYear(year) && day > 28) {
+      if ((leapYear(year) && day > 29) || (!leapYear(year) && day > 28)) {
         return false;
       }
       return true;
@@ -57,7 +55,6 @@ const validateDateTime = (dateTimeString: string): boolean => {
   // Check if it is a correct date using the javascript Date parse() method.
   const time = Date.parse(dateTimeString);
   if (time !== time) {
-    // eslint-disable-line
     return false;
   }
   // Split the date-time-string up into the string-date and time-string part.
@@ -77,7 +74,7 @@ const validateTime = (time: string): boolean => {
 
 const validateJSDate = (date: Date): boolean => {
   const time = date.getTime();
-  return time === time; // eslint-disable-line
+  return time === time;
 };
 
 const parseDateTime = (dateTime: string) => dateTime;

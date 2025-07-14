@@ -1,4 +1,3 @@
-import { addMilliseconds } from 'date-fns';
 import type { SpanResolvers } from './../../../__generated__/types';
 
 /*
