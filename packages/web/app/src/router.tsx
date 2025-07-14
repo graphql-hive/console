@@ -79,6 +79,7 @@ import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
+  PaginationState,
   TargetTracesFilterState,
   TargetTracesPage,
   TargetTracesPagination,
@@ -648,17 +649,25 @@ const targetInsightsRoute = createRoute({
 });
 
 const TargetTracesRouteSearch = z.object({
-  filter: TargetTracesFilterState.optional().default({}),
-  sort: TargetTracesSort.shape.optional().default([]),
-  pagination: TargetTracesPagination.shape.optional().default({}),
+  filter: TargetTracesFilterState.optional(),
+  sort: TargetTracesSort.shape.optional(),
+  pagination: TargetTracesPagination.shape.optional(),
 });
+
 const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
   validateSearch: TargetTracesRouteSearch.parse,
   component: function TargetTracesRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
-    const { filter, sort, pagination } = targetTracesRoute.useSearch();
+    const {
+      filter = {},
+      sort = [],
+      pagination = {
+        pageIndex: 0,
+        pageSize: 20,
+      } satisfies PaginationState,
+    } = targetTracesRoute.useSearch();
 
     return (
       <TargetTracesPage
@@ -667,7 +676,7 @@ const targetTracesRoute = createRoute({
         targetSlug={targetSlug}
         sorting={sort}
         pagination={pagination}
-        filter={filter}
+        filter={filter as any}
       />
     );
   },
