@@ -98,12 +98,17 @@ export const permissionGroups: Array<PermissionGroup> = [
   },
   {
     id: 'usage-reporting',
-    title: 'Usage Reporting',
+    title: 'Usage Reporting and Tracing',
     permissions: [
       {
         id: 'usage:report',
         title: 'Report usage data',
         description: 'Grant access to report usage data.',
+      },
+      {
+        id: 'traces:report',
+        title: 'Report OTEL traces',
+        description: 'Grant access to reporting traces.',
       },
     ],
   },
