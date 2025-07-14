@@ -1,5 +1,4 @@
 import { addDays, startOfMonth } from 'date-fns';
-import { Stripe } from 'stripe';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
@@ -201,19 +200,6 @@ export const stripeBillingRouter = router({
               });
             }
           }
-        }
-
-        const updateParams: Stripe.CustomerUpdateParams = {};
-
-        if (organizationBillingRecord.billingEmailAddress) {
-          updateParams.email = organizationBillingRecord.billingEmailAddress;
-        }
-
-        if (Object.keys(updateParams).length > 0) {
-          await ctx.stripeBilling.stripe.customers.update(
-            organizationBillingRecord.externalBillingReference,
-            updateParams,
-          );
         }
       } else {
         throw new Error(
