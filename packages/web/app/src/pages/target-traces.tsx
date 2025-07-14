@@ -687,7 +687,7 @@ export const TargetTracesFilterState = z.object({
   'http.url': z.array(z.string()).default([]),
 });
 
-type FilterState = z.infer<typeof TargetTracesFilterState>;
+export type FilterState = z.infer<typeof TargetTracesFilterState>;
 
 type FilterProps = {
   filter: FilterState;
@@ -1066,7 +1066,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
   const targetRef = useTargetReference();
 
   const period = useMemo(() => {
-    if (!props.filter.period.length) {
+    if (!props.filter.period?.length) {
       return null;
     }
     return dateMath.resolveRange({ from: props.filter.period[0], to: props.filter.period[1] });
@@ -1084,11 +1084,11 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
       filter: {
         period,
         duration: {
-          min: props.filter.duration[0] ?? null,
-          max: props.filter.duration[1] ?? null,
+          min: props.filter.duration?.[0] ?? null,
+          max: props.filter.duration?.[1] ?? null,
         },
         traceIds: props.filter['trace.id'],
-        success: props.filter['graphql.status'].map(status => (status === 'ok' ? true : false)),
+        success: props.filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
         errorCodes: props.filter['graphql.errorCode'],
         operationNames: props.filter['graphql.operation'],
         operationTypes: props.filter['graphql.kind'] as any,
