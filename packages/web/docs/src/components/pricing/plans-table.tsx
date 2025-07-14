@@ -452,6 +452,26 @@ export function PlansTable({ className }: { className?: string }) {
 
             <tr>
               <PlansTableCell>
+                <TextLink
+                  target="_blank"
+                  href="docs/gateway/authorization-authentication#rolescope-based-authentication-rbac-with-requiresscope-directive"
+                >
+                  Role-based Access Control (RBAC)
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>
                 <TextLink target="_blank" href="/docs/gateway/persisted-documents">
                   Persisted documents
                 </TextLink>
@@ -574,6 +594,23 @@ export function PlansTable({ className }: { className?: string }) {
                   href="/docs/gateway/other-features/performance/response-caching"
                 >
                   Response caching
+                </TextLink>
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Hobby">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Pro">
+                {YES}
+              </PlansTableCell>
+              <PlansTableCell activePlan={activePlan} plan="Enterprise">
+                {YES}
+              </PlansTableCell>
+            </tr>
+
+            <tr>
+              <PlansTableCell>
+                <TextLink target="_blank" href="/docs/gateway/defer-stream">
+                  Incremental Delivery (Defer & Stream)
                 </TextLink>
               </PlansTableCell>
               <PlansTableCell activePlan={activePlan} plan="Hobby">
