@@ -160,11 +160,9 @@ export const MultiInputFilter = memo(
 
     return (
       <Filter name={props.name}>
-        <FilterTitle
-          changes={props.selectedValues.length}
-          children={props.name}
-          onReset={() => props.onChange([])}
-        />
+        <FilterTitle changes={props.selectedValues.length} onReset={() => props.onChange([])}>
+          {props.name}
+        </FilterTitle>
         <FilterContent>
           <form
             className="mt-4 flex w-full max-w-sm items-center space-x-2"
@@ -181,7 +179,7 @@ export const MultiInputFilter = memo(
             />
             <Button
               variant="secondary"
-              className="h-9 w-9 p-0"
+              className="size-9 p-0"
               type="submit"
               onClick={() => {
                 addTraceId();
@@ -212,7 +210,7 @@ export const MultiInputFilter = memo(
   },
 );
 
-export const MultiSelectFilter = memo(function <$Value>(props: {
+export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
   name: string;
   /**
    * Filter's key for the backend and url state
@@ -255,11 +253,9 @@ export const MultiSelectFilter = memo(function <$Value>(props: {
 
   return (
     <Filter name={props.name}>
-      <FilterTitle
-        changes={props.selectedValues.length}
-        children={props.name}
-        onReset={() => props.onChange([])}
-      />
+      <FilterTitle changes={props.selectedValues.length} onReset={() => props.onChange([])}>
+        {props.name}
+      </FilterTitle>
       <FilterContent>
         {!props.hideSearch && <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />}
         {filteredOptions.map((option, index) => (
@@ -281,7 +277,7 @@ export const MultiSelectFilter = memo(function <$Value>(props: {
       </FilterContent>
     </Filter>
   );
-});
+};
 
 function FilterOption(props: {
   onClick(): void;
@@ -338,7 +334,7 @@ const DoubleSlider = forwardRef<
     {props.value?.map((_, index) => (
       <SliderPrimitive.Thumb
         key={index}
-        className="block h-4 w-4 rounded-full border border-gray-700 bg-gray-800 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+        className="block size-4 rounded-full border border-gray-700 bg-gray-800 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
       />
     ))}
   </SliderPrimitive.Root>
@@ -347,7 +343,7 @@ const DoubleSlider = forwardRef<
 export const DurationFilter = memo(
   (props: { value: [number, number] | []; onChange(value: [number, number]): void }) => {
     const minValue = 0;
-    const maxValue = 100000;
+    const maxValue = 100_000;
     const defaultValues: [number, number] = [minValue, maxValue];
     const [values, setValues] = useState<[number, number]>(
       props.value.length ? props.value : defaultValues,
@@ -399,9 +395,10 @@ export const DurationFilter = memo(
       <Filter name="Duration">
         <FilterTitle
           changes={values[0] === minValue && values[1] === maxValue ? 0 : 1}
-          children={'Duration'}
           onReset={() => props.onChange(defaultValues)}
-        />
+        >
+          Duration
+        </FilterTitle>
         <FilterContent>
           <div className="space-y-6 p-2">
             <div className="space-y-2">
@@ -441,7 +438,7 @@ export const DurationFilter = memo(
               step={1}
               value={values}
               onValueChange={handleSliderChange}
-              className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+              className="[&_[role=slider]]:size-4"
             />
           </div>
         </FilterContent>
@@ -518,11 +515,9 @@ export const TimelineFilter = memo(
 
     return (
       <Filter name="Timeline">
-        <FilterTitle
-          changes={props.value.length ? 1 : 0}
-          children={'Timeline'}
-          onReset={() => props.onChange([])}
-        />
+        <FilterTitle changes={props.value.length ? 1 : 0} onReset={() => props.onChange([])}>
+          Timeline
+        </FilterTitle>
         <FilterContent>
           <div className="space-y-2 p-2">
             <Select

@@ -1,8 +1,8 @@
 import { Injectable } from 'graphql-modules';
 import { z } from 'zod';
 import { subDays } from '@/lib/date-time';
-import { batch, parseDateRangeInput } from '@hive/api/shared/helpers';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { batch, parseDateRangeInput } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
 import { ClickHouse, sql } from './clickhouse-client';
 import { formatDate } from './operations-reader';
@@ -293,8 +293,6 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) 
     const period = parseDateRangeInput(filter.period);
     ANDs.push(
       sql`"otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')`,
-    );
-    ANDs.push(
       sql`"otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')`,
     );
   }
@@ -317,11 +315,13 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) 
     const hasError = filter.success.includes(false);
 
     if (hasSuccess && !hasError) {
-      ANDs.push(sql`"graphql_error_count" = 0`);
-      ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
-    } else if (hasError && !hasSuccess) {
-      ANDs.push(sql`"graphql_error_count" > 0`);
       ANDs.push(
+        sql`"graphql_error_count" = 0`,
+        sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`,
+      );
+    } else if (hasError && !hasSuccess) {
+      ANDs.push(
+        sql`"graphql_error_count" > 0`,
         sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
       );
     }
