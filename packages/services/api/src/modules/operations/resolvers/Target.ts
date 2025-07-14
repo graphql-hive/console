@@ -108,19 +108,18 @@ export const Target: Pick<
     }
 
     if (filter?.success?.length) {
-      // ANDs.push(sql`http_status_code IN (${sql.array(filter.success.map((ok) => ok ? ).flat(1), 'String')})`);
-      ANDs.push(
-        sql`${sql.join(
-          filter.success.map(ok =>
-            ok
-              ? // 2XX
-                sql`(toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300)`
-              : // non-2XXX
-                sql`(toUInt16OrZero(http_status_code) < 200 OR toUInt16OrZero(http_status_code) >= 300)`,
-          ),
-          ' OR ',
-        )}`,
-      );
+      const hasSuccess = filter.success.includes(true);
+      const hasError = filter.success.includes(false);
+
+      if (hasSuccess && !hasError) {
+        ANDs.push(sql`"graphql_error_count" = 0`);
+        ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
+      } else if (hasError && !hasSuccess) {
+        ANDs.push(sql`"graphql_error_count" > 0`);
+        ANDs.push(
+          sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
+        );
+      }
     }
 
     if (filter?.operationNames?.length) {
