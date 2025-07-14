@@ -1208,7 +1208,7 @@ function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragme
   return { rootSpan, spansById, events };
 }
 
-function formatNanoseconds(nsBigInt: bigint) {
+export function formatNanoseconds(nsBigInt: bigint) {
   const TEN_THOUSAND_NS = 10000n;
 
   if (nsBigInt === 0n) {
