@@ -441,8 +441,8 @@ function getBucketUnitAndCount(startDate: Date, endDate: Date): BucketResult {
   const diffMs = endDate.getTime() - startDate.getTime();
   const diffMinutes = diffMs / MS_IN.minute;
 
-  let unit;
-  let count;
+  let unit: BucketResult['unit'];
+  let count: BucketResult['count'];
 
   if (diffMinutes <= 60) {
     unit = 'minutes';
