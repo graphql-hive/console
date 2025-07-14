@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { formatDuration } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 import {
@@ -52,7 +51,11 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as dateMath from '../lib/date-math';
-import { CopyIconButton, TraceSheet as ImportedTraceSheet } from './target-trace';
+import {
+  CopyIconButton,
+  formatNanoseconds,
+  TraceSheet as ImportedTraceSheet,
+} from './target-trace';
 import {
   DurationFilter,
   MultiInputFilter,
@@ -68,6 +71,10 @@ const chartConfig = {
   error: {
     label: 'Failed',
     color: 'hsl(var(--chart-2))',
+  },
+  remaining: {
+    label: 'Remaining',
+    color: 'hsl(var(--chart-3))',
   },
 } satisfies ChartConfig;
 
@@ -88,7 +95,9 @@ type TrafficProps = {
 const Traffic = memo(function Traffic(props: TrafficProps) {
   const buckets = useFragment(Traffic_TracesStatusBreakdownBucketFragment, props.buckets);
   const data = buckets.map(b => ({
-    ...b,
+    ok: b.okCountFiltered,
+    error: b.errorCountFiltered,
+    remaining: b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
     timeBucket: b.timeBucket.substring(0, 10),
   }));
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
@@ -184,8 +193,9 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
             />
           }
         />
-        <Bar stackId="all" dataKey="okCountTotal" fill={`var(--color-ok)`} name="Ok" />
-        <Bar stackId="all" dataKey="errorCountTotal" fill={`var(--color-error)`} name="Error" />
+        <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} name="Ok" />
+        <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} name="Error" />
+        <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
         )}
@@ -468,7 +478,7 @@ const TracesList = memo(function TracesList(
           );
         },
         cell: ({ row }) => {
-          const duration = formatDuration((row.getValue('duration') as number) / 1000000, true);
+          const duration = formatNanoseconds(BigInt(row.getValue('duration')));
           return <div className="px-4 font-mono text-xs font-medium">{duration}</div>;
         },
       },
@@ -1132,7 +1142,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           <div className="mt-2 flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3 text-gray-400" />
-              <span className="text-gray-300">{formatDuration(trace.duration, true)}</span>
+              <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               variant="outline"
@@ -1167,6 +1177,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
       {trace && (
         <ImportedTraceSheet
           activeSpanId={null}
+          activeSpanTab={null}
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
