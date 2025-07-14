@@ -4737,6 +4737,8 @@ const FeatureFlagsModel = zod
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
+    /** whether otel tracing is enabled for the given organization */
+    otelTracing: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4747,6 +4749,7 @@ const FeatureFlagsModel = zod
         compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
+        otelTracing: false,
       },
   );
 
