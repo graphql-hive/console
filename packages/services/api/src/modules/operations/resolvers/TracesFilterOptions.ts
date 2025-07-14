@@ -80,11 +80,16 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
       .load({
         key: 'success',
         columnExpression:
-          'if((toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300), true, false)',
+          'if((toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300), true, false) AND "graphql_error_count" = 0',
         limit: null,
         arrayJoinColumn: null,
       })
-      .then(data => data.map(({ value, count }) => ({ value: value ? true : false, count })));
+      .then(data =>
+        data.map(({ value, count }) => ({
+          value: value === 'true' ? true : false,
+          count,
+        })),
+      );
   },
   errorCode: async ({ loader }, { top }) => {
     return loader.load({
