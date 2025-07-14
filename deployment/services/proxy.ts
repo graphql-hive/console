@@ -5,6 +5,7 @@ import { App } from './app';
 import { Environment } from './environment';
 import { GraphQL } from './graphql';
 import { Observability } from './observability';
+import { OTELCollector } from './otel-collector';
 import { type PublicGraphQLAPIGateway } from './public-graphql-api-gateway';
 import { Usage } from './usage';
 
@@ -15,6 +16,7 @@ export function deployProxy({
   environment,
   observability,
   publicGraphQLAPIGateway,
+  otelCollector,
 }: {
   observability: Observability;
   environment: Environment;
@@ -22,6 +24,7 @@ export function deployProxy({
   app: App;
   usage: Usage;
   publicGraphQLAPIGateway: PublicGraphQLAPIGateway;
+  otelCollector: OTELCollector;
 }) {
   const { tlsIssueName } = new CertManager().deployCertManagerAndIssuer();
   const commonConfig = new pulumi.Config('common');
@@ -110,6 +113,14 @@ export function deployProxy({
         path: '/graphql',
         customRewrite: '/graphql',
         service: publicGraphQLAPIGateway.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
+      {
+        name: 'otel-traces',
+        path: '/otel/v1/traces',
+        customRewrite: '/v1/traces',
+        service: otelCollector.service,
         requestTimeout: '60s',
         retriable: true,
       },

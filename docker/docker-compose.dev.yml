@@ -186,6 +186,11 @@ services:
       dockerfile: ./../../otel-collector.dockerfile
     environment:
       HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
+      CLICKHOUSE_PROTOCOL: tcp
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USERNAME: test
+      CLICKHOUSE_PASSWORD: test
     volumes:
       - ./configs/otel-collector/builder-config.yaml:/builder-config.yaml
       - ./configs/otel-collector/config.yaml:/etc/otel-config.yaml

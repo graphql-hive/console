@@ -1,6 +1,8 @@
 extensions:
   hiveauth:
     endpoint: ${HIVE_OTEL_AUTH_ENDPOINT}
+  health_check:
+    endpoint: '0.0.0.0:13133'
 receivers:
   otlp:
     protocols:
@@ -26,35 +28,17 @@ processors:
       - key: hive.target_id
         from_context: auth.targetId
         action: insert
-  # filter/drop_missing_attributes:
-  #   error_mode: ignore
-  #   traces:
-  #     span:
-  #       # prettier-ignore
-  #       - not (
-  #           attributes["http.status"] != nil and
-  #           attributes["http.host"] != nil and
-  #           attributes["http.method"] != nil and
-  #           attributes["http.route"] != nil and
-  #           attributes["http.url"] != nil and
-  #           attributes["hive.graphql.operation.document"] != nil and
-  #           (
-  #             attributes["hive.graphql.operation.type"] == "query" or
-  #             attributes["hive.graphql.operation.type"] == "mutation" or
-  #             attributes["hive.graphql.operation.type"] == "subscription"
-  #           )
-  #         )
 exporters:
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
   clickhouse:
-    endpoint: tcp://clickhouse:9000?dial_timeout=10s&compress=lz4
+    endpoint: ${CLICKHOUSE_PROTOCOL}://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}?dial_timeout=10s&compress=lz4
     database: default
     async_insert: true
-    username: test
-    password: test
+    username: ${CLICKHOUSE_USERNAME}
+    password: ${CLICKHOUSE_PASSWORD}
     create_schema: false
     ttl: 720h
     compress: lz4
@@ -70,6 +54,7 @@ exporters:
 service:
   extensions:
     - hiveauth
+    - health_check
   telemetry:
     logs:
       level: INFO
@@ -79,9 +64,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [
-          attributes,
-          # filter/drop_missing_attributes,
-          batch,
-        ]
-      exporters: [clickhouse, debug]
+      processors:
+        - attributes
+        - batch
+      exporters:
+        - clickhouse
+        - debug
