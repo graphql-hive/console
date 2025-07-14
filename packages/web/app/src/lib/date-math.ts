@@ -62,14 +62,14 @@ export function parse(text: string, now = new UTCDate()): Date | undefined {
     // yyyy-MM-dd
     const date = parseDateString(text);
 
-    if (date && !isNaN(date?.getTime())) {
+    if (date && !Number.isNaN(date?.getTime())) {
       return date;
     }
 
     // ISO
     const isoDate = parseISO(text);
 
-    if (isoDate && !isNaN(isoDate?.getTime())) {
+    if (isoDate && !Number.isNaN(isoDate?.getTime())) {
       return isoDate;
     }
   }

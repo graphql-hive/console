@@ -1,6 +1,5 @@
 import { lazy, useCallback, useEffect } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
-import qs from 'query-string';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';

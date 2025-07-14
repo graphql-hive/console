@@ -75,7 +75,6 @@ module.exports = {
         900: '#005b43',
       },
       cyan: '#0acccc',
-      purple: '#5f2eea',
       blue: colors.sky,
       gray: colors.stone,
       magenta: '#f11197',
@@ -91,6 +90,8 @@ module.exports = {
         800: '#926e26',
         900: '#785a1f',
       },
+      zinc: colors.zinc,
+      purple: colors.purple,
     },
     extend: {
       colors: {
@@ -142,6 +143,7 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        xs: 'calc(var(--radius) - 6px)',
       },
       ringColor: theme => ({
         DEFAULT: theme('colors.orange.500/75'),

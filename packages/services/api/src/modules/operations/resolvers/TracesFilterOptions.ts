@@ -19,7 +19,7 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
       arrayJoinColumn: null,
     });
   },
-  httpMethod: async ({ loader }, { top }, { injector }) => {
+  httpMethod: async ({ loader }, { top }) => {
     return loader.load({
       key: 'http_method',
       columnExpression: 'http_method',
@@ -27,7 +27,7 @@ export const TracesFilterOptions: TracesFilterOptionsResolvers = {
       arrayJoinColumn: null,
     });
   },
-  httpRoute: async ({ loader }, { top }, { injector }) => {
+  httpRoute: async ({ loader }, { top }) => {
     return loader.load({
       key: 'http_route',
       columnExpression: 'http_route',

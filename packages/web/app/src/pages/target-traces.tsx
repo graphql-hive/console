@@ -108,7 +108,7 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
 
   // Handle mouse down event to start selection
   const handleMouseDown = useCallback((e: any) => {
-    if (!e || !e.activeLabel) return;
+    if (!e?.activeLabel) return;
 
     // Check if the click is within the chart area and not on the Y-axis
     // e.chartX is the x-coordinate of the click relative to the chart
@@ -122,7 +122,7 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
   // Handle mouse move event during selection
   const handleMouseMove = useCallback(
     (e: any) => {
-      if (!isSelecting || !e || !e.activeLabel) return;
+      if (!isSelecting || !e?.activeLabel) return;
       setRefAreaRight(e.activeLabel);
     },
     [isSelecting],
@@ -193,8 +193,8 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
             />
           }
         />
-        <Bar stackId="all" dataKey="ok" fill={`var(--color-ok)`} name="Ok" />
-        <Bar stackId="all" dataKey="error" fill={`var(--color-error)`} name="Error" />
+        <Bar stackId="all" dataKey="ok" fill="var(--color-ok)" name="Ok" />
+        <Bar stackId="all" dataKey="error" fill="var(--color-error)" name="Error" />
         <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
@@ -647,28 +647,28 @@ const TracesList = memo(function TracesList(
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-x-2">
-      <div className={cn(`rounded-xs h-[11px] w-[2px]`, props.className)}></div>
+      <div className={cn('rounded-xs h-[11px] w-[2px]', props.className)} />
       <div>{props.children}</div>
     </div>
   );
 }
 
-function LabelWithBadge(props: {
-  children: ReactNode;
-  badgeText: string;
-  side?: 'left' | 'right';
-}) {
-  return (
-    <div
-      className={cn('flex items-center gap-1', props.side === 'right' ? 'flex-row-reverse' : '')}
-    >
-      <Badge variant="outline" className="rounded-sm px-1 font-normal">
-        {props.badgeText}
-      </Badge>
-      <span className="text-foreground font-medium">{props.children}</span>
-    </div>
-  );
-}
+// function LabelWithBadge(props: {
+//   children: ReactNode;
+//   badgeText: string;
+//   side?: 'left' | 'right';
+// }) {
+//   return (
+//     <div
+//       className={cn('flex items-center gap-1', props.side === 'right' ? 'flex-row-reverse' : '')}
+//     >
+//       <Badge variant="outline" className="rounded-sm px-1 font-normal">
+//         {props.badgeText}
+//       </Badge>
+//       <span className="text-foreground font-medium">{props.children}</span>
+//     </div>
+//   );
+// }
 
 export const TargetTracesFilterState = z.object({
   period: z.union([z.tuple([z.string(), z.string()]), z.tuple([])]).default([]),
@@ -752,7 +752,7 @@ function Filters(
   const filterSelector = <$Key extends FilterKeys>(key: $Key) => filters[key];
 
   const hasChanges = useMemo(() => {
-    for (let key in filters) {
+    for (const key in filters) {
       const filterName = key as FilterKeys;
 
       if (filterName === 'duration') {
@@ -792,7 +792,14 @@ function Filters(
       <MultiSelectFilter
         key="graphql.status"
         name="Status"
-        options={filterOptions['graphql.status']}
+        options={filterOptions['graphql.status'].map(option => ({
+          ...option,
+          label: (
+            <LabelWithColor className={option.value === 'ok' ? 'bg-green-600' : 'bg-red-600'}>
+              {option.label}
+            </LabelWithColor>
+          ),
+        }))}
         selectedValues={filterSelector('graphql.status')}
         onChange={updateFilter('graphql.status')}
         hideSearch
@@ -800,7 +807,10 @@ function Filters(
       <MultiSelectFilter
         key="graphql.errorCode"
         name="Error Code"
-        options={filterOptions['graphql.errorCode']}
+        options={filterOptions['graphql.errorCode'].map(option => ({
+          ...option,
+          label: <LabelWithColor className="bg-red-600">{option.label}</LabelWithColor>,
+        }))}
         selectedValues={filterSelector('graphql.errorCode')}
         onChange={updateFilter('graphql.errorCode')}
         hideSearch
@@ -931,7 +941,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           </SheetDescription>
           <div className="mt-2 flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-gray-400" />
+              <Clock className="size-3 text-gray-400" />
               <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
@@ -958,7 +968,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               }}
               className="absolute bottom-4 right-4"
             >
-              <ExternalLinkIcon className="mr-1 h-3 w-3" />
+              <ExternalLinkIcon className="mr-1 size-3" />
               Full Trace
             </Link>
           </Button>

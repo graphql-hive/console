@@ -112,11 +112,13 @@ export const Target: Pick<
       const hasError = filter.success.includes(false);
 
       if (hasSuccess && !hasError) {
-        ANDs.push(sql`"graphql_error_count" = 0`);
-        ANDs.push(sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`);
-      } else if (hasError && !hasSuccess) {
-        ANDs.push(sql`"graphql_error_count" > 0`);
         ANDs.push(
+          sql`"graphql_error_count" = 0`,
+          sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`,
+        );
+      } else if (hasError && !hasSuccess) {
+        ANDs.push(
+          sql`"graphql_error_count" > 0`,
           sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
         );
       }
