@@ -78,6 +78,7 @@ import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
+  FilterState,
   PaginationState,
   TargetTracesFilterState,
   TargetTracesPage,
@@ -660,7 +661,22 @@ const targetTracesRoute = createRoute({
   component: function TargetTracesRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
     const {
-      filter = {},
+      filter = {
+        'graphql.client': [],
+        'graphql.errorCode': [],
+        'graphql.kind': [],
+        'graphql.operation': [],
+        'graphql.status': [],
+        'graphql.subgraph': [],
+        'http.host': [],
+        'http.method': [],
+        'http.route': [],
+        'http.status': [],
+        'http.url': [],
+        'trace.id': [],
+        duration: [],
+        period: [],
+      } satisfies FilterState,
       sort = [],
       pagination = {
         pageIndex: 0,
@@ -675,7 +691,7 @@ const targetTracesRoute = createRoute({
         targetSlug={targetSlug}
         sorting={sort}
         pagination={pagination}
-        filter={filter as any}
+        filter={filter}
       />
     );
   },
