@@ -56,7 +56,7 @@ export function createOtelAuthEndpoint(args: {
 
     const canReportUsage = await session.canPerformAction({
       organizationId: target.orgId,
-      action: 'usage:report', // TODO: define a new action for tracing
+      action: 'traces:report',
       params: {
         organizationId: target.orgId,
         projectId: target.projectId,
