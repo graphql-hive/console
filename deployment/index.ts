@@ -14,6 +14,7 @@ import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
 import { deployKafka } from './services/kafka';
 import { deployObservability } from './services/observability';
+import { deployOTELCollector } from './services/otel-collector';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
@@ -278,6 +279,15 @@ if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
   });
 }
 
+const otelCollector = deployOTELCollector({
+  environment,
+  graphql,
+  dbMigrations,
+  clickhouse,
+  image: docker.factory.getImageId('otel-collector', imagesTag),
+  docker,
+});
+
 const app = deployApp({
   environment,
   graphql,
@@ -306,6 +316,7 @@ const proxy = deployProxy({
   usage,
   environment,
   publicGraphQLAPIGateway,
+  otelCollector,
 });
 
 deployCloudFlareSecurityTransform({
@@ -332,4 +343,5 @@ export const schemaApiServiceId = schema.service.id;
 export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
+export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
