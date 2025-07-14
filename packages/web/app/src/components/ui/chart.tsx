@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import * as RechartsPrimitive from 'recharts';
 import { cn } from '@/lib/utils';
 
@@ -175,7 +175,7 @@ const ChartTooltipContent = React.forwardRef<
               <div
                 key={item.dataKey}
                 className={cn(
-                  '[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5',
+                  '[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:size-2.5',
                   indicator === 'dot' && 'items-center',
                 )}
               >
@@ -269,15 +269,13 @@ const ChartLegendContent = React.forwardRef<
         return (
           <div
             key={item.value}
-            className={cn(
-              '[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3',
-            )}
+            className={cn('[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:size-3')}
           >
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />
             ) : (
               <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
+                className="size-2 shrink-0 rounded-[2px]"
                 style={{
                   backgroundColor: item.color,
                 }}
