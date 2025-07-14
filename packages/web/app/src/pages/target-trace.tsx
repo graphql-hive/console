@@ -1142,6 +1142,7 @@ function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragme
     spansById.set(ufragment.id, fragmentWithChildren);
     if (ufragment.parentId == null) {
       rootSpan = fragmentWithChildren;
+      rootSpan.percentageOfTotal = '100';
     }
   }
 
@@ -1182,11 +1183,13 @@ function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragme
 
     parent.children.push(item);
     item.startNs = parseRFC3339ToEpochNanos(uitem.startTime) - startNS;
-    item.percentageOfTotal = (
-      (nanosecondsToMilliseconds(item.durationNs) /
-        nanosecondsToMilliseconds(rootSpan.durationNs)) *
-      100
-    ).toFixed(2);
+    if (item.percentageOfTotal == '') {
+      item.percentageOfTotal = (
+        (nanosecondsToMilliseconds(item.durationNs) /
+          nanosecondsToMilliseconds(rootSpan.durationNs)) *
+        100
+      ).toFixed(2);
+    }
     item.percentageOfParentSpan = (
       (nanosecondsToMilliseconds(item.durationNs) / nanosecondsToMilliseconds(parent.durationNs)) *
       100
