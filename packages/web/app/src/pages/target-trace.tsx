@@ -861,7 +861,7 @@ export function TraceSheet(props: TraceSheetProps) {
                           variant="secondary"
                           className="rounded-md px-2 py-0.5 text-[10px] font-thin"
                         >
-                          3
+                          {events.length}
                         </Badge>
                       </div>
                     </div>
