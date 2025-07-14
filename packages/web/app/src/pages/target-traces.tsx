@@ -233,7 +233,7 @@ export const TargetTracesPagination = {
   shape: TargetTracesPaginationShape,
 };
 
-type PaginationState = z.infer<typeof TargetTracesPaginationShape>;
+export type PaginationState = z.infer<typeof TargetTracesPaginationShape>;
 type PaginationProps = {
   pagination: PaginationState;
 };
@@ -695,228 +695,18 @@ type FilterProps = {
 
 type FilterKeys = keyof FilterState;
 
-const filterOptions = {
-  'graphql.status': [
-    {
-      value: 'ok',
-      searchContent: 'ok',
-      label: <LabelWithColor className="bg-green-600">Ok</LabelWithColor>,
-      count: 12_500_000,
-    },
-    {
-      value: 'error',
-      searchContent: 'error',
-      label: <LabelWithColor className="bg-red-600">Error</LabelWithColor>,
-      count: 13_123,
-    },
-  ],
-  'graphql.kind': [
-    {
-      value: 'query',
-      searchContent: 'query',
-      label: 'Query',
-      count: 12_500_000,
-    },
-    {
-      value: 'mutation',
-      searchContent: 'mutation',
-      label: 'Mutation',
-      count: 3_200_000,
-    },
-    {
-      value: 'subscription',
-      searchContent: 'subscription',
-      label: 'Subscription',
-      count: 123_123,
-    },
-  ],
-  'graphql.subgraph': [
-    {
-      value: 'link',
-      searchContent: 'link',
-      label: 'link',
-      count: 530_000,
-    },
-    {
-      value: 'products',
-      searchContent: 'products',
-      label: 'products',
-      count: 612_000,
-    },
-    {
-      value: 'prices',
-      searchContent: 'prices',
-      label: 'prices',
-      count: 610_000,
-    },
-  ],
-  'graphql.name': [
-    {
-      value: '3h1s',
-      searchContent: '3h1s fetchproducts',
-      label: <LabelWithBadge badgeText="3h1s">FetchProducts</LabelWithBadge>,
-      count: 368_000,
-    },
-    {
-      value: '7na1',
-      searchContent: '7na1 fetchUsers',
-      label: <LabelWithBadge badgeText="7na1">FetchUsers</LabelWithBadge>,
-      count: 123_000,
-    },
-    {
-      value: '64a1',
-      searchContent: '64a1 FetchProducts',
-      label: <LabelWithBadge badgeText="64a1">FetchProducts</LabelWithBadge>,
-      count: 1_000,
-    },
-  ],
-  'graphql.client': [
-    {
-      value: 'unknown',
-      searchContent: 'unknown',
-      label: 'unknown',
-      count: 43_123,
-    },
-    {
-      value: 'hive-app',
-      searchContent: 'hive-app',
-      label: 'hive-app',
-      count: 720_000,
-    },
-    {
-      value: 'Hive CLI',
-      searchContent: 'Hive CLI',
-      label: 'Hive CLI',
-      count: 340_000,
-    },
-    {
-      value: 'Hive Client',
-      searchContent: 'Hive Client',
-      label: 'Hive Client',
-      count: 87_123,
-    },
-    {
-      value: 'Hive CLI@0.46.0',
-      searchContent: 'Hive CLI@0.46.0',
-      label: (
-        <LabelWithBadge side="right" badgeText="0.46.0">
-          Hive CLI
-        </LabelWithBadge>
-      ),
-      count: 1_000,
-    },
-    {
-      value: 'Hive Client@0.25.3',
-      searchContent: 'Hive Client@0.25.3',
-      label: (
-        <LabelWithBadge side="right" badgeText="0.25.3">
-          Hive Client
-        </LabelWithBadge>
-      ),
-      count: 6_120,
-    },
-  ],
-  'http.status': [
-    {
-      value: '200',
-      searchContent: '200',
-      label: '200',
-      count: 9_123_000,
-    },
-    {
-      value: '400',
-      searchContent: '400',
-      label: '400',
-      count: 100_000,
-    },
-    {
-      value: '500',
-      searchContent: '500',
-      label: '500',
-      count: 52_400,
-    },
-  ],
-  'http.method': [
-    {
-      value: 'GET',
-      searchContent: 'get',
-      label: 'GET',
-      count: 1230,
-    },
-    {
-      value: 'POST',
-      searchContent: 'post',
-      label: 'POST',
-      count: 12_000_000,
-    },
-  ],
-  'http.host': [
-    {
-      value: 'localhost:4000',
-      searchContent: 'localhost:4000',
-      label: 'localhost:4000',
-      count: 12_000_000,
-    },
-    {
-      value: 'localhost:4200',
-      searchContent: 'localhost:4200',
-      label: 'localhost:4200',
-      count: 7_540_123,
-    },
-    {
-      value: 'localhost:3000',
-      searchContent: 'localhost:3000',
-      label: 'localhost:3000',
-      count: 2_320_123,
-    },
-  ],
-  'http.route': [
-    {
-      value: '/graphql',
-      searchContent: '/graphql',
-      label: '/graphql',
-      count: 12_000_000,
-    },
-    {
-      value: '/',
-      searchContent: '/',
-      label: '/',
-      count: 7_540_123,
-    },
-  ],
-  'http.url': [
-    {
-      value: 'http://localhost:3000/',
-      searchContent: 'http://localhost:3000/',
-      label: 'http://localhost:3000/',
-      count: 12_000_000,
-    },
-    {
-      value: 'http://localhost:4000/graphql',
-      searchContent: 'http://localhost:4000/graphql',
-      label: 'http://localhost:4000/graphql',
-      count: 7_540_123,
-    },
-    {
-      value: 'http://localhost:4200/graphql',
-      searchContent: 'http://localhost:4200/graphql',
-      label: 'http://localhost:4200/graphql',
-      count: 2_320_123,
-    },
-  ],
-  'graphql.errorCode': [
-    {
-      value: 'ERR_AAA',
-      searchContent: 'ERR_AAA',
-      label: 'ERR_AAA',
-      count: 12_000_000,
-    },
-  ],
+type FilterOptions = {
+  [key: string]: Array<{
+    value: string;
+    searchContent: string;
+    label: ReactNode;
+    count: number;
+  }>;
 };
 
 function Filters(
   props: FilterProps & {
-    options: typeof filterOptions;
+    options: FilterOptions;
   },
 ) {
   const filters = props.filter;
