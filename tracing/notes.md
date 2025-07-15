@@ -1,8 +1,10 @@
 We want to:
+
 - show incoming graphql requests
 - show subgraph calls
 - track parse / validation / planning steps as well
-- annotate graphql requests with a list of subgraph names (so we can show operations that a subgraph is involved with)
+- annotate graphql requests with a list of subgraph names (so we can show operations that a subgraph
+  is involved with)
 - show performance of subgraph calls (latency, error rate - globally)
 - capture errors in subgraph calls
 - identify traces by client name and version
