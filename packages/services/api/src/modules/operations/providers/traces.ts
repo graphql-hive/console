@@ -113,6 +113,7 @@ export class Traces {
     targetId: string,
     first: number | null,
     filter: TraceFilter,
+    sort: GraphQLSchema.TracesSortInput | null,
   ) {
     await this._guardViewerCanAccessTraces(organizationId);
     const limit = (first ?? 10) + 1;
@@ -120,6 +121,14 @@ export class Traces {
     const filterSQLFragment = sqlConditions.length
       ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
       : sql``;
+
+    // By default we order by timestamp DESC
+    // In case a custom sort is provided, we order by duration asc/desc or timestamp asc
+    const orderByFragment = sql`
+      ${sort?.sort === 'DURATION' ? sql`"duration" ${sort.direction === 'ASC' ? sql`ASC` : sql`DESC`},` : sql``}
+      "timestamp" ${sort?.sort === 'TIMESTAMP' && sort?.direction === 'ASC' ? sql`ASC` : sql`DESC`}
+      , "trace_id" DESC
+    `;
 
     const tracesQuery = await this.clickHouse.query<unknown>({
       query: sql`
@@ -131,8 +140,7 @@ export class Traces {
           target_id = ${targetId}
           ${filterSQLFragment}
         ORDER BY
-          "timestamp" DESC
-          , "trace_id" DESC
+          ${orderByFragment}
         LIMIT ${sql.raw(String(limit))}
       `,
       queryId: 'traces',
