@@ -426,6 +426,21 @@ export default gql`
     count: Int!
   }
 
+  enum SortDirectionType {
+    ASC
+    DESC
+  }
+
+  enum TracesSortType {
+    DURATION
+    TIMESTAMP
+  }
+
+  input TracesSortInput {
+    sort: TracesSortType!
+    direction: SortDirectionType!
+  }
+
   type TraceStatusBreakdownBucket {
     """
     The time bucket for the data
@@ -461,7 +476,12 @@ export default gql`
     Whether the viewer can access OTEL traces
     """
     viewerCanAccessTraces: Boolean!
-    traces(first: Int, after: String, filter: TracesFilterInput): TraceConnection!
+    traces(
+      first: Int
+      after: String
+      filter: TracesFilterInput
+      sort: TracesSortInput
+    ): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
     tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
     trace(traceId: ID!): Trace
