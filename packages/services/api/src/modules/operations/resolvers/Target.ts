@@ -78,28 +78,34 @@ export const Target: Pick<
       schemaCoordinate: args.schemaCoordinate,
     };
   },
-  traces: async (target, { first, filter }, { injector }) => {
-    return injector.get(Traces).findTracesForTargetId(target.orgId, target.id, first ?? null, {
-      period: filter?.period ?? null,
-      duration: filter?.duration
-        ? {
-            min: filter.duration.min ?? null,
-            max: filter.duration.max ?? null,
-          }
-        : null,
-      traceIds: filter?.traceIds ?? null,
-      success: filter?.success ?? null,
-      errorCodes: filter?.errorCodes ?? null,
-      operationNames: filter?.operationNames ?? null,
-      operationTypes: filter?.operationTypes ?? null,
-      clientNames: filter?.clientNames ?? null,
-      subgraphNames: filter?.subgraphNames ?? null,
-      httpMethods: filter?.httpMethods ?? null,
-      httpStatusCodes: filter?.httpStatusCodes ?? null,
-      httpHosts: filter?.httpHosts ?? null,
-      httpRoutes: filter?.httpRoutes ?? null,
-      httpUrls: filter?.httpUrls ?? null,
-    });
+  traces: async (target, { first, filter, sort }, { injector }) => {
+    return injector.get(Traces).findTracesForTargetId(
+      target.orgId,
+      target.id,
+      first ?? null,
+      {
+        period: filter?.period ?? null,
+        duration: filter?.duration
+          ? {
+              min: filter.duration.min ?? null,
+              max: filter.duration.max ?? null,
+            }
+          : null,
+        traceIds: filter?.traceIds ?? null,
+        success: filter?.success ?? null,
+        errorCodes: filter?.errorCodes ?? null,
+        operationNames: filter?.operationNames ?? null,
+        operationTypes: filter?.operationTypes ?? null,
+        clientNames: filter?.clientNames ?? null,
+        subgraphNames: filter?.subgraphNames ?? null,
+        httpMethods: filter?.httpMethods ?? null,
+        httpStatusCodes: filter?.httpStatusCodes ?? null,
+        httpHosts: filter?.httpHosts ?? null,
+        httpRoutes: filter?.httpRoutes ?? null,
+        httpUrls: filter?.httpUrls ?? null,
+      },
+      sort ?? null,
+    );
   },
   tracesFilterOptions: async (target, { filter }, { injector }) => {
     const ANDs: SqlValue[] = [sql`target_id = ${target.id}`];
