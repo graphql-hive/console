@@ -416,19 +416,8 @@ const TracesList = memo(function TracesList(
       },
       {
         accessorKey: 'operationName',
-        header: ({ column }) => {
-          return (
-            <div>
-              <Button
-                variant="link"
-                className="text-muted-foreground"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Operation Name
-                <ArrowUpDown className="ml-2 size-4" />
-              </Button>
-            </div>
-          );
+        header: () => {
+          return <div className="text-muted-foreground px-4">Operation Name</div>;
         },
         cell: ({ row }) => (
           <TooltipProvider>
@@ -510,33 +499,33 @@ const TracesList = memo(function TracesList(
       },
       {
         accessorKey: 'subgraphs',
-        sortingFn(a, b, isAsc) {
-          const aValue = a.original.subgraphs.length;
-          const bValue = b.original.subgraphs.length;
-
-          if (isAsc) {
-            return aValue - bValue;
-          }
-
-          return bValue - aValue;
-        },
-        header: ({ column }) => (
-          <div className="text-center">
-            <Button
-              variant="link"
-              className="text-muted-foreground"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            >
-              Subgraphs
-              <ArrowUpDown className="ml-2 size-4" />
-            </Button>
-          </div>
-        ),
+        header: () => <div className="text-center">Subgraphs</div>,
         cell: ({ row }) => {
           return (
-            <div className="text-center font-mono text-xs font-medium">
-              {(row.getValue('subgraphs') as Array<string>).length}
-            </div>
+            <TooltipProvider>
+              <Tooltip disableHoverableContent delayDuration={100}>
+                <TooltipTrigger asChild>
+                  <div className="text-center font-mono text-xs font-medium">
+                    {(row.getValue('subgraphs') as Array<string>).length}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                >
+                  <GridTable
+                    rows={[
+                      {
+                        key: 'Subgraphs',
+                        value: (row.getValue('subgraphs') as Array<string>).length
+                          ? (row.getValue('subgraphs') as Array<string>).join(', ')
+                          : '<none>',
+                      },
+                    ]}
+                  />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         },
       },
