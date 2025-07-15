@@ -41,7 +41,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -92,7 +92,7 @@ type TrafficProps = {
   buckets: Array<FragmentType<typeof Traffic_TracesStatusBreakdownBucketFragment>>;
 };
 
-const Traffic = memo(function Traffic(props: TrafficProps) {
+const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
   const buckets = useFragment(Traffic_TracesStatusBreakdownBucketFragment, props.buckets);
   const data = buckets.map(b => ({
     ok: b.okCountFiltered,
@@ -102,7 +102,6 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
   }));
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
-  const [_, setZoomedData] = useState<typeof data | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +127,8 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
     [isSelecting],
   );
 
+  const navigate = useNavigate();
+
   // Handle mouse up event to end selection
   const handleMouseUp = useCallback(() => {
     if (!refAreaLeft || !refAreaRight) {
@@ -146,10 +147,14 @@ const Traffic = memo(function Traffic(props: TrafficProps) {
       [left, right] = [right, left];
     }
 
+    navigate({
+      search: (prev: any) => ({ ...prev, filter: { ...prev.filter, period: [left, right] } }),
+    });
+
     setRefAreaLeft(null);
     setRefAreaRight(null);
     setIsSelecting(false);
-  }, [refAreaLeft, refAreaRight]);
+  }, [refAreaLeft, refAreaRight, navigate]);
 
   return (
     <ChartContainer
@@ -1062,7 +1067,6 @@ const TargetTracesPageQuery = graphql(`
 `);
 
 function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
-  const [filtersOpen, setFiltersOpen] = useState(true);
   const targetRef = useTargetReference();
 
   const period = useMemo(() => {
@@ -1208,17 +1212,15 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
   return (
     <div className="py-6">
       <SidebarProvider>
-        {filtersOpen ? (
-          <Sidebar collapsible="none" className="bg-transparent">
-            <SidebarContent>
-              <Filters filter={props.filter} options={filterOptions} />
-            </SidebarContent>
-          </Sidebar>
-        ) : null}
+        <Sidebar collapsible="none" className="bg-transparent">
+          <SidebarContent>
+            <Filters filter={props.filter} options={filterOptions} />
+          </SidebarContent>
+        </Sidebar>
         <SidebarInset className="bg-transparent">
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div>
-              <Traffic buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
+              <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>
             <TracesList
               sorting={props.sorting}
