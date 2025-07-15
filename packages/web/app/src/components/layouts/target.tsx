@@ -104,6 +104,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanViewLaboratory
           viewerCanViewAppDeployments
           viewerCanAccessSettings
+          viewerCanAccessTraces
           latestSchemaVersion {
             id
           }
@@ -248,18 +249,20 @@ export const TargetLayout = ({
                         Insights
                       </Link>
                     </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Traces} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/traces"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Traces
-                      </Link>
-                    </TabsTrigger>
+                    {currentTarget.viewerCanAccessTraces && (
+                      <TabsTrigger variant="menu" value={Page.Traces} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/traces"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                          }}
+                        >
+                          Traces
+                        </Link>
+                      </TabsTrigger>
+                    )}
                     {currentTarget.viewerCanViewAppDeployments && (
                       <TabsTrigger variant="menu" value={Page.Apps} asChild>
                         <Link

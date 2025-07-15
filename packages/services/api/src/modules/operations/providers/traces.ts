@@ -2,8 +2,10 @@ import { Injectable } from 'graphql-modules';
 import { z } from 'zod';
 import { subDays } from '@/lib/date-time';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { HiveError } from '../../../shared/errors';
 import { batch, parseDateRangeInput } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
+import { Storage } from '../../shared/providers/storage';
 import { ClickHouse, sql } from './clickhouse-client';
 import { formatDate } from './operations-reader';
 import { SqlValue } from './sql';
@@ -15,7 +17,20 @@ export class Traces {
   constructor(
     private clickHouse: ClickHouse,
     private logger: Logger,
+    private storage: Storage,
   ) {}
+
+  async viewerCanAccessTraces(organizationId: string) {
+    const organization = await this.storage.getOrganization({ organizationId });
+    return organization.featureFlags.otelTracing;
+  }
+
+  private async _guardViewerCanAccessTraces(organizationId: string) {
+    if (await this.viewerCanAccessTraces(organizationId)) {
+      return;
+    }
+    throw new HiveError("You don't have acces to this feature.");
+  }
 
   private _findTraceByTraceId = batch<string, Trace | null>(async (traceIds: Array<string>) => {
     this.logger.debug('looking up traces by id (traceIds=%o)', traceIds);
@@ -48,7 +63,12 @@ export class Traces {
    * Find a specific trace by it's id.
    * Uses batching under the hood.
    */
-  async findTraceById(targetId: string, traceId: string): Promise<Trace | null> {
+  async findTraceById(
+    organizationId: string,
+    targetId: string,
+    traceId: string,
+  ): Promise<Trace | null> {
+    await this._guardViewerCanAccessTraces(organizationId);
     this.logger.debug('find trace by id (targetId=%s, traceId=%s)', targetId, traceId);
     const trace = await this._findTraceByTraceId(traceId);
     if (!trace) {
@@ -88,7 +108,13 @@ export class Traces {
     return SpanListModel.parse(result.data);
   }
 
-  async findTracesForTargetId(targetId: string, first: number | null, filter: TraceFilter) {
+  async findTracesForTargetId(
+    organizationId: string,
+    targetId: string,
+    first: number | null,
+    filter: TraceFilter,
+  ) {
+    await this._guardViewerCanAccessTraces(organizationId);
     const limit = (first ?? 10) + 1;
     const sqlConditions = buildTraceFilterSQLConditions(filter);
     const filterSQLFragment = sqlConditions.length
@@ -143,7 +169,12 @@ export class Traces {
     };
   }
 
-  async getTraceStatusBreakdownForTargetId(targetId: string, filter: TraceFilter) {
+  async getTraceStatusBreakdownForTargetId(
+    organizationId: string,
+    targetId: string,
+    filter: TraceFilter,
+  ) {
+    await this._guardViewerCanAccessTraces(organizationId);
     const sqlConditions = buildTraceFilterSQLConditions(filter, true);
     const filterSQLFragment = sqlConditions.length
       ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
