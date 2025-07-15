@@ -147,7 +147,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
       [left, right] = [right, left];
     }
 
-    navigate({
+    void navigate({
       search: (prev: any) => ({ ...prev, filter: { ...prev.filter, period: [left, right] } }),
     });
 
