@@ -18,6 +18,7 @@ export const Target: Pick<
   | 'traces'
   | 'tracesFilterOptions'
   | 'tracesStatusBreakdown'
+  | 'viewerCanAccessTraces'
 > = {
   totalRequests: (target, { period }, { injector }) => {
     return injector.get(OperationsManager).countRequests({
@@ -78,7 +79,7 @@ export const Target: Pick<
     };
   },
   traces: async (target, { first, filter }, { injector }) => {
-    return injector.get(Traces).findTracesForTargetId(target.id, first ?? null, {
+    return injector.get(Traces).findTracesForTargetId(target.orgId, target.id, first ?? null, {
       period: filter?.period ?? null,
       duration: filter?.duration
         ? {
@@ -227,10 +228,10 @@ export const Target: Pick<
     };
   },
   trace(target, args, { injector }) {
-    return injector.get(Traces).findTraceById(target.id, args.traceId);
+    return injector.get(Traces).findTraceById(target.orgId, target.id, args.traceId);
   },
   tracesStatusBreakdown: async (target, { filter }, { injector }) => {
-    return injector.get(Traces).getTraceStatusBreakdownForTargetId(target.id, {
+    return injector.get(Traces).getTraceStatusBreakdownForTargetId(target.orgId, target.id, {
       period: filter?.period ?? null,
       duration: filter?.duration
         ? {
@@ -251,5 +252,8 @@ export const Target: Pick<
       httpRoutes: filter?.httpRoutes ?? null,
       httpUrls: filter?.httpUrls ?? null,
     });
+  },
+  viewerCanAccessTraces: async (target, _, { injector }) => {
+    return injector.get(Traces).viewerCanAccessTraces(target.orgId);
   },
 };

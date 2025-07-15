@@ -456,6 +456,11 @@ export default gql`
     Retrieve an operation via it's hash.
     """
     operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
+
+    """
+    Whether the viewer can access OTEL traces
+    """
+    viewerCanAccessTraces: Boolean!
     traces(first: Int, after: String, filter: TracesFilterInput): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
     tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
