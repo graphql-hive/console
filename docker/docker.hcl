@@ -422,7 +422,8 @@ group "build" {
     "server",
     "commerce",
     "composition-federation-2",
-    "app"
+    "app",
+    "otel-collector"
   ]
 }
 
@@ -438,19 +439,14 @@ group "integration-tests" {
     "usage",
     "webhooks",
     "server",
-    "composition-federation-2"
+    "composition-federation-2",
+    "otel-collector"
   ]
 }
 
 group "apollo-router-hive-build" {
   targets = [
     "apollo-router"
-  ]
-}
-
-group "otel-collector-hive-build" {
-  targets = [
-    "otel-collector"
   ]
 }
 
