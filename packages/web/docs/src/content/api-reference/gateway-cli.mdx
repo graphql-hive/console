@@ -19,7 +19,7 @@ hive-gateway --help
 
 which will print out the following:
 
-{/* IMPORTANT: please dont forget to update the following when arguments change. simply run `node --import tsx packages/hive-gateway/src/bin.ts --help` and copy over the text */}
+{/* IMPORTANT: please dont forget to update the following when arguments change. simply run `node --import tsx packages/gateway/src/bin.ts --help` and copy over the text */}
 
 ```
 Usage: hive-gateway [options] [command]
@@ -27,27 +27,25 @@ Usage: hive-gateway [options] [command]
 Federated GraphQL Gateway
 
 Options:
-  --fork <count>                                  count of workers to spawn. uses "24" (available parallelism) workers when NODE_ENV is "production",
-                                                  otherwise "1" (the main) worker (default: 1) (env: FORK)
-  -c, --config-path <path>                        path to the configuration file. defaults to the following files respectively in the current working
-                                                  directory: gateway.ts, gateway.mts, gateway.cts, gateway.js, gateway.mjs, gateway.cjs (env:
-                                                  CONFIG_PATH)
+  --fork <number>                                 number of workers to spawn. (default: 1) (env: FORK)
+  -c, --config-path <path>                        path to the configuration file. defaults to the following files respectively in the current working directory: gateway.ts, gateway.mts, gateway.cts, gateway.js, gateway.mjs, gateway.cjs (env: CONFIG_PATH)
   -h, --host <hostname>                           host to use for serving (default: 0.0.0.0)
   -p, --port <number>                             port to use for serving (default: 4000) (env: PORT)
   --polling <duration>                            schema polling interval in human readable duration (default: 10s) (env: POLLING)
   --no-masked-errors                              don't mask unexpected errors in responses
   --masked-errors                                 mask unexpected errors in responses (default: true)
-  --hive-usage-target <target>                    Hive registry target to which the usage data should be reported to. requires the
-                                                  "--hive-usage-access-token <token>" option (env: HIVE_USAGE_TARGET)
-  --hive-usage-access-token <token>               Hive registry access token for usage metrics reporting. requires the "--hive-usage-target <target>"
-                                                  option (env: HIVE_USAGE_ACCESS_TOKEN)
-  --hive-persisted-documents-endpoint <endpoint>  [EXPERIMENTAL] Hive CDN endpoint for fetching the persisted documents. requires the
-                                                  "--hive-persisted-documents-token <token>" option
-  --hive-persisted-documents-token <token>        [EXPERIMENTAL] Hive persisted documents CDN endpoint token. requires the
-                                                  "--hive-persisted-documents-endpoint <endpoint>" option
+  --opentelemetry [exporter-endpoint]             Enable OpenTelemetry integration with an exporter using this option's value as endpoint. By default, it uses OTLP HTTP, use "--opentelemetry-exporter-type" to change the default. (env: OPENTELEMETRY)
+  --opentelemetry-exporter-type <type>            OpenTelemetry exporter type to use when setting up OpenTelemetry integration. Requires "--opentelemetry" to set the endpoint. (choices: "otlp-http", "otlp-grpc", default: "otlp-http", env: OPENTELEMETRY_EXPORTER_TYPE)
+  --hive-registry-token <token>                   [DEPRECATED: please use "--hive-target" and "--hive-access-token"] Hive registry token for usage metrics reporting (env: HIVE_REGISTRY_TOKEN)
+  --hive-usage-target <target>                    [DEPRECATED] please use --hive-target instead. (env: HIVE_USAGE_TARGET)
+  --hive-target <target>                          Hive registry target to which the usage and tracing data should be reported to. Requires either "--hive-access-token <token>", "--hive-usage-access-token <token>" or "--hive-trace-access-token" option (env: HIVE_TARGET)
+  --hive-access-token <token>                     Hive registry access token for usage metrics reporting and tracing. Enables both usage reporting and tracing. Requires the "--hive-target <target>" option (env: HIVE_ACCESS_TOKEN)
+  --hive-usage-access-token <token>               Hive registry access token for usage reporting. Enables Hive usage report. Requires the "--hive-target <target>" option. It can't be used together with "--hive-access-token" (env: HIVE_USAGE_ACCESS_TOKEN)
+  --hive-trace-access-token <token>               Hive registry access token for tracing. Enables Hive tracing. Requires the "--hive-target <target>" option. It can't be used together with "--hive-access-token" (env: HIVE_USAGE_ACCESS_TOKEN)
+  --hive-persisted-documents-endpoint <endpoint>  [EXPERIMENTAL] Hive CDN endpoint for fetching the persisted documents. Requires the "--hive-persisted-documents-token <token>" option
+  --hive-persisted-documents-token <token>        [EXPERIMENTAL] Hive persisted documents CDN endpoint token. Requires the "--hive-persisted-documents-endpoint <endpoint>" option
   --hive-cdn-endpoint <endpoint>                  Hive CDN endpoint for fetching the schema (env: HIVE_CDN_ENDPOINT)
-  --hive-cdn-key <key>                            Hive CDN API key for fetching the schema. implies that the "schemaPathOrUrl" argument is a url (env:
-                                                  HIVE_CDN_KEY)
+  --hive-cdn-key <key>                            Hive CDN API key for fetching the schema. implies that the "schemaPathOrUrl" argument is a url (env: HIVE_CDN_KEY)
   --apollo-graph-ref <graphRef>                   Apollo graph ref of the managed federation graph (<YOUR_GRAPH_ID>@<VARIANT>) (env: APOLLO_GRAPH_REF)
   --apollo-key <apiKey>                           Apollo API key to use to authenticate with the managed federation up link (env: APOLLO_KEY)
   --disable-websockets                            Disable WebSockets support
@@ -56,14 +54,10 @@ Options:
   --help                                          display help for command
 
 Commands:
-  supergraph [options] [schemaPathOrUrl]          serve a Federation supergraph provided by a compliant composition tool such as Mesh Compose or Apollo
-                                                  Rover
-  subgraph [schemaPathOrUrl]                      serve a Federation subgraph that can be used with any Federation compatible router like Apollo
-                                                  Router/Gateway
-  proxy [options] [endpoint]                      serve a proxy to a GraphQL API and add additional features such as monitoring/tracing, caching, rate
-                                                  limiting, security, and more
+  supergraph [options] [schemaPathOrUrl]          serve a Federation supergraph provided by a compliant composition tool such as Mesh Compose or Apollo Rover
+  subgraph [schemaPathOrUrl]                      serve a Federation subgraph that can be used with any Federation compatible router like Apollo Router/Gateway
+  proxy [options] [endpoint]                      serve a proxy to a GraphQL API and add additional features such as monitoring/tracing, caching, rate limiting, security, and more
   help [command]                                  display help for command
-
 ```
 
 All arguments can also be configured in the config file.
@@ -79,7 +73,9 @@ configuration file if you provide these environment variables.
 
 - `HIVE_CDN_ENDPOINT`: The endpoint of the Hive Registry CDN
 - `HIVE_CDN_KEY`: The API key provided by Hive Registry to fetch the schema
-- `HIVE_REGISTRY_TOKEN`: The token to push the metrics to Hive Registry
+- `HIVE_TARGET`: Hive Console target where usage will be reported to
+- `HIVE_ACCESS_TOKEN` or `HIVE_USAGE_ACCESS_TOKEN`: The access token to push usage data to Hive
+  Console
 
 [Learn more about Hive Registry integration here](/docs/gateway/supergraph-proxy-source)
 
