@@ -15,7 +15,7 @@ Hive Gateway can use the Hive Schema Registry as a source for persisted document
 Learn more about setting up app deployments and persisted documents on the Hive Dashboard
 [here](/docs/schema-registry/app-deployments).
 
-### Configuration
+## Configuration
 
 <Tabs items={['Hive Registry', 'Custom Store']}>
 
@@ -84,13 +84,13 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-#### Enabling Arbitrary Documents
+### Enabling Arbitrary Documents
 
 After enabling persisted documents on your Hive Gateway, any arbitary GraphQL documents that don't
 contain a `documentId` will be rejected. If you still want to allow executing arbitrary documents,
 you can set `allowArbitraryDocuments` to `true` in the configuration.
 
-```ts filename="gateway.config.ts" {8}
+```ts filename="gateway.config.ts" {11}
 import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
