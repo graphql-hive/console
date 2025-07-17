@@ -676,8 +676,9 @@ const useMyPlugin = () => ({
 
 ## Renamed CLI options for Hive Usage Reporting
 
-To prepare for future observability features of Hive Console, `--hive-usage-target` has been renamed
-to `--hive-target` which will define the target for the observability metrics _and_ usage reporting.
+To prepare for future observability features of Hive Console, `--hive-usage-target` has been
+deprecated and you're recommended to use `--hive-target`. It will define the target for the
+observability metrics _and_ usage reporting.
 
 In addition to this change, we've added a new option `--hive-access-token` which is used to define
 the token that's to be used for both observability and usage reporting.
@@ -690,17 +691,4 @@ hive-gateway supergraph \
 - --hive-usage-access-token "<hive_usage_access_token>"
 + --hive-target "<hive_usage_target>" \
 + --hive-access-token "<hive_usage_access_token>"
-```
-
-Please note that `--hive-usage-access-token` stays, and is now a specific access token that will be
-used **only** for usage reporting. So if you're only reporting usage metrics to Hive Console, you
-can keep using the `--hive-usage-access-token` option:
-
-```diff
-hive-gateway supergraph \
-  http://cdn.graphql-hive.com/<path>/supergraph \
-  --hive-cdn-key "<hive_cdn_access_key>" \
-- --hive-usage-target "<hive_usage_target>" \
-+ --hive-target "<hive_usage_target>" \
-  --hive-usage-access-token "<hive_usage_access_token>"
 ```
