@@ -129,6 +129,32 @@ export const action: Action = async exec => {
       , ttl_only_drop_parts = 1
   `);
 
+  // You might be wondering why we parse the data in such a weird way.
+  // This was the smartest I way I came up that did not require introducing additional span attribute validation logic on the gateway.
+  // We want to avoid inserts failing due to a column type-mismatch at any chance, since we are doing batch inserts and one fault record
+  // could prevent all other inserts within the same batch from happening.
+  //
+  // The idea here is to attempt verifying that the input is "array"-like and if so parse it as safe as possible.
+  // If the input is not "array"-like we just insert an empty array and move on.
+  //
+  // Later on, we could think about actually rejecting incorrect span values on the otel-collector business logic.
+  //
+  // ```
+  // if(
+  //   JSONType(toString("SpanAttributes"['hive.graphql.error.codes'])) = 'Array',
+  //   arrayFilter(
+  //     -- Filter out empty values
+  //     x -> notEquals(x, ''),
+  //     arrayMap(
+  //       -- If the user provided something non-stringy, this returns '', which is fine imho
+  //       x -> JSONExtractString(x),
+  //       JSONExtractArrayRaw(toString("SpanAttributes"['hive.graphql.error.codes']))
+  //     )
+  //   ),
+  //   []
+  //  )
+  // ```
+
   await exec(`
     CREATE MATERIALIZED VIEW IF NOT EXISTS "otel_traces_normalized_mv" TO "otel_traces_normalized" (
       "target_id" LowCardinality(String)
@@ -165,25 +191,37 @@ export const action: Action = async exec => {
         , "SpanAttributes"['http.url'] AS "http_url"
         , "SpanAttributes"['hive.client.name'] AS "client_name"
         , "SpanAttributes"['hive.client.version'] AS "client_version"
-        , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
-        , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
-        , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
+        , "SpanAttributes"['graphql.operation.name'] AS "graphql_operation_name"
+        , toLowCardinality("SpanAttributes"['graphql.operation.type']) AS "graphql_operation_type"
+        , "SpanAttributes"['graphql.document'] AS "graphql_operation_document"
         , "SpanAttributes"['hive.graphql.operation.hash'] AS "graphql_operation_hash"
         , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
         , if(
-            "SpanAttributes"['hive.graphql.error.codes'] = '',
-            [],
-            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes']))
+            JSONType(toString("SpanAttributes"['hive.graphql.error.codes'])) = 'Array',
+            arrayFilter(
+              x -> notEquals(x, ''),
+              arrayMap(
+                x -> JSONExtractString(x),
+                JSONExtractArrayRaw(toString("SpanAttributes"['hive.graphql.error.codes']))
+              )
+            ),
+            []
           ) AS "graphql_error_codes"
         , if(
-            "SpanAttributes"['hive.subgraph.names'] = '',
-            [],
-            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.subgraph.names']))
+            JSONType(toString("SpanAttributes"['hive.gateway.operation.subgraph.names'])) = 'Array',
+            arrayFilter(
+              x -> notEquals(x, ''),
+              arrayMap(
+                x -> JSONExtractString(x),
+                JSONExtractArrayRaw(toString("SpanAttributes"['hive.gateway.operation.subgraph.names']))
+              )
+            ),
+            []
           ) AS "subgraph_names"
       FROM
         "otel_traces"
       WHERE
-        empty("ParentSpanId") AND NOT empty("SpanAttributes"['hive.graphql.operation.type'])
+        empty("ParentSpanId") AND NOT empty("SpanAttributes"['graphql.operation.type'])
     )
   `);
 
@@ -253,14 +291,20 @@ export const action: Action = async exec => {
         , "SpanAttributes"['http.url'] AS "http_url"
         , "SpanAttributes"['hive.client.name'] AS "client_name"
         , "SpanAttributes"['hive.client.version'] AS "client_version"
-        , "SpanAttributes"['hive.graphql.operation.name'] AS "graphql_operation_name"
-        , toLowCardinality("SpanAttributes"['hive.graphql.operation.type']) AS "graphql_operation_type"
-        , "SpanAttributes"['hive.graphql.operation.document'] AS "graphql_operation_document"
+        , "SpanAttributes"['graphql.operation.name'] AS "graphql_operation_name"
+        , toLowCardinality("SpanAttributes"['graphql.operation.type']) AS "graphql_operation_type"
+        , "SpanAttributes"['graphql.document'] AS "graphql_operation_document"
         , toInt64OrZero("SpanAttributes"['hive.graphql.error.count']) AS "graphql_error_count"
         , if(
-            "SpanAttributes"['hive.graphql.error.codes'] = '',
-            [],
-            arrayMap(x -> toLowCardinality(x), splitByChar(',', "SpanAttributes"['hive.graphql.error.codes']))
+            JSONType(toString("SpanAttributes"['hive.graphql.error.codes'])) = 'Array',
+            arrayFilter(
+              x -> notEquals(x, ''),
+              arrayMap(
+                x -> JSONExtractString(x),
+                JSONExtractArrayRaw(toString("SpanAttributes"['hive.graphql.error.codes']))
+              )
+            ),
+            []
           ) AS "graphql_error_codes"
       FROM
         "otel_traces"

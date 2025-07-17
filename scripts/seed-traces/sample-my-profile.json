@@ -293,13 +293,13 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.name",
+                    "key": "graphql.operation.name",
                     "value": {
                       "stringValue": "MyProfile"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.type",
+                    "key": "graphql.operation.type",
                     "value": {
                       "stringValue": "query"
                     }
@@ -453,13 +453,13 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.name",
+                    "key": "graphql.operation.name",
                     "value": {
                       "stringValue": "MyProfile"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.type",
+                    "key": "graphql.operation.type",
                     "value": {
                       "stringValue": "query"
                     }
@@ -613,13 +613,13 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.name",
+                    "key": "graphql.operation.name",
                     "value": {
                       "stringValue": "MyProfile"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.type",
+                    "key": "graphql.operation.type",
                     "value": {
                       "stringValue": "query"
                     }
@@ -765,19 +765,19 @@
                     }
                   },
                   {
-                    "key": "hive.subgraph.names",
+                    "key": "hive.gateway.operation.subgraph.names",
                     "value": {
                       "stringValue": "users,reviews,products"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.type",
+                    "key": "graphql.operation.type",
                     "value": {
                       "stringValue": "query"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.name",
+                    "key": "graphql.operation.name",
                     "value": {
                       "stringValue": "MyProfile"
                     }

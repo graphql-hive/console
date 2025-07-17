@@ -457,7 +457,8 @@ function SpanNode(props: SpanNodeProps) {
 
   const isDimmed =
     (typeof props.highlightedServiceName === 'string' &&
-      props.highlightedServiceName !== span.spanAttributes['gateway.upstream.subgraph.name']) ||
+      props.highlightedServiceName !==
+        span.spanAttributes['hive.gateway.upstream.subgraph.name']) ||
     (activeSpanId && activeSpanId !== span.id) ||
     (highlightedEvent && highlightedEvent.spanId !== span.id);
 
@@ -518,9 +519,9 @@ function SpanNode(props: SpanNodeProps) {
                 </Badge>
               )}
             </div>
-            {span.spanAttributes['gateway.upstream.subgraph.name'] ? (
+            {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
               <div className={cn('truncate text-xs', isDimmed ? 'text-gray-600' : 'text-gray-500')}>
-                {span.spanAttributes['gateway.upstream.subgraph.name']}
+                {span.spanAttributes['hive.gateway.upstream.subgraph.name']}
               </div>
             ) : null}
           </div>
@@ -686,7 +687,7 @@ function SpanNode(props: SpanNodeProps) {
               const uchildSpan = useFragment(SpanFragment, childSpan.span);
 
               const serviceName: string | null =
-                uchildSpan.spanAttributes['gateway.upstream.subgraph.name'] ??
+                uchildSpan.spanAttributes['hive.gateway.upstream.subgraph.name'] ??
                 props.serviceName ??
                 null;
 

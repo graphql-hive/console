@@ -26,7 +26,7 @@ export function deployOTELCollector(args: {
         HIVE_OTEL_AUTH_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
           value => value + '/otel-auth',
         ),
-        CLICKHOUSE_PROTOCOL: 'tcp',
+        CLICKHOUSE_PROTOCOL: 'http',
       },
       /**
        * We are using the healthcheck extension.

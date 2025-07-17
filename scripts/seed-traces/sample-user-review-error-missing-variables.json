@@ -269,13 +269,13 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.type",
+                    "key": "graphql.operation.type",
                     "value": {
                       "stringValue": "query"
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.name",
+                    "key": "graphql.operation.name",
                     "value": {
                       "stringValue": "UserReview"
                     }
