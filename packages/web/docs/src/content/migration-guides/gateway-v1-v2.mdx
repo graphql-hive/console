@@ -14,6 +14,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [New Hive Logger for next-level observability and debugging](#hive-logger)
 - [New OpenTelemetry integration for better traces and custom spans](#opentelemetry)
+- [Subgraph Name is now part of the Execution Request](#)
 
 ## Drop Support for Node v18
 
@@ -566,7 +567,8 @@ informations.
 
 #### Example with HTTP OTLP Exporter
 
-<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>,
+<div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
@@ -814,6 +816,25 @@ export const myPlugin = () => ({
         // do something
       }
     )
+  }
+})
+```
+
+## Subgraph Name in Execution Request
+
+The targeted subgraph name is now exposed as a field of `ExecutionRequest`, it is no longer needed
+to use `subgraphNameFromExecutionRequest` to know which subgraph is targeted by an execution
+request.
+
+The `subgraphNameFromExecutionRequest` has been removed, since it's no longer needed.
+
+```diff
+- import { subgraphNameByExecutionRequest } from '@graphql-mesh/fusion-runtime';
+
+const useMyPlugin = () => ({
+  onFetch({ executionRequest }) {
+-   const subgraphName = subgraphNameByExecutionRequest.get(executionRequest)
++   const subgraphName = executionRequest.subgraphName
   }
 })
 ```
