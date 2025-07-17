@@ -787,8 +787,8 @@ export const gatewayConfig = defineConfig({
 
 The payload given as a parameter of the span filtering functions have been restrained.
 
-Due to internal changes, the informations available at span filtering time have been reduced to only
-include (depending on the span) the GraphQL `context`, the HTTP `request` and the Upsream
+Due to internal changes, the information available at span filtering time has been reduced to only
+include (depending on the span) the GraphQL `context`, the HTTP `request` and the Upstream
 `executionRequest`.
 
 Please refere to [Request Spans documentation](/docs/gateway/monitoring-tracing#request-spans) for
@@ -802,7 +802,7 @@ Please review your queries to not filter against `null` parent span id.
 
 ### New GraphQL Operation Span
 
-A new span encapsulating each GraphQL operation have been added.
+A new span encapsulating each GraphQL operation has been added.
 
 It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL processing. There
 can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
@@ -827,7 +827,7 @@ export const myPlugin = () => ({
     trace.startActiveSpan(
       'my-custom-span',
       { foo: 'bar' },
-+     ROOT_CONTEXT
++     ROOT_CONTEXT,
       () => {
         // do something
       }
