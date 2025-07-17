@@ -15,6 +15,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Hive Logger](#hive-logger)
 - [OpenTelemetry](#opentelemetry)
 - [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
+- [Renamed CLI options for Hive Usage Reporting](#renamed-cli-options-for-hive-usage-reporting)
 
 ## Drop Support for Node v18
 
@@ -551,6 +552,22 @@ For this features to be possible, we had to break the configuration API.
 You can read more about the new capabilities of the OpenTelemetry Tracing integration in the
 [Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing)
 
+### CLI Options
+
+It is now possible to setup OpenTelemetry without a configuration file, by using the new
+`--opentelemetry <exporter-endpoint>` option.
+
+```bash
+hive-gateway supergraph --opentelemetry "http://localhost:4318"
+```
+
+By default, an HTTP OTLP exporter will be used. You can also use a GRPC one by using
+`--opentelemetry-exporter-type`:
+
+```bash
+hive-gateway supergraph --opentelemetry "http://localhost:4317" --opentelemetry-exporter-type otlp-grpc
+```
+
 ### SDK Setup
 
 The OpenTelemetry SDK setup used to be automatically done by the plugin it self, it is no longer the
@@ -567,8 +584,7 @@ informations.
 
 #### Example using HTTP OTLP Exporter
 
-<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>,
-<div>OpenTelemetry <code>NodeSDK</code></div>]}>
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>,<div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
@@ -837,3 +853,13 @@ const useMyPlugin = () => ({
   }
 })
 ```
+
+## Renamed CLI options for Hive Usage Reporting
+
+To prepare for future observability features of Hive Console, some CLI options have been renamed:
+
+- `--hive-usage-target` has been renamed `--hive-target`
+- `--hive-access-token` is a new option to define an access token that will be used for all
+  observability features
+- `--hive-usage-access-token` is now a specific access token that will be used only for usage
+  reporting
