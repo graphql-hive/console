@@ -558,14 +558,17 @@ It is now possible to setup OpenTelemetry without a configuration file, by using
 `--opentelemetry <exporter-endpoint>` option.
 
 ```bash
-hive-gateway supergraph --opentelemetry "http://localhost:4318"
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4318"
 ```
 
 By default, an HTTP OTLP exporter will be used. You can also use a GRPC one by using
 `--opentelemetry-exporter-type`:
 
 ```bash
-hive-gateway supergraph --opentelemetry "http://localhost:4317" --opentelemetry-exporter-type otlp-grpc
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4317" \
+  --opentelemetry-exporter-type otlp-grpc
 ```
 
 ### SDK Setup
