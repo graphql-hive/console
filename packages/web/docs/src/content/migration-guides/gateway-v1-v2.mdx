@@ -12,9 +12,9 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Multipart Requests are Disabled by Default](#multipart-requests-are-disabled-by-default)
 - [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
-- [New Hive Logger for next-level observability and debugging](#hive-logger)
-- [New OpenTelemetry integration for better traces and custom spans](#opentelemetry)
-- [Subgraph Name is now part of the Execution Request](#)
+- [Hive Logger](#hive-logger)
+- [OpenTelemetry](#opentelemetry)
+- [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
 
 ## Drop Support for Node v18
 
@@ -68,7 +68,7 @@ export const gatewayConfig = defineConfig({
 });
 ```
 
-# Remove Mocking Plugin from built-ins
+## Remove Mocking Plugin from built-ins
 
 There is no need to provide the `useMock` plugin alongside Hive Gateway built-ins. Not only is the
 mock plugin 2MB in size (minified), but installing and using it is very simple.
@@ -440,7 +440,7 @@ export default {
 } satisfies Transport<LetterTransportOptions>;
 ```
 
-## Custom Logger Adapters
+### Custom Logger Writers
 
 The new Hive Logger is designed to be extensible and allows you to create custom logger adapters by
 implementing "log writers" instead of the complete logger interface. The `LogWriter` is simply:
@@ -465,7 +465,7 @@ winston, but also implement custom writers that send logs to a HTTP consumer or 
   Read more about implementing your own writers in the [Hive Logger documentation](/docs/logger).
 </Callout>
 
-### Pino (only Node.js)
+### Pino (Node.js Only)
 
 Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
 logs.
@@ -503,7 +503,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-### Winston (only Node.js)
+### Winston (Node.js Only)
 
 Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
 Logger's logs.
@@ -551,7 +551,7 @@ For this features to be possible, we had to break the configuration API.
 You can read more about the new capabilities of the OpenTelemetry Tracing integration in the
 [Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing)
 
-### OpenTelemetry SDK Setup
+### SDK Setup
 
 The OpenTelemetry SDK setup used to be automatically done by the plugin it self, it is no longer the
 case. You have the choice to either setup it yourself using official `@opentelemetry/*` pacakges
@@ -565,7 +565,7 @@ Most of OTEL related settings have been moved to `openTelemetrySetup` options. P
 [OpenTelemetry Setup documentation](/docs/gateway/monitoring-tracing#opentelemetry-setup) for more
 informations.
 
-#### Example with HTTP OTLP Exporter
+#### Example using HTTP OTLP Exporter
 
 <Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>,
 <div>OpenTelemetry <code>NodeSDK</code></div>]}>
@@ -784,7 +784,7 @@ Spans are now parented correctly. This can have impact on trace queries used in 
 
 Please review your queries to not filter against `null` parent span id.
 
-### New Graphql Operation Span
+### New GraphQL Operation Span
 
 A new span encapsulating each GraphQL operation have been added.
 
@@ -792,7 +792,7 @@ It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL
 can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
 operation batching over http.
 
-### OpenTelemetry Context
+### Context
 
 The OpenTelemetry Context is now modified by Hive Gateway. The Context is set with the current phase
 span. This means that if you were creating custom spans in your plugin without explicitly providing
@@ -823,10 +823,9 @@ export const myPlugin = () => ({
 ## Subgraph Name in Execution Request
 
 The targeted subgraph name is now exposed as a field of `ExecutionRequest`, it is no longer needed
-to use `subgraphNameFromExecutionRequest` to know which subgraph is targeted by an execution
-request.
-
-The `subgraphNameFromExecutionRequest` has been removed, since it's no longer needed.
+to use `subgraphNameFromExecutionRequest` helper utility to find out which subgraph is targeted by
+an execution request. Therefore, `subgraphNameFromExecutionRequest` has been removed, since it's no
+longer needed.
 
 ```diff
 - import { subgraphNameByExecutionRequest } from '@graphql-mesh/fusion-runtime';
