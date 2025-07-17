@@ -1,5 +1,6 @@
 import {
   ArgumentNode,
+  ASTNode,
   ConstDirectiveNode,
   ConstValueNode,
   DirectiveNode,
@@ -12,7 +13,9 @@ import {
   ValueNode,
 } from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
+import { Change, ChangeType } from '@graphql-inspector/core';
 import { nameNode } from './node-templates';
+import { AdditionChangeType } from './types';
 
 export function getDeprecatedDirectiveNode(
   definitionNode: Maybe<{ readonly directives?: ReadonlyArray<DirectiveNode> }>,
@@ -112,31 +115,24 @@ export function setInputValueDefinitionArgument(
   }
 }
 
-export function setArgument(
-  node: Maybe<{ arguments?: ArgumentNode[] | readonly ArgumentNode[] | undefined }>,
+export function upsertArgument(
+  node: { arguments?: ArgumentNode[] | readonly ArgumentNode[] },
   argumentName: string,
   value: ValueNode,
-): void {
-  if (node) {
-    let found = false;
-    for (const arg of node.arguments ?? []) {
-      if (arg.name.value === argumentName) {
-        (arg.value as ValueNode) = value;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      node.arguments = [
-        ...(node.arguments ?? []),
-        {
-          kind: Kind.ARGUMENT,
-          name: nameNode(argumentName),
-          value,
-        },
-      ];
+): ArgumentNode {
+  for (const arg of node.arguments ?? []) {
+    if (arg.name.value === argumentName) {
+      (arg.value as ValueNode) = value;
+      return arg;
     }
   }
+  const arg: ArgumentNode = {
+    kind: Kind.ARGUMENT,
+    name: nameNode(argumentName),
+    value,
+  };
+  node.arguments = [...(node.arguments ?? []), arg];
+  return arg;
 }
 
 export function findNamedNode<T extends { readonly name: NameNode }>(
@@ -168,5 +164,50 @@ export function removeArgument(
 ): void {
   if (node?.arguments) {
     node.arguments = node.arguments.filter(arg => arg.name.value !== argumentName);
+  }
+}
+
+export function parentPath(path: string) {
+  const lastDividerIndex = path.lastIndexOf('.');
+  return lastDividerIndex === -1 ? path : path.substring(0, lastDividerIndex);
+}
+
+const isAdditionChange = (change: Change<any>): change is Change<AdditionChangeType> => {
+  switch (change.type) {
+    case ChangeType.DirectiveAdded:
+    case ChangeType.DirectiveArgumentAdded:
+    case ChangeType.DirectiveLocationAdded:
+    case ChangeType.EnumValueAdded:
+    case ChangeType.EnumValueDeprecationReasonAdded:
+    case ChangeType.FieldAdded:
+    case ChangeType.FieldArgumentAdded:
+    case ChangeType.FieldDeprecationAdded:
+    case ChangeType.FieldDeprecationReasonAdded:
+    case ChangeType.FieldDescriptionAdded:
+    case ChangeType.InputFieldAdded:
+    case ChangeType.InputFieldDescriptionAdded:
+    case ChangeType.ObjectTypeInterfaceAdded:
+    case ChangeType.TypeDescriptionAdded:
+    case ChangeType.TypeAdded:
+    case ChangeType.UnionMemberAdded:
+      return true;
+    default:
+      return false;
+  }
+};
+
+export function debugPrintChange(change: Change<any>, nodeByPath: Map<string, ASTNode>) {
+  if (isAdditionChange(change)) {
+    console.log(`"${change.path}" is being added to the schema.`);
+  } else {
+    const changedNode = (change.path && nodeByPath.get(change.path)) || false;
+
+    if (changedNode) {
+      console.log(`"${change.path}" has a change: [${change.type}] "${change.message}"`);
+    } else {
+      console.log(
+        `The change to "${change.path}" cannot be applied. That coordinate does not exist in the schema.`,
+      );
+    }
   }
 }

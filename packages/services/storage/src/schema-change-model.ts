@@ -281,6 +281,7 @@ export const DirectiveArgumentAddedModel = implement<DirectiveArgumentAddedChang
     directiveName: z.string(),
     addedDirectiveArgumentName: z.string(),
     addedDirectiveArgumentTypeIsNonNull: z.boolean(),
+    addedDirectiveArgumentType: z.string(),
   }),
 });
 

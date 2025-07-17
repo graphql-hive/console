@@ -1,4 +1,4 @@
-import { Kind, NameNode, StringValueNode, TypeNode } from 'graphql';
+import { Kind, NamedTypeNode, NameNode, StringValueNode, TypeNode } from 'graphql';
 
 export function nameNode(name: string): NameNode {
   return {
@@ -14,7 +14,14 @@ export function stringNode(value: string): StringValueNode {
   };
 }
 
-export function namedType(name: string): TypeNode {
+export function typeNode(name: string): TypeNode {
+  return {
+    kind: Kind.NAMED_TYPE,
+    name: nameNode(name),
+  };
+}
+
+export function namedTypeNode(name: string): NamedTypeNode {
   return {
     kind: Kind.NAMED_TYPE,
     name: nameNode(name),
