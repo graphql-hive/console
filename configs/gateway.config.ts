@@ -134,10 +134,11 @@ class HiveTracingSpanProcessor implements SpanProcessor {
             rootSpan.updateName(`${operationType} ${operationName}`);
 
             // Copy attributes to root span
-            rootSpan.setAttribute('hive.graphql.operation.type', operationType);
-            rootSpan.setAttribute('hive.graphql.operation.name', operationName ?? '');
-            rootSpan.setAttribute('hive.graphql.operation.document', document);
+            rootSpan.setAttribute('graphql.operation.type', operationType);
+            rootSpan.setAttribute('graphql.operation.name', operationName ?? '');
+            rootSpan.setAttribute('graphql.operation.document', document);
             rootSpan.setAttribute('hive.graphql.error.count', errorCount ?? 0);
+            rootSpan.setAttribute('hive.graphql.operation.hash', 'FOFOFOFOFOFOFOFOF');
 
             // Add the subgraph names as a comma-separated list
             if (subgraphNamesForTrace && subgraphNamesForTrace.size > 0) {
@@ -173,9 +174,9 @@ class HiveTracingSpanProcessor implements SpanProcessor {
       // add hive branded attributes
       //
       span.attributes['hive.subgraph.name'] = span.attributes['gateway.upstream.subgraph.name'];
-      span.attributes['hive.graphql.operation.document'] = span.attributes['graphql.document'];
-      span.attributes['hive.graphql.operation.name'] = span.attributes['graphql.operation.name'];
-      span.attributes['hive.graphql.operation.type'] = span.attributes['graphql.operation.type'];
+      span.attributes['graphql.operation.document'] = span.attributes['graphql.document'];
+      span.attributes['graphql.operation.name'] = span.attributes['graphql.operation.name'];
+      span.attributes['graphql.operation.type'] = span.attributes['graphql.operation.type'];
       // TODO: attributes for error codes
       // hive.graphql.error.count
       // span.attributes['hive.graphql.error.count'] = 0;
