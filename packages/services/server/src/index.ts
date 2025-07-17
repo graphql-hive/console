@@ -65,6 +65,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
+import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
@@ -459,6 +460,10 @@ export async function main() {
       handler: graphql,
     });
 
+    const authN = new AuthN({
+      strategies: [organizationAccessTokenStrategy],
+    });
+
     server.route({
       method: ['GET', 'POST'],
       url: '/graphql-public',
@@ -466,9 +471,7 @@ export async function main() {
         registry,
         logger: logger as any,
         hiveUsageConfig: env.hive,
-        authN: new AuthN({
-          strategies: [organizationAccessTokenStrategy],
-        }),
+        authN,
         tracing,
       }),
     });
@@ -591,6 +594,8 @@ export async function main() {
       void res.status(result.status).send(result);
       return;
     });
+
+    createOtelAuthEndpoint({ server, authN, redis, pgPool: storage.pool, tracing: !!tracing });
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

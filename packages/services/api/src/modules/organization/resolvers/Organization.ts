@@ -207,8 +207,15 @@ export const Organization: Pick<
   availableMemberPermissionGroups: () => {
     return OrganizationMemberPermissions.permissionGroups;
   },
-  availableOrganizationAccessTokenPermissionGroups: () => {
-    return OrganizationAccessTokensPermissions.permissionGroups;
+  availableOrganizationAccessTokenPermissionGroups: organization => {
+    if (organization.featureFlags.otelTracing) {
+      return OrganizationAccessTokensPermissions.permissionGroups;
+    }
+
+    return OrganizationAccessTokensPermissions.permissionGroups.map(group => ({
+      ...group,
+      permissions: group.permissions.filter(p => p.id !== 'traces:report'),
+    }));
   },
   accessTokens: async (organization, args, { injector }) => {
     return injector.get(OrganizationAccessTokens).getPaginated({
