@@ -158,14 +158,17 @@ more details about OpenTelemetry setup and API.
 If your use case is simple enough, you can use CLI options to setup OpenTelemetry.
 
 ```bash
-hive-gateway supergraph --opentelemetry "http://localhost:4318"
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4318"
 ```
 
 By default, an HTTP OTLP exporter will be used, but you can change it with
 `--opentelemetry-exporter-type`:
 
 ```bash
-hive-gateway supergraph --opentelemetry "http://localhost:4317" --opentelemetry-exporter-type otlp-grpc
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4317" \
+  --opentelemetry-exporter-type otlp-grpc
 ```
 
 Please refer to `openTelemetrySetup()` usage if you need more control and options.
