@@ -808,7 +808,7 @@ It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL
 can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
 operation batching over http.
 
-### Context
+### Root Context
 
 The OpenTelemetry Context is now modified by Hive Gateway. The Context is set with the current phase
 span. This means that if you were creating custom spans in your plugin without explicitly providing
