@@ -820,14 +820,11 @@ a parent context, your spans will be considered sub-spans of Hive Gateway's curr
 To maintain your span as a root span, add an explicit parent context a creation time:
 
 ```diff
-import {
-  trace,
-+ ROOT_CONTEXT
-} from '@opentelemetry/api'
++ import { ROOT_CONTEXT } from '@opentelemetry/api'
 
 export const myPlugin = () => ({
   onExecute() {
-    trace.startActiveSpan(
+    myTrace.startActiveSpan(
       'my-custom-span',
       { foo: 'bar' },
 +     ROOT_CONTEXT,
