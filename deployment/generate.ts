@@ -1,9 +1,6 @@
 import { execSync } from 'child_process';
 import { readFile, writeFile } from 'fs/promises';
-import { gunzip } from 'node:zlib';
 import { Readable } from 'stream';
-import { gunzipSync } from 'zlib';
-import * as yaml from 'js-yaml';
 import { compile } from 'json-schema-to-typescript';
 import { extract } from 'tar-stream';
 import { fileSync } from 'tmp';
@@ -64,37 +61,8 @@ async function generateVectorDevTypes() {
 }
 
 async function generateContourTypes() {
-  let helmManifest = await fetch(`${CONTOUR_CHART.fetchOpts!['repo']}/index.yaml`, {
-    redirect: 'follow',
-  })
-    .then(r => r.text())
-    .then(r => yaml.load(r) as any);
-
-  let relevantChart = helmManifest.entries[CONTOUR_CHART['chart'] as string].find(
-    entry => entry.version === CONTOUR_CHART.version,
-  );
-
-  if (!relevantChart) {
-    throw new Error(
-      `Could not find chart ${CONTOUR_CHART['chart']} with version ${CONTOUR_CHART.version} in the Helm repository!`,
-    );
-  }
-
-  const url = relevantChart.urls.find((url: string) => url.endsWith('.tgz'));
-
-  if (!url) {
-    throw new Error(
-      `Could not find a .tgz file in the Helm repository for chart ${CONTOUR_CHART['chart']}!`,
-    );
-  }
-
-  const valuesFile = await fetch(url)
-    .then(r => r.arrayBuffer())
-    .then(r => Buffer.from(r))
-    .then(r => gunzipSync(r))
-    .then(r => Readable.from(r))
-    .then(r => getFileFromTar(r, 'contour/values.yaml'))
-    .then((r: any) => r.toString());
+  const helmValuesFileUrl = `https://raw.githubusercontent.com/bitnami/charts/contour/${CONTOUR_CHART.version}/bitnami/contour/values.yaml`;
+  const valuesFile = await fetch(helmValuesFileUrl).then(r => r.text());
 
   const valuesTempFile = fileSync();
   await writeFile(valuesTempFile.name, valuesFile);
