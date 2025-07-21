@@ -6,7 +6,7 @@ authors: eddeee888
 tags: [graphql, graphql-code-generator, graphql-codegen, client-preset, swc-plugin]
 ---
 
-I'm excited to announce that the [Client Preset](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client)'s SWC plugin ([@graphql-codegen/client-preset-swc-plugin](https://www.npmjs.com/package/@graphql-codegen/client-preset-swc-plugin)), which is used to [reduce bundle size](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size), has been moved to [swc-project/plugins](https://github.com/swc-project/plugins/tree/main/contrib/graphql-codegen-client-preset)!
+We're excited to announce that the Client Preset [SWC plugin](https://www.npmjs.com/package/@graphql-codegen/client-preset-swc-plugin) has been moved to [swc-project/plugins](https://github.com/swc-project/plugins/tree/main/contrib/graphql-codegen-client-preset)!
 
 To use the new package, simply install it:
 
@@ -30,8 +30,8 @@ const nextConfig = {
 
 For other use cases, check the [updated documentation](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#swc-plugin)!
 
-This plugin has been an essential part when integrating Client Preset into frameworks with SWC, such as Next.js and Vite. However, SWC plugins are currently not backwards compatible which means every time there is a new release in the `swc_core` package, `@graphql-codegen/client-preset-swc-plugin` version needs to be updated as well.
+This plugin has been an essential part to [reduce bundle size](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size) when integrating Client Preset into frameworks with SWC, such as Next.js and Vite. However, SWC plugins are currently not backwards compatible which means every time there was a new release in the `swc_core` package, `@graphql-codegen/client-preset-swc-plugin` version needed to be updated.
 
-I created [an issue](https://github.com/dotansimha/graphql-code-generator/issues/10379) to gather thoughts from the community on how to move forward with (1) guaranteed stability of the package and (2) minimal involvement from Codegen maintainers. Almost immediately, [@kdy1dev](https://x.com/kdy1dev) (Donny, the creator of SWC) made the suggestion to move the project to `swc-project/plugins`, which solved all the problems raised in the issue!
+We created [an issue](https://github.com/dotansimha/graphql-code-generator/issues/10379) to gather thoughts from the community on how to move forward with (1) guaranteed stability of the package and (2) minimal involvement from Codegen maintainers. Almost immediately, [@kdy1dev](https://x.com/kdy1dev) (Donny, the creator of SWC) made the suggestion to move the project to `swc-project/plugins`, which solved all the problems!
 
 Needless to say, this is a great solution for the community. Again, big shoutout to Donny for supporting us!
