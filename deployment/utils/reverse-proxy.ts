@@ -4,7 +4,7 @@ import { ContourValues } from './contour.types';
 import { helmChart } from './helm';
 
 // prettier-ignore
-export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
+export const CONTOUR_CHART = helmChart('oci://registry-1.docker.io/bitnamicharts/contour', 'contour', '20.0.3');
 
 export class Proxy {
   private lbService: Output<k8s.core.v1.Service> | null = null;
