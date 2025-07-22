@@ -4,10 +4,11 @@ export function helmChart(
   repo: string,
   chart: string,
   version: string,
-): Pick<ChartOpts, 'chart' | 'version' | 'fetchOpts'> {
+): Pick<ChartOpts, 'chart' | 'version' | 'fetchOpts'> & { repo: string } {
   return {
     chart,
     version,
+    repo,
     fetchOpts: {
       repo,
     },
