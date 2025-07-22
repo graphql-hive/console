@@ -7,7 +7,7 @@ import { helmChart } from './helm';
 export const CONTOUR_CHART = helmChart('oci://registry-1.docker.io/bitnamicharts/contour', 'contour', '20.0.3');
 
 export class Proxy {
-  private lbService: Output<k8s.core.v1.Service> | null = null;
+  private lbService: k8s.core.v1.Service | null = null;
 
   constructor(
     private tlsSecretName: string,
@@ -363,12 +363,16 @@ export class Proxy {
       values: chartValues,
     });
 
-    this.lbService = proxyController.getResource('v1/Service', 'contour/contour-proxy-envoy');
-
-    const contourDeployment = proxyController.getResource(
-      'apps/v1/Deployment',
-      'contour/contour-proxy-contour',
+    this.lbService = k8s.core.v1.Service.get(
+      'contour-proxy-service',
+      interpolate`${proxyController.status.namespace}/contour-proxy-envoy`,
     );
+
+    const contourDeployment = k8s.apps.v1.Deployment.get(
+      'contour-deployment',
+      interpolate`${proxyController.status.namespace}/contour-proxy-contour`,
+    );
+
     new k8s.policy.v1.PodDisruptionBudget('contour-pdb', {
       spec: {
         minAvailable: 1,
@@ -376,10 +380,11 @@ export class Proxy {
       },
     });
 
-    const envoyDaemonset = proxyController.getResource(
-      'apps/v1/ReplicaSet',
-      'contour/contour-proxy-envoy',
+    const envoyDaemonset = k8s.apps.v1.ReplicaSet.get(
+      'contour-deployment',
+      interpolate`${proxyController.status.namespace}/contour-proxy-envoy`,
     );
+
     new k8s.policy.v1.PodDisruptionBudget('envoy-pdb', {
       spec: {
         minAvailable: 1,
