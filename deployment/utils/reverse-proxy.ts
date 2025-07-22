@@ -4,10 +4,10 @@ import { ContourValues } from './contour.types';
 import { helmChart } from './helm';
 
 // prettier-ignore
-export const CONTOUR_CHART = helmChart('oci://registry-1.docker.io/bitnamicharts/contour', 'contour', '20.0.3');
+export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
 
 export class Proxy {
-  private lbService: k8s.core.v1.Service | null = null;
+  private lbService: Output<k8s.core.v1.Service> | null = null;
 
   constructor(
     private tlsSecretName: string,
@@ -355,24 +355,19 @@ export class Proxy {
       (chartValues.envoy!.resources!.limits as any).memory = options.envoy.memory;
     }
 
-    const proxyController = new k8s.helm.v3.Release('contour-proxy', {
-      name: 'contour-proxy',
-      chart: CONTOUR_CHART.repo,
+    const proxyController = new k8s.helm.v3.Chart('contour-proxy', {
+      ...CONTOUR_CHART,
       namespace: ns.metadata.name,
       // https://github.com/bitnami/charts/tree/master/bitnami/contour
       values: chartValues,
     });
 
-    this.lbService = k8s.core.v1.Service.get(
-      'contour-proxy-service',
-      interpolate`${proxyController.status.namespace}/contour-proxy-envoy`,
-    );
+    this.lbService = proxyController.getResource('v1/Service', 'contour/contour-proxy-envoy');
 
-    const contourDeployment = k8s.apps.v1.Deployment.get(
-      'contour-deployment',
-      interpolate`${proxyController.status.namespace}/contour-proxy-contour`,
+    const contourDeployment = proxyController.getResource(
+      'apps/v1/Deployment',
+      'contour/contour-proxy-contour',
     );
-
     new k8s.policy.v1.PodDisruptionBudget('contour-pdb', {
       spec: {
         minAvailable: 1,
@@ -380,11 +375,10 @@ export class Proxy {
       },
     });
 
-    const envoyDaemonset = k8s.apps.v1.ReplicaSet.get(
-      'contour-deployment',
-      interpolate`${proxyController.status.namespace}/contour-proxy-envoy`,
+    const envoyDaemonset = proxyController.getResource(
+      'apps/v1/ReplicaSet',
+      'contour/contour-proxy-envoy',
     );
-
     new k8s.policy.v1.PodDisruptionBudget('envoy-pdb', {
       spec: {
         minAvailable: 1,

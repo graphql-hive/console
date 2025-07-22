@@ -1,8 +1,6 @@
 import { execSync } from 'child_process';
 import { readFile, writeFile } from 'fs/promises';
-import { Readable } from 'stream';
 import { compile } from 'json-schema-to-typescript';
-import { extract } from 'tar-stream';
 import { fileSync } from 'tmp';
 import { OTLP_COLLECTOR_CHART, VECTOR_HELM_CHART } from './utils/observability';
 import { CONTOUR_CHART } from './utils/reverse-proxy';
@@ -12,33 +10,6 @@ async function generateJsonSchemaFromHelmValues(input: string) {
   execSync(`helm schema -input ${input} -output ${jsonSchemaTempFile.name}`);
 
   return await readFile(jsonSchemaTempFile.name, 'utf-8').then(r => JSON.parse(r));
-}
-
-function getFileFromTar(tar: Readable, filename: string) {
-  return new Promise(resolve => {
-    const extractInstance = extract();
-
-    extractInstance.on('entry', function (header, stream, next) {
-      if (header.name === filename) {
-        let data = '';
-        stream.on('data', chunk => (data += chunk));
-        stream.on('end', () => {
-          resolve(data);
-        });
-      }
-      stream.on('end', function () {
-        next(); // ready for next entry
-      });
-
-      stream.resume(); // just auto drain the stream
-    });
-
-    extractInstance.on('finish', function () {
-      // all entries read
-    });
-
-    tar.pipe(extractInstance);
-  });
 }
 
 async function generateOpenTelemetryCollectorTypes() {
