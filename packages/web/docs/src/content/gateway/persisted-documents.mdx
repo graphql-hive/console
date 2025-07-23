@@ -321,7 +321,7 @@ This can be achieved using the `allowArbitraryOperations` option.
 ```ts filename="Allow arbitrary GraphQL operations"
 {
   allowArbitraryOperations: request =>
-    request.headers.request.headers.get('x-allow-arbitrary-operations') === 'true'
+    request.headers.get('x-allow-arbitrary-operations') === 'true'
 }
 ```
 
