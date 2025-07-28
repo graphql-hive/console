@@ -31,7 +31,7 @@ struct SchemaCoordinatesContext {
     pub used_variables: HashSet<String>, 
     pub non_null_variables: HashSet<String>, 
     pub variables_with_defaults: HashSet<String>, 
-    error: Option<Error>
+    error: Option<Error>,
 }
 
 impl SchemaCoordinatesContext {
@@ -67,12 +67,9 @@ pub fn collect_schema_coordinates(
             } else if let Some(type_def) = schema.type_by_name(&type_name) {
                 match type_def {
                     TypeDefinition::Scalar(scalar_def) => {
-                        // Always collect custom scalars when referenced in variables
                         ctx.schema_coordinates.insert(scalar_def.name.clone());
                     }
                     TypeDefinition::InputObject(input_type) => {
-                        // Collect all fieldcollect_input_object_fieldss of input objects referenced in variable definitions
-                        // and recursively process field types
                         collect_input_object_fields(schema, input_type, &mut ctx.schema_coordinates);
                     }
                     TypeDefinition::Enum(enum_type) => {
@@ -105,19 +102,15 @@ fn collect_input_object_fields(
         
         let field_type_name = field.value_type.inner_type();
         
-        // Process the field's type but DON'T add the type name itself for enums/input objects
         if let Some(field_type_def) = schema.type_by_name(field_type_name) {
             match field_type_def {
                 TypeDefinition::Scalar(scalar_def) => {
-                    // Only collect scalar types
                     coordinates.insert(scalar_def.name.clone());
                 }
                 TypeDefinition::InputObject(nested_input_type) => {
-                    // Recursively collect nested input object fields (but not the type name)
                     collect_input_object_fields(schema, nested_input_type, coordinates);
                 }
                 TypeDefinition::Enum(enum_type) => {
-                    // Collect enum values (but not the enum type name)
                     for value in &enum_type.values {
                         coordinates.insert(format!("{}.{}", enum_type.name, value.name));
                     }
@@ -287,7 +280,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         ctx.used_variables.insert(name.to_string());
     }
 
-        fn enter_field(
+    fn enter_field(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
@@ -305,8 +298,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             ctx.schema_coordinates
                 .insert(format!("{}.{}", parent_name, field_name));
 
-            // If field's return type is an enum, collect all possible values
             if let Some(field_def) = parent_type.field_by_name(&field_name) {
+                // if field's type is an enum, we need to collect all possible values
                 let field_output_type = info.schema.type_by_name(field_def.field_type.inner_type());
                 if let Some(TypeDefinition::Enum(enum_type)) = field_output_type {
                     for value in &enum_type.values {
@@ -326,7 +319,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         }
     }
 
-        fn enter_variable_definition(
+    fn enter_variable_definition(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
@@ -347,7 +340,6 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
 
         let type_name = self.resolve_type_name(var.var_type.clone());
         
-        // Always collect the variable's type for reference resolution
         if let Some(inner_types) = self.resolve_references(info.schema, &type_name) {
             for inner_type in inner_types {
                 ctx.used_input_fields.insert(inner_type);
@@ -414,8 +406,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             // handled by enter_list_value
                         }
                         Value::Object(_) => {
-                            // CRITICAL FIX: Only collect scalar type if it's actually a custom scalar
-                            // receiving an object value (like JSON)
+                            // Only collect scalar type if it's actually a custom scalar
+                            // receiving an object value
                             if let Some(TypeDefinition::Scalar(_)) = info.schema.type_by_name(&arg_type_name) {
                                 ctx.schema_coordinates.insert(arg_type_name.clone());
                             }
@@ -459,10 +451,10 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             .insert(format!("{}.{}", coordinate, value_str));
                     }
                     Value::Object(_) => {
-                        // handled by enter_object_value
+                        // object fields are handled by enter_object_value
                     }
                     Value::List(_) => {
-                        // handled by enter_list_value recursively
+                        // handled by enter_list_value
                     }
                     Value::Variable(_) => {
                         // handled by enter_variable_definition
@@ -480,14 +472,13 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         }
     }
 
-fn enter_object_value(
+    fn enter_object_value(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
         object_value: &BTreeMap<String, graphql_tools::static_graphql::query::Value>,
     ) {
         if let Some(TypeDefinition::InputObject(input_object_def)) = info.current_input_type() {
-            // First, collect all fields that are explicitly provided in the object
             object_value.iter().for_each(|(name, value)| {
                 if let Some(field) = input_object_def
                     .fields
@@ -530,7 +521,7 @@ fn enter_object_value(
                             // handled by enter_list_value
                         }
                         Value::Object(_) => {
-                            // CRITICAL FIX: Only collect scalar type if it's a custom scalar receiving object
+                            // Only collect scalar type if it's a custom scalar receiving object
                             if let Some(TypeDefinition::Scalar(_)) = info.schema.type_by_name(&field_type_name) {
                                 ctx.schema_coordinates.insert(field_type_name.to_string());
                             }
@@ -546,7 +537,7 @@ fn enter_object_value(
                             }
                         }
                         Value::Null => {
-                            // CRITICAL FIX: When a field has a null value, we should still collect
+                            // When a field has a null value, we should still collect
                             // all nested coordinates for input object types
                             if let Some(TypeDefinition::InputObject(nested_input_obj)) = info.schema.type_by_name(&field_type_name) {
                                 self.collect_nested_input_coordinates(info.schema, nested_input_obj, ctx);
