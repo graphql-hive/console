@@ -111,7 +111,10 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     '@inaccessible',
   );
   const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
-  const externalDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@external');
+  const externalDirectiveName = resolveImportName(
+    'https://specs.apollo.dev/federation',
+    '@external',
+  );
 
   function getTagsForSchemaCoordinate(coordinate: string) {
     return tagRegister.get(coordinate) ?? new Set();

@@ -507,7 +507,10 @@ test('@external fields are always included if exclude @tag is used', async () =>
         raw: /* GraphQL */ `
           extend schema
             @link(url: "https://specs.apollo.dev/link/v1.0")
-            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@external", "@requires"])
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.8"
+              import: ["@key", "@external", "@requires"]
+            )
 
           type User @key(fields: "id") {
             id: ID!
@@ -517,7 +520,7 @@ test('@external fields are always included if exclude @tag is used', async () =>
         `,
         source: 'credit.graphql',
         url: 'https://localhost:3001/graphql',
-      }
+      },
     ],
     external: null,
     contracts: [
@@ -573,7 +576,10 @@ test('@external fields are always included if include @tag is used', async () =>
         raw: /* GraphQL */ `
           extend schema
             @link(url: "https://specs.apollo.dev/link/v1.0")
-            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@external", "@requires", "@tag"])
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.8"
+              import: ["@key", "@external", "@requires", "@tag"]
+            )
 
           type User @key(fields: "id") {
             id: ID!
@@ -583,7 +589,7 @@ test('@external fields are always included if include @tag is used', async () =>
         `,
         source: 'credit.graphql',
         url: 'https://localhost:3001/graphql',
-      }
+      },
     ],
     external: null,
     contracts: [
