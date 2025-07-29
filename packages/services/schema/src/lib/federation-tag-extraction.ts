@@ -111,6 +111,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     '@inaccessible',
   );
   const tagDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@tag');
+  const externalDirectiveName = resolveImportName('https://specs.apollo.dev/federation', '@external');
 
   function getTagsForSchemaCoordinate(coordinate: string) {
     return tagRegister.get(coordinate) ?? new Set();
@@ -140,6 +141,11 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     fieldLikeNode: InputValueDefinitionNode | FieldDefinitionNode,
     node: InputValueDefinitionNode,
   ) {
+    // Check for external tag because we cannot contribute directives to external fields.
+    if (node.directives?.find(d => d.name.value === externalDirectiveName)) {
+      return node;
+    }
+
     const tagsOnNode = getTagsForSchemaCoordinate(
       `${objectLikeNode.name.value}.${fieldLikeNode.name.value}(${node.name.value}:)`,
     );
@@ -210,6 +216,11 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
                 fieldArgumentHandler(node, fieldNode, argumentNode),
               ),
             } as FieldDefinitionNode;
+          }
+
+          // Check for external tag because we cannot contribute directives to external fields.
+          if (fieldNode.directives?.find(d => d.name.value === externalDirectiveName)) {
+            return fieldNode;
           }
 
           if (
