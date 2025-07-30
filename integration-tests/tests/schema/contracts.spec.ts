@@ -618,6 +618,77 @@ test('@external fields are always included if include @tag is used', async () =>
   `);
 });
 
+test(`@external object's fields are do not have contract tag applied`, async () => {
+  const result = await client.composeAndValidate.mutate({
+    type: 'federation',
+    native: true,
+    schemas: [
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@key", "@tag"])
+
+          type Query {
+            user: User @tag(name: "public")
+          }
+
+          type User @key(fields: "id") {
+            id: ID! @tag(name: "public")
+            ssn: String
+          }
+        `,
+        source: 'user.graphql',
+        url: 'https://localhost:3000/graphql',
+      },
+      {
+        raw: /* GraphQL */ `
+          extend schema
+            @link(url: "https://specs.apollo.dev/link/v1.0")
+            @link(
+              url: "https://specs.apollo.dev/federation/v2.8"
+              import: ["@key", "@external", "@requires", "@tag"]
+            )
+
+          extend type User @external {
+            ssn: String
+          }
+
+          type User @key(fields: "id") {
+            id: ID!
+            creditScore: Int @requires(fields: "ssn") @tag(name: "public")
+          }
+        `,
+        source: 'credit.graphql',
+        url: 'https://localhost:3001/graphql',
+      },
+    ],
+    external: null,
+    contracts: [
+      {
+        id: 'foo',
+        filter: {
+          removeUnreachableTypesFromPublicApiSchema: false,
+          exclude: null,
+          include: ['public'],
+        },
+      },
+    ],
+  });
+  expect(result.errors).toEqual([]);
+  expect(result.contracts?.[0].errors).toEqual([]);
+  expect(result.contracts?.[0].sdl).toMatchInlineSnapshot(`
+    type User {
+      id: ID!
+      creditScore: Int
+    }
+
+    type Query {
+      user: User
+    }
+  `);
+});
+
 test('include with exclude is possible', async () => {
   const result = await client.composeAndValidate.mutate({
     type: 'federation',

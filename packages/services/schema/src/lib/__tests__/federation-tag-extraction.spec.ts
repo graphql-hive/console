@@ -449,6 +449,38 @@ describe('applyTagFilterToInaccessibleTransformOnSubgraphSchema', () => {
         }
       `);
     });
+
+    test('external objects do not apply inaccessible based on tags', () => {
+      const filter: Federation2SubgraphDocumentNodeByTagsFilter = {
+        include: new Set(['public']),
+        exclude: new Set(),
+      };
+      const sdl = parse(/* GraphQL */ `
+        extend schema
+          @link(url: "https://specs.apollo.dev/link/v1.0")
+          @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@external"])
+
+        type Position @external {
+          x: Int!
+          y: Int!
+        }
+      `);
+
+      const output = applyTagFilterToInaccessibleTransformOnSubgraphSchema(
+        sdl,
+        buildSchemaCoordinateTagRegister([sdl]),
+        filter,
+      );
+
+      expect(print(output.typeDefs)).toMatchInlineSnapshot(`
+        extend schema @link(url: "https://specs.apollo.dev/link/v1.0") @link(url: "https://specs.apollo.dev/federation/v2.8", import: ["@external"])
+
+        type Position @external {
+          x: Int!
+          y: Int!
+        }
+      `);
+    });
   });
 
   describe('interface type', () => {
