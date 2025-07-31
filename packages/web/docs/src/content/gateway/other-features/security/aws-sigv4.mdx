@@ -77,6 +77,28 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+#### Other credential providers
+
+You can use AWS SDK's credential providers from
+[`@aws-sdk/credential-providers`](https://www.npmjs.com/package/@aws-sdk/credential-providers) such
+as SSO support etc.
+
+```ts filename="gateway.config.ts"
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  awsSigV4: {
+    outgoing: fromNodeProviderChain()
+  }
+})
+```
+
+<Callout>
+  Learn more about the available credential providers in the [AWS SDK for JavaScript v3
+  documentation](https://www.npmjs.com/package/@aws-sdk/credential-providers).
+</Callout>
+
 ### Service and region configuration
 
 By default, the plugin extracts the service and region from the URL of the subgraph. But you can
