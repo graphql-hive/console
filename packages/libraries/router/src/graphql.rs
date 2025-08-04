@@ -351,7 +351,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             self.process_default_value(info, ctx, &type_name, default_value);
         }
     }
-        fn enter_argument(
+    
+    fn enter_argument(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
@@ -382,7 +383,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             let has_value = match arg_value {
                 Value::Null => false,
                 Value::Variable(var_name) => {
-                    ctx.variables_with_defaults.contains(var_name)
+                    ctx.variables_with_defaults.contains(var_name) && ctx.non_null_variables.contains(var_name)
                 }
                 _ => true,
             };
