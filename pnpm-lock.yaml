@@ -854,8 +854,8 @@ importers:
         specifier: 17.5.0
         version: 17.5.0
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 23.0.1
+        version: 23.0.1(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1320,8 +1320,8 @@ importers:
         specifier: 0.0.4
         version: 0.0.4
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 23.0.1
+        version: 23.0.1(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -2261,12 +2261,14 @@ packages:
 
   '@apollo/server-gateway-interface@1.1.1':
     resolution: {integrity: sha512-pGwCl/po6+rxRmDMFgozKQo2pbsSwE91TpsDBAOgf74CRDPXHHtM88wbwjab0wMMZh95QfR45GGyDIdhY24bkQ==}
+    deprecated: '@apollo/server-gateway-interface v1 is part of Apollo Server v4, which is deprecated and will transition to end-of-life on January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v2 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.'
     peerDependencies:
       graphql: 14.x || 15.x || 16.x
 
   '@apollo/server@4.11.3':
     resolution: {integrity: sha512-mW8idE2q0/BN14mimfJU5DAnoPHZRrAWgwsVLBEdACds+mxapIYxIbI6AH4AsOpxfrpvHts3PCYDbopy1XPW1g==}
     engines: {node: '>=14.16.0'}
+    deprecated: Apollo Server v4 is deprecated and will transition to end-of-life on January 26, 2026. As long as you are already using a non-EOL version of Node.js, upgrading to v5 should take only a few minutes. See https://www.apollographql.com/docs/apollo-server/previous-versions for details.
     peerDependencies:
       graphql: ^16.6.0
 
@@ -3564,7 +3566,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -3653,6 +3654,7 @@ packages:
 
   '@graphql-codegen/client-preset-swc-plugin@0.2.0':
     resolution: {integrity: sha512-wibvCKuB+pP1ggNzZnkMLQgfyr0l+71kZsfK9M9GxxV8kaFGypbT3eN2XP4U8wH35GTaceLDg9jTg2JSUpcWdg==}
+    deprecated: This package is deprecated. Please use @swc-contrib/plugin-graphql-codegen-client-preset instead.
 
   '@graphql-codegen/client-preset@4.7.0':
     resolution: {integrity: sha512-U15GrsvSd0k6Wgo3vFN/oJMTMWUtbEkjQhifrfzkJpvUK+cqyB+C/SgLdSbzyxKd3GyMl8kfwgGr5K+yfksQ/g==}
@@ -11081,10 +11083,6 @@ packages:
     resolution: {integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==}
     engines: {node: '>=8'}
 
-  inflation@2.0.0:
-    resolution: {integrity: sha512-m3xv4hJYR2oXw4o4Y5l6P5P16WYmazYof+el6Al3f+YlggGj6qT9kImBAnzDelRALnP5d3h4jGBPKzYCizjZZw==}
-    engines: {node: '>= 0.8.0'}
-
   inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
     deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
@@ -13119,6 +13117,9 @@ packages:
     resolution: {integrity: sha512-8KPLGT5g9s+olKMRTU9LFekLizkVIu9tes90O1/aigJ0T5LmyPqTzGJrETnSw3meSYg58YH7JTzhTTW/3z6VAw==}
     hasBin: true
 
+  pako@2.1.0:
+    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
+
   param-case@3.0.4:
     resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
 
@@ -13730,9 +13731,6 @@ packages:
 
   pseudomap@1.0.2:
     resolution: {integrity: sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==}
-
-  psl@1.8.0:
-    resolution: {integrity: sha512-RIdOzyoavK+hA18OGGWDqUTsCLhtA7IcZ/6NCs4fFJaHBDab+pDDmDIByWFRQJq2Cd7r1OoQxBGKOaztq+hjIQ==}
 
   pump@3.0.0:
     resolution: {integrity: sha512-LwZy+p3SFs1Pytd/jYct4wpv49HiYCqd9Rlc5ZVdk0V+8Yzv6jR5Blk3TRmPL1ft69TxP0IMZGJ+WPFU2BFhww==}
@@ -14617,6 +14615,7 @@ packages:
   source-map@0.8.0-beta.0:
     resolution: {integrity: sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==}
     engines: {node: '>= 8'}
+    deprecated: The work that was done in this beta branch won't be included in future versions
 
   sourcemap-codec@1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
@@ -14861,8 +14860,8 @@ packages:
   supertokens-js-override@0.0.4:
     resolution: {integrity: sha512-r0JFBjkMIdep3Lbk3JA+MpnpuOtw4RSyrlRAbrzMcxwiYco3GFWl/daimQZ5b1forOiUODpOlXbSOljP/oyurg==}
 
-  supertokens-node@16.7.5:
-    resolution: {integrity: sha512-xrVwi0GfgLIqHKaWXEp7fCgmVQ2wTiJTHG2CQGLkGMvrO9dUcxY+H6qozn3EvyXxbkm1BmflYD8N7ILNSIbR1g==}
+  supertokens-node@23.0.1:
+    resolution: {integrity: sha512-cCuY9Y5Mj93Pg1ktbqilouWgAoQWniQauftB4Ef6rfOchogx13XTo1pNP14zezn2rSf7WIPb9iaZb5zif6TKtQ==}
 
   supertokens-web-js@0.9.0:
     resolution: {integrity: sha512-7DucVUWxImrcjckza0oW6tkPfMzScj8V/qiQNZeUT/EfCqIbslNSO8holBHc9Eykc0vG/CC0d9ne5TRhAmRcxg==}
@@ -23003,7 +23002,7 @@ snapshots:
       '@slack/types': 2.11.0
       '@types/node': 22.10.5
       '@types/retry': 0.12.0
-      axios: 1.8.3(debug@4.3.7)
+      axios: 1.8.3(debug@4.4.1)
       eventemitter3: 5.0.1
       form-data: 4.0.4
       is-electron: 2.2.2
@@ -25131,9 +25130,9 @@ snapshots:
 
   axe-core@4.7.0: {}
 
-  axios@1.8.3(debug@4.3.7):
+  axios@1.8.3(debug@4.4.1):
     dependencies:
-      follow-redirects: 1.15.6(debug@4.3.7)
+      follow-redirects: 1.15.6(debug@4.4.1)
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -27460,9 +27459,9 @@ snapshots:
 
   fn-name@3.0.0: {}
 
-  follow-redirects@1.15.6(debug@4.3.7):
+  follow-redirects@1.15.6(debug@4.4.1):
     optionalDependencies:
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.1(supports-color@8.1.1)
 
   for-each@0.3.3:
     dependencies:
@@ -28476,8 +28475,6 @@ snapshots:
 
   indent-string@4.0.0: {}
 
-  inflation@2.0.0: {}
-
   inflight@1.0.6:
     dependencies:
       once: 1.4.0
@@ -28519,7 +28516,7 @@ snapshots:
     dependencies:
       get-intrinsic: 1.3.0
       hasown: 2.0.2
-      side-channel: 1.0.6
+      side-channel: 1.1.0
 
   internmap@1.0.1: {}
 
@@ -31067,6 +31064,8 @@ snapshots:
       '@pagefind/linux-x64': 1.3.0
       '@pagefind/windows-x64': 1.3.0
 
+  pako@2.1.0: {}
+
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
@@ -31651,8 +31650,6 @@ snapshots:
     optional: true
 
   pseudomap@1.0.2: {}
-
-  psl@1.8.0: {}
 
   pump@3.0.0:
     dependencies:
@@ -33010,20 +33007,23 @@ snapshots:
 
   supertokens-js-override@0.0.4: {}
 
-  supertokens-node@16.7.5(encoding@0.1.13):
+  supertokens-node@23.0.1(encoding@0.1.13):
     dependencies:
+      buffer: 6.0.3
       content-type: 1.0.5
       cookie: 0.7.2
       cross-fetch: 3.1.8(encoding@0.1.13)
-      debug: 4.3.7(supports-color@8.1.1)
-      inflation: 2.0.0
+      debug: 4.4.1(supports-color@8.1.1)
       jose: 4.15.9
       libphonenumber-js: 1.10.14
       nodemailer: 6.9.16
+      pako: 2.1.0
       pkce-challenge: 3.1.0
-      psl: 1.8.0
+      process: 0.11.10
+      set-cookie-parser: 2.7.1
       supertokens-js-override: 0.0.4
-      twilio: 4.23.0(debug@4.3.7)
+      tldts: 6.1.86
+      twilio: 4.23.0(debug@4.4.1)
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -33433,13 +33433,13 @@ snapshots:
 
   tweetnacl@0.14.5: {}
 
-  twilio@4.23.0(debug@4.3.7):
+  twilio@4.23.0(debug@4.4.1):
     dependencies:
-      axios: 1.8.3(debug@4.3.7)
+      axios: 1.8.3(debug@4.4.1)
       dayjs: 1.11.13
       https-proxy-agent: 5.0.1
       jsonwebtoken: 9.0.0
-      qs: 6.13.0
+      qs: 6.14.0
       scmp: 2.1.0
       url-parse: 1.5.10
       xmlbuilder: 13.0.2
