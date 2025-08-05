@@ -16,9 +16,18 @@ It is now easier than ever to migrate from Apollo Client generated hooks (by
 ## Why do you need to migrate?
 
 Apollo Client v4 has a lot of interesting type overrides to serve as type-hint during development
-time. However, we lose these types by using the Apollo Client generated hooks. Client Preset was
-created to solve this issue (and the bloated bundle size caused by the generated hooks), so it
-remains our recommended approach to write GraphQL operations.
+time. However, we lose these types by using the Apollo Client generated hooks.
+[Client Preset](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client) was created to
+solve this issue (and the bloated bundle size caused by the generated hooks), so it remains our
+recommended approach to write GraphQL operations.
+
+There are lots more benefits for using Client Preset:
+
+- Works with any GraphQL: Apollo Client, urql, GraphQL Request, and more.
+- Supports
+  [fragment masking](https://the-guild.dev/graphql/hive/blog/unleash-the-power-of-fragments-with-graphql-codegen):
+  Components get exactly what they declare, no surprises.
+- Managed experience: Code more, configure less.
 
 We have created a codemod
 [@eddeee888/gcg-operation-location-migration](https://www.npmjs.com/package/@eddeee888/gcg-operation-location-migration)
