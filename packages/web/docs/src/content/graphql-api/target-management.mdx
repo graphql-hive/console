@@ -142,3 +142,20 @@ mutation UpdateTargetGraphQLEndpointUrl($input: UpdateTargetDangerousChangeClass
   }
 }
 ```
+
+## Delete a Target
+
+Use the `Mutation.deleteTarget` field for deleting a target within a project.
+
+```graphql
+mutation DeleteTarget($input: DeleteTargetInput!) {
+  deleteTarget(input: $input) {
+    ok {
+      deletedTargetId
+    }
+    error {
+      message
+    }
+  }
+}
+```
