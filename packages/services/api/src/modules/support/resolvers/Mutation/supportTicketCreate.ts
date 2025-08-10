@@ -11,6 +11,7 @@ export const supportTicketCreate: NonNullable<MutationResolvers['supportTicketCr
   const response = await injector.get(SupportManager).createTicket({
     organizationId,
     ...input,
+    category: input.category ?? undefined,
   });
 
   return response;
