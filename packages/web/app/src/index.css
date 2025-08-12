@@ -198,6 +198,13 @@
   input::-webkit-inner-spin-button {
     -webkit-appearance: none;
   }
+
+  .schema-doc-row-old::before {
+    content: counter(olddoc)
+  }
+  .schema-doc-row-new::before {
+    content: counter(newdoc)
+  }
 }
 
 .hive-badge-is-changed:after {
