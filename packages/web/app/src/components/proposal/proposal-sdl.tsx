@@ -1,9 +1,7 @@
-import { FragmentType, graphql, useFragment } from '@/gql';
-import type { Change } from '@graphql-inspector/core'
-import type { MonacoDiffEditor as OriginalMonacoDiffEditor } from '@monaco-editor/react';
-import { useRef } from 'react';
-import { printSchemaDiff } from './print-diff/printDiff';
 import { buildSchema } from 'graphql';
+import { FragmentType, graphql, useFragment } from '@/gql';
+import type { Change } from '@graphql-inspector/core';
+import { printSchemaDiff } from './print-diff/print-diff';
 
 const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewsFragment on SchemaProposalReviewConnection {
@@ -76,20 +74,54 @@ export function ProposalSDL(props: {
 
   try {
     // @todo props.baseSchemaSDL
-    const baseSchemaSDL = /* GraphQL */`
+    const baseSchemaSDL = /* GraphQL */ `
+      """
+      This is old
+      """
+      directive @old on FIELD
+
+      "Doesn't change"
       type Query {
-        okay: Boolean
+        okay: Boolean @deprecated
         dokay: Boolean
       }
     `;
     // const baseSchema = buildSchema(baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
 
-    const patchedSchemaSDL = /* GraphQL */`
+    const patchedSchemaSDL = /* GraphQL */ `
+      """
+      Custom scalar that can represent any valid JSON
+      """
+      scalar JSON
+      """
+      Enhances fields with meta data
+      """
+      directive @meta(
+        "The metadata key"
+        name: String!
+        "The value of the metadata"
+        content: String!
+      ) on FIELD
+
+      "Doesn't change"
       type Query {
-        ok: Boolean
+        ok: Boolean @meta(name: "team", content: "hive")
+
+        """
+        This is a new description on a field
+        """
         dokay: Boolean!
       }
-    `;// APPLY PATCH
+
+      "Yups"
+      enum Status {
+        OKAY
+        """
+        Hi
+        """
+        SMOKAY
+      }
+    `; // APPLY PATCH
 
     return printSchemaDiff(
       buildSchema(baseSchemaSDL, { assumeValid: true, assumeValidSDL: true }),
@@ -135,8 +167,6 @@ export function ProposalSDL(props: {
     //     }}
     //   />
     // )
-
-    
 
     // // @note assume reviews are specific to the current service...
     // const globalReviews: ReviewNode[] = [];

@@ -200,10 +200,10 @@
   }
 
   .schema-doc-row-old::before {
-    content: counter(olddoc)
+    content: counter(olddoc);
   }
   .schema-doc-row-new::before {
-    content: counter(newdoc)
+    content: counter(newdoc);
   }
 }
 

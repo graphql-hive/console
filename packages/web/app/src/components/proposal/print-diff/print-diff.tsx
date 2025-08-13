@@ -1,33 +1,11 @@
 /* eslint-disable tailwindcss/no-custom-classname */
-/** Adapted from graphqljs printSchema */
-import type { Maybe } from 'graphql/jsutils/Maybe';
-import { isPrintableAsBlockString } from 'graphql/language/blockString';
-import type {
-  GraphQLScalarType,
-  GraphQLSchema,
-} from 'graphql';
-import {
-  Kind,
-  print,
-  isIntrospectionType,
-  DEFAULT_DEPRECATION_REASON,
-} from 'graphql';
-
-import { compareLists } from './compareLists';
-import { ChangeDocument, ChangeRow, Description, SchemaDefinitionDiff, TypeDiff } from './components';
+import type { GraphQLSchema } from 'graphql';
+import { DEFAULT_DEPRECATION_REASON, isIntrospectionType, isSpecifiedDirective } from 'graphql';
 import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
+import { compareLists } from './compare-lists';
+import { ChangeDocument, DiffDirective, DiffType, SchemaDefinitionDiff } from './components';
 
-type SchemaRootFields = {
-  query: string;
-  mutation: string;
-  subscription: string;
-}
-
-export function printSchemaDiff(
-  oldSchema: GraphQLSchema,
-  newSchema: GraphQLSchema,
-): JSX.Element {
-
+export function printSchemaDiff(oldSchema: GraphQLSchema, newSchema: GraphQLSchema): JSX.Element {
   const {
     added: addedTypes,
     mutual: mutualTypes,
@@ -37,108 +15,43 @@ export function printSchemaDiff(
     Object.values(newSchema.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
   );
 
-  return (
-    <ChangeDocument>
-      <SchemaDefinitionDiff oldSchema={oldSchema} newSchema={newSchema}/>
-      {addedTypes.map(a => {
-        return (
-          <ChangeRow key={a.name} type='addition'><TypeDiff newType={a} oldType={null}/></ChangeRow>
-        )
-      })}
-      {removedTypes.map(a => {
-        return (
-          <ChangeRow type='removal' key={a.name}><TypeDiff oldType={a} newType={null}/></ChangeRow>
-        )
-      })}
-      {mutualTypes.map(a => {
-        return (
-          <TypeDiff key={a.newVersion.name} oldType={a.oldVersion} newType={a.newVersion}/>
-        )
-      })}
-    </ChangeDocument>
+  const {
+    added: addedDirectives,
+    mutual: mutualDirectives,
+    removed: removedDirectives,
+  } = compareLists(
+    oldSchema.getDirectives().filter(d => !isSpecifiedDirective(d)),
+    newSchema.getDirectives().filter(d => !isSpecifiedDirective(d)),
   );
 
-  // compareLists(oldSchema.getDirectives(), newSchema.getDirectives(), {
-  //   onAdded(directive) {
-  //     addChange(directiveAdded(directive));
-  //   },
-  //   onRemoved(directive) {
-  //     addChange(directiveRemoved(directive));
-  //   },
-  //   onMutual(directive) {
-  //     changesInDirective(directive.oldVersion, directive.newVersion, addChange);
-  //   },
-  // });
-
-  // compareLists(oldSchema.astNode?.directives || [], newSchema.astNode?.directives || [], {
-  //   onAdded(directive) {
-  //     addChange(directiveUsageAdded(Kind.SCHEMA_DEFINITION, directive, newSchema));
-  //   },
-  //   onRemoved(directive) {
-  //     addChange(directiveUsageRemoved(Kind.SCHEMA_DEFINITION, directive, oldSchema));
-  //   },
-  // });
-
-  // return changes;
+  return (
+    <ChangeDocument>
+      {removedDirectives.map(d => (
+        <DiffDirective key={d.name} newDirective={null} oldDirective={d} />
+      ))}
+      {addedDirectives.map(d => (
+        <DiffDirective key={d.name} newDirective={d} oldDirective={null} />
+      ))}
+      {mutualDirectives.map(d => (
+        <DiffDirective
+          key={d.newVersion.name}
+          newDirective={d.newVersion}
+          oldDirective={d.oldVersion}
+        />
+      ))}
+      <SchemaDefinitionDiff oldSchema={oldSchema} newSchema={newSchema} />
+      {addedTypes.map(a => (
+        <DiffType key={a.name} oldType={null} newType={a} />
+      ))}
+      {removedTypes.map(a => (
+        <DiffType key={a.name} oldType={a} newType={null} />
+      ))}
+      {mutualTypes.map(a => (
+        <DiffType key={a.newVersion.name} oldType={a.oldVersion} newType={a.newVersion} />
+      ))}
+    </ChangeDocument>
+  );
 }
-
-// export function printSchemaDiff<T>(beforeSchema: GraphQLSchema, afterSchema: GraphQLSchema, printFn: (before: ASTNode | undefined, after: ASTNode | undefined) => T): T {
-//   return printFilteredSchema(
-//     beforeSchema,
-//     (n) => !isSpecifiedDirective(n),
-//     isDefinedType,
-//   );
-// }
-
-// // export function printIntrospectionSchema(schema: GraphQLSchema): string {
-// //   return printFilteredSchema(schema, isSpecifiedDirective, isIntrospectionType);
-// }
-
-// function isDefinedType(type: GraphQLNamedType): boolean {
-//   return !isSpecifiedScalarType(type) && !isIntrospectionType(type);
-// }
-
-// function printFilteredSchema(
-//   schema: GraphQLSchema,
-//   directiveFilter: (type: GraphQLDirective) => boolean,
-//   typeFilter: (type: GraphQLNamedType) => boolean,
-// ): string {
-//   const directives = schema.getDirectives().filter(directiveFilter);
-//   const types = Object.values(schema.getTypeMap()).filter(typeFilter);
-
-//   return [
-//     printSchemaDefinition(schema),
-//     ...directives.map((directive) => printDirective(directive)),
-//     ...types.map((type) => printType(type)),
-//   ]
-//     .filter(Boolean)
-//     .join('\n\n');
-// }
-
-// function printSchemaDefinition(schema: GraphQLSchema): Maybe<string> {
-//   if (schema.description == null && isSchemaOfCommonNames(schema)) {
-//     return;
-//   }
-
-//   const operationTypes = [];
-
-//   const queryType = schema.getQueryType();
-//   if (queryType) {
-//     operationTypes.push(`  query: ${queryType.name}`);
-//   }
-
-//   const mutationType = schema.getMutationType();
-//   if (mutationType) {
-//     operationTypes.push(`  mutation: ${mutationType.name}`);
-//   }
-
-//   const subscriptionType = schema.getSubscriptionType();
-//   if (subscriptionType) {
-//     operationTypes.push(`  subscription: ${subscriptionType.name}`);
-//   }
-
-//   return printDescription(schema) + `schema {\n${operationTypes.join('\n')}\n}`;
-// }
 
 // /**
 //  * GraphQL schema define root types for each type of operation. These types are
@@ -352,23 +265,4 @@ export function printSchemaDiff(
 //     value: scalar.specifiedByURL,
 //   });
 //   return <div className='directive'>{`@specifiedBy(url: ${astValue})`}</div>;
-// }
-
-// function printDescription(
-//   def: { readonly description: Maybe<string> },
-//   indentation: string = '',
-//   // firstInBlock: boolean = true,
-// ): JSX.Element | null {
-//   const { description } = def;
-//   if (description == null) {
-//     return null;
-//   }
-
-//   const blockString = print({
-//     kind: Kind.STRING,
-//     value: description,
-//     block: isPrintableAsBlockString(description),
-//   });
-
-//   return <Description>{blockString.replace(/\n/g, '\n' + indentation) + '\n'}</Description>;
 // }

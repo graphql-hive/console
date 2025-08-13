@@ -53,6 +53,10 @@ export function diffArrays<T>(a: T[] | readonly T[], b: T[] | readonly T[]): T[]
   return a.filter(c => !b.some(d => isEqual(d, c)));
 }
 
+export function matchArrays<T>(a: T[] | readonly T[], b: T[] | readonly T[]): T[] {
+  return a.filter(c => b.some(d => isEqual(d, c)));
+}
+
 function extractName(name: string | NameNode): string {
   if (typeof name === 'string') {
     return name;
