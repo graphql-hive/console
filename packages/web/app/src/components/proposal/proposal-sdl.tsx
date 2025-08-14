@@ -88,7 +88,6 @@ export function ProposalSDL(props: {
         dokay: Boolean
       }
     `;
-    // const baseSchema = buildSchema(baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
 
     const patchedSchemaSDL = /* GraphQL */ `
       """
