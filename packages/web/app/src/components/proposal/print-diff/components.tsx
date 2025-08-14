@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import React, { ReactElement, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import {
   astFromValue,
   ConstArgumentNode,
@@ -45,7 +45,10 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
   return (
     <table
       aria-label="change-document"
-      className={cn('min-w-full whitespace-pre font-mono text-sm text-white', props.className)}
+      className={cn(
+        'min-w-full cursor-default whitespace-pre font-mono text-white',
+        props.className,
+      )}
       style={{ counterReset: 'olddoc newdoc' }}
     >
       <tbody>{props.children}</tbody>
@@ -53,19 +56,19 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
   );
 }
 
-export function ChangeSpacing(props: {
-  type?: 'removal' | 'addition' | 'mutual';
-}) {
+export function ChangeSpacing(props: { type?: 'removal' | 'addition' | 'mutual' }) {
   return (
     <tr>
-      <td/>
-      <td/>
-      <td className={cn(
-        props.type === 'removal' && 'bg-red-700/50',
-        props.type === 'addition' && 'bg-green-700/50',
-        (props.type === 'mutual' || !props.type) &&'bg-gray-900',
-        'h-4',
-      )}/>
+      <td />
+      <td />
+      <td
+        className={cn(
+          props.type === 'removal' && 'bg-[#351A19]',
+          props.type === 'addition' && 'bg-[#19241E]',
+          (props.type === 'mutual' || !props.type) && 'bg-gray-900',
+          'h-4',
+        )}
+      />
     </tr>
   );
 }
@@ -84,36 +87,38 @@ export function ChangeRow(props: {
         ? 'olddoc'
         : 'newdoc';
   return (
-    <tr
-      style={{ counterIncrement: incrementCounter }}
-    >
+    <tr style={{ counterIncrement: incrementCounter }}>
       <td
         className={cn(
-          'schema-doc-row-old w-[42px] min-w-fit select-none p-1 pr-3 text-right text-gray-600 bg-gray-900',
+          'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
           props.className,
+          props.type === 'removal' && 'bg-red-900/50',
           props.type === 'addition' && 'invisible',
         )}
       />
       <td
         className={cn(
-          'schema-doc-row-new w-[42px] min-w-fit select-none p-1 pr-3 text-right text-gray-600 bg-gray-900',
+          'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
           props.className,
           props.type === 'removal' && 'invisible',
+          props.type === 'addition' && 'bg-green-900/50',
         )}
       />
       <td
         className={cn(
-          'pl-2 bg-gray-900',
+          'bg-gray-900 pl-2',
           props.className,
-          props.type === 'removal' && 'bg-red-700/50',
-          props.type === 'addition' && 'bg-green-700/50',
+          props.type === 'removal' && 'bg-[#351A19]',
+          props.type === 'addition' && 'bg-[#19241E]',
         )}
       >
-        <span className={cn(
-          'bg-gray-900',
-          props.type === 'removal' && 'bg-red-700/50',
-          props.type === 'addition' && 'bg-green-700/50',
-        )}>
+        <span
+          className={cn(
+            'bg-gray-900',
+            props.type === 'removal' && 'bg-[#351A19] line-through decoration-[#998c8b]',
+            props.type === 'addition' && 'bg-[#19241E]',
+          )}
+        >
           {props.indent &&
             Array.from({ length: Number(props.indent) }).map((_, i) => (
               <React.Fragment key={i}>{TAB}</React.Fragment>
@@ -133,11 +138,24 @@ function Removal(props: {
   children: React.ReactNode | string;
   className?: string;
 }): React.ReactNode {
-  return <span className={cn('bg-red-700/50', props.className)}>{props.children}</span>;
+  return (
+    <span
+      className={cn(
+        'bg-[#351A19] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
+        props.className,
+      )}
+    >
+      {props.children}
+    </span>
+  );
 }
 
 function Addition(props: { children: React.ReactNode; className?: string }): React.ReactNode {
-  return <span className={cn('bg-green-700/50', props.className)}>{props.children}</span>;
+  return (
+    <span className={cn('bg-[#19241E] p-1 hover:bg-green-900', props.className)}>
+      {props.children}
+    </span>
+  );
 }
 
 function printDescription(def: { readonly description: string | undefined | null }): string | null {
@@ -166,15 +184,9 @@ function Description(props: {
     <>
       {lines.map((line, index) => (
         <ChangeRow key={index} type={props.type} indent={props.indent}>
-          <span
-            className={cn(
-              props.type === 'addition' || props.type === 'removal'
-                ? 'text-gray-900'
-                : 'text-gray-500',
-            )}
-          >
-            {line}
-          </span>
+          <Change type={props.type}>
+            <span className="text-gray-500">{line}</span>
+          </Change>
         </ChangeRow>
       ))}
     </>
@@ -248,10 +260,11 @@ export function DiffInputField({
   const changeType = determineChangeType(oldField, newField);
   return (
     <>
-      <ChangeSpacing type={changeType}/>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
       <ChangeRow type={changeType} indent>
-        <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+        <Change type={changeType}>
+          <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+        </Change>
         :&nbsp;
         <DiffReturnType newType={newField?.type!} oldType={oldField?.type!} />
         <DiffDirectiveUsages
@@ -263,17 +276,15 @@ export function DiffInputField({
   );
 }
 
-function Change(props: {
-  children: ReactElement;
+function Change({
+  type,
+  children,
+}: {
+  children: ReactNode;
   type?: 'addition' | 'removal' | 'mutual';
-}): ReactElement {
-  if (props.type === 'addition') {
-    return <Addition>{props.children}</Addition>
-  }
-  if (props.type === 'removal') {
-    return <Removal>{props.children}</Removal>
-  }
-  return props.children
+}): ReactNode {
+  const Klass = type === 'addition' ? Addition : type === 'removal' ? Removal : React.Fragment;
+  return <Klass>{children}</Klass>;
 }
 
 export function DiffField({
@@ -291,7 +302,13 @@ export function DiffField({
   const hasNewArgs = !!newField?.args.length;
   const hasOldArgs = !!oldField?.args.length;
   const hasArgs = hasNewArgs || hasOldArgs;
-  const argsChangeType = hasNewArgs ? (hasOldArgs ? 'mutual' : 'addition') : (hasOldArgs ? 'removal' : 'mutual');
+  const argsChangeType = hasNewArgs
+    ? hasOldArgs
+      ? 'mutual'
+      : 'addition'
+    : hasOldArgs
+      ? 'removal'
+      : 'mutual';
   const changeType = determineChangeType(oldField, newField);
   const AfterArguments = (
     <>
@@ -307,14 +324,23 @@ export function DiffField({
     <>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
       <ChangeRow type={changeType} indent>
-        <FieldName name={newField?.name ?? oldField?.name ?? ''} />
-        {hasArgs && <Change type={argsChangeType}><>(</></Change>}
+        <Change type={changeType}>
+          <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+        </Change>
+        {hasArgs && (
+          <Change type={argsChangeType}>
+            <>(</>
+          </Change>
+        )}
         {!hasArgs && AfterArguments}
       </ChangeRow>
       <DiffArguments newArgs={newField?.args ?? []} oldArgs={oldField?.args ?? []} indent={2} />
       {!!hasArgs && (
         <ChangeRow type={changeType} indent>
-          <Change type={argsChangeType}><>)</></Change>{AfterArguments}
+          <Change type={argsChangeType}>
+            <>)</>
+          </Change>
+          {AfterArguments}
         </ChangeRow>
       )}
     </>
@@ -337,7 +363,10 @@ export function DiffArguments(props: {
         <React.Fragment key={a.name}>
           <DiffDescription newNode={null} oldNode={a} indent={props.indent} />
           <ChangeRow type="removal" indent={props.indent}>
-            <FieldName name={a.name} />: <DiffReturnType oldType={a.type} newType={null} />
+            <Change type="removal">
+              <FieldName name={a.name} />
+            </Change>
+            : <DiffReturnType oldType={a.type} newType={null} />
             <DiffDefaultValue oldArg={a} newArg={null} />
             <DiffDirectiveUsages newDirectives={[]} oldDirectives={a.astNode?.directives ?? []} />
           </ChangeRow>
@@ -347,7 +376,10 @@ export function DiffArguments(props: {
         <React.Fragment key={a.name}>
           <DiffDescription newNode={a} oldNode={null} indent={props.indent} />
           <ChangeRow type="addition" indent={props.indent}>
-            <FieldName name={a.name} />: <DiffReturnType oldType={null} newType={a.type} />
+            <Change type="addition">
+              <FieldName name={a.name} />
+            </Change>
+            : <DiffReturnType oldType={null} newType={a.type} />
             <DiffDefaultValue oldArg={null} newArg={a} />
             <DiffDirectiveUsages newDirectives={a.astNode?.directives ?? []} oldDirectives={[]} />
           </ChangeRow>
@@ -357,8 +389,10 @@ export function DiffArguments(props: {
         <React.Fragment key={a.newVersion.name}>
           <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent={props.indent} />
           <ChangeRow indent={props.indent}>
-            <FieldName name={a.newVersion.name} />:{' '}
-            <DiffReturnType oldType={a.oldVersion.type} newType={a.newVersion.type} />
+            <Change>
+              <FieldName name={a.newVersion.name} />
+            </Change>
+            : <DiffReturnType oldType={a.oldVersion.type} newType={a.newVersion.type} />
             <DiffDefaultValue oldArg={a.oldVersion} newArg={a.newVersion} />
             <DiffDirectiveUsages
               newDirectives={a.newVersion.astNode?.directives ?? []}
@@ -473,7 +507,13 @@ export function DiffDirective(
   const hasNewArgs = !!props.newDirective?.args.length;
   const hasOldArgs = !!props.oldDirective?.args.length;
   const hasArgs = hasNewArgs || hasOldArgs;
-  const argsChangeType = hasNewArgs ? (hasOldArgs ? 'mutual' : 'addition') : (hasOldArgs ? 'removal' : 'mutual');
+  const argsChangeType = hasNewArgs
+    ? hasOldArgs
+      ? 'mutual'
+      : 'addition'
+    : hasOldArgs
+      ? 'removal'
+      : 'mutual';
   const AfterArguments = (
     <>
       &nbsp;
@@ -486,13 +526,19 @@ export function DiffDirective(
   );
   return (
     <>
-      <ChangeSpacing type={changeType}/>
+      <ChangeSpacing type={changeType} />
       <DiffDescription newNode={props.newDirective!} oldNode={props.oldDirective!} />
       <ChangeRow type={changeType}>
-        <Keyword term="directive" />
-        &nbsp;
-        <DirectiveName name={props.newDirective?.name ?? props.oldDirective?.name ?? ''} />
-        {!!hasArgs && <Change type={argsChangeType}><>(</></Change>}
+        <Change type={changeType}>
+          <Keyword term="directive" />
+          &nbsp;
+          <DirectiveName name={props.newDirective?.name ?? props.oldDirective?.name ?? ''} />
+        </Change>
+        {!!hasArgs && (
+          <Change type={argsChangeType}>
+            <>(</>
+          </Change>
+        )}
         {!hasArgs && AfterArguments}
       </ChangeRow>
       <DiffArguments
@@ -502,7 +548,10 @@ export function DiffDirective(
       />
       {!!hasArgs && (
         <ChangeRow type={changeType}>
-          <Change type={argsChangeType}><>)</></Change>{AfterArguments}
+          <Change type={argsChangeType}>
+            <>)</>
+          </Change>
+          {AfterArguments}
         </ChangeRow>
       )}
     </>
@@ -745,12 +794,14 @@ export function DiffInputObject({
   const changeType = determineChangeType(oldInput, newInput);
   return (
     <>
-      <ChangeSpacing type={changeType}/>
+      <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newInput!} oldNode={oldInput!} />
       <ChangeRow type={changeType}>
-        <Keyword term="input" />
-        &nbsp;
-        <TypeName name={oldInput?.name ?? newInput?.name ?? ''} />
+        <Change type={changeType}>
+          <Keyword term="input" />
+          &nbsp;
+          <TypeName name={oldInput?.name ?? newInput?.name ?? ''} />
+        </Change>
         <DiffDirectiveUsages
           newDirectives={newInput?.astNode?.directives ?? []}
           oldDirectives={oldInput?.astNode?.directives ?? []}
@@ -790,12 +841,14 @@ export function DiffObject({
   const changeType = determineChangeType(oldObject, newObject);
   return (
     <>
-      <ChangeSpacing type={changeType}/>
+      <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newObject!} oldNode={oldObject!} />
       <ChangeRow type={changeType}>
-        <Keyword term="type" />
-        &nbsp;
-        <TypeName name={oldObject?.name ?? newObject?.name ?? ''} />
+        <Change type={changeType}>
+          <Keyword term="type" />
+          &nbsp;
+          <TypeName name={oldObject?.name ?? newObject?.name ?? ''} />
+        </Change>
         <DiffDirectiveUsages
           newDirectives={newObject?.astNode?.directives ?? []}
           oldDirectives={oldObject?.astNode?.directives ?? []}
@@ -829,7 +882,9 @@ export function DiffEnumValue({
     <>
       <DiffDescription newNode={newValue!} oldNode={oldValue!} indent />
       <ChangeRow type={changeType} indent>
-        <TypeName name={name} />
+        <Change type={changeType}>
+          <TypeName name={name} />
+        </Change>
         <DiffDirectiveUsages
           newDirectives={newValue?.astNode?.directives ?? []}
           oldDirectives={oldValue?.astNode?.directives ?? []}
@@ -855,12 +910,14 @@ export function DiffEnum({
 
   return (
     <>
-      <ChangeSpacing type={changeType}/>
+      <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newEnum!} oldNode={oldEnum!} />
       <ChangeRow type={changeType}>
-        <Keyword term="enum" />
-        &nbsp;
-        <TypeName name={oldEnum?.name ?? newEnum?.name ?? ''} />
+        <Change type={changeType}>
+          <Keyword term="enum" />
+          &nbsp;
+          <TypeName name={oldEnum?.name ?? newEnum?.name ?? ''} />
+        </Change>
         {' {'}
       </ChangeRow>
       {removed.map(a => (
@@ -893,12 +950,14 @@ export function DiffUnion({
   const name = oldUnion?.name ?? newUnion?.name ?? '';
   return (
     <>
-      <ChangeSpacing type={changeType}/>
+      <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newUnion!} oldNode={oldUnion!} />
       <ChangeRow type={changeType}>
-        <Keyword term="union" />
-        &nbsp;
-        <TypeName name={name} />
+        <Change type={changeType}>
+          <Keyword term="union" />
+          &nbsp;
+          <TypeName name={name} />
+        </Change>
         <DiffDirectiveUsages
           newDirectives={newUnion?.astNode?.directives ?? []}
           oldDirectives={oldUnion?.astNode?.directives ?? []}
@@ -908,21 +967,27 @@ export function DiffUnion({
       {removed.map(a => (
         <React.Fragment key={a.name}>
           <ChangeRow type="removal" indent>
-            | <TypeName name={a.name} />
+            <Change type="removal">
+              | <TypeName name={a.name} />
+            </Change>
           </ChangeRow>
         </React.Fragment>
       ))}
       {added.map(a => (
         <React.Fragment key={a.name}>
           <ChangeRow type="addition" indent>
-            | <TypeName name={a.name} />
+            <Change type="addition">
+              | <TypeName name={a.name} />
+            </Change>
           </ChangeRow>
         </React.Fragment>
       ))}
       {mutual.map(a => (
         <React.Fragment key={a.newVersion.name}>
           <ChangeRow indent>
-            | <TypeName name={a.newVersion.name} />
+            <Change>
+              | <TypeName name={a.newVersion.name} />
+            </Change>
           </ChangeRow>
         </React.Fragment>
       ))}
@@ -943,42 +1008,22 @@ export function DiffScalar({
       newScalar: GraphQLScalarType;
     }) {
   const changeType = determineChangeType(oldScalar, newScalar);
-  if (oldScalar?.name === newScalar?.name) {
-    return (
-      <>
-        <ChangeSpacing type={changeType}/>
-        <DiffDescription oldNode={oldScalar!} newNode={newScalar!} />
-        <ChangeRow>
+  return (
+    <>
+      <ChangeSpacing type={changeType} />
+      <DiffDescription oldNode={oldScalar!} newNode={newScalar!} />
+      <ChangeRow type={changeType}>
+        <Change type={changeType}>
           <Keyword term="scalar" />
           &nbsp;
           <TypeName name={newScalar?.name ?? ''} />
-          <DiffDirectiveUsages
-            newDirectives={newScalar?.astNode?.directives ?? []}
-            oldDirectives={oldScalar?.astNode?.directives ?? []}
-          />
-        </ChangeRow>
-      </>
-    );
-  }
-  return (
-    <ChangeRow type={changeType}>
-      <Keyword term="scalar" />
-      &nbsp;
-      {oldScalar && (
-        <Removal>
-          <TypeName name={oldScalar.name} />
-        </Removal>
-      )}
-      {newScalar && (
-        <Addition className={oldScalar ? 'ml-2' : undefined}>
-          <TypeName name={newScalar.name} />
-        </Addition>
-      )}
-      <DiffDirectiveUsages
-        newDirectives={newScalar?.astNode?.directives ?? []}
-        oldDirectives={oldScalar?.astNode?.directives ?? []}
-      />
-    </ChangeRow>
+        </Change>
+        <DiffDirectiveUsages
+          newDirectives={newScalar?.astNode?.directives ?? []}
+          oldDirectives={oldScalar?.astNode?.directives ?? []}
+        />
+      </ChangeRow>
+    </>
   );
 }
 
@@ -1024,30 +1069,54 @@ export function DiffDirectiveUsage(
   const hasNewArgs = !!newArgs.length;
   const hasOldArgs = !!oldArgs.length;
   const hasArgs = hasNewArgs || hasOldArgs;
-  const argsChangeType = hasNewArgs ? (hasOldArgs ? 'mutual' : 'addition') : (hasOldArgs ? 'removal' : 'mutual');
+  const argsChangeType = hasNewArgs
+    ? hasOldArgs
+      ? 'mutual'
+      : 'addition'
+    : hasOldArgs
+      ? 'removal'
+      : 'mutual';
   const changeType = determineChangeType(props.oldDirective, props.newDirective);
-  const Klass =
-    changeType === 'addition' ? Addition : changeType === 'removal' ? Removal : React.Fragment;
   const { added, mutual, removed } = compareLists(oldArgs, newArgs);
   const argumentElements = [
-    ...removed.map(r => <DiffArgumentAST oldArg={r} newArg={null} />),
-    ...added.map(r => <DiffArgumentAST oldArg={null} newArg={r} />),
-    ...mutual.map(r => <DiffArgumentAST oldArg={r.oldVersion} newArg={r.newVersion} />),
+    ...removed.map(r => (
+      <Change type="removal">
+        <DiffArgumentAST oldArg={r} newArg={null} />
+      </Change>
+    )),
+    ...added.map(r => (
+      <Change type="addition">
+        <DiffArgumentAST oldArg={null} newArg={r} />
+      </Change>
+    )),
+    ...mutual.map(r => (
+      <Change>
+        <DiffArgumentAST oldArg={r.oldVersion} newArg={r.newVersion} />
+      </Change>
+    )),
   ];
 
   return (
-    <Klass>
+    <Change type={changeType}>
       &nbsp;
       <DirectiveName name={name} />
-      {hasArgs && <Change type={argsChangeType}><>(</></Change>}
+      {hasArgs && (
+        <Change type={argsChangeType}>
+          <>(</>
+        </Change>
+      )}
       {argumentElements.map((e, index) => (
         <React.Fragment key={index}>
           {e}
           {index === argumentElements.length - 1 ? '' : ', '}
         </React.Fragment>
       ))}
-      {hasArgs && <Change type={argsChangeType}><>)</></Change>}
-    </Klass>
+      {hasArgs && (
+        <Change type={argsChangeType}>
+          <>)</>
+        </Change>
+      )}
+    </Change>
   );
 }
 

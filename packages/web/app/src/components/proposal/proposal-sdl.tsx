@@ -109,6 +109,7 @@ export function ProposalSDL(props: {
 
       "Doesn't change"
       type Query {
+        okay: Boolean @deprecated(reason: "Use 'ok' instead.")
         ok: Boolean @meta(name: "team", content: "hive")
 
         """
