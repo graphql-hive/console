@@ -329,8 +329,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             return;
         }
 
-        if (is_non_null_type(&var.var_type) && var.default_value.is_some()) ||
-        (var.default_value.is_some() && !matches!(var.default_value.as_ref().unwrap(), Value::Null)) {
+        if is_non_null_type(&var.var_type) {
             ctx.non_null_variables.insert(var.name.clone());
         }
 
@@ -383,7 +382,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             let has_value = match arg_value {
                 Value::Null => false,
                 Value::Variable(var_name) => {
-                    ctx.variables_with_defaults.contains(var_name) && ctx.non_null_variables.contains(var_name)
+                    ctx.variables_with_defaults.contains(var_name) || ctx.non_null_variables.contains(var_name)
                 }
                 _ => true,
             };
@@ -910,7 +909,7 @@ mod tests {
         type Query {
             project(selector: ProjectSelectorInput!): Project
             projectsByType(type: ProjectType!): [Project!]!
-            projectsByTypes(types: [ProjectType!]!): [Project!]!
+            projectsByTypes(types: [ ProjectType!]!): [Project!]!
             projects(filter: FilterInput, and: [FilterInput!]): [Project!]!
             projectsByMetadata(metadata: JSON): [Project!]!
         }
@@ -1006,6 +1005,7 @@ mod tests {
         let expected = vec![
             "Mutation.deleteProject",
             "Mutation.deleteProject.selector",
+            "Mutation.deleteProject.selector!",
             "DeleteProjectPayload.selector",
             "ProjectSelector.organization",
             "ProjectSelector.project",
@@ -1231,7 +1231,9 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1309,6 +1311,7 @@ mod tests {
             "FilterInput.type",
             "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
             "ProjectType.FEDERATION",
         ]
         .into_iter()
@@ -1375,6 +1378,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByTypes",
             "Query.projectsByTypes.types",
+            "Query.projectsByTypes.types!",
             "Project.id",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
@@ -1453,8 +1457,10 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
-        ]
+            "PaginationInput.limit!",
+            ]
         .into_iter()
         .map(|s| s.to_string())
         .collect::<HashSet<String>>();
@@ -1505,7 +1511,9 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1549,7 +1557,9 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1590,7 +1600,9 @@ mod tests {
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1796,7 +1808,6 @@ mod tests {
             "Query.projects.filter",
             "Query.projects.filter!",
             "FilterInput.metadata",
-            "FilterInput.metadata!",
             "Project.name",
             "JSON",
         ]
@@ -1967,7 +1978,7 @@ mod tests {
         assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
     }
 
-        #[test]
+    #[test]
     fn undefined_variable_as_input_field(){
         let schema = parse_schema::<String>(
             "      
@@ -1994,6 +2005,7 @@ mod tests {
             "Query.random.a", 
             "Query.random.a!", 
             "A.b", 
+            "A.b!",
             "String"
         ]
         .into_iter()
@@ -2009,20 +2021,20 @@ mod tests {
 
     #[test]
     fn deeply_nested_variables(){
-let schema = parse_schema::<String>(
-            "      
-      type Query {
-        random(a: A): String
-      }
-      input A {
-        b: B
-      }
-      input B {
-        c: C
-      }
-      input C {
-        d: String
-      }
+    let schema = parse_schema::<String>(
+        "      
+        type Query {
+            random(a: A): String
+        }
+        input A {
+            b: B
+        }
+        input B {
+            c: C
+        }
+        input C {
+            d: String
+        }
             ")
             .unwrap();
         let document = parse_query::<String>(
@@ -2055,20 +2067,21 @@ let schema = parse_schema::<String>(
         let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
 
         assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
-                assert_eq!(missing.len(), 0, "Missing: {:?}", missing);    
-            }
-#[test]
-            fn aliased_field() {
-                let schema = parse_schema::<String>(
-            "      
-      type Query {
-        random(a: String): String
-      }
-      input C {
-        d: String
-      }
-            ")
-            .unwrap();
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);    
+    }
+
+    #[test]
+    fn aliased_field() {
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            random(a: String): String
+        }
+        input C {
+            d: String
+        }
+        ")
+        .unwrap();
         let document = parse_query::<String>(
             "
         query Random($a: String= \"B\" ) {
@@ -2096,29 +2109,29 @@ let schema = parse_schema::<String>(
                 assert_eq!(missing.len(), 0, "Missing: {:?}", missing);   
             }
 
-            #[test]
+    #[test]
     fn multiple_fields_with_mixed_nullability(){
-                let schema = parse_schema::<String>(
-            "      
-      type Query {
-        random(a: String): String
-      }
-      input C {
-        d: String
-      }
-            ")
-            .unwrap();
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            random(a: String): String
+        }
+        input C {
+            d: String
+        }
+        "
+        ).unwrap();
         let document = parse_query::<String>(
-            "
-       query Random($a: String = null) {
+        "
+        query Random($a: String = null) {
           nullable: random(a: $a)
           nonnullable: random(a: \"B\")
         }
-            ",
+        ",
         )
         .unwrap();
 
-            let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
         let expected = vec![
        "Query.random", 
        "Query.random.a", 
@@ -2133,7 +2146,179 @@ let schema = parse_schema::<String>(
         let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
 
         assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
-                assert_eq!(missing.len(), 0, "Missing: {:?}", missing);   
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);   
     }
 
+    #[test]
+    fn nonnull_and_default_arguments(){
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        "
+        ).unwrap();
+        let document = parse_query::<String>(
+        "
+        query($id: ID! = \"123\") {
+        user(id: $id) { name }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+       "User.name", 
+       "Query.user", 
+       "ID", 
+       "Query.user.id!",
+       "Query.user.id"
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);  
+    }
+
+    #[test]
+    fn default_nullable_arguments(){
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        "
+        ).unwrap();
+        let document = parse_query::<String>(
+        "
+        query($name: String = \"John\") {
+        user(id: \"fixed\", name: $name) { id }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+        "User.id",
+        "Query.user", 
+        "ID", 
+        "Query.user.id!",
+        "Query.user.id",
+        "Query.user.name!",
+        "Query.user.name",
+        "String"
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);  
+    }
+
+    #[test]
+    fn non_null_no_default_arguments(){
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        "
+        ).unwrap();
+        let document = parse_query::<String>(
+        "
+        query($id: ID!) {
+        user(id: $id) { name }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+        "User.name",
+        "Query.user", 
+        "ID", 
+        "Query.user.id!",
+        "Query.user.id",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);  
+    }
+
+    #[test]
+    fn fixed_arguments(){
+        let schema = parse_schema::<String>(
+        "      
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        "
+        ).unwrap();
+        let document = parse_query::<String>(
+        "
+        query($name: String) {
+        user(id: \"fixed\", name: $name) { id }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+        "User.id",
+        "Query.user", 
+        "ID", 
+        "Query.user.id!",
+        "Query.user.id",
+        "Query.user.name",
+        "String"
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);  
+    }
 }
