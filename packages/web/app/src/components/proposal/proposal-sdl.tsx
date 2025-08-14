@@ -73,12 +73,14 @@ export function ProposalSDL(props: {
   const _reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
 
   try {
-    // @todo props.baseSchemaSDL
+    // @todo use props.baseSchemaSDL
     const baseSchemaSDL = /* GraphQL */ `
       """
       This is old
       """
       directive @old on FIELD
+
+      directive @foo on OBJECT
 
       "Doesn't change"
       type Query {
@@ -93,6 +95,9 @@ export function ProposalSDL(props: {
       Custom scalar that can represent any valid JSON
       """
       scalar JSON
+
+      directive @foo repeatable on OBJECT | FIELD
+
       """
       Enhances fields with meta data
       """
@@ -110,7 +115,7 @@ export function ProposalSDL(props: {
         """
         This is a new description on a field
         """
-        dokay: Boolean!
+        dokay(foo: String = "What"): Boolean!
       }
 
       "Yups"
@@ -121,52 +126,39 @@ export function ProposalSDL(props: {
         """
         SMOKAY
       }
+
+      """
+      Crusty flaky delicious goodness.
+      """
+      type Pie {
+        name: String!
+        flavor: String!
+        slices: Int
+      }
+
+      """
+      Delicious baked flour based product
+      """
+      type Cake {
+        name: String!
+        flavor: String!
+        tiers: Int!
+      }
+
+      input FooInput {
+        """
+        Hi
+        """
+        asdf: String @foo
+      }
+
+      union Dessert = Pie | Cake
     `; // APPLY PATCH
 
     return printSchemaDiff(
       buildSchema(baseSchemaSDL, { assumeValid: true, assumeValidSDL: true }),
       buildSchema(patchedSchemaSDL, { assumeValid: true, assumeValidSDL: true }),
     );
-
-    // const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
-
-    // return (
-    //   <MonacoDiffEditor
-    //     width="100%"
-    //     height="70vh"
-    //     language="graphql"
-    //     theme="vs-dark"
-    //     loading={<Spinner />}
-    //     original={baseSchemaSDL ?? undefined}
-    //     modified={patchedSchemaSDL ?? undefined}
-    //     options={{
-    //       renderSideBySide: false,
-    //       originalEditable: false,
-    //       renderLineHighlightOnlyWhenFocus: true,
-    //       readOnly: true,
-    //       diffAlgorithm: 'advanced',
-    //       lineNumbers: 'on',
-    //       contextmenu: false,
-    //     }}
-    //     onMount={(editor, _monaco) => {
-    //       editorRef.current = editor;
-    //       editor.onDidUpdateDiff(() => {
-    //         // const coordinateToLineMap = collectCoordinateLocations(baseSchema, new Source(baseSchemaSDL));
-    //         const originalLines = editor.getOriginalEditor().getContainerDomNode().getElementsByClassName('view-line');
-    //         console.log(
-    //           'original editor',
-    //           Array.from(originalLines).map(e => e.textContent).join('\n'),
-    //         );
-
-    //         const modifiedLines = editor.getModifiedEditor().getContainerDomNode().getElementsByClassName('view-line');
-    //         console.log(
-    //           'modified',
-    //           Array.from(modifiedLines).map(e => e.textContent).join('\n'),
-    //         );
-    //       })
-    //     }}
-    //   />
-    // )
 
     // // @note assume reviews are specific to the current service...
     // const globalReviews: ReviewNode[] = [];

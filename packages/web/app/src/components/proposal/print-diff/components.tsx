@@ -1,17 +1,25 @@
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 import React, { ReactNode } from 'react';
 import {
+  astFromValue,
+  ConstArgumentNode,
   ConstDirectiveNode,
   DirectiveLocation,
   GraphQLArgument,
   GraphQLDirective,
   GraphQLEnumType,
+  GraphQLEnumValue,
   GraphQLField,
+  GraphQLInputField,
+  GraphQLInputObjectType,
+  GraphQLInputType,
   GraphQLInterfaceType,
   GraphQLNamedType,
   GraphQLObjectType,
   GraphQLOutputType,
   GraphQLScalarType,
   GraphQLSchema,
+  GraphQLUnionType,
   isEnumType,
   isInputObjectType,
   isInterfaceType,
@@ -37,7 +45,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
   return (
     <table
       aria-label="change-document"
-      className={cn('min-w-full whitespace-pre font-mono text-white', props.className)}
+      className={cn('min-w-full whitespace-pre font-mono text-sm text-white', props.className)}
       style={{ counterReset: 'olddoc newdoc' }}
     >
       <tbody>{props.children}</tbody>
@@ -46,11 +54,11 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
 }
 
 export function ChangeRow(props: {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   /** Default is mutual */
   type?: 'removal' | 'addition' | 'mutual';
-  indent?: boolean;
+  indent?: boolean | number;
 }) {
   const incrementCounter =
     props.type === 'mutual' || props.type === undefined
@@ -82,7 +90,10 @@ export function ChangeRow(props: {
           props.type === 'addition' && 'bg-green-800',
         )}
       >
-        {props.indent && <>{TAB}</>}
+        {props.indent &&
+          Array.from({ length: Number(props.indent) }).map((_, i) => (
+            <React.Fragment key={i}>{TAB}</React.Fragment>
+          ))}
         {props.children}
       </td>
     </tr>
@@ -122,7 +133,7 @@ function printDescription(def: { readonly description: string | undefined | null
 function Description(props: {
   content: string;
   type?: 'removal' | 'addition' | 'mutual';
-  indent?: boolean;
+  indent?: boolean | number;
 }): React.ReactNode {
   const lines = props.content.split('\n');
 
@@ -158,12 +169,12 @@ export function DiffDescription(
     | {
         oldNode: { description: string | null | undefined } | null;
         newNode: { description: string | null | undefined };
-        indent?: boolean;
+        indent?: boolean | number;
       }
     | {
         oldNode: { description: string | null | undefined };
         newNode: { description: string | null | undefined } | null;
-        indent?: boolean;
+        indent?: boolean | number;
       },
 ) {
   const oldDesc = props.oldNode?.description;
@@ -197,6 +208,35 @@ export function DiffDescription(
   }
 }
 
+export function DiffInputField({
+  oldField,
+  newField,
+}:
+  | {
+      oldField: GraphQLInputField | null;
+      newField: GraphQLInputField;
+    }
+  | {
+      oldField: GraphQLInputField;
+      newField: GraphQLInputField | null;
+    }) {
+  const changeType = determineChangeType(oldField, newField);
+  return (
+    <>
+      <DiffDescription newNode={newField!} oldNode={oldField!} indent />
+      <ChangeRow type={changeType} indent>
+        <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+        :&nbsp;
+        <DiffReturnType newType={newField?.type!} oldType={oldField?.type!} />
+        <DiffDirectiveUsages
+          newDirectives={newField?.astNode?.directives ?? []}
+          oldDirectives={oldField?.astNode?.directives ?? []}
+        />
+      </ChangeRow>
+    </>
+  );
+}
+
 export function DiffField({
   oldField,
   newField,
@@ -209,49 +249,32 @@ export function DiffField({
       oldField: GraphQLField<any, any, any>;
       newField: GraphQLField<any, any, any> | null;
     }) {
-  const oldReturnType = oldField?.type.toString();
-  const newReturnType = newField?.type.toString();
-  if (!!newField && oldReturnType === newReturnType) {
-    return (
-      <>
-        <DiffDescription newNode={newField} oldNode={oldField} indent />
-        <ChangeRow>
-          {TAB}
-          <FieldName name={newField.name} />
-          :&nbsp;
-          <FieldReturnType returnType={newField.type.toString()} />
-          <DiffDirectiveUsages
-            newDirectives={newField?.astNode?.directives ?? []}
-            oldDirectives={oldField?.astNode?.directives ?? []}
-          />
-        </ChangeRow>
-      </>
-    );
-  }
+  const hasArgs = !!(newField?.args.length || oldField?.args.length);
+  const changeType = determineChangeType(oldField, newField);
+  const AfterArguments = (
+    <>
+      :&nbsp;
+      <DiffReturnType newType={newField?.type!} oldType={oldField?.type!} />
+      <DiffDirectiveUsages
+        newDirectives={newField?.astNode?.directives ?? []}
+        oldDirectives={oldField?.astNode?.directives ?? []}
+      />
+    </>
+  );
   return (
     <>
-      <DiffDescription newNode={newField} oldNode={oldField!} indent />
-      <ChangeRow
-        type={newField && !oldField ? 'addition' : oldField && !newField ? 'removal' : 'mutual'}
-      >
-        {TAB}
-        <FieldName name={(newField ?? oldField)?.name ?? ''} />
-        :&nbsp;
-        {oldReturnType && (
-          <Removal>
-            <FieldReturnType returnType={oldReturnType} />
-          </Removal>
-        )}
-        {newReturnType && (
-          <Addition className={cn(oldReturnType && 'ml-2')}>
-            <FieldReturnType returnType={newReturnType} />
-          </Addition>
-        )}
-        <DiffDirectiveUsages
-          newDirectives={newField?.astNode?.directives ?? []}
-          oldDirectives={oldField?.astNode?.directives ?? []}
-        />
+      <DiffDescription newNode={newField!} oldNode={oldField!} indent />
+      <ChangeRow type={changeType} indent>
+        <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+        {hasArgs && '('}
+        {!hasArgs && AfterArguments}
       </ChangeRow>
+      <DiffArguments newArgs={newField?.args ?? []} oldArgs={oldField?.args ?? []} indent={2} />
+      {!!hasArgs && (
+        <ChangeRow type={changeType} indent>
+          ){AfterArguments}
+        </ChangeRow>
+      )}
     </>
   );
 }
@@ -263,34 +286,38 @@ export function DirectiveName(props: { name: string }) {
 export function DiffArguments(props: {
   oldArgs: readonly GraphQLArgument[];
   newArgs: readonly GraphQLArgument[];
+  indent: boolean | number;
 }) {
   const { added, mutual, removed } = compareLists(props.oldArgs, props.newArgs);
   return (
     <>
       {removed.map(a => (
         <React.Fragment key={a.name}>
-          <DiffDescription newNode={null} oldNode={a} indent />
-          <ChangeRow key={a.name} type="removal" indent>
-            <DirectiveArgument arg={a} />
+          <DiffDescription newNode={null} oldNode={a} indent={props.indent} />
+          <ChangeRow type="removal" indent={props.indent}>
+            <FieldName name={a.name} />: <DiffReturnType oldType={a.type} newType={null} />
+            <DiffDefaultValue oldArg={a} newArg={null} />
             <DiffDirectiveUsages newDirectives={[]} oldDirectives={a.astNode?.directives ?? []} />
           </ChangeRow>
         </React.Fragment>
       ))}
       {added.map(a => (
         <React.Fragment key={a.name}>
-          <DiffDescription newNode={a} oldNode={null} indent />
-          <ChangeRow key={a.name} type="addition" indent>
-            <DirectiveArgument arg={a} />
+          <DiffDescription newNode={a} oldNode={null} indent={props.indent} />
+          <ChangeRow type="addition" indent={props.indent}>
+            <FieldName name={a.name} />: <DiffReturnType oldType={null} newType={a.type} />
+            <DiffDefaultValue oldArg={null} newArg={a} />
             <DiffDirectiveUsages newDirectives={a.astNode?.directives ?? []} oldDirectives={[]} />
           </ChangeRow>
         </React.Fragment>
       ))}
-      {/* @todo This should do a diff on the nested fields... */}
       {mutual.map(a => (
         <React.Fragment key={a.newVersion.name}>
-          <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent />
-          <ChangeRow key={a.newVersion.name} indent>
-            <DirectiveArgument key={a.newVersion.name} arg={a.newVersion} />
+          <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent={props.indent} />
+          <ChangeRow indent={props.indent}>
+            <FieldName name={a.newVersion.name} />:{' '}
+            <DiffReturnType oldType={a.oldVersion.type} newType={a.newVersion.type} />
+            <DiffDefaultValue oldArg={a.oldVersion} newArg={a.newVersion} />
             <DiffDirectiveUsages
               newDirectives={a.newVersion.astNode?.directives ?? []}
               oldDirectives={a.oldVersion.astNode?.directives ?? []}
@@ -343,9 +370,48 @@ export function DiffLocations(props: {
       {locationElements.map((e, index) => (
         <span key={index}>
           {e}
-          {index !== locationElements.length - 1 && <>,&nbsp</>}
+          {index !== locationElements.length - 1 && <>&nbsp;|&nbsp;</>}
         </span>
       ))}
+    </>
+  );
+}
+
+function DiffRepeatable(
+  props:
+    | {
+        oldDirective: GraphQLDirective | null;
+        newDirective: GraphQLDirective;
+      }
+    | {
+        oldDirective: GraphQLDirective;
+        newDirective: GraphQLDirective | null;
+      },
+) {
+  const oldRepeatable = !!props.oldDirective?.isRepeatable;
+  const newRepeatable = !!props.newDirective?.isRepeatable;
+  if (oldRepeatable === newRepeatable) {
+    return newRepeatable ? (
+      <>
+        <Keyword term="repeatable" />
+        &nbsp;
+      </>
+    ) : null;
+  }
+  return (
+    <>
+      {oldRepeatable && (
+        <Removal>
+          <Keyword term="repeatable" />
+          &nbsp;
+        </Removal>
+      )}
+      {newRepeatable && (
+        <Addition className={oldRepeatable ? 'ml-2' : undefined}>
+          <Keyword term="repeatable" />
+          &nbsp;
+        </Addition>
+      )}
     </>
   );
 }
@@ -363,6 +429,16 @@ export function DiffDirective(
 ) {
   const changeType = determineChangeType(props.oldDirective, props.newDirective);
   const hasArgs = props.oldDirective?.args.length || props.newDirective?.args.length;
+  const AfterArguments = (
+    <>
+      &nbsp;
+      <DiffRepeatable oldDirective={props.oldDirective!} newDirective={props.newDirective!} />
+      <DiffLocations
+        oldLocations={props.oldDirective?.locations ?? []}
+        newLocations={props.newDirective?.locations ?? []}
+      />
+    </>
+  );
   return (
     <>
       <DiffDescription newNode={props.newDirective!} oldNode={props.oldDirective!} />
@@ -371,39 +447,79 @@ export function DiffDirective(
         &nbsp;
         <DirectiveName name={props.newDirective?.name ?? props.oldDirective?.name ?? ''} />
         {!!hasArgs && <>(</>}
-        {!hasArgs && (
-          <>
-            &nbsp;
-            <DiffLocations
-              oldLocations={props.oldDirective?.locations ?? []}
-              newLocations={props.newDirective?.locations ?? []}
-            />
-          </>
-        )}
+        {!hasArgs && AfterArguments}
       </ChangeRow>
       <DiffArguments
         oldArgs={props.oldDirective?.args ?? []}
         newArgs={props.newDirective?.args ?? []}
+        indent
       />
-      {!!hasArgs && (
-        <ChangeRow type={changeType}>
-          )&nbsp;
-          <DiffLocations
-            oldLocations={props.oldDirective?.locations ?? []}
-            newLocations={props.newDirective?.locations ?? []}
-          />
-        </ChangeRow>
+      {!!hasArgs && <ChangeRow type={changeType}>){AfterArguments}</ChangeRow>}
+    </>
+  );
+}
+
+function DiffReturnType(
+  props:
+    | {
+        oldType: GraphQLInputType | GraphQLOutputType;
+        newType: GraphQLInputType | GraphQLOutputType | null | undefined;
+      }
+    | {
+        oldType: GraphQLInputType | GraphQLOutputType | null | undefined;
+        newType: GraphQLInputType | GraphQLOutputType;
+      }
+    | {
+        oldType: GraphQLInputType | GraphQLOutputType;
+        newType: GraphQLInputType | GraphQLOutputType;
+      },
+) {
+  const oldStr = props.oldType?.toString();
+  const newStr = props.newType?.toString();
+  if (newStr && oldStr === newStr) {
+    return <FieldReturnType returnType={newStr} />;
+  }
+
+  return (
+    <>
+      {oldStr && (
+        <Removal>
+          <FieldReturnType returnType={oldStr} />
+        </Removal>
+      )}
+      {newStr && (
+        <Addition className={oldStr && 'ml-2'}>
+          <FieldReturnType returnType={newStr} />
+        </Addition>
       )}
     </>
   );
 }
 
-export function DirectiveArgument(props: { arg: GraphQLArgument }) {
+function printDefault(arg: GraphQLArgument) {
+  const defaultAST = astFromValue(arg.defaultValue, arg.type);
+  return defaultAST && print(defaultAST);
+}
+
+function DiffDefaultValue({
+  oldArg,
+  newArg,
+}: {
+  oldArg: GraphQLArgument | null;
+  newArg: GraphQLArgument | null;
+}) {
+  const oldDefault = oldArg && printDefault(oldArg);
+  const newDefault = newArg && printDefault(newArg);
+
+  if (oldDefault === newDefault) {
+    return newDefault ? <> = {newDefault}</> : null;
+  }
   return (
     <>
-      <FieldName name={props.arg.name} />:{' '}
-      <FieldReturnType returnType={props.arg.type.toString()} />
-      {props.arg.defaultValue === undefined ? '' : `= ${JSON.stringify(props.arg.defaultValue)}`}
+      {oldDefault && <Removal> = {oldDefault}</Removal>}
+      {newDefault && (
+        <Addition className={oldDefault ? 'ml-2' : undefined}> = {newDefault}</Addition>
+      )}
     </>
   );
 }
@@ -534,13 +650,13 @@ export function DiffType({
     return <DiffEnum oldEnum={oldType} newEnum={newType} />;
   }
   if ((isUnionType(oldType) || oldType === null) && (isUnionType(newType) || newType === null)) {
-    // changesInUnion(oldType, newType, addChange);
+    return <DiffUnion oldUnion={oldType} newUnion={newType} />;
   }
   if (
     (isInputObjectType(oldType) || oldType === null) &&
     (isInputObjectType(newType) || newType === null)
   ) {
-    // changesInInputObject(oldType, newType, addChange);
+    return <DiffInputObject oldInput={oldType!} newInput={newType!} />;
   }
   if ((isObjectType(oldType) || oldType === null) && (isObjectType(newType) || newType === null)) {
     return <DiffObject oldObject={oldType!} newObject={newType!} />;
@@ -556,8 +672,52 @@ export function DiffType({
   }
 }
 
-export function TypeName({ name }: { name: string }) {
+function TypeName({ name }: { name: string }) {
   return <span className="text-orange-400">{name}</span>;
+}
+
+export function DiffInputObject({
+  oldInput,
+  newInput,
+}:
+  | {
+      oldInput: GraphQLInputObjectType | null;
+      newInput: GraphQLInputObjectType;
+    }
+  | {
+      oldInput: GraphQLInputObjectType;
+      newInput: GraphQLInputObjectType | null;
+    }) {
+  const { added, mutual, removed } = compareLists(
+    Object.values(oldInput?.getFields() ?? {}),
+    Object.values(newInput?.getFields() ?? {}),
+  );
+  const changeType = determineChangeType(oldInput, newInput);
+  return (
+    <>
+      <DiffDescription newNode={newInput!} oldNode={oldInput!} />
+      <ChangeRow type={changeType}>
+        <Keyword term="input" />
+        &nbsp;
+        <TypeName name={oldInput?.name ?? newInput?.name ?? ''} />
+        <DiffDirectiveUsages
+          newDirectives={newInput?.astNode?.directives ?? []}
+          oldDirectives={oldInput?.astNode?.directives ?? []}
+        />
+        {' {'}
+      </ChangeRow>
+      {removed.map(a => (
+        <DiffInputField key={a.name} oldField={a} newField={null} />
+      ))}
+      {added.map(a => (
+        <DiffInputField key={a.name} oldField={null} newField={a} />
+      ))}
+      {mutual.map(a => (
+        <DiffInputField key={a.newVersion.name} oldField={a.oldVersion} newField={a.newVersion} />
+      ))}
+      <ChangeRow type={changeType}>{'}'}</ChangeRow>
+    </>
+  );
 }
 
 export function DiffObject({
@@ -576,10 +736,11 @@ export function DiffObject({
     Object.values(oldObject?.getFields() ?? {}),
     Object.values(newObject?.getFields() ?? {}),
   );
+  const changeType = determineChangeType(oldObject, newObject);
   return (
     <>
       <DiffDescription newNode={newObject!} oldNode={oldObject!} />
-      <ChangeRow>
+      <ChangeRow type={changeType}>
         <Keyword term="type" />
         &nbsp;
         <TypeName name={oldObject?.name ?? newObject?.name ?? ''} />
@@ -598,7 +759,30 @@ export function DiffObject({
       {mutual.map(a => (
         <DiffField key={a.newVersion.name} oldField={a.oldVersion} newField={a.newVersion} />
       ))}
-      <ChangeRow>{'}'}</ChangeRow>
+      <ChangeRow type={changeType}>{'}'}</ChangeRow>
+    </>
+  );
+}
+
+export function DiffEnumValue({
+  oldValue,
+  newValue,
+}: {
+  oldValue: GraphQLEnumValue | null;
+  newValue: GraphQLEnumValue | null;
+}) {
+  const changeType = determineChangeType(oldValue, newValue);
+  const name = oldValue?.name ?? newValue?.name ?? '';
+  return (
+    <>
+      <DiffDescription newNode={newValue!} oldNode={oldValue!} indent />
+      <ChangeRow type={changeType} indent>
+        <TypeName name={name} />
+        <DiffDirectiveUsages
+          newDirectives={newValue?.astNode?.directives ?? []}
+          oldDirectives={oldValue?.astNode?.directives ?? []}
+        />
+      </ChangeRow>
     </>
   );
 }
@@ -619,45 +803,75 @@ export function DiffEnum({
 
   return (
     <>
+      <DiffDescription newNode={newEnum!} oldNode={oldEnum!} />
       <ChangeRow type={enumChangeType}>
         <Keyword term="enum" />
         &nbsp;
         <TypeName name={oldEnum?.name ?? newEnum?.name ?? ''} />
         {' {'}
       </ChangeRow>
-      {/* @todo move this into a DiffEnumValue function and handle directives etc. */}
+      {removed.map(a => (
+        <DiffEnumValue key={a.name} newValue={null} oldValue={a} />
+      ))}
+      {added.map(a => (
+        <DiffEnumValue key={a.name} newValue={a} oldValue={null} />
+      ))}
+      {mutual.map(a => (
+        <DiffEnumValue key={a.newVersion.name} newValue={a.newVersion} oldValue={a.oldVersion} />
+      ))}
+      <ChangeRow type={enumChangeType}>{'}'}</ChangeRow>
+    </>
+  );
+}
+
+export function DiffUnion({
+  oldUnion,
+  newUnion,
+}: {
+  oldUnion: GraphQLUnionType | null;
+  newUnion: GraphQLUnionType | null;
+}) {
+  const { added, mutual, removed } = compareLists(
+    oldUnion?.getTypes() ?? [],
+    newUnion?.getTypes() ?? [],
+  );
+
+  const changeType = determineChangeType(oldUnion, newUnion);
+  const name = oldUnion?.name ?? newUnion?.name ?? '';
+  return (
+    <>
+      <DiffDescription newNode={newUnion!} oldNode={oldUnion!} />
+      <ChangeRow type={changeType}>
+        <Keyword term="union" />
+        &nbsp;
+        <TypeName name={name} />
+        <DiffDirectiveUsages
+          newDirectives={newUnion?.astNode?.directives ?? []}
+          oldDirectives={oldUnion?.astNode?.directives ?? []}
+        />
+        {' = '}
+      </ChangeRow>
       {removed.map(a => (
         <React.Fragment key={a.name}>
-          <DiffDescription newNode={null} oldNode={a} indent />
           <ChangeRow type="removal" indent>
-            <TypeName name={a.name} />
-            <DiffDirectiveUsages newDirectives={[]} oldDirectives={a.astNode?.directives ?? []} />
+            | <TypeName name={a.name} />
           </ChangeRow>
         </React.Fragment>
       ))}
       {added.map(a => (
         <React.Fragment key={a.name}>
-          <DiffDescription newNode={a} oldNode={null} indent />
           <ChangeRow type="addition" indent>
-            <TypeName name={a.name} />
-            <DiffDirectiveUsages newDirectives={a.astNode?.directives ?? []} oldDirectives={[]} />
+            | <TypeName name={a.name} />
           </ChangeRow>
         </React.Fragment>
       ))}
-      {/* @todo This should do a diff on the nested fields... */}
       {mutual.map(a => (
         <React.Fragment key={a.newVersion.name}>
-          <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent />
           <ChangeRow indent>
-            <TypeName name={a.newVersion.value.name} />
-            <DiffDirectiveUsages
-              newDirectives={a.newVersion.astNode?.directives ?? []}
-              oldDirectives={a.oldVersion.astNode?.directives ?? []}
-            />
+            | <TypeName name={a.newVersion.name} />
           </ChangeRow>
         </React.Fragment>
       ))}
-      <ChangeRow type={enumChangeType}>{'}'}</ChangeRow>
     </>
   );
 }
@@ -701,7 +915,7 @@ export function DiffScalar({
         </Removal>
       )}
       {newScalar && (
-        <Addition className={cn(oldScalar && 'ml-2')}>
+        <Addition className={oldScalar ? 'ml-2' : undefined}>
           <TypeName name={newScalar.name} />
         </Addition>
       )}
@@ -757,16 +971,62 @@ export function DiffDirectiveUsage(
   const Klass =
     changeType === 'addition' ? Addition : changeType === 'removal' ? Removal : React.Fragment;
   const { added, mutual, removed } = compareLists(oldArgs, newArgs);
+  const argumentElements = [
+    ...removed.map(r => <DiffArgumentAST oldArg={r} newArg={null} />),
+    ...added.map(r => <DiffArgumentAST oldArg={null} newArg={r} />),
+    ...mutual.map(r => <DiffArgumentAST oldArg={r.oldVersion} newArg={r.newVersion} />),
+  ];
+
   return (
     <Klass>
       &nbsp;
       <DirectiveName name={name} />
       {hasArgs && <>(</>}
-      {removed.map(_ => '@TODO REMOVED DIRECTIVE ARGS')}
-      {added.map(_ => '@TODO ADDED DIRECTIVE ARGS')}
-      {mutual.map(_ => '@TODO MUTUAL DIRECTIVE ARGS')}
+      {argumentElements.map((e, index) => (
+        <React.Fragment key={index}>
+          {e}
+          {index === argumentElements.length - 1 ? '' : ', '}
+        </React.Fragment>
+      ))}
       {hasArgs && <>)</>}
     </Klass>
   );
-  // <DiffArguments
+}
+
+export function DiffArgumentAST({
+  oldArg,
+  newArg,
+}: {
+  oldArg: ConstArgumentNode | null;
+  newArg: ConstArgumentNode | null;
+}) {
+  const name = oldArg?.name.value ?? newArg?.name.value ?? '';
+  const oldType = oldArg && print(oldArg.value);
+  const newType = newArg && print(newArg.value);
+
+  const DiffType = ({
+    oldType,
+    newType,
+  }: {
+    oldType: string | null;
+    newType: string | null;
+  }): ReactNode => {
+    if (oldType === newType) {
+      return newType;
+    }
+    return (
+      <>
+        {oldType && <Removal>{oldType}</Removal>}
+        {newType && <Addition>{newType}</Addition>}
+      </>
+    );
+  };
+
+  return (
+    <>
+      <FieldName name={name} />
+      :&nbsp;
+      <DiffType oldType={oldType} newType={newType} />
+    </>
+  );
 }
