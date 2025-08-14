@@ -503,6 +503,7 @@ export function DiffDirective(
         newDirective: GraphQLDirective | null;
       },
 ) {
+  const name = props.newDirective?.name ?? props.oldDirective?.name ?? '';
   const changeType = determineChangeType(props.oldDirective, props.newDirective);
   const hasNewArgs = !!props.newDirective?.args.length;
   const hasOldArgs = !!props.oldDirective?.args.length;
@@ -532,7 +533,7 @@ export function DiffDirective(
         <Change type={changeType}>
           <Keyword term="directive" />
           &nbsp;
-          <DirectiveName name={props.newDirective?.name ?? props.oldDirective?.name ?? ''} />
+          <DirectiveName name={name} />
         </Change>
         {!!hasArgs && (
           <Change type={argsChangeType}>
