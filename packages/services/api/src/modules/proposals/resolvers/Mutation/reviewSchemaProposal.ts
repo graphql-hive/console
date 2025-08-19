@@ -1,9 +1,10 @@
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-export const createSchemaProposalReview: NonNullable<
-  MutationResolvers['createSchemaProposalReview']
-> = async (_parent, { input: { stageTransition, commentBody } }, _ctx) => {
-  /* Implement Mutation.createSchemaProposalReview resolver logic here */
+export const reviewSchemaProposal: NonNullable<MutationResolvers['reviewSchemaProposal']> = async (
+  _parent,
+  { input: { stageTransition, commentBody } },
+  _ctx,
+) => {
   return {
     createdAt: Date.now(),
     id: `abcd-1234-efgh-5678-wxyz`,

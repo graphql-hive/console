@@ -1,21 +1,18 @@
 import { useQuery } from 'urql';
-import { ProposalSDL } from '@/components/proposal/proposal-sdl';
+import { Proposal } from '@/components/proposal';
 import { stageToColor, userText } from '@/components/proposal/util';
 import { Callout } from '@/components/ui/callout';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
 import { Tag, TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
+import { Change } from '@graphql-inspector/core';
 
-const ProposalOverviewQuery = graphql(/** GraphQL  */ `
-  query ProposalOverviewQuery($id: ID!) {
-    latestVersion {
+const ProposalOverviewQuery = graphql(/* GraphQL  */ `
+  query ProposalOverviewQuery($reference: TargetReferenceInput!, $id: ID!) {
+    latestValidVersion(target: $reference) {
       id
-      isValid
-    }
-    latestValidVersion {
-      id
-      sdl
+      # sdl
       schemas {
         edges {
           node {
@@ -39,12 +36,23 @@ const ProposalOverviewQuery = graphql(/** GraphQL  */ `
       commentsCount
       stage
       title
-      versions(input: { onlyLatest: true }) {
+      versions(first: 30, after: null, input: { onlyLatest: true }) {
         edges {
+          __typename
           node {
             id
-            schemaSDL
             serviceName
+            reviews {
+              edges {
+                cursor
+                node {
+                  id
+                  comments {
+                    __typename
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -61,6 +69,27 @@ const ProposalOverviewQuery = graphql(/** GraphQL  */ `
   }
 `);
 
+const ProposalChangesQuery = graphql(/* GraphQL */ `
+  query ProposalChangesQuery($id: ID!) {
+    schemaProposal(input: { id: $id }) {
+      id
+      versions(after: null, input: { onlyLatest: true }) {
+        edges {
+          __typename
+          node {
+            id
+            serviceName
+            changes {
+              __typename
+              ...ProposalOverview_ChangeFragment
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
 export function TargetProposalOverviewPage(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -71,169 +100,32 @@ export function TargetProposalOverviewPage(props: {
   const [query] = useQuery({
     query: ProposalOverviewQuery,
     variables: {
+      reference: {
+        bySelector: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      },
+      id: props.proposalId,
+    },
+    requestPolicy: 'cache-and-network',
+  });
+  const [changesQuery] = useQuery({
+    query: ProposalChangesQuery,
+    variables: {
       id: props.proposalId,
     },
     requestPolicy: 'cache-and-network',
   });
 
   const proposal = query.data?.schemaProposal;
-
-  // const diffSdl = /** GraphQL */ `
-  //   extend schema
-  //     @link(
-  //       url: "https://specs.apollo.dev/federation/v2.3"
-  //       import: ["@key", "@shareable", "@inaccessible", "@tag"]
-  //     )
-  //     @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-  //     @meta(name: "priority", content: "tier1")
-
-  //   directive @meta(
-  //     name: String!
-  //     content: String!
-  //   ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
-
-  //   directive @myDirective(a: String!) on FIELD_DEFINITION
-
-  //   directive @hello on FIELD_DEFINITION
-
-  //   type Query {
-  //     allProducts: [ProductItf] @meta(name: "owner", content: "hive-team")
-  //     product(id: ID!): ProductItf
-  //   }
-
-  //   interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
-  //     id: ID!
-  //     sku: String
-  //     name: String
-  //     package: String
-  //     variation: ProductVariation
-  //     dimensions: ProductDimension
-  //     createdBy: User
-  //     hidden: String @inaccessible
-  //     oldField: String @deprecated(reason: "refactored out")
-  //   }
-
-  //   interface SkuItf {
-  //     sku: String
-  //   }
-
-  //   type Product implements ProductItf & SkuItf
-  //     @key(fields: "id")
-  //     @key(fields: "sku package")
-  //     @key(fields: "sku variation { id }")
-  //     @meta(name: "owner", content: "product-team") {
-  //     id: ID! @tag(name: "hi-from-products")
-  //     sku: String @meta(name: "unique", content: "true")
-  //     name: String @hello
-  //     package: String
-  //     variation: ProductVariation
-  //     dimensions: ProductDimension
-  //     createdBy: User
-  //     hidden: String
-  //     reviewsScore: Float!
-  //     oldField: String
-  //   }
-
-  //   enum ShippingClass {
-  //     STANDARD
-  //     EXPRESS
-  //   }
-
-  //   type ProductVariation {
-  //     id: ID!
-  //     name: String
-  //   }
-
-  //   type ProductDimension @shareable {
-  //     size: String
-  //     weight: Float
-  //   }
-
-  //   type User @key(fields: "email") {
-  //     email: ID!
-  //     totalProductsCreated: Int @shareable
-  //   }
-  // `;
-
-  const sdl = /** GraphQL */ `
-    extend schema
-      @link(
-        url: "https://specs.apollo.dev/federation/v2.3"
-        import: ["@key", "@shareable", "@inaccessible", "@tag"]
-      )
-      @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
-      @meta(name: "priority", content: "tier1")
-
-    directive @meta(
-      name: String!
-      content: String!
-    ) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
-
-    directive @myDirective(a: String!) on FIELD_DEFINITION
-
-    directive @hello on FIELD_DEFINITION
-
-    type Query {
-      allProducts: [ProductItf] @meta(name: "owner", content: "hive-team")
-      product(id: ID!): ProductItf
-    }
-
-    interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
-      id: ID!
-      sku: String
-      name: String
-      package: String
-      variation: ProductVariation
-      dimensions: ProductDimension
-      createdBy: User
-      hidden: String @inaccessible
-    }
-
-    interface SkuItf {
-      sku: String
-    }
-
-    type Product implements ProductItf & SkuItf
-      @key(fields: "id")
-      @key(fields: "sku package")
-      @meta(name: "owner", content: "product-team") {
-      id: ID! @tag(name: "hi-from-products")
-      sku: String @meta(name: "unique", content: "true")
-      name: String @hello
-      package: String
-      variation: ProductVariation
-      dimensions: ProductDimension
-      createdBy: User
-      hidden: String
-      reviewsScore: Float!
-    }
-
-    enum ShippingClass {
-      STANDARD
-      EXPRESS
-      OVERNIGHT
-    }
-
-    type ProductVariation {
-      id: ID!
-      name: String
-    }
-
-    type ProductDimension @shareable {
-      size: String
-      weight: Float
-    }
-
-    type User @key(fields: "email") {
-      email: ID!
-      totalProductsCreated: Int @shareable
-    }
-  `;
+  const proposalVersion = proposal?.versions?.edges?.[0];
 
   return (
     <div className="w-full">
       {query.fetching && <Spinner />}
-      {proposal && (
+      {proposalVersion && (
         <>
           <Subtitle>
             {userText(proposal.user)} proposed <TimeAgo date={proposal.createdAt} />{' '}
@@ -245,19 +137,41 @@ export function TargetProposalOverviewPage(props: {
           <div className="text-xs">
             Last updated <TimeAgo date={proposal.updatedAt} />
           </div>
-          {query.data?.latestVersion && query.data.latestVersion.isValid === false && (
-            <Callout type="warning">
-              The latest schema is invalid. Showing comparison against latest valid schema{' '}
-              {query.data.latestValidVersion?.id}
-            </Callout>
+          {!query.data?.latestValidVersion && (
+            <Callout type="warning">This target does not have a valid schema version.</Callout>
           )}
-          <ProposalSDL
-            // diffSdl={diffSdl ?? query.data?.latestValidVersion?.schemas?.edges[0].node.source ?? ''}
-            latestProposalVersionId={proposal.versions?.edges?.[0].node.id ?? 'asdf'}
-            reviews={proposal.reviews ?? null}
-            sdl={sdl ?? proposal.versions?.edges?.[0].node.schemaSDL}
-            serviceName=""
-          />
+          {changesQuery.fetching ? (
+            <Spinner />
+          ) : (
+            changesQuery?.data?.schemaProposal?.versions?.edges?.length === 0 && (
+              <>No proposal versions</>
+            )
+          )}
+          {changesQuery?.data?.schemaProposal?.versions?.edges?.map(({ node: proposed }) => {
+            const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
+              ({ node }) =>
+                (node.__typename === 'CompositeSchema' && node.service === proposed.serviceName) ||
+                (node.__typename === 'SingleSchema' && proposed.serviceName == null),
+            )?.node.source;
+            if (existingSchema) {
+              return (
+                <Proposal
+                  key={`${proposed.id}-${proposed.serviceName ?? ''}`}
+                  latestProposalVersionId={proposalVersion.node.id}
+                  reviews={proposal.reviews ?? null}
+                  baseSchemaSDL={existingSchema}
+                  changes={proposed.changes ?? []}
+                  serviceName={proposed.serviceName ?? ''}
+                />
+              );
+            }
+
+            return (
+              <div key={`${proposed.id}-${proposed.serviceName ?? ''}`}>
+                {`Proposed changes cannot be applied to the ${proposed.serviceName ? `"${proposed.serviceName}" ` : ''}schema because it does not exist.`}
+              </div>
+            );
+          })}
         </>
       )}
     </div>

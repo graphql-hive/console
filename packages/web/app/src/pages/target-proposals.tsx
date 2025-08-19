@@ -57,9 +57,6 @@ const ProposalsQuery = graphql(`
           title
           stage
           updatedAt
-          diffSchema {
-            id
-          }
           user {
             id
             displayName

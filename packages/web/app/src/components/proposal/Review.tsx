@@ -22,7 +22,6 @@ const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
 
 export function ReviewComments(props: {
   review: FragmentType<typeof ProposalOverview_ReviewCommentsFragment>;
-  lineNumber: number;
 }) {
   const review = useFragment(ProposalOverview_ReviewCommentsFragment, props.review);
   if (!review.comments) {

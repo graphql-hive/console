@@ -9,6 +9,7 @@ export const schemaProposalReviews: NonNullable<QueryResolvers['schemaProposalRe
   return {
     edges: [
       {
+        cursor: '1234',
         node: {
           id: crypto.randomUUID(),
           createdAt: Date.now(),
@@ -16,10 +17,17 @@ export const schemaProposalReviews: NonNullable<QueryResolvers['schemaProposalRe
           schemaCoordinate: 'User',
           lineText: 'type User {',
           comments: {
+            pageInfo: {
+              endCursor: '',
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: '',
+            },
             edges: [
               {
                 cursor: crypto.randomUUID(),
                 node: {
+                  createdAt: Date.now(),
                   id: crypto.randomUUID(),
                   body: 'This is a comment. The first comment.',
                   updatedAt: Date.now(),

@@ -18,7 +18,19 @@ const severityMap: Record<CriticalityLevelEnum, SeverityLevelType> = {
   [CriticalityLevelEnum.Breaking]: 'BREAKING',
 };
 
-export const SchemaChange: SchemaChangeResolvers = {
+export const SchemaChange: Pick<
+  SchemaChangeResolvers,
+  | 'approval'
+  | 'criticality'
+  | 'criticalityReason'
+  | 'isSafeBasedOnUsage'
+  | 'message'
+  | 'path'
+  | 'severityLevel'
+  | 'severityReason'
+  | 'usageStatistics'
+  | '__isTypeOf'
+> = {
   message: (change, args) => {
     return args.withSafeBasedOnUsageNote && change.isSafeBasedOnUsage === true
       ? `${change.message} (non-breaking based on usage)`

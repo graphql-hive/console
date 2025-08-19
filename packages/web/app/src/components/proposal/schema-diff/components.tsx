@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import React, { ReactNode } from 'react';
+import { Fragment, ReactElement, ReactNode } from 'react';
 import {
   astFromValue,
   ConstArgumentNode,
@@ -79,6 +79,8 @@ export function ChangeRow(props: {
   /** Default is mutual */
   type?: 'removal' | 'addition' | 'mutual';
   indent?: boolean | number;
+  coordinate?: string;
+  annotations?: (coordinate: string) => ReactElement | null;
 }) {
   const incrementCounter =
     props.type === 'mutual' || props.type === undefined
@@ -86,47 +88,55 @@ export function ChangeRow(props: {
       : props.type === 'removal'
         ? 'olddoc'
         : 'newdoc';
+  const annotation = !!props.coordinate && props.annotations?.(props.coordinate);
   return (
-    <tr style={{ counterIncrement: incrementCounter }}>
-      <td
-        className={cn(
-          'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
-          props.className,
-          props.type === 'removal' && 'bg-red-900/50',
-          props.type === 'addition' && 'invisible',
-        )}
-      />
-      <td
-        className={cn(
-          'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
-          props.className,
-          props.type === 'removal' && 'invisible',
-          props.type === 'addition' && 'bg-green-900/50',
-        )}
-      />
-      <td
-        className={cn(
-          'bg-gray-900 pl-2',
-          props.className,
-          props.type === 'removal' && 'bg-[#351A19]',
-          props.type === 'addition' && 'bg-[#19241E]',
-        )}
-      >
-        <span
+    <>
+      <tr style={{ counterIncrement: incrementCounter }}>
+        <td
           className={cn(
-            'bg-gray-900',
-            props.type === 'removal' && 'bg-[#351A19] line-through decoration-[#998c8b]',
+            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            props.className,
+            props.type === 'removal' && 'bg-red-900/50',
+            props.type === 'addition' && 'invisible',
+          )}
+        />
+        <td
+          className={cn(
+            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            props.className,
+            props.type === 'removal' && 'invisible',
+            props.type === 'addition' && 'bg-green-900/50',
+          )}
+        />
+        <td
+          className={cn(
+            'bg-gray-900 pl-2',
+            props.className,
+            props.type === 'removal' && 'bg-[#351A19]',
             props.type === 'addition' && 'bg-[#19241E]',
           )}
         >
-          {props.indent &&
-            Array.from({ length: Number(props.indent) }).map((_, i) => (
-              <React.Fragment key={i}>{TAB}</React.Fragment>
-            ))}
-          {props.children}
-        </span>
-      </td>
-    </tr>
+          <span
+            className={cn(
+              'bg-gray-900',
+              props.type === 'removal' && 'bg-[#351A19] line-through decoration-[#998c8b]',
+              props.type === 'addition' && 'bg-[#19241E]',
+            )}
+          >
+            {props.indent &&
+              Array.from({ length: Number(props.indent) }).map((_, i) => (
+                <Fragment key={i}>{TAB}</Fragment>
+              ))}
+            {props.children}
+          </span>
+        </td>
+      </tr>
+      {annotation && (
+        <tr>
+          <td colSpan={3}>{annotation}</td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -134,10 +144,7 @@ function Keyword(props: { term: string }) {
   return <span className="text-gray-400">{props.term}</span>;
 }
 
-function Removal(props: {
-  children: React.ReactNode | string;
-  className?: string;
-}): React.ReactNode {
+function Removal(props: { children: ReactNode | string; className?: string }): ReactNode {
   return (
     <span
       className={cn(
@@ -150,7 +157,7 @@ function Removal(props: {
   );
 }
 
-function Addition(props: { children: React.ReactNode; className?: string }): React.ReactNode {
+function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   return (
     <span className={cn('bg-[#19241E] p-1 hover:bg-green-900', props.className)}>
       {props.children}
@@ -177,13 +184,19 @@ function Description(props: {
   content: string;
   type?: 'removal' | 'addition' | 'mutual';
   indent?: boolean | number;
-}): React.ReactNode {
+  annotations: (coordinat: string) => ReactElement | null;
+}): ReactNode {
   const lines = props.content.split('\n');
 
   return (
     <>
       {lines.map((line, index) => (
-        <ChangeRow key={index} type={props.type} indent={props.indent}>
+        <ChangeRow
+          key={index}
+          type={props.type}
+          indent={props.indent}
+          annotations={props.annotations}
+        >
           <Change type={props.type}>
             <span className="text-gray-500">{line}</span>
           </Change>
@@ -193,11 +206,11 @@ function Description(props: {
   );
 }
 
-function FieldName(props: { name: string }): React.ReactNode {
+function FieldName(props: { name: string }): ReactNode {
   return <span>{props.name}</span>;
 }
 
-function FieldReturnType(props: { returnType: string }): React.ReactNode {
+function FieldReturnType(props: { returnType: string }): ReactNode {
   return <span className="text-orange-400">{props.returnType}</span>;
 }
 
@@ -246,24 +259,36 @@ export function DiffDescription(
 }
 
 export function DiffInputField({
+  parentPath,
   oldField,
   newField,
+  annotations,
 }:
   | {
+      parentPath: string[];
       oldField: GraphQLInputField | null;
       newField: GraphQLInputField;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
+      parentPath: string[];
       oldField: GraphQLInputField;
       newField: GraphQLInputField | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   const changeType = determineChangeType(oldField, newField);
+  const name = newField?.name ?? oldField?.name ?? '';
+  const path = [...parentPath, name];
+  // @todo consider allowing comments on nested coordinates.
+  // const directiveCoordinates = [...newField?.astNode?.directives ?? [], ...oldField?.astNode?.directives ?? []].map(d => {
+  //   return [...path, `@${d.name.value}`].join('.')
+  // });
   return (
     <>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
-      <ChangeRow type={changeType} indent>
+      <ChangeRow type={changeType} indent coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
-          <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+          <FieldName name={name} />
         </Change>
         :&nbsp;
         <DiffReturnType newType={newField?.type!} oldType={oldField?.type!} />
@@ -283,21 +308,27 @@ function Change({
   children: ReactNode;
   type?: 'addition' | 'removal' | 'mutual';
 }): ReactNode {
-  const Klass = type === 'addition' ? Addition : type === 'removal' ? Removal : React.Fragment;
+  const Klass = type === 'addition' ? Addition : type === 'removal' ? Removal : Fragment;
   return <Klass>{children}</Klass>;
 }
 
 export function DiffField({
+  parentPath,
   oldField,
   newField,
+  annotations,
 }:
   | {
+      parentPath: string[];
       oldField: GraphQLField<any, any, any> | null;
       newField: GraphQLField<any, any, any>;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
+      parentPath: string[];
       oldField: GraphQLField<any, any, any>;
       newField: GraphQLField<any, any, any> | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   const hasNewArgs = !!newField?.args.length;
   const hasOldArgs = !!oldField?.args.length;
@@ -309,6 +340,7 @@ export function DiffField({
     : hasOldArgs
       ? 'removal'
       : 'mutual';
+  const name = newField?.name ?? oldField?.name ?? '';
   const changeType = determineChangeType(oldField, newField);
   const AfterArguments = (
     <>
@@ -320,12 +352,13 @@ export function DiffField({
       />
     </>
   );
+  const path = [...parentPath, name];
   return (
     <>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
-      <ChangeRow type={changeType} indent>
+      <ChangeRow type={changeType} indent coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
-          <FieldName name={newField?.name ?? oldField?.name ?? ''} />
+          <FieldName name={name} />
         </Change>
         {hasArgs && (
           <Change type={argsChangeType}>
@@ -334,9 +367,15 @@ export function DiffField({
         )}
         {!hasArgs && AfterArguments}
       </ChangeRow>
-      <DiffArguments newArgs={newField?.args ?? []} oldArgs={oldField?.args ?? []} indent={2} />
+      <DiffArguments
+        newArgs={newField?.args ?? []}
+        oldArgs={oldField?.args ?? []}
+        indent={2}
+        parentPath={path}
+        annotations={annotations}
+      />
       {!!hasArgs && (
-        <ChangeRow type={changeType} indent>
+        <ChangeRow type={changeType} indent annotations={annotations}>
           <Change type={argsChangeType}>
             <>)</>
           </Change>
@@ -352,17 +391,24 @@ export function DirectiveName(props: { name: string }) {
 }
 
 export function DiffArguments(props: {
+  parentPath: string[];
   oldArgs: readonly GraphQLArgument[];
   newArgs: readonly GraphQLArgument[];
   indent: boolean | number;
+  annotations: (coordinat: string) => ReactElement | null;
 }) {
   const { added, mutual, removed } = compareLists(props.oldArgs, props.newArgs);
   return (
     <>
       {removed.map(a => (
-        <React.Fragment key={a.name}>
+        <Fragment key={a.name}>
           <DiffDescription newNode={null} oldNode={a} indent={props.indent} />
-          <ChangeRow type="removal" indent={props.indent}>
+          <ChangeRow
+            type="removal"
+            indent={props.indent}
+            coordinate={[...props.parentPath, a.name].join('.')}
+            annotations={props.annotations}
+          >
             <Change type="removal">
               <FieldName name={a.name} />
             </Change>
@@ -370,12 +416,17 @@ export function DiffArguments(props: {
             <DiffDefaultValue oldArg={a} newArg={null} />
             <DiffDirectiveUsages newDirectives={[]} oldDirectives={a.astNode?.directives ?? []} />
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
       {added.map(a => (
-        <React.Fragment key={a.name}>
+        <Fragment key={a.name}>
           <DiffDescription newNode={a} oldNode={null} indent={props.indent} />
-          <ChangeRow type="addition" indent={props.indent}>
+          <ChangeRow
+            type="addition"
+            indent={props.indent}
+            coordinate={[...props.parentPath, a.name].join('.')}
+            annotations={props.annotations}
+          >
             <Change type="addition">
               <FieldName name={a.name} />
             </Change>
@@ -383,12 +434,16 @@ export function DiffArguments(props: {
             <DiffDefaultValue oldArg={null} newArg={a} />
             <DiffDirectiveUsages newDirectives={a.astNode?.directives ?? []} oldDirectives={[]} />
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
       {mutual.map(a => (
-        <React.Fragment key={a.newVersion.name}>
+        <Fragment key={a.newVersion.name}>
           <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent={props.indent} />
-          <ChangeRow indent={props.indent}>
+          <ChangeRow
+            indent={props.indent}
+            coordinate={[...props.parentPath, a.newVersion.name].join('.')}
+            annotations={props.annotations}
+          >
             <Change>
               <FieldName name={a.newVersion.name} />
             </Change>
@@ -399,7 +454,7 @@ export function DiffArguments(props: {
               oldDirectives={a.oldVersion.astNode?.directives ?? []}
             />
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
     </>
   );
@@ -497,10 +552,12 @@ export function DiffDirective(
     | {
         oldDirective: GraphQLDirective | null;
         newDirective: GraphQLDirective;
+        annotations: (coordinat: string) => ReactElement | null;
       }
     | {
         oldDirective: GraphQLDirective;
         newDirective: GraphQLDirective | null;
+        annotations: (coordinat: string) => ReactElement | null;
       },
 ) {
   const name = props.newDirective?.name ?? props.oldDirective?.name ?? '';
@@ -525,11 +582,12 @@ export function DiffDirective(
       />
     </>
   );
+  const path = [`@${name}`];
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={props.newDirective!} oldNode={props.oldDirective!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={props.annotations}>
         <Change type={changeType}>
           <Keyword term="directive" />
           &nbsp;
@@ -546,9 +604,11 @@ export function DiffDirective(
         oldArgs={props.oldDirective?.args ?? []}
         newArgs={props.newDirective?.args ?? []}
         indent
+        parentPath={path}
+        annotations={props.annotations}
       />
       {!!hasArgs && (
-        <ChangeRow type={changeType}>
+        <ChangeRow type={changeType} annotations={props.annotations}>
           <Change type={argsChangeType}>
             <>)</>
           </Change>
@@ -627,9 +687,11 @@ function DiffDefaultValue({
 export function SchemaDefinitionDiff({
   oldSchema,
   newSchema,
+  annotations,
 }: {
   oldSchema: GraphQLSchema;
   newSchema: GraphQLSchema;
+  annotations: (coordinat: string) => ReactElement | null;
 }) {
   const defaultNames = {
     query: 'Query',
@@ -718,16 +780,33 @@ export function SchemaDefinitionDiff({
       extensions: {},
     },
   };
+  // @todo verify using this as the path is correct.
+  const path = [''];
 
   return (
     <>
-      <ChangeRow>
+      <ChangeRow coordinate={path.join('.')} annotations={annotations}>
         <Keyword term="schema" />
         {' {'}
       </ChangeRow>
-      <DiffField oldField={oldRoot.query} newField={newRoot.query} />
-      <DiffField oldField={oldRoot.mutation} newField={newRoot.mutation} />
-      <DiffField oldField={oldRoot.subscription} newField={newRoot.subscription} />
+      <DiffField
+        oldField={oldRoot.query}
+        newField={newRoot.query}
+        parentPath={path}
+        annotations={annotations}
+      />
+      <DiffField
+        oldField={oldRoot.mutation}
+        newField={newRoot.mutation}
+        parentPath={path}
+        annotations={annotations}
+      />
+      <DiffField
+        oldField={oldRoot.subscription}
+        newField={newRoot.subscription}
+        parentPath={path}
+        annotations={annotations}
+      />
       <ChangeRow>{'}'}</ChangeRow>
     </>
   );
@@ -737,38 +816,41 @@ export function SchemaDefinitionDiff({
 export function DiffType({
   oldType,
   newType,
+  annotations,
 }:
   | {
       oldType: GraphQLNamedType;
       newType: GraphQLNamedType | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
       oldType: GraphQLNamedType | null;
       newType: GraphQLNamedType;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   if ((isEnumType(oldType) || oldType === null) && (isEnumType(newType) || newType === null)) {
-    return <DiffEnum oldEnum={oldType} newEnum={newType} />;
+    return <DiffEnum oldEnum={oldType} newEnum={newType} annotations={annotations} />;
   }
   if ((isUnionType(oldType) || oldType === null) && (isUnionType(newType) || newType === null)) {
-    return <DiffUnion oldUnion={oldType} newUnion={newType} />;
+    return <DiffUnion oldUnion={oldType} newUnion={newType} annotations={annotations} />;
   }
   if (
     (isInputObjectType(oldType) || oldType === null) &&
     (isInputObjectType(newType) || newType === null)
   ) {
-    return <DiffInputObject oldInput={oldType!} newInput={newType!} />;
+    return <DiffInputObject oldInput={oldType!} newInput={newType!} annotations={annotations} />;
   }
   if ((isObjectType(oldType) || oldType === null) && (isObjectType(newType) || newType === null)) {
-    return <DiffObject oldObject={oldType!} newObject={newType!} />;
+    return <DiffObject oldObject={oldType!} newObject={newType!} annotations={annotations} />;
   }
   if (
     (isInterfaceType(oldType) || oldType === null) &&
     (isInterfaceType(newType) || newType === null)
   ) {
-    return <DiffObject oldObject={oldType!} newObject={newType!} />;
+    return <DiffObject oldObject={oldType!} newObject={newType!} annotations={annotations} />;
   }
   if ((isScalarType(oldType) || oldType === null) && (isScalarType(newType) || newType === null)) {
-    return <DiffScalar oldScalar={oldType!} newScalar={newType!} />;
+    return <DiffScalar oldScalar={oldType!} newScalar={newType!} annotations={annotations} />;
   }
 }
 
@@ -779,29 +861,34 @@ function TypeName({ name }: { name: string }) {
 export function DiffInputObject({
   oldInput,
   newInput,
+  annotations,
 }:
   | {
       oldInput: GraphQLInputObjectType | null;
       newInput: GraphQLInputObjectType;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
       oldInput: GraphQLInputObjectType;
       newInput: GraphQLInputObjectType | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   const { added, mutual, removed } = compareLists(
     Object.values(oldInput?.getFields() ?? {}),
     Object.values(newInput?.getFields() ?? {}),
   );
   const changeType = determineChangeType(oldInput, newInput);
+  const name = oldInput?.name ?? newInput?.name ?? '';
+  const path = [name];
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newInput!} oldNode={oldInput!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="input" />
           &nbsp;
-          <TypeName name={oldInput?.name ?? newInput?.name ?? ''} />
+          <TypeName name={name} />
         </Change>
         <DiffDirectiveUsages
           newDirectives={newInput?.astNode?.directives ?? []}
@@ -810,15 +897,35 @@ export function DiffInputObject({
         {' {'}
       </ChangeRow>
       {removed.map(a => (
-        <DiffInputField key={a.name} oldField={a} newField={null} />
+        <DiffInputField
+          key={a.name}
+          oldField={a}
+          newField={null}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
       {added.map(a => (
-        <DiffInputField key={a.name} oldField={null} newField={a} />
+        <DiffInputField
+          key={a.name}
+          oldField={null}
+          newField={a}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
       {mutual.map(a => (
-        <DiffInputField key={a.newVersion.name} oldField={a.oldVersion} newField={a.newVersion} />
+        <DiffInputField
+          key={a.newVersion.name}
+          oldField={a.oldVersion}
+          newField={a.newVersion}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
-      <ChangeRow type={changeType}>{'}'}</ChangeRow>
+      <ChangeRow type={changeType} annotations={annotations}>
+        {'}'}
+      </ChangeRow>
     </>
   );
 }
@@ -826,29 +933,34 @@ export function DiffInputObject({
 export function DiffObject({
   oldObject,
   newObject,
+  annotations,
 }:
   | {
       oldObject: GraphQLObjectType | GraphQLInterfaceType | null;
       newObject: GraphQLObjectType | GraphQLInterfaceType;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
       oldObject: GraphQLObjectType | GraphQLInterfaceType;
       newObject: GraphQLObjectType | GraphQLInterfaceType | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   const { added, mutual, removed } = compareLists(
     Object.values(oldObject?.getFields() ?? {}),
     Object.values(newObject?.getFields() ?? {}),
   );
+  const name = oldObject?.name ?? newObject?.name ?? '';
   const changeType = determineChangeType(oldObject, newObject);
+  const path = [name];
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newObject!} oldNode={oldObject!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="type" />
           &nbsp;
-          <TypeName name={oldObject?.name ?? newObject?.name ?? ''} />
+          <TypeName name={name} />
         </Change>
         <DiffDirectiveUsages
           newDirectives={newObject?.astNode?.directives ?? []}
@@ -857,32 +969,61 @@ export function DiffObject({
         {' {'}
       </ChangeRow>
       {removed.map(a => (
-        <DiffField key={a.name} oldField={a} newField={null} />
+        <DiffField
+          key={a.name}
+          oldField={a}
+          newField={null}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
       {added.map(a => (
-        <DiffField key={a.name} oldField={null} newField={a} />
+        <DiffField
+          key={a.name}
+          oldField={null}
+          newField={a}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
       {mutual.map(a => (
-        <DiffField key={a.newVersion.name} oldField={a.oldVersion} newField={a.newVersion} />
+        <DiffField
+          key={a.newVersion.name}
+          oldField={a.oldVersion}
+          newField={a.newVersion}
+          parentPath={path}
+          annotations={annotations}
+        />
       ))}
-      <ChangeRow type={changeType}>{'}'}</ChangeRow>
+      <ChangeRow type={changeType} annotations={annotations}>
+        {'}'}
+      </ChangeRow>
     </>
   );
 }
 
 export function DiffEnumValue({
+  parentPath,
   oldValue,
   newValue,
+  annotations,
 }: {
+  parentPath: string[];
   oldValue: GraphQLEnumValue | null;
   newValue: GraphQLEnumValue | null;
+  annotations: (coordinat: string) => ReactElement | null;
 }) {
   const changeType = determineChangeType(oldValue, newValue);
   const name = oldValue?.name ?? newValue?.name ?? '';
   return (
     <>
       <DiffDescription newNode={newValue!} oldNode={oldValue!} indent />
-      <ChangeRow type={changeType} indent>
+      <ChangeRow
+        type={changeType}
+        indent
+        coordinate={[...parentPath, name].join('.')}
+        annotations={annotations}
+      >
         <Change type={changeType}>
           <TypeName name={name} />
         </Change>
@@ -898,9 +1039,11 @@ export function DiffEnumValue({
 export function DiffEnum({
   oldEnum,
   newEnum,
+  annotations,
 }: {
   oldEnum: GraphQLEnumType | null;
   newEnum: GraphQLEnumType | null;
+  annotations: (coordinat: string) => ReactElement | null;
 }) {
   const { added, mutual, removed } = compareLists(
     oldEnum?.getValues() ?? [],
@@ -908,29 +1051,50 @@ export function DiffEnum({
   );
 
   const changeType = determineChangeType(oldEnum, newEnum);
+  const name = oldEnum?.name ?? newEnum?.name ?? '';
 
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newEnum!} oldNode={oldEnum!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={name} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="enum" />
           &nbsp;
-          <TypeName name={oldEnum?.name ?? newEnum?.name ?? ''} />
+          <TypeName name={name} />
         </Change>
         {' {'}
       </ChangeRow>
       {removed.map(a => (
-        <DiffEnumValue key={a.name} newValue={null} oldValue={a} />
+        <DiffEnumValue
+          key={a.name}
+          newValue={null}
+          oldValue={a}
+          parentPath={[name]}
+          annotations={annotations}
+        />
       ))}
       {added.map(a => (
-        <DiffEnumValue key={a.name} newValue={a} oldValue={null} />
+        <DiffEnumValue
+          key={a.name}
+          newValue={a}
+          oldValue={null}
+          parentPath={[name]}
+          annotations={annotations}
+        />
       ))}
       {mutual.map(a => (
-        <DiffEnumValue key={a.newVersion.name} newValue={a.newVersion} oldValue={a.oldVersion} />
+        <DiffEnumValue
+          key={a.newVersion.name}
+          newValue={a.newVersion}
+          oldValue={a.oldVersion}
+          parentPath={[name]}
+          annotations={annotations}
+        />
       ))}
-      <ChangeRow type={changeType}>{'}'}</ChangeRow>
+      <ChangeRow type={changeType} annotations={annotations}>
+        {'}'}
+      </ChangeRow>
     </>
   );
 }
@@ -938,9 +1102,11 @@ export function DiffEnum({
 export function DiffUnion({
   oldUnion,
   newUnion,
+  annotations,
 }: {
   oldUnion: GraphQLUnionType | null;
   newUnion: GraphQLUnionType | null;
+  annotations: (coordinat: string) => ReactElement | null;
 }) {
   const { added, mutual, removed } = compareLists(
     oldUnion?.getTypes() ?? [],
@@ -949,11 +1115,12 @@ export function DiffUnion({
 
   const changeType = determineChangeType(oldUnion, newUnion);
   const name = oldUnion?.name ?? newUnion?.name ?? '';
+  const path = [name];
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newUnion!} oldNode={oldUnion!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="union" />
           &nbsp;
@@ -962,35 +1129,50 @@ export function DiffUnion({
         <DiffDirectiveUsages
           newDirectives={newUnion?.astNode?.directives ?? []}
           oldDirectives={oldUnion?.astNode?.directives ?? []}
+          // parentPath={path}
         />
         {' = '}
       </ChangeRow>
       {removed.map(a => (
-        <React.Fragment key={a.name}>
-          <ChangeRow type="removal" indent>
+        <Fragment key={a.name}>
+          <ChangeRow
+            type="removal"
+            indent
+            coordinate={[...path, a.name].join('.')}
+            annotations={annotations}
+          >
             <Change type="removal">
               | <TypeName name={a.name} />
             </Change>
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
       {added.map(a => (
-        <React.Fragment key={a.name}>
-          <ChangeRow type="addition" indent>
+        <Fragment key={a.name}>
+          <ChangeRow
+            type="addition"
+            indent
+            coordinate={[...path, a.name].join('.')}
+            annotations={annotations}
+          >
             <Change type="addition">
               | <TypeName name={a.name} />
             </Change>
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
       {mutual.map(a => (
-        <React.Fragment key={a.newVersion.name}>
-          <ChangeRow indent>
+        <Fragment key={a.newVersion.name}>
+          <ChangeRow
+            indent
+            coordinate={[...path, a.newVersion.name].join('.')}
+            annotations={annotations}
+          >
             <Change>
               | <TypeName name={a.newVersion.name} />
             </Change>
           </ChangeRow>
-        </React.Fragment>
+        </Fragment>
       ))}
     </>
   );
@@ -999,29 +1181,34 @@ export function DiffUnion({
 export function DiffScalar({
   oldScalar,
   newScalar,
+  annotations,
 }:
   | {
       oldScalar: GraphQLScalarType;
       newScalar: GraphQLScalarType | null;
+      annotations: (coordinat: string) => ReactElement | null;
     }
   | {
       oldScalar: GraphQLScalarType | null;
       newScalar: GraphQLScalarType;
+      annotations: (coordinat: string) => ReactElement | null;
     }) {
   const changeType = determineChangeType(oldScalar, newScalar);
+  const name = newScalar?.name ?? oldScalar?.name ?? '';
   return (
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription oldNode={oldScalar!} newNode={newScalar!} />
-      <ChangeRow type={changeType}>
+      <ChangeRow type={changeType} coordinate={name} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="scalar" />
           &nbsp;
-          <TypeName name={newScalar?.name ?? ''} />
+          <TypeName name={name} />
         </Change>
         <DiffDirectiveUsages
           newDirectives={newScalar?.astNode?.directives ?? []}
           oldDirectives={oldScalar?.astNode?.directives ?? []}
+          // parentPath={[name]}
         />
       </ChangeRow>
     </>
@@ -1107,10 +1294,10 @@ export function DiffDirectiveUsage(
         </Change>
       )}
       {argumentElements.map((e, index) => (
-        <React.Fragment key={index}>
+        <Fragment key={index}>
           {e}
           {index === argumentElements.length - 1 ? '' : ', '}
-        </React.Fragment>
+        </Fragment>
       ))}
       {hasArgs && (
         <Change type={argsChangeType}>
@@ -1120,6 +1307,24 @@ export function DiffDirectiveUsage(
     </Change>
   );
 }
+
+const DiffTypeStr = ({
+  oldType,
+  newType,
+}: {
+  oldType: string | null;
+  newType: string | null;
+}): ReactNode => {
+  if (oldType === newType) {
+    return newType;
+  }
+  return (
+    <>
+      {oldType && <Removal>{oldType}</Removal>}
+      {newType && <Addition>{newType}</Addition>}
+    </>
+  );
+};
 
 export function DiffArgumentAST({
   oldArg,
@@ -1132,29 +1337,11 @@ export function DiffArgumentAST({
   const oldType = oldArg && print(oldArg.value);
   const newType = newArg && print(newArg.value);
 
-  const DiffType = ({
-    oldType,
-    newType,
-  }: {
-    oldType: string | null;
-    newType: string | null;
-  }): ReactNode => {
-    if (oldType === newType) {
-      return newType;
-    }
-    return (
-      <>
-        {oldType && <Removal>{oldType}</Removal>}
-        {newType && <Addition>{newType}</Addition>}
-      </>
-    );
-  };
-
   return (
     <>
       <FieldName name={name} />
       :&nbsp;
-      <DiffType oldType={oldType} newType={newType} />
+      <DiffTypeStr oldType={oldType} newType={newType} />
     </>
   );
 }
