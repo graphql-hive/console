@@ -43,14 +43,14 @@
     "check:build": "bob check"
   },
   "peerDependencies": {
-    "@apollo/server": "^4.0.0",
+    "@apollo/server": "^4.0.0 || ^5.0.0",
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*"
   },
   "devDependencies": {
-    "@apollo/server": "4.11.3",
+    "@apollo/server": "5.0.0",
     "@graphql-tools/schema": "10.0.23",
     "body-parser": "1.20.3",
     "express": "4.21.2",
