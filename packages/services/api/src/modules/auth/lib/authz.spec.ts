@@ -213,4 +213,29 @@ describe('Session.assertPerformAction', () => {
       .catch(err => err);
     expect(result2).toBeInstanceOf(AccessError);
   });
+
+  test('Allow if no resource was specified on the permission', async () => {
+    const orgId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    const bId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    const session = new TestSession([
+      {
+        effect: 'allow',
+        action: 'project:describe',
+        resource: [],
+      },
+    ]);
+
+    const result1 = await session
+      .assertPerformAction({
+        action: 'project:describe',
+        organizationId: orgId,
+        params: {
+          organizationId: orgId,
+          projectId: bId,
+        },
+      })
+      .catch(err => err);
+    expect(result1).toEqual(undefined);
+  });
 });

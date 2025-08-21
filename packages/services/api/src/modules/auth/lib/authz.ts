@@ -193,6 +193,7 @@ export abstract class Session {
 
       /** If no resource matches, we skip this permission */
       if (
+        parsedResources.length > 0 &&
         !parsedResources.some(resource => {
           if (resource.organizationId !== '*' && resource.organizationId !== args.organizationId) {
             return false;
