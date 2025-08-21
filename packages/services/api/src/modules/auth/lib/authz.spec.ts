@@ -217,22 +217,25 @@ describe('Session.assertPerformAction', () => {
   test('Allow if no resource was specified on the permission', async () => {
     const orgId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
     const bId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    const cId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
 
     const session = new TestSession([
       {
         effect: 'allow',
-        action: 'project:describe',
+        action: 'appDeployment:create',
         resource: [],
       },
     ]);
 
     const result1 = await session
       .assertPerformAction({
-        action: 'project:describe',
+        action: 'appDeployment:create',
         organizationId: orgId,
         params: {
           organizationId: orgId,
           projectId: bId,
+          targetId: cId,
+          appDeploymentName: 'test',
         },
       })
       .catch(err => err);
