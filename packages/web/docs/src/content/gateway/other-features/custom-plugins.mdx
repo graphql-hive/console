@@ -62,6 +62,20 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+<details>
+  <summary>Configuration Context</summary>
+
+| Field Name      | Type                                 | Description                                                                 |
+| --------------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| `fetch`         | `MeshFetch`                          | WHATWG compatible Fetch implementation.                                     |
+| `log`           | `Logger`                             | The logger to use throughout Hive and its plugins.                          |
+| `cwd`           | `string`                             | Current working directory.                                                  |
+| `pubsub`        | `HivePubSub` (optional)              | Event bus for pub/sub.                                                      |
+| `cache`         | `KeyValueCache` (optional)           | Cache Storage.                                                              |
+| `openTelemetry` | `OpenTelemetryPluginUtils & { ... }` | OpenTelemetry API to access OTEL Tracer and Hive Gateway internal contexts. |
+
+</details>
+
 ## Custom Plugins
 
 You can take advantage of the plugin system to create your own custom plugin. This allows you to
