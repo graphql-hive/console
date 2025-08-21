@@ -822,7 +822,7 @@ to not use any context manager.
 
 If no Context Manager compatible with async is registered, automatic parenting of custom spans will
 not work. You will have to retreive the current OpenTelemetry context from the GraphQL context, or
-from the `getOtelContext` method of the plugin instance.
+from the `getActiveContext` method of the plugin instance.
 
 <Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
@@ -1829,14 +1829,20 @@ export const gateway = createGatewayRuntime({
     return [
       otelPlugin,
       useGenericAuth({
-        resolveUserFn: ({ context }) =>
+        resolveUserFn: ({ context }) => {
+          // If you have access to the configuration context:
+          const tracer = ctx.openTelemetry.tracer;
+          // Otherwise, you can access to the tracer on the plugin instance itself
+          const tracer = otelPlugin.tracer;
+
           // `startActiveSpan` will rely on the current context to parent the new span correctly
           // You can also use your own tracer instead of Hive Gateway's one.
-          otelPlugin.getTracer().startActiveSpan('users.fetch', (span) => {
+          return tracer.startActiveSpan('users.fetch', (span) => {
             const user = await fetchUser(extractUserIdFromContext(context))
             span.end();
             return user
           })
+        },
       }),
     ],
   }
@@ -1855,8 +1861,8 @@ If you can't or don't want to use the Context Manager, Hive Gateway provides a c
 context tracking mechanism.
 
 To parent spans correctly, you will have to manually provide the current OTEL context. You can
-retreive the current OTEL context by either using the `context.openTelemetry.activeContext`
-function, or the plugin's method `getOtelContext()`.
+retreive the current OTEL context by either using the `context.openTelemetry.getActiveContext`
+function, or the plugin's method `getActiveContext()`.
 
 <Tabs items={['CLI', 'Programmatic Usage']}>
 
@@ -1884,7 +1890,7 @@ export const gatewayConfig = defineConfig({
   plugins: () => [
     useGenericAuth({
       resolveUserFn: ({ context }) => {
-        const ctx = context.openTelemetry.activeContext();
+        const ctx = context.openTelemetry.getActiveContext();
 
         // Explicitly pass the parent context as the third argument.
         return context.openTelemetry.tracer.startActiveSpan('users.fetch', {}, ctx, (span) => {
@@ -1934,10 +1940,10 @@ export const gateway = createGatewayRuntime({
           // Retreive current OTEL Context by passing an object containing the graphql `context`,
           // the http `request` and/or the `executionRequest`. The appropriate context will be
           // found based on which of those properties are provided.
-          const ctx = otelPlugin.getOtelContext({ context });
+          const otelCtx = context.openTelemetry.getActiveContext();
 
           // Explicitly pass the parent context as the third argument.
-          return otelPlugin.getTracer().startActiveSpan('users.fetch', {}, ctx, (span) => {
+          return context.openTelemetry.tracer.startActiveSpan('users.fetch', {}, otelCtx, (span) => {
             const user = await fetchUser(extractUserIdFromContext(context))
             span.end();
             return user
@@ -2067,8 +2073,8 @@ If you can't or don't want to use the Context Manager, Hive Gateway provides a c
 context tracking mechanism.
 
 To parent spans correctly, you will have to manually provide the current OTEL context. You can
-retreive the current OTEL context by either using the `context.openTelemetry.activeContext`
-function, or the plugin's method `getOtelContext()`.
+retreive the current OTEL context by either using the `context.openTelemetry.getActiveContext()`
+function, or the plugin's method `getActiveContext()`.
 
 <Tabs items={['CLI', 'Programmatic Usage']}>
 
@@ -2097,7 +2103,7 @@ export const gatewayConfig = defineConfig({
   plugins: () => [
     useGenericAuth({
       resolveUserFn: ({ context }) => {
-        const ctx = context.openTelemetry.activeContext();
+        const ctx = context.openTelemetry.getActiveContext({ context });
         const span = trace.getSpan(ctx)
 
         const user = await fetchUser(extractUserIdFromContext(context))
@@ -2145,7 +2151,7 @@ export const gateway = createGatewayRuntime({
           // Retreive current OTEL Context by passing an object containing the graphql `context`,
           // the http `request` and/or the `executionRequest`. The appropriate context will be
           // found based on which of those properties are provided.
-          const ctx = otelPlugin.getOtelContext({ context });
+          const otelCtx = ctx.openTelemetry.getActiveContext({ context });
           const span = trace.getSpan(ctx)
 
           const user = await fetchUser(extractUserIdFromContext(context))
@@ -2166,6 +2172,20 @@ export const gateway = createGatewayRuntime({
 </Tabs.Tab>
 
 </Tabs>
+
+#### Access root spans
+
+Sometimes, you don't want to add the custom attribute on the current span, but on one of the root
+spans (http, operation, subgraph execution).
+
+You can access those spans by using `getHttpContext(request)`, `getOperationContext(context)` and
+`getExecutionRequestContext(executionRequest)` functions.
+
+They are accessible under `openTelemetry` key of the graphql and configuration context, and on the
+plugin instance if you don't have access to any of those contexts.
+
+When using the graphql context, the argument is optional and functions will return the current
+apropriate root context.
 
 ### Troubleshooting
 
