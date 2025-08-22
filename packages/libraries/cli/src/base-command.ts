@@ -153,7 +153,7 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     } else {
       const configValue = this._userConfig!.get(key) as GetConfigurationValueType<TKey>;
 
-      if (configValue !== undefined && configValue !== null) {
+      if (configValue != null) {
         value = configValue;
       } else if (defaultValue) {
         value = defaultValue;
