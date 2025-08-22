@@ -1,0 +1,870 @@
+import { Callout } from '@theguild/components'
+
+# Hive Logger
+
+Lightweight and customizable logging utility designed for use within the GraphQL Hive ecosystem. It
+provides structured logging capabilities, making it easier to debug and monitor applications
+effectively.
+
+## Compatibility
+
+The Hive Logger is designed to work seamlessly in all JavaScript environments, including Node.js,
+browsers, and serverless platforms. Its lightweight design ensures minimal overhead, making it
+suitable for a wide range of applications.
+
+## Getting Started
+
+### Install
+
+```sh npm2yarn
+npm i @graphql-hive/logger
+```
+
+### Basic Usage
+
+Create a default logger that set to the `info` log level writing to the console.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger()
+
+log.debug('I wont be logged by default')
+
+log.info({ some: 'attributes' }, 'Hello %s!', 'world')
+
+const child = log.child({ requestId: '123-456' })
+
+child.warn({ more: 'attributes' }, 'Oh hello child!')
+
+const err = new Error('Woah!')
+
+child.error({ err }, 'Something went wrong!')
+```
+
+Will produce the following output to the console output:
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z INF Hello world!
+  some: "attributes"
+2025-04-10T14:00:00.000Z WRN Oh hello child!
+  requestId: "123-456"
+  more: "attributes"
+2025-04-10T14:00:00.000Z ERR Something went wrong!
+  requestId: "123-456"
+  err: {
+    stack: "Error: Woah!
+        at <anonymous> (/project/example.js:13:13)
+        at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+        at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+        at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)"
+    message: "Woah!"
+    name: "Error"
+    class: "Error"
+  }
+```
+{/* prettier-ignore-end */}
+
+or if you wish to have JSON output, set the `LOG_JSON` environment variable to a truthy value:
+
+{/* prettier-ignore-start */}
+```sh
+$ LOG_JSON=1 node example.js
+
+{"some":"attributes","level":"info","msg":"Hello world!","timestamp":"2025-04-10T14:00:00.000Z"}
+{"requestId":"123-456","more":"attributes","level":"info","msg":"Hello child!","timestamp":"2025-04-10T14:00:00.000Z"}
+{"requestId":"123-456","err":{"stack":"Error: Woah!\n    at <anonymous> (/project/example.js:13:13)\n    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)","message":"Woah!","name":"Error","class":"Error"},"level":"error","msg":"Something went wrong!","timestamp":"2025-04-10T14:00:00.000Z"}
+```
+{/* prettier-ignore-end */}
+
+## Logging Methods and Their Arguments
+
+Hive Logger provides convenient methods for each log level: `trace`, `debug`, `info`, `warn`, and
+`error`.
+
+All logging methods support flexible argument patterns for structured and formatted logging:
+
+### No Arguments
+
+Logs an empty message at the specified level.
+
+```ts
+log.debug()
+```
+
+```sh
+2025-04-10T14:00:00.000Z DBG
+```
+
+### Attributes Only
+
+Logs structured attributes without a message.
+
+```ts
+log.info({ hello: 'world' })
+```
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z INF
+  hello: "world"
+```
+{/* prettier-ignore-end */}
+
+### Message with Interpolation
+
+Logs a formatted message, similar to printf-style formatting. Read more about it in the
+[Message Formatting section](#message-formatting).
+
+```ts
+log.warn('Hello %s!', 'World')
+```
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z WRN Hello World!
+```
+{/* prettier-ignore-end */}
+
+### Attributes and Message (with interpolation)
+
+Logs structured attributes and a formatted message. The attributes can be anything object-like,
+including classes.
+
+```ts
+const err = new Error('Something went wrong!')
+log.error(err, 'Problem occurred at %s', new Date())
+```
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z ERR Problem occurred at Thu Apr 10 2025 14:00:00 GMT+0200 (Central European Summer Time)
+  stack: "Error: Something went wrong!
+      at <anonymous> (/projects/example.js:2:1)"
+  message: "Something went wrong!"
+  name: "Error"
+  class: "Error"
+```
+{/* prettier-ignore-end */}
+
+## Message Formatting
+
+The Hive Logger uses the
+[`quick-format-unescaped` library](https://github.com/pinojs/quick-format-unescaped) to format log
+messages that include interpolation (e.g., placeholders like %s, %d, etc.).
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger()
+
+log.info('hello %s %j %d %o', 'world', { obj: true }, 4, { another: 'obj' })
+```
+
+Outputs:
+
+```sh
+2025-04-10T14:00:00.000Z INF hello world {"obj":true} 4 {"another":"obj"}
+```
+
+Available interpolation placeholders are:
+
+- `%s` - string
+- `%d` and `%f` - number with(out) decimals
+- `%i` - integer number
+- `%o`,`%O` and `%j` - JSON stringified object
+- `%%` - escaped percentage sign
+
+## Log Levels
+
+The default logger uses the `info` log level which will make sure to log only `info`+ logs.
+Available log levels are:
+
+- false (disables logging altogether)
+- `trace`
+- `debug`
+- `info` _default_
+- `warn`
+- `error`
+
+### Lazy Arguments and Performance
+
+Hive Logger supports "lazy" attributes for log methods. If you pass a function as the attributes
+argument, it will only be evaluated if the log level is enabled and the log will actually be
+written. This avoids unnecessary computation for expensive attributes when the log would be ignored
+due to the current log level.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger({ level: 'info' })
+
+log.debug(
+  // This function will NOT be called, since 'debug' is below the current log level.
+  () => ({ expensive: computeExpensiveValue() }),
+  'This will not be logged'
+)
+
+log.info(
+  // This function WILL be called, since 'info' log level is set.
+  () => ({ expensive: computeExpensiveValue() }),
+  'This will be logged'
+)
+```
+
+### Change on Creation
+
+When creating an instance of the logger, you can configure the logging level by configuring the
+`level` option. Like this:
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger({ level: 'debug' })
+
+log.trace(
+  // you can suply "lazy" attributes which wont be evaluated unless the log level allows logging
+  () => ({
+    wont: 'be evaluated',
+    some: expensiveOperation()
+  }),
+  'Wont be logged and attributes wont be evaluated'
+)
+
+log.debug('Hello world!')
+
+const child = log.child('[prefix] ')
+
+child.debug('Child loggers inherit the parent log level')
+```
+
+Outputs the following to the console:
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z DBG Hello world!
+2025-04-10T14:00:00.000Z DBG [prefix] Child loggers inherit the parent log level
+```
+{/* prettier-ignore-end */}
+
+### Change Dynamically
+
+Alternatively, you can change the logging level dynamically during runtime. There's two possible
+ways of doing that.
+
+#### Using `log.setLevel(level: LogLevel)`
+
+One way of doing it is by using the log's `setLevel` method.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger({ level: 'debug' })
+
+log.debug('Hello world!')
+
+const child = log.child('[prefix] ')
+
+child.debug('Child loggers inherit the parent log level')
+
+log.setLevel('trace')
+
+log.trace(() => ({ hi: 'there' }), 'Now tracing is logged too!')
+
+child.trace('Also on the child logger')
+
+child.setLevel('info')
+
+log.trace('Still logging!')
+
+child.debug('Wont be logged because the child has a different log level now')
+
+child.info('Hello child!')
+```
+
+Outputs the following to the console:
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z DBG Hello world!
+2025-04-10T14:00:00.000Z DBG [prefix] Child loggers inherit the parent log level
+2025-04-10T14:00:00.000Z TRC Now tracing is logged too!
+  hi: "there"
+2025-04-10T14:00:00.000Z TRC [prefix] Also on the child logger
+2025-04-10T14:00:00.000Z TRC Still logging!
+2025-04-10T14:00:00.000Z INF Hello child!
+```
+{/* prettier-ignore-end */}
+
+#### Using `LoggerOptions.level` Function
+
+Another way of doing it is to pass a function to the `level` option when creating a logger.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+let isDebug = false
+
+const log = new Logger({
+  level: () => {
+    if (isDebug) {
+      return 'debug'
+    }
+    return 'info'
+  }
+})
+
+log.debug('isDebug is false, so this wont be logged')
+
+log.info('Hello world!')
+
+const child = log.child('[scoped] ')
+
+child.debug('Child loggers inherit the parent log level function, so this wont be logged either')
+
+// enable debug mode
+isDebug = true
+
+child.debug('Now debug is enabled and logged')
+```
+
+Outputs the following:
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z INF Hello world!
+2025-04-10T14:00:00.000Z DBG [scoped] Now debug is enabled and logged
+```
+{/* prettier-ignore-end */}
+
+## Child Loggers
+
+Child loggers in Hive Logger allow you to create new logger instances that inherit configuration
+(such as log level, writers, and attributes) from their parent logger. This is useful for
+associating contextual information (like request IDs or component names) with all logs from a
+specific part of your application.
+
+When you create a child logger using the child method, you can:
+
+- Add a prefix to all log messages from the child logger.
+- Add attributes that will be included in every log entry from the child logger.
+- Inherit the log level and writers from the parent logger, unless explicitly changed on the child.
+
+This makes it easy to organize and structure logs in complex applications, ensuring that related
+logs carry consistent context.
+
+<Callout>
+  In a child logger, attributes provided in individual log calls will overwrite any attributes
+  inherited from the parent logger if they share the same keys. This allows you to override or add
+  context-specific attributes for each log entry.
+</Callout>
+
+For example, running this:
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger()
+
+const child = log.child({ requestId: '123-456' }, '[child] ')
+
+child.info('Hello World!')
+child.info({ requestId: 'overwritten attribute' })
+
+const nestedChild = child.child({ traceId: '789-012' }, '[nestedChild] ')
+
+nestedChild.info('Hello Deep Down!')
+```
+
+Will output:
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z INF [child] Hello World!
+  requestId: "123-456"
+2025-04-10T14:00:00.000Z INF [child]
+  requestId: "overwritten attribute"
+2025-04-20T18:39:30.291Z INF [child] [nestedChild] Hello Deep Down!
+  requestId: "123-456"
+  traceId: "789-012"
+```
+{/* prettier-ignore-end */}
+
+## Writers
+
+Logger writers are responsible for handling how and where log messages are output. In Hive Logger,
+writers are pluggable components that receive structured log data and determine its final
+destination and format. This allows you to easily customize logging behavior, such as printing logs
+to the console, writing them as JSON, storing them in memory for testing, or sending them to
+external systems.
+
+By default, Hive Logger provides several built-in writers, but you can also implement your own to
+suit your application's needs. The built-ins are:
+
+### `MemoryLogWriter`
+
+Writes the logs to memory allowing you to access the logs. Mostly useful for testing.
+
+```ts
+import { Logger, MemoryLogWriter } from '@graphql-hive/logger'
+
+const writer = new MemoryLogWriter()
+
+const log = new Logger({ writers: [writer] })
+
+log.info({ my: 'attrs' }, 'Hello World!')
+
+console.log(writer.logs)
+```
+
+Outputs:
+
+```sh
+[ { level: 'info', msg: 'Hello World!', attrs: { my: 'attrs' } } ]
+```
+
+### `ConsoleLogWriter` (default)
+
+The default log writer used by the Hive Logger. It outputs log messages to the console in a
+human-friendly, colorized format, making it easy to distinguish log levels and read structured
+attributes. Each log entry includes a timestamp, the log level (with color), the message, and any
+additional attributes (with colored keys), which are pretty-printed and formatted for clarity.
+
+The writer works in both Node.js and browser-like environments, automatically disabling colors if
+not supported. This makes `ConsoleLogWriter` ideal for all cases, providing clear and readable logs
+out of the box.
+
+```ts
+import { ConsoleLogWriter, Logger } from '@graphql-hive/logger'
+
+const writer = new ConsoleLogWriter({
+  noColor: true, // defaults to env.NO_COLOR. read more: https://no-color.org/
+  noTimestamp: true
+})
+
+const log = new Logger({ writers: [writer] })
+
+log.info({ my: 'attrs' }, 'Hello World!')
+```
+
+Outputs:
+
+{/* prettier-ignore-start */}
+```sh
+INF Hello World!
+  my: "attrs"
+```
+{/* prettier-ignore-end */}
+
+#### Disabling Colors
+
+You can disable colors in the console output by setting the `NO_COLOR=1` environment variable. All
+environments that need the logger to not color the output will automatically set this following the
+[NO_COLOR convention](https://no-color.org/).
+
+### `JSONLogWriter`
+
+<Callout type="info">Will be used then the `LOG_JSON=1` environment variable is provided.</Callout>
+
+Built-in log writer that outputs each log entry as a structured JSON object. When used, it prints
+logs to the console in JSON format, including all provided attributes, the log level, message, and a
+timestamp.
+
+In the JSONLogWriter implementation, any attributes you provide with the keys `msg`, `timestamp`, or
+`level` will be overwritten in the final log output. This is because the writer explicitly sets
+these fields when constructing the log object. If you include these keys in your attributes, their
+values will be replaced by the logger's own values in the JSON output.
+
+If the `LOG_JSON_PRETTY=1` environment variable is provided, the output will be pretty-printed for
+readability; otherwise, it is compact.
+
+This writer's format is ideal for machine parsing, log aggregation, or integrating with external
+logging systems, especially useful for production environments or when logs need to be consumed by
+other tools.
+
+```ts
+import { JSONLogWriter, Logger } from '@graphql-hive/logger'
+
+const log = new Logger({ writers: [new JSONLogWriter()] })
+
+log.info({ my: 'attrs' }, 'Hello World!')
+```
+
+Outputs:
+
+{/* prettier-ignore-start */}
+```sh
+{"my":"attrs","level":"info","msg":"Hello World!","timestamp":"2025-04-10T14:00:00.000Z"}
+```
+{/* prettier-ignore-end */}
+
+Or pretty printed:
+
+{/* prettier-ignore-start */}
+```sh
+$ LOG_JSON_PRETTY=1 node example.js
+
+{
+  "my": "attrs",
+  "level": "info",
+  "msg": "Hello World!",
+  "timestamp": "2025-04-10T14:00:00.000Z"
+}
+```
+{/* prettier-ignore-end */}
+
+### Optional Writers
+
+Hive Logger includes some writers for common loggers of the JavaScript ecosystem with optional peer
+dependencies.
+
+#### `LogTapeLogWriter`
+
+Use the [`LogTape` logger library](https://logtape.org/) for writing Hive Logger's logs.
+
+`@logtape/logtape` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i @logtape/logtape
+```
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+import { LogTapeLogWriter } from '@graphql-hive/logger/writers/logtape'
+import { configure, getConsoleSink } from '@logtape/logtape'
+
+await configure({
+  sinks: { console: getConsoleSink() },
+  loggers: [{ category: 'hive-gateway', sinks: ['console'] }]
+})
+
+const log = new Logger({ writers: [new LogTapeLogWriter()] })
+
+log.info({ some: 'attributes' }, 'hello world')
+```
+
+```sh
+14:00:00.000 INF hive-gateway hello world
+```
+
+#### `PinoLogWriter` (Node.js Only)
+
+Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
+logs.
+
+`pino` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i pino pino-pretty
+```
+
+```ts
+import pino from 'pino'
+import { Logger } from '@graphql-hive/logger'
+import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
+
+const pinoLogger = pino({
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+const log = new Logger({ writers: [new PinoLogWriter(pinoLogger)] })
+
+log.info({ some: 'attributes' }, 'hello world')
+```
+
+{/* prettier-ignore-start */}
+```sh
+[14:00:00.000] INFO (20744): hello world
+    some: "attributes"
+```
+{/* prettier-ignore-end */}
+
+#### `WinstonLogWriter` (Node.js Only)
+
+Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
+Logger's logs.
+
+`winston` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i winston
+```
+
+```ts
+import winston from 'winston'
+import { Logger } from '@graphql-hive/logger'
+import { WinstonLogWriter } from '@graphql-hive/logger/writers/winston'
+
+const winstonLogger = winston.createLogger({
+  transports: [new winston.transports.Console()]
+})
+
+const log = new Logger({ writers: [new WinstonLogWriter(winstonLogger)] })
+
+log.info({ some: 'attributes' }, 'hello world')
+```
+
+```sh
+{"level":"info","message":"hello world","some":"attributes"}
+```
+
+<Callout>
+  Winston logger does not have a "trace" log level. Hive Logger will instead use "verbose" when
+  writing logs to Winston.
+</Callout>
+
+### Custom Writers
+
+You can implement custom log writers for the Hive Logger by creating a class that implements the
+`LogWriter` interface. This interface requires a single `write` method, which receives the log
+level, attributes, and message and an optional `flush` method allowing you to ensure all writer jobs
+are completed when the logger is flushed.
+
+Your writer can perform any action, such as sending logs to a file, external service, or custom
+destination.
+
+Writers can be synchronous (returning `void`) or asynchronous (returning a `Promise<void>`). If your
+writer performs asynchronous operations (like network requests or file writes), simply return a
+promise from the `write` method.
+
+Furthermore, you can optionally implement the `flush` method to ensure that all pending writes are
+completed before the logger is disposed or flushed. This is particularly useful for asynchronous
+writers that need to ensure all logs are written before the application exits or the logger is no
+longer needed.
+
+```ts
+import { Attributes, LogLevel } from '@graphql-hive/logger'
+
+interface LogWriter {
+  write(
+    level: LogLevel,
+    attrs: Attributes | null | undefined,
+    msg: string | null | undefined
+  ): void | Promise<void>
+  flush?(): void | Promise<void>
+}
+```
+
+#### Example of HTTP Writer
+
+```ts
+import { Attributes, ConsoleLogWriter, Logger, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+class HTTPLogWriter implements LogWriter {
+  async write(level: LogLevel, attrs: Attributes, msg: string) {
+    await fetch('https://my-log-service.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ level, attrs, msg })
+    })
+  }
+}
+
+const log = new Logger({
+  // send logs both to the HTTP loggging service and output them to the console
+  writers: [new HTTPLogWriter(), new ConsoleLogWriter()]
+})
+
+log.info('Hello World!')
+
+await log.flush() // make sure all async writes settle
+```
+
+#### Example of Daily File Log Writer (Node.js Only)
+
+Here is an example of a custom log writer that writes logs to a daily log file. It will write to a
+file for each day in a given directory.
+
+```ts filename="daily-file-log-writer.ts"
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { Attributes, jsonStringify, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+export class DailyFileLogWriter implements LogWriter {
+  constructor(
+    private dir: string,
+    private name: string
+  ) {}
+  write(level: LogLevel, attrs: Attributes | null | undefined, msg: string | null | undefined) {
+    const date = new Date().toISOString().split('T')[0]
+    const logfile = path.resolve(this.dir, `${this.name}_${date}.log`)
+    return fs.appendFile(logfile, jsonStringify({ level, msg, attrs }))
+  }
+}
+```
+
+#### Flushing and Non-Blocking Logging
+
+The logger does not block when you log asynchronously. Instead, it tracks all pending async writes
+internally. When you call `log.flush()` it waits for all pending writes to finish, ensuring no logs
+are lost on shutdown. During normal operation, logging remains fast and non-blocking, even if some
+writers are async.
+
+This design allows you to use async writers without impacting the performance of your application or
+blocking the main thread.
+
+After all writes have been completed, the logger will call the optional `flush` method on the
+writers, executing any custom finalization logic you may have implemented.
+
+##### Explicit Resource Management
+
+The Hive Logger also supports
+[Explicit Resource Management](https://github.com/tc39/proposal-explicit-resource-management). This
+allows you to ensure that all pending asynchronous log writes are properly flushed before your
+application exits or when the logger is no longer needed.
+
+You can use the logger with `await using` (in environments that support it) to wait for all log
+operations to complete. This is especially useful in serverless or short-lived environments where
+you want to guarantee that no logs are lost due to unfinished asynchronous operations.
+
+```ts
+import { Attributes, ConsoleLogWriter, Logger, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+class HTTPLogWriter implements LogWriter {
+  async write(level: LogLevel, attrs: Attributes, msg: string) {
+    await fetch('https://my-log-service.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ level, attrs, msg })
+    })
+  }
+}
+
+{
+  await using log = new Logger({
+    // send logs both to the HTTP loggging service and output them to the console
+    writers: [new HTTPLogWriter(), new ConsoleLogWriter()]
+  })
+
+  log.info('Hello World!')
+}
+
+// logger went out of scope and all of the logs have been flushed
+```
+
+##### Handling Async Write Errors
+
+The Logger handles write errors for asynchronous writers by tracking all write promises. When
+`await log.flush()` is called (including during async disposal), it waits for all pending writes to
+settle. If any writes fail (i.e., their promises reject), their errors are collected and after all
+writes have settled, if there were any errors, an `AggregateError` is thrown containing all the
+individual write errors.
+
+```ts
+import { Logger } from './Logger'
+
+let i = 0
+const log = new Logger({
+  writers: [
+    {
+      async write() {
+        i++
+        throw new Error('Write failed! #' + i)
+      }
+    }
+  ]
+})
+
+// no fail during logs
+log.info('hello')
+log.info('world')
+
+try {
+  await log.flush()
+} catch (e) {
+  // flush will fail with each individually failed writes
+  console.error(e)
+}
+```
+
+Outputs:
+
+```sh
+AggregateError: Failed to flush 2 writes
+    at async <anonymous> (/project/example.js:20:3) {
+  [errors]: [
+    Error: Write failed! #1
+        at Object.write (/project/example.js:9:15),
+    Error: Write failed! #2
+        at Object.write (/project/example.js:9:15)
+  ]
+}
+```
+
+## Advanced Serialization of Attributes
+
+Hive Logger uses advanced serialization to ensure that all attributes are logged safely and
+readably, even when they contain complex or circular data structures. This means you can log rich,
+nested objects or errors as attributes without worrying about serialization failures or unreadable
+logs.
+
+For example, the logger will serialize the error object, including its message and stack, in a safe
+and readable way. This advanced serialization is applied automatically to all attributes passed to
+log methods, child loggers, and writers.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const log = new Logger()
+
+class DatabaseError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'DatabaseError'
+  }
+}
+const dbErr = new DatabaseError('Connection failed')
+const userErr = new Error('Updating user failed', { cause: dbErr })
+const errs = new AggregateError([dbErr, userErr], 'Failed to update user')
+
+log.error(errs)
+```
+
+{/* prettier-ignore-start */}
+```sh
+2025-04-10T14:00:00.000Z ERR
+  stack: "AggregateError: Failed to update user
+      at <anonymous> (/project/example.js:13:14)
+      at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)"
+  message: "Failed to update user"
+  errors: [
+    {
+      stack: "DatabaseError: Connection failed
+          at <anonymous> (/project/example.js:11:15)
+          at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+          at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+          at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)"
+      message: "Database connection failed"
+      name: "DatabaseError"
+      class: "DatabaseError"
+    }
+    {
+      stack: "Error: Updating user failed
+          at <anonymous> (/project/example.js:12:17)
+          at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+          at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+          at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)"
+      message: "Updating user failed"
+      cause: {
+        stack: "DatabaseError: Connection failed
+            at <anonymous> (/project/example.js:11:15)
+            at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+            at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+            at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)"
+        message: "Database connection failed"
+        name: "DatabaseError"
+        class: "DatabaseError"
+      }
+      name: "Error"
+      class: "Error"
+    }
+  ]
+  name: "AggregateError"
+  class: "AggregateError"
+```
+{/* prettier-ignore-end */}
