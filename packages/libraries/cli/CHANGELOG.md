@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.50.4
+
+### Patch Changes
+
+- [#6919](https://github.com/graphql-hive/console/pull/6919)
+  [`49187c9`](https://github.com/graphql-hive/console/commit/49187c972e220a48993ecf5d5ce11dccd3b73727)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix fallback when hive.json is used but does not
+  provide the requested value
+
 ## 0.50.3
 
 ### Patch Changes
