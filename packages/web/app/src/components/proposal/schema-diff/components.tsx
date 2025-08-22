@@ -689,8 +689,8 @@ export function SchemaDefinitionDiff({
   newSchema,
   annotations,
 }: {
-  oldSchema: GraphQLSchema;
-  newSchema: GraphQLSchema;
+  oldSchema: GraphQLSchema | undefined | null;
+  newSchema: GraphQLSchema | undefined | null;
   annotations: (coordinat: string) => ReactElement | null;
 }) {
   const defaultNames = {
@@ -782,9 +782,11 @@ export function SchemaDefinitionDiff({
   };
   // @todo verify using this as the path is correct.
   const path = [''];
+  const changeType = determineChangeType(oldSchema, newSchema);
 
   return (
     <>
+      <ChangeSpacing type={changeType} />
       <ChangeRow coordinate={path.join('.')} annotations={annotations}>
         <Keyword term="schema" />
         {' {'}
