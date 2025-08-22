@@ -207,8 +207,12 @@ export const Organization: Pick<
   availableMemberPermissionGroups: () => {
     return OrganizationMemberPermissions.permissionGroups;
   },
-  availableOrganizationAccessTokenPermissionGroups: () => {
-    return OrganizationAccessTokensPermissions.permissionGroups;
+  availableOrganizationAccessTokenPermissionGroups: async organization => {
+    const permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
+    if (!organization.featureFlags.appDeployments) {
+      return permissionGroups.filter(p => p.id !== 'app-deployments');
+    }
+    return permissionGroups;
   },
   accessTokens: async (organization, args, { injector }) => {
     return injector.get(OrganizationAccessTokens).getPaginated({

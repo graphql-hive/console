@@ -171,6 +171,14 @@ export function CreateAccessTokenSheetContent(
       }
       return;
     }
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'An error occured',
+        description: 'Something went wrong. Try again later.',
+      });
+      return;
+    }
   }
 
   return (
