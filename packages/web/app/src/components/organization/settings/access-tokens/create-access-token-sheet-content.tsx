@@ -170,6 +170,12 @@ export function CreateAccessTokenSheetContent(
         });
       }
       return;
+    } else if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'An error occured',
+        description: 'Something went wrong. Try again later.',
+      });
     }
   }
 
