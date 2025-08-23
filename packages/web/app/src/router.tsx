@@ -879,7 +879,7 @@ const targetProposalRoute = createRoute({
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         proposalId={proposalId}
-        page={page ?? (ProposalPage.OVERVIEW as string)}
+        page={page ?? (ProposalPage.SCHEMA as string)}
       />
     );
   },

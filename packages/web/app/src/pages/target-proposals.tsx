@@ -257,7 +257,10 @@ const ProposalsListPage = (props: {
                 targetSlug: props.targetSlug,
                 proposalId: proposal.id,
               }}
-              search={search}
+              search={{
+                ...search,
+                page: undefined,
+              }}
               variant="secondary"
             >
               <div className="flex flex-row items-start">
