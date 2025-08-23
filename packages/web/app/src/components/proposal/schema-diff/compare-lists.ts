@@ -65,6 +65,7 @@ function extractName(name: string | NameNode): string {
   return name.value;
 }
 
+/** @todo support repeat directives */
 export function compareLists<T extends { name: string | NameNode }>(
   oldList: readonly T[],
   newList: readonly T[],

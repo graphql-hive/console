@@ -4,83 +4,6 @@ import type {
   SeverityLevelType,
 } from './../../../../__generated__/types';
 
-// const schemaSDL = /* GraphQL */ `
-//   schema {
-//     query: Query
-//   }
-//   input AInput {
-//     """
-//     a
-//     """
-//     a: String = "1"
-//     b: String!
-//   }
-//   input ListInput {
-//     a: [String] = ["foo"]
-//     b: [String] = ["bar"]
-//   }
-//   """
-//   The Query Root of this schema
-//   """
-//   type Query {
-//     """
-//     Just a simple string
-//     """
-//     a(anArg: String): String!
-//     b: BType
-//   }
-//   type BType {
-//     a: String
-//   }
-//   type CType {
-//     a: String @deprecated(reason: "whynot")
-//     c: Int!
-//     d(arg: Int): String
-//   }
-//   union MyUnion = CType | BType
-//   interface AnInterface {
-//     interfaceField: Int!
-//   }
-//   interface AnotherInterface {
-//     anotherInterfaceField: String
-//   }
-//   type WithInterfaces implements AnInterface & AnotherInterface {
-//     a: String!
-//   }
-//   type WithArguments {
-//     a(
-//       """
-//       Meh
-//       """
-//       a: Int
-//       b: String
-//     ): String
-//     b(arg: Int = 1): String
-//   }
-//   enum Options {
-//     A
-//     B
-//     C
-//     E
-//     F @deprecated(reason: "Old")
-//   }
-//   """
-//   Old
-//   """
-//   directive @yolo(
-//     """
-//     Included when true.
-//     """
-//     someArg: Boolean!
-//     anotherArg: String!
-//     willBeRemoved: Boolean!
-//   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-//   type WillBeRemoved {
-//     a: String
-//   }
-//   directive @willBeRemoved on FIELD
-// `;
-
 const changes = [
   {
     criticality: { level: 'NON_BREAKING' },
@@ -698,7 +621,9 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = (
     stage: 'OPEN',
     updatedAt: Date.now(),
     commentsCount: 5,
-    title: 'This adds some stuff to the thing.',
+    title: 'Add some stuff to the thing',
+    description:
+      'This makes a bunch of changes. Here is a description of all the stuff and things and whatsits.',
     versions: {
       pageInfo: {
         startCursor: 'start',

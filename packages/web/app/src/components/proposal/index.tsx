@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { buildSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
@@ -33,7 +34,8 @@ const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
   }
 `);
 
-const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
+/** Move to utils? */
+export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
   fragment ProposalOverview_ChangeFragment on SchemaChange {
     message
     path
@@ -463,7 +465,8 @@ const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
   }
 `);
 
-function toUpperSnakeCase(str: string) {
+/** Move to utils */
+export function toUpperSnakeCase(str: string) {
   // Use a regular expression to find uppercase letters and insert underscores
   // The 'g' flag ensures all occurrences are replaced.
   // The 'replace' function uses a callback to add an underscore before the matched uppercase letter.
@@ -485,45 +488,12 @@ export function Proposal(props: {
   latestProposalVersionId: string;
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment> | null;
 }) {
-  /**
-   * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
-   * Because of this, we have to fetch every single page of comments...
-   * But because generally they are in order, we can take our time doing this. So fetch in small batches.
-   *
-   * Odds are there will never be so many reviews/comments that this is even a problem.
-   */
-  const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
-  try {
-    const serviceReviews =
-      reviewsConnection?.edges?.filter(edge => {
-        const { schemaProposalVersion } = edge.node;
-        return schemaProposalVersion?.serviceName === props.serviceName;
-      }) ?? [];
-    const reviewssByCoordinate = serviceReviews.reduce((result, review) => {
-      const coordinate = review.node.schemaCoordinate;
-      if (coordinate) {
-        const reviews = result.get(coordinate);
-        if (reviews) {
-          result.set(review.node.schemaCoordinate!, [...reviews, review]);
-        } else {
-          result.set(review.node.schemaCoordinate!, [review]);
-        }
-      }
-      return result;
-    }, new Map<string, Array<(typeof serviceReviews)[number]>>());
+  const before = useMemo(() => {
+    return buildSchema(props.baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
+  }, [props.baseSchemaSDL]);
 
-    const annotations = (coordinate: string) => {
-      const reviews = reviewssByCoordinate.get(coordinate);
-      if (reviews) {
-        return (
-          <>{reviews?.map(({ node, cursor }) => <ReviewComments key={cursor} review={node} />)}</>
-        );
-      }
-      return null;
-    };
-
-    const before = buildSchema(props.baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
-    const changes =
+  const changes = useMemo(() => {
+    return (
       props.changes
         ?.map((change): Change<any> | null => {
           const c = useFragment(ProposalOverview_ChangeFragment, change);
@@ -542,8 +512,52 @@ export function Proposal(props: {
           }
           return null;
         })
-        .filter(c => !!c) ?? [];
-    const after = patchSchema(before, changes, { throwOnError: false });
+        .filter(c => !!c) ?? []
+    );
+  }, [props.changes]);
+
+  const after = useMemo(() => {
+    return patchSchema(before, changes, { throwOnError: false });
+  }, [before, changes]);
+  /**
+   * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
+   * Because of this, we have to fetch every single page of comments...
+   * But because generally they are in order, we can take our time doing this. So fetch in small batches.
+   *
+   * Odds are there will never be so many reviews/comments that this is even a problem.
+   */
+  const annotations = useMemo(() => {
+    const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
+    const serviceReviews =
+      reviewsConnection?.edges?.filter(edge => {
+        const { schemaProposalVersion } = edge.node;
+        return schemaProposalVersion?.serviceName === props.serviceName;
+      }) ?? [];
+    const reviewssByCoordinate = serviceReviews.reduce((result, review) => {
+      const coordinate = review.node.schemaCoordinate;
+      if (coordinate) {
+        const reviews = result.get(coordinate);
+        if (reviews) {
+          result.set(review.node.schemaCoordinate!, [...reviews, review]);
+        } else {
+          result.set(review.node.schemaCoordinate!, [review]);
+        }
+      }
+      return result;
+    }, new Map<string, Array<(typeof serviceReviews)[number]>>());
+
+    return (coordinate: string) => {
+      const reviews = reviewssByCoordinate.get(coordinate);
+      if (reviews) {
+        return (
+          <>{reviews?.map(({ node, cursor }) => <ReviewComments key={cursor} review={node} />)}</>
+        );
+      }
+      return null;
+    };
+  }, [props.reviews]);
+
+  try {
     return <SchemaDiff before={before} after={after} annotations={annotations} />;
   } catch (e: unknown) {
     return (

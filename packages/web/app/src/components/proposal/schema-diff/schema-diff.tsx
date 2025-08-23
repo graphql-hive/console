@@ -1,5 +1,5 @@
 /* eslint-disable tailwindcss/no-custom-classname */
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 import type { GraphQLSchema } from 'graphql';
 import { isIntrospectionType, isSpecifiedDirective } from 'graphql';
 import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
@@ -19,19 +19,23 @@ export function SchemaDiff({
     added: addedTypes,
     mutual: mutualTypes,
     removed: removedTypes,
-  } = compareLists(
-    Object.values(before.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
-    Object.values(after.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
-  );
+  } = useMemo(() => {
+    return compareLists(
+      Object.values(before.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
+      Object.values(after.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
+    );
+  }, [before, after]);
 
   const {
     added: addedDirectives,
     mutual: mutualDirectives,
     removed: removedDirectives,
-  } = compareLists(
-    before.getDirectives().filter(d => !isSpecifiedDirective(d)),
-    after.getDirectives().filter(d => !isSpecifiedDirective(d)),
-  );
+  } = useMemo(() => {
+    return compareLists(
+      before.getDirectives().filter(d => !isSpecifiedDirective(d)),
+      after.getDirectives().filter(d => !isSpecifiedDirective(d)),
+    );
+  }, [before, after]);
 
   return (
     <ChangeDocument>

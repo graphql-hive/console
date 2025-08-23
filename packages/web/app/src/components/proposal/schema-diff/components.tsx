@@ -1225,15 +1225,23 @@ export function DiffDirectiveUsages(props: {
 
   return (
     <>
-      {removed.map(d => (
-        <DiffDirectiveUsage key={d.name.value} newDirective={null} oldDirective={d} />
-      ))}
-      {added.map(d => (
-        <DiffDirectiveUsage key={d.name.value} newDirective={d} oldDirective={null} />
-      ))}
-      {mutual.map(d => (
+      {removed.map((d, index) => (
         <DiffDirectiveUsage
-          key={d.newVersion.name.value}
+          key={`removed-${d.name.value}-${index}`}
+          newDirective={null}
+          oldDirective={d}
+        />
+      ))}
+      {added.map((d, index) => (
+        <DiffDirectiveUsage
+          key={`added-${d.name.value}-${index}`}
+          newDirective={d}
+          oldDirective={null}
+        />
+      ))}
+      {mutual.map((d, index) => (
+        <DiffDirectiveUsage
+          key={`mutual-${d.newVersion.name.value}-${index}`}
           newDirective={d.newVersion}
           oldDirective={d.oldVersion}
         />
@@ -1269,18 +1277,18 @@ export function DiffDirectiveUsage(
   const changeType = determineChangeType(props.oldDirective, props.newDirective);
   const { added, mutual, removed } = compareLists(oldArgs, newArgs);
   const argumentElements = [
-    ...removed.map(r => (
-      <Change type="removal">
+    ...removed.map((r, index) => (
+      <Change type="removal" key={`removal-${r.name.value}-${index}`}>
         <DiffArgumentAST oldArg={r} newArg={null} />
       </Change>
     )),
-    ...added.map(r => (
-      <Change type="addition">
+    ...added.map((r, index) => (
+      <Change type="addition" key={`added-${r.name.value}-${index}`}>
         <DiffArgumentAST oldArg={null} newArg={r} />
       </Change>
     )),
-    ...mutual.map(r => (
-      <Change>
+    ...mutual.map((r, index) => (
+      <Change key={`mutual-${r.newVersion.name.value}-${index}`}>
         <DiffArgumentAST oldArg={r.oldVersion} newArg={r.newVersion} />
       </Change>
     )),
@@ -1338,7 +1346,6 @@ export function DiffArgumentAST({
   const name = oldArg?.name.value ?? newArg?.name.value ?? '';
   const oldType = oldArg && print(oldArg.value);
   const newType = newArg && print(newArg.value);
-
   return (
     <>
       <FieldName name={name} />

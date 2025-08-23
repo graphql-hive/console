@@ -147,6 +147,8 @@ export default gql`
     """
     title: String
 
+    description: String
+
     """
     When the proposal was last modified. Adding a review or comment does not count.
     """
