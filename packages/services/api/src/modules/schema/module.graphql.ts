@@ -212,6 +212,7 @@ export default gql`
   input SchemaChecksFilter {
     failed: Boolean
     changed: Boolean
+    text: String
   }
 
   type SchemaConnection {
