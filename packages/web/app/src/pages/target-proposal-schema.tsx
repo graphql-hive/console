@@ -119,7 +119,7 @@ export function TargetProposalSchemaPage(props: {
                 latestProposalVersionId={proposalVersion.node.id}
                 reviews={proposal?.reviews ?? null}
                 baseSchemaSDL={existingSchema}
-                changes={proposed.changes ?? []}
+                changes={proposed.changes.filter(c => !!c) ?? []}
                 serviceName={proposed.serviceName ?? ''}
               />
             );

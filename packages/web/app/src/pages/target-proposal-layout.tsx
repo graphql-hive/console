@@ -90,10 +90,10 @@ export function TargetProposalLayoutPage(props: {
           <div className="flex flex-row items-center gap-4">
             <Title>{proposal.title}</Title>
           </div>
-          <div className="w-full py-2">{proposal.description}</div>
-          <div className="text-right text-xs">
-            {userText(proposal.user)} proposed <TimeAgo date={proposal.createdAt} />{' '}
+          <div className="text-xs text-gray-400">
+            proposed <TimeAgo date={proposal.createdAt} /> by {userText(proposal.user)}
           </div>
+          <div className="w-full py-2">{proposal.description}</div>
         </>
       )}
       <MainContent {...props} />

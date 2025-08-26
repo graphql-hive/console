@@ -3,6 +3,17 @@ import { buildSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
 import { patchSchema } from '@graphql-inspector/patch';
+import { NoopError } from '@graphql-inspector/patch/errors';
+import { labelize } from '../target/history/errors-and-changes';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from '../ui/accordion';
+import { Callout } from '../ui/callout';
+import { Title } from '../ui/page';
 import { ReviewComments } from './Review';
 import { SchemaDiff } from './schema-diff/schema-diff';
 
@@ -483,7 +494,7 @@ export function toUpperSnakeCase(str: string) {
 
 export function Proposal(props: {
   baseSchemaSDL: string;
-  changes: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] | null;
+  changes: FragmentType<typeof ProposalOverview_ChangeFragment>[] | null;
   serviceName?: string;
   latestProposalVersionId: string;
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment> | null;
@@ -494,31 +505,40 @@ export function Proposal(props: {
 
   const changes = useMemo(() => {
     return (
-      props.changes
-        ?.map((change): Change<any> | null => {
-          const c = useFragment(ProposalOverview_ChangeFragment, change);
-          if (c) {
-            return {
-              criticality: {
-                // isSafeBasedOnUsage: ,
-                // reason: ,
-                level: c.severityLevel as any,
-              },
-              message: c.message,
-              meta: c.meta,
-              type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
-              path: c.path?.join('.'),
-            };
-          }
-          return null;
-        })
-        .filter(c => !!c) ?? []
+      props.changes?.map((change): Change<any> => {
+        const c = useFragment(ProposalOverview_ChangeFragment, change);
+        return {
+          criticality: {
+            // isSafeBasedOnUsage: ,
+            // reason: ,
+            level: c.severityLevel as any,
+          },
+          message: c.message,
+          meta: c.meta,
+          type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
+          path: c.path?.join('.'),
+        };
+      }) ?? []
     );
   }, [props.changes]);
 
-  const after = useMemo(() => {
-    return patchSchema(before, changes, { throwOnError: false });
+  const [after, notApplied, ignored] = useMemo(() => {
+    const cannotBeApplied: Array<{ change: Change; error: Error }> = [];
+    const ignored: Array<{ change: Change; error: Error }> = [];
+    const patched = patchSchema(before, changes, {
+      throwOnError: false,
+      onError(error, change) {
+        if (error instanceof NoopError) {
+          ignored.push({ change, error });
+          return false;
+        }
+        cannotBeApplied.push({ change, error });
+        return true;
+      },
+    });
+    return [patched, cannotBeApplied, ignored];
   }, [before, changes]);
+
   /**
    * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
    * Because of this, we have to fetch every single page of comments...
@@ -558,7 +578,27 @@ export function Proposal(props: {
   }, [props.reviews]);
 
   try {
-    return <SchemaDiff before={before} after={after} annotations={annotations} />;
+    return (
+      <>
+        {notApplied.length ? (
+          <Callout type="error" className="mb-4 mt-0 items-start pt-4">
+            <Title>Incompatible Changes</Title>
+            {notApplied.map((p, i) => (
+              <ProposalError key={`issue-${i}`} change={p.change} error={p.error} />
+            ))}
+          </Callout>
+        ) : null}
+        {ignored.length ? (
+          <Callout type="info" className="mb-4 mt-0 items-start pt-4">
+            <Title>Ignored Changes</Title>
+            {ignored.map((p, i) => (
+              <ProposalError key={`issue-${i}`} change={p.change} error={p.error} />
+            ))}
+          </Callout>
+        ) : null}
+        <SchemaDiff before={before} after={after} annotations={annotations} />
+      </>
+    );
   } catch (e: unknown) {
     return (
       <>
@@ -567,4 +607,23 @@ export function Proposal(props: {
       </>
     );
   }
+}
+
+function ProposalError(props: { change: Change<any>; error: Error }) {
+  return (
+    <Accordion type="single" collapsible>
+      <AccordionItem value="item-1">
+        <AccordionHeader className="flex">
+          <AccordionTrigger className="py-3 text-red-400 hover:no-underline">
+            <div className="inline-flex justify-start space-x-2">
+              <span className="text-left text-gray-600 dark:text-white">
+                {labelize(props.change.message)}
+              </span>
+            </div>
+          </AccordionTrigger>
+        </AccordionHeader>
+        <AccordionContent>{props.error.message}</AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
 }
