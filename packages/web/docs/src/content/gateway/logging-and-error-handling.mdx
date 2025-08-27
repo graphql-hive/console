@@ -74,16 +74,16 @@ only log info, warn and error messages.
 By default, Hive Gateway uses the built-in `console` logger. However, you can also integrate Hive
 Gateway with [Winston](https://github.com/winstonjs/winston) on Node.js environments.
 
-You need to install `winston` and `@graphql-hive/winston` packages to use Winston with Hive Gateway.
+You need to install `winston` and `@graphql-hive/logger-winston` packages to use Winston with Hive Gateway.
 
 ```sh npm2yarn
-npm i winston @graphql-hive/winston
+npm i winston @graphql-hive/logger-winston
 ```
 
 ```ts
 import { createLogger, format, transports } from 'winston'
 import { defineConfig } from '@graphql-hive/gateway'
-import { createLoggerFromWinston } from '@graphql-hive/winston'
+import { createLoggerFromWinston } from '@graphql-hive/logger-winston'
 
 // Create a Winston logger
 const winstonLogger = createLogger({
