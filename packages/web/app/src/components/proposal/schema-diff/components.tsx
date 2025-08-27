@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { Fragment, ReactElement, ReactNode } from 'react';
+import { createContext, Fragment, ReactElement, ReactNode, useContext, useState } from 'react';
 import {
   astFromValue,
   ConstArgumentNode,
@@ -32,6 +32,10 @@ import {
 import { isPrintableAsBlockString } from 'graphql/language/blockString';
 import { cn } from '@/lib/utils';
 import { compareLists, diffArrays, matchArrays } from './compare-lists';
+import { SeverityLevelType } from '@/gql/graphql';
+import { CheckIcon, XIcon } from '@/components/ui/icon';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type RootFieldsType = {
   query: GraphQLField<any, any>;
@@ -41,18 +45,40 @@ type RootFieldsType = {
 
 const TAB = <>&nbsp;&nbsp;</>;
 
+export const AnnotatedContext = createContext({
+  annotatedCoordinates: null,
+} as Readonly<{
+  /**
+   * As annotations are rendered, this tracks coordinates used. This is used internally to
+   * show annotations that are not resolved but that are not tied to a coordinate that exists anymore.
+   * 
+   * Note that adding a value to this Set does not trigger a rerender.
+   * Special care must be taken to ensure the render order is correct
+   */
+  annotatedCoordinates: Set<string> | null,
+}>);
+
+export function AnnotatedProvider(props: { children: ReactNode; }) {
+  const [context] = useState({ annotatedCoordinates: new Set<string>()});
+  return (
+    <AnnotatedContext.Provider value={context}>
+      {props.children}
+    </AnnotatedContext.Provider>
+  );
+}
+
 export function ChangeDocument(props: { children: ReactNode; className?: string }) {
   return (
-    <table
-      aria-label="change-document"
-      className={cn(
-        'min-w-full cursor-default whitespace-pre font-mono text-white',
-        props.className,
-      )}
-      style={{ counterReset: 'olddoc newdoc' }}
-    >
-      <tbody>{props.children}</tbody>
-    </table>
+      <table
+        aria-label="change-document"
+        className={cn(
+          'min-w-full cursor-default whitespace-pre font-mono text-white',
+          props.className,
+        )}
+        style={{ counterReset: 'olddoc newdoc' }}
+      >
+        <tbody>{props.children}</tbody>
+      </table>
   );
 }
 
@@ -78,10 +104,12 @@ export function ChangeRow(props: {
   className?: string;
   /** Default is mutual */
   type?: 'removal' | 'addition' | 'mutual';
+  severityLevel?: SeverityLevelType;
   indent?: boolean | number;
   coordinate?: string;
   annotations?: (coordinate: string) => ReactElement | null;
 }) {
+  const ctx = useContext(AnnotatedContext);
   const incrementCounter =
     props.type === 'mutual' || props.type === undefined
       ? 'olddoc newdoc'
@@ -89,6 +117,11 @@ export function ChangeRow(props: {
         ? 'olddoc'
         : 'newdoc';
   const annotation = !!props.coordinate && props.annotations?.(props.coordinate);
+
+  if (!!annotation) {
+    ctx.annotatedCoordinates?.add(props.coordinate!);
+  }
+
   return (
     <>
       <tr style={{ counterIncrement: incrementCounter }}>
@@ -127,13 +160,24 @@ export function ChangeRow(props: {
               Array.from({ length: Number(props.indent) }).map((_, i) => (
                 <Fragment key={i}>{TAB}</Fragment>
               ))}
+            {props.severityLevel === SeverityLevelType.Breaking && (
+              <span title="Breaking Change"><XIcon className='inline-block text-red-600'/></span>
+            )}
+            {props.severityLevel === SeverityLevelType.Dangerous && (
+              <span title="Dangerous Change"><ExclamationTriangleIcon className='inline-block text-yellow-600 mr-1'/></span>
+            )}
+            {props.severityLevel === SeverityLevelType.Safe && (
+              <span title="Safe Change"><CheckIcon className='inline-block text-green-600 mr-1'/></span>
+            )}
             {props.children}
           </span>
         </td>
       </tr>
       {annotation && (
         <tr>
-          <td colSpan={3}>{annotation}</td>
+          <td colSpan={3}>
+            {annotation}
+          </td>
         </tr>
       )}
     </>

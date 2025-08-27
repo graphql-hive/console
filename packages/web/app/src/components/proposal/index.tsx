@@ -14,8 +14,9 @@ import {
 } from '../ui/accordion';
 import { Callout } from '../ui/callout';
 import { Title } from '../ui/page';
-import { ReviewComments } from './Review';
+import { DetachedAnnotations, ReviewComments } from './Review';
 import { SchemaDiff } from './schema-diff/schema-diff';
+import { AnnotatedProvider } from './schema-diff/components';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -546,7 +547,7 @@ export function Proposal(props: {
    *
    * Odds are there will never be so many reviews/comments that this is even a problem.
    */
-  const annotations = useMemo(() => {
+  const [annotations, reviewssByCoordinate] = useMemo(() => {
     const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
     const serviceReviews =
       reviewsConnection?.edges?.filter(edge => {
@@ -566,20 +567,34 @@ export function Proposal(props: {
       return result;
     }, new Map<string, Array<(typeof serviceReviews)[number]>>());
 
-    return (coordinate: string) => {
+    const annotate = (coordinate: string, withPreview = false) => {
       const reviews = reviewssByCoordinate.get(coordinate);
       if (reviews) {
         return (
-          <>{reviews?.map(({ node, cursor }) => <ReviewComments key={cursor} review={node} />)}</>
+          <>
+            {reviews?.map(({ node, cursor }) => (
+              <>
+                {withPreview === true && node.lineText && <code className='bg-gray-900 text-white w-full block p-2 rounded mb-1'>{node.lineText}</code> }
+                <ReviewComments key={cursor} review={node} />
+              </>
+            ))}
+          </>
         );
       }
       return null;
     };
-  }, [props.reviews]);
+    return [annotate, reviewssByCoordinate];
+  }, [props.reviews, props.serviceName]);
 
   try {
+    // @todo This doesnt work 100% of the time... A different solution must be found
+
+    // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
+    // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
+    const diff = <SchemaDiff before={before} after={after} annotations={annotations} />;
+
     return (
-      <>
+      <AnnotatedProvider>
         {notApplied.length ? (
           <Callout type="error" className="mb-4 mt-0 items-start pt-4">
             <Title>Incompatible Changes</Title>
@@ -596,8 +611,9 @@ export function Proposal(props: {
             ))}
           </Callout>
         ) : null}
-        <SchemaDiff before={before} after={after} annotations={annotations} />
-      </>
+        <DetachedAnnotations coordinates={reviewssByCoordinate.keys().toArray()} annotate={annotations}/>
+        {diff}
+      </AnnotatedProvider>
     );
   } catch (e: unknown) {
     return (

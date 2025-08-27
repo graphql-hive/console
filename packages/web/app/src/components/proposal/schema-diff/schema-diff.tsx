@@ -9,11 +9,19 @@ import { ChangeDocument, DiffDirective, DiffType, SchemaDefinitionDiff } from '.
 export function SchemaDiff({
   before,
   after,
-  annotations,
+  annotations = () => null,
+  // annotatedCoordinates = [],
 }: {
   before: GraphQLSchema;
   after: GraphQLSchema;
-  annotations: (coordinate: string) => ReactElement | null;
+  annotations?: (coordinate: string) => ReactElement | null;
+  /**
+   * A list of all the annotated coordinates, used or unused.
+   * Required to track which coordinates have inline annotations and which are detached
+   * from the current schemas. E.g. if previously commented on an addition but that addition
+   * has been removed.
+   */
+  // annotatedCoordinates?: string[];
 }): JSX.Element {
   const {
     added: addedTypes,

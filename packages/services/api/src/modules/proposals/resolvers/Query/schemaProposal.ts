@@ -672,6 +672,10 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = (
           cursor: 'asdf',
           node: {
             id: '1',
+            schemaProposalVersion: {
+              id: 'asdf',
+              serviceName: 'panda',
+            },
             comments: {
               pageInfo: {
                 endCursor: crypto.randomUUID(),
@@ -695,6 +699,40 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = (
             lineText: 'type User {',
             lineNumber: 2,
             stageTransition: 'OPEN',
+            schemaCoordinate: 'DType'
+          },
+        },
+        {
+          cursor: 'asdf',
+          node: {
+            id: '2',
+            schemaProposalVersion: {
+              id: 'asdf',
+              serviceName: 'panda',
+            },
+            comments: {
+              pageInfo: {
+                endCursor: crypto.randomUUID(),
+                startCursor: crypto.randomUUID(),
+                hasNextPage: false,
+                hasPreviousPage: false,
+              },
+              edges: [
+                {
+                  cursor: crypto.randomUUID(),
+                  node: {
+                    id: crypto.randomUUID(),
+                    createdAt: Date.now(),
+                    body: 'This is a comment. The first comment.',
+                    updatedAt: Date.now(),
+                  },
+                },
+              ],
+            },
+            createdAt: Date.now(),
+            lineText: 'foo: Boolean',
+            lineNumber: 3,
+            schemaCoordinate: 'UnknownType.foo'
           },
         },
       ],
