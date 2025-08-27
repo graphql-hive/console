@@ -62,8 +62,8 @@ export const gatewayConfig = defineConfig({
 
 When a query is planned by the gateway,
 
-- For each operation, the `operationTypeCost` function is called with the operation type. (By default
-  only mutations have a cost `10`)
+- For each operation, the `operationTypeCost` function is called with the operation type. (By
+  default only mutations have a cost `10`)
 - For each field in the operation, the `fieldCost` function is called with the field node. (By
   default fields have a cost of `0`)
 - For each type in the operation, the `typeCost` function is called with the type. (By default
