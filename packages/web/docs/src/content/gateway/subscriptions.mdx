@@ -788,3 +788,138 @@ export const network = Network.create(fetchQuery, subscribe)
 </Tabs.Tab>
 
 </Tabs>
+
+## PubSub
+
+Hive Gateway internally uses a PubSub system to handle subscriptions. By default, an in-memory
+PubSub engine is used when detecting subscriptions.
+
+You can implement your own PubSub engine by implementing the `PubSub` interface from the
+`@graphql-hive/pubsub` package, which looks like this:
+
+```ts
+export type TopicDataMap = { [topic: string]: any /* data */ }
+
+export type PubSubListener<Data extends TopicDataMap, Topic extends keyof Data> = (
+  data: Data[Topic]
+) => void
+
+type MaybePromise<T> = T | Promise<T>
+
+export interface PubSub<M extends TopicDataMap = TopicDataMap> {
+  /**
+   * Publish {@link data} for a {@link topic}.
+   * @returns `void` or a `Promise` that resolves when the data has been successfully published
+   */
+  publish<Topic extends keyof M>(topic: Topic, data: M[Topic]): MaybePromise<void>
+  /**
+   * A distinct list of all topics that are currently subscribed to.
+   * Can be a promise to accomodate distributed systems where subscribers exist on other
+   * locations and we need to know about all of them.
+   */
+  subscribedTopics(): MaybePromise<Iterable<keyof M>>
+  /**
+   * Subscribe and listen to a {@link topic} receiving its data.
+   *
+   * If the {@link listener} is provided, it will be called whenever data is emitted for the {@link topic},
+   *
+   * @returns an unsubscribe function or a `Promise<unsubscribe function>` that resolves when the subscription is successfully established. the unsubscribe function returns `void` or a `Promise` that resolves on successful unsubscribe and subscription cleanup
+   *
+   * If the {@link listener} is not provided,
+   *
+   * @returns an `AsyncIterable` that yields data for the given {@link topic}
+   */
+  subscribe<Topic extends keyof M>(topic: Topic): AsyncIterable<M[Topic]>
+  subscribe<Topic extends keyof M>(
+    topic: Topic,
+    listener: PubSubListener<M, Topic>
+  ): MaybePromise<() => MaybePromise<void>>
+  /**
+   * Closes active subscriptions and disposes of all resources. Publishing and subscribing after disposal
+   * is not possible and will throw an error if attempted.
+   */
+  dispose(): MaybePromise<void>
+  /** @see {@link dispose} */
+  [Symbol.asyncDispose](): Promise<void>
+}
+```
+
+The `@grpahql-hive/pubsub` package also provides a few built-in PubSub engines, at the moment an
+in-memory engine and a Redis-based engine.
+
+### In-Memory PubSub
+
+The in-memory PubSub engine is the default engine used when subscriptions are detected. It can also
+be used explicitly by setting it in the configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { MemPubSub } from '@graphql-hive/pubsub'
+// or from the Hive Gateway package
+import { MemPubSub } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  supergraph: 'supergraph.graphql',
+  pubsub: new MemPubSub()
+})
+```
+
+### Redis PubSub
+
+For more advanced use-cases, such as running multiple instances of Hive Gateway, you can use the
+Redis-based PubSub engine we offer out of the box.
+
+In case you have distributed instances of Hive Gateway, using a distributed PubSub engine is
+required to make sure all instances are aware of all active subscriptions and can publish events to
+the correct subscribers.
+
+For example, when using the webhooks transport for subscriptions, the subgraph will send events to
+only one instance of Hive Gateway. If that instance doesn't have any active subscription for the
+topic, the event will be lost. Using a distributed PubSub engine solves this problem.
+
+Redis PubSub does not come with Hive Gateway, you have to install the package and the Redis PubSub
+peer dependency of `ioredis` which you need to install first:
+
+```sh npm2yarn
+npm i @graphql-hive/pubsub ioredis
+```
+
+```ts filename="gateway.config.ts"
+import Redis from 'ioredis'
+import { defineConfig } from '@graphql-hive/gateway'
+import { RedisPubSub } from '@graphql-hive/pubsub/redis'
+
+/**
+ * When a Redis connection enters "subscriber mode" (after calling SUBSCRIBE), it can only execute
+ * subscriber commands (SUBSCRIBE, UNSUBSCRIBE, etc.). Meaning, it cannot execute other commands like PUBLISH.
+ * To avoid this, we use two separate Redis clients: one for publishing and one for subscribing.
+ */
+const pub = new Redis()
+const sub = new Redis()
+
+export const gatewayConfig = defineConfig({
+  webhooks: true,
+  pubsub: new RedisPubSub(
+    { pub, sub },
+    {
+      // we make sure to use the same prefix for all gateways to share the same channels and pubsub
+      // meaning, all gateways using this channel prefix will receive and publish to the same topics
+      channelPrefix: 'my-shared-gateways'
+    }
+  )
+})
+```
+
+Now, with this setup, any instance of Hive Gateway using the same `channelPrefix` will be able to
+share the same subscriptions.
+
+<Callout>
+
+Note that this works only if you have subgraphs that publish subscriptions to Hive Gateway's webhook
+to the same pubsub topic
+([see documentation on using webhooks to handle subscriptions](https://the-guild.dev/graphql/mesh/v1/subscriptions-webhooks)).
+
+You should also take a look at the E2E test serving as an example of
+[how distributed subscriptions would work with multiple Hive Gateway instances](https://github.com/graphql-hive/gateway/tree/main/e2e/distributed-subscriptions-webhooks).
+
+</Callout>
