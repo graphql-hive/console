@@ -699,7 +699,7 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = (
             lineText: 'type User {',
             lineNumber: 2,
             stageTransition: 'OPEN',
-            schemaCoordinate: 'DType'
+            schemaCoordinate: 'DType',
           },
         },
         {
@@ -732,7 +732,7 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = (
             createdAt: Date.now(),
             lineText: 'foo: Boolean',
             lineNumber: 3,
-            schemaCoordinate: 'UnknownType.foo'
+            schemaCoordinate: 'UnknownType.foo',
           },
         },
       ],

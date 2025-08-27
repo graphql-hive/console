@@ -15,8 +15,8 @@ import {
 import { Callout } from '../ui/callout';
 import { Title } from '../ui/page';
 import { DetachedAnnotations, ReviewComments } from './Review';
-import { SchemaDiff } from './schema-diff/schema-diff';
 import { AnnotatedProvider } from './schema-diff/components';
+import { SchemaDiff } from './schema-diff/schema-diff';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -574,7 +574,12 @@ export function Proposal(props: {
           <>
             {reviews?.map(({ node, cursor }) => (
               <>
-                {withPreview === true && node.lineText && <code className='bg-gray-900 text-white w-full block p-2 rounded mb-1'>{node.lineText}</code> }
+                {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
+                {withPreview === true && node.lineText && (
+                  <code className="mb-1 block w-full rounded bg-gray-900 p-2 text-white">
+                    {node.lineText}
+                  </code>
+                )}
                 <ReviewComments key={cursor} review={node} />
               </>
             ))}
@@ -611,7 +616,10 @@ export function Proposal(props: {
             ))}
           </Callout>
         ) : null}
-        <DetachedAnnotations coordinates={reviewssByCoordinate.keys().toArray()} annotate={annotations}/>
+        <DetachedAnnotations
+          coordinates={reviewssByCoordinate.keys().toArray()}
+          annotate={annotations}
+        />
         {diff}
       </AnnotatedProvider>
     );

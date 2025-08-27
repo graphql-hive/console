@@ -1,11 +1,11 @@
+import { Fragment, ReactElement, useContext } from 'react';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { TimeAgo } from '../v2';
-import { Fragment, ReactElement, useContext } from 'react';
-import { AnnotatedContext } from './schema-diff/components';
-import { Title } from '../ui/page';
-import { Callout } from '../ui/callout';
 import { Button } from '../ui/button';
+import { Callout } from '../ui/callout';
+import { Title } from '../ui/page';
+import { TimeAgo } from '../v2';
+import { AnnotatedContext } from './schema-diff/components';
 
 const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewCommentsFragment on SchemaProposalReview {
@@ -35,15 +35,21 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="rounded border-[1px] bg-black py-4 mb-2 font-sans px-6 border-gray-600">
+      <div className="mb-2 rounded border-[1px] border-gray-600 bg-black px-6 py-4 font-sans">
         {review.comments?.edges?.map(({ node: comment }, idx) => {
-          return <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />;
+          return (
+            <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />
+          );
         })}
       </div>
       {/* @todo check if able to reply */}
-      <div className='mt-4 mb-6 gap-4 flex font-sans ml-1'>
-        <Button variant='default' type='button' className='w-[120px] opacity-80'>Reply</Button>
-        <Button variant='primary' type='button' className='w-[120px]'>Resolve</Button>
+      <div className="mb-6 ml-1 mt-4 flex gap-4 font-sans">
+        <Button variant="default" type="button" className="w-[120px] opacity-80">
+          Reply
+        </Button>
+        <Button variant="primary" type="button" className="w-[120px]">
+          Resolve
+        </Button>
       </div>
     </>
   );
@@ -92,13 +98,11 @@ export function DetachedAnnotations(props: {
   const { annotatedCoordinates } = useContext(AnnotatedContext);
   const detachedReviewCoordinates = props.coordinates.filter(c => annotatedCoordinates?.has(c));
   return detachedReviewCoordinates.length ? (
-    <Callout type='warning' className="mb-4 mt-0 items-start pt-4">
-      <Title className='mb-3'>Detached Comments</Title>
-      {detachedReviewCoordinates.map(c =>
-        <Fragment key={c}>
-          {props.annotate(c, true)}
-        </Fragment>
-      )}
+    <Callout type="warning" className="mb-4 mt-0 items-start pt-4">
+      <Title className="mb-3">Detached Comments</Title>
+      {detachedReviewCoordinates.map(c => (
+        <Fragment key={c}>{props.annotate(c, true)}</Fragment>
+      ))}
     </Callout>
   ) : null;
 }
