@@ -698,7 +698,7 @@ hive-gateway supergraph \
 
 The Hive PubSub package has been rewritten to provide a better developer experience and improved support for asynchronous operations. The new interface is more intuitive and easier to use, making it simpler to implement pub/sub functionality in your Hive Gateway.
 
-It also unlocks the possibility of having a distributed subscriptions system.
+It also unlocks the possibility of having a distributed subscriptions system, [see Redis PubSub documentation](/docs/gateway/subscriptions#redis-pubsub).
 
 The only breaking change relating to Hive Gateway is the renaming of `PubSub` to `MemPubSub` to better reflect its in-memory nature. In case you have been using `PubSub`, you need to replace it with `MemPubSub`:
 
@@ -712,3 +712,5 @@ export const gatewayConfig = defineConfig({
 + pubsub: new MemPubSub()
 });
 ```
+
+However, if you have been implementing your own pubsub system by implementing the `HivePubSub` interface from `@graphql-hive/pubsub`, you need to update your implementation to match the [new `PubSub` interface](/docs/gateway/subscriptions#pubsub). Advise the `@graphql-hive/pubsub` changelog for exact migration steps upgrading from v1 to v2.
