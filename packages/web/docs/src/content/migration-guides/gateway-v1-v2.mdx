@@ -16,6 +16,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [OpenTelemetry](#opentelemetry)
 - [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
 - [Renamed CLI options for Hive Usage Reporting](#renamed-cli-options-for-hive-usage-reporting)
+- [New Hive PubSub interface](#new-hive-pubsub-interface)
 
 ## Drop Support for Node v18
 
@@ -691,4 +692,23 @@ hive-gateway supergraph \
 - --hive-usage-access-token "<hive_usage_access_token>"
 + --hive-target "<hive_usage_target>" \
 + --hive-access-token "<hive_usage_access_token>"
+```
+
+## New Hive PubSub interface
+
+The Hive PubSub package has been rewritten to provide a better developer experience and improved support for asynchronous operations. The new interface is more intuitive and easier to use, making it simpler to implement pub/sub functionality in your Hive Gateway.
+
+It also unlocks the possibility of having a distributed subscriptions system.
+
+The only breaking change relating to Hive Gateway is the renaming of `PubSub` to `MemPubSub` to better reflect its in-memory nature. In case you have been using `PubSub`, you need to replace it with `MemPubSub`:
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+- import { PubSub } from '@graphql-hive/gateway';
++ import { MemPubSub } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- pubsub: new PubSub()
++ pubsub: new MemPubSub()
+});
 ```
