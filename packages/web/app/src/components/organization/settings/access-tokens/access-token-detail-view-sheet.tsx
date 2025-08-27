@@ -160,7 +160,7 @@ function toResourceSelection(resources: AccessTokenResources): ResourceSelection
                 services: target.services.services?.map(serviceName => ({ serviceName })) ?? [],
               },
               appDeployments: {
-                mode: target.services.mode,
+                mode: target.appDeployments.mode,
                 appDeployments:
                   target.appDeployments.appDeployments?.map(appDeployment => ({ appDeployment })) ??
                   [],
