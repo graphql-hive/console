@@ -60,7 +60,6 @@ export function TargetProposalSchemaPage(props: {
   projectSlug: string;
   targetSlug: string;
   proposalId: string;
-  page: string;
 }) {
   const [query] = useQuery({
     query: ProposalSchemaQuery,
@@ -124,12 +123,6 @@ export function TargetProposalSchemaPage(props: {
               />
             );
           }
-
-          // return (
-          //   <div key={`${proposed.id}-${proposed.serviceName ?? ''}`}>
-          //     {`Proposed changes cannot be applied to the ${proposed.serviceName ? `"${proposed.serviceName}" ` : ''}schema because it does not exist.`}
-          //   </div>
-          // );
         })}
       </div>
     );

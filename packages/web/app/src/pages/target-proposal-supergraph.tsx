@@ -41,7 +41,6 @@ export function TargetProposalSupergraphPage(props: {
   projectSlug: string;
   targetSlug: string;
   proposalId: string;
-  page: string;
 }) {
   const [query] = useQuery({
     query: ProposalSupergraphChangesQuery,

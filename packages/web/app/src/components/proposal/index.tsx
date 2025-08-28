@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { buildSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
@@ -573,15 +573,15 @@ export function Proposal(props: {
         return (
           <>
             {reviews?.map(({ node, cursor }) => (
-              <>
+              <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
                   <code className="mb-1 block w-full rounded bg-gray-900 p-2 text-white">
                     {node.lineText}
                   </code>
                 )}
-                <ReviewComments key={cursor} review={node} />
-              </>
+                <ReviewComments review={node} />
+              </Fragment>
             ))}
           </>
         );

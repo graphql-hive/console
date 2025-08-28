@@ -526,16 +526,16 @@ export function DiffLocations(props: {
 
   const locationElements = [
     ...locations.removed.map(r => (
-      <Removal>
+      <Removal key={`removed-${r.toString()}`}>
         <FieldReturnType returnType={r.toString()} />
       </Removal>
     )),
     ...locations.added.map(r => (
-      <Addition>
+      <Addition key={`added-${r.toString()}`}>
         <FieldReturnType returnType={r.toString()} />
       </Addition>
     )),
-    ...locations.mutual.map(r => <FieldReturnType returnType={r.toString()} />),
+    ...locations.mutual.map(r => <FieldReturnType key={r.toString()} returnType={r.toString()} />),
   ];
 
   return (

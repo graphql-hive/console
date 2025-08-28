@@ -1,28 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from 'urql';
-import {
-  ListNavigationProvider,
-  ListNavigationTrigger,
-  ListNavigationWrapper,
-  useListNavCollapsedToggle,
-  useListNavigationContext,
-} from '@/components/common/ListNavigation';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { stageToColor } from '@/components/proposal/util';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { UserFilter } from '@/components/target/proposals/user-filter';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
+import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { ChatBubbleIcon, PinLeftIcon, PinRightIcon } from '@radix-ui/react-icons';
-import { Outlet, useRouter, useSearch } from '@tanstack/react-router';
+import { ChatBubbleIcon } from '@radix-ui/react-icons';
+import { useRouter, useSearch } from '@tanstack/react-router';
 
 export function TargetProposalsPage(props: {
   organizationSlug: string;
@@ -47,6 +41,31 @@ export function TargetProposalsPage(props: {
     </>
   );
 }
+
+const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
+  return (
+    <>
+      <div className="flex py-6">
+        <div className="flex-1">
+          <SubPageLayoutHeader
+            subPageTitle={<span className="flex items-center">Schema Proposals</span>}
+            description={
+              <>
+                <CardDescription>
+                  Collaborate on schema changes to reduce friction during development.
+                </CardDescription>
+              </>
+            }
+          />
+        </div>
+        <div className="ml-auto mr-0 flex flex-col justify-center">
+          <Button variant="default">Propose a change</Button>
+        </div>
+      </div>
+      <TargetProposalsList {...props} />
+    </>
+  );
+};
 
 const ProposalsQuery = graphql(`
   query listProposals($input: SchemaProposalsInput) {
@@ -74,65 +93,7 @@ const ProposalsQuery = graphql(`
   }
 `);
 
-const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
-  const isFullScreen = !props.selectedProposalId;
-
-  return (
-    <ListNavigationProvider isCollapsed={!!props.selectedProposalId} isHidden={false}>
-      <div className="flex py-6">
-        <div className="flex-1">
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-            }}
-          >
-            <Title className="inline-block cursor-pointer">Proposals</Title>
-          </Link>
-          <Subtitle>Collaborate on schema changes to reduce friction during development.</Subtitle>
-        </div>
-        <div className="ml-auto mr-0 flex flex-col justify-center">
-          <Button variant="primary">Propose a change</Button>
-        </div>
-      </div>
-      {!isFullScreen && (
-        <div className="flex flex-row">
-          <HideMenuButton />
-          <span className="flex grow flex-col" />
-          <ExpandMenuButton className="hidden md:inline" />
-        </div>
-      )}
-      <ListNavigationWrapper list={<ProposalsListv2 {...props} />} content={<Outlet />} />
-    </ListNavigationProvider>
-  );
-};
-
-function HideMenuButton() {
-  return (
-    <span>
-      <ListNavigationTrigger />
-    </span>
-  );
-}
-
-function ExpandMenuButton(props: { className?: string }) {
-  const { isListNavHidden } = useListNavigationContext();
-  const [collapsed, toggle] = useListNavCollapsedToggle();
-
-  return isListNavHidden ? null : (
-    <Button
-      variant="ghost"
-      className={cn('inline-block p-[10px]', props.className)}
-      onClick={toggle}
-    >
-      {collapsed ? <PinRightIcon /> : <PinLeftIcon />}
-    </Button>
-  );
-}
-
-function ProposalsListv2(props: Parameters<typeof TargetProposalsPage>[0]) {
+function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   const [pageVariables, setPageVariables] = useState([{ first: 20, after: null as string | null }]);
   const router = useRouter();
   const reset = () => {
@@ -142,39 +103,16 @@ function ProposalsListv2(props: Parameters<typeof TargetProposalsPage>[0]) {
   };
   const hasFilterSelection = !!(props.filterStages?.length || props.filterUserIds?.length);
 
-  const hasHasProposalSelected = !!props.selectedProposalId;
-  const { setIsListNavCollapsed, isListNavCollapsed, setIsListNavHidden } =
-    useListNavigationContext();
-  useEffect(() => {
-    if (props.selectedProposalId) {
-      setIsListNavCollapsed(true);
-    } else {
-      setIsListNavCollapsed(false);
-      setIsListNavHidden(false);
-    }
-  }, [props.selectedProposalId]);
-
-  const isFiltersHorizontalUI = !hasHasProposalSelected || !isListNavCollapsed;
-
   return (
     <>
-      <div
-        className={cn(
-          'flex flex-col justify-end gap-2.5 pb-2.5',
-          isFiltersHorizontalUI && 'md:flex-row',
-        )}
-      >
+      <div className="flex flex-col justify-end gap-2.5 pb-2.5 md:flex-row">
         <UserFilter
           selectedUsers={props.filterUserIds ?? []}
           organizationSlug={props.organizationSlug}
         />
         <StageFilter selectedStages={props.filterStages ?? []} />
         {hasFilterSelection ? (
-          <Button
-            variant="outline"
-            onClick={reset}
-            className={cn(isFiltersHorizontalUI && 'md:order-first')}
-          >
+          <Button variant="outline" onClick={reset} className="md:order-first">
             Reset Filters
           </Button>
         ) : null}
@@ -233,9 +171,6 @@ const ProposalsListPage = (props: {
   const pageInfo = query.data?.schemaProposals?.pageInfo;
   const search = useSearch({ strict: false });
 
-  const { isListNavCollapsed } = useListNavigationContext();
-  const isWide = !props.selectedProposalId || !isListNavCollapsed;
-
   return (
     <>
       {query.fetching ? <Spinner /> : null}
@@ -266,7 +201,7 @@ const ProposalsListPage = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row text-sm md:text-base">
-                    <span className={cn('text-primary mr-6 font-semibold', !isWide && 'truncate')}>
+                    <span className={cn('text-primary mr-6 truncate font-semibold')}>
                       {proposal.title}
                     </span>
                     <span className="text-accent">
@@ -287,8 +222,7 @@ const ProposalsListPage = (props: {
                 </div>
                 <div
                   className={cn(
-                    'hidden items-center justify-end gap-1 text-right text-gray-500',
-                    isWide && 'sm:flex',
+                    'hidden items-center justify-end gap-1 text-right text-gray-500 sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>

@@ -74,11 +74,7 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
-import {
-  ProposalPage,
-  TargetProposalLayoutPage,
-  TargetProposalsViewPage,
-} from './pages/target-proposal-layout';
+import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
@@ -860,26 +856,26 @@ const targetProposalsRoute = createRoute({
   },
 });
 
-const targetProposalRoute = createRoute({
-  getParentRoute: () => targetProposalsRoute,
-  path: '$proposalId',
+const targetProposalsSingleRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/$proposalId',
   validateSearch: z.object({
     page: z
-      .enum(Object.values(ProposalPage).map(s => s.toLowerCase()) as [string, ...string[]])
+      .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
       .optional()
       .catch(() => void 0),
   }),
   component: function TargetProposalRoute() {
     const { organizationSlug, projectSlug, targetSlug, proposalId } =
-      targetProposalRoute.useParams();
-    const { page } = targetProposalRoute.useSearch();
+      targetProposalsSingleRoute.useParams();
+    const { page } = targetProposalsSingleRoute.useSearch();
     return (
-      <TargetProposalLayoutPage
+      <TargetProposalsSinglePage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         proposalId={proposalId}
-        page={page ?? (ProposalPage.SCHEMA as string)}
+        tab={page ?? (ProposalTab.DETAILS as string)}
       />
     );
   },
@@ -940,7 +936,7 @@ const routeTree = root.addChildren([
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
       targetAppVersionRoute,
       targetAppsRoute,
-      targetProposalsRoute.addChildren([targetProposalRoute]),
+      targetProposalsRoute.addChildren([targetProposalsSingleRoute]),
     ]),
   ]),
 ]);
