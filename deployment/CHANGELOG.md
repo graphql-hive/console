@@ -1,5 +1,19 @@
 # hive
 
+## 8.1.2
+
+### Patch Changes
+
+- [#6924](https://github.com/graphql-hive/console/pull/6924)
+  [`d6cf026`](https://github.com/graphql-hive/console/commit/d6cf02663783076a3ab25d295d1c7a6eb7b2c711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix selecting "All" app deployments in target when
+  creating an access token
+
+- [#6909](https://github.com/graphql-hive/console/pull/6909)
+  [`d5218b8`](https://github.com/graphql-hive/console/commit/d5218b8d728c37628ee4a83a89e9bc922af84804)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly trim operation name on insights and add
+  popover title
+
 ## 8.1.1
 
 ### Patch Changes
