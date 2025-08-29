@@ -1,5 +1,12 @@
+import { useMemo } from 'react';
+import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import {
+  ProposalOverview_ChangeFragment,
+  ProposalOverview_ReviewsFragment,
+  toUpperSnakeCase,
+} from '@/components/proposal';
 import { userText } from '@/components/proposal/util';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import { VersionSelect } from '@/components/target/proposals/version-select';
@@ -12,13 +19,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/v2';
-import { graphql } from '@/gql';
-import { CubeIcon, ListBulletIcon } from '@radix-ui/react-icons';
+import { FragmentType, graphql, useFragment } from '@/gql';
+import { Change } from '@graphql-inspector/core';
+import { patchSchema } from '@graphql-inspector/patch';
+import { NoopError } from '@graphql-inspector/patch/errors';
+import { ListBulletIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import { TargetProposalDetailsPage } from './target-proposal-details';
 import { TargetProposalEditPage } from './target-proposal-edit';
 import { TargetProposalSchemaPage } from './target-proposal-schema';
 import { TargetProposalSupergraphPage } from './target-proposal-supergraph';
+import { ServiceProposalDetails } from './target-proposal-types';
 
 enum Tab {
   SCHEMA = 'schema',
@@ -28,43 +39,64 @@ enum Tab {
 }
 
 const ProposalQuery = graphql(/* GraphQL  */ `
-  query ProposalQuery($id: ID!) {
-    schemaProposal(input: { id: $id }) {
+  query ProposalQuery($proposalId: ID!, $latestValidVersionReference: TargetReferenceInput) {
+    schemaProposal(input: { id: $proposalId }) {
       id
       createdAt
-      updatedAt
-      commentsCount
       stage
       title
       description
-      versions(first: 30, after: null, input: { onlyLatest: true }) {
+      versions {
         ...ProposalQuery_VersionsListFragment
       }
-      # latestVersions: versions(first: 30, after: null, input: { onlyLatest: true }) {
-      #   edges {
-      #     __typename
-      #     node {
-      #       id
-      #       serviceName
-      #       reviews {
-      #         edges {
-      #           cursor
-      #           node {
-      #             id
-      #             comments {
-      #               __typename
-      #             }
-      #           }
-      #         }
-      #       }
-      #     }
-      #   }
-      # }
+      reviews {
+        ...ProposalOverview_ReviewsFragment
+      }
       user {
         id
         email
         displayName
         fullName
+      }
+    }
+    latestValidVersion(target: $latestValidVersionReference) {
+      id
+      # sdl
+      schemas {
+        edges {
+          node {
+            ... on CompositeSchema {
+              id
+              source
+              service
+            }
+            ... on SingleSchema {
+              id
+              source
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const ProposalChangesQuery = graphql(/* GraphQL */ `
+  query ProposalChangesQuery($id: ID!) {
+    schemaProposal(input: { id: $id }) {
+      id
+      versions(after: null, input: { onlyLatest: true }) {
+        edges {
+          __typename
+          node {
+            id
+            serviceName
+            changes {
+              __typename
+              ...ProposalOverview_ChangeFragment
+            }
+          }
+        }
       }
     }
   }
@@ -94,6 +126,101 @@ export function TargetProposalsSinglePage(props: {
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
+  // fetch main page details
+  const [query] = useQuery({
+    query: ProposalQuery,
+    variables: {
+      latestValidVersionReference: {
+        bySelector: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      },
+      proposalId: props.proposalId,
+    },
+    requestPolicy: 'cache-and-network',
+  });
+
+  // fetch all proposed changes for the selected version
+  const [changesQuery] = useQuery({
+    query: ProposalChangesQuery,
+    variables: {
+      id: props.proposalId,
+      // @todo versionId
+      // @todo deal with pagination
+    },
+    requestPolicy: 'cache-and-network',
+  });
+
+  // This does a lot of heavy lifting to avoid having to reapply patching etc on each tab...
+  // Takes all the data provided by the queries to apply the patch to the schema and
+  // categorize changes.
+  const services = useMemo(() => {
+    return (
+      changesQuery.data?.schemaProposal?.versions?.edges?.map(
+        ({ node: proposalVersion }): ServiceProposalDetails => {
+          const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
+            ({ node: latestSchema }) =>
+              (latestSchema.__typename === 'CompositeSchema' &&
+                latestSchema.service === proposalVersion.serviceName) ||
+              (latestSchema.__typename === 'SingleSchema' && proposalVersion.serviceName == null),
+          )?.node.source;
+          const beforeSchema = existingSchema?.length
+            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
+            : null;
+          const allChanges =
+            proposalVersion.changes
+              .filter(c => !!c)
+              ?.map((change): Change<any> => {
+                const c = useFragment(ProposalOverview_ChangeFragment, change);
+                return {
+                  criticality: {
+                    // isSafeBasedOnUsage: ,
+                    // reason: ,
+                    level: c.severityLevel as any,
+                  },
+                  message: c.message,
+                  meta: c.meta,
+                  type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
+                  path: c.path?.join('.'),
+                };
+              }) ?? [];
+          const conflictingChanges: Array<{ change: Change; error: Error }> = [];
+          const ignoredChanges: Array<{ change: Change; error: Error }> = [];
+          const afterSchema = beforeSchema
+            ? patchSchema(beforeSchema, allChanges, {
+                throwOnError: false,
+                onError(error, change) {
+                  if (error instanceof NoopError) {
+                    ignoredChanges.push({ change, error });
+                    return false;
+                  }
+                  conflictingChanges.push({ change, error });
+                  return true;
+                },
+              })
+            : null;
+
+          return {
+            beforeSchema,
+            afterSchema,
+            allChanges,
+            rawChanges: proposalVersion.changes.filter(c => !!c),
+            conflictingChanges,
+            ignoredChanges,
+            serviceName: proposalVersion.serviceName ?? '',
+          };
+        },
+      ) ?? []
+    );
+  }, [
+    // @todo handle pagination
+    changesQuery.data?.schemaProposal?.versions?.edges,
+    query.data?.latestValidVersion?.schemas.edges,
+  ]);
+
+  const proposal = query.data?.schemaProposal;
   return (
     <>
       <div className="flex py-6">
@@ -122,72 +249,54 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               </span>
             }
             description={
-              <>
-                <CardDescription>
-                  Collaborate on schema changes to reduce friction during development.
-                </CardDescription>
-              </>
+              <CardDescription>
+                Collaborate on schema changes to reduce friction during development.
+              </CardDescription>
             }
           />
         </div>
       </div>
-      <SinglePageContent {...props} />
+      <div className="flex w-full grow flex-col rounded bg-gray-900/50 p-4">
+        {query.fetching ? (
+          <Spinner />
+        ) : (
+          proposal && (
+            <>
+              <div className="flex flex-row">
+                <div className="flex-col">
+                  <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
+                </div>
+                <div className="grow flex-col" />
+                <div className="flex-col">
+                  <StageTransitionSelect stage={proposal.stage} />
+                </div>
+              </div>
+              <div className="p-4 py-8">
+                <Title className="text-orange-500">{proposal.title}</Title>
+                <div className="text-xs text-gray-400">
+                  proposed <TimeAgo date={proposal.createdAt} /> by {userText(proposal.user)}
+                </div>
+                <div className="w-full p-2 pt-4">{proposal.description}</div>
+              </div>
+            </>
+          )
+        )}
+        {changesQuery.fetching ? (
+          <Spinner />
+        ) : !services.length ? (
+          <>No changes found</>
+        ) : (
+          <TabbedContent
+            {...props}
+            page={props.tab}
+            services={services ?? []}
+            reviews={proposal?.reviews ?? {}}
+          />
+        )}
+      </div>
     </>
   );
 };
-
-function SinglePageContent(props: {
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  proposalId: string;
-  tab?: string;
-}) {
-  const [query] = useQuery({
-    query: ProposalQuery,
-    variables: {
-      reference: {
-        bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-        },
-      },
-      id: props.proposalId,
-    },
-    requestPolicy: 'cache-and-network',
-  });
-  const proposal = query.data?.schemaProposal;
-  return (
-    <div className="flex w-full grow flex-col rounded bg-gray-900/50 p-4">
-      {query.fetching ? (
-        <Spinner />
-      ) : (
-        proposal && (
-          <>
-            <div className="flex flex-row">
-              <div className="flex-col">
-                <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
-              </div>
-              <div className="grow flex-col" />
-              <div className="flex-col">
-                <StageTransitionSelect stage={proposal.stage} />
-              </div>
-            </div>
-            <div className="p-4">
-              <Title className="text-orange-500">{proposal.title}</Title>
-              <div className="text-xs text-gray-400">
-                proposed <TimeAgo date={proposal.createdAt} /> by {userText(proposal.user)}
-              </div>
-              <div className="w-full py-2">{proposal.description}</div>
-            </div>
-          </>
-        )
-      )}
-      <TabbedContent {...props} page={props.tab} />
-    </div>
-  );
-}
 
 function TabbedContent(props: {
   organizationSlug: string;
@@ -195,6 +304,8 @@ function TabbedContent(props: {
   targetSlug: string;
   proposalId: string;
   page?: string;
+  services: ServiceProposalDetails[];
+  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>

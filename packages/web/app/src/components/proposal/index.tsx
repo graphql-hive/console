@@ -1,19 +1,6 @@
 import { Fragment, useMemo } from 'react';
-import { buildSchema } from 'graphql';
+import { GraphQLSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import type { Change } from '@graphql-inspector/core';
-import { patchSchema } from '@graphql-inspector/patch';
-import { NoopError } from '@graphql-inspector/patch/errors';
-import { labelize } from '../target/history/errors-and-changes';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionItem,
-  AccordionTrigger,
-} from '../ui/accordion';
-import { Callout } from '../ui/callout';
-import { Title } from '../ui/page';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
 import { SchemaDiff } from './schema-diff/schema-diff';
@@ -24,7 +11,7 @@ import { SchemaDiff } from './schema-diff/schema-diff';
  * but this can be done serially because there should not be so many reviews within
  * a single screen's height that it matters.
  * */
-const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
+export const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewsFragment on SchemaProposalReviewConnection {
     pageInfo {
       startCursor
@@ -49,7 +36,7 @@ const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
 /** Move to utils? */
 export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
   fragment ProposalOverview_ChangeFragment on SchemaChange {
-    message
+    message(withSafeBasedOnUsageNote: false)
     path
     severityLevel
     meta {
@@ -119,13 +106,11 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on DirectiveArgumentTypeChanged {
         directiveArgumentName
         directiveName
-        isSafeDirectiveArgumentTypeChange
         newDirectiveArgumentType
         oldDirectiveArgumentType
       }
       ... on EnumValueRemoved {
         enumName
-        isEnumValueDeprecated
         removedEnumValueName
       }
       ... on EnumValueAdded {
@@ -157,7 +142,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         removedEnumValueDeprecationReason
       }
       ... on FieldRemoved {
-        isRemovedFieldDeprecated
         removedFieldName
         typeName
         typeType
@@ -209,14 +193,12 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on FieldTypeChanged {
         fieldName
-        isSafeFieldTypeChange
         newFieldType
         oldFieldType
         typeName
       }
       ... on DirectiveUsageUnionMemberAdded {
         addedDirectiveName
-        addedToNewType
         addedUnionMemberTypeName
         addedUnionMemberTypeName
         unionName
@@ -231,8 +213,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedArgumentType
         addedToNewField
         fieldName
-        hasDefaultValue
-        isAddedFieldArgumentBreaking
         typeName
       }
       ... on FieldArgumentRemoved {
@@ -243,7 +223,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on InputFieldRemoved {
         inputName
-        isInputFieldDeprecated
         removedFieldName
       }
       ... on InputFieldAdded {
@@ -252,7 +231,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedInputFieldType
         addedToNewType
         inputName
-        isAddedInputFieldTypeNullable
       }
       ... on InputFieldDescriptionAdded {
         addedInputFieldDescription
@@ -279,7 +257,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on InputFieldTypeChanged {
         inputFieldName
         inputName
-        isInputFieldTypeChangeSafe
         newInputFieldType
         oldInputFieldType
       }
@@ -360,7 +337,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageInputObjectRemoved {
         inputObjectName
-        isRemovedInputFieldTypeNullable
         removedDirectiveName
         removedInputFieldName
         removedInputFieldType
@@ -371,7 +347,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedInputFieldType
         addedToNewType
         inputObjectName
-        isAddedInputFieldTypeNullable
       }
       ... on DirectiveUsageInputFieldDefinitionAdded {
         addedDirectiveName
@@ -460,17 +435,9 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedArgumentValue
         directiveName
         oldArgumentValue
-        parentArgumentName
-        parentEnumValueName
-        parentFieldName
-        parentTypeName
       }
       ... on DirectiveUsageArgumentRemoved {
         directiveName
-        parentArgumentName
-        parentEnumValueName
-        parentFieldName
-        parentTypeName
         removedArgumentName
       }
     }
@@ -493,53 +460,13 @@ export function toUpperSnakeCase(str: string) {
   return snakeCaseString.toUpperCase();
 }
 
+// @todo ServiceProposalDetails
 export function Proposal(props: {
-  baseSchemaSDL: string;
-  changes: FragmentType<typeof ProposalOverview_ChangeFragment>[] | null;
-  serviceName?: string;
-  latestProposalVersionId: string;
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment> | null;
+  beforeSchema: GraphQLSchema | null;
+  afterSchema: GraphQLSchema | null;
+  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  serviceName: string;
 }) {
-  const before = useMemo(() => {
-    return buildSchema(props.baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
-  }, [props.baseSchemaSDL]);
-
-  const changes = useMemo(() => {
-    return (
-      props.changes?.map((change): Change<any> => {
-        const c = useFragment(ProposalOverview_ChangeFragment, change);
-        return {
-          criticality: {
-            // isSafeBasedOnUsage: ,
-            // reason: ,
-            level: c.severityLevel as any,
-          },
-          message: c.message,
-          meta: c.meta,
-          type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
-          path: c.path?.join('.'),
-        };
-      }) ?? []
-    );
-  }, [props.changes]);
-
-  const [after, notApplied, ignored] = useMemo(() => {
-    const cannotBeApplied: Array<{ change: Change; error: Error }> = [];
-    const ignored: Array<{ change: Change; error: Error }> = [];
-    const patched = patchSchema(before, changes, {
-      throwOnError: false,
-      onError(error, change) {
-        if (error instanceof NoopError) {
-          ignored.push({ change, error });
-          return false;
-        }
-        cannotBeApplied.push({ change, error });
-        return true;
-      },
-    });
-    return [patched, cannotBeApplied, ignored];
-  }, [before, changes]);
-
   /**
    * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
    * Because of this, we have to fetch every single page of comments...
@@ -552,7 +479,7 @@ export function Proposal(props: {
     const serviceReviews =
       reviewsConnection?.edges?.filter(edge => {
         const { schemaProposalVersion } = edge.node;
-        return schemaProposalVersion?.serviceName === props.serviceName;
+        return (schemaProposalVersion?.serviceName ?? '') === props.serviceName;
       }) ?? [];
     const reviewssByCoordinate = serviceReviews.reduce((result, review) => {
       const coordinate = review.node.schemaCoordinate;
@@ -592,30 +519,22 @@ export function Proposal(props: {
   }, [props.reviews, props.serviceName]);
 
   try {
-    // @todo This doesnt work 100% of the time... A different solution must be found
-
     // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
     // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
-    const diff = <SchemaDiff before={before} after={after} annotations={annotations} />;
+    const diff =
+      props.beforeSchema && props.afterSchema ? (
+        <SchemaDiff
+          before={props.beforeSchema}
+          after={props.afterSchema}
+          annotations={annotations}
+        />
+      ) : (
+        <></>
+      );
 
+    // @todo AnnotatedProvider doesnt work 100% of the time... A different solution must be found
     return (
       <AnnotatedProvider>
-        {notApplied.length ? (
-          <Callout type="error" className="mb-4 mt-0 items-start pt-4">
-            <Title>Incompatible Changes</Title>
-            {notApplied.map((p, i) => (
-              <ProposalError key={`issue-${i}`} change={p.change} error={p.error} />
-            ))}
-          </Callout>
-        ) : null}
-        {ignored.length ? (
-          <Callout type="info" className="mb-4 mt-0 items-start pt-4">
-            <Title>Ignored Changes</Title>
-            {ignored.map((p, i) => (
-              <ProposalError key={`issue-${i}`} change={p.change} error={p.error} />
-            ))}
-          </Callout>
-        ) : null}
         <DetachedAnnotations
           coordinates={reviewssByCoordinate.keys().toArray()}
           annotate={annotations}
@@ -631,23 +550,4 @@ export function Proposal(props: {
       </>
     );
   }
-}
-
-function ProposalError(props: { change: Change<any>; error: Error }) {
-  return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-red-400 hover:no-underline">
-            <div className="inline-flex justify-start space-x-2">
-              <span className="text-left text-gray-600 dark:text-white">
-                {labelize(props.change.message)}
-              </span>
-            </div>
-          </AccordionTrigger>
-        </AccordionHeader>
-        <AccordionContent>{props.error.message}</AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
 }

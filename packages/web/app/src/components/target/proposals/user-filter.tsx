@@ -83,7 +83,7 @@ export const UserFilter = ({
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0">
+      <PopoverContent align="start" className="p-0">
         <Command>
           <CommandInput placeholder="Search org members..." />
           <CommandEmpty>No results.</CommandEmpty>

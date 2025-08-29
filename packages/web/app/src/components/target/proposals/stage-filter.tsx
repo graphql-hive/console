@@ -28,7 +28,7 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[180px] truncate p-0">
+      <PopoverContent align="start" className="w-[180px] truncate p-0">
         <Command>
           <CommandGroup>
             <ScrollArea className="relative max-h-screen">
