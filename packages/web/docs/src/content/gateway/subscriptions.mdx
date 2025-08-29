@@ -838,16 +838,18 @@ export const composeConfig = defineConfig({
       subscription: Subscription
     }
     type Subscription {
-      newProduct: Product! @resolveTo(pubsubTopic: "new_product", sourceName: "products")
+      newProduct: Product! @resolveTo(pubsubTopic: "new_product")
     }
   `
 })
 ```
 
 The composed supergraph schema will now contain a `newProduct` subscription field that will have the
-gateway subscribe to the `new_product` topic. This is done by the `@resolveTo` directive, the
-`pubsubTopic` argument specifies the topic to subscribe to, and the `sourceName` argument specifies
-the subgraph that owns the `Product` type, i.e. the subgraph to use to resolve missing fields.
+gateway subscribe to the `new_product` topic. This is done by the `@resolveTo` directive where the
+`pubsubTopic` argument specifies the topic to subscribe to.
+
+Hive Gateway will intelligently detect the best subgraph to resolve the `Product` from by looking at
+the subscription event data.
 
 ### Configuring Hive Gateway With Redis PubSub
 
