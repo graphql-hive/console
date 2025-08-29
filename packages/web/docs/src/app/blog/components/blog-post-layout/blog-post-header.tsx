@@ -20,7 +20,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
       {image && <BlogPostPicture image={image} />}
       <header
         className={cn(
-          'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-12 md:pt-6 xl:w-[888px]',
+          'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-16 md:pt-12 xl:w-[888px]',
           image && '-mt-20 max-sm:mx-6',
           className,
         )}
