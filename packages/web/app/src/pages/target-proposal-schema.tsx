@@ -14,13 +14,7 @@ export function TargetProposalSchemaPage(props: {
     return (
       <div className="w-full">
         {props.services.map(proposed => {
-          return (
-            <Proposal
-              key={proposed.serviceName}
-              {...proposed}
-              reviews={props.reviews}
-            />
-          );
+          return <Proposal key={proposed.serviceName} {...proposed} reviews={props.reviews} />;
         })}
       </div>
     );
