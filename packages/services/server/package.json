@@ -16,7 +16,7 @@
     "@envelop/sentry": "7.1.1",
     "@envelop/types": "5.0.0",
     "@escape.tech/graphql-armor-max-aliases": "2.6.0",
-    "@escape.tech/graphql-armor-max-depth": "2.4.0",
+    "@escape.tech/graphql-armor-max-depth": "2.4.2",
     "@escape.tech/graphql-armor-max-directives": "2.3.0",
     "@escape.tech/graphql-armor-max-tokens": "2.5.0",
     "@fastify/cors": "9.0.1",
