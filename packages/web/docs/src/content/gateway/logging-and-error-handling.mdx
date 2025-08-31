@@ -62,6 +62,14 @@ export const gatewayConfig = defineConfig({
 + plugins() {
     return [
       {
+        onRequest({ serverContext }) {
+-         log.info('Got request...');
++         serverContext.log.info('Got request...');
+        },
+        onParams({ context }) {
+-         log.info('Params...');
++         context.log.info('Params...');
+        },
         onExecute({ context }) {
 -         log.info('Executing...');
 +         context.log.info('Executing...');
@@ -77,6 +85,10 @@ export const gatewayConfig = defineConfig({
         onFetch({ context }) {
 -         log.info('Fetching data...');
 +         context.log.info('Fetching data...');
+        },
+        onResponse({ serverContext }) {
+-         log.info('Responding...');
++         serverContext.log.info('Responding...');
         },
       },
     ];
