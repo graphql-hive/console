@@ -31,7 +31,6 @@ import {
 } from 'graphql';
 import { isPrintableAsBlockString } from 'graphql/language/blockString';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';

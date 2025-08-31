@@ -12,13 +12,20 @@ const ProposalSupergraphChangesQuery = graphql(/* GraphQL  */ `
   query ProposalSupergraphChangesQuery($id: ID!) {
     schemaProposal(input: { id: $id }) {
       id
-      versions(after: null, input: { onlyLatest: true }) {
+      checks(after: null, input: { latestPerService: true }) {
         edges {
+          __typename
           node {
             id
             serviceName
-            changes {
-              ...ProposalOverview_ChangeFragment
+            hasSchemaChanges
+            schemaChanges {
+              edges {
+                node {
+                  __typename
+                  ...ProposalOverview_ChangeFragment
+                }
+              }
             }
           }
         }
@@ -65,8 +72,11 @@ export function TargetProposalSupergraphPage(props: {
   // @todo use pagination to collect all
   const allChanges: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] =
     [];
-  query?.data?.schemaProposal?.versions?.edges?.map(({ node: { changes } }) => {
-    allChanges.push(...changes);
+  query?.data?.schemaProposal?.checks?.edges?.map(({ node: { schemaChanges } }) => {
+    if (schemaChanges) {
+      const changes = schemaChanges.edges.map(edge => edge.node);
+      allChanges.push(...changes);
+    }
   });
 
   return (

@@ -1,14 +1,16 @@
-import { Fragment, ReactNode } from 'react';
+import { Fragment, ReactNode, useMemo, useState } from 'react';
 import { ProposalOverview_ReviewsFragment } from '@/components/proposal';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
-import { Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/button';
+import { Subtitle, Title } from '@/components/ui/page';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType } from '@/gql';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
 import {
   ComponentNoneIcon,
   CubeIcon,
   ExclamationTriangleIcon,
-  LinkBreak2Icon,
+  InfoCircledIcon,
 } from '@radix-ui/react-icons';
 import type { ServiceProposalDetails } from './target-proposal-types';
 
@@ -16,6 +18,12 @@ export enum MergeStatus {
   CONFLICT,
   IGNORED,
 }
+
+type MappedChange = {
+  change: Change<any>;
+  error?: Error;
+  mergeStatus?: MergeStatus;
+};
 
 export function TargetProposalDetailsPage(props: {
   organizationSlug: string;
@@ -25,9 +33,9 @@ export function TargetProposalDetailsPage(props: {
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
 }) {
-  return (
-    <div className="w-full">
-      {props.services?.map(({ allChanges, ignoredChanges, conflictingChanges, serviceName }) => {
+  const mappedServices = useMemo(() => {
+    return props.services?.map(
+      ({ allChanges, ignoredChanges, conflictingChanges, serviceName }) => {
         const changes = allChanges.map(c => {
           const conflict = conflictingChanges.find(({ change }) => c === change);
           if (conflict) {
@@ -39,23 +47,41 @@ export function TargetProposalDetailsPage(props: {
           }
           const ignored = ignoredChanges.find(({ change }) => c === change);
           if (ignored) {
-            return {
-              change: c,
-              error: ignored.error,
-              mergeStatus: MergeStatus.IGNORED,
-            };
+            return null;
           }
           return { change: c };
         });
-        const breakingChanges = changes.filter(({ change }) => {
-          return change.criticality.level === CriticalityLevel.Breaking;
-        });
-        const dangerousChanges = changes.filter(({ change }) => {
-          return change.criticality.level === CriticalityLevel.Dangerous;
-        });
-        const safeChanges = changes.filter(({ change }) => {
-          return change.criticality.level === CriticalityLevel.NonBreaking;
-        });
+
+        const breaking: MappedChange[] = [];
+        const dangerous: MappedChange[] = [];
+        const safe: MappedChange[] = [];
+        for (const change of changes) {
+          if (change) {
+            const level = change.change.criticality.level;
+            if (level === CriticalityLevel.Breaking) {
+              breaking.push(change);
+            } else if (level === CriticalityLevel.Dangerous) {
+              dangerous.push(change);
+            } else {
+              // if (level === CriticalityLevel.NonBreaking) {
+              safe.push(change);
+            }
+          }
+        }
+        return {
+          safe,
+          breaking,
+          dangerous,
+          ignored: ignoredChanges.map(c => ({ ...c, mergeStatus: MergeStatus.IGNORED })),
+          serviceName,
+        };
+      },
+    );
+  }, [props.services]);
+
+  return (
+    <div className="w-full">
+      {mappedServices?.map(({ safe, dangerous, breaking, ignored, serviceName }) => {
         return (
           <Fragment key={serviceName}>
             {serviceName.length !== 0 && (
@@ -63,9 +89,26 @@ export function TargetProposalDetailsPage(props: {
                 <CubeIcon className="mr-2 h-6 w-auto flex-none" /> {serviceName}
               </Title>
             )}
-            <ChangeBlock changes={breakingChanges} title="Breaking Changes" />
-            <ChangeBlock changes={dangerousChanges} title="Dangerous Changes" />
-            <ChangeBlock changes={safeChanges} title="Safe Changes" />
+            <ChangeBlock
+              changes={breaking}
+              title="Breaking Changes"
+              info="Changes that will break existing operations."
+            />
+            <ChangeBlock
+              changes={dangerous}
+              title="Dangerous Changes"
+              info="Changes that could cause different behavior that might cause issues for existing operations."
+            />
+            <ChangeBlock
+              changes={safe}
+              title="Safe Changes"
+              info="Changes that do not run a risk of breaking any existing operations."
+            />
+            <ChangeBlock
+              changes={ignored}
+              title="Ignored Changes"
+              info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
+            />
           </Fragment>
         );
       })}
@@ -75,25 +118,33 @@ export function TargetProposalDetailsPage(props: {
 
 function ChangeBlock(props: {
   title: string;
-  changes: Array<{ change: Change; error?: Error; mergeStatus?: MergeStatus }>;
+  info: string;
+  changes: Array<{
+    change: Change;
+    error?: Error;
+    mergeStatus?: MergeStatus;
+  }>;
 }) {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="mb-2 mt-4 font-bold text-gray-900 dark:text-white">{props.title}</h2>
+        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900 dark:text-white">
+          {props.title}
+          {props.info && <ChangesBlockTooltip info={props.info} />}
+        </h2>
         <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
           {props.changes.map(({ change, error, mergeStatus }) => {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
-                <span className="flex items-center pl-4 text-red-400">
+                <span className="flex items-center justify-end pl-4 text-red-400">
                   <ExclamationTriangleIcon className="mr-2" />
                   CONFLICT
                 </span>
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
-                <span className="flex items-center pl-4 text-gray-400">
+                <span className="flex items-center justify-end pl-4 text-gray-400">
                   <ComponentNoneIcon className="mr-2" /> NO CHANGE
                 </span>
               );
@@ -110,5 +161,22 @@ function ChangeBlock(props: {
         </div>
       </>
     )
+  );
+}
+
+function ChangesBlockTooltip(props: { info: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger>
+          <Button variant="ghost" size="icon-sm" className="ml-1 text-gray-400">
+            <InfoCircledIcon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-md p-4 font-normal">
+          <p>{props.info}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

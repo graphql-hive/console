@@ -7,7 +7,6 @@ import {
   ProposalOverview_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/proposal';
-import { userText } from '@/components/proposal/util';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import { VersionSelect } from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
@@ -46,18 +45,13 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       stage
       title
       description
-      versions {
+      checks(after: null, input: {}) {
         ...ProposalQuery_VersionsListFragment
       }
       reviews {
         ...ProposalOverview_ReviewsFragment
       }
-      user {
-        id
-        email
-        displayName
-        fullName
-      }
+      author
     }
     latestValidVersion(target: $latestValidVersionReference) {
       id
@@ -85,15 +79,20 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
   query ProposalChangesQuery($id: ID!) {
     schemaProposal(input: { id: $id }) {
       id
-      versions(after: null, input: { onlyLatest: true }) {
+      checks(after: null, input: { latestPerService: true }) {
         edges {
           __typename
           node {
             id
             serviceName
-            changes {
-              __typename
-              ...ProposalOverview_ChangeFragment
+            hasSchemaChanges
+            schemaChanges {
+              edges {
+                node {
+                  __typename
+                  ...ProposalOverview_ChangeFragment
+                }
+              }
             }
           }
         }
@@ -158,7 +157,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
   // categorize changes.
   const services = useMemo(() => {
     return (
-      changesQuery.data?.schemaProposal?.versions?.edges?.map(
+      changesQuery.data?.schemaProposal?.checks?.edges?.map(
         ({ node: proposalVersion }): ServiceProposalDetails => {
           const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
             ({ node: latestSchema }) =>
@@ -169,10 +168,11 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           const beforeSchema = existingSchema?.length
             ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
             : null;
+          // @todo better handle pagination
           const allChanges =
-            proposalVersion.changes
+            proposalVersion.schemaChanges?.edges
               .filter(c => !!c)
-              ?.map((change): Change<any> => {
+              ?.map(({ node: change }): Change<any> => {
                 const c = useFragment(ProposalOverview_ChangeFragment, change);
                 return {
                   criticality: {
@@ -206,7 +206,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             beforeSchema,
             afterSchema,
             allChanges,
-            rawChanges: proposalVersion.changes.filter(c => !!c),
+            rawChanges: proposalVersion.schemaChanges?.edges.map(({ node }) => node) ?? [],
             conflictingChanges,
             ignoredChanges,
             serviceName: proposalVersion.serviceName ?? '',
@@ -216,7 +216,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     );
   }, [
     // @todo handle pagination
-    changesQuery.data?.schemaProposal?.versions?.edges,
+    changesQuery.data?.schemaProposal?.checks?.edges,
     query.data?.latestValidVersion?.schemas.edges,
   ]);
 
@@ -264,7 +264,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             <>
               <div className="flex flex-row">
                 <div className="flex-col">
-                  <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
+                  <VersionSelect proposalId={props.proposalId} versions={proposal.checks ?? {}} />
                 </div>
                 <div className="grow flex-col" />
                 <div className="flex-col">
@@ -274,7 +274,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               <div className="p-4 py-8">
                 <Title className="text-orange-500">{proposal.title}</Title>
                 <div className="text-xs text-gray-400">
-                  proposed <TimeAgo date={proposal.createdAt} /> by {userText(proposal.user)}
+                  proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
                 <div className="w-full p-2 pt-4">{proposal.description}</div>
               </div>

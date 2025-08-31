@@ -10,14 +10,13 @@ import { cn } from '@/lib/utils';
 import { useRouter, useSearch } from '@tanstack/react-router';
 
 const ProposalQuery_VersionsListFragment = graphql(/* GraphQL */ `
-  fragment ProposalQuery_VersionsListFragment on SchemaProposalVersionConnection {
+  fragment ProposalQuery_VersionsListFragment on SchemaCheckConnection {
     edges {
       node {
         id
         createdAt
-        user {
-          fullName
-          displayName
+        meta {
+          author
         }
       }
     }

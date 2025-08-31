@@ -2,45 +2,129 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   extend type Mutation {
-    createSchemaProposal(input: CreateSchemaProposalInput!): SchemaProposal!
-    reviewSchemaProposal(input: ReviewSchemaProposalInput!): SchemaProposalReview!
-    commentOnSchemaProposalReview(
+    createSchemaProposal(input: CreateSchemaProposalInput!): CreateSchemaProposalResult!
+    reviewSchemaProposal(input: ReviewSchemaProposalInput!): ReviewSchemaProposalResult!
+    replyToSchemaProposalReview(
       input: CommentOnSchemaProposalReviewInput!
-    ): SchemaProposalComment!
+    ): ReplyToSchemaProposalReviewResult!
+  }
+
+  type ReplyToSchemaProposalReviewResult {
+    ok: ReplyToSchemaProposalReviewOk
+    error: ReplyToSchemaProposalReviewError
+  }
+
+  type ReplyToSchemaProposalReviewOk {
+    reply: SchemaProposalComment!
+  }
+
+  type ReplyToSchemaProposalReviewError implements Error {
+    message: String!
+  }
+
+  type ReviewSchemaProposalResult {
+    ok: ReviewSchemaProposalOk
+    error: ReviewSchemaProposalError
+  }
+
+  type ReviewSchemaProposalOk {
+    review: SchemaProposalReview!
+  }
+
+  type ReviewSchemaProposalError implements Error {
+    message: String!
+  }
+
+  type CreateSchemaProposalResult {
+    error: CreateSchemaProposalError
+    ok: CreateSchemaProposalOk
+  }
+
+  type CreateSchemaProposalOk {
+    schemaProposal: SchemaProposal!
+  }
+
+  type CreateSchemaProposalErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
+  type CreateSchemaProposalError implements Error {
+    message: String!
+    details: CreateSchemaProposalErrorDetails!
+  }
+
+  input SchemaProposalCheckInput {
+    service: ID
+    sdl: String!
+    github: GitHubSchemaCheckInput
+    meta: SchemaCheckMetaInput
+    """
+    Optional context ID to group schema checks together.
+    Manually approved breaking changes will be memorized for schema checks with the same context id.
+    """
+    contextId: String
+    """
+    Optional url if wanting to show subgraph url changes inside checks.
+    """
+    url: String
   }
 
   input CreateSchemaProposalInput {
-    diffSchemaVersionId: ID!
+    """
+    Reference to the proposal's target. Either an ID or path.
+    """
+    target: TargetReferenceInput!
+
+    """
+    The title of the proposal. A short description of the proposal's main focus/theme.
+    """
     title: String!
 
     """
-    The initial changes by serviceName submitted as part of this proposal. Initial versions must have
-    unique "serviceName"s.
+    If no description was provided then this will be an empty string.
     """
-    initialVersions: [CreateSchemaProposalInitialVersionInput!]! = []
+    description: String! = ""
 
     """
     The default initial stage is OPEN. Set this to true to create this as proposal
     as a DRAFT instead.
     """
     isDraft: Boolean! = false
-  }
 
-  input CreateSchemaProposalInitialVersionInput {
-    schemaSDL: String!
-    serviceName: String
+    """
+    The initial proposed service changes to be ran as checks
+    """
+    initialChecks: [SchemaProposalCheckInput!]!
   }
 
   input ReviewSchemaProposalInput {
-    schemaProposalVersionId: ID!
+    """
+    The schema proposal that this review is being made on.
+    """
+    schemaProposalId: ID!
+
+    """
+    The schema coordinate being referenced. E.g. "Type.field".
+    If null, then this review is for the entire proposal.
+    """
+    coordinate: String
+
     """
     One or both of stageTransition or initialComment inputs is/are required.
     """
     stageTransition: SchemaProposalStage
+
     """
-    One or both of stageTransition or initialComment inputs is/are required.
+    The initial comment message attached to the review
     """
-    commentBody: String
+    commentBody: String = ""
   }
 
   input CommentOnSchemaProposalReviewInput {
@@ -52,15 +136,9 @@ export default gql`
     schemaProposals(
       after: String
       first: Int! = 30
-      input: SchemaProposalsInput
+      input: SchemaProposalsInput!
     ): SchemaProposalConnection
     schemaProposal(input: SchemaProposalInput!): SchemaProposal
-    schemaProposalReviews(
-      after: String
-      first: Int! = 30
-      input: SchemaProposalReviewsInput!
-    ): SchemaProposalReviewConnection
-    schemaProposalReview(input: SchemaProposalReviewInput!): SchemaProposalReview
   }
 
   input SchemaProposalsInput {
@@ -76,25 +154,6 @@ export default gql`
     id: ID!
   }
 
-  input SchemaProposalReviewInput {
-    """
-    Unique identifier of the desired SchemaProposalReview.
-    """
-    id: ID!
-  }
-
-  input SchemaProposalReviewsInput {
-    schemaProposalId: ID!
-  }
-
-  extend type User {
-    id: ID!
-  }
-
-  extend type Target {
-    id: ID!
-  }
-
   type SchemaProposalConnection {
     edges: [SchemaProposalEdge!]
     pageInfo: PageInfo!
@@ -103,10 +162,6 @@ export default gql`
   type SchemaProposalEdge {
     cursor: String!
     node: SchemaProposal!
-  }
-
-  extend type SchemaVersion {
-    id: ID!
   }
 
   enum SchemaProposalStage {
@@ -137,17 +192,15 @@ export default gql`
     stage: SchemaProposalStage!
 
     """
-    The schema Target that this proposal is to be applied to.
-    """
-    target: Target
-
-    """
     A short title of this proposal. Meant to give others an easy way to refer to this
     set of changes.
     """
-    title: String
+    title: String!
 
-    description: String
+    """
+    The proposal description. If no description was given, this will be an empty string.
+    """
+    description: String!
 
     """
     When the proposal was last modified. Adding a review or comment does not count.
@@ -155,18 +208,50 @@ export default gql`
     updatedAt: DateTime!
 
     """
-    The author of the proposal. If no author has been assigned or if that member is
-    removed from the org, then this returns null.
+    The author of the proposal. If no author has been assigned, then this returns an empty string.
+    The author is taken from the author of the oldest check ran for this proposal.
     """
-    user: User
+    author: String!
 
-    versions(
-      after: String
-      first: Int! = 15
-      input: SchemaProposalVersionsInput
-    ): SchemaProposalVersionConnection
+    """
+    The checks associated with this proposal. Each proposed change triggers a check
+    for the set of changes. And each service is checked separately. This is a limitation
+    of the schema check API at this time.
+    """
+    checks(after: ID, first: Int! = 20, input: SchemaProposalChecksInput!): SchemaCheckConnection
+
+    """
+    Applies changes to each service subgraph for each of the service's latest check belonging to the SchemaProposal.
+
+    @todo consider making this a connection before going live.
+    """
+    rebasedSchemaSDL(checkId: ID): [SubgraphSchema!]
+
+    """
+    Applies changes to the supergraph for each of the service's latest check belonging to the SchemaProposal.
+    """
+    rebasedSupergraphSDL(versionId: ID): String
 
     commentsCount: Int!
+  }
+
+  input SchemaProposalChecksInput {
+    """
+    Set to "true" to only return the latest checks for each service.
+    """
+    latestPerService: Boolean! = false
+  }
+
+  type SubgraphSchema {
+    """
+    The SDL of the schema that was checked.
+    """
+    schemaSDL: String!
+
+    """
+    The name of the service that owns the schema. Is null for non composite project types.
+    """
+    serviceName: String
   }
 
   type SchemaProposalReviewEdge {
@@ -177,65 +262,6 @@ export default gql`
   type SchemaProposalReviewConnection {
     edges: [SchemaProposalReviewEdge!]
     pageInfo: PageInfo!
-  }
-
-  type SchemaProposalVersionEdge {
-    cursor: String!
-    node: SchemaProposalVersion!
-  }
-
-  type SchemaProposalVersionConnection {
-    edges: [SchemaProposalVersionEdge!]
-    pageInfo: PageInfo!
-  }
-
-  input SchemaProposalVersionsInput {
-    """
-    Option to return only the latest version of each schema proposal. Versions
-    """
-    onlyLatest: Boolean! = false
-
-    """
-    Limit the returned SchemaProposalVersions to a single version. This can still
-    return multiple elements if that version changed multiple services.
-    """
-    schemaProposalVersionId: ID
-  }
-
-  # @key(fields: "id serviceName")
-  type SchemaProposalVersion {
-    """
-    An identifier for a list of SchemaProposalVersions.
-    """
-    id: ID!
-
-    """
-    The service that this version applies to.
-    """
-    serviceName: String
-
-    createdAt: DateTime!
-
-    """
-    The SchemaProposal that this version belongs to. A proposal can have
-    multiple versions.
-    """
-    schemaProposal: SchemaProposal!
-
-    """
-    The user who submitted this version of the proposal.
-    """
-    user: User
-
-    """
-    The list of proposed changes to the Target.
-    """
-    changes: [SchemaChange]!
-
-    """
-    A paginated list of reviews.
-    """
-    reviews(after: String, first: Int! = 30): SchemaProposalReviewConnection
   }
 
   type SchemaProposalCommentEdge {
@@ -281,9 +307,16 @@ export default gql`
     schemaCoordinate: String
 
     """
-    The specific version of the proposal that this review is for.
+    Name of the service if reviewing a specific service's schema.
+    Else an empty string.
     """
-    schemaProposalVersion: SchemaProposalVersion
+    serviceName: String!
+
+    # @todo
+    # """
+    # The specific version of the proposal that this review is for.
+    # """
+    # schemaProposalVersion: SchemaProposalVersion
 
     """
     If null then this review is just a comment. Otherwise, the reviewer changed the state of the
@@ -292,14 +325,17 @@ export default gql`
     stageTransition: SchemaProposalStage
 
     """
-    The author of this review.
+    The stored author of this review. Does not update if a user changes their name for the time being.
     """
-    user: User
+    author: String!
   }
 
   type SchemaProposalComment {
     id: ID!
 
+    """
+    When the comment was initially posted
+    """
     createdAt: DateTime!
 
     """
@@ -307,12 +343,15 @@ export default gql`
     """
     body: String!
 
-    updatedAt: DateTime!
+    """
+    If edited, then when it was last edited.
+    """
+    updatedAt: DateTime
 
     """
-    The author of this comment
+    The stored author of this comment. Does not update if a user changes their name for the time being.
     """
-    user: User
+    author: String!
   }
 
   extend type SchemaChange {
@@ -723,7 +762,7 @@ export default gql`
 
   type TypeAdded {
     addedTypeName: String!
-    addedTypeKind: GraphQLKind
+    addedTypeKind: String
   }
 
   type TypeKindChanged {

@@ -1,5 +1,3 @@
-import { InlineCode } from '@/components/v2/inline-code';
-
 export function TargetProposalEditPage(props: {
   organizationSlug: string;
   projectSlug: string;

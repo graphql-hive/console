@@ -19,9 +19,9 @@ export function ProposalChangeDetail(props: {
       <AccordionItem value="item-1">
         <AccordionHeader className="flex">
           <AccordionTrigger className="py-3 text-gray-600 hover:no-underline dark:text-white">
-            <div className="inline-flex items-center justify-start space-x-2">
-              <span className="text-left">{labelize(props.change.message)}</span>
-              {props.icon}
+            <div className="flex w-full flex-row items-center text-left">
+              <div>{labelize(props.change.message)}</div>
+              <div className="min-w-fit flex-grow pr-2 md:flex-none">{props.icon}</div>
             </div>
           </AccordionTrigger>
         </AccordionHeader>

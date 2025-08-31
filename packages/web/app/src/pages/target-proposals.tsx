@@ -68,7 +68,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
 };
 
 const ProposalsQuery = graphql(`
-  query listProposals($input: SchemaProposalsInput) {
+  query listProposals($input: SchemaProposalsInput!) {
     schemaProposals(input: $input) {
       edges {
         node {
@@ -76,11 +76,7 @@ const ProposalsQuery = graphql(`
           title
           stage
           updatedAt
-          user {
-            id
-            displayName
-            fullName
-          }
+          author
           commentsCount
         }
         cursor
@@ -152,7 +148,11 @@ const ProposalsListPage = (props: {
     variables: {
       input: {
         target: {
-          byId: props.targetSlug,
+          bySelector: {
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+            targetSlug: props.targetSlug,
+          },
         },
         stages: (
           props.filterStages ?? [
@@ -213,11 +213,7 @@ const ProposalsListPage = (props: {
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
-                    {proposal.user ? (
-                      <div className="truncate">
-                        by {proposal.user.displayName ?? proposal.user.fullName}
-                      </div>
-                    ) : null}
+                    {proposal.author ? <div className="truncate">by {proposal.author}</div> : null}
                   </div>
                 </div>
                 <div

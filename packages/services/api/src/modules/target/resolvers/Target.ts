@@ -10,6 +10,7 @@ export const Target: Pick<
   | 'experimental_forcedLegacySchemaComposition'
   | 'failDiffOnDangerousChange'
   | 'graphqlEndpointUrl'
+  | 'id'
   | 'name'
   | 'project'
   | 'slug'

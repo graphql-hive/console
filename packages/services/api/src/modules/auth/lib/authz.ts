@@ -351,6 +351,18 @@ function defaultAppDeploymentIdentity(
   return ids;
 }
 
+function defaultSchemaProposalIdentity(
+  args: { schemaProposalId: string | null } & Parameters<typeof defaultTargetIdentity>[0],
+) {
+  const ids = defaultTargetIdentity(args);
+
+  if (args.schemaProposalId !== null) {
+    ids.push(`target/${args.targetId}/schemaProposal/${args.schemaProposalId}`);
+  }
+
+  return ids;
+}
+
 function schemaCheckOrPublishIdentity(
   args: { serviceName: string | null } & Parameters<typeof defaultTargetIdentity>[0],
 ) {
@@ -418,6 +430,7 @@ const permissionsByLevel = {
     z.literal('appDeployment:publish'),
     z.literal('appDeployment:retire'),
   ],
+  schemaProposal: [z.literal('schemaProposal:modify')],
 } as const;
 
 export const allPermissions = [
@@ -509,6 +522,9 @@ const actionDefinitions = {
   ),
   ...objectFromEntries(
     permissionsByLevel['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity]),
+  ),
+  ...objectFromEntries(
+    permissionsByLevel['schemaProposal'].map(t => [t.value, defaultSchemaProposalIdentity]),
   ),
 } satisfies ActionDefinitionMap;
 

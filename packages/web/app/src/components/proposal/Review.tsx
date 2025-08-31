@@ -2,8 +2,7 @@ import { Fragment, ReactElement, useContext } from 'react';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
-import { Callout } from '../ui/callout';
-import { Title } from '../ui/page';
+import { CheckIcon, PlusIcon } from '../ui/icon';
 import { TimeAgo } from '../v2';
 import { AnnotatedContext } from './schema-diff/components';
 
@@ -43,11 +42,13 @@ export function ReviewComments(props: {
         })}
       </div>
       {/* @todo check if able to reply */}
-      <div className="mb-6 ml-1 mt-4 flex gap-4 font-sans">
-        <Button variant="default" type="button" className="w-[120px] opacity-80">
+      <div className="mb-6 ml-6 mt-3 flex gap-4 font-sans">
+        <Button variant="outline" type="button" className="px-4">
+          <PlusIcon size={16} className="mr-1" />
           Reply
         </Button>
-        <Button variant="primary" type="button" className="w-[120px]">
+        <Button variant="outline" type="button" className="px-4">
+          <CheckIcon size={16} className="mr-1" />
           Resolve
         </Button>
       </div>
@@ -58,14 +59,10 @@ export function ReviewComments(props: {
 const ProposalOverview_CommentFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_CommentFragment on SchemaProposalComment {
     id
-    user {
-      id
-      email
-      displayName
-      fullName
-    }
+    author
     body
     updatedAt
+    createdAt
   }
 `);
 
@@ -77,14 +74,13 @@ export function ReviewComment(props: {
   return (
     <>
       <div className={cn(!props.first && 'pl-4', 'flex grow flex-row align-middle')}>
-        <div className="flex grow font-bold">
-          {comment.user?.displayName ?? comment.user?.fullName ?? 'Unknown'}
-        </div>
+        <div className="flex grow font-bold text-gray-400">{comment.author ?? 'Unknown'}</div>
         <div className="flex text-xs">
-          <TimeAgo date={comment.updatedAt} />
+          {!!comment.updatedAt && 'updated '}
+          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-gray-400" />
         </div>
       </div>
-      <div className="flex-row">{comment.body}</div>
+      <div className="mt-2 flex-row">{comment.body}</div>
     </>
   );
 }
@@ -97,12 +93,7 @@ export function DetachedAnnotations(props: {
   /** Get the list of coordinates that have already been annotated */
   const { annotatedCoordinates } = useContext(AnnotatedContext);
   const detachedReviewCoordinates = props.coordinates.filter(c => annotatedCoordinates?.has(c));
-  return detachedReviewCoordinates.length ? (
-    <Callout type="warning" className="mb-4 mt-0 items-start pt-4">
-      <Title className="mb-3">Detached Comments</Title>
-      {detachedReviewCoordinates.map(c => (
-        <Fragment key={c}>{props.annotate(c, true)}</Fragment>
-      ))}
-    </Callout>
-  ) : null;
+  return detachedReviewCoordinates.length
+    ? detachedReviewCoordinates.map(c => <Fragment key={c}>{props.annotate(c, true)}</Fragment>)
+    : null;
 }

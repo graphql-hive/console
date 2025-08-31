@@ -277,6 +277,7 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
   schema_version_id: string | null;
@@ -332,25 +333,17 @@ export interface schema_proposal_reviews {
   created_at: Date;
   id: string;
   line_text: string | null;
-  original_line_num: number | null;
-  original_schema_proposal_version_id: string;
+  resolved_by_user_id: string | null;
+  schema_coordinate: string | null;
   schema_proposal_id: string;
   stage_transition: schema_proposal_stage;
   user_id: string | null;
 }
 
-export interface schema_proposal_versions {
-  created_at: Date;
-  id: string;
-  schema_proposal_id: string;
-  schema_sdl: string;
-  service_name: string | null;
-  user_id: string | null;
-}
-
 export interface schema_proposals {
+  comments_count: number;
   created_at: Date;
-  diff_schema_version_id: string;
+  description: string;
   id: string;
   stage: schema_proposal_stage;
   target_id: string;
@@ -494,7 +487,6 @@ export interface DBTables {
   schema_policy_config: schema_policy_config;
   schema_proposal_comments: schema_proposal_comments;
   schema_proposal_reviews: schema_proposal_reviews;
-  schema_proposal_versions: schema_proposal_versions;
   schema_proposals: schema_proposals;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;

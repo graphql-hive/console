@@ -37,6 +37,7 @@ import {
 } from './modules/policy/providers/tokens';
 import { projectModule } from './modules/project';
 import { proposalsModule } from './modules/proposals';
+import { SCHEMA_PROPOSALS_ENABLED } from './modules/proposals/providers/schema-proposals-enabled-token';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -115,6 +116,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  schemaProposalsEnabled,
   prometheus,
 }: {
   logger: Logger;
@@ -159,6 +161,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  schemaProposalsEnabled: boolean;
   prometheus: null | Record<string, unknown>;
 }) {
   const s3Config: S3Config = [
@@ -284,6 +287,11 @@ export function createRegistry({
     {
       provide: APP_DEPLOYMENTS_ENABLED,
       useValue: appDeploymentsEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: SCHEMA_PROPOSALS_ENABLED,
+      useValue: schemaProposalsEnabled,
       scope: Scope.Singleton,
     },
     {

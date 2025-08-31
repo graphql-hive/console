@@ -20,13 +20,10 @@ export const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
       cursor
       node {
         id
-        schemaProposalVersion {
-          id
-          serviceName
-        }
         stageTransition
         lineText
         schemaCoordinate
+        serviceName
         ...ProposalOverview_ReviewCommentsFragment
       }
     }
@@ -478,8 +475,7 @@ export function Proposal(props: {
     const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
     const serviceReviews =
       reviewsConnection?.edges?.filter(edge => {
-        const { schemaProposalVersion } = edge.node;
-        return (schemaProposalVersion?.serviceName ?? '') === props.serviceName;
+        return edge.node.serviceName === props.serviceName;
       }) ?? [];
     const reviewssByCoordinate = serviceReviews.reduce((result, review) => {
       const coordinate = review.node.schemaCoordinate;
@@ -491,6 +487,7 @@ export function Proposal(props: {
           result.set(review.node.schemaCoordinate!, [review]);
         }
       }
+      // @todo else add to global reviews
       return result;
     }, new Map<string, Array<(typeof serviceReviews)[number]>>());
 
@@ -503,7 +500,7 @@ export function Proposal(props: {
               <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
-                  <code className="mb-1 block w-full rounded bg-gray-900 p-2 text-white">
+                  <code className="mb-3 block w-full bg-gray-900 p-3 pl-6 text-white">
                     {node.lineText}
                   </code>
                 )}
@@ -537,7 +534,14 @@ export function Proposal(props: {
       <AnnotatedProvider>
         <DetachedAnnotations
           coordinates={reviewssByCoordinate.keys().toArray()}
-          annotate={annotations}
+          annotate={(coordinate, withPreview) => (
+            <>
+              <div className="p-2 text-sm text-gray-600">
+                This comment refers to a schema coordinate that no longer exists.
+              </div>
+              {annotations(coordinate, withPreview)}
+            </>
+          )}
         />
         {diff}
       </AnnotatedProvider>

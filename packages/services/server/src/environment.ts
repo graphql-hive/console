@@ -42,6 +42,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
 });
 
 const CommerceModel = zod.object({
@@ -518,5 +521,6 @@ export const env = {
   featureFlags: {
     /** Whether app deployments should be enabled by default for everyone. */
     appDeploymentsEnabled: base.FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED === '1',
+    schemaProposalsEnabled: base.FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED === '1',
   },
 } as const;
