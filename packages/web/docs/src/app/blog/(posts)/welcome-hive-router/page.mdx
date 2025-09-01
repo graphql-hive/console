@@ -15,7 +15,7 @@ Today, we're excited to introduce Hive Router, a new open-source GraphQL federat
 
 [GraphQL federation](http://the-guild.dev/graphql/hive/federation) is now the standard way to scale GraphQL across services.  Most teams want three things: **speed**, **predictability**, and **no vendor lock-in**.
 
-**Hive Router** is our answer: an open-source, Rust-based Federation gateway with **top-tier performance** and [full Apollo Federation compatibility]((https://the-guild.dev/graphql/hive/federation-gateway-audit)) - without tying your architecture to a single vendor.
+[**Hive Router**](https://github.com/graphql-hive/router) is our answer: an open-source, Rust-based Federation gateway with **top-tier performance** and [full Apollo Federation compatibility]((https://the-guild.dev/graphql/hive/federation-gateway-audit)) - without tying your architecture to a single vendor.
 
 <Highlights />
 
@@ -148,4 +148,6 @@ The outstanding performance of our GraphQL router is no accident – it's the re
 
 With this solid foundation, users can expect faster responses, lower infrastructure costs (since a single router instance can do the work of many), and the ability to confidently handle large supergraphs or high request volumes.
 
-Being open-source, Hive Router's development is transparent and community-driven. We invite developers to report issues, suggest improvements, and even contribute code. Our goal is to build a GraphQL federation router that the community can rely on and help shape. The Guild will continue to maintain Hive Router with the same commitment we give to our other popular projects (like GraphQL Codegen, Mesh, and Yoga) – you can expect timely updates, active support, and integration with the broader GraphQL Hive platform (for schema registry, analytics, etc.).
+For those wondering about **our existing JavaScript-based [Hive Gateway](https://the-guild.dev/graphql/hive/gateway), it isn't going anywhere.** We will continue to offer and support both solutions. Hive Router is designed for users who need the highest level of performance, while our Node.js gateway remains a fantastic option for teams prioritizing easy integration with the JavaScript ecosystem. This allows you to choose the best gateway for your needs.
+
+Being open-source, Hive Router's development is transparent and community-driven. We invite developers to report issues, suggest improvements, and even contribute code. Our goal is to build a GraphQL federation router that the community can rely on and help shape. The Guild will continue to maintain Hive Router with the same commitment we give to our other popular projects (like [GraphQL Codegen](https://the-guild.dev/graphql/codegen) and [Yoga](https://the-guild.dev/graphql/yoga-server)) – you can expect timely updates, active support, and integration with the broader [GraphQL Hive platform](https://the-guild.dev/graphql/hive) (for schema registry, analytics, etc.).

@@ -466,7 +466,7 @@ function JsonBlock({
 
   return (
     <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-slate-100 shadow-sm">
-      {title && <h3 className="mb-1 text-xs font-medium tracking-wide text-slate-200">{title}</h3>}
+      {title && <h3 className="mb-1 text-sm font-medium tracking-wide text-slate-200">{title}</h3>}
       <pre className="max-h-40 overflow-auto rounded-lg border border-neutral-800 bg-[#111111] p-2 font-mono text-[12px] leading-5 text-neutral-200">
         {renderVal(value, '', 0)}
       </pre>
@@ -497,7 +497,7 @@ function ByteBuffer({
   return (
     <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-3 text-neutral-100">
       <div className="flex items-baseline justify-between">
-        <h3 className="mb-1 text-xs font-medium tracking-wide text-slate-200">{title}</h3>
+        <h3 className="mb-1 text-sm font-medium tracking-wide text-slate-200">{title}</h3>
       </div>
       <div className="mt-2 border border-neutral-800 bg-[#111111]">
         <svg
@@ -533,8 +533,9 @@ function ByteBuffer({
           })}
         </svg>
       </div>
-      <p className="mt-1 text-[10px] text-neutral-400">
-        Colored bars are <strong>byte slices</strong>. Final references these offsets; no copies.
+      <p className="mt-1 text-xs text-neutral-400">
+        Colored bars are <strong>byte slices</strong>. Final response references these offsets; no
+        copies.
       </p>
     </div>
   );
