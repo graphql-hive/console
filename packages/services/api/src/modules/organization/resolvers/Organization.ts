@@ -210,7 +210,10 @@ export const Organization: Pick<
   },
   availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
     const permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
-    const isAppDeploymentsEnabled = injector.get<boolean>(APP_DEPLOYMENTS_ENABLED,organization.featureFlags.appDeployments);
+    const isAppDeploymentsEnabled = injector.get<boolean>(
+      APP_DEPLOYMENTS_ENABLED,
+      organization.featureFlags.appDeployments,
+    );
     if (!isAppDeploymentsEnabled) {
       return permissionGroups.filter(p => p.id !== 'app-deployments');
     }
