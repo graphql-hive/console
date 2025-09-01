@@ -132,7 +132,7 @@ High concurrency can introduce contention if not managed properly. We designed t
 
 We did not rely solely on theory or micro-benchmarks – our performance optimizations were guided by extensive profiling and real-world testing. The team collected traces of actual federated workloads running in production-like environments (multiple subgraphs, realistic query patterns, concurrent users) and used them to fine-tune the router. By analyzing flame graphs and latency distributions on dedicated VMs, we identified bottlenecks and verified that each optimization resulted in noticeable improvements. For example, profiling revealed how much time was spent in JSON serialization, which justified our zero-copy parsing approach.
 
-We built a comprehensive benchmark suites ([\[1\]](https://github.com/graphql-hive/graphql-gateways-benchmark), [\[2\]](https://github.com/graphql-hive/graphql-federation-gateways-benchmark)) with multiple scenarios to validate performance across different situations. These scenarios included:
+We built a comprehensive benchmark suites ([\[1\]](https://github.com/graphql-hive/graphql-gateways-benchmark), [\[2\]](https://github.com/graphql-hive/federation-gateways-performance)) with multiple scenarios to validate performance across different situations. These scenarios included:
 
 - **Baseline throughput** under constant load (to measure raw requests per second and latency).
 - **Peak load bursts** with high concurrent clients (to ensure reliability and no failures under stress).
