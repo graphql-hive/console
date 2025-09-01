@@ -158,8 +158,15 @@ more details about OpenTelemetry setup and API.
 This configuration API still rely on official `@opentelemetry/api` package, which means you can use
 any official or standard compliant packages with it.
 
+You will have to pick a [Context Manager](https://opentelemetry.io/docs/languages/js/context/#context-manager) (we recommend to use `AsyncLocalStorageContextManager` from `@opentelemetry/context-async-hooks` if
+your runtime supports `AsyncLocalStorage` API), and a trace exporter depending on your traces backend (probably `@opentelemetry/exporter-trace-otlp-http`).
+
+```sh npm2yarn
+npm i @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http
+```
+
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -190,7 +197,11 @@ openTelemetrySetup({
 </Callout>
 
 OpenTelemetry provides an official SDK for Node (`@opentelemetry/sdk-node`). This SDK offers a
-standard API compatible with OTEL SDK specification.
+standard API compatible with OTEL SDK specification. You will also need an exporter depending on your traces backend (probably `@opentelemetry/exporter-trace-otlp-http`)
+
+```sh npm2yarn
+npm i @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
+```
 
 It ships with a lot of features, most of them being configurable via environment variables.
 
@@ -252,7 +263,7 @@ You can provide a service name, either by using standard `OTEL_SERVICE_NAME` and
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 
 openTelemetrySetup({
   resource: {
@@ -294,8 +305,12 @@ This resource will be merged with the resource created from env variables, which
 `service.name` and `service.version` are not mandatory if already provided through environment
 variables.
 
+```sh npm2yarn
+npm i @opentelemetry/resources
+```
+
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 
 openTelemetrySetup({
@@ -349,7 +364,7 @@ You can setup OpenTelemetry by providing either:
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 openTelemetrySetup({
@@ -408,7 +423,7 @@ OpenTelemetry's `NodeSDK` doesn't allow to manually provide a Tracer Provider. Y
 it separately.
 
 ```ts filename="telemetry.ts"
-import { trace } from '@opentelemetry/api'
+import { trace } from '@graphql-hive/gateway/opentelemetry/api'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 // Manually set the Tracer Provider, NodeSDK will detect that it is already registered
@@ -440,7 +455,7 @@ debugging purpose.
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 
 openTelemetrySetup({
   contextManager: new AsyncLocalStorageContextManager(),
@@ -473,12 +488,16 @@ new NodeSDK({
 
 An exporter that writes the spans to an OTLP-supported backend using HTTP.
 
+```sh npm2yarn
+npm i @opentelemetry/exporter-trace-otlp-http
+```
+
 <Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -513,12 +532,16 @@ new NodeSDK({
 
 An exporter that writes the spans to an OTLP-supported backend using gRPC.
 
+```sh npm2yarn
+npm i @opentelemetry/exporter-trace-otlp-grpc
+```
+
 <Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc'
 
@@ -554,7 +577,11 @@ new NodeSDK({
 [Jaeger](https://www.jaegertracing.io/) supports [OTLP over HTTP/gRPC](#otlp-over-http), so you can
 use it by pointing the
 `@opentelemetry/exporter-trace-otlp-http`/`@opentelemetry/exporter-trace-otlp-grpc` to the Jaeger
-endpoint.
+endpoint. In the following example, we are using the HTTP exporter.
+
+```sh npm2yarn
+npm i @opentelemetry/exporter-trace-otlp-http
+```
 
 Your Jaeger instance needs to have OTLP ingestion enabled, so verify that you have the
 `COLLECTOR_OTLP_ENABLED=true` environment variable set, and that ports `4317` and `4318` are
@@ -565,7 +592,7 @@ accessible.
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -601,7 +628,11 @@ new NodeSDK({
 [NewRelic](https://newrelic.com/) supports [OTLP over HTTP/gRPC](#otlp-over-http), so you can use it
 by configuring the
 `@opentelemetry/exporter-trace-otlp-http`/`@opentelemetry/exporter-trace-otlp-grpc` to the NewRelic
-endpoint:
+endpoint. In the following example, we are using the HTTP exporter.
+
+```sh npm2yarn
+npm i @opentelemetry/exporter-trace-otlp-http
+```
 
 Please refer to the
 [NewRelic OTLP documentation](https://docs.newrelic.com/docs/opentelemetry/best-practices/opentelemetry-otlp/#configure-endpoint-port-protocol)
@@ -612,7 +643,7 @@ for complete documentation and to find the appropriate endpoint.
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -671,9 +702,13 @@ installing the dependency.
 The official DataDog's `TracerProvider` is the recommended approach, because it enable and sets up
 the correlation with DataDog APM spans.
 
+```sh npm2yarn
+npm i dd-trace
+```
+
 ```ts filename="telemetry.ts"
 import ddTrace from 'dd-trace'
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 const { TracerProvider } = ddTrace.init({
@@ -696,8 +731,12 @@ It is possible to not use DataDog Agent if you want to only use DataDog as a tra
 
 DataDog is compatible with standard OTLP over HTTP export format.
 
+```sh npm2yarn
+npm i @opentelemetry/exporter-trace-otlp-http
+```
+
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -741,12 +780,16 @@ new NodeSDK({
 [Zipkin](https://zipkin.io/) is using a custom protocol to send the spans, so you can use the Zipkin
 exporter to send the spans to a Zipkin backend.
 
+```sh npm2yarn
+npm i @opentelemetry/exporter-zipkin
+```
+
 <Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin'
 
@@ -773,27 +816,6 @@ new NodeSDK({
     url: '<your-zipkin-endpoint>'
   })
 }).start()
-```
-
-</Tabs.Tab>
-
-<Tabs.Tab>
-
-```ts filename="telemetry.ts"
-import ddTrace from 'dd-trace'
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
-
-const { TracerProvider } = ddTrace.init({
-  // Your configuration
-})
-
-openTelemetrySetup({
-  contextManager: new AsyncLocalStorageContextManager(),
-  traces: {
-    tracerProvider: new TracerProvider()
-  }
-})
 ```
 
 </Tabs.Tab>
@@ -828,8 +850,12 @@ from the `getActiveContext` method of the plugin instance.
 
 <Tabs.Tab>
 
+```sh npm2yarn
+npm i @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-grpc @opentelemetry/propagator-b3
+```
+
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { B3Propagator } from '@opentelemetry/propagator-b3'
@@ -847,10 +873,13 @@ openTelemetrySetup({
 
 <Tabs.Tab>
 
+```sh npm2yarn
+npm i @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-grpc @opentelemetry/propagator-b3
+```
 ```ts filename="telemetry.ts"
-import { ZipkinExporter } from '@opentelemetry/exporter-zipkin'
-import { B3Propagator } from '@opentelemetry/propagator-b3'
 import { NodeSDK } from '@opentelemetry/sdk-node'
+import { B3Propagator } from '@opentelemetry/propagator-b3'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc'
 
 new NodeSDK({
   traceExporter: new OTLPTraceExporter({ url: 'http://<otlp-endpoint>:4317' }),
@@ -888,7 +917,7 @@ The following configuration are allowed:
   [`SimpleSpanProcessor`](https://opentelemetry.io/docs/specs/otel/trace/sdk/#simple-processor)
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 
 openTelemetrySetup({
   traces: {
@@ -955,7 +984,7 @@ rate which will be used to setup a Parent + TraceID Ratio strategy.
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
 import { AlwaysOnSampler } from '@opentelemetry/sdk-trace-base'
 
@@ -1011,12 +1040,16 @@ both cardinality and amount of data the OpenTelemetry SDK will be allowed to gen
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 
 openTelemetrySetup({
-  generalLimits: {},
+  generalLimits: {
+    //...
+  },
   traces: {
-    spanLimits: {}
+    spanLimits: {
+      //...
+    }
   }
 })
 ```
@@ -1026,12 +1059,15 @@ openTelemetrySetup({
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
-import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
+import { NodeSDK } from '@opentelemetry/sdk-node'
 
 new NodeSDK({
-  generalLimits: {},
-  spanLimits: {}
+  generalLimits: {
+    //...
+  },
+  spanLimits: {
+    //...
+  }
 }).start()
 ```
 
@@ -1067,8 +1103,12 @@ hive-gateway supergraph --opentelemetry
 <Tabs.Tab>
 
 ```ts filename="gateway.config.ts"
-import './telemetry.ts'
 import { defineConfig } from '@graphql-hive/gateway'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+openTelemetrySetup({
+  //...
+})
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
@@ -1090,9 +1130,13 @@ npm i @graphql-mesh/plugin-opentelemetry
 ```
 
 ```ts filename="index.ts"
-import './telemetry.ts'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+
+openTelemetrySetup({
+  //...
+})
 
 export const gateway = createGatewayRuntime({
   plugins: ctx => [
@@ -1764,13 +1808,17 @@ If you are using an async compatible context manager, you can simply use the sta
 
 <Tabs.Tab>
 
-The Gateway's tracer is available in the graphql context. If you don't have access to the context,
-you can either create your own tracer, or manually instantiate the opentelemetry plugin (see
-Programmatic Usage).
+The Gateway's tracer is available can be accessed through the Hive Gateway OpenTelemetry API (`@graphql-hive/gateway/opentelemetry/api`).
+
+Note that the `tracer` will be defined only once the OpenTelemetry plugin has
+been instantiated, which means it will not be defined at import time or if `openTelemetry` option is `false`.
+
+You can also create your own tracer instead of reusing the Gateway one.
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
+import { hive } from '@graphql-hive/gateway/opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
@@ -1783,18 +1831,17 @@ export const gatewayConfig = defineConfig({
   openTelemetry: {
     traces: true,
   },
-  plugins: () => [
-    useGenericAuth({
-      resolveUserFn: ({ context }) =>
-        // `startActiveSpan` will rely on the current context to parent the new span correctly
-        // You can also use your own tracer instead of Hive Gateway's one.
-        context.openTelemetry.tracer.startActiveSpan('users.fetch', (span) => {
-          const user = await fetchUser(extractUserIdFromContext(context))
-          span.end();
-          return user
-        })
-    }),
-  ],
+  genericAuth: {
+    resolveUserFn: ({ context }) => {
+      // `startActiveSpan` will rely on the current context to parent the new span correctly
+      // You can also use your own tracer instead of Hive Gateway's one.
+      return hive.tracer!.startActiveSpan('users.fetch', (span) => {
+        const user = await fetchUser(extractUserIdFromContext(context))
+        span.end();
+        return user
+      })
+    }
+  },
 })
 ```
 
@@ -1802,14 +1849,17 @@ export const gatewayConfig = defineConfig({
 
 <Tabs.Tab>
 
-The Gateway's tracer is available in the graphql context (`context.openTelemetry.tracer`). If you
-don't have access to the graphql context, you can either create your own tracer, or use `getTracer`
-plugin method (as shown in this example).
+The Gateway's tracer is available can be accessed through the Hive Gateway OpenTelemetry API (`@graphql-hive/gateway/opentelemetry/api`).
+
+Note that the `tracer` will be defined only once the OpenTelemetry plugin has
+been instantiated, which means it will not be defined at import time or if no OpenTelemetry plugin is used.
+
+You can also create your own tracer instead of reusing the Gateway one.
 
 ```ts filename="index.ts"
-import './telemetry.ts'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+import { hive } from '@graphql-mesh/plugin-opentelemetry/api'
 import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
@@ -1821,23 +1871,16 @@ openTelemetrySetup({
 
 export const gateway = createGatewayRuntime({
   plugins: ctx => {
-    const otelPlugin = useOpenTelemetry({
-      ...ctx,
-      traces: true
-    })
-
     return [
-      otelPlugin,
+      useOpenTelemetry({
+        ...ctx,
+        traces: true
+      }),
       useGenericAuth({
         resolveUserFn: ({ context }) => {
-          // If you have access to the configuration context:
-          const tracer = ctx.openTelemetry.tracer;
-          // Otherwise, you can access to the tracer on the plugin instance itself
-          const tracer = otelPlugin.tracer;
-
           // `startActiveSpan` will rely on the current context to parent the new span correctly
           // You can also use your own tracer instead of Hive Gateway's one.
-          return tracer.startActiveSpan('users.fetch', (span) => {
+          return hive.tracer!.startActiveSpan('users.fetch', (span) => {
             const user = await fetchUser(extractUserIdFromContext(context))
             span.end();
             return user
@@ -1861,19 +1904,17 @@ If you can't or don't want to use the Context Manager, Hive Gateway provides a c
 context tracking mechanism.
 
 To parent spans correctly, you will have to manually provide the current OTEL context. You can
-retrieve the current OTEL context by either using the `context.openTelemetry.getActiveContext`
-function, or the plugin's method `getActiveContext()`.
+retrieve the current OTEL context by either using the Hive Gateway OpenTelemetry API (`@graphql-hive/gateway/opentelemetry/api`) utility function `getActiveContext` with a matcher. This matcher is an
+object containing either the HTTP `request`, the GraphQL `context` or an `executionRequest`, depending on the situation. You should always provide the most specific matcher to get the proper context.
 
 <Tabs items={['CLI', 'Programmatic Usage']}>
 
 <Tabs.Tab>
 
-If you don't have access to the graphql context, manually instantiate the OpenTelemetry plugin (see
-Programmatic Usage).
-
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
+import { hive } from '@graphql-hive/gateway/opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
@@ -1890,10 +1931,10 @@ export const gatewayConfig = defineConfig({
   plugins: () => [
     useGenericAuth({
       resolveUserFn: ({ context }) => {
-        const ctx = context.openTelemetry.getActiveContext();
+        const otelCtx = hive.getActiveContext({ context });
 
         // Explicitly pass the parent context as the third argument.
-        return context.openTelemetry.tracer.startActiveSpan('users.fetch', {}, ctx, (span) => {
+        return hive.tracer!.startActiveSpan('users.fetch', {}, otelCtx, (span) => {
           const user = await fetchUser(extractUserIdFromContext(context))
           span.end();
           return user
@@ -1908,14 +1949,10 @@ export const gatewayConfig = defineConfig({
 
 <Tabs.Tab>
 
-The Gateway's tracer is available in the graphql context (`context.openTelemetry.tracer`). If you
-don't have access to the graphql context, you can either create your own tracer, or use `getTracer`
-plugin method (as shown in this example).
-
 ```ts filename="index.ts"
-import './telemetry.ts'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+import { hive } from '@graphql-mesh/plugin-opentelemetry/api'
 import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
@@ -1927,23 +1964,18 @@ openTelemetrySetup({
 
 export const gateway = createGatewayRuntime({
   plugins: ctx => {
-    const otelPlugin = useOpenTelemetry({
-      ...ctx,
-      useContextManager: false, // Make sure to disable context manager usage
-      traces: true
-    })
-
     return [
-      otelPlugin,
+      useOpenTelemetry({
+        ...ctx,
+        useContextManager: false, // Make sure to disable context manager usage
+        traces: true
+      }),
       useGenericAuth({
         resolveUserFn: ({ context }) => {
-          // Retrieve current OTEL Context by passing an object containing the graphql `context`,
-          // the http `request` and/or the `executionRequest`. The appropriate context will be
-          // found based on which of those properties are provided.
-          const otelCtx = context.openTelemetry.getActiveContext();
+          const otelCtx = hive.getActiveContext({ context });
 
           // Explicitly pass the parent context as the third argument.
-          return context.openTelemetry.tracer.startActiveSpan('users.fetch', {}, otelCtx, (span) => {
+          return hive.tracer!.startActiveSpan('users.fetch', {}, otelCtx, (span) => {
             const user = await fetchUser(extractUserIdFromContext(context))
             span.end();
             return user
@@ -1991,8 +2023,8 @@ If you are using an async compatible context manager, you can simply use the sta
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
-import { trace } from '@opentelemetry/api'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
+import { trace } from '@graphql-hive/gateway/opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
@@ -2025,10 +2057,10 @@ export const gatewayConfig = defineConfig({
 If you can't or don't want to use the Context Manager, Hive Gateway provides a cross platform
 context tracking mechanism.
 
-To get access to the current span and add a custom attribute, event or link, you need to manually
-provide the current OpenTelemetry context. You can retrieve the current OTEL context by either using
-the `context.openTelemetry.getActiveContext()` function, or the utility function
-`getActiveContext({ context, request, executionRequest })`.
+You can
+retrieve the current OTEL context by using the Hive Gateway OpenTelemetry API (`@graphql-hive/gateway/opentelemetry/api`) utility function `getActiveContext` with a matcher. This matcher is an
+object containing either the HTTP `request`, the GraphQL `context` or an `executionRequest`, depending on the situation. You should always provide the most specific matcher to get the proper context.
+
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
@@ -2052,12 +2084,8 @@ export const gatewayConfig = defineConfig({
       resolveUserFn: ({ context }) => {
         const user = await fetchUser(extractUserIdFromContext(context))
 
-        // From graphql context
-        const ctx = context.openTelemetry.getActiveContext();
-        // From global utility function
-        const ctx = hive.getActiveContext({ context })
-
-        const span = trace.getSpan(ctx)
+        const otelCtx = hive.getActiveContext({ context })
+        const span = trace.getSpan(otelCtx)
         span.setAttribute('user.id', user.id);
 
         return user
@@ -2081,7 +2109,7 @@ Sometimes, you don't want to add the custom attribute on the current span, but o
 spans (http, operation, subgraph execution).
 
 You can access those spans by using `getHttpContext(request)`, `getOperationContext(context)` and
-`getExecutionRequestContext(executionRequest)` functions.
+`getExecutionRequestContext(executionRequest)` functions from `@graphql-hive/gateway/opentelemetry/api`.
 
 They are accessible under `openTelemetry` key of the graphql and configuration context, and on the
 plugin instance if you don't have access to any of those contexts.
