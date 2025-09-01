@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 /**
  * Zero‑Copy JSON: Two Subgraphs → Partial Final (Bytes & References) — Compact (≤620px)
@@ -508,9 +508,10 @@ function ByteBuffer({
           className="block"
         >
           <rect x={0} y={0} width={viewW} height={H + 8} fill="#111111" />
-          {bytes.map((_, i) => (
-            <rect key={i} x={i * PX} y={4} width={PX - 1} height={H} fill="#111111" />
-          ))}
+          {bytes.map(
+            (_, i) =>
+              (<rect key={i} x={i * PX} y={4} width={PX - 1} height={H} fill="#111111" />) as any,
+          )}
           {entries.map((e, i) => {
             const x = e.start * PX;
             const w = Math.max(2, e.len * PX);
