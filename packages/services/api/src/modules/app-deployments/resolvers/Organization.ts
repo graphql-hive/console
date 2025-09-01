@@ -14,7 +14,7 @@ export const Organization: Pick<OrganizationResolvers, 'isAppDeploymentsEnabled'
   /* Implement Organization resolver logic here */
   isAppDeploymentsEnabled(organization, _, { injector }) {
     return (
-      injector.get<boolean>(APP_DEPLOYMENTS_ENABLED) || organization.featureFlags.appDeployments
+      injector.get<boolean>(APP_DEPLOYMENTS_ENABLED, organization.featureFlags.appDeployments)
     );
   },
 };
