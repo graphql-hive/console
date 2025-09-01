@@ -78,40 +78,40 @@ const gateways = [
   {
     name: 'Hive Router',
     version: 'main',
-    rps: 1826.91,
-    p95: 48.34,
-    p99_9: 78.56,
-    mem: 53,
-    cpu: 166.0,
+    rps: 1831.09,
+    p95: 48.58,
+    p99_9: 78.84,
+    mem: 48,
+    cpu: 167.0,
     okTestCases: 189,
     okTestSuites: 42,
   },
   {
     name: 'Apollo Router',
-    version: 'v2.5.0',
-    rps: 317.45,
-    p95: 201.34,
-    p99_9: 495.61,
-    cpu: 273.0,
-    mem: 193,
+    version: 'v2.6.0',
+    rps: 329.84,
+    p95: 196.46,
+    p99_9: 472.21,
+    cpu: 270.0,
+    mem: 192,
     okTestCases: 185,
     okTestSuites: 40,
   },
   {
     name: 'Grafbase Gateway',
-    version: 'v0.46.2',
-    rps: 451.24,
-    p95: 139.79,
-    p99_9: 400.35,
-    cpu: 136.0,
+    version: 'v0.48.1',
+    rps: 461.19,
+    p95: 137.81,
+    p99_9: 395.73,
+    cpu: 133.0,
     mem: 94,
     okTestCases: 171,
     okTestSuites: 35,
   },
   {
     name: 'Cosmo Router',
-    version: 'v0.242.0',
-    rps: 570.79,
+    version: 'v0.247.0',
+    rps: 585.79,
     p95: 128.25,
     p99_9: 348.17,
     cpu: 263,
@@ -181,7 +181,7 @@ export function BenchmarkResultsTable() {
       <TableCaption className="text-xs">
         Results from our open-source{' '}
         <a
-          href="http://the-guild.dev/graphql/hive/federation-gateway-performance"
+          href="http://the-guild.dev/graphql/hive/federation-gateway-performance/#/constant"
           className="underline"
           target="_blank"
           title="Open Source GraphQL federation gateways performance benchmark"
@@ -741,7 +741,7 @@ export function Highlights() {
       <HighlightItem
         icon={<RouteIcon className="size-6" />}
         title="Familiair Query Plans"
-        description="Produces Apollo-like query plans, so you can switch without friction."
+        description="Apollo-style query plans, no new concepts to learn."
       />
     </div>
   );
