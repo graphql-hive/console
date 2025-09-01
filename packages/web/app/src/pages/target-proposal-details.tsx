@@ -1,4 +1,4 @@
-import { Fragment, ReactNode, useMemo, useState } from 'react';
+import { Fragment, ReactNode, useMemo } from 'react';
 import { ProposalOverview_ReviewsFragment } from '@/components/proposal';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export function TargetProposalDetailsPage(props: {
           }
         }
         return {
+          hasChanges: allChanges.length > 0,
           safe,
           breaking,
           dangerous,
@@ -81,7 +82,11 @@ export function TargetProposalDetailsPage(props: {
 
   return (
     <div className="w-full">
-      {mappedServices?.map(({ safe, dangerous, breaking, ignored, serviceName }) => {
+      {mappedServices?.map(({ safe, dangerous, breaking, ignored, serviceName, hasChanges }) => {
+        // don't print service name if service was not changed
+        if (!hasChanges) {
+          return null;
+        }
         return (
           <Fragment key={serviceName}>
             {serviceName.length !== 0 && (

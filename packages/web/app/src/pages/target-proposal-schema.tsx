@@ -1,4 +1,5 @@
 import { Proposal, ProposalOverview_ReviewsFragment } from '@/components/proposal';
+import { Subtitle } from '@/components/ui/page';
 import { FragmentType } from '@/gql';
 import { ServiceProposalDetails } from './target-proposal-types';
 

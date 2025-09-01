@@ -217,20 +217,40 @@ export default gql`
     The checks associated with this proposal. Each proposed change triggers a check
     for the set of changes. And each service is checked separately. This is a limitation
     of the schema check API at this time.
+
+    The check "cursor" can be considered the proposal "version".
     """
-    checks(after: ID, first: Int! = 20, input: SchemaProposalChecksInput!): SchemaCheckConnection
+    checks(
+      after: String
+      first: Int! = 20
+      input: SchemaProposalChecksInput!
+    ): SchemaCheckConnection
 
     """
     Applies changes to each service subgraph for each of the service's latest check belonging to the SchemaProposal.
-
-    @todo consider making this a connection before going live.
     """
-    rebasedSchemaSDL(checkId: ID): [SubgraphSchema!]
+    rebasedSchemaSDL(
+      """
+      A schema check cursor. This indicates from where in the list of schema checks to start applying
+      the changes. The check "cursor" can be considered the proposal "version".
+      """
+      after: String
+      """
+      The number of service SDLs return
+      """
+      first: Int! = 20
+    ): SubgraphSchemaConnection
 
     """
     Applies changes to the supergraph for each of the service's latest check belonging to the SchemaProposal.
     """
-    rebasedSupergraphSDL(versionId: ID): String
+    rebasedSupergraphSDL(
+      """
+      A schema check cursor. This indicates from where in the list of schema checks to start applying
+      the changes.
+      """
+      fromCursor: String
+    ): String
 
     commentsCount: Int!
   }
@@ -240,6 +260,16 @@ export default gql`
     Set to "true" to only return the latest checks for each service.
     """
     latestPerService: Boolean! = false
+  }
+
+  type SubgraphSchemaConnection {
+    edges: [SubgraphSchemaEdge]
+    pageInfo: PageInfo!
+  }
+
+  type SubgraphSchemaEdge {
+    cursor: String!
+    node: SubgraphSchema!
   }
 
   type SubgraphSchema {
@@ -757,8 +787,6 @@ export default gql`
   type TypeRemoved {
     removedTypeName: String!
   }
-
-  scalar GraphQLKind
 
   type TypeAdded {
     addedTypeName: String!

@@ -54,7 +54,7 @@ export function VersionSelect(props: {
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="truncate p-0">
+      <PopoverContent align="start" className="max-w-screen min-w-fit truncate p-0">
         <Command>
           <CommandGroup>
             <ScrollArea className="relative max-h-screen">

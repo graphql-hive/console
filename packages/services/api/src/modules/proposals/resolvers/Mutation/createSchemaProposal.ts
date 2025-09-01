@@ -7,16 +7,33 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
   { injector, session },
 ) => {
   const { target, title, description, isDraft, initialChecks } = input;
-  const user = await session.getViewer();
+  let user: {
+    id: string;
+    displayName: string;
+  } | null = null;
+  try {
+    const actor = await session.getActor();
+    if (actor.type === 'user') {
+      user = {
+        id: actor.user.id,
+        displayName: actor.user.displayName,
+      };
+    }
+  } catch (e) {
+    // ignore
+  }
+
   const result = await injector.get(SchemaProposalManager).proposeSchema({
     target,
     title,
     description: description ?? '',
     isDraft: isDraft ?? false,
-    user: {
-      id: user.id,
-      displayName: user.displayName,
-    },
+    user: user
+      ? {
+          id: user.id,
+          displayName: user.displayName,
+        }
+      : null,
     initialChecks,
   });
 

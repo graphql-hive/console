@@ -54,7 +54,7 @@ export class SchemaProposalStorage {
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
-          'organization has no access to schema proposals (targetId=%s, proposalId=%s)',
+          'organization has no access to schema proposals (target=%s, proposal=%s)',
           args.targetId,
           args.proposalId,
         );
@@ -75,10 +75,10 @@ export class SchemaProposalStorage {
     title: string;
     description: string;
     stage: SchemaProposalStage;
-    userId: string;
+    userId: string | null;
   }) {
     this.logger.debug(
-      'propose schema (targetId=%s, title=%s, stage=%b)',
+      'propose schema (targetId=%s, title=%s, stage=%s)',
       args.targetId,
       args.title,
       args.stage,
@@ -107,30 +107,18 @@ export class SchemaProposalStorage {
     const proposal = await this.pool
       .maybeOne<unknown>(
         sql`
-      INSERT INTO schema_proposals
-        (
-          "id"
-          , "created_at"
-          , "updated_at"
-          , "target_id"
-          , "title"
-          , "description"
-          , "stage"
-          , "user_id"
-        )
-      VALUES
-        (
-          DEFAULT
-          , DEFAULT
-          , DEFAULT
-          , ${args.targetId}
-          , ${args.title}
-          , ${args.description}
-          , ${args.stage}
-          , ${args.userId}
-        )
-      RETURNING *
-    `,
+          INSERT INTO "schema_proposals"
+            ("target_id", "title", "description", "stage", "user_id")
+          VALUES
+            (
+              ${args.targetId}
+              , ${args.title}
+              , ${args.description}
+              , ${args.stage}
+              , ${args.userId}
+            )
+          RETURNING ${schemaProposalFields}
+        `,
       )
       .then(row => SchemaProposalModel.parse(row));
 
@@ -140,17 +128,19 @@ export class SchemaProposalStorage {
     };
   }
 
-  async getProposal(args: { proposalId: string }) {
+  async getProposal(args: { id: string }) {
+    this.logger.debug('Get proposal (proposal=%s)', args.id);
     const result = await this.pool
       .maybeOne<unknown>(
         sql`
-      SELECT
-        ${schemaProposalFields}
-      FROM
-        "schema_proposals"
-      WHERE
-        "id" = ${args.proposalId}
-    `,
+          SELECT
+            ${schemaProposalFields}
+          FROM
+            "schema_proposals"
+          WHERE
+            "id" = ${args.id}
+          LIMIT 1
+        `,
       )
       .then(row => SchemaProposalModel.parse(row));
 
@@ -232,7 +222,7 @@ export class SchemaProposalStorage {
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
 
     this.logger.debug(
-      'Select by proposalId ID (targetId=%s, cursor=%s, limit=%d)',
+      'Select by proposalId ID (proposal=%s, cursor=%s, limit=%d)',
       args.proposalId,
       cursor,
       limit,
@@ -243,7 +233,7 @@ export class SchemaProposalStorage {
       FROM
         "schema_proposal_reviews"
       WHERE
-        "proposal_id" = ${args.proposalId}
+        "schema_proposal_id" = ${args.proposalId}
         ${
           cursor
             ? sql`
@@ -327,8 +317,9 @@ const SchemaProposalModel = z.object({
   description: z.string(),
   stage: z.enum(['DRAFT', 'OPEN', 'APPROVED', 'IMPLEMENTED', 'CLOSED']),
   targetId: z.string(),
-  userId: z.string(),
+  userId: z.string().nullable(),
   commentsCount: z.number(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;
+export type SchemaProposalReviewRecord = z.infer<typeof SchemaProposalReviewModel>;

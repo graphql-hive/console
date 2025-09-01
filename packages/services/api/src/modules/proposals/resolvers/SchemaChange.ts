@@ -1,8 +1,17 @@
 import type { SchemaChangeResolvers } from './../../../__generated__/types';
 
+export function toTitleCase(str: string) {
+  return str.toLowerCase().replace(/^_*(.)|_+(.)/g, (_, c: string, d: string) => {
+    return (c ?? d).toUpperCase();
+  });
+}
+
 export const SchemaChange: Pick<SchemaChangeResolvers, 'meta' | '__isTypeOf'> = {
-  meta: ({ meta }, _arg, _ctx) => {
+  meta: ({ meta, type }, _arg, _ctx) => {
     // @todo consider validating
-    return meta as any;
+    return {
+      __typename: toTitleCase(type),
+      ...(meta as any),
+    };
   },
 };

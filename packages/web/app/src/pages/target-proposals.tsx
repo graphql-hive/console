@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
+import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/v2';
@@ -34,7 +35,7 @@ export function TargetProposalsPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="flex min-h-[300px] flex-col"
       >
         <ProposalsContent {...props} />
       </TargetLayout>
@@ -174,6 +175,12 @@ const ProposalsListPage = (props: {
   return (
     <>
       {query.fetching ? <Spinner /> : null}
+      {query.data?.schemaProposals?.edges?.length === 0 && (
+        <div className="mt-8 text-center">
+          <Title>No proposals have been created yet</Title>
+          <Subtitle>To get started, use the Hive CLI to propose a schema change.</Subtitle>
+        </div>
+      )}
       {query.data?.schemaProposals?.edges?.map(({ node: proposal }) => {
         return (
           <div

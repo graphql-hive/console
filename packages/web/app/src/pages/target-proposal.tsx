@@ -12,7 +12,7 @@ import { VersionSelect } from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
 import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
-import { Title } from '@/components/ui/page';
+import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
@@ -284,7 +284,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         {changesQuery.fetching ? (
           <Spinner />
         ) : !services.length ? (
-          <>No changes found</>
+          <>
+            <Title className="text-center">No changes found</Title>
+            <Subtitle className="text-center">
+              This proposed version would result in no changes to the latest schemas.
+            </Subtitle>
+          </>
         ) : (
           <TabbedContent
             {...props}

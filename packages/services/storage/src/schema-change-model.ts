@@ -979,6 +979,7 @@ const SchemaCheckSharedOutputFields = {
   githubRepository: z.string().nullable(),
   githubSha: z.string().nullable(),
   contextId: z.string().nullable(),
+  schemaProposalId: z.string().nullable().optional(),
 };
 
 const SchemaCheckSharedInputFields = {

@@ -89,7 +89,7 @@ const schemaDeleteCount = new promClient.Counter({
 });
 
 export type CheckInput = Types.SchemaCheckInput & {
-  schemaProposalId?: string;
+  schemaProposalId?: string | null;
 };
 
 export type DeleteInput = Types.SchemaDeleteInput;
@@ -342,10 +342,11 @@ export class SchemaPublisher {
           targetId: selector.targetId,
           onlyComposable: true,
         }),
-        input.schemaProposalId &&
-          this.schemaProposals.getProposal({
-            id: input.schemaProposalId,
-          }),
+        input.schemaProposalId
+          ? this.schemaProposals.getProposal({
+              id: input.schemaProposalId,
+            })
+          : null,
       ]);
 
     if (input.schemaProposalId && schemaProposal?.targetId !== selector.targetId) {
@@ -485,6 +486,7 @@ export class SchemaPublisher {
       }
 
       if (github != null) {
+        // @todo should proposals do anything special here?
         const result = await this.createGithubCheckRunStartForSchemaCheck({
           organization,
           project,
@@ -723,6 +725,7 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
@@ -768,6 +771,7 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
@@ -845,6 +849,7 @@ export class SchemaPublisher {
               })),
             )
           : null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }

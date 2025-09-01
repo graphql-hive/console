@@ -35,7 +35,7 @@ export class SchemaProposalManager {
     user: {
       id: string;
       displayName: string;
-    };
+    } | null;
     initialChecks: ReadonlyArray<SchemaProposalCheckInput>;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
@@ -45,7 +45,7 @@ export class SchemaProposalManager {
 
     const createProposalResult = await this.storage.createProposal({
       organizationId: selector.organizationId,
-      userId: args.user.id,
+      userId: args.user?.id ?? null,
       description: args.description,
       stage: args.isDraft ? 'DRAFT' : 'OPEN',
       targetId: selector.targetId,
@@ -98,7 +98,7 @@ export class SchemaProposalManager {
         stage: proposal.stage,
         targetId: proposal.targetId,
         reviews: null,
-        author: args.user.displayName,
+        author: args.user?.displayName ?? '',
         commentsCount: 0,
         // checks: {
         //   edges: checkEdges,
@@ -115,7 +115,7 @@ export class SchemaProposalManager {
     };
   }
 
-  async getProposal(args: { proposalId: string }) {
+  async getProposal(args: { id: string }) {
     return this.storage.getProposal(args);
   }
 
@@ -154,5 +154,6 @@ export class SchemaProposalManager {
     });
   }
 
+  // @todo
   async reviewProposal(args: { proposalId: string }) {}
 }

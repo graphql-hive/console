@@ -1,0 +1,50 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@shareable", "@override"]
+  )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "reviews-team")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+type Product implements ProductItf @key(fields: "id") {
+  id: ID!
+  reviewsCount: Int!
+  reviewsScore: Float! @shareable @override(from: "products")
+  reviews: [Review!]!
+}
+
+interface ProductItf {
+  id: ID!
+  reviewsCount: Int!
+  reviewsScore: Float!
+  reviews: [Review!]!
+}
+
+type Query {
+  review(id: ID!): Review
+  reviewsByProductId(id: ID!): [Review]
+}
+
+type Mutation {
+  reviewProduct(productId: ID!, input: ReviewProductInput!): Review
+}
+
+input ReviewProductInput {
+  body: String!
+
+  """
+  Rating on a scale of 0 - 5
+  """
+  rating: Int!
+}
+
+type Review {
+  id: ID!
+  body: String!
+  rating: Int!
+}

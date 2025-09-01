@@ -133,7 +133,7 @@ export default {
           ADD COLUMN IF NOT EXISTS "schema_proposal_id" UUID REFERENCES "schema_proposals" ("id") ON DELETE SET NULL
         ;
         CREATE INDEX IF NOT EXISTS schema_checks_schema_proposal_id ON schema_checks(
-          schema_proposal_id
+          schema_proposal_id, lower(service_name)
         )
         ;
       `,

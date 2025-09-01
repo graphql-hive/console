@@ -405,6 +405,30 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
+  // @todo consider moving to proposals provider
+  getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(_: {
+    proposalId: string;
+    first: number | null;
+    cursor: null | string;
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+  }): Promise<
+    Readonly<{
+      edges: ReadonlyArray<{
+        // @todo consider conditionally excluding this from the query for performance
+        // Omit<TransformedSchemaCheck, 'supergraphSDL' | 'compositeSchemaSDL' | 'schemaSDL'>;
+        node: TransformedSchemaCheck;
+        cursor: string;
+      }>;
+      pageInfo: Readonly<{
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string;
+        endCursor: string;
+      }>;
+    }>
+  >;
   getVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | never>;
   deleteSchema(
     _: {
@@ -743,7 +767,9 @@ export interface Storage {
   /**
    * Persist a schema check record in the database.
    */
-  createSchemaCheck(_: SchemaCheckInput & { expiresAt: Date | null }): Promise<SchemaCheck>;
+  createSchemaCheck(
+    _: SchemaCheckInput & { expiresAt: Date | null; schemaProposalId?: string | null },
+  ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.
    */
