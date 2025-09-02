@@ -3,24 +3,6 @@
 
 import { useMemo, useState } from 'react';
 
-/**
- * Zero‑Copy JSON: Two Subgraphs → Partial Final (Bytes & References) — Compact (≤620px)
- *
- * Layout (compact):
- *  1) Subgraph A — left: JSON, right: bytes (two tight columns)
- *  2) Subgraph B — same
- *  3) Final — full‑width JSON with ref chips
- *
- * Notes:
- *  - Container max width is 620px.
- *  - Cards, fonts, and paddings reduced.
- *  - JSON panes are clamped in height with internal scroll.
- *  - Byte strip auto‑scales to container width via SVG viewBox (no horizontal scroll).
- *  - Hover cross‑highlight preserved.
- *
- * Includes lightweight runtime tests via console.assert.
- */
-
 // --- Minimal tokenizer utilities (used by tests to validate slices remain correct) ---
 function isDigit(ch: string) {
   return ch >= '0' && ch <= '9';
