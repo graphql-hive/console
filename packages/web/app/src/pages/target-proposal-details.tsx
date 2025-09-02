@@ -90,7 +90,7 @@ export function TargetProposalDetailsPage(props: {
         return (
           <Fragment key={serviceName}>
             {serviceName.length !== 0 && (
-              <Title className="flex items-center">
+              <Title className="flex items-center text-xl">
                 <CubeIcon className="mr-2 h-6 w-auto flex-none" /> {serviceName}
               </Title>
             )}

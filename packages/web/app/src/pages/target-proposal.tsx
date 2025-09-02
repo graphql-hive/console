@@ -22,8 +22,12 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { Change } from '@graphql-inspector/core';
 import { patchSchema } from '@graphql-inspector/patch';
 import { NoopError } from '@graphql-inspector/patch/errors';
-import { ListBulletIcon } from '@radix-ui/react-icons';
+import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
+import {
+  ProposalOverview_ChecksFragment,
+  TargetProposalChecksPage,
+} from './target-proposal-checks';
 import { TargetProposalDetailsPage } from './target-proposal-details';
 import { TargetProposalEditPage } from './target-proposal-edit';
 import { TargetProposalSchemaPage } from './target-proposal-schema';
@@ -34,6 +38,7 @@ enum Tab {
   SCHEMA = 'schema',
   SUPERGRAPH = 'supergraph',
   DETAILS = 'details',
+  CHECKS = 'checks',
   EDIT = 'edit',
 }
 
@@ -47,6 +52,7 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       description
       checks(after: null, input: {}) {
         ...ProposalQuery_VersionsListFragment
+        ...ProposalOverview_ChecksFragment
       }
       reviews {
         ...ProposalOverview_ReviewsFragment
@@ -296,6 +302,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             page={props.tab}
             services={services ?? []}
             reviews={proposal?.reviews ?? {}}
+            checks={proposal?.checks ?? null}
           />
         )}
       </div>
@@ -311,6 +318,7 @@ function TabbedContent(props: {
   page?: string;
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -359,8 +367,24 @@ function TabbedContent(props: {
             search={{ page: 'supergraph' }}
             className="flex items-center"
           >
-            <GraphQLIcon className="mr-2 h-5 w-auto flex-none" />
+            <GraphQLIcon className="mr-2 h-4 w-auto flex-none" />
             Supergraph Preview
+          </Link>
+        </TabsTrigger>
+        <TabsTrigger variant="menu" value={Tab.CHECKS} asChild>
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
+            params={{
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+              proposalId: props.proposalId,
+            }}
+            search={{ page: 'checks' }}
+            className="flex items-center"
+          >
+            <PieChartIcon className="mr-2 h-4 w-auto flex-none" />
+            Checks
           </Link>
         </TabsTrigger>
         <TabsTrigger variant="menu" value={Tab.EDIT} asChild>
@@ -375,8 +399,8 @@ function TabbedContent(props: {
             search={{ page: 'edit' }}
             className="flex items-center"
           >
-            <EditIcon className="mr-2 h-4 w-auto flex-none" />
-            <span>Edit</span>
+            <EditIcon className="mr-2 h-3 w-auto flex-none" />
+            Edit
           </Link>
         </TabsTrigger>
       </TabsList>
@@ -393,6 +417,11 @@ function TabbedContent(props: {
       <TabsContent value={Tab.SUPERGRAPH} variant="content" className="w-full">
         <div className="flex grow flex-row">
           <TargetProposalSupergraphPage {...props} />
+        </div>
+      </TabsContent>
+      <TabsContent value={Tab.CHECKS} variant="content" className="w-full">
+        <div className="flex grow flex-row">
+          <TargetProposalChecksPage {...props} checks={props.checks} />
         </div>
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">

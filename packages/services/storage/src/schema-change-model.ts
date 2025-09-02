@@ -5,7 +5,6 @@ import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
   ChangeType,
-  TypeOfChangeType,
   CriticalityLevel,
   DirectiveAddedChange,
   DirectiveArgumentAddedChange,
@@ -57,6 +56,7 @@ import {
   TypeDescriptionChangedChange,
   TypeDescriptionRemovedChange,
   TypeKindChangedChange,
+  TypeOfChangeType,
   TypeRemovedChange,
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
@@ -250,7 +250,7 @@ export const DirectiveAddedModel = implement<DirectiveAddedChange>().with({
     addedDirectiveRepeatable: z.boolean().default(false), // boolean;
     addedDirectiveLocations: z.array(z.string()).default([]), // string[];
     addedDirectiveDescription: z.string().nullable().default(null), // string | null;
-  }) as any // @todo fix typing
+  }) as any, // @todo fix typing
 });
 
 export const DirectiveDescriptionChangedModel = implement<DirectiveDescriptionChangedChange>().with(
@@ -622,7 +622,7 @@ export const ObjectTypeInterfaceRemovedModel = implement<ObjectTypeInterfaceRemo
     objectTypeName: z.string(),
     removedInterfaceName: z.string(),
     addedToNewType: z.boolean().optional(), // optional for backwards compatibility
-  }), 
+  }),
 });
 
 // Schema
@@ -901,7 +901,7 @@ export const HiveSchemaChangeModel = z
       let change = schemaChangeFromSerializableChange(rawChange as any);
       // @todo figure out more permanent solution for unhandled change types.
       if (!change) {
-        throw new Error(`Cannot deserialize change "${rawChange.type}"`)
+        throw new Error(`Cannot deserialize change "${rawChange.type}"`);
       }
 
       /** The schema coordinate used for detecting whether something is a breaking change can be different based on the change type. */

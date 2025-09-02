@@ -167,7 +167,7 @@ export function ChangeRow(props: {
             )}
             {props.severityLevel === SeverityLevelType.Safe && (
               <span title="Safe Change">
-                <CheckIcon className="mr-1 inline-block text-green-600" />
+                <CheckIcon className="mr-1 inline-block text-green-500" />
               </span>
             )}
             {props.children}
@@ -191,7 +191,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        'bg-[#351A19] p-1 -m-1 line-through decoration-[#998c8b] hover:bg-red-800',
+        '-ml-1 bg-[#351A19] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
         props.className,
       )}
     >
@@ -202,7 +202,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   return (
-    <span className={cn('bg-[#19241E] p-1 -m-1 hover:bg-green-900', props.className)}>
+    <span className={cn('-ml-1 bg-[#19241E] p-1 hover:bg-green-900', props.className)}>
       {props.children}
     </span>
   );
@@ -1003,13 +1003,17 @@ export function DiffObject({
       <DiffDescription newNode={newObject!} oldNode={oldObject!} />
       <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
         <Change type={changeType}>
-          <Keyword term="type" />
+          <Keyword term={isInterfaceType(newObject) ? 'interface' : 'type'} />
           &nbsp;
           <TypeName name={name} />
         </Change>
         <DiffDirectiveUsages
           newDirectives={newObject?.astNode?.directives ?? []}
           oldDirectives={oldObject?.astNode?.directives ?? []}
+        />
+        <DiffInterfaces
+          newInterfaces={newObject?.getInterfaces() ?? []}
+          oldInterfaces={oldObject?.getInterfaces() ?? []}
         />
         {' {'}
       </ChangeRow>
@@ -1256,6 +1260,42 @@ export function DiffScalar({
           // parentPath={[name]}
         />
       </ChangeRow>
+    </>
+  );
+}
+
+export function DiffInterfaces(props: {
+  oldInterfaces: readonly GraphQLInterfaceType[];
+  newInterfaces: readonly GraphQLInterfaceType[];
+}) {
+  if (props.oldInterfaces.length + props.newInterfaces.length === 0) {
+    return null;
+  }
+  const { added, mutual, removed } = compareLists(props.oldInterfaces, props.newInterfaces);
+
+  let implementsChangeType: 'mutual' | 'addition' | 'removal';
+  if (props.oldInterfaces.length === 0 && props.newInterfaces.length !== 0) {
+    implementsChangeType = 'addition';
+  } else if (props.oldInterfaces.length !== 0 && props.newInterfaces.length === 0) {
+    implementsChangeType = 'removal';
+  } else {
+    implementsChangeType = 'mutual';
+  }
+  const interfaces = [
+    ...removed.map(r => <Removal key={`removal-${r.name}`}>{r.name}</Removal>),
+    ...added.map(r => <Addition key={`addition-${r.name}`}>{r.name}</Addition>),
+    ...mutual.map(({ newVersion: r }) => <Change key={`removal-${r.name}`}>{r.name}</Change>),
+  ];
+  return (
+    <>
+      <Change type={implementsChangeType}>&nbsp;implements&nbsp;</Change>
+      {/* @todo wrap the ampersand in the appropriate change type */}
+      {interfaces.map((iface, index) => (
+        <>
+          {iface}
+          {index !== interfaces.length - 1 && ' & '}
+        </>
+      ))}
     </>
   );
 }
