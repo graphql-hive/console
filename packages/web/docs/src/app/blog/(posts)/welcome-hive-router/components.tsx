@@ -36,7 +36,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b border-neutral-800 transition-colors hover:bg-neutral-800/25',
+        'hover:bg-beige-100 border-beige-400 border-b transition-colors hover:transition-none dark:border-neutral-800 dark:hover:bg-neutral-800/25',
         className,
       )}
       {...props}
@@ -67,7 +67,7 @@ function TableCaption({ className, ...props }: React.ComponentProps<'caption'>) 
   return (
     <caption
       data-slot="table-caption"
-      className={cn('text-sm text-neutral-400', className)}
+      className={cn('mt-2 text-sm text-green-800 dark:text-neutral-400', className)}
       {...props}
     />
   );
@@ -129,36 +129,36 @@ export function BenchmarkResultsTable() {
   return (
     <Table className="mt-6 font-mono">
       <TableHeader>
-        <TableRow className="bg-neutral-800/50">
+        <TableRow className="bg-beige-100 dark:bg-neutral-800/50">
           <TableHead className="w-[100px]">
             Gateway
             <br />
-            <span className="text-neutral-400">version</span>
+            <span className="text-green-800 dark:text-neutral-400">version</span>
           </TableHead>
           <TableHead className="text-center">
             RPS
             <br />
-            <span className="text-neutral-400">reqs/s</span>
+            <span className="text-green-800 dark:text-neutral-400">reqs/s</span>
           </TableHead>
           <TableHead className="text-center">
             P95
             <br />
-            <span className="text-neutral-400">ms</span>
+            <span className="text-green-800 dark:text-neutral-400">ms</span>
           </TableHead>
           <TableHead className="text-center">
             P99.9
             <br />
-            <span className="text-neutral-400">ms</span>
+            <span className="text-green-800 dark:text-neutral-400">ms</span>
           </TableHead>
           <TableHead className="text-center">
             CPU
             <br />
-            <span className="text-neutral-400">max %</span>
+            <span className="text-green-800 dark:text-neutral-400">max %</span>
           </TableHead>
           <TableHead className="text-center">
             MEM
             <br />
-            <span className="text-neutral-400">max MB</span>
+            <span className="text-green-800 dark:text-neutral-400">max MB</span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -168,7 +168,7 @@ export function BenchmarkResultsTable() {
             <TableRow key={row.name}>
               <TableCell>
                 <div className="font-medium">{row.name}</div>
-                <span className="text-xs text-neutral-400">{row.version}</span>
+                <span className="text-xs text-green-800 dark:text-neutral-400">{row.version}</span>
               </TableCell>
               <TableCell className="text-center">{row.rps}</TableCell>
               <TableCell className="text-center">{row.p95}</TableCell>
@@ -201,7 +201,7 @@ export function AuditResultsTable() {
   return (
     <Table className="mt-6 font-mono">
       <TableHeader>
-        <TableRow className="bg-neutral-800/50">
+        <TableRow className="bg-beige-100 hover:bg-beige-100 dark:bg-neutral-800/50 hover:dark:bg-neutral-800/50">
           <TableHead className="w-[100px]">Gateway</TableHead>
           <TableHead className="text-center">Compatibility</TableHead>
           <TableHead className="text-center">Test Cases</TableHead>
@@ -215,7 +215,7 @@ export function AuditResultsTable() {
               <TableCell className="font-medium">{row.name}</TableCell>
               <TableCell className="text-center font-medium">
                 {((row.okTestCases * 100) / testCasesTotal).toFixed(2)}
-                <span className="text-neutral-400">%</span>
+                <span className="text-green-800 dark:text-neutral-400">%</span>
               </TableCell>
               <TableCell className="space-x-2 text-center">
                 <span className="text-green-500">✓ {row.okTestCases}</span>
@@ -264,15 +264,15 @@ export function RPSRace() {
           onMouseLeave={() => setHovered(null)}
         >
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-sm text-neutral-300">{d.name}</span>
-            <span className="text-sm tabular-nums text-zinc-400">
+            <span className="text-sm text-green-900 dark:text-neutral-300">{d.name}</span>
+            <span className="text-sm tabular-nums text-green-800 dark:text-neutral-400">
               {d.name === first.name && hovered
                 ? `${(first.rps / hovered.rps).toFixed(1)}x faster | `
                 : null}
               {d.rps.toFixed(0)} rps
             </span>
           </div>
-          <div className="h-[5px] overflow-hidden bg-zinc-800">
+          <div className="h-[5px] overflow-hidden bg-blue-200 dark:bg-zinc-800">
             <div
               className="h-full bg-sky-600/90 transition-[width] duration-1000 ease-out dark:bg-sky-600"
               style={{ width: `${(d.rps / max) * 100}%` }}
@@ -294,11 +294,11 @@ export function LatencyBands() {
         <div key={d.name} className="">
           <div className="mb-1 flex items-center justify-between text-sm">
             <span>{d.name}</span>
-            <span className="tabular-nums text-neutral-400">
+            <span className="tabular-nums text-green-800 dark:text-neutral-400">
               p95 {d.p95.toFixed(1)} ms | p99.9 {d.p99_9.toFixed(1)} ms
             </span>
           </div>
-          <div className="relative h-4 border border-zinc-800 bg-zinc-900">
+          <div className="border-beige-300 bg-beige-100 relative h-4 border dark:border-zinc-800 dark:bg-zinc-900">
             {/*<div className="absolute inset-y-0 left-0 right-0 m-2 border-b border-zinc-800" />*/}
             <div
               title={`p95 ${d.p95}ms`}
@@ -313,7 +313,7 @@ export function LatencyBands() {
           </div>
         </div>
       ))}
-      <div className="text-center text-xs text-neutral-400">
+      <div className="text-center text-xs text-green-700 dark:text-neutral-400">
         Axis scaled to the highest p99.9 across gateways
       </div>
     </div>
@@ -516,19 +516,19 @@ export function GatewaySpeedway({ variant = 'fancy' }: { variant?: SpeedwayVaria
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+    <div className="border-beige-400 bg-beige-100 rounded-2xl border p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-sm font-medium text-zinc-300">Gateway Speedway</div>
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <button
             onClick={() => setRunning(v => !v)}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-200 hover:bg-zinc-700"
+            className="border-beige-400 bg-beige-100 rounded-lg border px-2 py-1 text-zinc-200 hover:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-800"
           >
             {running ? 'Pause' : 'Play'}
           </button>
           <button
             onClick={reset}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1 text-zinc-200 hover:bg-zinc-700"
+            className="border-beige-400 bg-beige-100 rounded-lg border px-2 py-1 text-zinc-200 hover:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-800"
           >
             Reset
           </button>
@@ -710,13 +710,13 @@ export function GatewaySpeedway({ variant = 'fancy' }: { variant?: SpeedwayVaria
 function HighlightItem(props: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="relative pl-16">
-      <div className="font-semibold text-white">
-        <div className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-lg bg-neutral-600/20">
+      <div className="font-semibold">
+        <div className="bg-beige-100 absolute left-0 top-0 flex size-10 items-center justify-center rounded-lg dark:bg-neutral-600/20">
           {props.icon}
         </div>
         {props.title}
       </div>
-      <div className="text-sm text-neutral-400">{props.description}</div>
+      <div className="text-sm text-green-800 dark:text-neutral-400">{props.description}</div>
     </div>
   );
 }
