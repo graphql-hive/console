@@ -15,7 +15,7 @@ Today, we're excited to introduce Hive Router, a new open-source GraphQL federat
 
 [GraphQL federation](http://the-guild.dev/graphql/hive/federation) is now the standard way to scale GraphQL across services.  Most teams want three things: **speed**, **predictability**, and **no vendor lock-in**.
 
-[**Hive Router**](https://github.com/graphql-hive/router) is our answer: an open-source, Rust-based Federation gateway with **top-tier performance** and [full Apollo Federation compatibility]((https://the-guild.dev/graphql/hive/federation-gateway-audit)) - without tying your architecture to a single vendor.
+[**Hive Router**](https://github.com/graphql-hive/router) is our answer: an open-source, Rust-based Federation gateway with **top-tier performance** and [full Apollo Federation compatibility](https://the-guild.dev/graphql/hive/federation-gateway-audit) - without tying your architecture to a single vendor.
 
 <Highlights />
 
@@ -30,7 +30,7 @@ This means Hive Router can handle heavy GraphQL workloads with minimal latency a
 
 > To ensure consistency and reproducibility, the numbers presented here are from our [newly open-sourced benchmark](http://the-guild.dev/graphql/hive/federation-gateway-performance), run on an __Azure Standard D4s v4 VM (4 vCPUs, 16 GiB memory) with Linux (Ubuntu 24.04)__. The benchmark website provides a complete breakdown of how we measured performance, the queries we used, and the subgraph setup, so you can replicate our findings.
 
-Hive Router's optimizations allow it to serve **~6x more traffic than Apollo Router** at a fraction of the latency. In practice, adopting Hive Router can translate to snappier responses for end-users and lower infrastructure costs due to its efficient use of CPU and RAM.
+Hive Router's optimizations allow it to serve **~6x more traffic in our benchmark than Apollo Router** at a fraction of the latency. In practice, adopting Hive Router can translate to snappier responses for end-users and lower infrastructure costs due to its efficient use of CPU and RAM.
 
 <BenchmarkResultsTable />
 
@@ -39,6 +39,8 @@ Under stress tests, Hive Router also maintained 100% reliability (no errors or t
 <LatencyBands />
 
 We've optimized everything from the networking to the execution engine for speed - so your federated GraphQL API remains performant at scale.
+
+Of course, raw speed isn't the only concern - correctness and spec compliance are equally important.
 
 ## Built on a GraphQL Federation Audit
 
@@ -126,7 +128,7 @@ QueryPlan {
 
 Networking is another area we aggressively optimized. Our router is I/O-bound - it needs to accept client requests and fetch data from multiple services quickly. We built on Rust's asynchronous runtime (Tokio) and the highly efficient Hyper HTTP library, which are known for handling massive numbers of connections with minimal overhead. The router uses non-blocking I/O, meaning threads are never stuck waiting on network calls, instead, they can handle other tasks while awaiting responses. This lets a single machine handle many concurrent GraphQL requests effectively.
 
-We also implemented **connection pooling** for outgoing calls to subgraphs. Rather than establishing a new HTTP connection for every subgraph request, the router reuses persistent connections. By maintaining a pool of keep-alive connections to each downstream service, we can send GraphQL requests back-to-back without delay. This also helps avoid running out of ephemeral ports or other system resources that too many new connections can consume ([the stress test scenario in our benchmark](http://the-guild.dev/graphql/hive/federation-gateway-performance/#/stress) covers this).
+We also implemented **connection pooling** for outgoing calls to subgraphs. Rather than establishing a new HTTP connection for every subgraph request, the router reuses persistent connections. By maintaining a pool of keep-alive connections to each downstream service, we can send GraphQL requests back-to-back without delay. This also helps avoid running out of ephemeral ports (the short-lived network ports that can get exhausted with too many new connections) or other system resources that too many new connections can consume ([the stress test scenario in our benchmark](http://the-guild.dev/graphql/hive/federation-gateway-performance/#/stress) covers this).
 
 ### Lock-Free Concurrency
 
@@ -152,4 +154,4 @@ The outstanding performance of our GraphQL router is no accident – it's the re
 
 With this solid foundation, users can expect faster responses, lower infrastructure costs (since a single router instance can do the work of many), and the ability to confidently handle large supergraphs or high request volumes.
 
-Being open-source, Hive Router's development is transparent and community-driven. We invite developers to report issues, suggest improvements, and even contribute code. Our goal is to build a GraphQL federation router that the community can rely on and help shape. The Guild will continue to maintain Hive Router with the same commitment we give to our other popular projects (like [GraphQL Codegen](https://the-guild.dev/graphql/codegen) and [Yoga](https://the-guild.dev/graphql/yoga-server)) – you can expect timely updates, active support, and integration with the broader [GraphQL Hive platform](https://the-guild.dev/graphql/hive) (for schema registry, analytics, etc.).
+Being open-source, Hive Router's development is transparent and community-driven. We invite developers to report issues, suggest improvements, and even contribute code. Our goal is to build a GraphQL federation router that the community can rely on and help shape. The Guild will continue to maintain Hive Router with the same commitment we give to our other popular projects (like [GraphQL Codegen](https://the-guild.dev/graphql/codegen) and [Yoga](https://the-guild.dev/graphql/yoga-server)) - you can count on long-term support and integration with the broader [GraphQL Hive platform](https://the-guild.dev/graphql/hive) (for schema registry, analytics, etc.).
