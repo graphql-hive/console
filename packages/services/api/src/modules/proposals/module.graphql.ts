@@ -790,7 +790,7 @@ export default gql`
 
   type TypeAdded {
     addedTypeName: String!
-    addedTypeKind: String
+    addedTypeKind: String!
   }
 
   type TypeKindChanged {

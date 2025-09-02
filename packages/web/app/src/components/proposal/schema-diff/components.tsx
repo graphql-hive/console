@@ -191,7 +191,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        'bg-[#351A19] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
+        'bg-[#351A19] p-1 -m-1 line-through decoration-[#998c8b] hover:bg-red-800',
         props.className,
       )}
     >
@@ -202,7 +202,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   return (
-    <span className={cn('bg-[#19241E] p-1 hover:bg-green-900', props.className)}>
+    <span className={cn('bg-[#19241E] p-1 -m-1 hover:bg-green-900', props.className)}>
       {props.children}
     </span>
   );

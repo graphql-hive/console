@@ -20,7 +20,7 @@
     "@graphiql/react": "1.0.0-alpha.4",
     "@graphiql/toolkit": "0.9.1",
     "@graphql-codegen/client-preset-swc-plugin": "0.2.0",
-    "@graphql-inspector/core": "6.2.1",
+    "@graphql-inspector/core": "file:../../../../graphql-inspector/packages/core",
     "@graphql-inspector/patch": "file:../../../../graphql-inspector/packages/patch",
     "@graphql-tools/mock": "9.0.22",
     "@graphql-typed-document-node/core": "3.2.0",

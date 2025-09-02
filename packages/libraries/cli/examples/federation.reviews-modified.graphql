@@ -40,7 +40,7 @@ input ReviewProductInput {
   """
   Rating on a scale of 0 - 5
   """
-  rating: Int!
+  rating: Int! = 3
 }
 
 type Review {

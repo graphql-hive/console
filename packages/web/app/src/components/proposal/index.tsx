@@ -113,7 +113,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on EnumValueAdded {
         addedDirectiveDescription
         addedEnumValueName
-        addedToNewType
         enumName
       }
       ... on EnumValueDescriptionChanged {
@@ -226,7 +225,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedFieldDefault
         addedInputFieldName
         addedInputFieldType
-        addedToNewType
         inputName
       }
       ... on InputFieldDescriptionAdded {
@@ -259,7 +257,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on ObjectTypeInterfaceAdded {
         addedInterfaceName
-        addedToNewType
         objectTypeName
       }
       ... on ObjectTypeInterfaceRemoved {
@@ -308,13 +305,11 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         unionName
       }
       ... on UnionMemberAdded {
-        addedToNewType
         addedUnionMemberTypeName
         unionName
       }
       ... on DirectiveUsageEnumAdded {
         addedDirectiveName
-        addedToNewType
         enumName
       }
       ... on DirectiveUsageEnumRemoved {
@@ -323,7 +318,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageEnumValueAdded {
         addedDirectiveName
-        addedToNewType
         enumName
         enumValueName
       }
@@ -342,12 +336,10 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedDirectiveName
         addedInputFieldName
         addedInputFieldType
-        addedToNewType
         inputObjectName
       }
       ... on DirectiveUsageInputFieldDefinitionAdded {
         addedDirectiveName
-        addedToNewType
         inputFieldName
         inputFieldType
         inputObjectName
@@ -369,7 +361,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageScalarAdded {
         addedDirectiveName
-        addedToNewType
         scalarName
       }
       ... on DirectiveUsageScalarRemoved {
@@ -378,7 +369,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageObjectAdded {
         addedDirectiveName
-        addedToNewType
         objectName
       }
       ... on DirectiveUsageObjectRemoved {
@@ -387,12 +377,10 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageInterfaceAdded {
         addedDirectiveName
-        addedToNewType
         interfaceName
       }
       ... on DirectiveUsageSchemaAdded {
         addedDirectiveName
-        addedToNewType
         schemaTypeName
       }
       ... on DirectiveUsageSchemaRemoved {
@@ -401,7 +389,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageFieldDefinitionAdded {
         addedDirectiveName
-        addedToNewType
         fieldName
         typeName
       }
@@ -422,7 +409,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageArgumentDefinitionAdded {
         addedDirectiveName
-        addedToNewType
         argumentName
         fieldName
         typeName

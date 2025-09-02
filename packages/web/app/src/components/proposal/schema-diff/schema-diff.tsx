@@ -1,7 +1,7 @@
 /* eslint-disable tailwindcss/no-custom-classname */
 import { ReactElement, useMemo } from 'react';
 import type { GraphQLSchema } from 'graphql';
-import { isIntrospectionType, isSpecifiedDirective } from 'graphql';
+import { isIntrospectionType, isSpecifiedDirective, printSchema } from 'graphql';
 import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
 import { compareLists } from './compare-lists';
 import { ChangeDocument, DiffDirective, DiffType, SchemaDefinitionDiff } from './components';
