@@ -898,9 +898,8 @@ export const HiveSchemaChangeModel = z
       } | null;
       readonly breakingChangeSchemaCoordinate: string | null;
     } => {
-      // @todo handle more change types...
-      console.error(JSON.stringify(rawChange));
       let change = schemaChangeFromSerializableChange(rawChange as any);
+      // @todo figure out more permanent solution for unhandled change types.
       if (!change) {
         throw new Error(`Cannot deserialize change "${rawChange.type}"`)
       }
