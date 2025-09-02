@@ -1,6 +1,7 @@
 import { Fragment, ReactNode, useMemo } from 'react';
 import { ProposalOverview_ReviewsFragment } from '@/components/proposal';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
+import { ServiceHeading } from '@/components/target/proposals/service-heading';
 import { Button } from '@/components/ui/button';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -89,31 +90,29 @@ export function TargetProposalDetailsPage(props: {
         }
         return (
           <Fragment key={serviceName}>
-            {serviceName.length !== 0 && (
-              <Title className="flex items-center text-xl">
-                <CubeIcon className="mr-2 h-6 w-auto flex-none" /> {serviceName}
-              </Title>
-            )}
-            <ChangeBlock
-              changes={breaking}
-              title="Breaking Changes"
-              info="Changes that will break existing operations."
-            />
-            <ChangeBlock
-              changes={dangerous}
-              title="Dangerous Changes"
-              info="Changes that could cause different behavior that might cause issues for existing operations."
-            />
-            <ChangeBlock
-              changes={safe}
-              title="Safe Changes"
-              info="Changes that do not run a risk of breaking any existing operations."
-            />
-            <ChangeBlock
-              changes={ignored}
-              title="Ignored Changes"
-              info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
-            />
+            <ServiceHeading serviceName={serviceName} />
+            <div className="px-2">
+              <ChangeBlock
+                changes={breaking}
+                title="Breaking Changes"
+                info="Changes that will break existing operations."
+              />
+              <ChangeBlock
+                changes={dangerous}
+                title="Dangerous Changes"
+                info="Changes that could cause different behavior that might cause issues for existing operations."
+              />
+              <ChangeBlock
+                changes={safe}
+                title="Safe Changes"
+                info="Changes that do not run a risk of breaking any existing operations."
+              />
+              <ChangeBlock
+                changes={ignored}
+                title="Ignored Changes"
+                info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
+              />
+            </div>
           </Fragment>
         );
       })}

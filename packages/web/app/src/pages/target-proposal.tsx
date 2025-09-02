@@ -404,7 +404,7 @@ function TabbedContent(props: {
           </Link>
         </TabsTrigger>
       </TabsList>
-      <TabsContent value={Tab.DETAILS} variant="content" className="w-full p-6">
+      <TabsContent value={Tab.DETAILS} variant="content" className="w-full">
         <div className="flex grow flex-row">
           <TargetProposalDetailsPage {...props} />
         </div>

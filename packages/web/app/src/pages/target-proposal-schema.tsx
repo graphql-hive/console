@@ -1,5 +1,5 @@
 import { Proposal, ProposalOverview_ReviewsFragment } from '@/components/proposal';
-import { Subtitle } from '@/components/ui/page';
+import { ServiceHeading } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
 import { ServiceProposalDetails } from './target-proposal-types';
 
@@ -14,9 +14,12 @@ export function TargetProposalSchemaPage(props: {
   if (props.services.length) {
     return (
       <div className="w-full">
-        {props.services.map(proposed => {
-          return <Proposal key={proposed.serviceName} {...proposed} reviews={props.reviews} />;
-        })}
+        {props.services.map(proposed => (
+          <>
+            <ServiceHeading serviceName={proposed.serviceName} />
+            <Proposal key={proposed.serviceName} {...proposed} reviews={props.reviews} />
+          </>
+        ))}
       </div>
     );
   }
