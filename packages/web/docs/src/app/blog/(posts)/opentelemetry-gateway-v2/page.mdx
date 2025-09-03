@@ -1,7 +1,7 @@
 ---
 title: Monitoring GraphQL Gateways with OpenTelemetry
 tags: [graphql, monitoring, opentelemetry, hive]
-author: valentin
+author: EmrysMyrddin
 date: 2025-08-04
 description: Explore the new OpenTelemetry integration for Hive Gateway v2
 ---
@@ -187,13 +187,13 @@ in your visualization tool (like
 [Grafana's Critical Path Highlighting](https://github.com/grafana/grafana/pull/76857)).
 
 <video>
-  <source src="/blog-assets/opentelemetry-graphql/demo-span-parenting.webm" type="video/webm" />
-  <source src="/blog-assets/opentelemetry-graphql/demo-span-parenting.mp4" type="video/mp4" />
+  <source src="./demo-span-parenting.webm" type="video/webm" />
+  <source src="./demo-span-parenting.mp4" type="video/mp4" />
   <a
     alt="Click on this image to download video demo"
-    href="/blog-assets/opentelemetry-graphql/demo-span-parenting.mp4"
+    href="./demo-span-parenting.mp4"
   >
-    <img src="/blog-assets/opentelemetry-graphql/demo-span-parenting.png" />
+    <img src="./demo-span-parenting.png" />
   </a>
   Click on image to download the video demo.
 </video>
@@ -214,7 +214,7 @@ span.
 This span represent the processing and execution of a single graphql operation. A single HTTP span
 can contain multiple graphql operation span in case of a batched HTTP request.
 
-![A screenshot demoing batched graphql operation tracing](/blog-assets/opentelemetry-graphql/demo-http-batching.png)
+![A screenshot demoing batched graphql operation tracing](./demo-http-batching.png)
 
 ### Support of HTTP Retry
 
@@ -224,7 +224,7 @@ rate of the gateway.
 Those retry request are now properly registered and the standard `http.request.resend_count`
 attribute is used to indicate a failed retry attempt.
 
-![A screenshot demoing failed and retried upstream request with appropriate attribute](/blog-assets/opentelemetry-graphql/demo-http-retry.png)
+![A screenshot demoing failed and retried upstream request with appropriate attribute](./demo-http-retry.png)
 
 ### Standard OpenTelemetry Context support
 
@@ -242,7 +242,7 @@ nested in Hive Gateways' spans.
 This allows you to keep track of performance of low level Node's internals and usage of third party
 libraries, such as Databases accesses.
 
-![A screenshot demoing support of standard fetch instrumentation](/blog-assets/opentelemetry-graphql/demo-instrumentation.png)
+![A screenshot demoing support of standard fetch instrumentation](./demo-instrumentation.png)
 
 ### Easier custom spans
 
@@ -271,7 +271,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-![A screenshot showing custom span registered at context building time](/blog-assets/opentelemetry-graphql/demo-custom-span.png)
+![A screenshot showing custom span registered at context building time](./demo-custom-span.png)
 
 ### Custom Span Attributes
 
@@ -326,7 +326,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-![A screenshot showing an example of custom attribute](/blog-assets/opentelemetry-graphql/demo-custom-attributes.png)
+![A screenshot showing an example of custom attribute](./demo-custom-attributes.png)
 
 ### Custom Baggage
 
