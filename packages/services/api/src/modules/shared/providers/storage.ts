@@ -413,6 +413,7 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
     transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    latest?: boolean;
   }): Promise<
     Readonly<{
       edges: ReadonlyArray<{

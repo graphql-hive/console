@@ -191,7 +191,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        '-ml-1 bg-[#561c1d] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
+        'bg-[#561c1d] line-through decoration-[#998c8b] hover:bg-red-800',
         props.className,
       )}
     >
@@ -202,9 +202,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   return (
-    <span className={cn('-ml-1 bg-[#11362b] p-1 hover:bg-green-900', props.className)}>
-      {props.children}
-    </span>
+    <span className={cn('bg-[#11362b] hover:bg-green-900', props.className)}>{props.children}</span>
   );
 }
 
@@ -1289,20 +1287,28 @@ export function DiffInterfaces(props: {
   } else {
     implementsChangeType = 'mutual';
   }
-  const interfaces = [
-    ...removed.map(r => <Removal key={`removal-${r.name}`}>{r.name}</Removal>),
-    ...added.map(r => <Addition key={`addition-${r.name}`}>{r.name}</Addition>),
-    ...mutual.map(({ newVersion: r }) => <Change key={`removal-${r.name}`}>{r.name}</Change>),
-  ];
+
   return (
     <>
       <Change type={implementsChangeType}>&nbsp;implements&nbsp;</Change>
-      {/* @todo wrap the ampersand in the appropriate change type */}
-      {interfaces.map((iface, index) => (
-        <>
-          {iface}
-          {index !== interfaces.length - 1 && ' & '}
-        </>
+      {/* @todo move amp to other side */}
+      {...removed.map((r, idx) => (
+        <Removal key={`removal-${r.name}`}>
+          {idx !== 0 && ' & '}
+          {r.name}
+        </Removal>
+      ))}
+      {...added.map((r, idx) => (
+        <Addition key={`addition-${r.name}`}>
+          {(removed.length !== 0 || idx !== 0) && ' & '}
+          {r.name}
+        </Addition>
+      ))}
+      {...mutual.map(({ newVersion: r }, idx) => (
+        <Change key={`removal-${r.name}`}>
+          {(removed.length !== 0 || added.length !== 0 || idx !== 0) && ' & '}
+          {r.name}
+        </Change>
       ))}
     </>
   );

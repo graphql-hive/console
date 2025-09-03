@@ -38,10 +38,12 @@ export function TargetProposalChecksPage(props: {
 }) {
   const checks = useFragment(ProposalOverview_ChecksFragment, props.checks);
   return (
-    <div className="grid w-full grid-cols-3 content-evenly rounded-lg border-2 sm:grid-cols-5 [&>*:nth-child(even)]:bg-gray-900/50 [&>*]:hover:bg-gray-900">
+    <div className="grid w-full grid-cols-3 content-evenly rounded-lg border-2 sm:grid-cols-5">
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
+            className={index % 2 === 1 ? 'bg-gray-900/50' : ''}
+            key={node.id}
             {...props}
             {...node}
             serviceName={node.serviceName ?? ''}
@@ -78,7 +80,7 @@ function CheckItem(props: {
         schemaCheckId: props.id,
       }}
       className={cn(
-        'col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-xs sm:col-span-5',
+        'col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-xs hover:bg-gray-800 sm:col-span-5',
         props.className,
       )}
     >

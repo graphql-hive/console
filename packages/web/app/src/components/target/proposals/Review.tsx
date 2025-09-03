@@ -1,9 +1,9 @@
 import { Fragment, ReactElement, useContext } from 'react';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
-import { Button } from '../ui/button';
-import { CheckIcon, PlusIcon } from '../ui/icon';
-import { TimeAgo } from '../v2';
+import { Button } from '../../ui/button';
+import { CheckIcon, PlusIcon } from '../../ui/icon';
+import { TimeAgo } from '../../v2';
 import { AnnotatedContext } from './schema-diff/components';
 
 const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `

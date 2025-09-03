@@ -1,18 +1,12 @@
 import { Fragment, ReactNode, useMemo } from 'react';
-import { ProposalOverview_ReviewsFragment } from '@/components/proposal';
+import { ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { ServiceHeading } from '@/components/target/proposals/service-heading';
 import { Button } from '@/components/ui/button';
-import { Subtitle, Title } from '@/components/ui/page';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType } from '@/gql';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
-import {
-  ComponentNoneIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-} from '@radix-ui/react-icons';
+import { ComponentNoneIcon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import type { ServiceProposalDetails } from './target-proposal-types';
 
 export enum MergeStatus {

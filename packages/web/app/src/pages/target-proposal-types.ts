@@ -1,5 +1,5 @@
 import type { GraphQLSchema } from 'graphql';
-import { ProposalOverview_ChangeFragment } from '@/components/proposal';
+import { ProposalOverview_ChangeFragment } from '@/components/target/proposals';
 import { FragmentType } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
 

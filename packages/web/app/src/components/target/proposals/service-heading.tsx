@@ -1,4 +1,3 @@
-import { Title } from '@/components/ui/page';
 import { CubeIcon } from '@radix-ui/react-icons';
 
 export function ServiceHeading(props: { serviceName: string }) {

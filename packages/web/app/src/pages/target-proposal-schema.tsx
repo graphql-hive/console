@@ -1,4 +1,5 @@
-import { Proposal, ProposalOverview_ReviewsFragment } from '@/components/proposal';
+import { Fragment } from 'react';
+import { Proposal, ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
 import { ServiceHeading } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
 import { ServiceProposalDetails } from './target-proposal-types';
@@ -15,10 +16,10 @@ export function TargetProposalSchemaPage(props: {
     return (
       <div className="w-full">
         {props.services.map(proposed => (
-          <>
+          <Fragment key={proposed.serviceName}>
             <ServiceHeading serviceName={proposed.serviceName} />
-            <Proposal key={proposed.serviceName} {...proposed} reviews={props.reviews} />
-          </>
+            <Proposal {...proposed} reviews={props.reviews} />
+          </Fragment>
         ))}
       </div>
     );

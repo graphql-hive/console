@@ -6,7 +6,7 @@ import {
   ProposalOverview_ChangeFragment,
   ProposalOverview_ReviewsFragment,
   toUpperSnakeCase,
-} from '@/components/proposal';
+} from '@/components/target/proposals';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import { VersionSelect } from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';

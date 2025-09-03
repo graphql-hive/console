@@ -79,7 +79,6 @@ export const SchemaProposal: SchemaProposalResolvers = {
         first: args.first ?? null,
         latest: args.input.latestPerService ?? false,
       });
-
     return schemaChecks;
   },
   async rebasedSupergraphSDL(proposal, args, { injector }) {

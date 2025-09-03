@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { stageToColor } from '@/components/proposal/util';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
 import { UserFilter } from '@/components/target/proposals/user-filter';
+import { stageToColor } from '@/components/target/proposals/util';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
