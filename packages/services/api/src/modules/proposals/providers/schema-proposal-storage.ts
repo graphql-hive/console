@@ -69,6 +69,69 @@ export class SchemaProposalStorage {
     }
   }
 
+  async manuallyTransitionProposal(args: {
+    organizationId: string;
+    targetId: string;
+    id: string;
+    stage: SchemaProposalStage;
+    userId: string;
+    serviceName: string;
+  }) {
+    this.logger.debug(
+      'manually transition schema (proposal=%s, stage=%s, userId=%s)',
+      args.id,
+      args.stage,
+      args.userId,
+    );
+
+    this.assertSchemaProposalsEnabled({
+      organizationId: args.organizationId,
+      targetId: args.targetId,
+      proposalId: undefined,
+    });
+
+    const stageValidationResult = ManualTransitionStageModel.safeParse(args.stage);
+    if (stageValidationResult.error) {
+      return {
+        type: 'error' as const,
+        error: {
+          message: 'Invalid input',
+          details: {
+            stage: stageValidationResult.error?.issues[0].message ?? null,
+          },
+        },
+      };
+    }
+    const review = await this.pool.transaction(async conn => {
+      await conn.maybeOne<unknown>(
+        sql`
+            UPDATE "schema_proposals"
+            SET "stage" = ${args.stage}
+            WHERE "id" = ${args.id} AND "stage" <> 'IMPLEMENTED'
+          `,
+      );
+      const row = await conn.maybeOne(sql`
+          INSERT INTO schema_proposal_reviews
+            ("schema_proposal_id", "stage_transition", "user_id", "service_name")
+          VALUES (
+            ${args.id}
+            , ${args.stage}
+            , ${args.userId}
+            , ${args.serviceName}
+          )
+          RETURNING ${schemaProposalReviewFields}
+        `);
+      return SchemaProposalReviewModel.parse(row);
+    });
+
+    console.log(JSON.stringify(review));
+
+    return {
+      type: 'ok' as const,
+      review,
+    };
+  }
+
   async createProposal(args: {
     organizationId: string;
     targetId: string;
@@ -107,7 +170,7 @@ export class SchemaProposalStorage {
     const proposal = await this.pool
       .maybeOne<unknown>(
         sql`
-          INSERT INTO "schema_proposals"
+          INSERT INTO "schema_proposals" as "sp"
             ("target_id", "title", "description", "stage", "user_id")
           VALUES
             (
@@ -135,10 +198,13 @@ export class SchemaProposalStorage {
         sql`
           SELECT
             ${schemaProposalFields}
+            , u."display_name" as "author"
           FROM
-            "schema_proposals"
+            "schema_proposals" AS "sp"
+          LEFT JOIN "users" AS "u"
+            ON "u"."id" = "sp"."user_id"
           WHERE
-            "id" = ${args.id}
+            "sp"."id" = ${args.id}
           LIMIT 1
         `,
       )
@@ -152,7 +218,7 @@ export class SchemaProposalStorage {
     first: number;
     after: string;
     stages: ReadonlyArray<SchemaProposalStage>;
-    users: string[];
+    users: ReadonlyArray<string>;
   }) {
     this.logger.debug(
       'Get paginated proposals (target=%s, after=%s, stages=%s)',
@@ -172,24 +238,45 @@ export class SchemaProposalStorage {
     const result = await this.pool.query<unknown>(sql`
       SELECT
         ${schemaProposalFields}
+        , u."display_name" as "author"
       FROM
-        "schema_proposals"
+        "schema_proposals" as "sp"
+      LEFT JOIN "users" as "u"
+        ON u."id" = sp."user_id"
       WHERE
-        "target_id" = ${args.targetId}
+        sp."target_id" = ${args.targetId}
         ${
           cursor
             ? sql`
                 AND (
                   (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
+                    sp."created_at" = ${cursor.createdAt}
+                    AND sp."id" < ${cursor.id}
                   )
-                  OR "created_at" < ${cursor.createdAt}
+                  OR sp."created_at" < ${cursor.createdAt}
                 )
               `
             : sql``
         }
-      ORDER BY "created_at" DESC, "id"
+        ${
+          args.stages.length > 0
+            ? sql`
+              AND (
+                sp."stage" = ANY(${sql.array(args.stages, 'schema_proposal_stage')})
+              )
+              `
+            : sql``
+        }
+        ${
+          args.users.length > 0
+            ? sql`
+              AND (
+                sp."user_id" = ANY(${sql.array(args.users, 'uuid')})
+              )
+              `
+            : sql``
+        }
+      ORDER BY sp."created_at" DESC, sp."id"
       LIMIT ${limit + 1}
     `);
 
@@ -216,7 +303,12 @@ export class SchemaProposalStorage {
     };
   }
 
-  async getPaginatedReviews(args: { proposalId: string; first: number; after: string }) {
+  async getPaginatedReviews(args: {
+    proposalId: string;
+    first: number;
+    after: string;
+    authors: string[];
+  }) {
     this.logger.debug('Get paginated reviews (proposal=%s, after=%s)', args.proposalId, args.after);
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
@@ -276,15 +368,15 @@ export class SchemaProposalStorage {
 }
 
 const schemaProposalFields = sql`
-  "id"
-  , to_json("created_at") as "createdAt"
-  , to_json("updated_at") as "updatedAt"
-  , "title"
-  , "description"
-  , "stage"
-  , "target_id" as "targetId"
-  , "user_id" as "userId"
-  , "comments_count" as "commentsCount"
+  sp."id"
+  , to_json(sp."created_at") as "createdAt"
+  , to_json(sp."updated_at") as "updatedAt"
+  , sp."title"
+  , sp."description"
+  , sp."stage"
+  , sp."target_id" as "targetId"
+  , sp."user_id" as "userId"
+  , sp."comments_count" as "commentsCount"
 `;
 
 const schemaProposalReviewFields = sql`
@@ -296,18 +388,23 @@ const schemaProposalReviewFields = sql`
   , "line_text" as "lineText"
   , "schema_coordinate" as "schemaCoordinate"
   , "resolved_by_user_id" as "resolvedByUserId"
+  , "service_name" as "serviceName"
 `;
+
+const ManualTransitionStageModel = z.enum(['DRAFT', 'OPEN', 'APPROVED', 'CLOSED']);
 
 const SchemaProposalReviewModel = z.object({
   id: z.string(),
   createdAt: z.string(),
-  updatedAt: z.string(),
-  stageTransition: z.enum(['DRAFT', 'OPEN', 'APPROVED']),
-  userId: z.string(),
-  lineText: z.string(),
-  schemaCoordinate: z.string(),
-  resolvedByUserId: z.string(),
+  stageTransition: ManualTransitionStageModel,
+  userId: z.string().nullable().optional().default(null), // if deleted
+  lineText: z.string().nullable().optional().default(null),
+  schemaCoordinate: z.string().nullable().optional().default(null),
+  resolvedByUserId: z.string().nullable().optional().default(null),
+  serviceName: z.string(),
 });
+
+const StageModel = z.enum(['DRAFT', 'OPEN', 'APPROVED', 'IMPLEMENTED', 'CLOSED']);
 
 const SchemaProposalModel = z.object({
   id: z.string(),
@@ -315,9 +412,9 @@ const SchemaProposalModel = z.object({
   updatedAt: z.string(),
   title: z.string(),
   description: z.string(),
-  stage: z.enum(['DRAFT', 'OPEN', 'APPROVED', 'IMPLEMENTED', 'CLOSED']),
+  stage: StageModel,
   targetId: z.string(),
-  userId: z.string().nullable(),
+  author: z.string().nullable().default('none'),
   commentsCount: z.number(),
 });
 

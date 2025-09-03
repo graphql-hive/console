@@ -25,6 +25,11 @@ const STAGE_TRANSITIONS: ReadonlyArray<
     label: 'READY FOR REVIEW',
   },
   {
+    fromStates: [SchemaProposalStage.Closed],
+    value: SchemaProposalStage.Draft,
+    label: 'REOPEN AS DRAFT',
+  },
+  {
     fromStates: [SchemaProposalStage.Closed, SchemaProposalStage.Approved],
     value: SchemaProposalStage.Open,
     label: 'REOPEN',
@@ -49,7 +54,10 @@ const STAGE_TITLES = {
   [SchemaProposalStage.Implemented]: 'IMPLEMENTED',
 } as const;
 
-export function StageTransitionSelect(props: { stage: SchemaProposalStage }) {
+export function StageTransitionSelect(props: {
+  stage: SchemaProposalStage;
+  onSelect: (stage: SchemaProposalStage) => void | Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -57,10 +65,10 @@ export function StageTransitionSelect(props: { stage: SchemaProposalStage }) {
         <Button
           variant="link"
           role="combobox"
-          className="flex min-w-[200px] justify-between"
+          className="flex min-w-[200px] max-w-[250px] justify-between truncate"
           aria-expanded={open}
         >
-          {STAGE_TITLES[props.stage]}
+          <span className="truncate">{STAGE_TITLES[props.stage]}</span>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -72,8 +80,10 @@ export function StageTransitionSelect(props: { stage: SchemaProposalStage }) {
                 <CommandItem
                   key={s.value}
                   value={s.value}
-                  onSelect={value => {
-                    console.log(`selected ${value}`);
+                  onSelect={async value => {
+                    // @todo debounce...
+                    await props.onSelect(value.toUpperCase() as SchemaProposalStage);
+                    setOpen(false);
                   }}
                   className="cursor-pointer truncate"
                 >

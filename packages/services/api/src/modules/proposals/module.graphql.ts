@@ -124,7 +124,13 @@ export default gql`
     """
     The initial comment message attached to the review
     """
-    commentBody: String = ""
+    commentBody: String! = ""
+
+    """
+    The service this review applies to. If the target is a monorepo, then use
+    an empty string.
+    """
+    serviceName: String!
   }
 
   input CommentOnSchemaProposalReviewInput {

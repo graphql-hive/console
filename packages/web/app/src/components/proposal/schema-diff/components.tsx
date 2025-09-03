@@ -84,8 +84,8 @@ export function ChangeSpacing(props: { type?: 'removal' | 'addition' | 'mutual' 
       <td />
       <td
         className={cn(
-          props.type === 'removal' && 'bg-[#351A19]',
-          props.type === 'addition' && 'bg-[#19241E]',
+          props.type === 'removal' && 'bg-[#561c1d]',
+          props.type === 'addition' && 'bg-[#11362b]',
           (props.type === 'mutual' || !props.type) && 'bg-gray-900',
           'h-4',
         )}
@@ -124,7 +124,7 @@ export function ChangeRow(props: {
           className={cn(
             'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
             props.className,
-            props.type === 'removal' && 'bg-red-900/50',
+            props.type === 'removal' && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
           )}
         />
@@ -133,22 +133,22 @@ export function ChangeRow(props: {
             'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
-            props.type === 'addition' && 'bg-green-900/50',
+            props.type === 'addition' && 'bg-green-900/30',
           )}
         />
         <td
           className={cn(
             'bg-gray-900 pl-2',
             props.className,
-            props.type === 'removal' && 'bg-[#351A19]',
-            props.type === 'addition' && 'bg-[#19241E]',
+            props.type === 'removal' && 'bg-[#561c1d]',
+            props.type === 'addition' && 'bg-[#11362b]',
           )}
         >
           <span
             className={cn(
               'bg-gray-900',
-              props.type === 'removal' && 'bg-[#351A19] line-through decoration-[#998c8b]',
-              props.type === 'addition' && 'bg-[#19241E]',
+              props.type === 'removal' && 'bg-[#561c1d] line-through decoration-[#998c8b]',
+              props.type === 'addition' && 'bg-[#11362b]',
             )}
           >
             {props.indent &&
@@ -191,7 +191,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        '-ml-1 bg-[#351A19] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
+        '-ml-1 bg-[#561c1d] p-1 line-through decoration-[#998c8b] hover:bg-red-800',
         props.className,
       )}
     >
@@ -202,7 +202,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   return (
-    <span className={cn('-ml-1 bg-[#19241E] p-1 hover:bg-green-900', props.className)}>
+    <span className={cn('-ml-1 bg-[#11362b] p-1 hover:bg-green-900', props.className)}>
       {props.children}
     </span>
   );
@@ -284,6 +284,7 @@ export function DiffDescription(
             content={printDescription(props.oldNode!)!}
             indent={props.indent}
             type="removal"
+            annotations={() => null}
           />
         )}
         {newDesc && (
@@ -291,13 +292,20 @@ export function DiffDescription(
             content={printDescription(props.newNode!)!}
             indent={props.indent}
             type="addition"
+            annotations={() => null}
           />
         )}
       </>
     );
   }
   if (newDesc) {
-    return <Description content={printDescription(props.newNode!)!} indent={props.indent} />;
+    return (
+      <Description
+        content={printDescription(props.newNode!)!}
+        indent={props.indent}
+        annotations={() => null}
+      />
+    );
   }
 }
 
@@ -746,7 +754,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'query',
       type:
-        oldSchema.getQueryType() ??
+        oldSchema?.getQueryType() ??
         ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
       astNode: null,
       deprecationReason: null,
@@ -757,7 +765,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'mutation',
       type:
-        oldSchema.getMutationType() ??
+        oldSchema?.getMutationType() ??
         ({
           name: defaultNames.mutation,
           toString: () => defaultNames.mutation,
@@ -771,7 +779,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'subscription',
       type:
-        oldSchema.getSubscriptionType() ??
+        oldSchema?.getSubscriptionType() ??
         ({
           name: defaultNames.subscription,
           toString: () => defaultNames.subscription,
@@ -787,7 +795,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'query',
       type:
-        newSchema.getQueryType() ??
+        newSchema?.getQueryType() ??
         ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
       astNode: null,
       deprecationReason: null,
@@ -798,7 +806,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'mutation',
       type:
-        newSchema.getMutationType() ??
+        newSchema?.getMutationType() ??
         ({
           name: defaultNames.mutation,
           toString: () => defaultNames.mutation,
@@ -812,7 +820,7 @@ export function SchemaDefinitionDiff({
       args: [],
       name: 'subscription',
       type:
-        newSchema.getSubscriptionType() ??
+        newSchema?.getSubscriptionType() ??
         ({
           name: defaultNames.subscription,
           toString: () => defaultNames.subscription,

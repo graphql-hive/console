@@ -17,6 +17,7 @@ const ProposalQuery_VersionsListFragment = graphql(/* GraphQL */ `
         createdAt
         meta {
           author
+          commit
         }
       }
     }
@@ -47,11 +48,15 @@ export function VersionSelect(props: {
         <Button
           variant="link"
           role="combobox"
-          className="flex min-w-[200px] justify-between"
+          className="flex min-w-[50px] max-w-[420px] justify-between"
           aria-expanded={open}
         >
-          {selectedVersion ? `Version ${selectedVersion.id}` : 'Invalid version'}
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+          <span className="truncate">
+            {selectedVersion
+              ? (selectedVersion.meta?.commit ?? selectedVersion.id)
+              : 'Invalid version'}
+          </span>
+          <ChevronsUpDown className="ml-2 flex size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="max-w-screen min-w-fit truncate p-0">
@@ -75,12 +80,14 @@ export function VersionSelect(props: {
                       version.id === selectedVersionId && 'underline',
                     )}
                   >
-                    <div className="max-w-[300px] grow flex-col truncate">Version {version.id}</div>
+                    <div className="max-w-[300px] grow flex-col truncate">
+                      {version.meta?.commit ?? version.id}
+                    </div>
                     <div className="grow flex-col">
                       (<TimeAgo date={version.createdAt} />)
                     </div>
                     <div className="max-w-[200px] grow flex-col truncate">
-                      by {version.user?.displayName ?? version.user?.fullName ?? 'null'}
+                      by {version.meta?.author ?? 'null'}
                     </div>
                   </div>
                 </CommandItem>

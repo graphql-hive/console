@@ -4268,8 +4268,14 @@ export async function createStorage(
           ${schemaCheckSQLFields}
         FROM
           "schema_checks" as c
-        LEFT JOIN "schema_checks" as cc
-          ON c.service_name = cc.service_name AND c."created_at" < cc."created_at"
+        ${
+          args.latest
+            ? sql`
+            INNER JOIN "schema_checks" as cc
+              ON c.service_name = cc.service_name AND c."created_at" < cc."created_at"
+          `
+            : sql``
+        }
         LEFT JOIN "sdl_store" as s_schema
           ON s_schema."id" = c."schema_sdl_store_id"
         LEFT JOIN "sdl_store" as s_composite_schema

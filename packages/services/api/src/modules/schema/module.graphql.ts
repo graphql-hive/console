@@ -693,6 +693,11 @@ export default gql`
     Optional url if wanting to show subgraph url changes inside checks.
     """
     url: String
+
+    """
+    Optional. Attaches the check to a schema proposal.
+    """
+    schemaProposalId: ID
   }
 
   input SchemaDeleteInput {

@@ -81,6 +81,7 @@ export default {
           -- line can be provided.
           , schema_coordinate text
           , resolved_by_user_id UUID REFERENCES users (id) ON DELETE SET NULL
+          , service_name TEXT NOT NULL
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposal_reviews_schema_proposal_id ON schema_proposal_reviews(

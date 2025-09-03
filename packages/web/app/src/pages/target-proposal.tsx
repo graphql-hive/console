@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { buildSchema } from 'graphql';
-import { useQuery } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
   ProposalOverview_ChangeFragment,
@@ -107,6 +107,19 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
   }
 `);
 
+const ReviewSchemaProposalMutation = graphql(/* GraphQL */ `
+  mutation ReviewSchemaProposalMutation($input: ReviewSchemaProposalInput!) {
+    reviewSchemaProposal(input: $input) {
+      ok {
+        __typename
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 export function TargetProposalsSinglePage(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -132,7 +145,7 @@ export function TargetProposalsSinglePage(props: {
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
   // fetch main page details
-  const [query] = useQuery({
+  const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
     variables: {
       latestValidVersionReference: {
@@ -157,6 +170,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     },
     requestPolicy: 'cache-and-network',
   });
+
+  const [_, reviewSchemaProposal] = useMutation(ReviewSchemaProposalMutation);
 
   // This does a lot of heavy lifting to avoid having to reapply patching etc on each tab...
   // Takes all the data provided by the queries to apply the patch to the schema and
@@ -268,13 +283,23 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         ) : (
           proposal && (
             <>
-              <div className="flex flex-row">
-                <div className="flex-col">
-                  <VersionSelect proposalId={props.proposalId} versions={proposal.checks ?? {}} />
-                </div>
-                <div className="grow flex-col" />
-                <div className="flex-col">
-                  <StageTransitionSelect stage={proposal.stage} />
+              <div className="grid grid-cols-2">
+                <VersionSelect proposalId={props.proposalId} versions={proposal.checks ?? {}} />
+                <div className="flex justify-end">
+                  <StageTransitionSelect
+                    stage={proposal.stage}
+                    onSelect={async stage => {
+                      const review = await reviewSchemaProposal({
+                        input: {
+                          schemaProposalId: props.proposalId,
+                          stageTransition: stage,
+                          // for monorepos and non-service related comments, use an empty string
+                          serviceName: '',
+                        },
+                      });
+                      refreshProposal();
+                    }}
+                  />
                 </div>
               </div>
               <div className="p-4 py-8">

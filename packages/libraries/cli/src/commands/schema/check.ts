@@ -150,6 +150,9 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       description:
         'If checking a service, then you can optionally provide the service URL to see the difference in the supergraph during the check.',
     }),
+    schemaProposalId: Flags.string({
+      description: 'Attach the schema check to a schema proposal.',
+    }),
   };
 
   static args = {
@@ -263,6 +266,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
             contextId: flags.contextId ?? undefined,
             target,
             url: flags.url,
+            schemaProposalId: flags.schemaProposalId,
           },
         },
       });

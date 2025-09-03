@@ -33,6 +33,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
         proposalId: proposal.id,
         cursor: args.after ?? null,
         first: args.first ?? null,
+        latest: true,
       });
 
     if (target) {
@@ -76,6 +77,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
         proposalId: proposal.id,
         cursor: args.after ?? null,
         first: args.first ?? null,
+        latest: args.input.latestPerService ?? false,
       });
 
     return schemaChecks;

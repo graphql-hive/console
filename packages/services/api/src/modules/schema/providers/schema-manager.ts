@@ -363,6 +363,7 @@ export class SchemaManager {
     proposalId: string;
     first: number | null;
     cursor: string | null;
+    latest?: boolean;
   }) {
     const connection = await this.storage.getPaginatedSchemaChecksForSchemaProposal(args);
     return connection;

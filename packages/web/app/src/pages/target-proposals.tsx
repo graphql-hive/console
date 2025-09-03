@@ -171,13 +171,16 @@ const ProposalsListPage = (props: {
   });
   const pageInfo = query.data?.schemaProposals?.pageInfo;
   const search = useSearch({ strict: false });
+  const hasFilter = props.filterStages?.length || props.filterUserIds?.length;
 
   return (
     <>
       {query.fetching ? <Spinner /> : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className="mt-8 text-center">
-          <Title>No proposals have been created yet</Title>
+          <Title>
+            No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
+          </Title>
           <Subtitle>To get started, use the Hive CLI to propose a schema change.</Subtitle>
         </div>
       )}

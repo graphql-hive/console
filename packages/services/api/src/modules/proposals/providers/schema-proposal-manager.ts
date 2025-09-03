@@ -3,12 +3,14 @@
  */
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
+import { HiveError } from '@hive/api/shared/errors';
 import { SchemaChangeType } from '@hive/storage';
 import { SchemaProposalCheckInput, SchemaProposalStage } from '../../../__generated__/types';
 import { Session } from '../../auth/lib/authz';
 import { SchemaPublisher } from '../../schema/providers/schema-publisher';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import { Storage } from '../../shared/providers/storage';
 import { SchemaProposalStorage } from './schema-proposal-storage';
 
 @Injectable({
@@ -19,7 +21,8 @@ export class SchemaProposalManager {
 
   constructor(
     logger: Logger,
-    private storage: SchemaProposalStorage,
+    private proposalStorage: SchemaProposalStorage,
+    private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
     private schemaPublisher: SchemaPublisher,
@@ -43,7 +46,7 @@ export class SchemaProposalManager {
       this.session.raise('schemaProposal:modify');
     }
 
-    const createProposalResult = await this.storage.createProposal({
+    const createProposalResult = await this.proposalStorage.createProposal({
       organizationId: selector.organizationId,
       userId: args.user?.id ?? null,
       description: args.description,
@@ -116,13 +119,19 @@ export class SchemaProposalManager {
   }
 
   async getProposal(args: { id: string }) {
-    return this.storage.getProposal(args);
+    return this.proposalStorage.getProposal(args);
   }
 
-  async getPaginatedReviews(args: { proposalId: string; first: number; after: string }) {
+  async getPaginatedReviews(args: {
+    proposalId: string;
+    first: number;
+    after: string;
+    stages: SchemaProposalStage[];
+    authors: string[];
+  }) {
     this.logger.debug('Get paginated reviews (target=%s, after=%s)', args.proposalId, args.after);
 
-    return this.storage.getPaginatedReviews(args);
+    return this.proposalStorage.getPaginatedReviews(args);
   }
 
   async getPaginatedProposals(args: {
@@ -130,7 +139,7 @@ export class SchemaProposalManager {
     first: number;
     after: string;
     stages: ReadonlyArray<SchemaProposalStage>;
-    users: string[];
+    users: ReadonlyArray<string>;
   }) {
     this.logger.debug(
       'Get paginated proposals (target=%s, after=%s, stages=%s)',
@@ -145,15 +154,55 @@ export class SchemaProposalManager {
       this.session.raise('schemaProposal:modify');
     }
 
-    return this.storage.getPaginatedProposals({
+    return this.proposalStorage.getPaginatedProposals({
       targetId: selector.targetId,
       after: args.after,
       first: args.first,
       stages: args.stages,
-      users: [],
+      users: args.users,
     });
   }
 
-  // @todo
-  async reviewProposal(args: { proposalId: string }) {}
+  async reviewProposal(args: {
+    proposalId: string;
+    stage: SchemaProposalStage | null;
+    body: string | null;
+    serviceName: string;
+  }) {
+    this.logger.debug(`Reviewing proposal (proposal=%s, stage=%s)`, args.proposalId, args.stage);
+
+    // @todo check permissions for user
+    const proposal = await this.proposalStorage.getProposal({ id: args.proposalId });
+    const user = await this.session.getViewer();
+    const target = await this.storage.getTargetById(proposal.targetId);
+
+    if (!target) {
+      throw new HiveError('Proposal target lookup failed.');
+    }
+
+    if (args.stage) {
+      const review = await this.proposalStorage.manuallyTransitionProposal({
+        organizationId: target.orgId,
+        targetId: proposal.targetId,
+        id: args.proposalId,
+        stage: args.stage,
+        userId: user.id,
+        serviceName: args.serviceName,
+      });
+
+      if (review.type === 'error') {
+        return review;
+      }
+
+      return {
+        ...review,
+        review: {
+          ...review.review,
+          author: user.displayName,
+        },
+      };
+    }
+
+    throw new HiveError('Not implemented');
+  }
 }

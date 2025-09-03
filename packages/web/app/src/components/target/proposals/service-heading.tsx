@@ -6,9 +6,9 @@ export function ServiceHeading(props: { serviceName: string }) {
     return null;
   }
   return (
-    <Title className="flex flex-row items-center rounded border px-4 py-2">
+    <div className="flex flex-row items-center border-b-2 px-4 py-2 text-base font-semibold">
       <CubeIcon className="mr-2" />
       <span>{props.serviceName}</span>
-    </Title>
+    </div>
   );
 }
