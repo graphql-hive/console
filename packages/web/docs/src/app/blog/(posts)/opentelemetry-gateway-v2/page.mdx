@@ -1,14 +1,12 @@
 ---
-title: Monitoring GraphQL Gateways with OpenTelemetry
+title: Monitoring Hive Gateway with OpenTelemetry
 tags: [graphql, monitoring, opentelemetry, hive]
-author: EmrysMyrddin
-date: 2025-08-04
+author: valentin
+date: 2025-09-04
 description: Explore the new OpenTelemetry integration for Hive Gateway v2
 ---
 
 import { Tabs } from '@theguild/components'
-
-## The Importance of Monitoring and Tracing for GraphQL Gateways
 
 GraphQL Gateways play a crucial role in modern API architectures, acting as the central point for
 request routing, schema composition, and performance optimization. As these gateways handle
@@ -60,7 +58,7 @@ integration by providing the [`--opentelemetry` option of our `hive-gateway` CLI
 provide a custom endpoint our rely on the standard default OTLP over HTTP exporter.
 
 For more control over the OpenTelemetry setup, we also now provide a cross-runtime
-`openTelemetrySetup` function from `@graphql-mesh/plugin-opentelemetry/setup` or we support standard
+`openTelemetrySetup` function from `@graphql-hive/plugin-opentelemetry/setup` or we support standard
 `NodeSDK` from `@opentelemetry/sdk-node` for a NodeJS specific setup.
 
 <Tabs items={["CLI", <code>openTelemetrySetup</code>, <code>NodeSDK</code>]}>
@@ -398,14 +396,14 @@ export const gatewayConfig = defineConfig({
 ### A unified plugin for Hive Gateway and GraphQL Yoga
 
 Our new OpenTelemetry is not only about Hive Gateway, but is also usable in GraphQL Yoga! You can
-use `@graphql-mesh/plugin-opentelemetry` to improve your GraphQL server observability and take
+use `@graphql-hive/plugin-opentelemetry` to improve your GraphQL server observability and take
 profit of all the new features presented in this blog post:
 
 ```ts filename="server.ts"
 import 'telemetry.ts'
 import { createServer } from 'node:http'
 import { createYoga } from 'graphql-yoga'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
+import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
 import { schema } from './schema'
 
 const server = createServer(
