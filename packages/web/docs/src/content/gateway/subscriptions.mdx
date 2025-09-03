@@ -1011,6 +1011,45 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
+
+### NATS PubSub
+
+For distributed use-cases requiring high-performance messaging, you can use the NATS-based PubSub engine. [NATS is a lightweight, high-performance messaging system that's ideal for microservices architectures and distributed systems.](https://nats.io/)
+
+Similar to Redis PubSub, when running multiple instances of Hive Gateway, using a distributed PubSub engine like NATS ensures all instances are aware of active subscriptions and can publish events to the correct subscribers.
+
+NATS PubSub does not come with Hive Gateway, you have to install the package and the NATS PubSub transport dependency of `@nats-io/transport-node` for Node or Bun which you need to install first:
+
+```sh npm2yarn
+npm i @graphql-hive/pubsub @nats-io/transport-node
+```
+
+```ts filename="gateway.config.ts"
+import { connect } from '@nats-io/transport-node'
+import { defineConfig } from '@graphql-hive/gateway'
+import { NATSPubSub } from '@graphql-hive/pubsub/nats'
+
+const natsConnection = await connect({
+  servers: [
+    `nats://${process.env['NATS_HOST']}:${process.env['NATS_PORT']}`
+  ]
+})
+
+export const gatewayConfig = defineConfig({
+  webhooks: true,
+  pubsub: new NATSPubSub(
+    natsConnection,
+    {
+      // we make sure to use the same prefix for all gateways to share the same channels and pubsub
+      // meaning, all gateways using this channel prefix will receive and publish to the same topics
+      subjectPrefix: 'my-shared-gateways'
+    }
+  )
+})
+```
+
+Now, with this setup, any instance of Hive Gateway using the same `subjectPrefix` will be able to share the same subscriptions through the NATS messaging system.
+
 ### Redis PubSub
 
 For more advanced use-cases, such as running multiple instances of Hive Gateway, you can use the
