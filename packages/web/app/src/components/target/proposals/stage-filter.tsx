@@ -32,6 +32,31 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
         <Command>
           <CommandGroup>
             <ScrollArea className="relative max-h-screen">
+              <CommandItem
+                key="all"
+                value={''}
+                onSelect={selectedStage => {
+                  const allSelected = stages.every(s => selectedStages.includes(s));
+                  let updated: string[] | undefined;
+                  if (allSelected) {
+                    updated = undefined;
+                  } else {
+                    updated = [...stages];
+                  }
+                  void router.navigate({
+                    search: { ...search, stage: updated },
+                  });
+                }}
+                className="cursor-pointer truncate border-b"
+              >
+                <div className="flex flex-row items-center">
+                  <Checkbox
+                    className="mr-[6px]"
+                    checked={stages.every(s => selectedStages.includes(s))}
+                  />
+                  <div className="max-w-[350px] grow flex-col truncate">All</div>
+                </div>
+              </CommandItem>
               {stages?.map(stage => (
                 <CommandItem
                   key={stage}

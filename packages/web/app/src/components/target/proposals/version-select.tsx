@@ -68,9 +68,11 @@ export function VersionSelect(props: {
                   key={version.id}
                   value={version.id}
                   onSelect={selectedVersion => {
+                    // @todo make more generic by taking in version via arg
                     void router.navigate({
                       search: { ...search, version: selectedVersion },
                     });
+                    setOpen(false);
                   }}
                   className="cursor-pointer truncate"
                 >
