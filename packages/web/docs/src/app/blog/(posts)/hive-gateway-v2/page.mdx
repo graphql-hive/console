@@ -24,15 +24,6 @@ If you've struggled with tracing in distributed GraphQL systems, v2 changes ever
 completely rebuilt our OpenTelemetry integration from the ground up, following official
 OpenTelemetry best practices and conventions.
 
-**What was broken before:**
-
-- Incomplete or missing spans that left gaps in your traces
-- Poor span parenting that made it impossible to understand request flow
-- SDK version conflicts that forced you to choose between observability and stability
-- Limited customization that didn't fit your monitoring setup
-
-**What's fixed now:**
-
 - **Proper span hierarchy**: Every GraphQL operation now gets its own span, correctly nested under
   HTTP request spans
 - **Complete trace coverage**: From initial request to subgraph execution, every step is traced
