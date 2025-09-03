@@ -74,15 +74,15 @@ hive-gateway supergraph --opentelemtry
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { openTelemetrySetup } '@graphql-hive/gateway/opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
 openTelemetrySetup({
-   contextManager: new AsyncLocalStorageContextManager(),
-   traces: {
-      exporter: new OTLPTraceExporter({ url: process.env('OTLP_EXPORTER_URL') })
-   }
+  contextManager: new AsyncLocalStorageContextManager(),
+  traces: {
+    exporter: new OTLPTraceExporter({ url: process.env['OTLP_EXPORTER_URL'] })
+  }
 })
 ```
 
@@ -102,13 +102,16 @@ export const gatewayConfig = defineConfig({
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
-import { NodeSDK, tracing } from '@opentelemetry/sdk-node'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { NodeSDK } from '@opentelemetry/sdk-node'
 
 const sdk = new NodeSDK({
-  traceExporter: new tracing.OTLPTraceExporter({ url: process.env('OTLP_EXPORTER_URL') })
+  traceExporter: new OTLPTraceExporter({
+    url: process.env['OTLP_EXPORTER_URL']
+  })
 })
 
-skd.start()
+sdk.start()
 ```
 
 ```ts filename="gateway.config.ts"
@@ -139,7 +142,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 openTelemetrySetup({
   contextManager: new AsyncLocalStorageContextManager(),
   traces: {
-    exporter: new OTLPTraceExporter({ url: process.env('OTLP_EXPORTER_URL') })
+    exporter: new OTLPTraceExporter({ url: process.env['OTLP_EXPORTER_URL'] })
   },
   samplingRate: 0.1 // Only 10% of requests will be traced (or if enabled via context propagation)
 })
@@ -159,7 +162,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 openTelemetrySetup({
   contextManager: new AsyncLocalStorageContextManager(),
   traces: {
-    exporter: new OTLPTraceExporter({ url: process.env('OTLP_EXPORTER_URL') })
+    exporter: new OTLPTraceExporter({ url: process.env['OTLP_EXPORTER_URL'] })
     spanLimits: {
       // limits specific to spans, like `eventCountLimit` or `attributeCountLimit`
     },
@@ -187,10 +190,7 @@ in your visualization tool (like
 <video>
   <source src="./demo-span-parenting.webm" type="video/webm" />
   <source src="./demo-span-parenting.mp4" type="video/mp4" />
-  <a
-    alt="Click on this image to download video demo"
-    href="./demo-span-parenting.mp4"
-  >
+  <a alt="Click on this image to download video demo" href="./demo-span-parenting.mp4">
     <img src="./demo-span-parenting.png" />
   </a>
   Click on image to download the video demo.
@@ -248,14 +248,14 @@ You can now easily register custom spans from your custom plugins! Thanks to the
 OpenTelemetry Context, your custom spans will be parented correctly.
 
 ```ts filename="gateway.config.ts"
-import 'telemetry.ts'
+import './telemetry.ts'
 import { defineConfig } from '@graphql-hive/gateway'
-import { hive, trace } from '@graphql-hive/gateway/opentelemetry/api'
-import { getUserFromRequest } from './authentication'
+import { hive } from '@graphql-hive/gateway/opentelemetry/api'
 
 export const gatewayConfig = defineConfig({
-  openTelemetry: { traces: true },
-
+  openTelemetry: {
+    traces: true
+  },
   genericAuth: {
     mode: 'protect-granular',
     resolveUserFn: ctx =>
@@ -280,21 +280,22 @@ The most straight forward usage is to add an attribute to the current span, the 
 span for example:
 
 ```ts filename="gateway.config.ts"
-import 'telemetry.ts'
+import './telemetry.ts'
 import { defineConfig } from '@graphql-hive/gateway'
 import { trace } from '@opentelemetry/api'
 
-export const defineConfig({
+export const gatewayConfig = defineConfig({
   openTelemetry: { traces: true },
   genericAuth: {
-    //...
-  }
-
-  plugins: () => [{
-    onExecute({ context }) {
-      trace.getActiveSpan()?.setAttribute('auth.user.id', context.user.id ?? '<unauthenticated>')
+    // authenticate and authorize the user
+  },
+  plugins: () => [
+    {
+      onExecute({ context }) {
+        trace.getActiveSpan()?.setAttribute('auth.user.id', context.user.id ?? '<unauthenticated>')
+      }
     }
-  }]
+  ]
 })
 ```
 
@@ -313,9 +314,9 @@ export const gatewayConfig = defineConfig({
     mode: 'protect-granular',
     async resolveUserFn(ctx) {
       const token = ctx.request.headers.get('authorization')
-      const user = await fetch(`https://auth/validate?token=${token}`).then(r => r.json)
+      const user = await fetch(`https://auth/validate?token=${token}`).then(r => r.json())
 
-      const httpSpan = trace.getSpan(hive.getHttpContext(ctx.request)
+      const httpSpan = trace.getSpan(hive.getHttpContext(ctx.request))
       httpSpan?.setAttribute('auth.user.id', user?.id ?? '<unauthenticated>')
 
       return user
@@ -340,26 +341,28 @@ import { context, hive, propagation } from '@graphql-hive/gateway/opentelemetry/
 
 export const gatewayConfig = defineConfig({
   openTelemetry: { traces: true },
-  plugins: () => ({
-    instrumentation: {
-      request({ request }, wrapped) {
-        const requestId = request.headers.get('request-id')
-        const baggage = propagation.createBaggage({ requestId })
-        const ctxWithBaggage = propagation.setBaggage(hive.getActiveContext({ request }), baggage)
+  plugins: () => [
+    {
+      instrumentation: {
+        request({ request }, wrapped) {
+          const requestId = request.headers.get('request-id')
+          const baggage = propagation.createBaggage({ requestId })
+          const ctxWithBaggage = propagation.setBaggage(hive.getActiveContext({ request }), baggage)
 
-        // The wrapped function represent the processing of the request. It allows you to wrap
-        // the entire request pipeline into an other function call, the OTEL context in this case.
-        return context.with(ctxWithBaggage, wrapped)
+          // The wrapped function represent the processing of the request. It allows you to wrap
+          // the entire request pipeline into an other function call, the OTEL context in this case.
+          return context.with(ctxWithBaggage, wrapped)
+        }
       }
     }
-  })
+  ]
 })
 ```
 
 ### Log Correlation
 
-The new OpenTelemetry integration leverage the new [Hive Logger](!!!!todo!!!!) feature with an
-integration with the beta Logger API of OpenTelemetry.
+The new OpenTelemetry integration leverages the new [Hive Logger](/docs/logger) feature with an
+integration with the logger API of OpenTelemetry.
 
 You can now correlate the logs related to a trace for the best debugging experience!
 
@@ -377,7 +380,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 openTelemetrySetup({
   contextManager: new AsyncLocalStorageContextManager(),
   traces: {
-    exporter: new OTLPTraceExporter({ url: process.env('OTLP_EXPORTER_URL') })
+    exporter: new OTLPTraceExporter({ url: process.env['OTLP_EXPORTER_URL'] })
   }
 })
 
@@ -386,7 +389,9 @@ export const gatewayConfig = defineConfig({
   logging: new Logger({
     writers: [
       new OpenTelemetryLogWriter({
-        exporter: new OTLPLogExporter({ url: process.env('OTLP_EXPORTER_URL') })
+        exporter: new OTLPLogExporter({
+          url: process.env['OTLP_EXPORTER_URL']
+        })
       })
     ]
   })
@@ -400,7 +405,7 @@ use `@graphql-hive/plugin-opentelemetry` to improve your GraphQL server observab
 profit of all the new features presented in this blog post:
 
 ```ts filename="server.ts"
-import 'telemetry.ts'
+import './telemetry.ts'
 import { createServer } from 'node:http'
 import { createYoga } from 'graphql-yoga'
 import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
