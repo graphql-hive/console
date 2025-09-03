@@ -929,6 +929,13 @@ Note that the event payload only contains the `id` field, which is the only requ
 resolve the `Product` type. Hive Gateway will then fetch the missing fields from the "products"
 subgraph.
 
+<Callout>
+
+You should also take a look at the E2E test serving as an example of
+[how EDFS works with multiple distributed Hive Gateway instances](https://github.com/graphql-hive/gateway/tree/main/e2e/event-driven-federated-subscriptions).
+
+</Callout>
+
 ## PubSub
 
 Hive Gateway internally uses a PubSub system to handle subscriptions. By default, an in-memory
@@ -985,7 +992,7 @@ export interface PubSub<M extends TopicDataMap = TopicDataMap> {
 ```
 
 The `@grpahql-hive/pubsub` package also provides a few built-in PubSub engines, at the moment an
-in-memory engine and a Redis-based engine.
+in-memory engine, Redis and NATS engine.
 
 ### In-Memory PubSub
 
