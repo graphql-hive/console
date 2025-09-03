@@ -32,7 +32,7 @@ The following packages have been updated to their latest versions, which require
 - `@graphql-mesh/hmac-upstream-signature`
 - `@graphql-hive/plugin-deduplicate-request`
 - `@graphql-mesh/transport-http-callback`
-- `@graphql-mesh/plugin-opentelemetry`
+- `@graphql-hive/plugin-opentelemetry`
 - `@graphql-tools/executor-graphql-ws`
 - `@graphql-tools/stitching-directives`
 - `@graphql-mesh/plugin-prometheus`
@@ -560,10 +560,15 @@ export const gatewayConfig = defineConfig({
 OpenTelemetry integration have been re-worked to offer better traces, custom attributes and spans,
 and overall compatiblity with standard OTEL API.
 
-For this features to be possible, we had to break the configuration API.
+For this features to be possible, we had to break the configuration API of the old plugin and release a brand new one `@graphql-**hive**/plugin-opentelemetry`. Everyone that has used the plugin directly, you're advised to move away from the now deprecated `@graphql-**mesh**/plugin-opentelemetry` and upgrade:
 
-You can read more about the new capabilities of the OpenTelemetry Tracing integration in the
-[Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing)
+```diff
+- @graphql-mesh/plugin-opentelemetry
++ @graphql-hive/plugin-opentelemetry
+```
+
+To upgrade, please read the new capabilities of the OpenTelemetry Tracing integration in the
+[Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing).
 
 ### CLI Options
 

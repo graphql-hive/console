@@ -1126,13 +1126,13 @@ export const gatewayConfig = defineConfig({
 <Tabs.Tab>
 
 ```sh npm2yarn
-npm i @graphql-mesh/plugin-opentelemetry
+npm i @graphql-hive/plugin-opentelemetry
 ```
 
 ```ts filename="index.ts"
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 
 openTelemetrySetup({
   //...
@@ -1858,9 +1858,9 @@ You can also create your own tracer instead of reusing the Gateway one.
 
 ```ts filename="index.ts"
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-import { hive } from '@graphql-mesh/plugin-opentelemetry/api'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
+import { hive } from '@graphql-hive/plugin-opentelemetry/api'
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
@@ -1951,9 +1951,9 @@ export const gatewayConfig = defineConfig({
 
 ```ts filename="index.ts"
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { useOpenTelemetry } from '@graphql-mesh/plugin-opentelemetry'
-import { hive } from '@graphql-mesh/plugin-opentelemetry/api'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
+import { hive } from '@graphql-hive/plugin-opentelemetry/api'
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
@@ -2064,9 +2064,9 @@ object containing either the HTTP `request`, the GraphQL `context` or an `execut
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
-import { openTelemetrySetup } from '@graphql-mesh/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 // This package re-export official @opentelemetry/api package for ease of use
-import { trace, hive } from '@graphql-mesh/plugin-opentelemetry/api'
+import { trace, hive } from '@graphql-hive/plugin-opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 openTelemetrySetup({
