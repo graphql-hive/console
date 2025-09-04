@@ -12,6 +12,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Multipart Requests are Disabled by Default](#multipart-requests-are-disabled-by-default)
 - [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
+- [Sane Security Defaults](#sane-security-defaults)
 - [Inflight Request Deduplication](#inflight-request-deduplication)
 - [Hive Logger](#hive-logger)
 - [OpenTelemetry](#opentelemetry)
@@ -109,6 +110,25 @@ export const gatewayConfig = defineConfig({
   You can read more about the mocking plugin in the [Mocking
   documentation](/docs/src/content/gateway/other-features/testing/mocking).
 </Callout>
+
+## Sane Security Defaults
+
+Hive Gateway v2 comes with improved security defaults to help protect your GraphQL API from common
+vulnerabilities. The following security measures are now enabled by default:
+
+- [Maximum query depth](/docs/gateway/other-features/security/max-depth) is set to 7
+- [Maximum query tokens](/docs/gateway/other-features/security/max-tokens) is set to 1000
+
+If you want to keep the v1 behavior, you can set these options to `false` in your configuration:
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  maxDepth: false,
+  maxTokens: false
+})
+```
 
 ## Disabled Automatic Forking
 
