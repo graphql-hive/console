@@ -3,7 +3,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'supportTicket' | 'supportTickets' | 'viewerCanManageSupportTickets' | '__isTypeOf'
+  'supportTicket' | 'supportTickets' | 'viewerCanManageSupportTickets'
 > = {
   supportTickets: async (org, args, { injector }) => {
     const response = await injector.get(SupportManager).getTickets(org.id);

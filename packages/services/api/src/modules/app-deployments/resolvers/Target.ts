@@ -14,7 +14,7 @@ import type { TargetResolvers } from './../../../__generated__/types';
  */
 export const Target: Pick<
   TargetResolvers,
-  'appDeployment' | 'appDeployments' | 'viewerCanViewAppDeployments' | '__isTypeOf'
+  'appDeployment' | 'appDeployments' | 'viewerCanViewAppDeployments'
 > = {
   /* Implement Target resolver logic here */
   appDeployment: async (target, args, { injector }) => {

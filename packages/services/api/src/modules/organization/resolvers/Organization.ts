@@ -34,7 +34,6 @@ export const Organization: Pick<
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
   | 'viewerCanTransferOwnership'
-  | '__isTypeOf'
 > = {
   __isTypeOf: organization => {
     return !!organization.id;
