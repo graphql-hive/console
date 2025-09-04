@@ -25,8 +25,7 @@ flowchart LR
     Open -.-> Draft
     Open --> Approved
     Approved -.-> Open
-    Approved --> SchemaPush@{ shape: subproc, label: Wait for all changes to be implemented }
-    SchemaPush --> Implemented@{ shape: stadium }
+    Approved -.->|Wait on changes implementation|Implemented
     Approved -.-> Closed
     Approved -.-> Draft
     Closed <-.-> Draft
