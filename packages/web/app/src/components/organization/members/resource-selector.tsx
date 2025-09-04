@@ -317,7 +317,7 @@ export function ResourceSelector(props: {
               targetId: item.id,
               targetSlug: item.slug,
               appDeployments: {
-                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+                mode: GraphQLSchema.ResourceAssignmentModeType.All,
                 appDeployments: [],
               },
               services: {
