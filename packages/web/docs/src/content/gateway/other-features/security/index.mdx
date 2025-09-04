@@ -82,7 +82,9 @@ perform requesting signing and verification.
 
 ## Query Depth Limiting
 
-<Callout type="info">Query Depth Limiting is enabled by default in Hive Gateway and set to 7.</Callout>
+<Callout type="info">
+  Query Depth Limiting is enabled by default in Hive Gateway and set to 7.
+</Callout>
 
 Attackers can send operations with deeply nested selection sets that could block other requests
 being processed. Fortunately, infinite loops are not possible by design as a fragment cannot
@@ -146,7 +148,9 @@ needs, as it could vary between users.
 
 ## Query Token Limiting
 
-<Callout type="info">Query Token Limiting is enabled by default in Hive Gateway and set to 1000.</Callout>
+<Callout type="info">
+  Query Token Limiting is enabled by default in Hive Gateway and set to 1000.
+</Callout>
 
 Malicious queries can contain a great number of tokens, which can lead to performance issues when
 processing them. Attackers can send these operations over and over to degrade the performance of the
@@ -154,8 +158,8 @@ Hive Gateway using the DDoS attack.
 
 [Configuring the `maxTokens` option](/docs/gateway/other-features/security/max-tokens) can prevent
 malicious API users executing GraphQL operations with high token counts. You need to tweak the
-maximum token count an operation is allowed to have based on your schema and needs, as it could
-vary between users.
+maximum token count an operation is allowed to have based on your schema and needs, as it could vary
+between users.
 
 ## Rate Limiting
 
