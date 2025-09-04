@@ -190,8 +190,8 @@ openTelemetrySetup({
 })
 ```
 
-After configuring and setting up the telemetry, make sure to import it as the first import in your `gateway.config.ts` file and
-enable OpenTelemetry tracing:
+After configuring and setting up the telemetry, make sure to import it as the first import in your
+`gateway.config.ts` file and enable OpenTelemetry tracing:
 
 ```ts filename="gateway.config.ts"
 import './telemetry'
@@ -199,8 +199,8 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
-    traces: true,
-  },
+    traces: true
+  }
 })
 ```
 
@@ -245,8 +245,8 @@ new NodeSDK({
 }).start()
 ```
 
-After configuring and setting up the telemetry, make sure to import it as the first import in your `gateway.config.ts` file and
-enable OpenTelemetry tracing:
+After configuring and setting up the telemetry, make sure to import it as the first import in your
+`gateway.config.ts` file and enable OpenTelemetry tracing:
 
 ```ts filename="gateway.config.ts"
 import './telemetry'
@@ -254,8 +254,8 @@ import { defineConfig } from '@graphql-hive/gateway'
 
 export const gatewayConfig = defineConfig({
   openTelemetry: {
-    traces: true,
-  },
+    traces: true
+  }
 })
 ```
 
