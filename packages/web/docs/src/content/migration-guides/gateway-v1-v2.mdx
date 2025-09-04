@@ -13,6 +13,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
 - [Sane Security Defaults](#sane-security-defaults)
+- [Load Schema on CLI Start](#load-schema-on-cli-start)
 - [Inflight Request Deduplication](#inflight-request-deduplication)
 - [Hive Logger](#hive-logger)
 - [OpenTelemetry](#opentelemetry)
@@ -110,6 +111,16 @@ export const gatewayConfig = defineConfig({
   You can read more about the mocking plugin in the [Mocking
   documentation](/docs/src/content/gateway/other-features/testing/mocking).
 </Callout>
+
+## Load Schema on CLI Start
+
+Hive Gateway runtime is JavaScript environment agnostic, meaning it can run in Node.js, Deno,
+Cloudflare Workers, Bun, and more. To achieve this, the schema loading needed to be handled on first
+request or during the readiness check because the runtime is simply a request handler.
+
+However, the CLI is a complete program that gets ran by the user; meaning, we do not have to load
+the schema on-demand, we can load the schema on start! This helps catch schema issues early and
+provides a better developer experience.
 
 ## Sane Security Defaults
 
