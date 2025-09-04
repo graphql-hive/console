@@ -157,10 +157,12 @@ infrastructure.
 
 ### Secure-by-Default Multipart Handling
 
-Based on security findings in the ecosystem, [like this vulnerability](https://medium.com/@lclrobert2020_38117/exposed-the-critical-multer-bug-that-can-bring-your-server-down-robert-li-dev-space-86df9b020257), and GraphQL conventions, file uploads through GraphQL multipart
-requests are now disabled by default. While convenient, they can pose security considerations and go
-against GraphQL's design principles. If you need file uploads, you can explicitly enable them – but
-we recommend dedicated file upload services instead.
+Based on security findings in the ecosystem,
+[like this vulnerability](https://medium.com/@lclrobert2020_38117/exposed-the-critical-multer-bug-that-can-bring-your-server-down-robert-li-dev-space-86df9b020257),
+and GraphQL conventions, file uploads through GraphQL multipart requests are now disabled by
+default. While convenient, they can pose security considerations and go against GraphQL's design
+principles. If you need file uploads, you can explicitly enable them – but we recommend dedicated
+file upload services instead.
 
 **[Read more about the multipart requests default →](/docs/migration-guides/gateway-v1-v2#multipart-requests-are-disabled-by-default)**
 

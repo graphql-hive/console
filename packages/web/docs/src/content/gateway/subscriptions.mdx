@@ -853,36 +853,35 @@ the subscription event data.
 
 ### Configuring Hive Gateway With NATS
 
-Next step is to configure Hive Gateway to use [NATS](https://nats.io/) as the message broker and consume the
-Mesh Compose generated supergraph. This is how the configuration would look like:
+Next step is to configure Hive Gateway to use [NATS](https://nats.io/) as the message broker and
+consume the Mesh Compose generated supergraph. This is how the configuration would look like:
 
-NATS PubSub does not come with Hive Gateway, you have to install the package and the
-peer dependency of the chosen [NATS JavaScript transport](https://github.com/nats-io/nats.js) which you need to install first:
+NATS PubSub does not come with Hive Gateway, you have to install the package and the peer dependency
+of the chosen [NATS JavaScript transport](https://github.com/nats-io/nats.js) which you need to
+install first:
 
 ```sh npm2yarn
 npm i @graphql-hive/pubsub @nats-io/transport-node
 ```
 
 ```ts filename="gateway.config.ts"
-import { defineConfig } from '@graphql-hive/gateway';
-import { NATSPubSub } from '@graphql-hive/pubsub/nats';
-import { connect } from '@nats-io/transport-node';
+import { defineConfig } from '@graphql-hive/gateway'
+import { NATSPubSub } from '@graphql-hive/pubsub/nats'
+import { connect } from '@nats-io/transport-node'
 
 export const gatewayConfig = defineConfig({
   maskedErrors: false,
   pubsub: new NATSPubSub(
     await connect({
-      servers: [
-        `nats://${process.env['NATS_HOST']}:${process.env['NATS_PORT']}`,
-      ],
+      servers: [`nats://${process.env['NATS_HOST']}:${process.env['NATS_PORT']}`]
     }),
     {
       // we make sure to use the same prefix for all gateways to share the same channels and pubsub.
       // meaning, all gateways using this channel prefix will receive and publish to the same topics
-      subjectPrefix: 'my-shared-gateways',
-    },
-  ),
-});
+      subjectPrefix: 'my-shared-gateways'
+    }
+  )
+})
 ```
 
 ### Subscribing and Publishing Events
@@ -905,8 +904,9 @@ subscription {
 }
 ```
 
-and then [publish an event to the NATS instance](https://docs.nats.io/nats-concepts/core-nats/pubsub/pubsub_walkthrough) on the `new_product` topic with the `edfs` prefix like
-this:
+and then
+[publish an event to the NATS instance](https://docs.nats.io/nats-concepts/core-nats/pubsub/pubsub_walkthrough)
+on the `new_product` topic with the `edfs` prefix like this:
 
 ```sh
 nats pub edfs:new_product '{"id":"roomba70x"}'
@@ -1011,44 +1011,44 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-
 ### NATS PubSub
 
-For distributed use-cases requiring high-performance messaging, you can use the NATS-based PubSub engine. [NATS is a lightweight, high-performance messaging system that's ideal for microservices architectures and distributed systems.](https://nats.io/)
+For distributed use-cases requiring high-performance messaging, you can use the NATS-based PubSub
+engine.
+[NATS is a lightweight, high-performance messaging system that's ideal for microservices architectures and distributed systems.](https://nats.io/)
 
-Similar to Redis PubSub, when running multiple instances of Hive Gateway, using a distributed PubSub engine like NATS ensures all instances are aware of active subscriptions and can publish events to the correct subscribers.
+Similar to Redis PubSub, when running multiple instances of Hive Gateway, using a distributed PubSub
+engine like NATS ensures all instances are aware of active subscriptions and can publish events to
+the correct subscribers.
 
-NATS PubSub does not come with Hive Gateway, you have to install the package and the NATS PubSub transport dependency of `@nats-io/transport-node` for Node or Bun which you need to install first:
+NATS PubSub does not come with Hive Gateway, you have to install the package and the NATS PubSub
+transport dependency of `@nats-io/transport-node` for Node or Bun which you need to install first:
 
 ```sh npm2yarn
 npm i @graphql-hive/pubsub @nats-io/transport-node
 ```
 
 ```ts filename="gateway.config.ts"
-import { connect } from '@nats-io/transport-node'
 import { defineConfig } from '@graphql-hive/gateway'
 import { NATSPubSub } from '@graphql-hive/pubsub/nats'
+import { connect } from '@nats-io/transport-node'
 
 const natsConnection = await connect({
-  servers: [
-    `nats://${process.env['NATS_HOST']}:${process.env['NATS_PORT']}`
-  ]
+  servers: [`nats://${process.env['NATS_HOST']}:${process.env['NATS_PORT']}`]
 })
 
 export const gatewayConfig = defineConfig({
   webhooks: true,
-  pubsub: new NATSPubSub(
-    natsConnection,
-    {
-      // we make sure to use the same prefix for all gateways to share the same channels and pubsub
-      // meaning, all gateways using this channel prefix will receive and publish to the same topics
-      subjectPrefix: 'my-shared-gateways'
-    }
-  )
+  pubsub: new NATSPubSub(natsConnection, {
+    // we make sure to use the same prefix for all gateways to share the same channels and pubsub
+    // meaning, all gateways using this channel prefix will receive and publish to the same topics
+    subjectPrefix: 'my-shared-gateways'
+  })
 })
 ```
 
-Now, with this setup, any instance of Hive Gateway using the same `subjectPrefix` will be able to share the same subscriptions through the NATS messaging system.
+Now, with this setup, any instance of Hive Gateway using the same `subjectPrefix` will be able to
+share the same subscriptions through the NATS messaging system.
 
 ### Redis PubSub
 
