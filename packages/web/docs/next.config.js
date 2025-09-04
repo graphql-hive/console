@@ -241,6 +241,11 @@ export default withGuildDocs({
       destination: '/docs/gateway/deployment/runtimes/nodejs',
       permanent: true,
     },
+    {
+      source: '/docs/gateway/other-features/performance/deduplicate-request',
+      destination: '/docs/gateway/other-features/performance/deduplicate-inflight-requests',
+      permanent: true,
+    },
   ],
   env: {
     SITE_URL: 'https://the-guild.dev/graphql/hive',

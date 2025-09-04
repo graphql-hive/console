@@ -1,6 +1,6 @@
 import { Callout } from '@theguild/components'
 
-# Deduplicate HTTP Requests
+# Deduplicate Inflight Requests
 
 Most of the time, your Hive Gateway will receive multiple requests for the same data. This can
 happen when multiple clients request the same data, or when a single client sends multiple requests
@@ -10,12 +10,20 @@ To reduce the load on your downstream services, you can deduplicate the requests
 multiple requests for the same data are received at the same time, only one request will be sent to
 the downstream service, and the responses will be shared among the clients.
 
-You can enable request deduplication by using the built-in `useDeduplicateRequest` plugin like this:
+This feature is enabled by default in Hive Gateway! If you would like to disable it, you can disable it like this:
+
 
 ```ts filename="gateway.config.ts"
-import { defineConfig, useDeduplicateRequest } from '@graphql-hive/gateway'
+import { defineConfig } from '@graphql-hive/gateway';
+import { HTTPTransportOptions } from '@graphql-tools/executor-http';
 
 export const gatewayConfig = defineConfig({
-  plugins: ctx => [useDeduplicateRequest(ctx)]
-})
+  transportEntries: {
+    '*.http': {
+      options: {
+        deduplicateInflightRequests: false,
+      } as HTTPTransportOptions,
+    },
+  },
+});
 ```
