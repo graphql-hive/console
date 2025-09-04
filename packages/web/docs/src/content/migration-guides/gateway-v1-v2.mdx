@@ -12,6 +12,7 @@ v2 includes several breaking changes and improvements over v1. The most signific
 - [Multipart Requests are Disabled by Default](#multipart-requests-are-disabled-by-default)
 - [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
 - [Disabled Automatic Forking](#disabled-automatic-forking)
+- [Inflight Request Deduplication](#inflight-request-deduplication)
 - [Hive Logger](#hive-logger)
 - [OpenTelemetry](#opentelemetry)
 - [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
@@ -123,6 +124,57 @@ you can manually configure forking if needed.
 You can configure forking in your `gateway.config.ts` file by using the `fork` option or using the
 environment variable `FORK`. These options allow you to specify the number of worker processes to
 fork.
+
+## Inflight Request Deduplication
+
+Hive Gateway ships with built-in inflight request deduplication. This means that if multiple
+requests for the same resource are made simultaneously, Hive Gateway will only send one request to
+the upstream service and share the response with all the original requesters.
+
+Previously, you would use the suboptimal `useDeduplicateRequest()` plugin to achieve this
+functionality. The plugin has been removed in v2, and the deduplication is now built-in and enabled
+by default.
+
+To migrate, simply remove the plugin from your configuration and you're good to go!
+
+```diff
+import {
+  defineConfig,
+- useDeduplicateRequest,
+} from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+- plugins: ctx => [useDeduplicateRequest(ctx)]
+})
+```
+
+If you still want to use the deprecated plugin, you need to install it separately and use it as
+before:
+
+```sh
+npm i @graphql-hive/plugin-deduplicate-request
+```
+
+```ts
+import {
+  defineConfig,
+  useDeduplicateRequest,
+  type HTTPTransportOptions, // only for typedefs, otherwise not necessary
+} from '@graphql-hive/gateway'
+import { useDeduplicateRequest } from '@graphql-hive/plugin-deduplicate-request'
+
+export const gatewayConfig = defineConfig({
+  transportEntries: {
+    '*.http': {
+      options: {
+        // disable the built in deduplication
+        deduplicateInflightRequests: false,
+      } as HTTPTransportOptions,
+    },
+  },
+  plugins: ctx => [useDeduplicateRequest(ctx)]
+})
+```
 
 ## Hive Logger
 
