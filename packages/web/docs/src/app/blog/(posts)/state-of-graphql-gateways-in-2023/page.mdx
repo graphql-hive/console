@@ -24,6 +24,12 @@ the following problems.
 exploring, and creating a report on the state of GraphQL gateways in 2023. We compared, tested, and
 benchmark various open-source solutions, and we'd like to share our process thus far.**
 
+<Callout type="info" emoji="📊">
+  Prefer numbers? See the live, reproducible benchmark (RPS, p95/p99, CPU, memory):
+  <a href="https://the-guild.dev/graphql/hive/federation-gateway-performance">GraphQL Gateway Performance Benchmarks</a>.
+</Callout>
+
+
 <Callout type="info" emoji="❣️">
   We would like to thank our partners and customers who took part in that journey!
 </Callout>
@@ -93,8 +99,8 @@ between GraphQL gateways:
 4. We tracked all available vitals and metrics, such as network traffic, CPU, and RAM.
 5. We tested different use cases to simulate real-life scenarios with different flows, such as peak
    times or upstream server delays.
-6. We are running all scenarios for every change, and have a complete overview of the results and
-   the stats of every gateway.
+6. We are running all scenarios for every change, and maintain a **complete, live overview of results**
+   at <a href="https://the-guild.dev/graphql/hive/federation-gateway-performance">the benchmark dashboard</a>.
 7. We are running Rust-based servers for the subgraphs implementation, to ensure it's never becoming
    a bottleneck.
 
@@ -128,6 +134,8 @@ encourage developers to help us with the following:
 - Improve the code of the actual gateways and help to improve the GraphQL ecosystem.
 
 ## The Numbers
+
+For up-to-date results across scenarios, use the [live benchmark website](https://the-guild.dev/graphql/hive/federation-gateway-performance).
 
 ### `constant-vus-over-time`
 
