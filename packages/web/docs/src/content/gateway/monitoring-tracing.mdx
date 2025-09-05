@@ -631,7 +631,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 openTelemetrySetup({
   contextManager: new AsyncLocalStorageContextManager(),
   traces: {
-    exporter: new OTLPTraceExporter({ url: 'http://<jaeger-endpoint>:4318' })
+    exporter: new OTLPTraceExporter({ url: 'http://<jaeger-endpoint>:4318/v1/traces' })
   }
 })
 ```
@@ -645,7 +645,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 new NodeSDK({
-  traceExporter: new OTLPTraceExporter({ url: 'http://<jaeger-endpoint>:4318' })
+  traceExporter: new OTLPTraceExporter({ url: 'http://<jaeger-endpoint>:4318/v1/traces' })
 }).start()
 ```
 
