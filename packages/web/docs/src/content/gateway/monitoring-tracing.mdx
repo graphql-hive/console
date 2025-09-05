@@ -391,7 +391,7 @@ export const gatewayConfig = defineConfig({
   openTelemetry: {
     exporters: [
       createOtlpHttpExporter({
-        url: 'http://<jaeger-endpoint>:4318/v1/traces'
+        url: 'http://<jaeger-endpoint>:4318'
       })
     ]
   }
@@ -412,7 +412,7 @@ export const gateway = createGatewayRuntime({
       ...ctx,
       exporters: [
         createOtlpHttpExporter({
-          url: 'http://<jaeger-endpoint>:4318/v1/traces'
+          url: 'http://<jaeger-endpoint>:4318'
         })
       ]
     })
