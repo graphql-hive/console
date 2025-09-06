@@ -144,11 +144,6 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
     fieldLikeNode: InputValueDefinitionNode | FieldDefinitionNode,
     node: InputValueDefinitionNode,
   ) {
-    // Check for external tag because we cannot contribute directives to external fields.
-    if (node.directives?.find(d => d.name.value === externalDirectiveName)) {
-      return node;
-    }
-
     const tagsOnNode = getTagsForSchemaCoordinate(
       `${objectLikeNode.name.value}.${fieldLikeNode.name.value}(${node.name.value}:)`,
     );
@@ -204,6 +199,7 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
 
     for (const node of nodes) {
       const tagsOnNode = getTagsForSchemaCoordinate(node.name.value);
+      const nodeIsExternal = !!node.directives?.find(d => d.name.value === externalDirectiveName);
 
       let newNode = {
         ...node,
@@ -222,7 +218,10 @@ export function applyTagFilterToInaccessibleTransformOnSubgraphSchema(
           }
 
           // Check for external tag because we cannot contribute directives to external fields.
-          if (fieldNode.directives?.find(d => d.name.value === externalDirectiveName)) {
+          const fieldIsExternal = !!fieldNode.directives?.find(
+            d => d.name.value === externalDirectiveName,
+          );
+          if (nodeIsExternal || fieldIsExternal) {
             return fieldNode;
           }
 
