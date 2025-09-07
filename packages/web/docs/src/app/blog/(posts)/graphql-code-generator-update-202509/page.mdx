@@ -4,12 +4,14 @@ authors: eddeee888
 tags: [graphql, graphql-codegen, resolvers, federation]
 date: 2025-09-07
 description:
-  GraphQL Code Generator September 2025 update comes with improvements to Federation and monolithic
+  GraphQL Code Generator September 2025 update comes with improvements to Federation and normal
   GraphQL server typing and lots of internal quality-of-life changes.
 ---
 
-GraphQL Code Generator has just gone through a major update to improve type usability for both
-Federation and monolithic GraphQL server architecture.
+GraphQL Code Generator has just gone through a major update to improve type correctness and
+usability for both Federation and normal GraphQL server architecture. This is a big milestone for
+us, which closes many long-standing reported issues and serves as the foundation to help us move
+faster.
 
 ## Migration Guide
 
@@ -45,15 +47,15 @@ export type UserMapper = UserTypeFromDatabase
 - `FederationReferenceTypes` is generated instead of inlining `__resolveReference` types to improve
   usability with mappers
 - Fixed mappers for Federation use case
-- Federation `__resolveReference` is available for Interfaces
-- Fixed Federation type generation when `@external`, `@requires`, etc. are used.
-- Interfaces types having non-meta resolvers e.g. `__resolveReference`
+- Federation `__resolveReference` resolver is available for Interfaces
+- Fixed Federation directives types such as `@external`, `@requires`, etc.
+- Interface non-meta resolvers are no longer generated.
 - `__isTypeOf` resolver is no longer generated for output types which are not Interface implementing
   types or Union member types
 - `UnwrappedObject` type is no longer generated
 - `Record<PropertyKey, never>` is generated instead of `{}` for empty object types
-- Deprecated `generateInternalResolversIfNeeded` option. Codegen decides whether to generate
-  internal resolvers to match the spec
+- Deprecated `generateInternalResolversIfNeeded` option. Codegen decides whether to generate meta
+  resolvers to match the spec
 - Deprecated `watchConfig`, `dedupeFragments` and `noGraphQLTag` legacy options
 - Dropped Node 18 support
 - Refactored internal type overrides that has been causing confusion and frustration to
@@ -67,8 +69,10 @@ export type UserMapper = UserTypeFromDatabase
 
 ## Summary
 
-This GraphQL Codegen major version update comes with improved support for Federation and monolithic
-use cases for type correctness based on community feedback and collaboration. It also overhauls old
-config and internal to improve contributor's Developer Experience. Please create issues
+This GraphQL Codegen major version update comes with improved support for Federation and normal use
+cases for type correctness based on community feedback and collaboration. It also overhauls old
+config and internal implementation to improve contributor's Developer Experience.
+
+If you spot problems or have unsupported use cases, please create issues
 [here](https://github.com/dotansimha/graphql-code-generator/issues) to help us track and continue to
 make improvements!
