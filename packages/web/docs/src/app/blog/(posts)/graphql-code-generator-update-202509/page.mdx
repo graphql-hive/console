@@ -1,0 +1,74 @@
+---
+title: GraphQL Code Generator Major Update, September 2025
+authors: eddeee888
+tags: [graphql, graphql-codegen, resolvers, federation]
+date: 2025-09-07
+description:
+  GraphQL Code Generator September 2025 update comes with improvements to Federation and monolithic
+  GraphQL server typing and lots of internal quality-of-life changes.
+---
+
+GraphQL Code Generator has just gone through a major update to improve type usability for both
+Federation and monolithic GraphQL server architecture.
+
+## Migration Guide
+
+- Federation entity's resolver types correctly reflect the parent may come from a different subgraph
+  (via `__resolveReference`) or from the same subgraph. Use `mappers` to explicitly set the expected
+  use case to help with typing. For example:
+
+```ts
+// If you are only resolving fields through `__resolveReference`, then explicitly set the reference type:
+import { FederationReferenceTypes } from "./types.generated";
+export type UserMapper = FederationReferenceTypes["User"]
+
+// If your current subgraph returns a different interface to `__resolveReference`, include both in the mapper, and handle both cases in subsequent resolvers:
+import { UserTypeFromDatabase } from "./your-database-type";
+import { FederationReferenceTypes } from "./types.generated";
+export type UserMapper =
+  | UserTypeFromDatabase
+  | FederationReferenceTypes["User"]
+
+// If you want to standardise the mapper interface (which means you may need to resolve for `UserTypeFromDatabase` in `__resolveReference`):
+import { UserTypeFromDatabase } from "./your-database-type";
+export type UserMapper = UserTypeFromDatabase
+```
+
+- If you have implemented non-meta resolvers in Interfaces, remove them as they are never called.
+  Generated types have been updated to reflect this.
+- If you have implemented `__isTypeOf` resolvers for types that are not Interface implementing types
+  or Union member types, remove them as they are never called. Generated types have been updated to
+  reflect this.
+
+## Breaking Changes
+
+- `FederationReferenceTypes` is generated instead of inlining `__resolveReference` types to improve
+  usability with mappers
+- Fixed mappers for Federation use case
+- Federation `__resolveReference` is available for Interfaces
+- Fixed Federation type generation when `@external`, `@requires`, etc. are used.
+- Interfaces types having non-meta resolvers e.g. `__resolveReference`
+- `__isTypeOf` resolver is no longer generated for output types which are not Interface implementing
+  types or Union member types
+- `UnwrappedObject` type is no longer generated
+- `Record<PropertyKey, never>` is generated instead of `{}` for empty object types
+- Deprecated `generateInternalResolversIfNeeded` option. Codegen decides whether to generate
+  internal resolvers to match the spec
+- Deprecated `watchConfig`, `dedupeFragments` and `noGraphQLTag` legacy options
+- Dropped Node 18 support
+- Refactored internal type overrides that has been causing confusion and frustration to
+  contributors. This impacts downstream plugins that extend base `typescript` and
+  `typescript-resolvers` plugins.
+
+## Other Changes
+
+- Partial success writes successful generation to file
+- Migrated from Jest to Vitest
+
+## Summary
+
+This GraphQL Codegen major version update comes with improved support for Federation and monolithic
+use cases for type correctness based on community feedback and collaboration. It also overhauls old
+config and internal to improve contributor's Developer Experience. Please create issues
+[here](https://github.com/dotansimha/graphql-code-generator/issues) to help us track and continue to
+make improvements!
