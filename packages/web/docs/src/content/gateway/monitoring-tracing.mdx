@@ -741,7 +741,6 @@ npm i dd-trace
 ```ts filename="telemetry.ts"
 import ddTrace from 'dd-trace'
 import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 const { TracerProvider } = ddTrace.init({
   // Your configuration
@@ -1866,7 +1865,7 @@ export const gatewayConfig = defineConfig({
     traces: true,
   },
   genericAuth: {
-    resolveUserFn: ({ context }) => {
+    resolveUserFn: (context) => {
       // `startActiveSpan` will rely on the current context to parent the new span correctly
       // You can also use your own tracer instead of Hive Gateway's one.
       return hive.tracer!.startActiveSpan('users.fetch', (span) => {
@@ -1912,7 +1911,7 @@ export const gateway = createGatewayRuntime({
         traces: true
       }),
       useGenericAuth({
-        resolveUserFn: ({ context }) => {
+        resolveUserFn: (context) => {
           // `startActiveSpan` will rely on the current context to parent the new span correctly
           // You can also use your own tracer instead of Hive Gateway's one.
           return hive.tracer!.startActiveSpan('users.fetch', (span) => {
@@ -1953,7 +1952,6 @@ to get the proper context.
 import { defineConfig } from '@graphql-hive/gateway'
 import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 import { hive } from '@graphql-hive/gateway/opentelemetry/api'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
 openTelemetrySetup({
@@ -1968,7 +1966,7 @@ export const gatewayConfig = defineConfig({
   },
   plugins: () => [
     useGenericAuth({
-      resolveUserFn: ({ context }) => {
+      resolveUserFn: (context) => {
         const otelCtx = hive.getActiveContext({ context });
 
         // Explicitly pass the parent context as the third argument.
@@ -1992,7 +1990,6 @@ import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
 import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry'
 import { hive } from '@graphql-hive/plugin-opentelemetry/api'
 import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { useGenericAuth } from '@envelop/generic-auth'
 
 openTelemetrySetup({
@@ -2009,7 +2006,7 @@ export const gateway = createGatewayRuntime({
         traces: true
       }),
       useGenericAuth({
-        resolveUserFn: ({ context }) => {
+        resolveUserFn: (context) => {
           const otelCtx = hive.getActiveContext({ context });
 
           // Explicitly pass the parent context as the third argument.
@@ -2077,7 +2074,7 @@ export const gatewayConfig = defineConfig({
   },
   plugins: () => [
     useGenericAuth({
-      resolveUserFn: ({ context }) => {
+      resolveUserFn: (context) => {
         const span = trace.getActiveSpan();
         const user = await fetchUser(extractUserIdFromContext(context))
         span.setAttribute('user.id', user.id);
@@ -2106,7 +2103,6 @@ import { defineConfig } from '@graphql-hive/gateway'
 import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 // This package re-export official @opentelemetry/api package for ease of use
 import { trace, hive } from '@graphql-hive/plugin-opentelemetry/api'
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 openTelemetrySetup({
   contextManager: null, // Don't register any context manager
@@ -2120,7 +2116,7 @@ export const gatewayConfig = defineConfig({
   },
   plugins: () => [
     useGenericAuth({
-      resolveUserFn: ({ context }) => {
+      resolveUserFn: (context) => {
         const user = await fetchUser(extractUserIdFromContext(context))
 
         const otelCtx = hive.getActiveContext({ context })
@@ -2151,11 +2147,33 @@ You can access those spans by using `getHttpContext(request)`, `getOperationCont
 `getExecutionRequestContext(executionRequest)` functions from
 `@graphql-hive/gateway/opentelemetry/api`.
 
-They are accessible under `openTelemetry` key of the graphql and configuration context, and on the
-plugin instance if you don't have access to any of those contexts.
+They are also accessible under `openTelemetry` key of the graphql and configuration context, and on
+the plugin. When using the graphql context, the argument is optional and functions will return the
+current appropriate root context.
 
-When using the graphql context, the argument is optional and functions will return the current
-appropriate root context.
+```ts filename="gateway.config.ts"
+import { hive } '@graphql-hive/gateway/opentelemetry/api'
+import { defineConfig } from '@graphql-hive/gateway'
+import { trace } from '@opentelemetry/api'
+
+export config gatewayConfig = defineConfig({
+  openTelemetry: {
+    traces: true
+  },
+
+  plugin: () => [{
+    onRequest({ request }) {
+      const httpSpan = trace.getSpan(hive.getHttpContext(request))
+    },
+    onExecute({ context }) {
+      const operationSpan = trace.getSpan(hive.getOperationContext(context))
+    },
+    onSubgraphExecute({ executionRequest }) {
+      const executionRequestSpan = trace.getSpan(hive.getExecutionRequestContext(executionRequest))
+    },
+  }]
+})
+```
 
 ### Troubleshooting
 
@@ -2176,7 +2194,7 @@ import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
 openTelemetrySetup({
-  contextManager: new AsyncLocalStorageContextManager
+  contextManager: new AsyncLocalStorageContextManager(),
   traces: {
     console: true
   }
@@ -2657,6 +2675,7 @@ ignore introspection queries for all metrics prefixed by `graphql_envelop_` by s
 </Tabs.Tab>
 
 <Tabs.Tab>
+
 By default, all labels are enabled, but each one can be disabled to reduce cardinality:
 
 ```ts filename="gateway.config.ts"
