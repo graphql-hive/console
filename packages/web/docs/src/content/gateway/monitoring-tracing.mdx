@@ -2152,9 +2152,8 @@ the plugin. When using the graphql context, the argument is optional and functio
 current appropriate root context.
 
 ```ts filename="gateway.config.ts"
-import { hive } '@graphql-hive/gateway/opentelemetry/api'
+import { hive, trace } '@graphql-hive/gateway/opentelemetry/api'
 import { defineConfig } from '@graphql-hive/gateway'
-import { trace } from '@opentelemetry/api'
 
 export config gatewayConfig = defineConfig({
   openTelemetry: {
