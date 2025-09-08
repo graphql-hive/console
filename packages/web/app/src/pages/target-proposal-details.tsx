@@ -85,7 +85,7 @@ export function TargetProposalDetailsPage(props: {
         return (
           <Fragment key={serviceName}>
             <ServiceHeading serviceName={serviceName} />
-            <div className="px-2">
+            <div className="px-2 pb-8">
               <ChangeBlock
                 changes={breaking}
                 title="Breaking Changes"
