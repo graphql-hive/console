@@ -1,0 +1,14 @@
+            - name: Cloudlist Action
+  # You may pin to the exact commit or the version.
+  # uses: projectdiscovery/cloudlist-action@8875fc8f49349c412d5d5f2e5fcb685041e9f8bf
+  uses: projectdiscovery/cloudlist-action@v1.0.1
+  with:
+    # Providers config file to use
+    config: 
+    # File to save output result
+    output: # optional, default is cloudlist.log
+    # Format to save of output file
+    json: # optional
+    # Additional cloudlist CLI flags to use
+    flags: # optional
+          
