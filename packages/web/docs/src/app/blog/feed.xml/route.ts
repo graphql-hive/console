@@ -1,7 +1,13 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
+import { AuthorId, authors } from '../../../authors';
 import { isBlogPost } from '../blog-types';
+
+function getAuthor(name: string) {
+  const author = authors[name as AuthorId]?.name;
+  return author ?? name;
+}
 
 export async function GET() {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
@@ -14,10 +20,11 @@ export async function GET() {
           date: new Date(item.frontMatter.date),
           url: `https://the-guild.dev/graphql/hive${item.route}`,
           description: (item.frontMatter as any).description ?? '',
-          author:
+          author: getAuthor(
             typeof item.frontMatter.authors === 'string'
               ? item.frontMatter.authors
-              : item.frontMatter.authors.at(0),
+              : item.frontMatter.authors.at(0)!,
+          ),
           categories: Array.isArray(item.frontMatter.tags)
             ? item.frontMatter.tags
             : [item.frontMatter.tags],
