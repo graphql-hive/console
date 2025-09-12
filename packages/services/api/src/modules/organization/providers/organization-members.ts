@@ -172,7 +172,7 @@ export class OrganizationMembers {
       organization.id,
     );
 
-    const first = args.first ?? 100;
+    const first = args.first ?? 200;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
 
     const query = sql`
