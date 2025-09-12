@@ -234,7 +234,7 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        unusedSchema(usage: { period: $period }) {
+        unusedSchema(period: $period) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
         }
       }
