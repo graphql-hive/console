@@ -59,7 +59,7 @@
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "6.0.22",
     "@oclif/plugin-update": "4.2.13",
-    "@theguild/federation-composition": "0.19.1",
+    "@theguild/federation-composition": "0.20.0-alpha-20250912110521-66e265f3338e5b14455944f1d4aa900bd79428ae",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
     "graphql": "^16.8.1",
