@@ -821,8 +821,8 @@ importers:
         specifier: 4.13.0
         version: 4.13.0(graphql@16.9.0)
       graphql-scalars:
-        specifier: 1.24.0
-        version: 1.24.0(graphql@16.9.0)
+        specifier: 1.24.2
+        version: 1.24.2(graphql@16.9.0)
       graphql-yoga:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.9.0)
@@ -10849,8 +10849,8 @@ packages:
     peerDependencies:
       graphql: 14 - 16
 
-  graphql-scalars@1.24.0:
-    resolution: {integrity: sha512-olbFN39m0XsHHESACUdd7jWU/lGxMMS1B7NZ8XqpqhKZrjBxzeGYAnQ4Ax//huYds771wb7gCznA+65QDuUa+g==}
+  graphql-scalars@1.24.2:
+    resolution: {integrity: sha512-FoZ11yxIauEnH0E5rCUkhDXHVn/A6BBfovJdimRZCQlFCl+h7aVvarKmI15zG4VtQunmCDdqdtNs6ixThy3uAg==}
     engines: {node: '>=10'}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -28309,7 +28309,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  graphql-scalars@1.24.0(graphql@16.9.0):
+  graphql-scalars@1.24.2(graphql@16.9.0):
     dependencies:
       graphql: 16.9.0
       tslib: 2.8.1
