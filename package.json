@@ -108,7 +108,7 @@
     "overrides.miniflare": "To address CVE: https://github.com/graphql-hive/console/security/dependabot/245",
     "overrides.tar-fs": "https://github.com/graphql-hive/console/security/dependabot/290",
     "overrides": {
-      "esbuild": "0.25.0",
+      "esbuild": "0.25.9",
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",
       "mjml-cli@4.14.0>html-minifier": "-",
