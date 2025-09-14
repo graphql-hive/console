@@ -1233,8 +1233,8 @@ importers:
         specifier: 2.6.0
         version: 2.6.0
       '@escape.tech/graphql-armor-max-depth':
-        specifier: 2.4.0
-        version: 2.4.0
+        specifier: 2.4.2
+        version: 2.4.2
       '@escape.tech/graphql-armor-max-directives':
         specifier: 2.3.0
         version: 2.3.0
@@ -3500,8 +3500,8 @@ packages:
     resolution: {integrity: sha512-9dwRC5+dl986byBD9QRYRUrLALa7awpUe4aIM1j7StZHGJgmYRj3LZaWQM3JyI8j2FXg4rqBC4FJAiVYpRyWqw==}
     engines: {node: '>=18.0.0'}
 
-  '@escape.tech/graphql-armor-max-depth@2.4.0':
-    resolution: {integrity: sha512-4sQkvPITjkSW4mReGyBT5A4qFkBTzyK9HGOLm8Rrte/JrulVAsokK8HWDr/2Yw0KqSFBMCAmy575YMaYoTHLvQ==}
+  '@escape.tech/graphql-armor-max-depth@2.4.2':
+    resolution: {integrity: sha512-J9fbW1+W4u3GAcf19wwS0zrNGICCbWn/glvopCoC11Ga0reXvGwgr8EcyuHjTFLL7+pPvWAeVhP4qo6hybcB9w==}
     engines: {node: '>=18.0.0'}
 
   '@escape.tech/graphql-armor-max-directives@2.3.0':
@@ -10852,6 +10852,10 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^15.2.0 || ^16.0.0
+
+  graphql@16.11.0:
+    resolution: {integrity: sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   graphql@16.9.0:
     resolution: {integrity: sha512-GGTKBX4SD7Wdb8mqeDLni2oaRGYQWjWHGKPQ24ZMnUtKfcsVoiv4uX8+LJr1K6U5VW2Lu1BwJnj7uiori0YtRw==}
@@ -18384,11 +18388,11 @@ snapshots:
       '@envelop/core': 5.0.2
       '@escape.tech/graphql-armor-types': 0.7.0
 
-  '@escape.tech/graphql-armor-max-depth@2.4.0':
+  '@escape.tech/graphql-armor-max-depth@2.4.2':
     dependencies:
-      graphql: 16.9.0
+      graphql: 16.11.0
     optionalDependencies:
-      '@envelop/core': 5.0.2
+      '@envelop/core': 5.2.3
       '@escape.tech/graphql-armor-types': 0.7.0
 
   '@escape.tech/graphql-armor-max-directives@2.3.0':
@@ -28268,6 +28272,8 @@ snapshots:
       graphql: 16.9.0
       lru-cache: 10.2.0
       tslib: 2.8.1
+
+  graphql@16.11.0: {}
 
   graphql@16.9.0: {}
 
