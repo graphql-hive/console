@@ -1230,17 +1230,17 @@ importers:
         specifier: 5.0.0
         version: 5.0.0
       '@escape.tech/graphql-armor-max-aliases':
-        specifier: 2.6.0
-        version: 2.6.0
+        specifier: 2.6.2
+        version: 2.6.2
       '@escape.tech/graphql-armor-max-depth':
         specifier: 2.4.2
         version: 2.4.2
       '@escape.tech/graphql-armor-max-directives':
-        specifier: 2.3.0
-        version: 2.3.0
+        specifier: 2.3.1
+        version: 2.3.1
       '@escape.tech/graphql-armor-max-tokens':
-        specifier: 2.5.0
-        version: 2.5.0
+        specifier: 2.5.1
+        version: 2.5.1
       '@fastify/cors':
         specifier: 9.0.1
         version: 9.0.1
@@ -3502,20 +3502,20 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@escape.tech/graphql-armor-max-aliases@2.6.0':
-    resolution: {integrity: sha512-9dwRC5+dl986byBD9QRYRUrLALa7awpUe4aIM1j7StZHGJgmYRj3LZaWQM3JyI8j2FXg4rqBC4FJAiVYpRyWqw==}
+  '@escape.tech/graphql-armor-max-aliases@2.6.2':
+    resolution: {integrity: sha512-SDk7pAzY6gutsdZ3NlyY55RrytrCPxJJxSN/DBfIGKphTrfBvKQWTnioQ9OlLP9kPjCE6XM5UWwGt7uqbpKSYA==}
     engines: {node: '>=18.0.0'}
 
   '@escape.tech/graphql-armor-max-depth@2.4.2':
     resolution: {integrity: sha512-J9fbW1+W4u3GAcf19wwS0zrNGICCbWn/glvopCoC11Ga0reXvGwgr8EcyuHjTFLL7+pPvWAeVhP4qo6hybcB9w==}
     engines: {node: '>=18.0.0'}
 
-  '@escape.tech/graphql-armor-max-directives@2.3.0':
-    resolution: {integrity: sha512-8tCJ5pymEOp6niKqqyWdiiuY2GDaei02FNj2Vx0dg/1uCnJbUcOZoL7YaAW6W7e3raY2kOWTK2wF4L/KY+fINw==}
+  '@escape.tech/graphql-armor-max-directives@2.3.1':
+    resolution: {integrity: sha512-YieT/NrTgZdLu3hzWfCgpmUKO1o/7Im9C4TI0e4O85Wa+zLit/DzHO4ZCIY//w8nkBf1KStkA1pD/v0daEfY5Q==}
     engines: {node: '>=18.0.0'}
 
-  '@escape.tech/graphql-armor-max-tokens@2.5.0':
-    resolution: {integrity: sha512-XypQs0NELYwmz/Mx9wVjw1riI3bvZyU2Ya4BnV0AIFLd9UYYl0BzuI4BSR46t5V2Sh73ePl6Ru1jj5rb4nfVOw==}
+  '@escape.tech/graphql-armor-max-tokens@2.5.1':
+    resolution: {integrity: sha512-XHui2npOz7Jn8shBZqfyeocWhdl0pUbKiaWmvbF+5rvNoRIGMgwMtaVhmf9ia8oGGbd+cx5EYo1v+oKHzIm79w==}
     engines: {node: '>=18.0.0'}
 
   '@escape.tech/graphql-armor-types@0.7.0':
@@ -18430,11 +18430,11 @@ snapshots:
   '@esbuild/win32-x64@0.25.9':
     optional: true
 
-  '@escape.tech/graphql-armor-max-aliases@2.6.0':
+  '@escape.tech/graphql-armor-max-aliases@2.6.2':
     dependencies:
-      graphql: 16.9.0
+      graphql: 16.11.0
     optionalDependencies:
-      '@envelop/core': 5.0.2
+      '@envelop/core': 5.2.3
       '@escape.tech/graphql-armor-types': 0.7.0
 
   '@escape.tech/graphql-armor-max-depth@2.4.2':
@@ -18444,18 +18444,18 @@ snapshots:
       '@envelop/core': 5.2.3
       '@escape.tech/graphql-armor-types': 0.7.0
 
-  '@escape.tech/graphql-armor-max-directives@2.3.0':
+  '@escape.tech/graphql-armor-max-directives@2.3.1':
     dependencies:
-      graphql: 16.9.0
+      graphql: 16.11.0
     optionalDependencies:
-      '@envelop/core': 5.0.2
+      '@envelop/core': 5.2.3
       '@escape.tech/graphql-armor-types': 0.7.0
 
-  '@escape.tech/graphql-armor-max-tokens@2.5.0':
+  '@escape.tech/graphql-armor-max-tokens@2.5.1':
     dependencies:
-      graphql: 16.9.0
+      graphql: 16.11.0
     optionalDependencies:
-      '@envelop/core': 5.0.2
+      '@envelop/core': 5.2.3
       '@escape.tech/graphql-armor-types': 0.7.0
 
   '@escape.tech/graphql-armor-types@0.7.0':
