@@ -1786,8 +1786,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@stepperize/react':
-        specifier: 5.1.0
-        version: 5.1.0(react@18.3.1)
+        specifier: 5.1.7
+        version: 5.1.7(react@18.3.1)(typescript@5.7.3)
       '@storybook/addon-essentials':
         specifier: 8.4.7
         version: 8.4.7(@types/react@18.3.18)(storybook@8.4.7(prettier@3.4.2))
@@ -7208,11 +7208,13 @@ packages:
     resolution: {integrity: sha512-PiLI5OMSDOw0IyA+lB8Ta0CIgaJuIyXE97Khvrk1G1ab71WbMTruzLKP9j3nS6QJScGirkUVN9sTOhZHU8q3OQ==}
     engines: {node: '>=18.0.0'}
 
-  '@stepperize/core@1.2.0':
-    resolution: {integrity: sha512-H3a14uq21HI2hemkjz/zh5qGWZfx87XOu/T+MKwkW3ZkOPBNY8S0jrOOYPrSr30xDbMfSXQ3oq00ieg9rgZUiw==}
+  '@stepperize/core@1.2.6':
+    resolution: {integrity: sha512-6qUGCyI/Rq9tskBCwzJFwOpnT+uCRJTjwCwMiymnCA3utkvejOvfj6EPte21lMJNiqMuMhhKNFukX6ooI/2uSQ==}
+    peerDependencies:
+      typescript: '>=5.0.2'
 
-  '@stepperize/react@5.1.0':
-    resolution: {integrity: sha512-5FqMd38klnd8OlXqIKZ7/2uRfZJE+UDVLR3fSOvkBZvSIz/G823eW6Bg5nEDXOq1yYOB4QBU9zwPpAvmlKuorw==}
+  '@stepperize/react@5.1.7':
+    resolution: {integrity: sha512-iouXXt9HbQUnnS2Duiyah91WOY0WcUeyXeLbN/3n4GN/y2svexE38IgLcNpvcHyUbjNkGeNuo5TEO54SG62jUQ==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -23829,12 +23831,16 @@ snapshots:
       '@smithy/types': 4.0.0
       tslib: 2.8.1
 
-  '@stepperize/core@1.2.0': {}
-
-  '@stepperize/react@5.1.0(react@18.3.1)':
+  '@stepperize/core@1.2.6(typescript@5.7.3)':
     dependencies:
-      '@stepperize/core': 1.2.0
+      typescript: 5.7.3
+
+  '@stepperize/react@5.1.7(react@18.3.1)(typescript@5.7.3)':
+    dependencies:
+      '@stepperize/core': 1.2.6(typescript@5.7.3)
       react: 18.3.1
+    transitivePeerDependencies:
+      - typescript
 
   '@storybook/addon-actions@8.4.7(storybook@8.4.7(prettier@3.4.2))':
     dependencies:

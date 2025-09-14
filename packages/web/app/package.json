@@ -52,7 +52,7 @@
     "@sentry/node": "7.120.2",
     "@sentry/react": "7.120.2",
     "@sentry/types": "7.120.2",
-    "@stepperize/react": "5.1.0",
+    "@stepperize/react": "5.1.7",
     "@storybook/addon-essentials": "8.4.7",
     "@storybook/addon-interactions": "8.4.7",
     "@storybook/addon-links": "8.4.7",
