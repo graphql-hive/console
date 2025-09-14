@@ -49,7 +49,7 @@
     "supertokens-js-override": "0.0.4",
     "supertokens-node": "16.7.5",
     "tslib": "2.8.1",
-    "zod": "3.24.1"
+    "zod": "3.25.76"
   },
   "buildOptions": {
     "external": [
