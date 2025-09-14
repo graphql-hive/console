@@ -52,7 +52,7 @@
   "devDependencies": {
     "@apollo/server": "5.0.0",
     "@as-integrations/express4": "1.1.2",
-    "@graphql-tools/schema": "10.0.23",
+    "@graphql-tools/schema": "10.0.25",
     "@types/express": "4.17.21",
     "body-parser": "1.20.3",
     "express": "4.21.2",

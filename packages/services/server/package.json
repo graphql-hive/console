@@ -22,7 +22,7 @@
     "@fastify/cors": "9.0.1",
     "@fastify/formbody": "7.4.0",
     "@graphql-hive/yoga": "workspace:*",
-    "@graphql-tools/merge": "9.0.24",
+    "@graphql-tools/merge": "9.1.1",
     "@graphql-yoga/plugin-response-cache": "3.15.4",
     "@graphql-yoga/redis-event-target": "3.0.3",
     "@hive/api": "workspace:*",
