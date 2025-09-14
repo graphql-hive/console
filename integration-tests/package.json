@@ -30,7 +30,7 @@
     "bcryptjs": "2.4.3",
     "csv-parse": "5.6.0",
     "date-fns": "4.1.0",
-    "dockerode": "4.0.4",
+    "dockerode": "4.0.8",
     "dotenv": "16.4.7",
     "graphql": "16.9.0",
     "human-id": "4.1.1",
