@@ -14,7 +14,7 @@
     "@aws-sdk/client-s3": "3.723.0",
     "@aws-sdk/s3-request-presigner": "3.723.0",
     "@bentocache/plugin-prometheus": "0.2.0",
-    "@date-fns/utc": "2.1.0",
+    "@date-fns/utc": "2.1.1",
     "@graphql-hive/core": "workspace:*",
     "@graphql-hive/signal": "1.0.0",
     "@graphql-inspector/core": "5.1.0-alpha-20231208113249-34700c8a",
