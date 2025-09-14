@@ -404,8 +404,8 @@ importers:
         specifier: 5.16.1
         version: 5.16.1(graphql@16.9.0)
       nock:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.0.10
+        version: 14.0.10
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -530,8 +530,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       nock:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.0.10
+        version: 14.0.10
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -609,8 +609,8 @@ importers:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.9.0)
       nock:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.0.10
+        version: 14.0.10
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -4703,8 +4703,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@mswjs/interceptors@0.37.3':
-    resolution: {integrity: sha512-USvgCL/uOGFtVa6SVyRrC8kIAedzRohxIXN5LISlg5C5vLZCn7dgMFVSNhSF9cuBEFrm/O2spDWEZeMnw4ZXYg==}
+  '@mswjs/interceptors@0.39.6':
+    resolution: {integrity: sha512-bndDP83naYYkfayr/qhBHMhk0YGwS1iv6vaEGcr0SQbO0IZtbOPqjKjds/WcG+bJA+1T5vCx6kprKOzn5Bg+Vw==}
     engines: {node: '>=18'}
 
   '@n1ru4l/push-pull-async-iterable-iterator@3.2.0':
@@ -12853,9 +12853,9 @@ packages:
   no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
-  nock@14.0.0:
-    resolution: {integrity: sha512-3Z2ZoZoYTR/y2I+NI16+6IzfZFKBX7MrADtoBAm7v/QKqxQUhKw+Dh+847PPS1j/FDutjfIXfrh3CJF74yITWg==}
-    engines: {node: '>= 18'}
+  nock@14.0.10:
+    resolution: {integrity: sha512-Q7HjkpyPeLa0ZVZC5qpxBt5EyLczFJ91MEewQiIi9taWuA0KB/MDJlUWtON+7dGouVdADTQsf9RA7TZk6D8VMw==}
+    engines: {node: '>=18.20.0 <20 || >=20.12.1'}
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
@@ -20327,7 +20327,7 @@ snapshots:
   '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
     optional: true
 
-  '@mswjs/interceptors@0.37.3':
+  '@mswjs/interceptors@0.39.6':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/logger': 0.3.0
@@ -30894,9 +30894,9 @@ snapshots:
       lower-case: 2.0.2
       tslib: 2.8.1
 
-  nock@14.0.0:
+  nock@14.0.10:
     dependencies:
-      '@mswjs/interceptors': 0.37.3
+      '@mswjs/interceptors': 0.39.6
       json-stringify-safe: 5.0.1
       propagate: 2.0.1
 
