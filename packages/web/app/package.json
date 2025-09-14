@@ -81,7 +81,7 @@
     "@urql/exchange-auth": "2.2.0",
     "@urql/exchange-graphcache": "7.1.0",
     "@vitejs/plugin-react": "4.3.4",
-    "autoprefixer": "10.4.20",
+    "autoprefixer": "10.4.21",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "0.2.1",
