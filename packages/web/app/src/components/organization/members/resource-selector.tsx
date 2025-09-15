@@ -517,7 +517,7 @@ export function ResourceSelector(props: {
     const targetId = targetState.activeTarget.targetSelection.targetId;
 
     if (
-      targetState.activeTarget.targetSelection.services.mode ===
+      targetState.activeTarget.targetSelection.appDeployments.mode ===
       GraphQLSchema.ResourceAssignmentModeType.All
     ) {
       return {
@@ -700,25 +700,30 @@ export function ResourceSelector(props: {
                     )}
                   </span>
                   {/** Service All / Granular Toggle */}
-                  {serviceState && serviceState !== 'none' && (
-                    <div className="ml-auto text-xs">
-                      <button
-                        className={cn(serviceState.selection !== '*' && 'text-orange-500')}
-                        onClick={serviceState.setGranular}
-                      >
-                        Select
-                      </button>
-                      {' / '}
-                      <button
-                        className={cn('mr-1', serviceState.selection === '*' && 'text-orange-500')}
-                        onClick={serviceState.setAll}
-                      >
-                        All
-                      </button>
-                    </div>
-                  )}
+                  {serviceState &&
+                    serviceState !== 'none' &&
+                    serviceAppsState === ServicesAppsState.service && (
+                      <div className="ml-auto text-xs">
+                        <button
+                          className={cn(serviceState.selection !== '*' && 'text-orange-500')}
+                          onClick={serviceState.setGranular}
+                        >
+                          Select
+                        </button>
+                        {' / '}
+                        <button
+                          className={cn(
+                            'mr-1',
+                            serviceState.selection === '*' && 'text-orange-500',
+                          )}
+                          onClick={serviceState.setAll}
+                        >
+                          All
+                        </button>
+                      </div>
+                    )}
                   {/** Apps All / Granular Toggle */}
-                  {appsState && (
+                  {appsState && serviceAppsState === ServicesAppsState.apps && (
                     <div className="ml-auto text-xs">
                       <button
                         className={cn(appsState.selection !== '*' && 'text-orange-500')}
@@ -949,7 +954,7 @@ export function ResourceSelector(props: {
                           </div>
                         ) : appsState.selection === '*' ? (
                           <div className="text-muted-foreground px-2 text-xs">
-                            Access to all services in target granted.
+                            Access to all apps in target granted.
                           </div>
                         ) : (
                           <>

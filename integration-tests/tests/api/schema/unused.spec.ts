@@ -8,11 +8,11 @@ import { initSeed } from '../../../testkit/seed';
 
 const IntegrationTestsUnusedSchemaQuery = graphql(/* GraphQL */ `
   query IntegrationTestsUnusedSchema(
-    $usageInput: UnusedSchemaExplorerUsageInput!
+    $usagePeriod: DateRangeInput!
     $targetRef: TargetReferenceInput!
   ) {
     latestValidVersion(target: $targetRef) {
-      unusedSchema(usage: $usageInput) {
+      unusedSchema(period: { absoluteRange: $usagePeriod }) {
         types {
           __typename
           ... on GraphQLObjectType {
@@ -74,9 +74,7 @@ test.concurrent(
         targetRef: {
           byId: target.id,
         },
-        usageInput: {
-          period,
-        },
+        usagePeriod: period,
       },
       authToken: writeToken.secret,
     }).then(r => r.expectNoGraphQLErrors());
@@ -133,9 +131,7 @@ test.concurrent(
         targetRef: {
           byId: target.id,
         },
-        usageInput: {
-          period,
-        },
+        usagePeriod: period,
       },
       authToken: writeToken.secret,
     }).then(r => r.expectNoGraphQLErrors());

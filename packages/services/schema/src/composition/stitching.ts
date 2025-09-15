@@ -1,4 +1,13 @@
-import { buildASTSchema, concatAST, DocumentNode, Kind, parse, printSchema } from 'graphql';
+import {
+  buildASTSchema,
+  concatAST,
+  DocumentNode,
+  GraphQLSchema,
+  Kind,
+  parse,
+  printSchema,
+  validateSchema,
+} from 'graphql';
 import { validateSDL } from 'graphql/validation/validate.js';
 import { stitchSchemas } from '@graphql-tools/stitch';
 import { stitchingDirectives } from '@graphql-tools/stitching-directives';
@@ -64,25 +73,37 @@ export async function composeStitching(args: ComposeStitchingArgs) {
     .map(schema => validateStitchedSchema(schema))
     .flat();
 
+  let stitchedSchema: GraphQLSchema | null = null;
   let sdl: string | null = null;
-  try {
-    sdl = printSchema(
-      stitchSchemas({
+
+  if (errors.length === 0) {
+    try {
+      stitchedSchema = stitchSchemas({
         subschemas: args.schemas.map(schema =>
           buildASTSchema(trimDescriptions(parse(schema.raw)), {
             assumeValid: true,
             assumeValidSDL: true,
           }),
         ),
-      }),
+      });
+      sdl = printSchema(stitchedSchema);
+    } catch (error) {
+      errors.push(toValidationError(error, 'composition'));
+    }
+  }
+
+  if (stitchedSchema) {
+    errors.push(
+      ...validateSchema(stitchedSchema).map(error => ({
+        message: error.message,
+        source: 'graphql' as const,
+      })),
     );
-  } catch (error) {
-    errors.push(toValidationError(error, 'composition'));
   }
 
   return {
     errors,
-    sdl,
+    sdl: errors.length ? null : sdl,
     supergraph: null,
     contracts: null,
     tags: null,

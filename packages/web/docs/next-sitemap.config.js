@@ -9,6 +9,12 @@ export default {
       changefreq: 'weekly',
       priority: 0.7,
     },
+    {
+      loc: config.siteUrl.replace(/\/$/, '') + '/federation-gateway-performance',
+      lastmod: new Date().toISOString(),
+      changefreq: 'weekly',
+      priority: 0.7,
+    },
   ],
   output: 'export',
 };

@@ -124,7 +124,7 @@ impl HiveRegistry {
         // It also enables hot-reloading to makes sure Apollo Router watches the file.
         let file_name = config.schema_file_path.unwrap_or(
             env::temp_dir()
-                .with_file_name("supergraph-schema.graphql")
+                .join("supergraph-schema.graphql")
                 .to_string_lossy()
                 .to_string(),
         );

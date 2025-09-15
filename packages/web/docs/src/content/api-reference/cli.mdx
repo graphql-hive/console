@@ -234,8 +234,17 @@ hive schema:publish \
 
 #### Metadata
 
-You can attach metadata to your schema publication. Hive metadata published to Hive must be a valid
-JSON, and limited to `25MB`.
+<Callout>
+  For most cases, it's recommended to add metadata directly to your schema with the [@meta Link
+  Specification](/docs/specs/link-specifications#meta) instead of using `--metadata`. Directives
+  allow you to enhance specific parts of your schema with this important information, which can be
+  especially useful for large projects with multiple owners.
+</Callout>
+
+You can attach metadata to your schema publication. Metadata files published to Hive must be valid
+JSON and are limited to `25MB`. This metadata is not exposed in the Hive UI, but it can be useful
+for storing JSON configuration files for services, such as for
+[GraphQL Mesh](https://the-guild.dev/graphql/mesh/docs/config-reference).
 
 To attach metadata to your published schema, you can use `--metadata` flag when publishing.
 
@@ -262,6 +271,7 @@ hive schema:publish \
 **Further reading:**
 
 - [Fetching Hive Metadata from the CDN](/docs/high-availability-cdn)
+- [Using the @meta Link Specification](/docs/specs/link-specifications#meta)
 
 ### Check a Schema
 
@@ -593,22 +603,43 @@ You can fetch either the latest schema or a schema by the action id (commit sha)
 publishing the schema version. The `--write` option can be used for writing the schema to a file.
 
 ```bash
-hive schema:fetch --type sdl --write schema.graphql
-hive schema:fetch --type sdl --write schema.graphql feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type sdl \
+  --write schema.graphqls
+
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type sdl \
+  --write schema.graphqls \
+  feb8aa9ec8932eb
 ```
 
 For projects with a supergraph it is also possible to fetch the supergraph.
 
 ```bash
-hive schema:fetch --type supergraph --write supergraph.graphql
-hive schema:fetch --type supergraph --write supergraph.graphql feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type supergraph \
+  --write supergraph.graphqls
+
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type supergraph \
+  --write supergraph.graphqls \
+  feb8aa9ec8932eb
 ```
 
 It is also possible to print a list of subgraph details in an ascii table.
 
 ```bash
-hive schema:fetch --type subgraphs
-hive schema:fetch --type subgraphs feb8aa9ec8932eb
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type subgraphs
+
+hive schema:fetch \
+  --target "<YOUR_ORGANIZATION>/<YOUR_PROJECT>/<YOUR_TARGET>" \
+  --type subgraphs feb8aa9ec8932eb
 ```
 
 For more information please refer to the

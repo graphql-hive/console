@@ -59,7 +59,7 @@ create an app deployment
 ```
 USAGE
   $ hive app:create FILE --name <value> --version <value> [--debug] [--registry.endpoint <value>]
-    [--registry.accessToken <value>]
+    [--registry.accessToken <value>] [--target <value>]
 
 ARGUMENTS
   FILE  Path to the persisted operations mapping.
@@ -69,6 +69,10 @@ FLAGS
   --name=<value>                  (required) app name
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
+  --target=<value>                The target in which the app deployment will be created. This can either be a slug
+                                  following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --version=<value>               (required) app version
 
 DESCRIPTION
@@ -76,7 +80,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/app/create.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/app/create.js)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -84,14 +88,18 @@ publish an app deployment
 
 ```
 USAGE
-  $ hive app:publish --name <value> --version <value> [--registry.endpoint <value>] [--registry.accessToken
-    <value>]
+  $ hive app:publish --name <value> --version <value> [--debug] [--registry.endpoint <value>]
+    [--registry.accessToken <value>] [--target <value>]
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --name=<value>                  (required) app name
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
+  --target=<value>                The target in which the app deployment will be published (slug or ID). This can either
+                                  be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --version=<value>               (required) app version
 
 DESCRIPTION
@@ -99,7 +107,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/app/publish.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/app/publish.js)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/app/publish.ts)_
 
 ## `hive artifact:fetch`
 
@@ -107,8 +115,8 @@ fetch artifacts from the CDN
 
 ```
 USAGE
-  $ hive artifact:fetch --artifact sdl|supergraph|metadata|services|sdl.graphql|sdl.graphqls [--cdn.endpoint
-    <value>] [--cdn.accessToken <value>] [--outputFile <value>]
+  $ hive artifact:fetch --artifact sdl|supergraph|metadata|services|sdl.graphql|sdl.graphqls [--debug]
+    [--cdn.endpoint <value>] [--cdn.accessToken <value>] [--outputFile <value>]
 
 FLAGS
   --artifact=<option>        (required) artifact to fetch (Note: supergraph is only available for federation projects)
@@ -123,7 +131,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/artifact/fetch.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/artifact/fetch.js)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -133,7 +141,7 @@ Develop and compose Supergraph with your local services.
 USAGE
   $ hive dev (--url <address>... --service <string>...) [--debug] [--registry.endpoint <value> --remote]
     [--registry <value> ] [--registry.accessToken <value> ] [--token <value> ] [--schema <filepath>... ] [--watch]
-    [--watchInterval <value>] [--write <value>]
+    [--watchInterval <value>] [--write <value>] [--target <value>]
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
@@ -143,6 +151,10 @@ FLAGS
   --remote                        Compose provided services remotely
   --schema=<filepath>...          Service sdl. If not provided, will be introspected from the service
   --service=<string>...           (required) Service name
+  --target=<value>                The target to use for composition (slug or ID). This can either be a slug following
+                                  the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --token=<value>                 api token (deprecated in favor of --registry.accessToken)
   --url=<address>...              (required) Service url
   --watch                         Watch mode
@@ -162,7 +174,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/dev.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/dev.js)_
+[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -206,7 +218,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/introspect.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/introspect.js)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -216,7 +228,7 @@ checks operations against a published schema
 USAGE
   $ hive operations:check FILE [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
     <value>] [--token <value>] [--require <value>...] [--graphqlTag <value>...] [--globalGraphqlTag <value>...]
-    [--apolloClient]
+    [--apolloClient] [--target <value>]
 
 ARGUMENTS
   FILE  Glob pattern to find the operations
@@ -252,6 +264,11 @@ FLAGS
   --require=<value>...
       [default: ] Loads specific require.extensions before running the command
 
+  --target=<value>
+      The target to which to check agains (slug or ID). This can either be a slug following the format
+      "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging") or an UUID (e.g.
+      "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
+
   --token=<value>
       api token
 
@@ -260,7 +277,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/operations/check.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/operations/check.js)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -269,8 +286,9 @@ checks schema
 ```
 USAGE
   $ hive schema:check FILE [--debug] [--service <value>] [--registry.endpoint <value>] [--registry <value>]
-    [--registry.accessToken <value>] [--token <value>] [--forceSafe] [--github] [--require <value>...] [--author
-    <value>] [--commit <value>] [--contextId <value>]
+    [--registry.accessToken <value>] [--token <value>] [--experimentalJsonFile <value>] [--forceSafe] [--github]
+    [--require <value>...] [--author <value>] [--commit <value>] [--contextId <value>] [--target <value>] [--url
+    <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -280,6 +298,8 @@ FLAGS
   --commit=<value>                Associated commit sha
   --contextId=<value>             Context ID for grouping the schema check.
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
+  --experimentalJsonFile=<value>  File path to output a JSON file containing the command's result. Useful for e.g. CI
+                                  scripting with `jq`.
   --forceSafe                     mark the check as safe, breaking changes are expected
   --github                        Connect with GitHub Application
   --registry=<value>              registry address
@@ -288,14 +308,20 @@ FLAGS
   --require=<value>...            [default: ] Loads specific require.extensions before running the codegen and reading
                                   the configuration
   --service=<value>               service name (only for distributed schemas)
+  --target=<value>                The target against which to check the schema (slug or ID). This can either be a slug
+                                  following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --token=<value>                 api token
+  --url=<value>                   If checking a service, then you can optionally provide the service URL to see the
+                                  difference in the supergraph during the check.
 
 DESCRIPTION
   checks schema
 ```
 
 _See code:
-[dist/commands/schema/check.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/schema/check.js)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -304,7 +330,7 @@ deletes a schema
 ```
 USAGE
   $ hive schema:delete SERVICE [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
-    <value>] [--token <value>] [--dryRun] [--confirm]
+    <value>] [--token <value>] [--dryRun] [--confirm] [--target <value>]
 
 ARGUMENTS
   SERVICE  name of the service
@@ -316,6 +342,10 @@ FLAGS
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
+  --target=<value>                The target to which to publish to (slug or ID). This can either be a slug following
+                                  the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --token=<value>                 api token
 
 DESCRIPTION
@@ -323,17 +353,16 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/schema/delete.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/schema/delete.js)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [ACTIONID]`
 
-fetch a schema, supergraph, or list of subgraphs from the Hive API. Uses the latest if no ACTIONID
-is provided.
+fetch a schema, supergraph, or list of subgraphs from the Hive API
 
 ```
 USAGE
   $ hive schema:fetch [ACTIONID] [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
-    [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>]
+    [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>] [--target <value>]
 
 ARGUMENTS
   ACTIONID  action id (e.g. commit sha)
@@ -344,6 +373,10 @@ FLAGS
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
+  --target=<value>                The target from which to fetch the schema (slug or ID). This can either be a slug
+                                  following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                  "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                  "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --token=<value>                 api token
   --type=<value>                  Type to fetch (possible types: sdl, supergraph, subgraphs)
   --write=<value>                 Write to a file (possible extensions: .graphql, .gql, .gqls, .graphqls)
@@ -353,7 +386,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/schema/fetch.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/schema/fetch.js)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/schema/fetch.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -363,7 +396,7 @@ publishes schema
 USAGE
   $ hive schema:publish FILE [--debug] [--service <value>] [--url <value>] [--metadata <value>] [--registry.endpoint
     <value>] [--registry <value>] [--registry.accessToken <value>] [--token <value>] [--author <value>] [--commit
-    <value>] [--github] [--force] [--experimental_acceptBreakingChanges] [--require <value>...]
+    <value>] [--github] [--force] [--experimental_acceptBreakingChanges] [--require <value>...] [--target <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -384,6 +417,10 @@ FLAGS
   --require=<value>...                  [default: ] Loads specific require.extensions before running the codegen and
                                         reading the configuration
   --service=<value>                     service name (only for distributed schemas)
+  --target=<value>                      The target to which to publish to (slug or ID). This can either be a slug
+                                        following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
+                                        "the-guild/graphql-hive/staging") or an UUID (e.g.
+                                        "a0f4c605-6541-4350-8cfe-b31f21a4bf80").
   --token=<value>                       api token
   --url=<value>                         service url (only for distributed schemas)
 
@@ -392,7 +429,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/schema/publish.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/schema/publish.js)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -453,7 +490,7 @@ DESCRIPTION
 ```
 
 _See code:
-[dist/commands/whoami.js](https://github.com/graphql-hive/platform/blob/v0.37.0/dist/commands/whoami.js)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 

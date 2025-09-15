@@ -185,7 +185,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
             values
           }
         }
-        deprecatedSchema(usage: { period: $period }) {
+        deprecatedSchema(period: { absoluteRange: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
       }

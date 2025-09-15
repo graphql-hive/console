@@ -78,6 +78,22 @@ export class OrganizationManager {
     return this.storage.getOrganization(selector);
   }
 
+  async getOrganizationOrNull(organizationId: string) {
+    const canAccessOrganization = await this.session.canPerformAction({
+      action: 'organization:describe',
+      organizationId,
+      params: {
+        organizationId,
+      },
+    });
+
+    if (canAccessOrganization === false) {
+      return null;
+    }
+
+    return this.storage.getOrganization({ organizationId });
+  }
+
   async getOrganizationBySlug(organizationSlug: string): Promise<Organization | null> {
     const organization = await this.storage.getOrganizationBySlug({ slug: organizationSlug });
 

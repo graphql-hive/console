@@ -71,7 +71,7 @@ const gateway = new ApolloGateway({
 
 const server = new ApolloServer({ gateway })
 
-const { url } = await startStandaloneServer({ server })
+const { url } = await startStandaloneServer(server)
 console.log(`🚀 Server ready at ${url}`)
 ```
 
@@ -113,7 +113,7 @@ const server = new ApolloServer({
   ]
 })
 
-const { url } = await startStandaloneServer({ server })
+const { url } = await startStandaloneServer(server)
 console.log(`🚀 Server ready at ${url}`)
 ```
 

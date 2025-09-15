@@ -127,7 +127,7 @@ jobs:
         name: sanitize branch name
         if: ${{ inputs.dockerize }}
         with:
-          pattern: '[+\/@|-]'
+          pattern: '[+\/><@|-]'
           flags: 'g'
           string: ${{ github.head_ref || github.ref_name }}
           replace-with: '_'
@@ -185,7 +185,7 @@ jobs:
 
             <details>
               <summary>Docker Bake metadata</summary>
-              
+
               ```json
               ${{ steps.docker-bake.outputs.metadata }}
               ```

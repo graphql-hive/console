@@ -134,6 +134,7 @@ const PreflightScript_TargetFragment = graphql(`
       id
       sourceCode
     }
+    viewerCanModifyPreflightScript
   }
 `);
 
@@ -424,6 +425,7 @@ export function usePreflight(args: {
     isEnabled,
     setIsEnabled,
     content: target?.preflightScript?.sourceCode ?? '',
+    viewerCanModifyPreflightScript: target?.viewerCanModifyPreflightScript ?? false,
     environmentVariables,
     setEnvironmentVariables,
     state,
@@ -493,37 +495,41 @@ function PreflightContent() {
 
   return (
     <>
-      <PreflightModal
-        // to unmount on submit/close
-        key={String(showModal)}
-        isOpen={showModal}
-        toggle={toggleShowModal}
-        execute={value =>
-          preflight.execute(value, true).catch(err => {
-            console.error(err);
-          })
-        }
-        state={preflight.state}
-        abortExecution={preflight.abortExecution}
-        logs={preflight.logs}
-        clearLogs={preflight.clearLogs}
-        content={preflight.content}
-        onContentChange={handleContentChange}
-        envValue={preflight.environmentVariables}
-        onEnvValueChange={preflight.setEnvironmentVariables}
-      />
+      {preflight.viewerCanModifyPreflightScript && (
+        <PreflightModal
+          // to unmount on submit/close
+          key={String(showModal)}
+          isOpen={showModal}
+          toggle={toggleShowModal}
+          execute={value =>
+            preflight.execute(value, true).catch(err => {
+              console.error(err);
+            })
+          }
+          state={preflight.state}
+          abortExecution={preflight.abortExecution}
+          logs={preflight.logs}
+          clearLogs={preflight.clearLogs}
+          content={preflight.content}
+          onContentChange={handleContentChange}
+          envValue={preflight.environmentVariables}
+          onEnvValueChange={preflight.setEnvironmentVariables}
+        />
+      )}
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
-        <Button
-          variant="orangeLink"
-          size="icon-sm"
-          className="size-auto gap-1"
-          onClick={toggleShowModal}
-          data-cy="preflight-modal-button"
-        >
-          <Pencil1Icon className="shrink-0" />
-          Edit
-        </Button>
+        {preflight.viewerCanModifyPreflightScript && (
+          <Button
+            variant="orangeLink"
+            size="icon-sm"
+            className="size-auto gap-1"
+            onClick={toggleShowModal}
+            data-cy="preflight-modal-button"
+          >
+            <Pencil1Icon className="shrink-0" />
+            Edit
+          </Button>
+        )}
       </div>
       <Subtitle>
         Before each GraphQL request begins, this script is executed automatically - for example, to
