@@ -64,7 +64,7 @@ function PlanFeaturesListItem({
 }
 
 const USAGE_DATA_RETENTION_EXPLAINER = 'How long your GraphQL operations are stored on Hive';
-const OPERATIONS_EXPLAINER = 'GraphQL operations reported to GraphQL Hive';
+const OPERATIONS_EXPLAINER = 'GraphQL operations reported to Hive Console';
 
 export function Pricing({ className }: { className?: string }): ReactElement {
   type PlanType = 'Hobby' | 'Pro' | 'Enterprise';
@@ -272,13 +272,17 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                 <PlanFeaturesListItem
                   icon={<OperationsIcon />}
                   category="Operations per month"
-                  features={['Custom operations limit']}
+                  features={[
+                    'Custom operation limit',
+                    'Large request volume discount',
+                    'Ability to exceed operation limit without loss of data',
+                  ]}
                   tooltip={OPERATIONS_EXPLAINER}
                 />
                 <PlanFeaturesListItem
                   icon={<RetentionIcon />}
                   category="Usage data retention"
-                  features={['One year contract']}
+                  features={['One year or more']}
                   tooltip={USAGE_DATA_RETENTION_EXPLAINER}
                 />
                 <PlanFeaturesListItem
