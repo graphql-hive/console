@@ -73,6 +73,7 @@
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.13.5",
     "@theguild/eslint-config": "0.12.1",
+    "@theguild/federation-composition": "0.20.0",
     "@theguild/prettier-config": "2.0.7",
     "@types/node": "22.10.5",
     "bob-the-bundler": "7.0.1",
