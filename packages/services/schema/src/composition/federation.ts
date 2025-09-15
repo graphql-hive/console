@@ -7,9 +7,12 @@ import {
   type NameNode,
 } from 'graphql';
 import type { ServiceLogger } from '@hive/service-common';
-import { extractLinkImplementations } from '@theguild/federation-composition';
+import {
+  addInaccessibleToUnreachableTypes,
+  applyTagFilterOnSubgraphs,
+  extractLinkImplementations,
+} from '@theguild/federation-composition';
 import type { ContractsInputType } from '../api';
-import { addInaccessibleToUnreachableTypes } from '../lib/add-inaccessible-to-unreachable-types';
 import {
   composeExternalFederation,
   composeFederationV1,
@@ -18,7 +21,6 @@ import {
   SubgraphInput,
 } from '../lib/compose';
 import {
-  applyTagFilterOnSubgraphs,
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
 } from '../lib/federation-tag-extraction';
@@ -260,38 +262,21 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         ) {
           let supergraphSDL = parse(compositionResult.result.supergraph);
           const { resolveImportName } = extractLinkImplementations(supergraphSDL);
-          const result = addInaccessibleToUnreachableTypes(
-            resolveImportName,
-            compositionResult,
-            supergraphSDL,
-          );
-
-          if (result.type === 'success') {
-            return {
-              id: contract.id,
-              result: {
-                type: 'success',
-                result: {
-                  supergraph: result.result.supergraph,
-                  sdl: result.result.sdl,
-                },
-              },
-            } satisfies ContractResultSuccess;
-          }
+          const result = addInaccessibleToUnreachableTypes(resolveImportName, {
+            supergraphSdl: compositionResult.result.supergraph,
+            publicSdl: compositionResult.result.sdl,
+          });
 
           return {
             id: contract.id,
             result: {
-              type: 'failure',
+              type: 'success',
               result: {
-                supergraph: null,
-                sdl: null,
-                errors: result.result.errors,
-                includesNetworkError: false,
-                includesException: false,
+                supergraph: result.supergraphSdl,
+                sdl: result.publicSdl,
               },
             },
-          } satisfies ContractResultFailure;
+          } satisfies ContractResultSuccess;
         }
 
         if (compositionResult.type === 'success') {

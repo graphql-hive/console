@@ -2,8 +2,7 @@ import { parse, type DocumentNode } from 'graphql';
 import { createSchema } from 'graphql-yoga';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { type Registry } from '@hive/api';
-import { composeFederationV2 } from '@hive/schema/src/lib/compose';
-import { applyTagFilterOnSubgraphs } from '@hive/schema/src/lib/federation-tag-extraction';
+import { composeSchemaContract } from '@theguild/federation-composition';
 
 /**
  * Creates the public GraphQL schema from the private GraphQL Schema Registry definition.
@@ -14,8 +13,7 @@ export function createPublicGraphQLSchema<TContext>(registry: Registry) {
     throwOnConflict: true,
   });
 
-  // Use our tag filter logic for marking everything not tagged with `@tag(name: "public")` as @inaccessible
-  const [filteredSubgraph] = applyTagFilterOnSubgraphs(
+  const compositionResult = composeSchemaContract(
     [
       {
         name: 'public',
@@ -26,26 +24,18 @@ export function createPublicGraphQLSchema<TContext>(registry: Registry) {
       include: new Set(['public']),
       exclude: new Set(),
     },
+    true,
   );
 
-  // Compose the filtered subgraph in order to receive the public schema SDL
-  const compositionResult = composeFederationV2([
-    {
-      typeDefs: filteredSubgraph.typeDefs,
-      name: 'server',
-      url: undefined,
-    },
-  ]);
-
-  if (compositionResult.type === 'failure') {
+  if (compositionResult.errors) {
     throw new Error(
       'Could not create public GraphQL schema.\nEncountered the following composition errors:\n' +
-        compositionResult.result.errors.map(error => `- ${error.message}`).join('\n'),
+        compositionResult.errors.map(error => `- ${error.message}`).join('\n'),
     );
   }
 
   return createSchema<TContext>({
-    typeDefs: parse(compositionResult.result.sdl),
+    typeDefs: parse(compositionResult.publicSdl),
     resolvers: registry.resolvers,
     resolverValidationOptions: {
       // The resolvers still contain the ones of the public schema
