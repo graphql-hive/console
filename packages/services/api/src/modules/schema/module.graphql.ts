@@ -746,6 +746,13 @@ export default gql`
     pageInfo: PageInfo! @tag(name: "public")
   }
 
+  input SchemaExplorerPeriodInput @oneOf {
+    """
+    A full range using a start and end date.
+    """
+    absoluteRange: DateRangeInput @tag(name: "public")
+  }
+
   type SchemaVersion {
     id: ID! @tag(name: "public")
     """
@@ -806,7 +813,7 @@ export default gql`
 
       Defaults to the last 30 days by default.
       """
-      period: DateRangeInput @tag(name: "public")
+      period: SchemaExplorerPeriodInput @tag(name: "public")
     ): UnusedSchemaExplorer @tag(name: "public")
     """
     An overview of deprecated fields and types with their usage in the GraphQL schema.
@@ -817,7 +824,7 @@ export default gql`
 
       Defaults to the last 30 days by default.
       """
-      period: DateRangeInput @tag(name: "public")
+      period: SchemaExplorerPeriodInput @tag(name: "public")
     ): DeprecatedSchemaExplorer @tag(name: "public")
 
     schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")

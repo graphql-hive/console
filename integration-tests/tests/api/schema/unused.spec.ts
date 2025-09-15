@@ -12,7 +12,7 @@ const IntegrationTestsUnusedSchemaQuery = graphql(/* GraphQL */ `
     $targetRef: TargetReferenceInput!
   ) {
     latestValidVersion(target: $targetRef) {
-      unusedSchema(period: $usagePeriod) {
+      unusedSchema(period: { absoluteRange: $usagePeriod }) {
         types {
           __typename
           ... on GraphQLObjectType {
