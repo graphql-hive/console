@@ -817,7 +817,7 @@ export default gql`
 
       Defaults to the last 30 days by default.
       """
-      period: DateRangeInput
+      period: DateRangeInput @tag(name: "public")
     ): DeprecatedSchemaExplorer @tag(name: "public")
 
     schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
