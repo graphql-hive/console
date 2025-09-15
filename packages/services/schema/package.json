@@ -10,12 +10,12 @@
   },
   "devDependencies": {
     "@apollo/federation": "0.38.1",
-    "@graphql-tools/merge": "9.0.24",
-    "@graphql-tools/stitch": "9.4.21",
-    "@graphql-tools/stitching-directives": "3.1.31",
+    "@graphql-tools/merge": "9.1.1",
+    "@graphql-tools/stitch": "9.4.29",
+    "@graphql-tools/stitching-directives": "3.1.38",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
-    "@theguild/federation-composition": "0.18.5",
+    "@theguild/federation-composition": "0.20.0",
     "@trpc/server": "10.45.2",
     "@types/async-retry": "1.4.8",
     "@types/ioredis-mock": "8.2.5",
@@ -30,6 +30,6 @@
     "p-timeout": "6.1.4",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
-    "zod": "3.24.1"
+    "zod": "3.25.76"
   }
 }

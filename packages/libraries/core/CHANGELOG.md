@@ -1,5 +1,14 @@
 # @graphql-hive/core
 
+## 0.13.0
+
+### Minor Changes
+
+- [#6876](https://github.com/graphql-hive/console/pull/6876)
+  [`8d56b98`](https://github.com/graphql-hive/console/commit/8d56b9848028d65442cb1dada139f5a17d464f1b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add helper function `hashOperation` for generating
+  consistent hashes used within the Hive Console platform.
+
 ## 0.12.0
 
 ### Minor Changes

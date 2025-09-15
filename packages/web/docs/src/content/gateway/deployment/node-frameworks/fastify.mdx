@@ -18,17 +18,14 @@ So you can benefit from the powerful plugins of Fastify ecosystem with Hive Gate
 
 ## Example
 
-In order to connect Fastify's logger to the gateway, you need to install the
-`@graphql-hive/logger-pino` package together with `@graphql-hive/gateway-runtime` and `fastify`.
-
 ```sh npm2yarn
-npm i @graphql-hive/gateway-runtime @graphql-hive/logger-pino fastify
+npm i @graphql-hive/gateway-runtime @graphql-hive/logger fastify
 ```
 
 ```ts
 import fastify, { type FastifyReply, type FastifyRequest } from 'fastify'
-import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
-import { createLoggerFromPino } from '@graphql-hive/logger-pino'
+import { createGatewayRuntime, Logger } from '@graphql-hive/gateway-runtime'
+import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
 
 // Request ID header used for tracking requests
 const requestIdHeader = 'x-request-id'
@@ -52,8 +49,10 @@ interface FastifyContext {
 }
 
 const gateway = createGatewayRuntime<FastifyContext>({
-  // Integrate Fastify's logger / Pino with the gateway logger
-  logging: createLoggerFromPino(app.log),
+  // Use Fastify's logger (Pino) with Hive Logger
+  logging: new Logger({
+    writers: [new PinoLogWriter(app.log)]
+  }),
   // Align with Fastify
   requestId: {
     // Use the same header name as Fastify

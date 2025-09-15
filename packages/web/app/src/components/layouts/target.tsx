@@ -67,6 +67,9 @@ const TargetLayoutQuery = graphql(`
           viewerCanViewLaboratory
           viewerCanViewAppDeployments
           viewerCanAccessSettings
+          latestSchemaVersion {
+            id
+          }
         }
       }
     }
@@ -103,6 +106,7 @@ export const TargetLayout = ({
   const currentOrganization = query.data?.organization;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
+  const latestSchemaVersion = query.data?.organization?.project?.target?.latestSchemaVersion?.id;
 
   const isCDNEnabled = query.data?.isCDNEnabled === true;
 
@@ -180,11 +184,12 @@ export const TargetLayout = ({
                     </TabsTrigger>
                     <TabsTrigger variant="menu" value={Page.History} asChild>
                       <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/history"
+                        to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
                         params={{
                           organizationSlug: currentOrganization.slug,
                           projectSlug: currentProject.slug,
                           targetSlug: currentTarget.slug,
+                          versionId: latestSchemaVersion ?? '',
                         }}
                       >
                         History

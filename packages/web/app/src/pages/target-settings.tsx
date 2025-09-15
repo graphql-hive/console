@@ -1334,20 +1334,23 @@ function TargetSettingsContent(props: {
     }> = [];
 
     if (currentTarget?.viewerCanModifySettings) {
-      pages.push(
-        {
-          key: 'general',
-          title: 'General',
-        },
-        {
+      pages.push({
+        key: 'general',
+        title: 'General',
+      });
+
+      if (currentProject?.type !== ProjectType.Federation) {
+        pages.push({
           key: 'base-schema',
           title: 'Base Schema',
-        },
-        {
-          key: 'breaking-changes',
-          title: 'Breaking Changes',
-        },
-      );
+        });
+      }
+
+      pages.push({
+        key: 'breaking-changes',
+        title: 'Breaking Changes',
+      });
+
       if (currentProject?.type === ProjectType.Federation) {
         pages.push({
           key: 'schema-contracts',

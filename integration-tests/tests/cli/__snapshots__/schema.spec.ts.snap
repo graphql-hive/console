@@ -781,10 +781,9 @@ exitCode------------------------------------------:
 stderr--------------------------------------------:
 __NONE__
 stdout--------------------------------------------:
-✖ Detected 3 errors
+✖ Detected 2 errors
 
    - Unknown type User.
-   - Unknown type: User.
    - Unknown type: User.
 
 View full report:
