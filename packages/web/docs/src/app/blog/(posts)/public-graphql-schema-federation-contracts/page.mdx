@@ -89,9 +89,58 @@ If you’re working with a hosted schema registry, like
 
 **2. Using a CLI or Library**
 
-You can also use our
+If you not yet have adopted a schema registry, you can also use our
 [MIT licensed JavaScript library for Federation Composition](https://github.com/graphql-hive/federation-composition)
 to generate the contract programmatically from your monolith.
+
+```ts
+import { parse } from 'graphql'
+import { composeSchemaContract } from '@theguild/federation-composition'
+
+const result = composeSchemaContract(
+  [
+    {
+      name: 'monolith',
+      typeDefs: parse(/* GraphQL */ `
+        type Query {
+          publicInfo: String @tag(name: "public")
+          privateInfo: String
+        }
+      `)
+    }
+  ],
+  /** Tags to include and exclude */
+  {
+    include: new Set(['public']),
+    exclude: new Set()
+  },
+  /** Exclude unreachable types */
+  true
+)
+
+// This is the filtered schema!
+console.log(result.publicSdl)
+```
+
+Then you can simply create a private schema, similar to the following
+
+```ts
+import { createSchema } from 'graphql-yoga'
+import { composeSchemaContract } from '@theguild/federation-composition'
+import { resolvers } from './resolvers'
+
+// ...
+
+const publicSchema = createSchema({
+  typeDefs: parse(result.publicSdl),
+  resolvers,
+  resolverValidationOptions: {
+    // The resolvers still contain the ones of the public schema
+    // Instead of filtering them out ignoring it is good enough.
+    requireResolversToMatchSchema: 'ignore'
+  }
+})
+```
 
 ## Step 4: Serve the Public Schema Contract
 
@@ -103,22 +152,41 @@ contract**. Popular choices include Apollo Gateway,
 [Hive Gateway](https://the-guild.dev/graphql/hive/gateway), or
 [Hive Router](https://github.com/graphql-hive/router).
 
-When serving your contract you deploy the Gateway that consumes the schema contract from the schema
-registry to your infrastructure.
+If using Hive Console as a schema registry, point your gateway to
+[the contract supergraph endpoint](https://the-guild.dev/graphql/hive/docs/schema-registry/contracts#access-contract-cdn-artifacts)
+to have it expose the public API.
 
 Additionally, you can then configure things like authentication, rate limiting, and access policies.
 
 Clients can now consume the public API fields by pointing to the gateway, while the internal schema
 remains private.
 
-As a additional measure you can leverage persisted documents to avoid execution of arbitary GraphQL
-operations against the private schema.
+As a additional security measure you should leverage
+[persisted documents to avoid execution of arbitary GraphQL operations](https://the-guild.dev/graphql/hive/docs/gateway/persisted-documents)
+against the private schema.
 
 For more guidance on choosing a gateway for your project, refer to the
 [Federation Gateway Audit](https://the-guild.dev/graphql/hive/federation-gateway-audit) for feature
 compatibility and the
 [Federation Gateway Performance Benchmark](https://the-guild.dev/graphql/hive/federation-gateway-performance)
 for performance considerations.
+
+As mentioned before, if you are not relying on a schema registry you can simply use and GraphQL
+server for serving the public schema.
+
+```ts filename="Example GraphQL Yoga"
+import { createServer } from 'node:http'
+import { createSchema, createYoga } from 'graphql-yoga'
+import { publicSchema } from './public-schema'
+
+const server = createServer(
+  createYoga({
+    schema: publicSchema
+  })
+)
+
+server.listen(8080)
+```
 
 ## Step 5: Evolve the Public Schema Incrementally
 
@@ -127,6 +195,10 @@ Federation contracts let you add fields to the public schema **at your own pace*
 For example, when you decide to open up a mutation:
 
 ```graphql
+input PublishInput @tag(name: "public") {
+  data: String!
+}
+
 type Mutation {
   publishData(input: PublishInput!): PublishResult! @tag(name: "public")
 }
@@ -150,3 +222,7 @@ one, while only exposing the parts you want today, and leaving the door open for
 
 This approach provides a clean, incremental path to offering a public GraphQL API without
 compromising the flexibility of your internal schema.
+
+[Learn more on schema contracts with Hive
+Console]([Learn more in the Hive Console documentation](https://the-guild.dev/graphql/hive/docs/schema-registry/contracts).
+).
