@@ -30,7 +30,7 @@ export function ProjectSelector(props: {
 }) {
   const router = useRouter();
   const optional = props.optional ?? false;
-  const showOrganization = props.showOrganization ?? true
+  const showOrganization = props.showOrganization ?? true;
   const defaultFunc = (id: string) => {
     void router.navigate({
       to: '/$organizationSlug/$projectSlug',
