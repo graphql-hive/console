@@ -316,8 +316,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/services/storage
       '@theguild/federation-composition':
-        specifier: 0.19.0
-        version: 0.19.0(graphql@16.9.0)
+        specifier: 0.19.1
+        version: 0.19.1(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -453,8 +453,8 @@ importers:
         specifier: 4.2.13
         version: 4.2.13
       '@theguild/federation-composition':
-        specifier: 0.19.0
-        version: 0.19.0(graphql@16.9.0)
+        specifier: 0.19.1
+        version: 0.19.1(graphql@16.9.0)
       colors:
         specifier: 1.4.0
         version: 1.4.0
@@ -764,8 +764,8 @@ importers:
         specifier: 7.8.0
         version: 7.8.0
       '@theguild/federation-composition':
-        specifier: 0.19.0
-        version: 0.19.0(graphql@16.9.0)
+        specifier: 0.19.1
+        version: 0.19.1(graphql@16.9.0)
       '@trpc/client':
         specifier: 10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -1161,8 +1161,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@theguild/federation-composition':
-        specifier: 0.19.0
-        version: 0.19.0(graphql@16.9.0)
+        specifier: 0.19.1
+        version: 0.19.1(graphql@16.9.0)
       '@trpc/server':
         specifier: 10.45.2
         version: 10.45.2
@@ -7780,8 +7780,8 @@ packages:
       eslint: ^8 || ^9
       typescript: ^5
 
-  '@theguild/federation-composition@0.19.0':
-    resolution: {integrity: sha512-83mSKIvoQJYNynAkeLF4brQL7216Z2HlGVF5dg18taUn+XW7XHefGFHX7gSoS+1qL1lWgHBwxyW4aGiy7impXg==}
+  '@theguild/federation-composition@0.19.1':
+    resolution: {integrity: sha512-E4kllHSRYh+FsY0VR+fwl0rmWhDV8xUgWawLZTXmy15nCWQwj0BDsoEpdEXjPh7xes+75cRaeJcSbZ4jkBuSdg==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: ^16.0.0
@@ -19761,7 +19761,7 @@ snapshots:
   '@graphql-tools/import@7.1.1(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 10.9.1(graphql@16.9.0)
-      '@theguild/federation-composition': 0.19.0(graphql@16.9.0)
+      '@theguild/federation-composition': 0.19.1(graphql@16.9.0)
       graphql: 16.9.0
       resolve-from: 5.0.0
       tslib: 2.8.1
@@ -24758,7 +24758,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  '@theguild/federation-composition@0.19.0(graphql@16.9.0)':
+  '@theguild/federation-composition@0.19.1(graphql@16.9.0)':
     dependencies:
       constant-case: 3.0.4
       debug: 4.4.1(supports-color@8.1.1)
