@@ -40,4 +40,7 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
 
     return role;
   },
+  organization: async (_parent, _arg, _ctx) => {
+    /* OIDCIntegration.organization resolver is required because OIDCIntegration.organization exists but OIDCIntegrationMapper.organization does not */
+  },
 };
