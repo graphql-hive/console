@@ -29,9 +29,8 @@ export function ProjectSelector(props: {
   showOrganization?: boolean;
 }) {
   const router = useRouter();
-  const optional = typeof props.optional !== 'undefined' ? props.optional : false;
-  const showOrganization =
-    typeof props.showOrganization !== 'undefined' ? props.showOrganization : true;
+  const optional = props.optional ?? false;
+  const showOrganization = props.showOrganization ?? true
   const defaultFunc = (id: string) => {
     void router.navigate({
       to: '/$organizationSlug/$projectSlug',
