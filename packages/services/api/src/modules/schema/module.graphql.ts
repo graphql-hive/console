@@ -114,14 +114,40 @@ export default gql`
     externalSchemaComposition: ExternalSchemaComposition
     schemaVersionsCount(period: DateRangeInput): Int!
     isNativeFederationEnabled: Boolean!
-    nativeFederationCompatibility: NativeFederationCompatibilityStatus!
+    """
+    Get the status of the native federation compatability for the project.
+    """
+    nativeFederationCompatibility: NativeCompositionCompatibility!
   }
 
   extend type Target {
     schemaVersionsCount(period: DateRangeInput): Int!
   }
 
-  enum NativeFederationCompatibilityStatus {
+  type NativeCompositionVersionStatus {
+    """
+    The schema version we check against.
+    """
+    schemaVersion: SchemaVersion!
+    """
+    The native composition result. The supergraphSdl is sorted and normalized.
+    """
+    nativeCompositionResult: SchemaCompositionResult!
+    """
+    The supergraph of the latest valid schema version (sorted and normalized).
+    """
+    currentSupergraphSdl: String!
+  }
+
+  type NativeCompositionCompatibility {
+    """
+    Whether the schema version is compatible.
+    """
+    status: NativeFederationCompatibilityStatusType!
+    results: [NativeCompositionVersionStatus]!
+  }
+
+  enum NativeFederationCompatibilityStatusType {
     COMPATIBLE
     INCOMPATIBLE
     UNKNOWN

@@ -38,6 +38,7 @@ import { DevPage } from './pages/dev';
 import { IndexPage } from './pages/index';
 import { LogoutPage } from './pages/logout';
 import { ManagePage } from './pages/manage';
+import { NativeCompositionDiff } from './pages/native-composition-diff';
 import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organization';
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
@@ -299,6 +300,16 @@ const devRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: 'dev',
   component: DevPage,
+});
+
+const nativeCompositionDiffRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: 'native-composition-compatibility-report/$projectId',
+  component: NativeCompositionDiff,
+  component: function TransferOrganizationRoute() {
+    const { projectId } = nativeCompositionDiffRoute.useParams();
+    return <NativeCompositionDiff projectId={projectId} />;
+  },
 });
 
 const newOrgPage = createRoute({
@@ -836,6 +847,7 @@ const routeTree = root.addChildren([
   ]),
   authenticatedRoute.addChildren([
     indexRoute,
+    nativeCompositionDiffRoute,
     devRoute,
     newOrgPage,
     manageRoute,
