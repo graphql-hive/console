@@ -18,7 +18,7 @@
     "pnpm": ">=10.4.0"
   },
   "scripts": {
-    "build": "pnpm turbo build --color",
+    "build": "pnpm turbo build --color --filter '!@hive/docs'",
     "build:libraries": "pnpm prebuild && pnpm graphql:generate && pnpm turbo build --filter=./packages/libraries/* --color",
     "build:services": "pnpm prebuild && pnpm turbo build --filter=./packages/services/**/* --filter=./packages/migrations --color",
     "build:web": "pnpm prebuild && pnpm turbo build --filter=./packages/web/* --color",
