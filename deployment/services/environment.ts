@@ -71,6 +71,14 @@ export function prepareEnvironment(input: {
         maxReplicas: isProduction ? /* numberOfPartitions */ 16 : 2,
         cpuAverageToScale: 60,
       },
+      redis: {
+        memoryLimit: isProduction ? '4Gi' : '100Mi',
+        cpuLimit: isProduction ? '1000m' : '50m',
+      },
+      internalObservability: {
+        cpuLimit: isProduction ? '512m' : '150m',
+        memoryLimit: isProduction ? '1000Mi' : '300Mi',
+      },
     },
   };
 }
