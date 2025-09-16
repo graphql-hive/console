@@ -193,7 +193,7 @@ export class ServiceDeployment {
       topologySpreadConstraints.push({
         maxSkew: 1,
         topologyKey: 'kubernetes.io/hostname',
-        whenUnsatisfiable: 'DoNotSchedule',
+        whenUnsatisfiable: 'ScheduleAnyway',
         labelSelector: {
           matchLabels: {
             app: this.name,
