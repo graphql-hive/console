@@ -10,6 +10,7 @@ export default withGuildDocs({
       treeShaking: true,
     },
   },
+
   nextraConfig: {
     contentDirBasePath: '/docs',
   },
