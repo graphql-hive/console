@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { NativeFederationCompatibilityStatus } from '@/gql/graphql';
+import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
 const IncrementalNativeCompositionSwitch_TargetFragment = graphql(`
@@ -121,7 +121,9 @@ const NativeCompositionSettings_ProjectQuery = graphql(`
   query NativeCompositionSettings_ProjectQuery($selector: ProjectSelectorInput!) {
     project(reference: { bySelector: $selector }) {
       id
-      nativeFederationCompatibility
+      nativeFederationCompatibility {
+        status
+      }
       experimental_nativeCompositionPerTarget
     }
   }
@@ -290,37 +292,37 @@ export function NativeCompositionSettings(props: {
         <CardContent>
           <div className="flex flex-row items-center gap-x-4">
             <div>
-              {projectQuery.data.project.nativeFederationCompatibility ===
-              NativeFederationCompatibilityStatus.Compatible ? (
+              {projectQuery.data.project.nativeFederationCompatibility.status ===
+              NativeFederationCompatibilityStatusType.Compatible ? (
                 <PartyPopperIcon className="size-10 text-emerald-500" />
               ) : null}
-              {projectQuery.data.project.nativeFederationCompatibility ===
-              NativeFederationCompatibilityStatus.Incompatible ? (
+              {projectQuery.data.project.nativeFederationCompatibility.status ===
+              NativeFederationCompatibilityStatusType.Incompatible ? (
                 <HeartCrackIcon className="size-10 text-red-500" />
               ) : null}
-              {projectQuery.data.project.nativeFederationCompatibility ===
-              NativeFederationCompatibilityStatus.Unknown ? (
+              {projectQuery.data.project.nativeFederationCompatibility.status ===
+              NativeFederationCompatibilityStatusType.Unknown ? (
                 <FlaskConicalIcon className="size-10 text-orange-500" />
               ) : null}
             </div>
             <div>
               <div className="text-base font-semibold">
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Compatible
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Compatible
                   ? 'Your project is compatible'
                   : null}
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Incompatible
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Incompatible
                   ? 'Your project is not yet supported'
                   : null}
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Unknown
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Unknown
                   ? 'Unclear whether your project is compatible'
                   : null}
               </div>
               <div className="text-muted-foreground text-sm">
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Compatible ? (
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Compatible ? (
                   <>
                     Subgraphs of this project are composed and validated correctly by our{' '}
                     <a
@@ -332,8 +334,8 @@ export function NativeCompositionSettings(props: {
                     for Apollo Federation.
                   </>
                 ) : null}
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Incompatible ? (
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Incompatible ? (
                   <>
                     Our{' '}
                     <a
@@ -344,11 +346,17 @@ export function NativeCompositionSettings(props: {
                     </a>{' '}
                     is not yet compatible with subgraphs of your project. We're working on it!
                     <br />
-                    Please reach out to us to explore solutions for addressing this issue.
+                    Please reach out to us to explore solutions for addressing this issue and share
+                    this report with us:
+                    <a
+                      href={`/native-composition-compatibility-report/${projectQuery.data.project.id}`}
+                    >
+                      View full report
+                    </a>
                   </>
                 ) : null}
-                {projectQuery.data.project.nativeFederationCompatibility ===
-                NativeFederationCompatibilityStatus.Unknown ? (
+                {projectQuery.data.project.nativeFederationCompatibility.status ===
+                NativeFederationCompatibilityStatusType.Unknown ? (
                   <>
                     Your project appears to lack any subgraphs at the moment, making it impossible
                     for us to assess compatibility with our{' '}
