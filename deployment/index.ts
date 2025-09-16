@@ -316,18 +316,6 @@ deployCloudFlareSecurityTransform({
     '/api/github',
     '/api/slack',
   ],
-  ignoredHosts: [
-    // Ignore CSP for Production CDN
-    'cdn.graphql-hive.com',
-    // Staging
-    'staging.graphql-hive.com',
-    'app.staging.graphql-hive.com',
-    'cdn.staging.graphql-hive.com',
-    // Dev
-    'dev.graphql-hive.com',
-    'app.dev.graphql-hive.com',
-    'cdn.dev.graphql-hive.com',
-  ],
 });
 
 export const graphqlApiServiceId = graphql.service.id;

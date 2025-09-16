@@ -17,21 +17,15 @@ function toExpressionList(items: string[]): string {
 export function deployCloudFlareSecurityTransform(options: {
   environment: Environment;
   ignoredPaths: string[];
-  ignoredHosts: string[];
 }) {
-  // We deploy it only once, because CloudFlare is not super friendly for multiple deployments of "http_response_headers_transform" rules
-  // The single rule, deployed to prod, covers all other envs, and infers the hostname dynamically.
   if (!options.environment.isProduction) {
-    console.warn(
-      `Skipped deploy security headers (see "cloudflare-security.ts") for env ${options.environment.envName}`,
-    );
-
     return;
   }
 
+  const ignoredHosts = [`cdn.${options.environment.rootDns}`];
   const expression = `not http.request.uri.path in { ${toExpressionList(
     options.ignoredPaths,
-  )} } and not http.host in { ${toExpressionList(options.ignoredHosts)} }`;
+  )} } and not http.host in { ${toExpressionList(ignoredHosts)} }`;
 
   // TODO: When Preflight PR is merged, we'll need to change this to build this host in a better way.
   const monacoCdnDynamicBasePath: `https://${string}/` = `https://cdn.jsdelivr.net/npm/monaco-editor@${monacoEditorVersion}/`;
@@ -57,7 +51,7 @@ export function deployCloudFlareSecurityTransform(options: {
   frame-src ${stripeHost} https://game.crisp.chat https://{DYNAMIC_HOST_PLACEHOLDER};
   style-src 'self' 'unsafe-inline' ${crispHost} fonts.googleapis.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath};
   script-src 'self' 'unsafe-eval' 'unsafe-inline' {DYNAMIC_HOST_PLACEHOLDER} ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${cspHosts};
-  connect-src 'self' * {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts}; 
+  connect-src 'self' * {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
   media-src ${crispHost};
   style-src-elem 'self' 'unsafe-inline' ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} fonts.googleapis.com rsms.me ${crispHost};
   font-src 'self' data: fonts.gstatic.com rsms.me ${monacoCdnDynamicBasePath} ${monacoCdnStaticBasePath} ${crispHost};
@@ -75,14 +69,14 @@ export function deployCloudFlareSecurityTransform(options: {
   return new cf.Ruleset('cloudflare-security-transform', {
     zoneId: cfConfig.require('zoneId'),
     description: 'Enforce security headers and CSP',
-    name: `Security Transform (all envs)`,
+    name: `Security Transform (${options.environment.envName})`,
     kind: 'zone',
     phase: 'http_response_headers_transform',
     rules: [
       {
         expression,
         enabled: true,
-        description: `Security Headers (all envs)`,
+        description: `Security Headers (${options.environment.envName})`,
         action: 'rewrite',
         actionParameters: {
           headers: [
