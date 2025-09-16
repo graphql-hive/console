@@ -21,16 +21,20 @@ const NativeCompositionDiff_NativeCompositionDiffQuery = graphql(/* GraphQL */ `
           nativeCompositionResult {
             supergraphSdl
             errors {
-              nodes {
-                message
+              edges {
+                node {
+                  message
+                }
               }
             }
           }
           schemaVersion {
+            id
             schemas {
               edges {
                 node {
                   ... on CompositeSchema {
+                    id
                     service
                     source
                   }
@@ -85,10 +89,10 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               <div>
                 <div>Composition Errors:</div>
                 <div>
-                  {result.nativeCompositionResult.errors?.nodes?.length ? (
+                  {result.nativeCompositionResult.errors?.edges?.length ? (
                     <ul>
-                      {result.nativeCompositionResult.errors.nodes.map(error => (
-                        <li>{error.message}</li>
+                      {result.nativeCompositionResult.errors.edges.map(edge => (
+                        <li>{edge.node.message}</li>
                       ))}
                     </ul>
                   ) : (
@@ -104,7 +108,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       name: (edge.node as any).service,
                     }));
 
-                    clipboard(JSON.stringify(services, null, 2));
+                    void clipboard(JSON.stringify(services, null, 2));
                   }}
                 >
                   Copy services to clipboard

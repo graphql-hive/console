@@ -305,8 +305,7 @@ const devRoute = createRoute({
 const nativeCompositionDiffRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: 'native-composition-compatibility-report/$projectId',
-  component: NativeCompositionDiff,
-  component: function TransferOrganizationRoute() {
+  component: function NativeCompositionDiffRoute() {
     const { projectId } = nativeCompositionDiffRoute.useParams();
     return <NativeCompositionDiff projectId={projectId} />;
   },
