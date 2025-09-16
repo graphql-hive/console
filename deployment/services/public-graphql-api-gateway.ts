@@ -60,7 +60,7 @@ export function deployPublicGraphQLAPIGateway(args: {
     {
       imagePullSecret: args.docker.secret,
       image: dockerImage,
-      replicas: args.environment.isProduction ? 3 : 1,
+      replicas: args.environment.podsConfig.general.replicas,
       availabilityOnEveryNode: true,
       env: {
         GRAPHQL_SERVICE_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(

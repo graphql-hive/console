@@ -88,7 +88,7 @@ export function deploySuperTokens(
   const deployment = new kx.Deployment(
     'supertokens',
     {
-      spec: pb.asDeploymentSpec({ replicas: environment.isProduction ? 3 : 1 }),
+      spec: pb.asDeploymentSpec({ replicas: environment.podsConfig.supertokens.replicas }),
     },
     {
       dependsOn: resourceOptions.dependencies,
