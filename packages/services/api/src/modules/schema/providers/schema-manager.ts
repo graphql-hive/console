@@ -1123,7 +1123,18 @@ export class SchemaManager {
     return true;
   }
 
-  async getNativeFederationCompatibilityStatus(project: Project) {
+  async getNativeFederationCompatibilityStatus(project: Project): Promise<{
+    status: NativeFederationCompatibilityStatusType;
+    results: Array<null | {
+      schemaVersion: SchemaVersion;
+      target: Target;
+      nativeCompositionResult: {
+        supergraphSdl: string | null;
+        errors: Array<{ message: string }> | null;
+      };
+      currentSupergraphSdl: string;
+    }>;
+  }> {
     this.logger.debug(
       'Get native Federation compatibility status (organization=%s, project=%s)',
       project.orgId,
@@ -1169,12 +1180,7 @@ export class SchemaManager {
         });
 
         if (schemas.length === 0) {
-          return {
-            target,
-            schemaVersion,
-            nativeCompositionResult: null,
-            currentSupergraphSdl,
-          };
+          return null;
         }
 
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
