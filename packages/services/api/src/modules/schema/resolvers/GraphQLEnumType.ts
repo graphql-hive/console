@@ -26,4 +26,7 @@ export const GraphQLEnumType: GraphQlEnumTypeResolvers = {
           ownedByServiceNames: t.supergraph.ownedByServiceNames,
         }
       : null,
+  deprecationReason: async (_parent, _arg, _ctx) => {
+    /* GraphQLEnumType.deprecationReason resolver is required because GraphQLEnumType.deprecationReason exists but GraphQLEnumTypeMapper.deprecationReason does not */
+  },
 };
