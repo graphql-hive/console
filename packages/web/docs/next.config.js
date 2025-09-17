@@ -10,6 +10,7 @@ export default withGuildDocs({
       treeShaking: true,
     },
   },
+
   nextraConfig: {
     contentDirBasePath: '/docs',
   },
@@ -239,6 +240,11 @@ export default withGuildDocs({
     {
       source: '/docs/gateway/deployment/node-frameworks',
       destination: '/docs/gateway/deployment/runtimes/nodejs',
+      permanent: true,
+    },
+    {
+      source: '/docs/gateway/other-features/performance/deduplicate-request',
+      destination: '/docs/gateway/other-features/performance/deduplicate-inflight-requests',
       permanent: true,
     },
   ],

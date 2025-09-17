@@ -75,7 +75,7 @@ export default gql`
     description: String @tag(name: "public")
     """
     List of permissions that are assigned to the access token.
-    A list of available permissions can be retrieved via the \`Organization.availableOrganizationAccessTokenPermissionGroups\` field.
+    A list of available permissions can be retrieved via the 'Organization.availableOrganizationAccessTokenPermissionGroups' field.
     """
     permissions: [String!]! @tag(name: "public")
     """
@@ -521,7 +521,7 @@ export default gql`
     """
     description: String! @tag(name: "public")
     """
-    A list of available permissions can be retrieved via the \`Organization.availableMemberPermissionGroups\` field.
+    A list of available permissions can be retrieved via the 'Organization.availableMemberPermissionGroups' field.
     """
     selectedPermissions: [String!]! @tag(name: "public")
   }

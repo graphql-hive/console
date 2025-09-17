@@ -5,88 +5,400 @@ description:
   how to handle errors and mask them to prevent leaking sensitive information to the client.
 ---
 
-# Logging & Error Handling
+import { Callout, Tabs } from '@theguild/components'
 
-import { Callout } from '@theguild/components'
+## Logging
 
-Hive Gateway provides a built-in logger that allows you to log information about the Gateway's
-lifecycle, errors, and other events. The default logger uses JavaScript's
+Hive Gateway uses the [Hive Logger](/docs/logger) for logging about the Gateway's lifecycle, errors,
+and other events. The default logger uses JavaScript's
 [`console`](https://developer.mozilla.org/en-US/docs/Web/API/console) API, but you can also provide
 a custom logger implementation. By default, Hive Gateway logs the critical masked errors so that the
 sensitive information is not exposed to the client.
 
-## Logging
+<Callout type="info">
+  The Hive Logger is a powerful tool with many features. You can learn more about it in the [Hive
+  Logger documentation](/docs/logger).
+</Callout>
 
-Hive Gateway provides a built-in logging system that allows you to log information about the
-Gateway's lifecycle, errors, and other events. The default logger uses JavaScript's
-[`console`](https://developer.mozilla.org/en-US/docs/Web/API/console) API, but you can also provide
-a custom logger implementation.
+### Using the Logger
 
-### Logging in JSON format
+The `log` prop is now used in all APIs, contexts, and plugin options. It's short and intuitive,
+making it easier to understand and use.
 
-By default without any production environment variable, Hive Gateway prints the logs in human
-readable format. However, in production (when `NODE_ENV` is `production`) Hive Gateway prints the
-logs in JSON format, but if you want to enable it in regular mode, you can pass `LOG_FORMAT=json` as
-an environment variable.
+#### Context
+
+The context object passed to plugins and hooks will always have the relevant logger instance
+provided throug the `log` property. Same goes for all of the transports' contexts. Each of the
+transport contexts now has a `log` prop.
+
+##### Plugin Setup Function
+
+The `log` property in the plugin setup function contains the root-most logger instance.
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { myPlugins } from './my-plugins'
+
+export const gatewayConfig = defineConfig({
+  plugins(ctx) {
+    ctx.log.info('Loading plugins...')
+    return [...myPlugins]
+  }
+})
+```
+
+##### Plugin Hooks
+
+Across all plugins, hooks and contexts, the `log` property will always be provided.
+
+It is now the highly recommended to use the logger from the context at all times because it contains
+the necessary metadata for increased observability, like the request ID or the execution step.
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- plugins({ log }) {
++ plugins() {
+    return [
+      {
+        onRequest({ serverContext }) {
+-         log.info('Got request...');
++         serverContext.log.info('Got request...');
+        },
+        onParams({ context }) {
+-         log.info('Params...');
++         context.log.info('Params...');
+        },
+        onExecute({ context }) {
+-         log.info('Executing...');
++         context.log.info('Executing...');
+        },
+        onDelegationPlan(context) {
+-         log.info('Creating delegation plan...');
++         context.log.info('Creating delegation plan...');
+        },
+        onSubgraphExecute(context) {
+-         log.info('Executing on subgraph...');
++         context.log.info('Executing on subgraph...');
+        },
+        onFetch({ context }) {
+-         log.info('Fetching data...');
++         context.log.info('Fetching data...');
+        },
+        onResponse({ serverContext }) {
+-         log.info('Responding...');
++         serverContext.log.info('Responding...');
+        },
+      },
+    ];
+  },
+});
+```
+
+Will log with the necessary metadata for increased observability, like this:
+
+```
+2025-04-10T14:00:00.000Z INF Executing...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+2025-04-10T14:00:00.000Z INF Creating delegation plan...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Executing on subgraph...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Fetching data...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+```
 
 ### Log Levels
 
-Hive Gateway uses 4 log levels `debug`, `info`, `warn` and `error`. By default, Hive Gateway will
-only log info, warn and error messages.
+The default logger uses the `info` log level which will make sure to log only `info`+ logs.
+Available log levels are:
 
-#### `error`
+- false (disables logging altogether)
+- `trace`
+- `debug`
+- `info` _default_
+- `warn`
+- `error`
 
-- Only log unexpected errors including masked errors
+##### Change on Start
 
-#### `warn`
+The `logging` option during Hive Gateway setup accepts:
 
-- All prior log levels
-- Deprecation notices
-- Potential issues that could lead to errors
+1. `true` to enable and log using the `info` level
+1. `false` to disable logging altogether
+1. A Hive Logger instance
+1. A string log level (e.g., `debug`, `info`, `warn`, `error`)
 
-#### `info`
+<Tabs items={['CLI', 'Programmatic Usage']}>
 
-- All prior log levels
-- Information about the current state of the system
+<Tabs.Tab>
 
-#### `debug`
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
 
-- All prior log levels
-- Processing of GraphQL parameters
-- Parsing of GraphQL parameters
-- Execution or subscription start
-- Received GraphQL operation variables
-- Execution or subscription end
-- Health checks
-- Subgraph requests
-- All HTTP requests and responses
-- Supergraph fetching
-- Any caching operations
-
-<Callout>
-  If you want to learn more about the life-cycle of the Gateway, you can enable debug logs. Setting
-  the `DEBUG=1` environment variable or passing `debug` to `logging` parameter will enable debug
-  logs that include all operations done to the upstream services, query plans etc.
-</Callout>
-
-### Integration with Winston (only Node.js)
-
-By default, Hive Gateway uses the built-in `console` logger. However, you can also integrate Hive
-Gateway with [Winston](https://github.com/winstonjs/winston) on Node.js environments.
-
-You need to install `winston` and `@graphql-hive/logger-winston` packages to use Winston with Hive
-Gateway.
-
-```sh npm2yarn
-npm i winston @graphql-hive/logger-winston
+export const gatewayConfig = defineConfig({
+  logging: 'debug'
+})
 ```
 
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="index.ts"
+import { createGatewayRuntime } from '@graphql-hive/runtime-gateway'
+
+export const gateway = createGatewayRuntime({
+  logging: 'debug'
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+##### Change Dynamically
+
+A powerful ability of Hive Logger is allowinh you to change the log level dynamically at runtime.
+This is useful for debugging and testing purposes. You can change the log level by calling the
+`setLogLevel` method on the logger instance.
+
+Lets write a plugin that toggles the `debug` log level when a secure HTTP request is made on the
+`/toggle-debug` path.
+
+<Callout>
+
+Please be very carefuly with securing your logger. Changing the log level from an HTTP request can
+be a security risk and should be avoided in production environments. **Use this feature with caution
+and proper security measures.**
+
+</Callout>
+
+```ts filename="toggle-debug.ts"
+import { GatewayPlugin, Logger } from '@graphql-hive/gateway'
+
+interface ToggleDebugOptions {
+  /**
+   * A secret value that has to be provided alongside the
+   * request authenticating its origin.
+   */
+  secret: string
+  /**
+   * The root most logger, all of the child loggers will
+   * inherit its log level.
+   */
+  rootLog: Logger
+}
+
+export function useToggleDebug(opts: ToggleDebugOptions): GatewayPlugin {
+  return {
+    onRequest({ request }) {
+      if (!request.url.endsWith('/toggle-debug')) {
+        return
+      }
+
+      const secret = request.headers.get('x-toggle-debug-secret')
+      if (secret !== opts.secret) {
+        return
+      }
+
+      // request is authenticated, we can change the log level
+      if (opts.rootLog.level === 'debug') {
+        opts.rootLog.setLevel('info')
+      } else {
+        opts.rootLog.setLevel('debug')
+      }
+
+      opts.rootLog.warn('Log level changed to %s', opts.rootLog.level)
+    }
+  }
+}
+```
+
+And finally use the plugin with Hive Gateway:
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { useToggleDebug } from './toggle-debug'
+
+export const gatewayConfig = defineConfig({
+  plugins(ctx) {
+    return [
+      useToggleDebug({
+        secret: 'wow-very-much-secret',
+        // the plugins factory function provides the root logger,
+        // all of the child loggers will inherit its log level
+        rootLog: ctx.log
+      })
+    ]
+  }
+})
+```
+
+Finally, issue the following request to toggle the debug log level:
+
+```sh
+curl -H 'x-toggle-debug-secret: wow-very-much-secret' \
+  http://localhost:4000/toggle-debug
+```
+
+### Writing Logs in JSON format
+
+By default, Hive Gateway prints the logs in human readable format. However, in production
+environments where you use tools for consuming the logs, it's advised to print logs in JSON format.
+
+#### Toggle with Environment Variable
+
+To enable JSON logs, pass the `LOG_JSON=1` as an environment variable to enable the
+[JSON writer](/docs/logger#jsonlogwriter).
+
+#### Use the JSON Log Writer
+
+You can also use the JSON writer directly in your configuration.
+
+```ts filename="gateway.config.ts"
+import { defineConfig, JSONLogWriter, Logger } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  logging: new Logger({ writers: [new JSONLogWriter()] })
+})
+```
+
+#### Pretty Printing JSON
+
+When using the JSON writer (either by toggling it using the environment variable or using the JSON
+writer directly), you can use the `LOG_JSON_PRETTY=1` environment variable to enable pretty-printing
+the JSON logs.
+
+### Custom Logger Writers
+
+The new Hive Logger is designed to be extensible and allows you to create custom logger adapters by
+implementing "log writers" instead of the complete logger interface. The `LogWriter` is simply:
+
 ```ts
+import { Attributes, LogLevel } from '@graphql-hive/logger'
+
+interface LogWriter {
+  write(
+    level: LogLevel,
+    attrs: Attributes | null | undefined,
+    msg: string | null | undefined
+  ): void | Promise<void>
+  flush?(): void | Promise<void>
+}
+```
+
+As you may see, it's very simple and allows you, to not only use your favourite logger like pino or
+winston, but also implement custom writers that send logs to a HTTP consumer or writes to a file.
+
+<Callout type="info">
+  Read more about implementing your own writers in the [Hive Logger documentation](/docs/logger).
+</Callout>
+
+#### Daily File Log Writer (Node.js Only)
+
+Here is an example of a custom log writer that writes logs to a daily log file. It will write to a
+file for each day in a given directory.
+
+```ts filename="daily-file-log-writer.ts"
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { Attributes, jsonStringify, LogLevel, LogWriter } from '@graphql-hive/logger'
+
+export class DailyFileLogWriter implements LogWriter {
+  constructor(
+    private dir: string,
+    private name: string
+  ) {}
+  write(level: LogLevel, attrs: Attributes | null | undefined, msg: string | null | undefined) {
+    const date = new Date().toISOString().split('T')[0]
+    const logfile = path.resolve(this.dir, `${this.name}_${date}.log`)
+    return fs.appendFile(logfile, jsonStringify({ level, msg, attrs }))
+  }
+}
+```
+
+And using it as simple as pluging it into an instance of Hive Logger to the `logging` option:
+
+```ts filename="gateway.config.ts"
+import { defineConfig, JSONLogWriter, Logger } from '@graphql-hive/gateway'
+import { DailyFileLogWriter } from './daily-file-log-writer'
+
+export const gatewayConfig = defineConfig({
+  logging: new Logger({
+    // you can combine multiple writers to log to different places
+    writers: [
+      // this will log to the console in JSON format
+      new JSONLogWriter(),
+      // and this is our daily file writer
+      new DailyFileLogWriter('/var/log/hive', 'gateway')
+    ]
+  })
+})
+```
+
+#### Pino (Node.js Only)
+
+Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
+logs.
+
+`pino` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i pino pino-pretty
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```sh npm2yarn
+npm i @graphql-hive/logger
+```
+
+```ts filename="gateway.config.ts"
+import pino from 'pino'
+import { defineConfig } from '@graphql-hive/gateway'
+import { Logger } from '@graphql-hive/logger'
+import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
+
+const pinoLogger = pino({
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+export const gatewayConfig = defineConfig({
+  logging: new Logger({
+    writers: [new PinoLogWriter(pinoLogger)]
+  })
+})
+```
+
+#### Winston (Node.js Only)
+
+Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
+Logger's logs.
+
+`winston` is an optional peer dependency, so you must install it first.
+
+```sh
+npm i winston
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```sh npm2yarn
+npm i @graphql-hive/logger
+```
+
+```ts filename="gateway.config.ts"
 import { createLogger, format, transports } from 'winston'
 import { defineConfig } from '@graphql-hive/gateway'
-import { createLoggerFromWinston } from '@graphql-hive/logger-winston'
+import { Logger } from '@graphql-hive/logger'
+import { WinstonLogWriter } from '@graphql-hive/logger/writers/winston'
 
-// Create a Winston logger
 const winstonLogger = createLogger({
   level: 'info',
   format: format.combine(format.timestamp(), format.json()),
@@ -94,97 +406,10 @@ const winstonLogger = createLogger({
 })
 
 export const gatewayConfig = defineConfig({
-  // Create an adapter for Winston
-  logging: createLoggerFromWinston(winstonLogger)
+  logging: new Logger({
+    writers: [new WinstonLogWriter(winstonLogger)]
+  })
 })
-```
-
-### Integration with Pino (only Node.js)
-
-Like Winston, you can also use [Pino](https://getpino.io/) with Hive Gateway on Node.js
-environments.
-
-```ts
-import pino from 'pino'
-import { defineConfig } from '@graphql-hive/gateway'
-import { createLoggerFromPino } from '@graphql-hive/logger-pino'
-
-export const gatewayConfig = defineConfig({
-  logging: createLoggerFromPino(pino({ level: 'info' }))
-})
-```
-
-### Custom Logger
-
-If you want to implement your own logger, you can use the interface `Logger` from
-`@graphql-hive/gateway`. The logger should implement the following methods:
-
-- `log(...args: any[]): void`
-- `error(...args: any[]): void`
-- `warn(...args: any[]): void`
-- `info(...args: any[]): void`
-- `debug(lazyMessageArgs: ...(() => any | any)[]): void`
-- `child(nameOrMeta: string | Record<string, string>): Logger`
-
-Keep on mind that, all methods can receive `any` type of variables, and serializing them for the
-output is up to the logger implementation. `JSON.stringify` might not be the best option for all
-cases.
-
-Also please notice that `debug` can receive functions that will be invoked only if the log level is
-enabled.
-
-Here is an example of a custom logger implementation, that logs to the console. But keep in mind
-that this is a very basic example and you shouldn't use it in production directly!
-
-```ts
-import { Logger } from '@graphql-hive/gateway'
-
-class CustomLogger implements Logger {
-  constructor(
-    public name: string,
-    public meta: Record<string, string>,
-    public isDebugEnabled: boolean
-  ) {}
-
-  log(...args: any[]): void {
-    console.log(this.name, this.meta, ...args)
-  }
-
-  error(...args: any[]): void {
-    console.error(this.name, this.meta, ...args)
-  }
-
-  warn(...args: any[]): void {
-    console.warn(this.name, this.meta, ...args)
-  }
-
-  info(...args: any[]): void {
-    console.info(this.name, this.meta, ...args)
-  }
-
-  debug(...lazyMessageArgs: (() => any | any)[]): void {
-    if (this.isDebugEnabled) {
-      console.debug(
-        this.name,
-        this.meta,
-        ...lazyMessageArgs.map(arg => (typeof arg === 'function' ? arg() : arg))
-      )
-    }
-  }
-
-  child(nameOrMeta: string | Record<string, string>): Logger {
-    let newName: string
-    let newMeta: Record<string, string>
-    if (typeof nameOrMeta === 'string') {
-      newName = `${this.name}.${nameOrMeta}`
-      newMeta = this.meta
-    } else {
-      newName = this.name
-      newMeta = { ...this.meta, ...nameOrMeta }
-    }
-    return new CustomLogger(newName, newMeta)
-  }
-}
 ```
 
 ## Error Handling

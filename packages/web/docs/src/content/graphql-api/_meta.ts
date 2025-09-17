@@ -5,4 +5,5 @@ export default {
   'project-management': 'Manage Projects',
   'target-management': 'Manage Targets',
   'contract-management': 'Manage Contracts',
+  'unused-deprecated-schema': 'Lookup unused/deprecated Schema',
 };

@@ -114,14 +114,40 @@ export default gql`
     externalSchemaComposition: ExternalSchemaComposition
     schemaVersionsCount(period: DateRangeInput): Int!
     isNativeFederationEnabled: Boolean!
-    nativeFederationCompatibility: NativeFederationCompatibilityStatus!
+    """
+    Get the status of the native federation compatability for the project.
+    """
+    nativeFederationCompatibility: NativeCompositionCompatibility!
   }
 
   extend type Target {
     schemaVersionsCount(period: DateRangeInput): Int!
   }
 
-  enum NativeFederationCompatibilityStatus {
+  type NativeCompositionVersionStatus {
+    """
+    The schema version we check against.
+    """
+    schemaVersion: SchemaVersion!
+    """
+    The native composition result. The supergraphSdl is sorted and normalized.
+    """
+    nativeCompositionResult: SchemaCompositionResult!
+    """
+    The supergraph of the latest valid schema version (sorted and normalized).
+    """
+    currentSupergraphSdl: String!
+  }
+
+  type NativeCompositionCompatibility {
+    """
+    Whether the schema version is compatible.
+    """
+    status: NativeFederationCompatibilityStatusType!
+    results: [NativeCompositionVersionStatus]!
+  }
+
+  enum NativeFederationCompatibilityStatusType {
     COMPATIBLE
     INCOMPATIBLE
     UNKNOWN
@@ -420,7 +446,7 @@ export default gql`
   }
 
   """
-  Describes a schema change for either a schema version (\`SchemaVersion\`) or schema check (\`SchemaCheck\`).
+  Describes a schema change for either a schema version ('SchemaVersion') or schema check ('SchemaCheck').
   """
   type SchemaChange {
     criticality: CriticalityLevel!
@@ -433,11 +459,11 @@ export default gql`
       )
     """
     The severity level of this schema change.
-    Note: A schema change with the impact \`SeverityLevelType.BREAKING\` can still be safe based on the usage (\`SchemaChange.isSafeBasedOnUsage\`).
+    Note: A schema change with the impact 'SeverityLevelType.BREAKING' can still be safe based on the usage ('SchemaChange.isSafeBasedOnUsage').
     """
     severityLevel: SeverityLevelType! @tag(name: "public")
     """
-    The reason for the schema changes severity level (\`SchemaChange.severityLevel\`)
+    The reason for the schema changes severity level ('SchemaChange.severityLevel')
     """
     severityReason: String @tag(name: "public")
     """
@@ -746,6 +772,13 @@ export default gql`
     pageInfo: PageInfo! @tag(name: "public")
   }
 
+  input SchemaExplorerPeriodInput @oneOf {
+    """
+    A full range using a start and end date.
+    """
+    absoluteRange: DateRangeInput @tag(name: "public")
+  }
+
   type SchemaVersion {
     id: ID! @tag(name: "public")
     """
@@ -796,8 +829,29 @@ export default gql`
     Experimental: This field is not stable and may change in the future.
     """
     explorer(usage: SchemaExplorerUsageInput): SchemaExplorer
-    unusedSchema(usage: UnusedSchemaExplorerUsageInput): UnusedSchemaExplorer
-    deprecatedSchema(usage: DeprecatedSchemaExplorerUsageInput): DeprecatedSchemaExplorer
+    """
+    An overview of unused fields and their types within the GraphQL schema.
+    """
+    unusedSchema(
+      """
+      The period to use in order to determind whether a field is unused.
+      A field is unused if it has not been requested within the specified period.
+
+      Defaults to the last 30 days by default.
+      """
+      period: SchemaExplorerPeriodInput @tag(name: "public")
+    ): UnusedSchemaExplorer @tag(name: "public")
+    """
+    An overview of deprecated fields and types with their usage in the GraphQL schema.
+    """
+    deprecatedSchema(
+      """
+      The period for which the usage data should be included within the result.
+
+      Defaults to the last 30 days by default.
+      """
+      period: SchemaExplorerPeriodInput @tag(name: "public")
+    ): DeprecatedSchemaExplorer @tag(name: "public")
 
     schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
 
@@ -846,14 +900,6 @@ export default gql`
     period: DateRangeInput!
   }
 
-  input UnusedSchemaExplorerUsageInput {
-    period: DateRangeInput!
-  }
-
-  input DeprecatedSchemaExplorerUsageInput {
-    period: DateRangeInput!
-  }
-
   type MetadataAttribute {
     name: String!
     values: [String!]!
@@ -873,30 +919,66 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
+  """
+  Explorer for navigating unused schema parts within the contextual provided period.
+  """
   type UnusedSchemaExplorer {
-    types: [GraphQLNamedType!]!
+    """
+    The affected unused types and their fields/values/members etc.
+
+    The types within the result only contain unused fields/values/members, all other entities are excluded,
+    they are not a representation of the full GraphQL schema.
+    """
+    types: [GraphQLNamedType!]! @tag(name: "public")
   }
 
+  """
+  Explorer for navigating the deprecated schema parts with usage data provided by the contextual period.
+  """
   type DeprecatedSchemaExplorer {
-    types: [GraphQLNamedType!]!
+    """
+    The affected types whose fields/values/members are deprecated.
+
+    The types within the result only contain deprecated fields/values/members, all other entities are excluded,
+    they are not a representation of the full GraphQL schema.
+    """
+    types: [GraphQLNamedType!]! @tag(name: "public")
   }
 
-  type SchemaCoordinateUsage {
+  """
+  Information about the schema coordinate usage within the contextual period.
+  """
+  type SchemaCoordinateUsage @tag(name: "public") {
+    """
+    The total amount of usages of the schema coordinate within the contextual period.
+    """
     total: Float!
+    """
+    Whether the schema coordinate is used within the contextual period.
+    """
     isUsed: Boolean!
     """
     A list of clients that use this schema coordinate within GraphQL operation documents.
     Is null if used by none clients.
     """
     usedByClients: [String!]
+    """
+    The top operations executed for this schema coordinate within the contextual period.
+    """
     topOperations(limit: Int!): [SchemaCoordinateUsageOperation!]!
   }
 
-  type SchemaCoordinateUsageOperation {
+  type SchemaCoordinateUsageOperation @tag(name: "public") {
+    """
+    The name of the GraphQL operation.
+    """
     name: String!
+    """
+    The hash of the GraphQL operation
+    """
     hash: String!
     """
-    The number of times the operation was called.
+    The number of times the operation was called within the contextual period.
     """
     count: Float!
   }
@@ -907,7 +989,7 @@ export default gql`
     List of service names that own the field/type.
     Resolves to null if the entity (field, type, scalar) does not belong to any service.
     """
-    ownedByServiceNames: [String!]
+    ownedByServiceNames: [String!] @tag(name: "public")
   }
 
   type SchemaMetadata {
@@ -925,15 +1007,27 @@ export default gql`
     source: String
   }
 
-  union GraphQLNamedType =
-    | GraphQLObjectType
-    | GraphQLInterfaceType
-    | GraphQLUnionType
-    | GraphQLEnumType
-    | GraphQLInputObjectType
-    | GraphQLScalarType
+  interface GraphQLNamedType @tag(name: "public") {
+    """
+    The name of the GraphQL type.
+    """
+    name: String!
+    """
+    The description of the GraphQL type.
+    """
+    description: String
+    """
+    The usage of the type within the specified period.
+    """
+    usage: SchemaCoordinateUsage!
+    """
+    Metadata specific to Apollo Federation Projects.
+    Is null if no meta information is available (e.g. this is not an apollo federation project).
+    """
+    supergraphMetadata: SupergraphMetadata
+  }
 
-  type GraphQLObjectType {
+  type GraphQLObjectType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLField!]!
@@ -946,7 +1040,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInterfaceType {
+  type GraphQLInterfaceType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLField!]!
@@ -959,7 +1053,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLUnionType {
+  type GraphQLUnionType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     members: [GraphQLUnionTypeMember!]!
@@ -971,7 +1065,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLUnionTypeMember {
+  type GraphQLUnionTypeMember @tag(name: "public") {
     name: String!
     usage: SchemaCoordinateUsage!
     """
@@ -981,7 +1075,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLEnumType {
+  type GraphQLEnumType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     deprecationReason: String
@@ -994,7 +1088,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInputObjectType {
+  type GraphQLInputObjectType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     fields: [GraphQLInputField!]!
@@ -1006,7 +1100,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLScalarType {
+  type GraphQLScalarType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
     usage: SchemaCoordinateUsage!
@@ -1017,7 +1111,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLField {
+  type GraphQLField @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -1032,7 +1126,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLInputField {
+  type GraphQLInputField @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -1047,7 +1141,7 @@ export default gql`
     supergraphMetadata: SupergraphMetadata
   }
 
-  type GraphQLArgument {
+  type GraphQLArgument @tag(name: "public") {
     name: String!
     description: String
     type: String!
@@ -1057,7 +1151,7 @@ export default gql`
     usage: SchemaCoordinateUsage!
   }
 
-  type GraphQLEnumValue {
+  type GraphQLEnumValue @tag(name: "public") {
     name: String!
     description: String
     isDeprecated: Boolean!

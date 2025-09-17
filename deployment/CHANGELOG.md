@@ -1,5 +1,30 @@
 # hive
 
+## 8.2.0
+
+### Minor Changes
+
+- [#6951](https://github.com/graphql-hive/console/pull/6951)
+  [`f567fbb`](https://github.com/graphql-hive/console/commit/f567fbbf49124e0f7ce54fdf8104acd422c543bb)
+  Thanks [@martyganz](https://github.com/martyganz)! - Add `SchemaVersion.unusedSchema` and
+  `SchemaVersion.deprecatedSchema` to the public API schema.
+
+- [#6960](https://github.com/graphql-hive/console/pull/6960)
+  [`e57b6c0`](https://github.com/graphql-hive/console/commit/e57b6c01987e6be9013923ffe760b0fa4fe390a1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Return all users by default if no `first` value is
+  provided for the `Organization.members` field.
+
+### Patch Changes
+
+- [#6963](https://github.com/graphql-hive/console/pull/6963)
+  [`91e830b`](https://github.com/graphql-hive/console/commit/91e830be6cf9fca238375616a8b79d637ae89e10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve styling of unused schema parts.
+
+- [#6961](https://github.com/graphql-hive/console/pull/6961)
+  [`a66013d`](https://github.com/graphql-hive/console/commit/a66013d5eaa436c8c8106c6c29b546b76b5e50bc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent editing the base schema showing up for
+  federation projects.
+
 ## 8.1.2
 
 ### Patch Changes

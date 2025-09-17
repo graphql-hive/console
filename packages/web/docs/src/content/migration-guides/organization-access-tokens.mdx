@@ -120,16 +120,16 @@ within the Hive dashboard.
 Please upgrade Hive Gateway to at least version
 [`hive-gateway@1.10.4`](https://github.com/graphql-hive/gateway/releases/tag/hive-gateway%401.10.4).
 
-Replace the usage of the `--hive-registry-token` config flag with the `--hive-usage-target` and
-`--hive-usage-access-token` flags.
+Replace the usage of the `--hive-registry-token` config flag with the `--hive-target` and
+`--hive-access-token` flags.
 
 ```diff
   hive-gateway supergraph \
     "<hive_cdn_endpoint>" \
     --hive-cdn-key "<hive_cdn_access_key>" \
 -    --hive-registry-token "<hive_registry_token>"
-+    --hive-usage-target "my-org/my-project/my-target" \
-+    --hive-usage-access-token "hvo1/...TRUNCATED..."
++    --hive-target "my-org/my-project/my-target" \
++    --hive-access-token "hvo1/...TRUNCATED..."
 ```
 
 **Further Reading:**

@@ -39,9 +39,9 @@ It have to be a function, which will be called each time the gateway have update
 For example, if polling is enabled, this function will be called for each poll.
 
 Most Hive Gateway plugins takes an object as a parameter, and expect some common components like a
-`logger`, a `pubsub`, etc... Those components are given in parameters to the `plugins` function. It
-is advised to spread the plugin's factory context into the plugins options, this way plugins will
-have access to all components they need.
+`log`, a `pubsub`, etc... Those components are given in parameters to the `plugins` function. It is
+advised to spread the plugin's factory context into the plugins options, this way plugins will have
+access to all components they need.
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
@@ -61,6 +61,20 @@ export const gatewayConfig = defineConfig({
   ]
 })
 ```
+
+<details>
+  <summary>Configuration Context</summary>
+
+| Field Name      | Type                                 | Description                                                                 |
+| --------------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| `fetch`         | `MeshFetch`                          | WHATWG compatible Fetch implementation.                                     |
+| `log`           | `Logger`                             | The logger to use throughout Hive and its plugins.                          |
+| `cwd`           | `string`                             | Current working directory.                                                  |
+| `pubsub`        | `HivePubSub` (optional)              | Event bus for pub/sub.                                                      |
+| `cache`         | `KeyValueCache` (optional)           | Cache Storage.                                                              |
+| `openTelemetry` | `OpenTelemetryPluginUtils & { ... }` | OpenTelemetry API to access OTEL Tracer and Hive Gateway internal contexts. |
+
+</details>
 
 ## Custom Plugins
 
@@ -172,7 +186,7 @@ Possible usage examples of the hooks are:
 | `setFetchFn`       | Replace the `fetch` function that will be used to make the request. It should be compatible with standard `fetch` API.                                                 |
 | `executionRequest` | Present only if the request is an upstream subgraph request. It contains all information about the upstream query, notably the target subgraph name.                   |
 | `requestId`        | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.                                                |
-| `logger`           | The logger instance for the specific request that includes the details of the request and the response.                                                                |
+| `log`              | The [Hive Logger](/docs/logger) instance for the specific request that includes the details of the request and the response.                                           |
 
 ##### `onFetchDone`
 
@@ -659,21 +673,21 @@ This hook has a before and after stage. You can return a function to hook into t
 
 This hook is mostly used for monitoring and tracing purposes.
 
-| Field Name                 | Description                                                                                                             |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `supergraph`               | The GraphQL schema of the supergraph.                                                                                   |
-| `subgraph`                 | The name of the subgraph.                                                                                               |
-| `sourceSubschema`          | The schema of the subgraph.                                                                                             |
-| `typeName`                 | The name of the type being planed.                                                                                      |
-| `variables`                | The variables provided in the client request.                                                                           |
-| `fragments`                | The fragments provided in the client request.                                                                           |
-| `fieldNodes`               | The field nodes of selection set being planned.                                                                         |
-| `context`                  | The GraphQL context object.                                                                                             |
-| `requestId`                | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services. |
-| `logger`                   | The logger instance for the specific request that includes the details of the request and the response.                 |
-| `info`                     | The `GraphQLResolveInfo` object of the client query.                                                                    |
-| `delegationPlanBuilder`    | The delegation plan builder.                                                                                            |
-| `setDelegationPlanBuilder` | Function to replace the current delegation plan builder.                                                                |
+| Field Name                 | Description                                                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `supergraph`               | The GraphQL schema of the supergraph.                                                                                        |
+| `subgraph`                 | The name of the subgraph.                                                                                                    |
+| `sourceSubschema`          | The schema of the subgraph.                                                                                                  |
+| `typeName`                 | The name of the type being planed.                                                                                           |
+| `variables`                | The variables provided in the client request.                                                                                |
+| `fragments`                | The fragments provided in the client request.                                                                                |
+| `fieldNodes`               | The field nodes of selection set being planned.                                                                              |
+| `context`                  | The GraphQL context object.                                                                                                  |
+| `requestId`                | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.      |
+| `log`                      | The [Hive Logger](/docs/logger) instance for the specific request that includes the details of the request and the response. |
+| `info`                     | The `GraphQLResolveInfo` object of the client query.                                                                         |
+| `delegationPlanBuilder`    | The delegation plan builder.                                                                                                 |
+| `setDelegationPlanBuilder` | Function to replace the current delegation plan builder.                                                                     |
 
 ##### `onDelegationPlanDone`
 
@@ -694,21 +708,21 @@ requires multiple stages to be fully resolved.
 This hooks has a before and after stage. You can return a function to hook into the after stage (see
 [`onDelegationStageExecuteDone`](#ondelegationstageexecutedone)).
 
-| Payload Field  | Description                                                                                                             |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `object`       | The object being resolved.                                                                                              |
-| `context`      | The GraphQL context object.                                                                                             |
-| `info`         | The `GraphQLResolveInfo` object.                                                                                        |
-| `subgraph`     | The name of the subgraph.                                                                                               |
-| `subschema`    | The schema of the current subgraph.                                                                                     |
-| `selectionSet` | The selection set node that will be queried.                                                                            |
-| `key`          | The key for the entity being resolved.                                                                                  |
-| `type`         | The type of the entity being resolved.                                                                                  |
-| `typeName`     | The name of the type being resolved.                                                                                    |
-| `resolver`     | The resolver function for the merged type.                                                                              |
-| `setResolver`  | Function to set a new resolver for the merged type.                                                                     |
-| `requestId`    | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services. |
-| `logger`       | The logger instance for the specific request that includes the details of the request and the response.                 |
+| Payload Field  | Description                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `object`       | The object being resolved.                                                                                                   |
+| `context`      | The GraphQL context object.                                                                                                  |
+| `info`         | The `GraphQLResolveInfo` object.                                                                                             |
+| `subgraph`     | The name of the subgraph.                                                                                                    |
+| `subschema`    | The schema of the current subgraph.                                                                                          |
+| `selectionSet` | The selection set node that will be queried.                                                                                 |
+| `key`          | The key for the entity being resolved.                                                                                       |
+| `type`         | The type of the entity being resolved.                                                                                       |
+| `typeName`     | The name of the type being resolved.                                                                                         |
+| `resolver`     | The resolver function for the merged type.                                                                                   |
+| `setResolver`  | Function to set a new resolver for the merged type.                                                                          |
+| `requestId`    | A unique ID identifying the client request. This is used to correlate downstream and upstream requests across services.      |
+| `log`          | The [Hive Logger](/docs/logger) instance for the specific request that includes the details of the request and the response. |
 
 ##### `onDelegationStageExecuteDone`
 
@@ -733,17 +747,17 @@ This hook is invoked for ANY request that is sent to the subgraph.
 You can see [Prometheus plugin](/docs/gateway/authorization-authentication) for an example of how to
 use this hook.
 
-| Payload Field         | Description                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `subgraph`            | The GraphQL schema of the subgraph.                                                                     |
-| `subgraphName`        | The name of the subgraph.                                                                               |
-| `transportEntry`      | The transport entry that will be used to resolve queries for this subgraph                              |
-| `executionRequest`    | The execution request object containing details of the upstream GraphQL operation.                      |
-| `setExecutionRequest` | Function to replace the current execution request.                                                      |
-| `executor`            | The executor function used to execute the upstream request.                                             |
-| `setExecutor`         | Function to replace the current executor.                                                               |
-| `requestId`           | A unique ID identifying the client request.                                                             |
-| `logger`              | The logger instance for the specific request that includes the details of the request and the response. |
+| Payload Field         | Description                                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `subgraph`            | The GraphQL schema of the subgraph.                                                                                          |
+| `subgraphName`        | The name of the subgraph.                                                                                                    |
+| `transportEntry`      | The transport entry that will be used to resolve queries for this subgraph                                                   |
+| `executionRequest`    | The execution request object containing details of the upstream GraphQL operation.                                           |
+| `setExecutionRequest` | Function to replace the current execution request.                                                                           |
+| `executor`            | The executor function used to execute the upstream request.                                                                  |
+| `setExecutor`         | Function to replace the current executor.                                                                                    |
+| `requestId`           | A unique ID identifying the client request.                                                                                  |
+| `log`                 | The [Hive Logger](/docs/logger) instance for the specific request that includes the details of the request and the response. |
 
 ##### `onSubgraphExecuteDone`
 
@@ -1040,7 +1054,7 @@ return a `Promise` if `wrapped()` returns a `Promise`.
 
 ### Plugin Context
 
-Hive Gateway comes with ready-to-use `logger`, `fetch`, cache storage and etc that are shared across
+Hive Gateway comes with ready-to-use `log`, `fetch`, cache storage and etc that are shared across
 different components. We'd highly recommend you to use those available context values instead of
 creating your own for a specific plugin.
 
@@ -1050,13 +1064,13 @@ import { defineConfig } from '@graphql-hive/gateway'
 export const gatewayConfig = defineConfig({
   plugins({
     fetch, // WHATWG compatible Fetch implementation.
-    logger, // Logger instance used by Hive Gateway
+    log, // Hive Logger instance used by Hive Gateway
     cwd, // Current working directory
     pubsub, // PubSub instance used by Hive Gateway
     cache // Cache storage used by Hive Gateway
   }) {
     return [
-      useMyPlugin({ logger, fetch }) // So the plugin can use the shared logger and fetch
+      useMyPlugin({ log, fetch }) // So the plugin can use the shared logger and fetch
     ]
   }
 })
