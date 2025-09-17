@@ -234,7 +234,9 @@ const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
   usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
 });
 
-const RUN_PUBLISH_COMMANDS: boolean = false;
+// You can change this to `false` in cases when you don't want to publish commands.
+// For example, if the entire env is down or if you are having SSL issues.
+const RUN_PUBLISH_COMMANDS: boolean = true;
 
 const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
   ? publishGraphQLSchema({
