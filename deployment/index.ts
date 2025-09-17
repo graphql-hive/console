@@ -272,7 +272,7 @@ if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
           dockerSecret: docker.secret,
         },
     // We need to wait until the new GraphQL schema is published before we can publish the app deployment.
-    dependsOn: [publishGraphQLSchemaCommand],
+    dependsOn: publishGraphQLSchemaCommand ? [publishGraphQLSchemaCommand] : [],
   });
 }
 
