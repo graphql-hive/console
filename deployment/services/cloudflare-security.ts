@@ -18,10 +18,6 @@ export function deployCloudFlareSecurityTransform(options: {
   environment: Environment;
   ignoredPaths: string[];
 }) {
-  if (!options.environment.isProduction) {
-    return;
-  }
-
   const ignoredHosts = [`cdn.${options.environment.rootDns}`];
   const expression = `not http.request.uri.path in { ${toExpressionList(
     options.ignoredPaths,
