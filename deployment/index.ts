@@ -234,22 +234,26 @@ const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
   usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
 });
 
-const publishGraphQLSchemaCommand = publishGraphQLSchema({
-  graphql,
-  registry: {
-    endpoint: `https://${environment.appDns}/registry`,
-    accessToken: hiveConfigSecret.raw.usageAccessToken,
-    target: hiveConfig.require('target'),
-  },
-  version: {
-    commit: imagesTag,
-  },
-  schemaPath: graphqlSchemaAbsolutePath,
-});
+const RUN_PUBLISH_COMMANDS: boolean = false;
+
+const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
+  ? publishGraphQLSchema({
+      graphql,
+      registry: {
+        endpoint: `https://${environment.appDns}/registry`,
+        accessToken: hiveConfigSecret.raw.usageAccessToken,
+        target: hiveConfig.require('target'),
+      },
+      version: {
+        commit: imagesTag,
+      },
+      schemaPath: graphqlSchemaAbsolutePath,
+    })
+  : null;
 
 let publishAppDeploymentCommand: pulumi.Resource | undefined;
 
-if (hiveAppPersistedDocumentsAbsolutePath) {
+if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
   publishAppDeploymentCommand = publishAppDeployment({
     appName: 'hive-app',
     registry: {
