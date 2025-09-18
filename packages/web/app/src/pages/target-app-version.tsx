@@ -227,8 +227,8 @@ function TargetAppVersionContent(props: {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.data?.target?.appDeployment.documents?.edges.map(edge => (
-                    <TableRow>
+                  {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
+                    <TableRow key={i}>
                       <TableCell>
                         <span className="rounded bg-gray-800 p-1 font-mono text-sm">
                           {edge.node.hash}

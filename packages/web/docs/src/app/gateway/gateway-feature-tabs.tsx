@@ -56,6 +56,7 @@ export function GatewayFeatureTabs(props: { className?: string }) {
   return (
     <FeatureTabs
       highlights={highlights}
+      // eslint-disable-next-line react/jsx-key
       icons={[<PerformanceIcon />, <SecurityIcon />]}
       className={cn(
         'border-blue-200 [--tab-bg-dark:theme(colors.blue.300)] [--tab-bg:theme(colors.blue.200)]',
