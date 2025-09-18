@@ -46,29 +46,29 @@ export function prepareEnvironment(input: {
     rootDns: input.rootDns,
     podsConfig: {
       general: {
-        replicas: isProduction ? 3 : isStaging ? 2 : 1,
+        replicas: isProduction || isStaging ? 3 : 1,
       },
       supertokens: {
-        replicas: isProduction ? 3 : 1,
+        replicas: isProduction || isStaging ? 3 : 1,
       },
       envoy: {
-        replicas: isProduction ? 3 : 1,
-        cpuLimit: isProduction ? '800m' : '150m',
-        memoryLimit: isProduction ? '1Gi' : '200Mi',
+        replicas: isProduction || isStaging ? 3 : 1,
+        cpuLimit: isProduction ? '1500m' : '150m',
+        memoryLimit: isProduction ? '2Gi' : '200Mi',
       },
       schemaService: {
-        memoryLimit: isProduction ? '2Gi' : '1Gi',
+        memoryLimit: isProduction || isStaging ? '2Gi' : '1Gi',
       },
       usageService: {
-        replicas: isProduction ? 3 : isStaging ? 2 : 1,
-        cpuLimit: isProduction ? '900m' : '300m',
-        maxReplicas: isProduction ? 6 : isStaging ? 3 : 1,
+        replicas: isProduction || isStaging ? 3 : 1,
+        cpuLimit: isProduction ? '1000m' : '300m',
+        maxReplicas: isProduction || isStaging ? 6 : 1,
         cpuAverageToScale: 60,
       },
       usageIngestorService: {
-        replicas: isProduction ? 6 : isStaging ? 2 : 1,
-        cpuLimit: isProduction ? '900m' : '300m',
-        maxReplicas: isProduction ? /* numberOfPartitions */ 16 : 2,
+        replicas: isProduction || isStaging ? 6 : 1,
+        cpuLimit: isProduction ? '1000m' : '300m',
+        maxReplicas: isProduction || isStaging ? /* numberOfPartitions */ 16 : 2,
         cpuAverageToScale: 60,
       },
       redis: {
