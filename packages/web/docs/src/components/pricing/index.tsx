@@ -209,6 +209,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                   icon={<OperationsIcon />}
                   category="Operations per month"
                   features={[
+                    // eslint-disable-next-line react/jsx-key
                     <span>
                       1M operations per month
                       <small className="block text-xs">Then $10 per million operations</small>
@@ -296,6 +297,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
                   features={[
                     'Dedicated Slack channel for support',
                     'White-glove onboarding',
+                    // eslint-disable-next-line react/jsx-key
                     <span>
                       GraphQL / APIs support and guidance from{' '}
                       <TextLink href="https://theguild.dev">The&nbsp;Guild</TextLink>

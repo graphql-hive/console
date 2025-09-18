@@ -71,12 +71,16 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
       <Tabs>
         <TabsList>
           {nativeFederationCompatibility.results.map((result, index) =>
-            result ? <TabsTrigger value={String(index)}>Target {index}</TabsTrigger> : null,
+            result ? (
+              <TabsTrigger value={String(index)} key={index}>
+                Target {index}
+              </TabsTrigger>
+            ) : null,
           )}
         </TabsList>
         {nativeFederationCompatibility.results.map((result, index) =>
           result ? (
-            <TabsContent value={String(index)}>
+            <TabsContent value={String(index)} key={index}>
               <div>
                 <div>Supergraph Diff</div>
                 <div>
@@ -91,8 +95,8 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 <div>
                   {result.nativeCompositionResult.errors?.edges?.length ? (
                     <ul>
-                      {result.nativeCompositionResult.errors.edges.map(edge => (
-                        <li>{edge.node.message}</li>
+                      {result.nativeCompositionResult.errors.edges.map((edge, i) => (
+                        <li key={i}>{edge.node.message}</li>
                       ))}
                     </ul>
                   ) : (
