@@ -344,8 +344,8 @@ function OIDCMetadataFetcher(props: {
                 metadataResult.error.formErrors.fieldErrors.userinfo_endpoint?.[0],
               ]
                 .filter(Boolean)
-                .map(msg => (
-                  <p>{msg}</p>
+                .map((msg, i) => (
+                  <p key={i}>{msg}</p>
                 ))}
             </>
           ),
