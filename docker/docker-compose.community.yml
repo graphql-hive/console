@@ -75,7 +75,7 @@ services:
       - ./.hive/broker/db:/var/lib/redpanda/data
 
   redis:
-    image: bitnami/redis:7.4.2
+    image: bitnamilegacy/redis:7.4.2
     networks:
       - 'stack'
     healthcheck:
