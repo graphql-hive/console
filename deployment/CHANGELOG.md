@@ -1,5 +1,19 @@
 # hive
 
+## 8.2.1
+
+### Patch Changes
+
+- [#6935](https://github.com/graphql-hive/console/pull/6935)
+  [`261daf8`](https://github.com/graphql-hive/console/commit/261daf81c384dc992608431e388836b7dde54336)
+  Thanks [@jdolle](https://github.com/jdolle)! - AppDeployment permissions granted to all if none
+  selected by default in access token UI. Fix app deployments feature flag check
+
+- [#7004](https://github.com/graphql-hive/console/pull/7004)
+  [`07a99f0`](https://github.com/graphql-hive/console/commit/07a99f0f4cd21edae5da734893175e1675c23173)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve usability when creating a registry access
+  token.
+
 ## 8.2.0
 
 ### Minor Changes
