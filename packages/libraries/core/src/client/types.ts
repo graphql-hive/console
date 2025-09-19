@@ -304,6 +304,11 @@ export type PersistedDocumentsConfiguration = {
    * @default 10_000
    */
   cache?: number;
+  /**
+   * WHATWG Compatible fetch implementation
+   * used for doing HTTP requests.
+   */
+  fetch?: typeof fetch;
 };
 
 export type AllowArbitraryDocumentsFunction = (context: {
