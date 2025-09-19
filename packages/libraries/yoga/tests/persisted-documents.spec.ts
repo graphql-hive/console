@@ -676,9 +676,9 @@ test('usage reporting with batch execution and persisted documents', async () =>
           },
         },
         agent: {
-          maxSize: 1,
+          maxSize: 2,
           logger: createLogger('silent'),
-          sendInterval: 1,
+          sendInterval: 10,
           async fetch(...args) {
             usageD.resolve(args);
             return new Response('');
